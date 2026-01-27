@@ -459,6 +459,18 @@
   border-color: #d1d5db;
 }
 
+.date-navigation .nav-button.today-highlight {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+  border-color: #3b82f6 !important;
+  font-weight: 600;
+}
+
+.date-navigation .nav-button.today-highlight:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border-color: #2563eb !important;
+}
+
 .current-date {
   font-weight: 600;
   color: #1f2937;

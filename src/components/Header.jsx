@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 
@@ -83,6 +83,20 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       return format(currentDate, 'yyyy', { locale: fr });
     }
   };
+
+  // Vérifier si on est dans la période actuelle
+  const isCurrentPeriod = () => {
+    const today = new Date();
+    if (view === 'week') {
+      return isSameWeek(currentDate, today, { weekStartsOn: 1 });
+    } else if (view === 'month') {
+      return isSameMonth(currentDate, today);
+    } else {
+      return isSameYear(currentDate, today);
+    }
+  };
+  
+  const showTodayHighlight = !isCurrentPeriod();
 
   return (
     <div className="header">
@@ -317,7 +331,17 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             <button className="nav-button" onClick={goToPrevious} aria-label="Période précédente">
               <ChevronLeft size={20} />
             </button>
-            <button className="nav-button" onClick={goToToday} aria-label="Revenir à aujourd'hui">
+            <button 
+              className={`nav-button ${showTodayHighlight ? 'today-highlight' : ''}`}
+              onClick={goToToday} 
+              aria-label="Revenir à aujourd'hui"
+              style={showTodayHighlight ? {
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                color: 'white',
+                borderColor: '#3b82f6',
+                fontWeight: 600
+              } : {}}
+            >
               Aujourd'hui
             </button>
             <button className="nav-button" onClick={goToNext} aria-label="Période suivante">

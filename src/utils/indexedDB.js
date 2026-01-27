@@ -1,0 +1,204 @@
+// Gestion de la base de données IndexedDB
+
+const DB_NAME = 'ReservationVehicules';
+const DB_VERSION = 3;
+const STORES = {
+  vehicles: 'vehicles',
+  reservations: 'reservations',
+  clients: 'clients',
+  drivers: 'drivers',
+  locations: 'locations',
+  calendarConfig: 'calendarConfig',
+  garages: 'garages',
+  maintenances: 'maintenances'
+};
+
+// Ouvrir ou créer la base de données
+const openDB = () => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+
+      // Créer les object stores si ils n'existent pas
+      Object.values(STORES).forEach(storeName => {
+        if (!db.objectStoreNames.contains(storeName)) {
+          db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+        }
+      });
+    };
+  });
+};
+
+// Sauvegarder des données
+export const saveToIndexedDB = async (storeName, data) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+
+    // Vider le store avant d'ajouter les nouvelles données
+    const clearRequest = store.clear();
+    
+    clearRequest.onsuccess = () => {
+      // Ajouter toutes les données après le clear
+      if (Array.isArray(data)) {
+        for (const item of data) {
+          // Utiliser put au lieu de add pour gérer les IDs existants
+          store.put(item);
+        }
+      } else if (data && typeof data === 'object') {
+        // Pour les objets simples comme calendarConfig
+        store.put({ ...data, id: 1 });
+      }
+    };
+
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      transaction.onerror = () => {
+        db.close();
+        reject(transaction.error || new Error('Transaction error'));
+      };
+      transaction.onabort = () => {
+        db.close();
+        reject(new Error('Transaction aborted'));
+      };
+    });
+  } catch (error) {
+    console.error(`Erreur lors de la sauvegarde dans ${storeName}:`, error);
+    throw error;
+  }
+};
+
+// Charger des données
+export const loadFromIndexedDB = async (storeName, defaultValue = []) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(storeName, 'readonly');
+    const store = transaction.objectStore(storeName);
+    const request = store.getAll();
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        db.close();
+        const result = request.result;
+        
+        // Si c'est un objet unique (comme calendarConfig), retourner le premier élément
+        if (storeName === STORES.calendarConfig && result && result.length > 0) {
+          const { id, ...config } = result[0];
+          resolve(config);
+          return;
+        }
+        
+        resolve(result && result.length > 0 ? result : defaultValue);
+      };
+      request.onerror = () => {
+        db.close();
+        reject(request.error);
+      };
+    });
+  } catch (error) {
+    console.error(`Erreur lors du chargement depuis ${storeName}:`, error);
+    return defaultValue;
+  }
+};
+
+// Ajouter un élément
+export const addToIndexedDB = async (storeName, item) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    const request = store.add(item);
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        db.close();
+        resolve(request.result);
+      };
+      request.onerror = () => {
+        db.close();
+        reject(request.error);
+      };
+    });
+  } catch (error) {
+    console.error(`Erreur lors de l'ajout dans ${storeName}:`, error);
+    throw error;
+  }
+};
+
+// Mettre à jour un élément
+export const updateInIndexedDB = async (storeName, item) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    const request = store.put(item);
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        db.close();
+        resolve(request.result);
+      };
+      request.onerror = () => {
+        db.close();
+        reject(request.error);
+      };
+    });
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour dans ${storeName}:`, error);
+    throw error;
+  }
+};
+
+// Supprimer un élément
+export const deleteFromIndexedDB = async (storeName, id) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    const request = store.delete(id);
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        db.close();
+        resolve();
+      };
+      request.onerror = () => {
+        db.close();
+        reject(request.error);
+      };
+    });
+  } catch (error) {
+    console.error(`Erreur lors de la suppression dans ${storeName}:`, error);
+    throw error;
+  }
+};
+
+// Vider complètement la base de données
+export const clearIndexedDB = async () => {
+  try {
+    const db = await openDB();
+    const storeNames = Object.values(STORES);
+    
+    for (const storeName of storeNames) {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      await store.clear();
+    }
+    
+    db.close();
+  } catch (error) {
+    console.error('Erreur lors du vidage de la base:', error);
+    throw error;
+  }
+};
+
+export { STORES };

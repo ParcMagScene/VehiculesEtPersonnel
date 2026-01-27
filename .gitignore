@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.local
+.vscode/
+.idea/
+
+# Fichiers temporaires de développement
+check_localstorage.html
+test_*.js
+analyze.js

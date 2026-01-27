@@ -1,0 +1,834 @@
+.calendar-container {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: white;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  margin: 0;
+  min-height: 0;
+}
+
+.calendar-headers-row {
+  display: flex;
+  flex-shrink: 0;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+  border-radius: 0;
+}
+
+.calendar-headers-row .vehicle-column-header {
+  position: static;
+  flex-shrink: 0;
+  width: 250px;
+  border-right: 2px solid #e5e7eb;
+}
+
+.calendar-headers-scroll-area {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+.calendar-headers-scroll-area::-webkit-scrollbar {
+  height: 8px;
+}
+
+.calendar-headers-scroll-area::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.calendar-headers-scroll-area::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.calendar-headers-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.calendar-grid-headers {
+  display: grid;
+  gap: 0;
+  background: white;
+  min-width: max-content;
+}
+
+.calendar-content-row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Colonne véhicules fixe */
+.vehicle-column {
+  flex-shrink: 0;
+  width: 250px;
+  overflow-y: auto;
+  overflow-x: visible;
+  border-right: 2px solid #e5e7eb;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: none;
+}
+
+.vehicle-column::-webkit-scrollbar {
+  display: none;
+}
+
+.vehicle-column-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88px;
+  flex-shrink: 0;
+  border-radius: 0;
+}
+
+.vehicle-column-header > span {
+  flex: 1;
+  text-align: left;
+}
+
+.vehicle-column-header .section-toggle-button {
+  flex-shrink: 0;
+}
+
+/* En-têtes de section véhicules */
+.vehicle-section-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  height: 80px;
+  min-height: 80px;
+}
+
+.vehicle-section-header > span {
+  text-align: left;
+  flex: 1;
+}
+
+.vehicle-section-header .section-toggle-button {
+  flex-shrink: 0;
+}
+
+.vehicle-section-header:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+
+.section-toggle-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.section-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Séparateur de section dans la grille */
+.vehicle-section-separator {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  min-height: 80px;
+  height: 80px;
+}
+
+.vehicle-section-separator > span {
+  text-align: left;
+  flex: 1;
+}
+
+.vehicle-section-separator .section-toggle-button {
+  flex-shrink: 0;
+}
+
+.vehicle-section-separator:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+
+/* Zone scrollable à droite */
+.calendar-scroll-area {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+
+.calendar-scroll-area::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.calendar-scroll-area::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.calendar-scroll-area::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.calendar-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.calendar-grid {
+  display: grid;
+  gap: 0;
+  background: white;
+  min-width: max-content;
+  position: relative;
+}
+
+.week-view {
+  grid-template-columns: repeat(14, minmax(100px, 1fr));
+}
+
+.month-view {
+  grid-template-columns: repeat(62, minmax(60px, 1fr));
+}
+
+.year-view {
+  grid-template-columns: repeat(12, minmax(150px, 1fr)) !important;
+  min-width: 1800px;
+}
+
+/* En-tête */
+.calendar-header {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.calendar-header > * {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+}
+
+.calendar-header-cell.month-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  min-height: 5.5rem;
+}
+
+.calendar-header-cell .month-name {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.calendar-header-cell .weeks-in-month {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.calendar-header-cell .week-number-small {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.calendar-header-cell .week-number-small:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.calendar-subheader {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.calendar-subheader > * {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+}
+
+.calendar-body {
+  display: contents;
+}
+
+.vehicle-row {
+  display: contents;
+}
+
+.calendar-header-cell {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 0.5rem;
+  font-weight: 600;
+  text-align: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: center;
+  justify-content: center;
+  position: static;
+  left: auto;
+}
+
+.calendar-header-cell.day-header {
+  font-size: 0.85rem;
+  padding: 0.5rem 0.5rem;
+  height: 3.5rem;
+  position: static;
+  left: auto;
+}
+
+.calendar-header-cell.day-header .day-name {
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.calendar-header-cell.day-header .day-number {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.calendar-header-cell.period-cell {
+  font-size: 0.65rem;
+  padding: 0.5rem 0.25rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%) !important;
+  height: 2rem;
+  position: static;
+  left: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.calendar-header-cell.clickable {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calendar-header-cell.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+
+.calendar-header-cell.day-header.weekend {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.calendar-header-cell.period-cell.weekend {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+
+.calendar-header-cell.day-header.today {
+  border-top: 3px solid #10b981;
+  border-left: 3px solid #10b981;
+  border-right: 3px solid #10b981;
+}
+
+.calendar-header-cell.period-cell.today.today-left {
+  border-left: 3px solid #10b981;
+}
+
+.calendar-header-cell.period-cell.today.today-right {
+  border-right: 3px solid #10b981;
+}
+
+/* Corps */
+.calendar-body {
+  display: contents;
+}
+
+.vehicle-row {
+  display: contents;
+}
+
+.vehicle-cell {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  height: 80px;
+  z-index: 1;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.vehicle-cell:hover {
+  background-color: #f9fafb;
+}
+
+.vehicle-color {
+  width: 6px;
+  min-height: 40px;
+  border-radius: 0;
+  flex-shrink: 0;
+}
+
+.vehicle-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  justify-content: center;
+}
+
+.vehicle-photo {
+  width: 45px;
+  height: 45px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.vehicle-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vehicle-name {
+  display: block;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1f2937;
+  line-height: 0.9;
+}
+
+.vehicle-type {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #6b7280;
+  line-height: 0.9;
+  margin-top: -2px;
+  background: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.vehicle-registration {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 900 !important;
+  color: #8b5cf6 !important;
+  font-family: monospace;
+  line-height: 0.9;
+  margin-top: -4px;
+  background: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.vehicle-brand {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  line-height: 1.2;
+}
+
+.vehicle-period {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.time-slot {
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  height: 80px;
+  background-color: white;
+  z-index: 1;
+}
+
+.time-slot:hover:not(.reserved) {
+  background-color: #f3f4f6 !important;
+}
+
+.time-slot.drag-selected {
+  background-color: #dbeafe !important;
+  border: 2px solid #3b82f6 !important;
+  z-index: 10;
+}
+
+.time-slot.weekend-slot:not(.reserved) {
+  background-color: #fef3c7;
+}
+
+.time-slot.today-slot.today-left {
+  border-left: 3px solid #10b981;
+}
+
+.time-slot.today-slot.today-right {
+  border-right: 3px solid #10b981;
+}
+
+/* Bordure inférieure pour la dernière ligne du jour actuel */
+.vehicle-row:last-child .time-slot.today-slot.today-left,
+.vehicle-row:last-child .time-slot.today-slot.today-right {
+  border-bottom: 3px solid #10b981;
+}
+
+.vehicle-row:last-child .time-slot.today-slot:not(.today-left):not(.today-right) {
+  border-bottom: 3px solid #10b981;
+}
+
+.time-slot.reserved {
+  padding: 0;
+}
+
+.reservation {
+  width: 100%;
+  height: 100%;
+  min-height: 80px;
+  display: block;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), 
+              inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  transition: box-shadow 0.2s, transform 0.2s;
+  z-index: 50;
+}
+
+.reservation.highlighted {
+  box-shadow: 0 0 0 3px #3b82f6, 
+              0 4px 12px rgba(59, 130, 246, 0.4),
+              inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  transform: scale(1.02);
+  z-index: 100;
+}
+
+.reservation.maintenance-block {
+  cursor: default;
+  font-style: italic;
+  z-index: 60;
+  position: relative;
+}
+
+.reservation.maintenance-block .resize-handle {
+  display: none;
+}
+
+.resize-handle {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 8px !important;
+  height: 80% !important;
+  cursor: ew-resize;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.2s, width 0.2s;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+}
+
+.resize-handle-start {
+  left: 0px !important;
+  right: auto !important;
+}
+
+.resize-handle-end {
+  right: 0px !important;
+  left: auto !important;
+}
+
+.reservation:hover .resize-handle {
+  opacity: 1;
+}
+
+.resize-handle:hover {
+  background: rgba(0, 0, 0, 0.7);
+  width: 10px !important;
+}
+
+/* Désactiver les événements de souris sur les réservations pendant le resize */
+.reservation.resizing {
+  pointer-events: none;
+  opacity: 0.25;
+  outline: 2px dashed #3b82f6;
+  outline-offset: -2px;
+}
+
+.reservation.resizing .resize-handle {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.reservation-overlay {
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.reservation-overlay.resizing {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.reservation-overlay .resize-handle {
+  pointer-events: auto !important;
+}
+
+.reservation-overlay.resizing .resize-handle {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.reservation-content-wrapper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+  padding: 0.5rem;
+}
+
+.reservation-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.85rem;
+  color: #1f2937;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reservation-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.reservation-location {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.reservation-affaire {
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.affaire-plus {
+  font-size: 0.65rem;
+  background: rgba(124, 58, 237, 0.2);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  margin-left: 0.125rem;
+  font-weight: 700;
+}
+
+.event-badge {
+  font-size: 0.875rem;
+  margin-right: 0.25rem;
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.client-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+  width: 100%;
+}
+
+.driver-name,
+.location-name {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  text-align: center;
+  width: 100%;
+}
+
+.reservation-count {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Aperçu du redimensionnement */
+.time-slot.resize-preview {
+  background: rgba(59, 130, 246, 0.3) !important;
+  border: 2px dashed #3b82f6 !important;
+  position: relative;
+  z-index: 20;
+}
+
+.time-slot.resize-preview::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 40%,
+    rgba(59, 130, 246, 0.15) 40%,
+    rgba(59, 130, 246, 0.15) 60%,
+    transparent 60%
+  );
+  background-size: 10px 10px;
+  pointer-events: none;
+  animation: moveStripes 0.5s linear infinite;
+  z-index: 16;
+}
+
+@keyframes moveStripes {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 10px 10px;
+  }
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .week-view {
+    grid-template-columns: 180px repeat(14, minmax(80px, 1fr));
+  }
+}
+
+@media (max-width: 1200px) {
+  .week-view {
+    grid-template-columns: 150px repeat(14, minmax(60px, 1fr));
+  }
+  
+  .vehicle-cell {
+    padding: 0.75rem;
+  }
+  
+  .time-slot {
+    padding: 0.375rem;
+    font-size: 0.875rem;
+  }
+}

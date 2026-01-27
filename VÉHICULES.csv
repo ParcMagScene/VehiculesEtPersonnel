@@ -1,0 +1,27 @@
+
+http://127.0.0.1:5174Nom,Type,Immatriculation,Marque,Couleur,Mod�le,Commentaire,Propri�taire
+Sprinter 20m3,VL 20 m3,DL-622-TF,Mercedes,Blanc,Sprinter,,MAG SCENE
+Sprinter 20m3,VL 20 m3,EB-855-VR,Mercedes,Blanc,Sprinter,,MAG SCENE
+Sprinter 20m3,VL 20 m3,EE-446-NG,Mercedes,Blanc,Sprinter,,MAG SCENE
+Sprinter 17m3,VL 17 m3,DT-406-TJ,Mercedes,Blanc,Sprinter,,MAG SCENE
+Porteur Bleu,Porteur,DT-692-RE,Mercedes,Bleu,Actros Ulysse,,MAG SCENE
+Porteur Blanc 1,Porteur,ER-301-WC,Mercedes,Blanc,Actros Ulysse,Sheila Tour,MAG SCENE
+Porteur Blanc 2,Porteur,DS-377-RL,Mercedes,Blanc,Actros,Magie Tour,MAG SCENE
+Tracteur Mercedes,Tracteur,BM-038-NY,Mercedes,Noir,Actros,,MAG SCENE
+Tracteur Volvo,Tracteur,DQ-055-LG,Volvo,Gris,FH,,MAG SCENE
+Semi Samro 1,Semi-remorque,DX-121-VE,Samro,Gris,,,MAG SCENE
+Semi Samro 2,Semi-remorque,DX-631-VE,Samro,Gris,,,MAG SCENE
+Semi Schmitz,Semi-remorque,CE-066-CJ,Schmitz,Gris,,,MAG SCENE
+Partner,VL,EL-720-CX,Peugeot,Blanc,Partner,,MAG SCENE
+Mov'160,Sc�ne Mobile,FQ-247-YE,Moving Stage,Gris,Mov'160,,MAG SCENE
+Semi Fruehauf,Semi-remorque,EL-130-AL,Fruehauf,,City,Voulzy Tour,MAG SCENE
+Tracteur Loc 1,Tracteur,,,,,Location,Externe
+Tracteur Loc 2,Tracteur,,,,,Location,Externe
+20m3 Loc 1,VL 20m3,,,,,Location,Externe
+20m3 Loc 2,VL 20m3,,,,,Location,Externe
+20m3 Loc 3,VL 20m3,,,,,Location,Externe
+Remorque Loc 1,Semi-remorque,,,,,Location,Externe
+Remorque Loc 2,Semi-remorque,,,,,Location,Externe
+Remorque Loc 3,Semi-remorque,,,,,Location,Externe
+Remorque Loc 4,Semi-remorque,,,,,Location,Externe
+Remorque Loc 5,Semi-remorque,,,,,Location,Externe

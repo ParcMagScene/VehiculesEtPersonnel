@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell } from 'lucide-react';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
@@ -113,7 +113,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       <div className="header-content">
         <div className="header-title-container">
           <img src="/Logos/LogoMagSceneBLACK.gif" alt="Mag Scène" className="header-logo" />
-          <h1 className="header-title">🚛 Véhicules</h1>
+          <h1 className="header-title"><Truck className="title-icon" strokeWidth={2.5} size={32} /> Véhicules</h1>
         </div>
         
         {/* Notifications de pannes */}
@@ -127,7 +127,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   setShowNotificationsPopup(true);
                 }}
               >
-                🚫 {immobilizedVehicles.length} véhicule{immobilizedVehicles.length > 1 ? 's' : ''} immobilisé{immobilizedVehicles.length > 1 ? 's' : ''}
+                <XCircle size={18} strokeWidth={2.5} /> {immobilizedVehicles.length} véhicule{immobilizedVehicles.length > 1 ? 's' : ''} immobilisé{immobilizedVehicles.length > 1 ? 's' : ''}
               </div>
             )}
             {pendingMaintenances.length > 0 && (
@@ -138,7 +138,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   setShowNotificationsPopup(true);
                 }}
               >
-                📝 {pendingMaintenances.length} demande{pendingMaintenances.length > 1 ? 's' : ''} d'intervention
+                <ClipboardList size={18} strokeWidth={2.5} /> {pendingMaintenances.length} demande{pendingMaintenances.length > 1 ? 's' : ''} d'intervention
               </div>
             )}
             {reportedMaintenances.length > immobilizedVehicles.length && (
@@ -149,7 +149,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   setShowNotificationsPopup(true);
                 }}
               >
-                ⚠️ {reportedMaintenances.length - immobilizedVehicles.length} panne{reportedMaintenances.length - immobilizedVehicles.length > 1 ? 's' : ''} signalée{reportedMaintenances.length - immobilizedVehicles.length > 1 ? 's' : ''}
+                <AlertTriangle size={18} strokeWidth={2.5} /> {reportedMaintenances.length - immobilizedVehicles.length} panne{reportedMaintenances.length - immobilizedVehicles.length > 1 ? 's' : ''} signalée{reportedMaintenances.length - immobilizedVehicles.length > 1 ? 's' : ''}
               </div>
             )}
             {scheduledMaintenances.length > 0 && (
@@ -161,9 +161,9 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                 }}
                 style={{ position: 'relative' }}
               >
-                📅 {scheduledMaintenances.length} intervention{scheduledMaintenances.length > 1 ? 's' : ''} programmée{scheduledMaintenances.length > 1 ? 's' : ''}
+                <CalendarCheck size={18} strokeWidth={2.5} /> {scheduledMaintenances.length} intervention{scheduledMaintenances.length > 1 ? 's' : ''} programmée{scheduledMaintenances.length > 1 ? 's' : ''}
                 {conflictingMaintenances.length > 0 && (
-                  <span className="conflict-badge">⚠️</span>
+                  <span className="conflict-badge"><AlertTriangle size={14} strokeWidth={2.5} /></span>
                 )}
               </div>
             )}
@@ -175,7 +175,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
           <div className="notifications-popup-overlay" onClick={() => setShowNotificationsPopup(false)}>
             <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
               <div className="notifications-popup-header">
-                <h3>🔔 Notifications</h3>
+                <h3><Bell size={20} strokeWidth={2.5} className="popup-icon" /> Notifications</h3>
                 <button className="close-popup-button" onClick={() => setShowNotificationsPopup(false)}>✕</button>
               </div>
               <div className="notifications-popup-content">
@@ -186,7 +186,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     {/* Section Interventions programmées */}
                     {(notificationFilter === 'all' || notificationFilter === 'scheduled') && scheduledMaintenances.length > 0 && (
                       <div className="notification-section">
-                        <h4 className="notification-section-title">📅 Interventions programmées</h4>
+                        <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions programmées</h4>
                         <div className="notifications-list">
                           {scheduledMaintenances.map(maintenance => {
                             const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
@@ -232,7 +232,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     {/* Section Demandes d'intervention */}
                     {(notificationFilter === 'all' || notificationFilter === 'pending') && pendingMaintenances.length > 0 && (
                       <div className="notification-section">
-                        <h4 className="notification-section-title">📝 Demandes d'intervention</h4>
+                        <h4 className="notification-section-title"><ClipboardList size={18} strokeWidth={2.5} /> Demandes d'intervention</h4>
                         <div className="notifications-list">
                           {pendingMaintenances.map(maintenance => {
                             const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
@@ -270,7 +270,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     {/* Section Pannes signalées */}
                     {(notificationFilter === 'all' || notificationFilter === 'reported') && reportedMaintenances.length > 0 && (
                       <div className="notification-section">
-                        <h4 className="notification-section-title">⚠️ Pannes signalées</h4>
+                        <h4 className="notification-section-title"><AlertTriangle size={18} strokeWidth={2.5} /> Pannes signalées</h4>
                         <div className="notifications-list">
                           {reportedMaintenances.map(maintenance => {
                             const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
@@ -288,7 +288,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                               >
                                 <div className="notification-item-header">
                                   <span className="notification-vehicle-name">
-                                    {maintenance.isImmobilized && '🚫 '}
+                                    {maintenance.isImmobilized && <XCircle size={16} strokeWidth={2.5} className="inline-icon" />}
                                     {vehicle?.name || 'Véhicule inconnu'}
                                   </span>
                                   <span className="notification-status reported">

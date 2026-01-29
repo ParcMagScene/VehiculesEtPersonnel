@@ -51,20 +51,6 @@ function App() {
       .map(r => r.id);
   }, [hoveredEventId, reservations]);
 
-  // Désactiver le clic droit sur toute l'application
-  useEffect(() => {
-    const handleContextMenu = (e) => {
-      e.preventDefault();
-      return false;
-    };
-    
-    document.addEventListener('contextmenu', handleContextMenu);
-    
-    return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-    };
-  }, []);
-
   // Charger les données au démarrage
   useEffect(() => {
     const initializeData = async () => {

@@ -43,20 +43,22 @@ export const saveToIndexedDB = async (storeName, data) => {
     const store = transaction.objectStore(storeName);
 
     // Vider le store avant d'ajouter les nouvelles données
-    const clearRequest = store.clear();
+    await new Promise((resolve, reject) => {
+      const clearRequest = store.clear();
+      clearRequest.onsuccess = () => resolve();
+      clearRequest.onerror = () => reject(clearRequest.error);
+    });
     
-    clearRequest.onsuccess = () => {
-      // Ajouter toutes les données après le clear
-      if (Array.isArray(data)) {
-        for (const item of data) {
-          // Utiliser put au lieu de add pour gérer les IDs existants
-          store.put(item);
-        }
-      } else if (data && typeof data === 'object') {
-        // Pour les objets simples comme calendarConfig
-        store.put({ ...data, id: 1 });
+    // Ajouter toutes les données après le clear
+    if (Array.isArray(data)) {
+      for (const item of data) {
+        // Utiliser put au lieu de add pour gérer les IDs existants
+        store.put(item);
       }
-    };
+    } else if (data && typeof data === 'object') {
+      // Pour les objets simples comme calendarConfig
+      store.put({ ...data, id: 1 });
+    }
 
     return new Promise((resolve, reject) => {
       transaction.oncomplete = () => {

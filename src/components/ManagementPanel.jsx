@@ -7,6 +7,8 @@ import './ManagementPanel.css';
 const ManagementPanel = ({
   vehicles,
   setVehicles,
+  reservations,
+  setReservations,
   clients,
   setClients,
   drivers,
@@ -393,6 +395,7 @@ const ManagementPanel = ({
       
       // Mettre à jour les états locaux
       if (backupData.vehicles) setVehicles(backupData.vehicles);
+      if (backupData.reservations) setReservations(backupData.reservations);
       if (backupData.clients) setClients(backupData.clients);
       if (backupData.drivers) setDrivers(backupData.drivers);
       if (backupData.locations) setLocations(backupData.locations);

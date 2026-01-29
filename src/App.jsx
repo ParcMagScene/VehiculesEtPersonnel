@@ -418,6 +418,8 @@ function App() {
         <ManagementPanel
           vehicles={vehicles}
           setVehicles={setVehicles}
+          reservations={reservations}
+          setReservations={setReservations}
           clients={clients}
           setClients={setClients}
           drivers={drivers}

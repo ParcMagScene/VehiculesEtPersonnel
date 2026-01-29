@@ -79,8 +79,12 @@ function App() {
               await saveToIndexedDB(STORES.vehicles, savedVehicles);
             }
             
-            // NE PAS écraser les réservations existantes - garder celles de la DB
-            // (on ne charge initial_data.reservations que si vraiment vide ET qu'on veut les données de démo)
+            // Charger les réservations SEULEMENT si vide
+            if (savedReservations.length === 0 && initialData.reservations) {
+              console.log(`✅ ${initialData.reservations.length} réservations chargées`);
+              savedReservations = initialData.reservations;
+              await saveToIndexedDB(STORES.reservations, savedReservations);
+            }
             
             // Charger les clients SEULEMENT si vide
             if (savedClients.length === 0 && initialData.clients) {

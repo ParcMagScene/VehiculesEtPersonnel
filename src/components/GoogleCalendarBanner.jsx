@@ -415,8 +415,9 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       
       if (autoSignin === 'true') {
         setTimeout(() => {
-          // Essayer de renouveler le token silencieusement avec prompt: ''
-          client.requestAccessToken({ prompt: '' });
+          // Essayer de renouveler le token silencieusement avec prompt: 'none'
+          // Cela permet une connexion automatique sans popup
+          client.requestAccessToken({ prompt: 'none' });
         }, 500);
       }
     } catch (err) {

@@ -380,6 +380,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: calendarConfig.clientId,
         scope: 'https://www.googleapis.com/auth/calendar',
+        ux_mode: 'popup',
         callback: (response) => {
           if (response.error) {
             console.error('Erreur OAuth:', response.error);

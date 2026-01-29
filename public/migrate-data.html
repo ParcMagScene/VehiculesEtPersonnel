@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Migration IndexedDB</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 50px auto; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        textarea { width: 100%; height: 200px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Migration des données IndexedDB</h1>
+    
+    <h2>Étape 1 : Exporter depuis localhost:5174</h2>
+    <button onclick="exportData()">📤 Exporter</button>
+    <p id="export-status"></p>
+    
+    <h2>Étape 2 : Télécharger le fichier</h2>
+    <a id="download-link" style="display:none;">⬇️ Télécharger backup.json</a>
+    
+    <h2>Étape 3 : Importer sur magsav.duckdns.org:4173</h2>
+    <input type="file" id="file-input" accept=".json">
+    <button onclick="importData()">📥 Importer</button>
+    <p id="import-status"></p>
+
+    <script>
+        async function exportData() {
+            try {
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('ReservationVehicules', 4);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+                
+                const stores = ['vehicles', 'reservations', 'clients', 'drivers', 'locations', 'garages', 'maintenances', 'calendarConfig'];
+                const data = {};
+                
+                for (const storeName of stores) {
+                    const tx = db.transaction(storeName, 'readonly');
+                    const store = tx.objectStore(storeName);
+                    data[storeName] = await new Promise(resolve => {
+                        const req = store.getAll();
+                        req.onsuccess = () => resolve(req.result);
+                    });
+                }
+                
+                // Créer un blob et un lien de téléchargement
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.getElementById('download-link');
+                link.href = url;
+                link.download = 'backup.json';
+                link.style.display = 'inline-block';
+                
+                document.getElementById('export-status').innerHTML = 
+                    `<span class="success">✅ ${data.reservations.length} réservations exportées! Cliquez sur le lien pour télécharger.</span>`;
+            } catch (err) {
+                document.getElementById('export-status').innerHTML = 
+                    `<span class="error">❌ Erreur: ${err.message}</span>`;
+            }
+        }
+        
+        async function importData() {
+            const fileInput = document.getElementById('file-input');
+            if (!fileInput.files.length) {
+                alert('Veuillez sélectionner un fichier JSON');
+                return;
+            }
+            
+            try {
+                const file = fileInput.files[0];
+                const text = await file.text();
+                const backupData = JSON.parse(text);
+                
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('ReservationVehicules', 4);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+                
+                for (const [storeName, items] of Object.entries(backupData)) {
+                    const tx = db.transaction(storeName, 'readwrite');
+                    const store = tx.objectStore(storeName);
+                    await store.clear();
+                    for (const item of items) {
+                        await store.put(item);
+                    }
+                }
+                
+                document.getElementById('import-status').innerHTML = 
+                    `<span class="success">✅ ${backupData.reservations.length} réservations importées! La page va se recharger...</span>`;
+                
+                setTimeout(() => location.reload(), 2000);
+            } catch (err) {
+                document.getElementById('import-status').innerHTML = 
+                    `<span class="error">❌ Erreur: ${err.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -12,7 +12,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#3b82f6",
       "order": 0,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "DL-622-TF.jpg"
     },
     {
       "id": "20M3-EB-855-VR",
@@ -26,7 +27,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#8b5cf6",
       "order": 1,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "EB-855-VR.jpg"
     },
     {
       "id": "20M3-EE-446-NG",
@@ -40,7 +42,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#ec4899",
       "order": 2,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "EE-446-NG.jpg"
     },
     {
       "id": "17M3-DT-406-TJ",
@@ -54,7 +57,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#f59e0b",
       "order": 3,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "DT-406-TJ.jpg"
     },
     {
       "id": "PORTEUR-DT-692-RE",
@@ -68,7 +72,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#10b981",
       "order": 4,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "DT-692-RE.jpg"
     },
     {
       "id": "PORTEUR-ER-301-WC",
@@ -96,7 +101,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#6366f1",
       "order": 6,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "DS-377-RL.jpg"
     },
     {
       "id": "TRACTEUR-BM-038-NY",
@@ -110,7 +116,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#ef4444",
       "order": 7,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "BM-038-NY.jpg"
     },
     {
       "id": "TRACTEUR-DQ-055-LG",
@@ -124,7 +131,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#f97316",
       "order": 8,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "DQ-055-LG.jpg"
     },
     {
       "id": "SEMI-REMORQUE-DX-121-VE",
@@ -180,7 +188,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#f43f5e",
       "order": 12,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "EL-720-CX.jpg"
     },
     {
       "id": "SCÈNEMOBILE-FQ-247-YE",
@@ -194,7 +203,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#eab308",
       "order": 13,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "MOV160.jpg"
     },
     {
       "id": "SEMI-REMORQUE-EL-130-AL",

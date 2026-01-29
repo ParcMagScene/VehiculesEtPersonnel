@@ -111,7 +111,10 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     <>
     <div className="header">
       <div className="header-content">
-        <h1 className="header-title">🚛 Véhicules</h1>
+        <div className="header-title-container">
+          <img src="/Logos/LogoMagSceneBLACK.gif" alt="Mag Scène" className="header-logo" />
+          <h1 className="header-title">🚛 Véhicules</h1>
+        </div>
         
         {/* Notifications de pannes */}
         {(reportedMaintenances.length > 0 || scheduledMaintenances.length > 0 || pendingMaintenances.length > 0) && (

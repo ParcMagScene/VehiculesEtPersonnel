@@ -57,6 +57,18 @@
   gap: 2rem;
 }
 
+.header-title-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
 .header-title {
   font-size: 1.5rem;
   font-weight: 700;

@@ -65,6 +65,43 @@ function App() {
         let savedGarages = await loadFromIndexedDB(STORES.garages, []);
         let savedMaintenances = await loadFromIndexedDB(STORES.maintenances, []);
 
+        // Si IndexedDB est vide, charger les données initiales depuis initial_data.json
+        if (savedVehicles.length === 0) {
+          console.log('📦 IndexedDB vide - Chargement des données initiales...');
+          try {
+            const response = await fetch('/initial_data.json');
+            const initialData = await response.json();
+            
+            if (initialData.vehicles && initialData.vehicles.length > 0) {
+              console.log(`✅ ${initialData.vehicles.length} véhicules chargés depuis initial_data.json`);
+              savedVehicles = initialData.vehicles;
+              await saveToIndexedDB(STORES.vehicles, savedVehicles);
+            }
+            
+            if (initialData.reservations) {
+              savedReservations = initialData.reservations;
+              await saveToIndexedDB(STORES.reservations, savedReservations);
+            }
+            
+            if (initialData.clients) {
+              savedClients = initialData.clients;
+              await saveToIndexedDB(STORES.clients, savedClients);
+            }
+            
+            if (initialData.drivers) {
+              savedDrivers = initialData.drivers;
+              await saveToIndexedDB(STORES.drivers, savedDrivers);
+            }
+            
+            if (initialData.garages) {
+              savedGarages = initialData.garages;
+              await saveToIndexedDB(STORES.garages, savedGarages);
+            }
+          } catch (fetchError) {
+            console.error('❌ Erreur chargement initial_data.json:', fetchError);
+          }
+        }
+
         // Trier les véhicules par ordre
         const sortedVehicles = savedVehicles.sort((a, b) => (a.order || 0) - (b.order || 0));
 

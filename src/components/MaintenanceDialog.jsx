@@ -4,19 +4,46 @@ import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import './MaintenanceDialog.css';
 
-function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garages = [], reservations = [], maintenanceToEdit = null }) {
+function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garages = [], reservations = [], maintenanceToEdit = null, actionType = null }) {
   // Trouver la maintenance à éditer dès le départ
   const maintenanceToEditData = maintenanceToEdit ? maintenances.find(m => m.id === maintenanceToEdit) : null;
   
+  console.log('🔍 MaintenanceDialog debug:', {
+    maintenanceToEdit,
+    maintenanceToEditData,
+    actionType,
+    startDate: maintenanceToEditData?.startDate,
+    endDate: maintenanceToEditData?.endDate,
+    date: maintenanceToEditData?.date
+  });
+  
+  // Déterminer le statut et le mode initial en fonction de actionType
+  const getInitialStatus = () => {
+    if (maintenanceToEditData) return maintenanceToEditData.status;
+    if (actionType === 'schedule') return 'scheduled';
+    if (actionType === 'request') return 'pending';
+    if (actionType === 'breakdown') return 'reported';
+    return '';
+  };
+  
+  const getInitialQuickReport = () => {
+    if (maintenanceToEditData) return maintenanceToEditData.isQuickReport || false;
+    return actionType === 'breakdown' || actionType === 'request';
+  };
+  
   const [activeTab, setActiveTab] = useState('new'); // 'new' ou 'history'
-  const [isQuickReport, setIsQuickReport] = useState(maintenanceToEditData?.isQuickReport || false);
+  const [isQuickReport, setIsQuickReport] = useState(getInitialQuickReport());
   const [editingId, setEditingId] = useState(maintenanceToEditData?.id || null);
   const [conflictWarning, setConflictWarning] = useState(null); // Avertissement de conflit
+  const [initialFormData, setInitialFormData] = useState(null);
+  const [hasChanges, setHasChanges] = useState(false);
   const [formData, setFormData] = useState(
     maintenanceToEditData ? {
       type: maintenanceToEditData.type,
       startDate: maintenanceToEditData.startDate || maintenanceToEditData.date || '',
+      startDatePeriod: maintenanceToEditData.startDatePeriod || 'AM',
       endDate: maintenanceToEditData.endDate || maintenanceToEditData.date || '',
+      endDatePeriod: maintenanceToEditData.endDatePeriod || 'PM',
       description: maintenanceToEditData.description,
       garageId: maintenanceToEditData.garageId || '',
       cost: maintenanceToEditData.cost || '',
@@ -26,22 +53,58 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       isImmobilized: maintenanceToEditData.isImmobilized || false,
       isQuickReport: maintenanceToEditData.isQuickReport || false
     } : {
-      type: 'revision',
+      type: actionType === 'breakdown' ? 'breakdown' : 'revision',
       startDate: '',
+      startDatePeriod: 'AM',
       endDate: '',
+      endDatePeriod: 'PM',
       description: '',
       garageId: '',
       cost: '',
       mileage: '',
-      status: 'scheduled',
+      status: getInitialStatus(),
       notes: '',
-      isImmobilized: false,
-      isQuickReport: false
+      isImmobilized: actionType === 'breakdown',
+      isQuickReport: getInitialQuickReport()
     }
   );
 
   // Filtrer les maintenances pour ce véhicule
   const vehicleMaintenances = maintenances.filter(m => m.vehicleId === vehicle.id);
+
+  // Sauvegarder les données initiales lors de l'édition
+  useEffect(() => {
+    if (maintenanceToEditData) {
+      const initial = {
+        type: maintenanceToEditData.type,
+        startDate: maintenanceToEditData.startDate || maintenanceToEditData.date || '',
+        endDate: maintenanceToEditData.endDate || maintenanceToEditData.date || '',
+        description: maintenanceToEditData.description,
+        garageId: maintenanceToEditData.garageId || '',
+        cost: maintenanceToEditData.cost || '',
+        mileage: maintenanceToEditData.mileage || '',
+        status: maintenanceToEditData.status,
+        notes: maintenanceToEditData.notes || '',
+        isImmobilized: maintenanceToEditData.isImmobilized || false,
+        isQuickReport: maintenanceToEditData.isQuickReport || false
+      };
+      setInitialFormData(initial);
+      setFormData(initial); // Mettre à jour formData
+      setEditingId(maintenanceToEditData.id);
+      setIsQuickReport(maintenanceToEditData.isQuickReport || false);
+    }
+  }, [maintenanceToEditData?.id]); // Se déclenche seulement quand l'ID change
+
+  // Détecter les changements
+  useEffect(() => {
+    if (!initialFormData || !editingId) {
+      setHasChanges(false);
+      return;
+    }
+    
+    const hasChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+    setHasChanges(hasChanged);
+  }, [formData, initialFormData, editingId]);
 
   const startEditing = (maintenance) => {
     setEditingId(maintenance.id);
@@ -68,11 +131,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       return [];
     }
 
-    const newStart = getPeriodTimestamp(formData.startDate, 'AM');
-    const newEnd = getPeriodTimestamp(formData.endDate, 'PM');
+    const newStart = getPeriodTimestamp(formData.startDate, formData.startDatePeriod || 'AM');
+    const newEnd = getPeriodTimestamp(formData.endDate, formData.endDatePeriod || 'PM');
     
     const conflicts = [];
     
+    // Vérifier les conflits avec les réservations
     for (const r of reservations) {
       // Vérifier uniquement les réservations du même véhicule
       if (String(r.vehicleId) !== String(vehicle.id)) continue;
@@ -87,6 +151,26 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       // Vérifier si les intervalles se chevauchent
       if (Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd)) {
         conflicts.push(r);
+      }
+    }
+    
+    // Vérifier les conflits avec les autres maintenances programmées
+    for (const m of vehicleMaintenances) {
+      // Ignorer la maintenance en cours d'édition
+      if (editingId && m.id === editingId) continue;
+      
+      // Vérifier uniquement les maintenances programmées avec des dates
+      if (m.status !== 'scheduled' || !m.startDate || !m.endDate) continue;
+      
+      const existingStart = getPeriodTimestamp(m.startDate, m.startDatePeriod || 'AM');
+      const existingEnd = getPeriodTimestamp(m.endDate, m.endDatePeriod || 'PM');
+      
+      // Vérifier si les intervalles se chevauchent
+      if (Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd)) {
+        conflicts.push({
+          ...m,
+          isMaintenance: true
+        });
       }
     }
     
@@ -115,24 +199,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     };
 
     onSave(maintenance);
-    
-    // Réinitialiser le formulaire et l'avertissement
-    setEditingId(null);
-    setIsQuickReport(false);
-    setConflictWarning(null);
-    setFormData({
-      type: 'revision',
-      startDate: '',
-      endDate: '',
-      description: '',
-      garageId: '',
-      cost: '',
-      mileage: '',
-      status: 'scheduled',
-      notes: '',
-      isImmobilized: false,
-      isQuickReport: false
-    });
+    onClose();
   };
 
   const handleChange = (field, value) => {
@@ -189,20 +256,28 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
 
   const cancelEditing = () => {
     setEditingId(null);
-    setIsQuickReport(false);
+    setIsQuickReport(getInitialQuickReport());
     setFormData({
-      type: 'revision',
+      type: actionType === 'breakdown' ? 'breakdown' : 'revision',
       startDate: '',
       endDate: '',
       description: '',
       garageId: '',
       cost: '',
       mileage: '',
-      status: 'scheduled',
+      status: getInitialStatus(),
       notes: '',
-      isImmobilized: false,
-      isQuickReport: false
+      isImmobilized: actionType === 'breakdown',
+      isQuickReport: getInitialQuickReport()
     });
+  };
+
+  const getDialogTitle = () => {
+    if (editingId) return '🔧 Modifier l\'intervention';
+    if (actionType === 'schedule') return '📅 Programmer une intervention';
+    if (actionType === 'request') return '📝 Demander une intervention';
+    if (actionType === 'breakdown') return '⚠️ Signaler une panne';
+    return '🔧 Entretien';
   };
 
   return (
@@ -210,7 +285,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       <div className="maintenance-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="maintenance-dialog-header">
           <div className="maintenance-dialog-title">
-            <h2>🔧 Entretien - {vehicle.name}</h2>
+            <h2>{getDialogTitle()} - {vehicle.name}</h2>
             <div className="vehicle-info">
               <span className="vehicle-type">{vehicle.type}</span>
               {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
@@ -224,7 +299,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
             className={`tab-button ${activeTab === 'new' ? 'active' : ''}`}
             onClick={() => setActiveTab('new')}
           >
-            {editingId ? '✏️ Modifier l\'intervention' : '➕ Nouvelle intervention'}
+            {editingId ? (
+              maintenanceToEditData?.status === 'pending' ? '📝 Demande d\'intervention' :
+              maintenanceToEditData?.status === 'reported' ? '⚠️ Panne signalée' :
+              maintenanceToEditData?.status === 'scheduled' ? '📅 Intervention programmée' :
+              '✏️ Modifier l\'intervention'
+            ) : '➕ Nouvelle intervention'}
           </button>
           <button 
             className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
@@ -237,49 +317,57 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
         <div className="maintenance-dialog-content">
           {activeTab === 'new' ? (
             <form onSubmit={handleSubmit} className="maintenance-form">
-              {/* Mode de saisie */}
-              <div className="form-mode-selector">
-                <label className="mode-option">
-                  <input
-                    type="radio"
-                    checked={!isQuickReport && formData.status === 'scheduled'}
-                    onChange={() => {
-                      setIsQuickReport(false);
-                      handleChange('isQuickReport', false);
-                      handleChange('status', 'scheduled');
-                    }}
-                  />
-                  <span>📅 Programmer une intervention</span>
-                </label>
-                <label className="mode-option">
-                  <input
-                    type="radio"
-                    checked={!isQuickReport && formData.status === 'pending'}
-                    onChange={() => {
-                      setIsQuickReport(false);
-                      handleChange('isQuickReport', false);
-                      handleChange('status', 'pending');
-                      handleChange('startDate', '');
-                      handleChange('endDate', '');
-                    }}
-                  />
-                  <span>📝 Demander une intervention</span>
-                </label>
-                <label className="mode-option">
-                  <input
-                    type="radio"
-                    checked={isQuickReport}
-                    onChange={() => {
-                      setIsQuickReport(true);
-                      handleChange('isQuickReport', true);
-                      handleChange('status', 'reported');
-                      handleChange('startDate', '');
-                      handleChange('endDate', '');
-                    }}
-                  />
-                  <span>⚠️ Signaler une panne</span>
-                </label>
-              </div>
+              {/* Mode de saisie - masquer si actionType est défini ou si on édite une intervention */}
+              {!actionType && !(editingId && (maintenanceToEditData?.status === 'pending' || maintenanceToEditData?.status === 'reported' || maintenanceToEditData?.status === 'scheduled')) && 
+               !formData.status && (
+                <div className="form-mode-selector">
+                  {/* Pour nouvelle intervention : afficher tous les choix */}
+                  {!editingId && (
+                    <>
+                      <label className="mode-option">
+                        <input
+                          type="radio"
+                          checked={!isQuickReport && formData.status === 'scheduled'}
+                          onChange={() => {
+                            setIsQuickReport(false);
+                            handleChange('isQuickReport', false);
+                            handleChange('status', 'scheduled');
+                          }}
+                        />
+                        <span>📅 Programmer une intervention</span>
+                      </label>
+                      <label className="mode-option">
+                        <input
+                          type="radio"
+                          checked={!isQuickReport && formData.status === 'pending'}
+                          onChange={() => {
+                            setIsQuickReport(false);
+                            handleChange('isQuickReport', false);
+                            handleChange('status', 'pending');
+                            handleChange('startDate', '');
+                            handleChange('endDate', '');
+                          }}
+                        />
+                        <span>📝 Demander une intervention</span>
+                      </label>
+                      <label className="mode-option">
+                        <input
+                          type="radio"
+                          checked={isQuickReport}
+                          onChange={() => {
+                            setIsQuickReport(true);
+                            handleChange('isQuickReport', true);
+                            handleChange('status', 'reported');
+                            handleChange('startDate', '');
+                            handleChange('endDate', '');
+                          }}
+                        />
+                        <span>⚠️ Signaler une panne</span>
+                      </label>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Case véhicule immobilisé (visible uniquement en mode signalement de panne) */}
               {isQuickReport && (
@@ -334,28 +422,52 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               </div>
 
               {formData.status === 'scheduled' && (
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Date de début *</label>
-                    <input
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => handleChange('startDate', e.target.value)}
-                      required
-                    />
-                  </div>
+                <>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Date de début *</label>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                          type="date"
+                          value={formData.startDate}
+                          onChange={(e) => handleChange('startDate', e.target.value)}
+                          required
+                          style={{ flex: 1 }}
+                        />
+                        <select
+                          value={formData.startDatePeriod}
+                          onChange={(e) => handleChange('startDatePeriod', e.target.value)}
+                          style={{ width: '80px' }}
+                        >
+                          <option value="AM">🌅 AM</option>
+                          <option value="PM">🌆 PM</option>
+                        </select>
+                      </div>
+                    </div>
 
-                  <div className="form-group">
-                    <label>Date de fin *</label>
-                    <input
-                      type="date"
-                      value={formData.endDate}
-                      onChange={(e) => handleChange('endDate', e.target.value)}
-                      min={formData.startDate}
-                      required
-                    />
+                    <div className="form-group">
+                      <label>Date de fin *</label>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                          type="date"
+                          value={formData.endDate}
+                          onChange={(e) => handleChange('endDate', e.target.value)}
+                          min={formData.startDate}
+                          required
+                          style={{ flex: 1 }}
+                        />
+                        <select
+                          value={formData.endDatePeriod}
+                          onChange={(e) => handleChange('endDatePeriod', e.target.value)}
+                          style={{ width: '80px' }}
+                        >
+                          <option value="AM">🌅 AM</option>
+                          <option value="PM">🌆 PM</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
 
               {formData.status === 'scheduled' && (
@@ -455,22 +567,54 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                     🗑️ Supprimer
                   </button>
                 )}
-                {editingId && (formData.status === 'pending' || formData.status === 'reported') && (
-                  <button 
-                    type="button" 
-                    className="schedule-button"
-                    onClick={() => {
-                      handleChange('status', 'scheduled');
-                      handleChange('isQuickReport', false);
-                      setIsQuickReport(false);
-                    }}
-                  >
-                    📅 Programmer maintenant
-                  </button>
+                {/* Boutons spécifiques pour panne signalée */}
+                {editingId && maintenanceToEditData?.status === 'reported' ? (
+                  <>
+                    <button 
+                      type="button" 
+                      className="submit-button"
+                      style={{ flex: 1, marginRight: '8px' }}
+                      onClick={() => {
+                        handleChange('status', 'pending');
+                        handleChange('isQuickReport', false);
+                        setIsQuickReport(false);
+                        handleChange('startDate', '');
+                        handleChange('endDate', '');
+                        // Soumettre le formulaire
+                        handleSubmit({ preventDefault: () => {} });
+                      }}
+                    >
+                      📝 Demander une intervention
+                    </button>
+                    <button 
+                      type="button" 
+                      className="submit-button"
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        handleChange('status', 'scheduled');
+                        handleChange('isQuickReport', false);
+                        setIsQuickReport(false);
+                        // Rediriger vers le formulaire de programmation
+                        setActiveTab('new');
+                      }}
+                    >
+                      📅 Programmer une intervention
+                    </button>
+                  </>
+                ) : (
+                  /* Bouton de soumission conditionnel pour intervention programmée */
+                  editingId && maintenanceToEditData?.status === 'scheduled' ? (
+                    hasChanges && (
+                      <button type="submit" className="submit-button">
+                        Valider les modifications
+                      </button>
+                    )
+                  ) : (
+                    <button type="submit" className="submit-button">
+                      {editingId ? 'Mettre à jour' : (isQuickReport ? 'Signaler' : formData.status === 'pending' ? 'Enregistrer la demande' : 'Enregistrer')}
+                    </button>
+                  )
                 )}
-                <button type="submit" className="submit-button">
-                  {editingId ? 'Mettre à jour' : (isQuickReport ? 'Signaler' : formData.status === 'pending' ? 'Enregistrer la demande' : 'Enregistrer')}
-                </button>
               </div>
             </form>
           ) : (

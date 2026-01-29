@@ -3,10 +3,16 @@ import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
+import MonthSelector from './MonthSelector';
+import WeekSelector from './WeekSelector';
+import YearSelector from './YearSelector';
 
 const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [] }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
+  const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const [showWeekSelector, setShowWeekSelector] = useState(false);
+  const [showYearSelector, setShowYearSelector] = useState(false);
   
   // Fonction pour détecter les conflits entre une intervention et les réservations
   const getMaintenanceConflicts = (maintenance) => {
@@ -75,13 +81,16 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   };
 
   const getDateLabel = () => {
+    let label = '';
     if (view === 'week') {
-      return format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
+      label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
     } else if (view === 'month') {
-      return format(currentDate, 'MMMM yyyy', { locale: fr });
+      label = format(currentDate, 'MMMM yyyy', { locale: fr });
     } else {
-      return format(currentDate, 'yyyy', { locale: fr });
+      label = format(currentDate, 'yyyy', { locale: fr });
     }
+    // Mettre une majuscule à la première lettre
+    return label.charAt(0).toUpperCase() + label.slice(1);
   };
 
   // Vérifier si on est dans la période actuelle
@@ -99,6 +108,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const showTodayHighlight = !isCurrentPeriod();
 
   return (
+    <>
     <div className="header">
       <div className="header-content">
         <h1 className="header-title">🚛 Véhicules</h1>
@@ -347,7 +357,24 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             <button className="nav-button" onClick={goToNext} aria-label="Période suivante">
               <ChevronRight size={20} />
             </button>
-            <div className="current-date" aria-live="polite" aria-atomic="true">{getDateLabel()}</div>
+            <div 
+              className={`current-date ${(view === 'month' || view === 'week' || view === 'year') ? 'clickable' : ''}`}
+              aria-live="polite" 
+              aria-atomic="true"
+              onClick={() => {
+                if (view === 'month') setShowMonthSelector(true);
+                if (view === 'week') setShowWeekSelector(true);
+                if (view === 'year') setShowYearSelector(true);
+              }}
+              title={
+                view === 'month' ? 'Cliquer pour sélectionner un mois' : 
+                view === 'week' ? 'Cliquer pour sélectionner une semaine' : 
+                view === 'year' ? 'Cliquer pour sélectionner une année' : 
+                undefined
+              }
+            >
+              {getDateLabel()}
+            </div>
           </div>
 
           <button className="management-button" onClick={onOpenManagement} aria-label="Ouvrir le panneau de gestion">
@@ -357,6 +384,36 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         </div>
       </div>
     </div>
+
+    {showMonthSelector && (
+      <MonthSelector
+        currentDate={currentDate}
+        onSelectMonth={setCurrentDate}
+        onClose={() => setShowMonthSelector(false)}
+        reservations={reservations}
+        vehicles={vehicles}
+      />
+    )}
+
+    {showWeekSelector && (
+      <WeekSelector
+        currentDate={currentDate}
+        onSelectWeek={setCurrentDate}
+        onClose={() => setShowWeekSelector(false)}
+        reservations={reservations}
+        vehicles={vehicles}
+      />
+    )}
+
+    {showYearSelector && (
+      <YearSelector
+        currentDate={currentDate}
+        onSelectYear={setCurrentDate}
+        onClose={() => setShowYearSelector(false)}
+        reservations={reservations}
+      />
+    )}
+  </>
   );
 };
 

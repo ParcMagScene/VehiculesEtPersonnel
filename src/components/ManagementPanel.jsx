@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical } from 'lucide-react';
 import { saveToIndexedDB, STORES } from '../utils/indexedDB';
+import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
 import './ManagementPanel.css';
 
 const ManagementPanel = ({
@@ -33,8 +34,33 @@ const ManagementPanel = ({
     lng: null,
     placeId: ''
   });
+  const [availablePhotos, setAvailablePhotos] = useState(getPhotosSync());
+  const [isRefreshingPhotos, setIsRefreshingPhotos] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [draggedSection, setDraggedSection] = useState(null);
   const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Charger la liste des photos au montage du composant
+  useEffect(() => {
+    const loadPhotos = async () => {
+      const photos = await getAvailablePhotos();
+      setAvailablePhotos(photos);
+    };
+    loadPhotos();
+  }, []);
+
+  // Fonction pour rafraîchir la liste des photos
+  const refreshPhotoList = async () => {
+    setIsRefreshingPhotos(true);
+    try {
+      const photos = await getAvailablePhotos();
+      setAvailablePhotos(photos);
+    } finally {
+      setTimeout(() => setIsRefreshingPhotos(false), 500);
+    }
+  };
 
   // Initialiser Google Maps Autocomplete pour les lieux
   useEffect(() => {
@@ -112,7 +138,6 @@ const ManagementPanel = ({
       case 'drivers': setDrivers(newList); break;
       case 'locations': setLocations(newList); break;
       case 'garages': setGarages(newList); break;
-      case 'locations': setLocations(newList); break;
     }
   };
 
@@ -128,10 +153,13 @@ const ManagementPanel = ({
       ...(activeTab === 'vehicles' && { 
         type: newItem.type || 'Véhicule',
         color: newItem.color,
+        displayColor: newItem.color,
         immatriculation: newItem.immatriculation || '',
         marque: newItem.marque || '',
         couleurVehicule: newItem.couleurVehicule || '',
-        photo: newItem.photo || ''
+        photo: newItem.photo || '',
+        order: currentList.length,
+        isLocation: false
       }),
       ...(activeTab === 'locations' && {
         address: newItem.address || '',
@@ -141,7 +169,26 @@ const ManagementPanel = ({
       })
     };
 
-    setCurrentList([...currentList, itemToAdd]);
+    const newList = [...currentList, itemToAdd];
+    
+    // Mettre à jour l'état ET sauvegarder
+    if (activeTab === 'vehicles') {
+      setVehicles(newList);
+      saveToIndexedDB(STORES.vehicles, newList);
+    } else if (activeTab === 'clients') {
+      setClients(newList);
+      saveToIndexedDB(STORES.clients, newList);
+    } else if (activeTab === 'drivers') {
+      setDrivers(newList);
+      saveToIndexedDB(STORES.drivers, newList);
+    } else if (activeTab === 'locations') {
+      setLocations(newList);
+      saveToIndexedDB(STORES.locations, newList);
+    } else if (activeTab === 'garages') {
+      setGarages(newList);
+      saveToIndexedDB(STORES.garages, newList);
+    }
+    
     setNewItem({ 
       name: '', 
       type: '', 
@@ -155,6 +202,7 @@ const ManagementPanel = ({
       lng: null,
       placeId: ''
     });
+    setShowAddForm(false);
   };
 
   const handleEdit = (item) => {
@@ -165,16 +213,51 @@ const ManagementPanel = ({
     if (!editingItem.name.trim()) return;
 
     const currentList = getCurrentList();
-    setCurrentList(
-      currentList.map(item => item.id === editingItem.id ? editingItem : item)
-    );
+    const newList = currentList.map(item => item.id === editingItem.id ? editingItem : item);
+    
+    // Mettre à jour l'état ET sauvegarder
+    if (activeTab === 'vehicles') {
+      setVehicles(newList);
+      saveToIndexedDB(STORES.vehicles, newList);
+    } else if (activeTab === 'clients') {
+      setClients(newList);
+      saveToIndexedDB(STORES.clients, newList);
+    } else if (activeTab === 'drivers') {
+      setDrivers(newList);
+      saveToIndexedDB(STORES.drivers, newList);
+    } else if (activeTab === 'locations') {
+      setLocations(newList);
+      saveToIndexedDB(STORES.locations, newList);
+    } else if (activeTab === 'garages') {
+      setGarages(newList);
+      saveToIndexedDB(STORES.garages, newList);
+    }
+    
     setEditingItem(null);
   };
 
   const handleDelete = (id) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
       const currentList = getCurrentList();
-      setCurrentList(currentList.filter(item => item.id !== id));
+      const newList = currentList.filter(item => item.id !== id);
+      
+      // Mettre à jour l'état ET sauvegarder
+      if (activeTab === 'vehicles') {
+        setVehicles(newList);
+        saveToIndexedDB(STORES.vehicles, newList);
+      } else if (activeTab === 'clients') {
+        setClients(newList);
+        saveToIndexedDB(STORES.clients, newList);
+      } else if (activeTab === 'drivers') {
+        setDrivers(newList);
+        saveToIndexedDB(STORES.drivers, newList);
+      } else if (activeTab === 'locations') {
+        setLocations(newList);
+        saveToIndexedDB(STORES.locations, newList);
+      } else if (activeTab === 'garages') {
+        setGarages(newList);
+        saveToIndexedDB(STORES.garages, newList);
+      }
     }
   };
 
@@ -186,10 +269,19 @@ const ManagementPanel = ({
     // Mettre à jour les ordre si c'est des véhicules
     if (activeTab === 'vehicles') {
       currentList.forEach((v, i) => v.order = i);
+      setVehicles(currentList);
       saveToIndexedDB(STORES.vehicles, currentList);
+    } else {
+      if (activeTab === 'clients') {
+        setClients(currentList);
+      } else if (activeTab === 'drivers') {
+        setDrivers(currentList);
+      } else if (activeTab === 'locations') {
+        setLocations(currentList);
+      } else if (activeTab === 'garages') {
+        setGarages(currentList);
+      }
     }
-    
-    setCurrentList(currentList);
   };
 
   const handleMoveDown = (index) => {
@@ -200,10 +292,60 @@ const ManagementPanel = ({
     // Mettre à jour les ordre si c'est des véhicules
     if (activeTab === 'vehicles') {
       currentList.forEach((v, i) => v.order = i);
+      setVehicles(currentList);
       saveToIndexedDB(STORES.vehicles, currentList);
+    } else {
+      if (activeTab === 'clients') {
+        setClients(currentList);
+      } else if (activeTab === 'drivers') {
+        setDrivers(currentList);
+      } else if (activeTab === 'locations') {
+        setLocations(currentList);
+      } else if (activeTab === 'garages') {
+        setGarages(currentList);
+      }
+    }
+  };
+
+  const handleDragStart = (index, section) => {
+    setDraggedIndex(index);
+    setDraggedSection(section);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (dropIndex, dropSection) => {
+    if (draggedIndex === null || draggedSection !== dropSection) return;
+    
+    if (activeTab === 'vehicles') {
+      const allVehicles = [...vehicles];
+      const sectionVehicles = allVehicles.filter(v => 
+        dropSection === 'magscene' ? !v.isLocation : v.isLocation
+      );
+      
+      if (draggedIndex === dropIndex) return;
+      
+      const [movedItem] = sectionVehicles.splice(draggedIndex, 1);
+      sectionVehicles.splice(dropIndex, 0, movedItem);
+      
+      // Reconstruire la liste complète en conservant l'ordre des deux sections
+      const otherVehicles = allVehicles.filter(v => 
+        dropSection === 'magscene' ? v.isLocation : !v.isLocation
+      );
+      
+      const newList = dropSection === 'magscene' 
+        ? [...sectionVehicles, ...otherVehicles]
+        : [...otherVehicles, ...sectionVehicles];
+      
+      newList.forEach((v, i) => v.order = i);
+      setVehicles(newList);
+      saveToIndexedDB(STORES.vehicles, newList);
     }
     
-    setCurrentList(currentList);
+    setDraggedIndex(null);
+    setDraggedSection(null);
   };
 
   const colors = [
@@ -255,8 +397,18 @@ const ManagementPanel = ({
           {/* Formulaire d'ajout */}
           {activeTab !== 'sync' && (
             <div className="add-section">
-              <h3>Ajouter</h3>
-            <div className="add-form">
+              <div className="add-section-header">
+                <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : activeTab === 'garages' ? 'un garage' : 'un lieu'}</h3>
+                <button 
+                  className="toggle-add-form-btn"
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  title={showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire'}
+                >
+                  {showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </button>
+              </div>
+            {showAddForm && (
+              <div className="add-form">
               <input
                 type="text"
                 placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : activeTab === 'garages' ? 'garage' : 'lieu'}`}
@@ -310,24 +462,25 @@ const ManagementPanel = ({
                     value={newItem.couleurVehicule}
                     onChange={(e) => setNewItem({ ...newItem, couleurVehicule: e.target.value })}
                   />
-                  <select
-                    value={newItem.photo}
-                    onChange={(e) => setNewItem({ ...newItem, photo: e.target.value })}
-                  >
-                    <option value="">Pas de photo</option>
-                    <option value="BM-038-NY.jpg">BM-038-NY.jpg</option>
-                    <option value="DL-622-TF.jpg">DL-622-TF.jpg</option>
-                    <option value="DQ-055-LG.jpg">DQ-055-LG.jpg</option>
-                    <option value="DS-377-RL.jpg">DS-377-RL.jpg</option>
-                    <option value="DT-406-TJ.jpg">DT-406-TJ.jpg</option>
-                    <option value="DT-692-RE.jpg">DT-692-RE.jpg</option>
-                    <option value="EB-855-VR.jpg">EB-855-VR.jpg</option>
-                    <option value="EE-446-NG.jpg">EE-446-NG.jpg</option>
-                    <option value="EL-720-CX.jpg">EL-720-CX.jpg</option>
-                    <option value="MOV160.jpg">MOV160.jpg</option>
-                    <option value="MOV60.jpg">MOV60.jpg</option>
-                    <option value="MOV80.jpg">MOV80.jpg</option>
-                  </select>
+                  <div className="photo-select-wrapper">
+                    <select
+                      value={newItem.photo}
+                      onChange={(e) => setNewItem({ ...newItem, photo: e.target.value })}
+                    >
+                      <option value="">Pas de photo</option>
+                      {availablePhotos.map(photo => (
+                        <option key={photo} value={photo}>{photo}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                      onClick={refreshPhotoList}
+                      title="Rafraîchir la liste des photos"
+                    >
+                      <RefreshCw size={16} />
+                    </button>
+                  </div>
                   <div className="color-picker">
                     <label>Couleur d'affichage:</label>
                     <div className="color-options-grid">
@@ -349,7 +502,8 @@ const ManagementPanel = ({
                 Ajouter
               </button>
             </div>
-          </div>
+            )}
+            </div>
           )}
 
           {/* Configuration Google Calendar */}
@@ -458,11 +612,22 @@ const ManagementPanel = ({
           {/* Liste des éléments */}
           {activeTab !== 'sync' && (
           <div className="items-section">
-            <h3>Liste ({getCurrentList().length})</h3>
-            <div className="items-list">
-              {getCurrentList().map((item, index) => (
-                <div key={item.id} className="item-card">
-                  {editingItem?.id === item.id ? (
+            {activeTab === 'vehicles' ? (
+              <>
+                {/* Véhicules Mag Scène */}
+                <div className="vehicles-subsection">
+                  <h3>Véhicules Mag Scène ({vehicles.filter(v => !v.isLocation).length})</h3>
+                  <div className="items-list">
+                    {vehicles.filter(v => !v.isLocation).map((item, index) => (
+                      <div 
+                        key={item.id} 
+                        className={`item-card ${draggedSection === 'magscene' && draggedIndex === index ? 'dragging' : ''}`}
+                        draggable={!editingItem}
+                        onDragStart={() => handleDragStart(index, 'magscene')}
+                        onDragOver={handleDragOver}
+                        onDrop={() => handleDrop(index, 'magscene')}
+                      >
+                        {editingItem?.id === item.id ? (
                     <div className="edit-form">
                       <input
                         type="text"
@@ -497,24 +662,25 @@ const ManagementPanel = ({
                             onChange={(e) => setEditingItem({ ...editingItem, couleurVehicule: e.target.value, color: e.target.value })}
                             placeholder="Couleur véhicule"
                           />
-                          <select
-                            value={editingItem.photo || ''}
-                            onChange={(e) => setEditingItem({ ...editingItem, photo: e.target.value })}
-                          >
-                            <option value="">Pas de photo</option>
-                            <option value="BM-038-NY.jpg">BM-038-NY.jpg</option>
-                            <option value="DL-622-TF.jpg">DL-622-TF.jpg</option>
-                            <option value="DQ-055-LG.jpg">DQ-055-LG.jpg</option>
-                            <option value="DS-377-RL.jpg">DS-377-RL.jpg</option>
-                            <option value="DT-406-TJ.jpg">DT-406-TJ.jpg</option>
-                            <option value="DT-692-RE.jpg">DT-692-RE.jpg</option>
-                            <option value="EB-855-VR.jpg">EB-855-VR.jpg</option>
-                            <option value="EE-446-NG.jpg">EE-446-NG.jpg</option>
-                            <option value="EL-720-CX.jpg">EL-720-CX.jpg</option>
-                            <option value="MOV160.jpg">MOV160.jpg</option>
-                            <option value="MOV60.jpg">MOV60.jpg</option>
-                            <option value="MOV80.jpg">MOV80.jpg</option>
-                          </select>
+                          <div className="photo-select-wrapper">
+                            <select
+                              value={editingItem.photo || ''}
+                              onChange={(e) => setEditingItem({ ...editingItem, photo: e.target.value })}
+                            >
+                              <option value="">Pas de photo</option>
+                              {availablePhotos.map(photo => (
+                                <option key={photo} value={photo}>{photo}</option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                              onClick={refreshPhotoList}
+                              title="Rafraîchir la liste des photos"
+                            >
+                              <RefreshCw size={16} />
+                            </button>
+                          </div>
                           <div className="color-picker-inline">
                             <label>Couleur d'affichage:</label>
                             <div className="color-options-grid">
@@ -590,30 +756,13 @@ const ManagementPanel = ({
                         )}
                       </div>
                       <div className="item-actions">
-                        {activeTab === 'vehicles' && (
-                          <div className="move-buttons">
-                            <button 
-                              className="move-button" 
-                              onClick={() => handleMoveUp(index)}
-                              disabled={index === 0}
-                              title="Déplacer vers le haut"
-                            >
-                              <ChevronUp size={16} />
-                            </button>
-                            <button 
-                              className="move-button" 
-                              onClick={() => handleMoveDown(index)}
-                              disabled={index === getCurrentList().length - 1}
-                              title="Déplacer vers le bas"
-                            >
-                              <ChevronDown size={16} />
-                            </button>
-                          </div>
-                        )}
-                        <button className="edit-button" onClick={() => handleEdit(item)}>
+                        <div className="drag-handle" title="Glisser pour réorganiser">
+                          <GripVertical size={20} />
+                        </div>
+                        <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                           <Edit2 size={16} />
                         </button>
-                        <button className="delete-button" onClick={() => handleDelete(item.id)}>
+                        <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -622,13 +771,223 @@ const ManagementPanel = ({
                 </div>
               ))}
               
-              {getCurrentList().length === 0 && (
+              {vehicles.filter(v => !v.isLocation).length === 0 && (
                 <div className="empty-state">
-                  <p>Aucun élément pour le moment</p>
-                  <p className="empty-hint">Utilisez le formulaire ci-dessus pour en ajouter</p>
+                  <p>Aucun véhicule Mag Scène</p>
                 </div>
               )}
             </div>
+                </div>
+
+                {/* Véhicules de location */}
+                <div className="vehicles-subsection">
+                  <h3>Véhicules de location ({vehicles.filter(v => v.isLocation).length})</h3>
+                  <div className="items-list">
+                    {vehicles.filter(v => v.isLocation).map((item, index) => (
+                      <div 
+                        key={item.id} 
+                        className={`item-card ${draggedSection === 'location' && draggedIndex === index ? 'dragging' : ''}`}
+                        draggable={!editingItem}
+                        onDragStart={() => handleDragStart(index, 'location')}
+                        onDragOver={handleDragOver}
+                        onDrop={() => handleDrop(index, 'location')}
+                      >
+                        {editingItem?.id === item.id ? (
+                          <div className="edit-form">
+                            {/* Contenu d'édition identique */}
+                            <input
+                              type="text"
+                              value={editingItem.name}
+                              onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                              onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                              placeholder="Nom"
+                            />
+                            <input
+                              type="text"
+                              value={editingItem.type || ''}
+                              onChange={(e) => setEditingItem({ ...editingItem, type: e.target.value })}
+                              placeholder="Type"
+                            />
+                            <input
+                              type="text"
+                              value={editingItem.immatriculation || editingItem.registration || ''}
+                              onChange={(e) => setEditingItem({ ...editingItem, immatriculation: e.target.value, registration: e.target.value })}
+                              placeholder="Immatriculation"
+                            />
+                            <input
+                              type="text"
+                              value={editingItem.marque || editingItem.brand || ''}
+                              onChange={(e) => setEditingItem({ ...editingItem, marque: e.target.value, brand: e.target.value })}
+                              placeholder="Marque"
+                            />
+                            <input
+                              type="text"
+                              value={editingItem.couleurVehicule || editingItem.color || ''}
+                              onChange={(e) => setEditingItem({ ...editingItem, couleurVehicule: e.target.value, color: e.target.value })}
+                              placeholder="Couleur véhicule"
+                            />
+                            <div className="photo-select-wrapper">
+                              <select
+                                value={editingItem.photo || ''}
+                                onChange={(e) => setEditingItem({ ...editingItem, photo: e.target.value })}
+                              >
+                                <option value="">Pas de photo</option>
+                                {availablePhotos.map(photo => (
+                                  <option key={photo} value={photo}>{photo}</option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                                onClick={refreshPhotoList}
+                                title="Rafraîchir la liste des photos"
+                              >
+                                <RefreshCw size={16} />
+                              </button>
+                            </div>
+                            <div className="color-picker-inline">
+                              <label>Couleur d'affichage:</label>
+                              <div className="color-options-grid">
+                                {colors.map(color => (
+                                  <button
+                                    key={color}
+                                    className={`color-option ${(editingItem.displayColor || editingItem.color) === color ? 'selected' : ''}`}
+                                    style={{ backgroundColor: color }}
+                                    onClick={() => setEditingItem({ ...editingItem, color, displayColor: color })}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <div className="edit-actions">
+                              <button className="save-button" onClick={handleSaveEdit}>
+                                Enregistrer
+                              </button>
+                              <button className="cancel-edit-button" onClick={() => setEditingItem(null)}>
+                                Annuler
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="item-content">
+                              <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || '#3b82f6' }} />
+                              <div>
+                                <div className="item-name">{item.name}</div>
+                                <div className="item-type">{item.type}</div>
+                                {(item.immatriculation || item.registration) && (
+                                  <div className="item-detail">📋 {item.immatriculation || item.registration}</div>
+                                )}
+                                {item.marque && (
+                                  <div className="item-detail">🚗 {item.marque} {item.couleurVehicule}</div>
+                                )}
+                                {item.brand && (
+                                  <div className="item-detail">🏭 {item.brand} {item.model || ''}</div>
+                                )}
+                              </div>
+                              {item.photo && (
+                                <div className="item-photo">
+                                  <img src={`/Photos/${item.photo}`} alt={item.name} />
+                                </div>
+                              )}
+                            </div>
+                            <div className="item-actions">
+                              <div className="drag-handle" title="Glisser pour réorganiser">
+                                <GripVertical size={20} />
+                              </div>
+                              <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                                <Edit2 size={16} />
+                              </button>
+                              <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {vehicles.filter(v => v.isLocation).length === 0 && (
+                      <div className="empty-state">
+                        <p>Aucun véhicule de location</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3>Liste ({getCurrentList().length})</h3>
+                <div className="items-list">
+                  {getCurrentList().map((item, index) => (
+                    <div key={item.id} className="item-card">
+                      {editingItem?.id === item.id ? (
+                        <div className="edit-form">
+                          <input
+                            type="text"
+                            value={editingItem.name}
+                            onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                            onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                            placeholder="Nom"
+                          />
+                          <div className="edit-actions">
+                            <button className="save-button" onClick={handleSaveEdit}>
+                              Enregistrer
+                            </button>
+                            <button className="cancel-edit-button" onClick={() => setEditingItem(null)}>
+                              Annuler
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="item-content">
+                            <div>
+                              <div className="item-name">{item.name}</div>
+                              {activeTab === 'locations' && (
+                                <>
+                                  {item.address && (
+                                    <div className="item-detail">📍 {item.address}</div>
+                                  )}
+                                  {item.lat && item.lng && (
+                                    <div className="item-detail coordinates-detail">
+                                      🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
+                                      <a 
+                                        href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="map-link"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        Voir sur Google Maps
+                                      </a>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="item-actions">
+                            <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                              <Edit2 size={16} />
+                            </button>
+                            <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {getCurrentList().length === 0 && (
+                    <div className="empty-state">
+                      <p>Aucun élément pour le moment</p>
+                      <p className="empty-hint">Utilisez le formulaire ci-dessus pour en ajouter</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
           )}
         </div>

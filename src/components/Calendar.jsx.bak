@@ -46,10 +46,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
         eventEnd = new Date(event.end.dateTime);
       }
       
-      if (!eventStart || !eventEnd) {
-        console.log('Invalid event dates');
-        return;
-      }
+      if (!eventStart || !eventEnd) return;
       
       // Trouver le premier et le dernier slot que l'événement touche (dans le bloc de la tournée)
       let firstSlotIdx = -1;
@@ -61,39 +58,19 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
         if (slotIndex >= timeSlots.length) break;
         
         const slot = timeSlots[slotIndex];
+        const dayStart = new Date(slot.day);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(slot.day);
+        dayEnd.setHours(23, 59, 59, 999);
         
-        // Extraire la date en heure locale (pas UTC)
-        const slotYear = slot.day.getFullYear();
-        const slotMonth = slot.day.getMonth() + 1;
-        const slotDate = slot.day.getDate();
-        const slotDateISO = `${slotYear}-${String(slotMonth).padStart(2, '0')}-${String(slotDate).padStart(2, '0')}`;
-        
-        // Pour événements toute la journée : comparer les dates ISO (YYYY-MM-DD)
+        // Pour événements toute la journée
         if (isAllDayEvent) {
-          const eventStartYear = eventStart.getFullYear();
-          const eventStartMonth = eventStart.getMonth();
-          const eventStartDate = eventStart.getDate();
-          
-          const eventEndYear = eventEnd.getFullYear();
-          const eventEndMonth = eventEnd.getMonth();
-          const eventEndDate = eventEnd.getDate();
-          
-          // Créer les dates ISO pour comparaison
-          const eventStartISO = `${eventStartYear}-${String(eventStartMonth + 1).padStart(2, '0')}-${String(eventStartDate).padStart(2, '0')}`;
-          const eventEndISO = `${eventEndYear}-${String(eventEndMonth + 1).padStart(2, '0')}-${String(eventEndDate).padStart(2, '0')}`;
-          
-          const matches = eventEndISO >= slotDateISO && eventStartISO <= slotDateISO;
-          if (matches) {
+          if (eventEnd >= dayStart && eventStart <= dayEnd) {
             if (firstSlotIdx === -1) firstSlotIdx = i;
             lastSlotIdx = i;
           }
         } else {
           // Pour événements avec heure
-          const dayStart = new Date(slot.day);
-          dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(slot.day);
-          dayEnd.setHours(23, 59, 59, 999);
-          
           const periodStart = new Date(slot.day);
           const periodEnd = new Date(slot.day);
           
@@ -109,7 +86,6 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
           }
           
           const touches = eventStart <= periodEnd && eventEnd >= periodStart;
-          console.log(`  Timed check (${slot.period}): ${touches}`);
           if (touches) {
             if (firstSlotIdx === -1) firstSlotIdx = i;
             lastSlotIdx = i;
@@ -125,46 +101,37 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
         }
         if (!cleanTitle) cleanTitle = '(Sans titre)';
         
-        const eventBlock = {
+        eventBlocks.push({
           startSlot: firstSlotIdx,
           span: lastSlotIdx - firstSlotIdx + 1,
           affaire: event.affaire,
           title: cleanTitle
-        };
-        eventBlocks.push(eventBlock);
+        });
       }
     });
     
     if (eventBlocks.length > 0) {
       return (
         <div style={{ 
-          position: 'absolute',
-          top: 'auto',
-          left: 0,
-          right: 0,
-          bottom: 0,
+          marginTop: '0.5rem',
           display: 'grid',
           gridTemplateColumns: `repeat(${block.span}, 1fr)`,
           gap: '0.125rem',
-          padding: '0.25rem',
-          pointerEvents: 'none',
-          zIndex: 10
+          pointerEvents: 'none'
         }}>
           {eventBlocks.map((eventBlock, idx) => (
             <span key={idx} style={{ 
-              fontSize: '0.55rem',
+              fontSize: '0.6rem',
               background: '#eef2ff',
-              padding: '0.1rem 0.2rem',
-              borderRadius: '0.2rem',
+              padding: '0.125rem 0.25rem',
+              borderRadius: '0.25rem',
               color: '#6366f1',
               fontWeight: '600',
               display: 'block',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              gridColumn: `${eventBlock.startSlot + 1} / span ${eventBlock.span}`,
-              height: '1rem',
-              lineHeight: '0.8rem'
+              gridColumn: `${eventBlock.startSlot + 1} / span ${eventBlock.span}`
             }}>
               {eventBlock.affaire || eventBlock.title}
             </span>
@@ -258,53 +225,34 @@ const Calendar = ({
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
   }, [isDragging, dragState, resizeState]);
 
-  // Centrer sur le début du mois/année visible lors des changements, sauf si on revient à aujourd'hui
+  // Centrer sur la date actuelle en vue mensuelle et annuelle
   useEffect(() => {
     if (view === 'month' || view === 'year') {
       // Utiliser plusieurs timeouts pour s'assurer que tout est bien rendu
       const timeouts = [];
       
-      const scrollToPosition = () => {
-        const container = document.querySelector('.calendar-scroll-area');
-        const headersContainer = document.querySelector('.calendar-headers-scroll-area');
-        
-        if (!container) return;
-        
-        // Vérifier si currentDate correspond à aujourd'hui (même jour)
-        const today = new Date();
-        const isToday = currentDate.getDate() === today.getDate() &&
-                       currentDate.getMonth() === today.getMonth() &&
-                       currentDate.getFullYear() === today.getFullYear();
-        
-        if (isToday) {
-          // Si on est aujourd'hui, centrer sur le jour actuel
-          const todayElements = document.querySelectorAll('.calendar-header-cell.today');
-          if (todayElements.length > 0) {
-            const todayElement = todayElements[0];
+      const centerOnToday = () => {
+        const todayElements = document.querySelectorAll('.calendar-header-cell.today');
+        if (todayElements.length > 0) {
+          const todayElement = todayElements[0];
+          const container = document.querySelector('.calendar-scroll-area');
+          if (container && todayElement) {
             // Calculer la position pour centrer l'élément
             const containerWidth = container.offsetWidth;
             const elementLeft = todayElement.offsetLeft;
             const elementWidth = todayElement.offsetWidth;
             const scrollLeft = elementLeft - (containerWidth / 2) + (elementWidth / 2);
             
+            // Défilement vers l'élément (sans smooth pour éviter les désynchronisations)
             container.scrollLeft = scrollLeft;
-            if (headersContainer) {
-              headersContainer.scrollLeft = scrollLeft;
-            }
-          }
-        } else {
-          // Sinon, scroller au début du mois/année
-          container.scrollLeft = 0;
-          if (headersContainer) {
-            headersContainer.scrollLeft = 0;
           }
         }
       };
 
       // Essayer plusieurs fois pour s'assurer que le DOM est prêt
-      timeouts.push(setTimeout(scrollToPosition, 50));
-      timeouts.push(setTimeout(scrollToPosition, 150));
-      timeouts.push(setTimeout(scrollToPosition, 300));
+      timeouts.push(setTimeout(centerOnToday, 50));
+      timeouts.push(setTimeout(centerOnToday, 150));
+      timeouts.push(setTimeout(centerOnToday, 300));
 
       return () => {
         timeouts.forEach(timeout => clearTimeout(timeout));
@@ -1267,6 +1215,7 @@ const Calendar = ({
                     const isLastOfDay = slot.period === 'PM' && block.span === 1;
                     const isBeingResized = resizeState && resizeState.reservation.id === block.id;
                         // Calculer les slots couverts par ce bloc pour les tournées
+    const blockTimeSlots = block.isTournee ? timeSlots.slice(block.startIndex, block.startIndex + block.span) : null;
                     
                     // Si on redimensionne ce bloc, ne pas l'afficher (on affiche uniquement la prévisualisation)
                     if (isBeingResized) return null;
@@ -1497,6 +1446,7 @@ const Calendar = ({
                     const isLastOfDay = slot.period === 'PM' && block.span === 1;
                     const isBeingResized = resizeState && resizeState.reservation.id === block.id;
                         // Calculer les slots couverts par ce bloc pour les tournées
+    const blockTimeSlots = block.isTournee ? timeSlots.slice(block.startIndex, block.startIndex + block.span) : null;
                     
                     // Si on redimensionne ce bloc, ne pas l'afficher (on affiche uniquement la prévisualisation)
                     if (isBeingResized) return null;

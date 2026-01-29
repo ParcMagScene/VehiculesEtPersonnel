@@ -316,6 +316,42 @@
   color: #9ca3af;
 }
 
+.selected-event-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.selected-event-display .event-dates {
+  font-size: 0.75rem;
+  color: #4b5563;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.selected-event-display .event-title {
+  flex: 1;
+  font-weight: 500;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-event-display .event-affaire {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+}
+
 .dropdown-arrow {
   color: #6b7280;
   font-size: 0.75rem;

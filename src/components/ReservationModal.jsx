@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X, Trash2 } from 'lucide-react';
@@ -68,7 +68,11 @@ const ReservationModal = ({
     googleEventId: reservation?.googleEventId || googleEvent?.id || '', // Pour compatibilité
     linkedEventIds: initLinkedEvents(), // Nouveau tableau pour les événements multiples
     affaires: initAffaires(),
+    isTournee: reservation?.isTournee || false, // Nouvelle option Tournée
   });
+
+  const [initialFormData, setInitialFormData] = useState(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const [newAffaire, setNewAffaire] = useState('');
 
@@ -79,6 +83,21 @@ const ReservationModal = ({
 
   // État pour le dropdown personnalisé des événements Google
   const [isEventDropdownOpen, setIsEventDropdownOpen] = useState(false);
+
+  // Initialiser initialFormData au montage pour la réservation en édition
+  useEffect(() => {
+    if (isEdit && reservation && !initialFormData) {
+      setInitialFormData({...formData});
+    }
+  }, [isEdit, reservation]);
+
+  // Détecter les changements
+  useEffect(() => {
+    if (isEdit && initialFormData) {
+      const changed = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+      setHasChanges(changed);
+    }
+  }, [formData, initialFormData, isEdit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -120,27 +139,55 @@ const ReservationModal = ({
   const selectGoogleEvent = (event) => {
     if (event) {
       setFormData((prev) => {
-        const newAffaires = [...prev.affaires];
-        if (event.affaire && !newAffaires.includes(event.affaire)) {
-          newAffaires.push(event.affaire);
+        if (prev.isTournee) {
+          // Mode tournée : ajouter/retirer l'événement de la liste
+          const newLinkedEventIds = [...prev.linkedEventIds];
+          const eventIndex = newLinkedEventIds.indexOf(event.id);
+          
+          if (eventIndex > -1) {
+            // L'événement est déjà sélectionné, le retirer
+            newLinkedEventIds.splice(eventIndex, 1);
+          } else {
+            // Ajouter l'événement
+            newLinkedEventIds.push(event.id);
+          }
+          
+          // Mettre à jour les affaires
+          const newAffaires = [];
+          newLinkedEventIds.forEach(eventId => {
+            const e = googleEvents.find(ev => ev.id === eventId);
+            if (e?.affaire && !newAffaires.includes(e.affaire)) {
+              newAffaires.push(e.affaire);
+            }
+          });
+          
+          return {
+            ...prev,
+            linkedEventIds: newLinkedEventIds,
+            googleEventId: newLinkedEventIds[0] || '',
+            affaires: newAffaires,
+          };
+        } else {
+          // Mode normal : un seul événement
+          const newAffaires = [...prev.affaires];
+          if (event.affaire && !newAffaires.includes(event.affaire)) {
+            newAffaires.push(event.affaire);
+          }
+          
+          setIsEventDropdownOpen(false);
+          
+          return {
+            ...prev,
+            linkedEventIds: [event.id],
+            googleEventId: event.id,
+            locationName: event.detectedLocation || event.location || prev.locationName,
+            prestationName: prev.prestationName || event.summary,
+            clientName: prev.clientName || event.detectedClient,
+            affaires: newAffaires,
+          };
         }
-        
-        const newLinkedEventIds = [...prev.linkedEventIds];
-        if (!newLinkedEventIds.includes(event.id)) {
-          newLinkedEventIds.push(event.id);
-        }
-        
-        return {
-          ...prev,
-          linkedEventIds: newLinkedEventIds,
-          googleEventId: newLinkedEventIds[0] || '', // Pour compatibilité, garder le premier
-          locationName: event.detectedLocation || event.location || prev.locationName,
-          prestationName: prev.prestationName || event.summary,
-          clientName: prev.clientName || event.detectedClient,
-          affaires: newAffaires,
-        };
       });
-      // Ne pas fermer le dropdown pour permettre d'ajouter d'autres affaires
+      // Ne fermer le dropdown qu'en mode normal
     } else {
       // Désélectionner tous les événements
       setFormData((prev) => ({
@@ -189,6 +236,10 @@ const ReservationModal = ({
     const reservationStart = new Date(formData.date);
     const reservationEnd = new Date(formData.endDate);
     
+    // Ajouter un jour après la fin de réservation pour inclure les événements adjacents
+    const extendedEnd = new Date(reservationEnd);
+    extendedEnd.setDate(extendedEnd.getDate() + 1);
+    
     return googleEvents.filter(event => {
       const eventStart = event.start?.dateTime 
         ? new Date(event.start.dateTime) 
@@ -204,8 +255,8 @@ const ReservationModal = ({
       
       if (!eventStart || !eventEnd) return false;
       
-      // Vérifier si les périodes se chevauchent
-      return eventStart <= reservationEnd && eventEnd >= reservationStart;
+      // Vérifier si les périodes se chevauchent ou si l'événement est le lendemain
+      return eventStart <= extendedEnd && eventEnd >= reservationStart;
     });
   };
 
@@ -329,15 +380,74 @@ const ReservationModal = ({
                   className="custom-dropdown-trigger"
                   onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
                 >
-                  {formData.googleEventId ? (
-                    <span>
-                      {(() => {
-                        const event = googleEvents.find(e => e.id === formData.googleEventId);
-                        return event ? formatEventOption(event) : 'Aucun événement';
-                      })()}
-                    </span>
+                  {formData.isTournee ? (
+                    // Mode tournée : afficher tous les événements liés
+                    formData.linkedEventIds.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                        {formData.linkedEventIds.map(eventId => {
+                          const event = googleEvents.find(e => e.id === eventId);
+                          if (!event) return null;
+                          
+                          const startDate = event.start?.dateTime 
+                            ? new Date(event.start.dateTime) 
+                            : event.start?.date 
+                              ? new Date(event.start.date) 
+                              : null;
+                          
+                          const dateRange = startDate ? format(startDate, 'dd/MM', { locale: fr }) : '';
+                          
+                          return (
+                            <div key={eventId} className="selected-event-display" style={{ backgroundColor: getEventColor(event) + '20', padding: '0.25rem 0.5rem' }}>
+                              <span className="event-dates" style={{ fontSize: '0.7rem' }}>{dateRange}</span>
+                              {event.affaire && <span className="event-affaire" style={{ fontSize: '0.7rem' }}>{event.affaire}</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <span className="placeholder">Aucun événement sélectionné</span>
+                    )
                   ) : (
-                    <span className="placeholder">Aucun événement</span>
+                    // Mode normal : un seul événement
+                    formData.googleEventId ? (
+                      (() => {
+                        const event = googleEvents.find(e => e.id === formData.googleEventId);
+                        if (!event) return <span className="placeholder">Aucun événement</span>;
+                        
+                        const startDate = event.start?.dateTime 
+                          ? new Date(event.start.dateTime) 
+                          : event.start?.date 
+                            ? new Date(event.start.date) 
+                            : null;
+                        
+                        const endDate = event.end?.dateTime 
+                          ? new Date(event.end.dateTime) 
+                          : event.end?.date 
+                            ? new Date(event.end.date) 
+                            : null;
+                        
+                        const dateRange = startDate && endDate
+                          ? `${format(startDate, 'dd/MM', { locale: fr })} → ${format(endDate, 'dd/MM', { locale: fr })}`
+                          : '';
+                        
+                        let cleanTitle = event.summary || '(Sans titre)';
+                        if (event.affaire) {
+                          cleanTitle = cleanTitle.replace(/\baf\s*\d+\b/gi, '').trim();
+                          cleanTitle = cleanTitle.replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
+                        }
+                        if (!cleanTitle) cleanTitle = '(Sans titre)';
+                        
+                        return (
+                          <div className="selected-event-display" style={{ backgroundColor: getEventColor(event) + '20' }}>
+                            <span className="event-dates">{dateRange}</span>
+                            <span className="event-title">{cleanTitle}</span>
+                            {event.affaire && <span className="event-affaire">{event.affaire}</span>}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <span className="placeholder">Aucun événement</span>
+                    )
                   )}
                   <span className="dropdown-arrow">▼</span>
                 </div>
@@ -419,6 +529,138 @@ const ReservationModal = ({
             </div>
           )}
 
+          {formData.isTournee && formData.linkedEventIds.length > 0 && (
+            <div className="linked-events-display" style={{ 
+              marginTop: '1rem',
+              padding: '1rem',
+              backgroundColor: '#f9fafb',
+              borderRadius: '0.5rem',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div style={{ 
+                fontWeight: '600',
+                fontSize: '0.875rem',
+                color: '#374151',
+                marginBottom: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span>🗓️ Événements liés à cette tournée</span>
+                <span style={{ 
+                  fontWeight: 'normal',
+                  color: '#6b7280',
+                  fontSize: '0.8rem'
+                }}>({formData.linkedEventIds.length})</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {formData.linkedEventIds
+                  .map(eventId => {
+                    const event = googleEvents.find(e => e.id === eventId);
+                    if (!event) return null;
+                    
+                    const startDate = event.start?.dateTime 
+                      ? new Date(event.start.dateTime) 
+                      : event.start?.date 
+                        ? new Date(event.start.date) 
+                        : null;
+                    
+                    const endDate = event.end?.dateTime 
+                      ? new Date(event.end.dateTime) 
+                      : event.end?.date 
+                        ? new Date(event.end.date) 
+                        : null;
+                    
+                    const dateRange = startDate && endDate
+                      ? `${format(startDate, 'dd/MM/yy', { locale: fr })} → ${format(endDate, 'dd/MM/yy', { locale: fr })}`
+                      : startDate
+                        ? format(startDate, 'dd/MM/yy', { locale: fr })
+                        : '';
+                    
+                    let cleanTitle = event.summary || '(Sans titre)';
+                    if (event.affaire) {
+                      cleanTitle = cleanTitle.replace(/\baf\s*\d+\b/gi, '').trim();
+                      cleanTitle = cleanTitle.replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
+                    }
+                    if (!cleanTitle) cleanTitle = '(Sans titre)';
+                    
+                    return {
+                      eventId,
+                      event,
+                      startDate,
+                      dateRange,
+                      cleanTitle
+                    };
+                  })
+                  .filter(item => item !== null)
+                  .sort((a, b) => {
+                    if (!a.startDate) return 1;
+                    if (!b.startDate) return -1;
+                    return a.startDate - b.startDate;
+                  })
+                  .map(({ eventId, event, dateRange, cleanTitle }) => (
+                    <div 
+                      key={eventId}
+                      style={{ 
+                        backgroundColor: getEventColor(event) + '20',
+                        padding: '0.75rem',
+                        borderRadius: '0.375rem',
+                        border: '1px solid ' + getEventColor(event) + '40',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.375rem'
+                      }}
+                    >
+                      <div style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.5rem'
+                      }}>
+                        <span style={{ 
+                          fontSize: '0.75rem',
+                          color: '#6b7280',
+                          fontWeight: '500'
+                        }}>
+                          📅 {dateRange}
+                        </span>
+                        {event.affaire && (
+                          <span style={{ 
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            color: '#6366f1',
+                            backgroundColor: '#eef2ff',
+                            padding: '0.125rem 0.5rem',
+                            borderRadius: '0.25rem'
+                          }}>
+                            {event.affaire}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.875rem',
+                        color: '#111827',
+                        fontWeight: '500'
+                      }}>
+                        {cleanTitle}
+                      </div>
+                      {event.location && (
+                        <div style={{ 
+                          fontSize: '0.75rem',
+                          color: '#6b7280',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}>
+                          📍 {event.location}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="date">Date de début *</label>
@@ -446,8 +688,8 @@ const ReservationModal = ({
                 required
                 aria-required="true"
               >
-                <option value="AM">Matin (AM)</option>
-                <option value="PM">Après-midi (PM)</option>
+                <option value="AM">🌅 AM</option>
+                <option value="PM">🌆 PM</option>
               </select>
             </div>
           </div>
@@ -477,8 +719,8 @@ const ReservationModal = ({
                 required
                 aria-required="true"
               >
-                <option value="AM">Matin (AM)</option>
-                <option value="PM">Après-midi (PM)</option>
+                <option value="AM">🌅 AM</option>
+                <option value="PM">🌆 PM</option>
               </select>
             </div>
           </div>
@@ -498,6 +740,24 @@ const ReservationModal = ({
               <strong>{selectedVehicleIds.length}</strong> véhicule(s) sélectionné(s)
             </div>
           )}
+
+          <div className="form-divider" />
+
+          <div className="form-group">
+            <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={formData.isTournee}
+                onChange={(e) => setFormData(prev => ({ ...prev, isTournee: e.target.checked }))}
+              />
+              <span style={{ fontWeight: '500' }}>🚐 Tournée (réservation longue durée avec plusieurs affaires)</span>
+            </label>
+            {formData.isTournee && (
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem', marginBottom: 0 }}>
+                Vous pouvez lier plusieurs événements Google Calendar à cette réservation. Chaque numéro d'affaire s'affichera à la position correspondante dans le planning.
+              </p>
+            )}
+          </div>
 
           <div className="form-divider" />
 
@@ -691,9 +951,16 @@ const ReservationModal = ({
             <button type="button" className="cancel-button" onClick={onClose}>
               Annuler
             </button>
-            <button type="submit" className="submit-button">
-              {isEdit ? 'Modifier' : 'Créer'}
-            </button>
+            {!isEdit && (
+              <button type="submit" className="submit-button">
+                Créer
+              </button>
+            )}
+            {isEdit && hasChanges && (
+              <button type="submit" className="submit-button">
+                Valider les modifications
+              </button>
+            )}
           </div>
         </form>
       </div>

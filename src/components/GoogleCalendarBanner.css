@@ -222,7 +222,7 @@
 }
 
 .banner-grid.month-view {
-  grid-template-columns: repeat(62, 120px);
+  grid-template-columns: repeat(62, minmax(60px, 1fr));
 }
 
 .banner-grid.year-view {

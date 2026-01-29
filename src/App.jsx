@@ -6,6 +6,7 @@ import Header from './components/Header';
 import ManagementPanel from './components/ManagementPanel';
 import GoogleCalendarBanner from './components/GoogleCalendarBanner';
 import MaintenanceDialog from './components/MaintenanceDialog';
+import VehicleDetailsModal from './components/VehicleDetailsModal';
 import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
 import './App.css';
@@ -39,6 +40,8 @@ function App() {
   const [maintenances, setMaintenances] = useState([]);
   const [selectedVehicleForMaintenance, setSelectedVehicleForMaintenance] = useState(null);
   const [maintenanceToEdit, setMaintenanceToEdit] = useState(null);
+  const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
+  const [maintenanceActionType, setMaintenanceActionType] = useState(null); // 'schedule', 'request', 'breakdown'
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {
@@ -47,6 +50,20 @@ function App() {
       .filter(r => r.googleEventId === hoveredEventId)
       .map(r => r.id);
   }, [hoveredEventId, reservations]);
+
+  // Désactiver le clic droit sur toute l'application
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      return false;
+    };
+    
+    document.addEventListener('contextmenu', handleContextMenu);
+    
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
 
   // Charger les données au démarrage
   useEffect(() => {
@@ -86,16 +103,16 @@ function App() {
   // Sauvegarder automatiquement
   useEffect(() => {
     if (!isLoading) {
-      if (vehicles.length > 0) saveToIndexedDB(STORES.vehicles, vehicles);
-      if (reservations.length > 0) saveToIndexedDB(STORES.reservations, reservations);
-      if (clients.length > 0) saveToIndexedDB(STORES.clients, clients);
-      if (drivers.length > 0) saveToIndexedDB(STORES.drivers, drivers);
-      if (locations.length > 0) saveToIndexedDB(STORES.locations, locations);
+      saveToIndexedDB(STORES.vehicles, vehicles);
+      saveToIndexedDB(STORES.reservations, reservations);
+      saveToIndexedDB(STORES.clients, clients);
+      saveToIndexedDB(STORES.drivers, drivers);
+      saveToIndexedDB(STORES.locations, locations);
       if (calendarConfig && (calendarConfig.apiKey || calendarConfig.calendarId)) {
         saveToIndexedDB(STORES.calendarConfig, calendarConfig);
       }
-      if (garages.length > 0) saveToIndexedDB(STORES.garages, garages);
-      if (maintenances.length > 0) saveToIndexedDB(STORES.maintenances, maintenances);
+      saveToIndexedDB(STORES.garages, garages);
+      saveToIndexedDB(STORES.maintenances, maintenances);
     }
   }, [vehicles, reservations, clients, drivers, locations, calendarConfig, garages, maintenances, isLoading]);
 
@@ -294,6 +311,21 @@ function App() {
     }
   };
 
+  const handleRequestMaintenance = (vehicle) => {
+    setMaintenanceActionType('request');
+    setSelectedVehicleForMaintenance(vehicle);
+  };
+
+  const handleReportBreakdown = (vehicle) => {
+    setMaintenanceActionType('breakdown');
+    setSelectedVehicleForMaintenance(vehicle);
+  };
+
+  const handleScheduleMaintenance = (vehicle) => {
+    setMaintenanceActionType('schedule');
+    setSelectedVehicleForMaintenance(vehicle);
+  };
+
   return (
     <div className="app">
       <Header
@@ -347,7 +379,7 @@ function App() {
         highlightedReservationIds={highlightedReservationIds}
         reservationToEdit={reservationToEdit}
         onReservationEditComplete={() => setReservationToEdit(null)}
-        onVehicleClick={setSelectedVehicleForMaintenance}
+        onVehicleClick={setSelectedVehicleForDetails}
       />
 
       {showManagement && (
@@ -375,11 +407,24 @@ function App() {
           garages={garages}
           reservations={reservations}
           maintenanceToEdit={maintenanceToEdit}
+          actionType={maintenanceActionType}
           onSave={handleMaintenanceSave}
           onClose={() => {
             setSelectedVehicleForMaintenance(null);
             setMaintenanceToEdit(null);
+            setMaintenanceActionType(null);
           }}
+        />
+      )}
+
+      {selectedVehicleForDetails && (
+        <VehicleDetailsModal
+          vehicle={selectedVehicleForDetails}
+          maintenances={maintenances}
+          onClose={() => setSelectedVehicleForDetails(null)}
+          onRequestMaintenance={handleRequestMaintenance}
+          onReportBreakdown={handleReportBreakdown}
+          onScheduleMaintenance={handleScheduleMaintenance}
         />
       )}
     </div>

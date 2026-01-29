@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical } from 'lucide-react';
-import { saveToIndexedDB, STORES } from '../utils/indexedDB';
+import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download } from 'lucide-react';
+import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
 import './ManagementPanel.css';
 
@@ -39,8 +39,10 @@ const ManagementPanel = ({
   const [showAddForm, setShowAddForm] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggedSection, setDraggedSection] = useState(null);
+  const [importStatus, setImportStatus] = useState('');
   const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Charger la liste des photos au montage du composant
   useEffect(() => {
@@ -348,6 +350,66 @@ const ManagementPanel = ({
     setDraggedSection(null);
   };
 
+  // Fonction d'export des données
+  const handleExportData = async () => {
+    try {
+      const stores = ['vehicles', 'reservations', 'clients', 'drivers', 'locations', 'garages', 'maintenances', 'calendarConfig'];
+      const data = {};
+      
+      for (const storeName of stores) {
+        data[storeName] = await loadFromIndexedDB(storeName, []);
+      }
+      
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      setImportStatus('✅ Données exportées avec succès !');
+      setTimeout(() => setImportStatus(''), 3000);
+    } catch (err) {
+      setImportStatus('❌ Erreur lors de l\'export : ' + err.message);
+      setTimeout(() => setImportStatus(''), 5000);
+    }
+  };
+
+  // Fonction d'import des données
+  const handleImportData = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const backupData = JSON.parse(text);
+      
+      // Importer dans IndexedDB
+      for (const [storeName, items] of Object.entries(backupData)) {
+        await saveToIndexedDB(storeName, items);
+      }
+      
+      // Mettre à jour les états locaux
+      if (backupData.vehicles) setVehicles(backupData.vehicles);
+      if (backupData.clients) setClients(backupData.clients);
+      if (backupData.drivers) setDrivers(backupData.drivers);
+      if (backupData.locations) setLocations(backupData.locations);
+      if (backupData.garages) setGarages(backupData.garages);
+      if (backupData.calendarConfig) setCalendarConfig(backupData.calendarConfig);
+      
+      setImportStatus(`✅ ${backupData.reservations?.length || 0} réservations importées ! Rechargement...`);
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      setImportStatus('❌ Erreur lors de l\'import : ' + err.message);
+      setTimeout(() => setImportStatus(''), 5000);
+    }
+  };
+
   const colors = [
     // Bleus
     '#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa', '#93c5fd',
@@ -509,7 +571,51 @@ const ManagementPanel = ({
           {/* Configuration Google Calendar */}
           {activeTab === 'sync' && (
             <div className="sync-section">
-              <h3>🗓️ Synchronisation Google Calendar</h3>
+              <h3>� Import / Export des données</h3>
+              <div className="sync-info">
+                <p>Sauvegardez ou restaurez toutes vos données (véhicules, réservations, clients, etc.)</p>
+              </div>
+              
+              <div className="sync-form">
+                <div className="import-export-buttons">
+                  <button className="export-button" onClick={handleExportData}>
+                    <Download size={20} />
+                    Exporter toutes les données
+                  </button>
+                  
+                  <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    accept=".json"
+                    style={{ display: 'none' }}
+                    onChange={handleImportData}
+                  />
+                  <button className="import-button" onClick={() => fileInputRef.current?.click()}>
+                    <Upload size={20} />
+                    Importer des données
+                  </button>
+                </div>
+                
+                {importStatus && (
+                  <div className={`sync-status ${importStatus.includes('✅') ? 'success' : 'error'}`}>
+                    {importStatus}
+                  </div>
+                )}
+                
+                <div className="sync-tips">
+                  <h4>ℹ️ Utilisation :</h4>
+                  <ul>
+                    <li><strong>Export :</strong> Télécharge un fichier JSON avec toutes vos données</li>
+                    <li><strong>Import :</strong> Remplace toutes les données actuelles par celles du fichier</li>
+                    <li><strong>⚠️ Attention :</strong> L'import écrase complètement les données existantes</li>
+                    <li>Utile pour transférer vos données entre différents navigateurs ou appareils</li>
+                  </ul>
+                </div>
+              </div>
+
+              <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+
+              <h3>�🗓️ Synchronisation Google Calendar</h3>
               <div className="sync-info">
                 <p>Affichez vos événements Google Calendar personnels au-dessus du planning de réservation.</p>
               </div>

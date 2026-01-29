@@ -65,35 +65,40 @@ function App() {
         let savedGarages = await loadFromIndexedDB(STORES.garages, []);
         let savedMaintenances = await loadFromIndexedDB(STORES.maintenances, []);
 
-        // Si IndexedDB est vide, charger les données initiales depuis initial_data.json
-        if (savedVehicles.length === 0) {
-          console.log('📦 IndexedDB vide - Chargement des données initiales...');
+        // Charger les données initiales depuis initial_data.json SEULEMENT pour ce qui manque
+        if (savedVehicles.length === 0 || savedClients.length === 0 || savedDrivers.length === 0 || savedGarages.length === 0) {
+          console.log('📦 Chargement des données initiales manquantes...');
           try {
             const response = await fetch('/initial_data.json');
             const initialData = await response.json();
             
-            if (initialData.vehicles && initialData.vehicles.length > 0) {
+            // Charger les véhicules SEULEMENT si vide
+            if (savedVehicles.length === 0 && initialData.vehicles && initialData.vehicles.length > 0) {
               console.log(`✅ ${initialData.vehicles.length} véhicules chargés depuis initial_data.json`);
               savedVehicles = initialData.vehicles;
               await saveToIndexedDB(STORES.vehicles, savedVehicles);
             }
             
-            if (initialData.reservations) {
-              savedReservations = initialData.reservations;
-              await saveToIndexedDB(STORES.reservations, savedReservations);
-            }
+            // NE PAS écraser les réservations existantes - garder celles de la DB
+            // (on ne charge initial_data.reservations que si vraiment vide ET qu'on veut les données de démo)
             
-            if (initialData.clients) {
+            // Charger les clients SEULEMENT si vide
+            if (savedClients.length === 0 && initialData.clients) {
+              console.log(`✅ ${initialData.clients.length} clients chargés`);
               savedClients = initialData.clients;
               await saveToIndexedDB(STORES.clients, savedClients);
             }
             
-            if (initialData.drivers) {
+            // Charger les conducteurs SEULEMENT si vide
+            if (savedDrivers.length === 0 && initialData.drivers) {
+              console.log(`✅ ${initialData.drivers.length} conducteurs chargés`);
               savedDrivers = initialData.drivers;
               await saveToIndexedDB(STORES.drivers, savedDrivers);
             }
             
-            if (initialData.garages) {
+            // Charger les garages SEULEMENT si vide
+            if (savedGarages.length === 0 && initialData.garages) {
+              console.log(`✅ ${initialData.garages.length} garages chargés`);
               savedGarages = initialData.garages;
               await saveToIndexedDB(STORES.garages, savedGarages);
             }

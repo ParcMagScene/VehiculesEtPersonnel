@@ -748,8 +748,19 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   
   console.log('🔄 Rendu GoogleCalendarBanner - Vue:', view, 'Events state:', events.length, 'EventBlocks:', eventBlocks.length);
 
+  // Toujours afficher le banner, même sans clientId configuré (pour permettre la configuration)
   if (!calendarConfig?.clientId) {
-    return null;
+    return (
+      <div className="google-calendar-banner auth">
+        <div className="banner-content">
+          <div className="auth-prompt">
+            <h3>📅 Synchronisation Google Calendar</h3>
+            <p>⚠️ Configuration manquante</p>
+            <p>Veuillez configurer le Client ID Google dans le panneau de gestion (⚙️ Paramètres → Google Calendar)</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!isSignedIn) {

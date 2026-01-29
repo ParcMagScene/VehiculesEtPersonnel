@@ -87,7 +87,8 @@
       "owner": "MAG SCENE",
       "displayColor": "#06b6d4",
       "order": 5,
-      "isLocation": false
+      "isLocation": false,
+      "photo": "ER-301-WC.jpg"
     },
     {
       "id": "PORTEUR-DS-377-RL",

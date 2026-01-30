@@ -84,28 +84,40 @@ const VehicleDetailsModal = ({
                 </div>
               )}
               <div className="info-grid">
-                {vehicle.type && (
-                  <div className="info-item">
-                    <span className="info-label">Type :</span>
-                    <span className="info-value">{vehicle.type}</span>
-                  </div>
-                )}
-                {vehicle.immatriculation && (
+                {(vehicle.immatriculation || vehicle.registration) && (
                   <div className="info-item">
                     <span className="info-label">Immatriculation :</span>
-                    <span className="info-value">{vehicle.immatriculation}</span>
+                    <span className="info-value">{vehicle.immatriculation || vehicle.registration}</span>
                   </div>
                 )}
-                {vehicle.marque && (
+                {(vehicle.marque || vehicle.brand) && (
                   <div className="info-item">
                     <span className="info-label">Marque :</span>
-                    <span className="info-value">{vehicle.marque}</span>
+                    <span className="info-value">{vehicle.marque || vehicle.brand}</span>
                   </div>
                 )}
-                {vehicle.couleurVehicule && (
+                {vehicle.model && (
+                  <div className="info-item">
+                    <span className="info-label">Modèle :</span>
+                    <span className="info-value">{vehicle.model}</span>
+                  </div>
+                )}
+                {(vehicle.couleurVehicule || vehicle.color) && (
                   <div className="info-item">
                     <span className="info-label">Couleur :</span>
-                    <span className="info-value">{vehicle.couleurVehicule}</span>
+                    <span className="info-value">{vehicle.couleurVehicule || vehicle.color}</span>
+                  </div>
+                )}
+                {vehicle.owner && (
+                  <div className="info-item">
+                    <span className="info-label">Propriétaire :</span>
+                    <span className="info-value">{vehicle.owner}</span>
+                  </div>
+                )}
+                {vehicle.comment && (
+                  <div className="info-item full-width">
+                    <span className="info-label">Commentaire :</span>
+                    <span className="info-value">{vehicle.comment}</span>
                   </div>
                 )}
               </div>

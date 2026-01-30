@@ -430,6 +430,8 @@ function App() {
           setCalendarConfig={setCalendarConfig}
           garages={garages}
           setGarages={setGarages}
+          maintenances={maintenances}
+          setMaintenances={setMaintenances}
           onClose={() => setShowManagement(false)}
         />
       )}

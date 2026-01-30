@@ -19,6 +19,8 @@ const ManagementPanel = ({
   setCalendarConfig,
   garages,
   setGarages,
+  maintenances,
+  setMaintenances,
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState('vehicles');
@@ -388,10 +390,14 @@ const ManagementPanel = ({
       const text = await file.text();
       const backupData = JSON.parse(text);
       
-      // Importer dans IndexedDB
+      setImportStatus(`⏳ Import de ${backupData.reservations?.length || 0} réservations en cours...`);
+      
+      // Importer dans IndexedDB - ATTENDRE que TOUTES les sauvegardes soient terminées
+      const savePromises = [];
       for (const [storeName, items] of Object.entries(backupData)) {
-        await saveToIndexedDB(storeName, items);
+        savePromises.push(saveToIndexedDB(storeName, items));
       }
+      await Promise.all(savePromises);
       
       // Mettre à jour les états locaux
       if (backupData.vehicles) setVehicles(backupData.vehicles);
@@ -400,14 +406,17 @@ const ManagementPanel = ({
       if (backupData.drivers) setDrivers(backupData.drivers);
       if (backupData.locations) setLocations(backupData.locations);
       if (backupData.garages) setGarages(backupData.garages);
+      if (backupData.maintenances) setMaintenances(backupData.maintenances);
       if (backupData.calendarConfig) setCalendarConfig(backupData.calendarConfig);
       
-      setImportStatus(`✅ ${backupData.reservations?.length || 0} réservations importées ! Rechargement...`);
+      setImportStatus(`✅ ${backupData.reservations?.length || 0} réservations sauvegardées ! Rechargement...`);
       
+      // Attendre 500ms pour que l'utilisateur voie le message, puis recharger
       setTimeout(() => {
         window.location.reload();
-      }, 1500);
+      }, 500);
     } catch (err) {
+      console.error('Erreur import:', err);
       setImportStatus('❌ Erreur lors de l\'import : ' + err.message);
       setTimeout(() => setImportStatus(''), 5000);
     }

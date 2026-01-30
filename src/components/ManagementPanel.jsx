@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
+import UserManagement from './UserManagement';
+import GoogleCalendarConfig from './GoogleCalendarConfig';
+import ChangePassword from './ChangePassword';
+import MobileAccess from './MobileAccess';
 import './ManagementPanel.css';
 
 const ManagementPanel = ({
@@ -21,6 +25,7 @@ const ManagementPanel = ({
   setGarages,
   maintenances,
   setMaintenances,
+  currentUser,
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState('vehicles');
@@ -124,6 +129,12 @@ const ManagementPanel = ({
     { id: 'locations', label: 'Lieux', icon: MapPin },
     { id: 'garages', label: 'Garages', icon: MapPin },
     { id: 'sync', label: 'Synchronisation', icon: Calendar },
+    { id: 'account', label: 'Mon compte', icon: Lock },
+    ...(currentUser?.isAdmin ? [
+      { id: 'users', label: 'Utilisateurs', icon: Shield },
+      { id: 'google-config', label: 'Config Google', icon: Settings },
+      { id: 'mobile', label: 'Accès Mobile', icon: Smartphone },
+    ] : []),
   ];
 
   const getCurrentList = () => {
@@ -727,8 +738,28 @@ const ManagementPanel = ({
             </div>
           )}
 
+          {/* Mon compte */}
+          {activeTab === 'account' && (
+            <ChangePassword />
+          )}
+
+          {/* Gestion des utilisateurs (Admin uniquement) */}
+          {activeTab === 'users' && currentUser?.isAdmin && (
+            <UserManagement />
+          )}
+
+          {/* Configuration Google Calendar (Admin uniquement) */}
+          {activeTab === 'google-config' && currentUser?.isAdmin && (
+            <GoogleCalendarConfig />
+          )}
+
+          {/* Accès Mobile (Admin uniquement) */}
+          {activeTab === 'mobile' && currentUser?.isAdmin && (
+            <MobileAccess />
+          )}
+
           {/* Liste des éléments */}
-          {activeTab !== 'sync' && (
+          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && (
           <div className="items-section">
             {activeTab === 'vehicles' ? (
               <>

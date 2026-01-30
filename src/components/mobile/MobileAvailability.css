@@ -1,0 +1,287 @@
+.mobile-availability {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f9fafb;
+}
+
+.availability-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.availability-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.back-button:active {
+  background: #f3f4f6;
+}
+
+/* Navigation par jour */
+.day-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 16px;
+}
+
+.nav-button {
+  background: #f3f4f6;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.nav-button:active {
+  background: #e5e7eb;
+  transform: scale(0.95);
+}
+
+.current-day {
+  flex: 1;
+  text-align: center;
+}
+
+.day-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.day-date {
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 2px;
+  text-transform: capitalize;
+}
+
+.today-button {
+  margin: 12px 16px;
+  padding: 10px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.today-button:active {
+  background: #2563eb;
+  transform: scale(0.98);
+}
+
+/* Statistiques */
+.availability-stats {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.availability-stats .stat {
+  flex: 1;
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.availability-stats .stat.available {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.availability-stats .stat.total {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Liste des véhicules */
+.vehicles-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #9ca3af;
+}
+
+.empty-state svg {
+  opacity: 0.5;
+  margin-bottom: 16px;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 16px;
+}
+
+.vehicle-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.vehicle-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.vehicle-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vehicle-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.vehicle-registration {
+  font-size: 13px;
+  color: #6b7280;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.reserve-button {
+  padding: 10px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.reserve-button:active {
+  background: #2563eb;
+  transform: scale(0.95);
+}
+
+/* Véhicules occupés */
+.unavailable-section {
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.unavailable-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.unavailable-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.unavailable-item {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 3px solid #ef4444;
+}
+
+.unavailable-item .vehicle-info {
+  margin-bottom: 6px;
+}
+
+.unavailable-item .vehicle-name {
+  font-size: 14px;
+}
+
+.unavailable-item .vehicle-registration {
+  font-size: 12px;
+}
+
+.unavailable-reason {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* Scrollbar */
+.vehicles-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.vehicles-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vehicles-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}

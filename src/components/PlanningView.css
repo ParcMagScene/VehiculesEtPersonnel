@@ -1,0 +1,340 @@
+.planning-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f9fafb;
+}
+
+.planning-header {
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.planning-week-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.planning-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Colonne fixe des véhicules */
+.planning-vehicles-column {
+  width: 250px;
+  flex-shrink: 0;
+  background: white;
+  border-right: 2px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.planning-column-header {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: #111827;
+  background: #f3f4f6;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.planning-vehicles-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.planning-vehicle-row {
+  height: 100px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  background: white;
+  transition: background 0.2s;
+}
+
+.planning-vehicle-row:hover {
+  background: #f9fafb;
+}
+
+.planning-vehicle-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #111827;
+}
+
+.planning-vehicle-registration {
+  font-size: 13px;
+  color: #6b7280;
+  font-family: 'Monaco', monospace;
+}
+
+/* Grille scrollable */
+.planning-grid-container {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.planning-days-header {
+  height: 80px;
+  display: flex;
+  background: #f3f4f6;
+  border-bottom: 2px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.planning-day-header {
+  min-width: 200px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.planning-day-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.planning-day-date {
+  font-size: 13px;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.planning-grid {
+  flex: 1;
+}
+
+.planning-grid-row {
+  display: flex;
+  height: 100px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.planning-cell {
+  min-width: 200px;
+  flex: 1;
+  border-right: 1px solid #e5e7eb;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: white;
+  position: relative;
+  overflow-y: auto;
+}
+
+.planning-cell:hover {
+  background: #f9fafb;
+}
+
+.planning-cell-empty {
+  width: 100%;
+  height: 100%;
+}
+
+/* Réservations */
+.planning-reservation {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  min-height: 50px;
+}
+
+.planning-reservation:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.planning-reservation-icon {
+  color: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.planning-reservation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.planning-reservation-client {
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e40af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planning-reservation-period {
+  font-size: 11px;
+  color: #3b82f6;
+  margin-top: 2px;
+}
+
+/* Interventions */
+.planning-maintenance {
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  border-left: 3px solid;
+  min-height: 50px;
+}
+
+.planning-maintenance:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.planning-maintenance-reported {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.planning-maintenance-scheduled {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.planning-maintenance-in_progress {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.planning-maintenance-pending {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+}
+
+.planning-maintenance-completed {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.planning-maintenance-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.planning-maintenance-reported .planning-maintenance-icon {
+  color: #dc2626;
+}
+
+.planning-maintenance-scheduled .planning-maintenance-icon {
+  color: #d97706;
+}
+
+.planning-maintenance-in_progress .planning-maintenance-icon {
+  color: #2563eb;
+}
+
+.planning-maintenance-pending .planning-maintenance-icon {
+  color: #7c3aed;
+}
+
+.planning-maintenance-completed .planning-maintenance-icon {
+  color: #059669;
+}
+
+.planning-maintenance-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.planning-maintenance-description {
+  font-weight: 600;
+  font-size: 13px;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planning-maintenance-status {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.planning-maintenance-reported .planning-maintenance-status {
+  color: #dc2626;
+}
+
+.planning-maintenance-scheduled .planning-maintenance-status {
+  color: #d97706;
+}
+
+.planning-maintenance-in_progress .planning-maintenance-status {
+  color: #2563eb;
+}
+
+.planning-maintenance-pending .planning-maintenance-status {
+  color: #7c3aed;
+}
+
+.planning-maintenance-completed .planning-maintenance-status {
+  color: #059669;
+}
+
+/* Scrollbars */
+.planning-vehicles-list::-webkit-scrollbar,
+.planning-grid-container::-webkit-scrollbar,
+.planning-cell::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.planning-vehicles-list::-webkit-scrollbar-track,
+.planning-grid-container::-webkit-scrollbar-track,
+.planning-cell::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.planning-vehicles-list::-webkit-scrollbar-thumb,
+.planning-grid-container::-webkit-scrollbar-thumb,
+.planning-cell::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.planning-vehicles-list::-webkit-scrollbar-thumb:hover,
+.planning-grid-container::-webkit-scrollbar-thumb:hover,
+.planning-cell::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .planning-vehicles-column {
+    width: 200px;
+  }
+
+  .planning-day-header,
+  .planning-cell {
+    min-width: 150px;
+  }
+}

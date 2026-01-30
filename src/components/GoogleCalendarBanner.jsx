@@ -3,6 +3,7 @@ import { format, addDays, parseISO, isToday, isTomorrow, isSameDay, startOfWeek,
 import { fr } from 'date-fns/locale';
 import './GoogleCalendarBanner.css';
 import AffaireImportModal from './AffaireImportModal';
+import api from '../utils/api';
 
 function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation }) {
   const [events, setEvents] = useState([]);
@@ -17,10 +18,33 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [clickedCell, setClickedCell] = useState(null);
+  const [googleClientId, setGoogleClientId] = useState(null);
+  const [googleCalendarId, setGoogleCalendarId] = useState(null);
   
   // Cache pour éviter de recharger les mêmes données
   const eventsCache = useRef({});
   const fetchTimeoutRef = useRef(null);
+
+  // Charger la configuration Google depuis le backend
+  useEffect(() => {
+    const loadGoogleConfig = async () => {
+      try {
+        console.log('🔧 Chargement de la config Google...');
+        const [clientIdData, calendarIdData] = await Promise.all([
+          api.getGoogleClientId(),
+          api.getGoogleCalendarId()
+        ]);
+        console.log('📦 Données reçues:', { clientIdData, calendarIdData });
+        // Extraire juste la valeur, pas l'objet entier
+        setGoogleClientId(clientIdData?.value || null);
+        setGoogleCalendarId(calendarIdData?.value || null);
+        console.log('✅ Config Google chargée - clientId:', clientIdData?.value, 'calendarId:', calendarIdData?.value);
+      } catch (error) {
+        console.error('Erreur lors du chargement de la configuration Google:', error);
+      }
+    };
+    loadGoogleConfig();
+  }, []);
 
   // Notifier le parent quand les événements changent
   useEffect(() => {
@@ -179,7 +203,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     // Créer l'événement dans Google Calendar
     try {
       const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${calendarConfig.calendarId || 'primary'}/events`,
+        `https://www.googleapis.com/calendar/v3/calendars/${googleCalendarId || 'primary'}/events`,
         {
           method: 'POST',
           headers: {
@@ -214,7 +238,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       if (!eventToUpdate) return;
 
       const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${calendarConfig.calendarId || 'primary'}/events/${eventId}`,
+        `https://www.googleapis.com/calendar/v3/calendars/${googleCalendarId || 'primary'}/events/${eventId}`,
         {
           method: 'PATCH',
           headers: {
@@ -356,7 +380,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   };
 
   useEffect(() => {
-    if (!calendarConfig?.clientId) return;
+    if (!googleClientId) return;
 
     // Charger le script Google Identity Services
     const script = document.createElement('script');
@@ -371,14 +395,14 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         script.parentNode.removeChild(script);
       }
     };
-  }, [calendarConfig?.clientId]);
+  }, [googleClientId]);
 
   const initializeGIS = () => {
-    if (!window.google || !calendarConfig?.clientId) return;
+    if (!window.google || !googleClientId) return;
 
     try {
       const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: calendarConfig.clientId,
+        client_id: googleClientId,
         scope: 'https://www.googleapis.com/auth/calendar',
         ux_mode: 'popup',
         callback: (response) => {
@@ -453,7 +477,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         clearTimeout(fetchTimeoutRef.current);
       }
     };
-  }, [view, currentDate, isSignedIn, accessToken]);
+  }, [view, currentDate, isSignedIn, accessToken, googleCalendarId]);
 
   const handleSignIn = () => {
     if (tokenClient) {
@@ -499,7 +523,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         return;
       }
 
-      const calendarId = calendarConfig.calendarId || 'primary';
+      const calendarId = googleCalendarId || 'primary';
       const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?` +
         `timeMin=${timeMin.toISOString()}&` +
         `timeMax=${timeMax.toISOString()}&` +
@@ -510,7 +534,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       console.log('🔍 Récupération événements Google Calendar');
       console.log('   Vue:', view);
       console.log('   Plage:', timeMin.toISOString(), '→', timeMax.toISOString());
-      console.log('   Calendar ID:', calendarId);
+      console.log('   googleCalendarId state:', googleCalendarId);
+      console.log('   Calendar ID utilisé:', calendarId);
       console.log('   URL:', url);
 
       const response = await fetch(url, {
@@ -750,14 +775,14 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   console.log('🔄 Rendu GoogleCalendarBanner - Vue:', view, 'Events state:', events.length, 'EventBlocks:', eventBlocks.length);
 
   // Toujours afficher le banner, même sans clientId configuré (pour permettre la configuration)
-  if (!calendarConfig?.clientId) {
+  if (!googleClientId) {
     return (
       <div className="google-calendar-banner auth">
         <div className="banner-content">
           <div className="auth-prompt">
             <h3>📅 Synchronisation Google Calendar</h3>
             <p>⚠️ Configuration manquante</p>
-            <p>Veuillez configurer le Client ID Google dans le panneau de gestion (⚙️ Paramètres → Google Calendar)</p>
+            <p>Veuillez configurer le Client ID Google dans le panneau de gestion (onglet Config Google)</p>
           </div>
         </div>
       </div>
@@ -771,8 +796,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
           <div className="auth-prompt">
             <h3>📅 Synchronisation Google Calendar</h3>
             <p>Connectez-vous pour afficher vos événements personnels</p>
-            <button onClick={handleSignIn} className="signin-button">
-              Se connecter avec Google
+            <button 
+              onClick={handleSignIn} 
+              className="signin-button"
+              disabled={!tokenClient}
+            >
+              {tokenClient ? 'Se connecter avec Google' : 'Chargement...'}
             </button>
             {error && (
               <div className="error-message">

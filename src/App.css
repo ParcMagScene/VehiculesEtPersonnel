@@ -537,6 +537,26 @@
   color: #667eea;
 }
 
+.qr-button {
+  padding: 0.5rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  width: 40px;
+  height: 40px;
+}
+
+.qr-button:hover {
+  background: #059669;
+  transform: scale(1.05);
+}
+
 .management-button {
   padding: 0.5rem 1rem;
   background: #3b82f6;

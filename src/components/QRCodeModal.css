@@ -1,0 +1,259 @@
+.qr-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.qr-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: auto;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.qr-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qr-modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.qr-close-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  color: #6b7280;
+}
+
+.qr-close-button:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.qr-modal-content {
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.qr-code-container {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e5e7eb;
+}
+
+.qr-code-container canvas {
+  display: block;
+  border-radius: 8px;
+}
+
+.qr-info {
+  width: 100%;
+  text-align: center;
+}
+
+.qr-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.qr-description {
+  margin: 0 0 20px 0;
+  color: #6b7280;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.qr-url-section {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.qr-url-section label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.qr-url-display {
+  padding: 10px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  color: #3b82f6;
+  word-break: break-all;
+}
+
+.qr-legend {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border-radius: 12px;
+  border: 1px solid #bfdbfe;
+  text-align: left;
+}
+
+.qr-legend h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e40af;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qr-legend ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qr-legend li {
+  padding: 6px 0;
+  color: #1e3a8a;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qr-modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.print-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.print-button:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Styles d'impression */
+@media print {
+  .qr-modal-overlay {
+    background: white;
+  }
+
+  .qr-modal {
+    box-shadow: none;
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .qr-modal-content {
+    padding: 40px;
+  }
+
+  .qr-code-container {
+    margin-bottom: 30px;
+  }
+
+  .qr-legend {
+    page-break-before: avoid;
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .qr-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .qr-modal-header {
+    padding: 16px;
+  }
+
+  .qr-modal-content {
+    padding: 24px 16px;
+  }
+
+  .qr-code-container canvas {
+    width: 250px;
+    height: 250px;
+  }
+
+  .qr-legend {
+    padding: 16px;
+  }
+}

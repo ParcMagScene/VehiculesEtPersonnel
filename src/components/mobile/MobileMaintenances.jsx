@@ -1,0 +1,301 @@
+import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { ArrowLeft, Settings, AlertTriangle, Calendar, Plus, MapPin } from 'lucide-react';
+import api from '../../utils/api';
+import './MobileMaintenances.css';
+
+const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, currentUser, onMaintenanceCreated, onBack }, ref) => {
+  const [showForm, setShowForm] = useState(false);
+  const [formType, setFormType] = useState(''); // 'scheduled', 'request', 'breakdown'
+  const [openedDirectly, setOpenedDirectly] = useState(false);
+  
+  // Exposer la méthode openForm au parent
+  useImperativeHandle(ref, () => ({
+    openForm: () => {
+      setFormType(''); // Ne pas définir de type pour afficher le menu de sélection
+      setShowForm(true);
+      setOpenedDirectly(true);
+    }
+  }));
+  const [formData, setFormData] = useState({
+    vehicleId: '',
+    type: '',
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: '',
+    garageId: '',
+    description: '',
+    status: 'pending'
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleTypeSelect = (type) => {
+    setFormType(type);
+    setFormData({
+      ...formData,
+      type,
+      status: type === 'breakdown' ? 'reported' : type === 'scheduled' ? 'scheduled' : 'pending'
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const newMaintenance = await api.createMaintenance({
+        ...formData,
+        createdBy: currentUser.id
+      });
+      onMaintenanceCreated(newMaintenance);
+      setShowForm(false);
+      setFormType('');
+      setFormData({
+        vehicleId: '',
+        type: '',
+        startDate: format(new Date(), 'yyyy-MM-dd'),
+        endDate: '',
+        garageId: '',
+        description: '',
+        status: 'pending'
+      });
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la création');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const myMaintenances = maintenances
+    .filter(m => new Date(m.endDate || m.startDate) >= new Date() || m.status !== 'completed')
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+  const getStatusBadge = (status) => {
+    const badges = {
+      'pending': { label: 'En attente', class: 'pending' },
+      'scheduled': { label: 'Programmée', class: 'scheduled' },
+      'in_progress': { label: 'En cours', class: 'in-progress' },
+      'completed': { label: 'Effectuée', class: 'completed' },
+      'reported': { label: 'Signalée', class: 'reported' }
+    };
+    return badges[status] || badges.pending;
+  };
+
+  if (showForm && !formType) {
+    return (
+      <div className="mobile-maintenances">
+        <div className="screen-header">
+          <button className="back-button" onClick={() => {
+            setShowForm(false);
+            // Si ouvert directement via action rapide, retourner à l'accueil
+            if (openedDirectly) {
+              setOpenedDirectly(false);
+              onBack();
+            }
+          }}>
+            <ArrowLeft size={24} />
+          </button>
+          <h2>Type d'intervention</h2>
+        </div>
+
+        <div className="type-selection">
+          <button className="type-card" onClick={() => handleTypeSelect('scheduled')}>
+            <div className="type-icon scheduled">
+              <Calendar size={32} />
+            </div>
+            <div className="type-title">Intervention programmée</div>
+            <div className="type-description">Planifier une intervention future</div>
+          </button>
+
+          <button className="type-card" onClick={() => handleTypeSelect('request')}>
+            <div className="type-icon request">
+              <Settings size={32} />
+            </div>
+            <div className="type-title">Demande d'intervention</div>
+            <div className="type-description">Soumettre une demande à valider</div>
+          </button>
+
+          <button className="type-card" onClick={() => handleTypeSelect('breakdown')}>
+            <div className="type-icon breakdown">
+              <AlertTriangle size={32} />
+            </div>
+            <div className="type-title">Signaler une panne</div>
+            <div className="type-description">Signaler un problème urgent</div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (showForm && formType) {
+    return (
+      <div className="mobile-maintenances">
+        <div className="screen-header">
+          <button className="back-button" onClick={() => setFormType('')}>
+            <ArrowLeft size={24} />
+          </button>
+          <h2>
+            {formType === 'scheduled' && 'Programmer'}
+            {formType === 'request' && 'Demander'}
+            {formType === 'breakdown' && 'Signaler'}
+          </h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="maintenance-form">
+          <div className="form-group">
+            <label>
+              <Settings size={18} />
+              Véhicule
+            </label>
+            <select
+              value={formData.vehicleId}
+              onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
+              required
+            >
+              <option value="">Sélectionner un véhicule</option>
+              {vehicles.map(vehicle => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.name} - {vehicle.immatriculation}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {formType === 'scheduled' && (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    <Calendar size={18} />
+                    Début
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <Calendar size={18} />
+                    Fin
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    min={formData.startDate}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <MapPin size={18} />
+                  Garage
+                </label>
+                <select
+                  value={formData.garageId}
+                  onChange={(e) => setFormData({ ...formData, garageId: e.target.value })}
+                >
+                  <option value="">Sélectionner un garage (optionnel)</option>
+                  {garages.map(garage => (
+                    <option key={garage.id} value={garage.id}>{garage.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows="4"
+              placeholder="Décrivez l'intervention ou le problème..."
+              required
+            />
+          </div>
+
+          {error && <div className="form-error">{error}</div>}
+
+          <div className="form-actions">
+            <button type="button" onClick={() => setFormType('')} className="btn-cancel">
+              Retour
+            </button>
+            <button type="submit" disabled={isSubmitting} className="btn-submit">
+              {isSubmitting ? 'Envoi...' : 'Envoyer'}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mobile-maintenances">
+      <div className="screen-header">
+        <button className="back-button" onClick={onBack}>
+          <ArrowLeft size={24} />
+        </button>
+        <h2>Interventions</h2>
+        <button className="add-button" onClick={() => setShowForm(true)}>
+          <Plus size={24} />
+        </button>
+      </div>
+
+      <div className="maintenances-list">
+        {myMaintenances.length === 0 ? (
+          <div className="empty-state">
+            <Settings size={48} />
+            <p>Aucune intervention</p>
+            <button className="btn-primary" onClick={() => setShowForm(true)}>
+              Créer une intervention
+            </button>
+          </div>
+        ) : (
+          myMaintenances.map(maintenance => {
+            const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
+            const garage = garages.find(g => g.id === maintenance.garageId);
+            const statusBadge = getStatusBadge(maintenance.status);
+            
+            return (
+              <div key={maintenance.id} className="maintenance-card">
+                <div className="maintenance-header">
+                  <div className="vehicle-name">{vehicle?.name || 'Véhicule'}</div>
+                  <div className={`status-badge ${statusBadge.class}`}>
+                    {statusBadge.label}
+                  </div>
+                </div>
+                
+                <div className="maintenance-date">
+                  <Calendar size={16} />
+                  {format(new Date(maintenance.startDate), 'dd MMM yyyy', { locale: fr })}
+                  {maintenance.endDate && ` - ${format(new Date(maintenance.endDate), 'dd MMM yyyy', { locale: fr })}`}
+                </div>
+
+                {garage && (
+                  <div className="maintenance-garage">
+                    <MapPin size={16} />
+                    <span>{garage.name}</span>
+                  </div>
+                )}
+
+                {maintenance.description && (
+                  <div className="maintenance-description">{maintenance.description}</div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+});
+
+export default MobileMaintenances;

@@ -1,17 +1,55 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid } from 'lucide-react';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import MonthSelector from './MonthSelector';
 import WeekSelector from './WeekSelector';
 import YearSelector from './YearSelector';
+import QRCodeModal from './QRCodeModal';
+
+// Générer les initiales à partir du nom
+const getInitials = (name) => {
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+// Générer une couleur unique basée sur le nom
+const getColorFromName = (name) => {
+  if (!name) return '#6b7280';
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colors = [
+    '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', 
+    '#10b981', '#06b6d4', '#6366f1', '#f97316',
+    '#14b8a6', '#a855f7', '#ef4444', '#84cc16'
+  ];
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Ajuster la luminosité d'une couleur
+const adjustColor = (color, percent) => {
+  const num = parseInt(color.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = (num >> 8 & 0x00FF) + amt;
+  const B = (num & 0x0000FF) + amt;
+  return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+    (B < 255 ? B < 1 ? 0 : B : 255))
+    .toString(16).slice(1);
+};
 
 const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showWeekSelector, setShowWeekSelector] = useState(false);
+  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
   
   // Fonction pour détecter les conflits entre une intervention et les réservations
@@ -42,6 +80,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const reportedMaintenances = maintenances.filter(m => m.status === 'reported');
   const scheduledMaintenances = maintenances.filter(m => m.status === 'scheduled');
   const pendingMaintenances = maintenances.filter(m => m.status === 'pending');
+  const inProgressMaintenances = maintenances.filter(m => m.status === 'in_progress');
   const immobilizedVehicles = reportedMaintenances.filter(m => m.isImmobilized);
   
   // Détecter les interventions en conflit avec des réservations
@@ -50,7 +89,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     return conflicts.length > 0;
   });
   
-  const allNotifications = [...reportedMaintenances, ...scheduledMaintenances, ...pendingMaintenances];
+  const allNotifications = [...reportedMaintenances, ...scheduledMaintenances, ...pendingMaintenances, ...inProgressMaintenances];
   
   const goToPrevious = () => {
     const newDate = new Date(currentDate);
@@ -117,7 +156,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         </div>
         
         {/* Notifications de pannes */}
-        {(reportedMaintenances.length > 0 || scheduledMaintenances.length > 0 || pendingMaintenances.length > 0) && (
+        {(reportedMaintenances.length > 0 || scheduledMaintenances.length > 0 || pendingMaintenances.length > 0 || inProgressMaintenances.length > 0) && (
           <div className="maintenance-notifications">
             {immobilizedVehicles.length > 0 && (
               <div 
@@ -139,6 +178,17 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                 }}
               >
                 <ClipboardList size={18} strokeWidth={2.5} /> {pendingMaintenances.length} demande{pendingMaintenances.length > 1 ? 's' : ''} d'intervention
+              </div>
+            )}
+            {inProgressMaintenances.length > 0 && (
+              <div 
+                className="notification-badge in-progress"
+                onClick={() => {
+                  setNotificationFilter('in_progress');
+                  setShowNotificationsPopup(true);
+                }}
+              >
+                <CalendarCheck size={18} strokeWidth={2.5} /> {inProgressMaintenances.length} intervention{inProgressMaintenances.length > 1 ? 's' : ''} en cours
               </div>
             )}
             {reportedMaintenances.length > immobilizedVehicles.length && (
@@ -208,6 +258,52 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   </span>
                                   <span className="notification-status scheduled">
                                     Programmée
+                                  </span>
+                                </div>
+                                <p className="notification-description">{maintenance.description}</p>
+                                {maintenance.startDate && (
+                                  <span className="notification-date">
+                                    {maintenance.startDate === maintenance.endDate 
+                                      ? format(new Date(maintenance.startDate), 'dd/MM/yyyy')
+                                      : `${format(new Date(maintenance.startDate), 'dd/MM')} - ${format(new Date(maintenance.endDate), 'dd/MM/yyyy')}`
+                                    }
+                                  </span>
+                                )}
+                                {vehicle?.registration && (
+                                  <span className="notification-registration">{vehicle.registration}</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Section Interventions en cours */}
+                    {(notificationFilter === 'all' || notificationFilter === 'in_progress') && inProgressMaintenances.length > 0 && (
+                      <div className="notification-section">
+                        <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions en cours</h4>
+                        <div className="notifications-list">
+                          {inProgressMaintenances.map(maintenance => {
+                            const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
+                            
+                            return (
+                              <div 
+                                key={maintenance.id} 
+                                className="notification-item"
+                                onClick={() => {
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance && vehicle) {
+                                    onOpenMaintenance(vehicle, maintenance.id);
+                                  }
+                                }}
+                              >
+                                <div className="notification-item-header">
+                                  <span className="notification-vehicle-name">
+                                    {vehicle?.name || 'Véhicule inconnu'}
+                                  </span>
+                                  <span className="notification-status in-progress">
+                                    En cours
                                   </span>
                                 </div>
                                 <p className="notification-description">{maintenance.description}</p>
@@ -385,33 +481,69 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '10px',
-                padding: '8px 15px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
+                gap: '12px',
+                padding: '8px 12px',
+                background: 'rgba(255, 255, 255, 0.15)',
+                borderRadius: '10px',
                 fontSize: '14px',
-                color: 'white'
+                color: 'white',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
               }}>
-                <span>👤 {currentUser.name}</span>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${getColorFromName(currentUser.name)} 0%, ${adjustColor(getColorFromName(currentUser.name), -20)} 100%)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  color: 'white',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)'
+                }}>
+                  {getInitials(currentUser.name)}
+                </div>
+                <span style={{ fontWeight: '500' }}>{currentUser.name}</span>
                 <button 
                   onClick={onLogout}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
+                    background: 'rgba(239, 68, 68, 0.9)',
                     border: 'none',
-                    borderRadius: '5px',
-                    padding: '5px 10px',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
                     color: 'white',
                     cursor: 'pointer',
-                    fontSize: '12px',
-                    transition: 'background 0.2s'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
-                  onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
-                  onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'rgba(220, 38, 38, 1)';
+                    e.target.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'rgba(239, 68, 68, 0.9)';
+                    e.target.style.transform = 'scale(1)';
+                  }}
                 >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
                   Déconnexion
                 </button>
               </div>
             )}
+
+            <button className="qr-button" onClick={() => setShowQRCodeModal(true)} aria-label="Afficher le QR code mobile">
+              <QrCode size={20} />
+            </button>
 
             <button className="management-button" onClick={onOpenManagement} aria-label="Ouvrir le panneau de gestion">
               <Settings size={20} />
@@ -421,6 +553,10 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         </div>
       </div>
     </div>
+
+    {showQRCodeModal && (
+      <QRCodeModal onClose={() => setShowQRCodeModal(false)} />
+    )}
 
     {showMonthSelector && (
       <MonthSelector

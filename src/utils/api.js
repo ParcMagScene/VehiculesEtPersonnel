@@ -1,6 +1,6 @@
 // API Client pour communiquer avec le backend
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://192.168.205.75:3002/api';
 
 class ApiClient {
   constructor() {

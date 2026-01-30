@@ -22,8 +22,7 @@ const LoginForm = ({ onLogin }) => {
         setError('');
         alert('Compte créé ! Vous pouvez maintenant vous connecter.');
       } else {
-        await api.login(email, password);
-        onLogin();
+        await onLogin(email, password);
       }
     } catch (err) {
       setError(err.message);

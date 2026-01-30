@@ -6,7 +6,7 @@ import db, { addToHistory, getHistory } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 
 const app = express();
-const PORT = 3000;
+const PORT = 3002;
 const JWT_SECRET = 'your-secret-key-change-in-production';
 
 app.use(cors());
@@ -305,6 +305,7 @@ setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
 setupConfigRoutes(app, authenticateToken);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Serveur backend démarré sur http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
+  console.log(`📡 Accessible depuis le réseau sur http://192.168.205.75:${PORT}`);
 });

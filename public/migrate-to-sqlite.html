@@ -217,7 +217,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:3000/api/auth/login', {
+                const response = await fetch('http://192.168.205.75:3002/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
@@ -283,7 +283,7 @@
 
             for (const item of data) {
                 try {
-                    const response = await fetch(`http://localhost:3000/api/${apiEndpoint}`, {
+                    const response = await fetch(`http://192.168.205.75:3002/api/${apiEndpoint}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

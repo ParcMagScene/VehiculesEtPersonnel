@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../utils/api';
+import AccessRequestModal from './AccessRequestModal';
 import './LoginForm.css';
 
 const LoginForm = ({ onLogin }) => {
@@ -9,6 +10,7 @@ const LoginForm = ({ onLogin }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAccessRequest, setShowAccessRequest] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +39,11 @@ const LoginForm = ({ onLogin }) => {
         <div className="login-header">
           <h1>Planning Véhicules MagScene</h1>
           <p>{isRegister ? 'Créer un compte' : 'Connexion'}</p>
+          {isRegister && (
+            <small style={{ color: '#6b7280', fontSize: '13px', display: 'block', marginTop: '8px' }}>
+              ⚠️ Seuls les emails autorisés par un administrateur peuvent créer un compte
+            </small>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -92,7 +99,24 @@ const LoginForm = ({ onLogin }) => {
           >
             {isRegister ? 'Déjà un compte ? Se connecter' : 'Créer un compte'}
           </button>
+
+          <button
+            type="button"
+            className="access-request-button"
+            onClick={() => setShowAccessRequest(true)}
+          >
+            Pas encore d'accès ? Faire une demande
+          </button>
         </form>
+
+        {showAccessRequest && (
+          <AccessRequestModal
+            onClose={() => setShowAccessRequest(false)}
+            onSuccess={() => {
+              alert('✅ Demande envoyée avec succès !\n\nVous recevrez un email dès qu\'un administrateur aura validé votre demande.');
+            }}
+          />
+        )}
       </div>
     </div>
   );

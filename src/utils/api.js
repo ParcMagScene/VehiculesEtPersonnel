@@ -1,6 +1,55 @@
 // API Client pour communiquer avec le backend
 
-const API_URL = 'http://192.168.205.75:3002/api';
+// Détection automatique de l'URL du backend
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
+  
+  // Si on accède via DuckDNS, utiliser DuckDNS pour le backend aussi
+  if (hostname === 'magsav.duckdns.org') {
+    return 'http://magsav.duckdns.org:3002/api';
+  }
+  
+  // Sinon utiliser l'IP locale
+  return 'http://192.168.205.75:3002/api';
+};
+
+const API_URL = getApiUrl();
+
+// Convertir snake_case en camelCase
+function toCamelCase(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(item => toCamelCase(item));
+  }
+  
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  
+  const camelObj = {};
+  for (const key in obj) {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    camelObj[camelKey] = toCamelCase(obj[key]);
+  }
+  return camelObj;
+}
+
+// Convertir camelCase en snake_case
+function toSnakeCase(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(item => toSnakeCase(item));
+  }
+  
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  
+  const snakeObj = {};
+  for (const key in obj) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    snakeObj[snakeKey] = toSnakeCase(obj[key]);
+  }
+  return snakeObj;
+}
 
 class ApiClient {
   constructor() {
@@ -49,7 +98,8 @@ class ApiClient {
       throw new Error(data.error || 'Erreur serveur');
     }
 
-    return data;
+    // Convertir les données de snake_case en camelCase
+    return toCamelCase(data);
   }
 
   // Authentification
@@ -115,14 +165,14 @@ class ApiClient {
   async createReservation(reservation) {
     return this.request('/reservations', {
       method: 'POST',
-      body: JSON.stringify(reservation),
+      body: JSON.stringify(toSnakeCase(reservation)),
     });
   }
 
   async updateReservation(id, reservation) {
     return this.request(`/reservations/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(reservation),
+      body: JSON.stringify(toSnakeCase(reservation)),
     });
   }
 
@@ -140,14 +190,14 @@ class ApiClient {
   async createMaintenance(maintenance) {
     return this.request('/maintenances', {
       method: 'POST',
-      body: JSON.stringify(maintenance),
+      body: JSON.stringify(toSnakeCase(maintenance)),
     });
   }
 
   async updateMaintenance(id, maintenance) {
     return this.request(`/maintenances/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(maintenance),
+      body: JSON.stringify(toSnakeCase(maintenance)),
     });
   }
 
@@ -272,6 +322,82 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(value),
     });
+  }
+
+  // Gestion des utilisateurs (admin)
+  async getAuthorizedEmails() {
+    return this.request('/admin/authorized-emails');
+  }
+
+  async addAuthorizedEmail(email) {
+    return this.request('/admin/authorized-emails', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async removeAuthorizedEmail(id) {
+    return this.request(`/admin/authorized-emails/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getUsers() {
+    return this.request('/admin/users');
+  }
+
+  async resetUserPassword(userId, newPassword) {
+    return this.request('/admin/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ userId, newPassword }),
+    });
+  }
+
+  async changePassword(currentPassword, newPassword) {
+    return this.request('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
+  // Configuration Google Calendar
+  async getGoogleClientId() {
+    return this.request('/config/google/client-id');
+  }
+
+  async getGoogleCalendarId() {
+    return this.request('/config/google/calendar-id');
+  }
+
+  async saveGoogleClientId(value) {
+    return this.request('/config/google/client-id', {
+      method: 'POST',
+      body: JSON.stringify({ value }),
+    });
+  }
+
+  async saveGoogleCalendarId(value) {
+    return this.request('/config/google/calendar-id', {
+      method: 'POST',
+      body: JSON.stringify({ value }),
+    });
+  }
+
+  // ============ DEMANDES D'ACCÈS ============
+
+  async getAccessRequests() {
+    return this.request('/access-requests');
+  }
+
+  async updateAccessRequest(requestId, status) {
+    return this.request(`/access-requests/${requestId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async getPendingAccessRequestsCount() {
+    return this.request('/access-requests/count/pending');
   }
 }
 

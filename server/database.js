@@ -24,6 +24,20 @@ function initializeDatabase() {
     )
   `);
 
+  // Table des demandes d'accès
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS access_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL,
+      name TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      reviewed_by INTEGER,
+      reviewed_at DATETIME,
+      FOREIGN KEY (reviewed_by) REFERENCES users(id)
+    )
+  `);
+
   // Table des véhicules
   db.exec(`
     CREATE TABLE IF NOT EXISTS vehicles (
@@ -55,13 +69,17 @@ function initializeDatabase() {
       id TEXT PRIMARY KEY,
       vehicle_id TEXT NOT NULL,
       start_date TEXT NOT NULL,
+      start_period TEXT DEFAULT 'AM',
       end_date TEXT NOT NULL,
+      end_period TEXT DEFAULT 'PM',
       client_name TEXT,
       driver_name TEXT,
-      pickup_location TEXT,
-      return_location TEXT,
+      location_name TEXT,
+      prestation_name TEXT,
       notes TEXT,
       google_event_id TEXT,
+      affaire TEXT,
+      is_tournee BOOLEAN DEFAULT 0,
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
@@ -144,18 +162,24 @@ function initializeDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS maintenances (
       id TEXT PRIMARY KEY,
-      vehicle_id TEXT NOT NULL,
-      type TEXT NOT NULL,
-      status TEXT NOT NULL,
+      vehicle_id TEXT,
+      vehicle_name TEXT,
+      type TEXT,
+      status TEXT,
       date TEXT NOT NULL,
+      end_date TEXT,
       description TEXT,
-      garage TEXT,
+      garage_id INTEGER,
       cost REAL,
+      mileage INTEGER,
+      notes TEXT,
+      is_immobilized BOOLEAN DEFAULT 0,
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+      FOREIGN KEY (garage_id) REFERENCES garages(id),
       FOREIGN KEY (created_by) REFERENCES users(id),
       FOREIGN KEY (modified_by) REFERENCES users(id)
     )
@@ -192,12 +216,18 @@ function initializeDatabase() {
 
 // Fonctions helper pour l'historique
 export function addToHistory(entityType, entityId, action, changes, userId, userName) {
+  // Si entityId est null ou undefined, ne pas enregistrer l'historique
+  if (!entityId) {
+    console.warn(`⚠️  Tentative d'ajout à l'historique sans entity_id pour ${entityType}`);
+    return;
+  }
+  
   const stmt = db.prepare(`
     INSERT INTO modification_history (entity_type, entity_id, action, changes, user_id, user_name)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
   
-  stmt.run(entityType, entityId, action, JSON.stringify(changes), userId, userName);
+  stmt.run(entityType, String(entityId), action, JSON.stringify(changes), userId, userName);
 }
 
 export function getHistory(entityType, entityId) {

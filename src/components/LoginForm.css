@@ -117,3 +117,22 @@
 .toggle-button:hover {
   color: #5568d3;
 }
+
+.access-request-button {
+  background: transparent;
+  border: 2px dashed #d1d5db;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.access-request-button:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background: #f0f4ff;
+}

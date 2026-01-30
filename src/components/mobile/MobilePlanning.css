@@ -1,0 +1,369 @@
+.mobile-planning {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #f9fafb;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-planning-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.month-nav-btn {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #374151;
+}
+
+.month-nav-btn:active {
+  background: #e5e7eb;
+}
+
+.today-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 14px;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.today-btn:active {
+  background: #5568d3;
+}
+
+.mobile-planning-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  text-transform: capitalize;
+  flex: 1;
+  text-align: center;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.close-button:active {
+  background: #f3f4f6;
+}
+
+.mobile-planning-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Wrapper scrollable horizontal et vertical */
+.mobile-planning-scroll-wrapper {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.mobile-planning-scroll-content {
+  min-width: fit-content;
+  display: flex;
+  flex-direction: column;
+}
+
+/* En-tête des jours - sticky */
+.mobile-days-header {
+  display: flex;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mobile-day-column {
+  flex: 1;
+  min-width: 80px;
+  padding: 12px 4px;
+  text-align: center;
+  border-right: 1px solid #e5e7eb;
+}
+
+.mobile-day-column.today {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.mobile-day-column.today .mobile-day-name,
+.mobile-day-column.today .mobile-day-date {
+  color: white;
+}
+
+.mobile-day-column:last-child {
+  border-right: none;
+}
+
+.mobile-day-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.mobile-day-date {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 2px;
+}
+
+/* Grille des véhicules */
+.mobile-planning-vehicles {
+  flex: 1;
+}
+
+.mobile-vehicle-row {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.mobile-vehicle-label-wrapper {
+  position: sticky;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.mobile-vehicle-label {
+  padding: 6px 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 0 auto;
+  pointer-events: auto;
+}
+
+.mobile-vehicle-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.mobile-vehicle-registration {
+  font-size: 10px;
+  color: #6b7280;
+  font-family: 'Monaco', monospace;
+  background: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.mobile-days-grid {
+  display: grid;
+  grid-auto-flow: dense;
+  grid-template-rows: 60px;
+  grid-auto-rows: 0;
+  min-width: fit-content;
+  gap: 0;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-day-cell {
+  width: 80px;
+  height: 60px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.mobile-day-cell:last-child {
+  border-right: none;
+}
+
+/* Items de réservation */
+.mobile-reservation {
+  border-radius: 4px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 56px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 2px;
+  z-index: 1;
+  color: white;
+}
+
+.mobile-item-icon {
+  flex-shrink: 0;
+}
+
+.mobile-reservation .mobile-item-icon {
+  color: white;
+  align-self: flex-start;
+}
+
+.mobile-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-item-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #111827;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.mobile-item-subtitle {
+  font-size: 10px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.mobile-reservation .mobile-item-title {
+  color: white;
+}
+
+.mobile-reservation .mobile-item-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Items de maintenance */
+.mobile-maintenance {
+  border-radius: 4px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-left: 3px solid;
+  height: 56px;
+  margin: 2px;
+  z-index: 2;
+}
+
+.mobile-maintenance-reported {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.mobile-maintenance-reported .mobile-item-icon {
+  color: #dc2626;
+}
+
+.mobile-maintenance-reported .mobile-item-subtitle {
+  color: #dc2626;
+}
+
+.mobile-maintenance-scheduled {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.mobile-maintenance-scheduled .mobile-item-icon {
+  color: #d97706;
+}
+
+.mobile-maintenance-scheduled .mobile-item-subtitle {
+  color: #d97706;
+}
+
+.mobile-maintenance-in_progress {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.mobile-maintenance-in_progress .mobile-item-icon {
+  color: #2563eb;
+}
+
+.mobile-maintenance-in_progress .mobile-item-subtitle {
+  color: #2563eb;
+}
+
+.mobile-maintenance-pending {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+}
+
+.mobile-maintenance-pending .mobile-item-icon {
+  color: #7c3aed;
+}
+
+.mobile-maintenance-pending .mobile-item-subtitle {
+  color: #7c3aed;
+}
+
+.mobile-maintenance-completed {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.mobile-maintenance-completed .mobile-item-icon {
+  color: #059669;
+}
+
+.mobile-maintenance-completed .mobile-item-subtitle {
+  color: #059669;
+}
+
+/* Scrollbars */
+.mobile-planning-scroll::-webkit-scrollbar,
+.mobile-day-cell::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.mobile-planning-scroll::-webkit-scrollbar-track,
+.mobile-day-cell::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-planning-scroll::-webkit-scrollbar-thumb,
+.mobile-day-cell::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}

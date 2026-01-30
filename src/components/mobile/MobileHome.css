@@ -1,0 +1,201 @@
+.mobile-home {
+  padding-bottom: 2rem;
+}
+
+.home-title {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+  color: #1f2937;
+}
+
+/* Statistiques */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.stat-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.available {
+  cursor: pointer;
+}
+
+.stat-card.reservations {
+  cursor: pointer;
+}
+
+.stat-chevron {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #9ca3af;
+}
+
+.stat-card svg {
+  color: #667eea;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card.available svg { color: #10b981; }
+.stat-card.reservations svg { color: #3b82f6; }
+.stat-card.pending svg { color: #f59e0b; }
+.stat-card.in-progress svg { color: #8b5cf6; }
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Actions rapides */
+.quick-actions {
+  margin-bottom: 2rem;
+}
+
+.quick-actions h3 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.action-card {
+  width: 100%;
+  background: white;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.action-card:active {
+  transform: scale(0.98);
+}
+
+.action-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.action-icon.maintenance {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.action-content {
+  flex: 1;
+  text-align: left;
+}
+
+.action-title {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.action-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.action-chevron {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+/* Prochaines réservations */
+.upcoming-section {
+  margin-bottom: 2rem;
+}
+
+.upcoming-section h3 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.upcoming-list {
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.upcoming-item {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.upcoming-item:last-child {
+  border-bottom: none;
+}
+
+.upcoming-icon {
+  width: 40px;
+  height: 40px;
+  background: #ede9fe;
+  color: #667eea;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.upcoming-content {
+  flex: 1;
+}
+
+.upcoming-title {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.upcoming-date {
+  font-size: 0.875rem;
+  color: #6b7280;
+}

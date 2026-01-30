@@ -8,6 +8,8 @@ import GoogleCalendarBanner from './components/GoogleCalendarBanner';
 import MaintenanceDialog from './components/MaintenanceDialog';
 import VehicleDetailsModal from './components/VehicleDetailsModal';
 import LoginForm from './components/LoginForm';
+import MobileApp from './components/mobile/MobileApp';
+import PlanningView from './components/PlanningView';
 import api from './utils/api';
 import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
@@ -24,6 +26,14 @@ const formatDateToString = (date) => {
 };
 
 function App() {
+  // Vérifier si on est sur l'interface mobile
+  const isMobilePath = window.location.pathname === '/mobile' || window.location.hash === '#/mobile';
+  
+  // Si mobile, afficher uniquement MobileApp
+  if (isMobilePath) {
+    return <MobileApp />;
+  }
+  
   const [view, setView] = useState('week'); // 'week', 'month', 'year'
   const [currentDate, setCurrentDate] = useState(new Date());
   const [vehicles, setVehicles] = useState([]);
@@ -455,29 +465,48 @@ function App() {
         onRequestEditReservation={setReservationToEdit}
       />
 
-      <Calendar
-        view={view}
-        setView={setView}
-        currentDate={currentDate}
-        setCurrentDate={setCurrentDate}
-        vehicles={vehicles}
-        reservations={reservations}
-        maintenances={maintenances}
-        onAddReservation={addReservation}
-        onUpdateReservation={updateReservation}
-        onScroll={handleCalendarScroll}
-        onDeleteReservation={deleteReservation}
-        clients={clients}
-        drivers={drivers}
-        locations={locations}
-        googleEvent={googleEventForReservation}
-        onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
-        googleEvents={googleEvents}
-        highlightedReservationIds={highlightedReservationIds}
-        reservationToEdit={reservationToEdit}
-        onReservationEditComplete={() => setReservationToEdit(null)}
-        onVehicleClick={setSelectedVehicleForDetails}
-      />
+      {view === 'planning' ? (
+        <PlanningView
+          vehicles={vehicles}
+          reservations={reservations}
+          maintenances={maintenances}
+          currentDate={currentDate}
+          onOpenReservation={(reservation) => {
+            const vehicle = vehicles.find(v => v.id === reservation.vehicleId);
+            if (vehicle) {
+              // TODO: Ouvrir modal de réservation si besoin
+              console.log('Open reservation', reservation);
+            }
+          }}
+          onOpenMaintenance={setSelectedVehicleForMaintenance}
+          clients={clients}
+          drivers={drivers}
+        />
+      ) : (
+        <Calendar
+          view={view}
+          setView={setView}
+          currentDate={currentDate}
+          setCurrentDate={setCurrentDate}
+          vehicles={vehicles}
+          reservations={reservations}
+          maintenances={maintenances}
+          onAddReservation={addReservation}
+          onUpdateReservation={updateReservation}
+          onScroll={handleCalendarScroll}
+          onDeleteReservation={deleteReservation}
+          clients={clients}
+          drivers={drivers}
+          locations={locations}
+          googleEvent={googleEventForReservation}
+          onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
+          googleEvents={googleEvents}
+          highlightedReservationIds={highlightedReservationIds}
+          reservationToEdit={reservationToEdit}
+          onReservationEditComplete={() => setReservationToEdit(null)}
+          onVehicleClick={setSelectedVehicleForDetails}
+        />
+      )}
 
       {showManagement && (
         <ManagementPanel
@@ -497,6 +526,7 @@ function App() {
           setGarages={setGarages}
           maintenances={maintenances}
           setMaintenances={setMaintenances}
+          currentUser={currentUser}
           onClose={() => setShowManagement(false)}
         />
       )}

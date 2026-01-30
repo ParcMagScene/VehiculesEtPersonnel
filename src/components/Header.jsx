@@ -7,7 +7,7 @@ import MonthSelector from './MonthSelector';
 import WeekSelector from './WeekSelector';
 import YearSelector from './YearSelector';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [] }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [showMonthSelector, setShowMonthSelector] = useState(false);
@@ -380,10 +380,44 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             </div>
           </div>
 
-          <button className="management-button" onClick={onOpenManagement} aria-label="Ouvrir le panneau de gestion">
-            <Settings size={20} />
-            Gestion
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {currentUser && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px',
+                padding: '8px 15px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: 'white'
+              }}>
+                <span>👤 {currentUser.name}</span>
+                <button 
+                  onClick={onLogout}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    border: 'none',
+                    borderRadius: '5px',
+                    padding: '5px 10px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+                  onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
+                >
+                  Déconnexion
+                </button>
+              </div>
+            )}
+
+            <button className="management-button" onClick={onOpenManagement} aria-label="Ouvrir le panneau de gestion">
+              <Settings size={20} />
+              Gestion
+            </button>
+          </div>
         </div>
       </div>
     </div>

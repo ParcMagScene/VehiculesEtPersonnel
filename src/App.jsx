@@ -7,6 +7,8 @@ import ManagementPanel from './components/ManagementPanel';
 import GoogleCalendarBanner from './components/GoogleCalendarBanner';
 import MaintenanceDialog from './components/MaintenanceDialog';
 import VehicleDetailsModal from './components/VehicleDetailsModal';
+import LoginForm from './components/LoginForm';
+import api from './utils/api';
 import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
 import './App.css';
@@ -42,6 +44,8 @@ function App() {
   const [maintenanceToEdit, setMaintenanceToEdit] = useState(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [maintenanceActionType, setMaintenanceActionType] = useState(null); // 'schedule', 'request', 'breakdown'
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {
@@ -51,86 +55,81 @@ function App() {
       .map(r => r.id);
   }, [hoveredEventId, reservations]);
 
-  // Charger les données au démarrage
+  // Vérifier l'authentification au démarrage
   useEffect(() => {
-    const initializeData = async () => {
-      try {
-        // Charger depuis IndexedDB
-        let savedVehicles = await loadFromIndexedDB(STORES.vehicles, []);
-        let savedReservations = await loadFromIndexedDB(STORES.reservations, []);
-        let savedClients = await loadFromIndexedDB(STORES.clients, []);
-        let savedDrivers = await loadFromIndexedDB(STORES.drivers, []);
-        let savedLocations = await loadFromIndexedDB(STORES.locations, []);
-        let savedCalendarConfig = await loadFromIndexedDB(STORES.calendarConfig, { apiKey: '', calendarId: '' });
-        let savedGarages = await loadFromIndexedDB(STORES.garages, []);
-        let savedMaintenances = await loadFromIndexedDB(STORES.maintenances, []);
+    const checkAuth = async () => {
+      if (api.isAuthenticated()) {
+        const user = api.getCurrentUser();
+        setIsAuthenticated(true);
+        setCurrentUser(user);
+      }
+      setIsLoading(false);
+    };
+    checkAuth();
+  }, []);
 
-        // Charger les données initiales depuis initial_data.json SEULEMENT pour ce qui manque
-        if (savedVehicles.length === 0 || savedClients.length === 0 || savedDrivers.length === 0 || savedGarages.length === 0) {
-          console.log('📦 Chargement des données initiales manquantes...');
-          try {
-            const response = await fetch('/initial_data.json');
-            const initialData = await response.json();
-            
-            // Charger les véhicules SEULEMENT si vide
-            if (savedVehicles.length === 0 && initialData.vehicles && initialData.vehicles.length > 0) {
-              console.log(`✅ ${initialData.vehicles.length} véhicules chargés depuis initial_data.json`);
-              savedVehicles = initialData.vehicles;
-              await saveToIndexedDB(STORES.vehicles, savedVehicles);
-            }
-            
-            // Charger les réservations SEULEMENT si vide
-            if (savedReservations.length === 0 && initialData.reservations) {
-              console.log(`✅ ${initialData.reservations.length} réservations chargées`);
-              savedReservations = initialData.reservations;
-              await saveToIndexedDB(STORES.reservations, savedReservations);
-            }
-            
-            // Charger les clients SEULEMENT si vide
-            if (savedClients.length === 0 && initialData.clients) {
-              console.log(`✅ ${initialData.clients.length} clients chargés`);
-              savedClients = initialData.clients;
-              await saveToIndexedDB(STORES.clients, savedClients);
-            }
-            
-            // Charger les conducteurs SEULEMENT si vide
-            if (savedDrivers.length === 0 && initialData.drivers) {
-              console.log(`✅ ${initialData.drivers.length} conducteurs chargés`);
-              savedDrivers = initialData.drivers;
-              await saveToIndexedDB(STORES.drivers, savedDrivers);
-            }
-            
-            // Charger les garages SEULEMENT si vide
-            if (savedGarages.length === 0 && initialData.garages) {
-              console.log(`✅ ${initialData.garages.length} garages chargés`);
-              savedGarages = initialData.garages;
-              await saveToIndexedDB(STORES.garages, savedGarages);
-            }
-          } catch (fetchError) {
-            console.error('❌ Erreur chargement initial_data.json:', fetchError);
-          }
-        }
+  // Charger les données depuis l'API après authentification
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+
+    const loadDataFromAPI = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Charger toutes les données en parallèle
+        const [
+          vehiclesData,
+          reservationsData,
+          clientsData,
+          driversData,
+          locationsData,
+          garagesData,
+          maintenancesData,
+          configData
+        ] = await Promise.all([
+          api.getVehicles(),
+          api.getReservations(),
+          api.getClients(),
+          api.getDrivers(),
+          api.getLocations(),
+          api.getGarages(),
+          api.getMaintenances(),
+          api.getConfig('googleCalendar')
+        ]);
 
         // Trier les véhicules par ordre
-        const sortedVehicles = savedVehicles.sort((a, b) => (a.order || 0) - (b.order || 0));
+        const sortedVehicles = vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0));
 
         setVehicles(sortedVehicles);
-        setReservations(savedReservations);
-        setClients(savedClients);
-        setDrivers(savedDrivers);
-        setLocations(savedLocations);
-        setCalendarConfig(savedCalendarConfig);
-        setGarages(savedGarages);
-        setMaintenances(savedMaintenances);
+        setReservations(reservationsData);
+        setClients(clientsData);
+        setDrivers(driversData);
+        setLocations(locationsData);
+        setGarages(garagesData);
+        setMaintenances(maintenancesData);
+        
+        // Parser la configuration du calendrier
+        if (configData && configData.value) {
+          try {
+            const parsedConfig = JSON.parse(configData.value);
+            setCalendarConfig(parsedConfig);
+          } catch (e) {
+            setCalendarConfig({ apiKey: '', calendarId: '' });
+          }
+        }
       } catch (error) {
         console.error('❌ Erreur lors du chargement des données:', error);
+        // Si erreur d'authentification, déconnecter
+        if (error.message.includes('authentification') || error.message.includes('401')) {
+          handleLogout();
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    initializeData();
-  }, []);
+    loadDataFromAPI();
+  }, [isAuthenticated]);
 
   // Sauvegarder automatiquement
   useEffect(() => {
@@ -147,6 +146,9 @@ function App() {
       saveToIndexedDB(STORES.maintenances, maintenances);
     }
   }, [vehicles, reservations, clients, drivers, locations, calendarConfig, garages, maintenances, isLoading]);
+
+  // NOTE: Cette sauvegarde IndexedDB est conservée temporairement pour la compatibilité
+  // pendant la migration. Elle sera supprimée une fois la migration terminée.
 
   // Mettre à jour automatiquement les statuts des interventions selon les dates
   useEffect(() => {
@@ -238,7 +240,7 @@ function App() {
     return conflicts;
   };
 
-  const addReservation = (reservationData) => {
+  const addReservation = async (reservationData) => {
     // Gérer la création multiple (tableau) ou simple (objet)
     const reservationsToAdd = Array.isArray(reservationData) ? reservationData : [reservationData];
     
@@ -256,23 +258,29 @@ function App() {
         return false;
       }
       
-      // Créer une seule réservation avec date de début et de fin
-      newReservations.push({
-        id: Date.now() + Math.random(),
-        vehicleId,
-        date,
-        period,
-        endDate,
-        endPeriod,
-        ...otherData
-      });
+      // Créer la réservation via l'API
+      try {
+        const createdReservation = await api.createReservation({
+          vehicleId,
+          date,
+          period,
+          endDate,
+          endPeriod,
+          ...otherData
+        });
+        newReservations.push(createdReservation);
+      } catch (error) {
+        console.error('❌ Erreur création réservation:', error);
+        alert(`Erreur lors de la création de la réservation: ${error.message}`);
+        return false;
+      }
     }
     
     setReservations([...reservations, ...newReservations]);
     return true;
   };
 
-  const updateReservation = (id, updatedReservation) => {
+  const updateReservation = async (id, updatedReservation) => {
     // Trouver la réservation à modifier
     const oldReservation = reservations.find(r => r.id === id);
     if (!oldReservation) return false;
@@ -291,30 +299,77 @@ function App() {
       return false;
     }
 
-    // Remplacer la réservation existante par la version mise à jour
-    const updatedReservations = reservations.map(r => 
-      r.id === id ? { ...updatedReservation, id } : r
-    );
+    // Mettre à jour via l'API
+    try {
+      await api.updateReservation(id, { ...updatedReservation, id });
+      
+      // Mettre à jour localement
+      const updatedReservations = reservations.map(r => 
+        r.id === id ? { ...updatedReservation, id } : r
+      );
 
-    setReservations(updatedReservations);
-    return true;
-  };
-
-  const deleteReservation = (id) => {
-    setReservations(reservations.filter(r => r.id !== id));
-  };
-
-  const handleMaintenanceSave = (maintenance) => {
-    if (maintenance._deleted) {
-      // Suppression
-      setMaintenances(maintenances.filter(m => m.id !== maintenance.id));
-    } else if (maintenances.find(m => m.id === maintenance.id)) {
-      // Mise à jour
-      setMaintenances(maintenances.map(m => m.id === maintenance.id ? maintenance : m));
-    } else {
-      // Ajout
-      setMaintenances([...maintenances, maintenance]);
+      setReservations(updatedReservations);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur mise à jour réservation:', error);
+      alert(`Erreur lors de la mise à jour: ${error.message}`);
+      return false;
     }
+  };
+
+  const deleteReservation = async (id) => {
+    try {
+      await api.deleteReservation(id);
+      setReservations(reservations.filter(r => r.id !== id));
+    } catch (error) {
+      console.error('❌ Erreur suppression réservation:', error);
+      alert(`Erreur lors de la suppression: ${error.message}`);
+    }
+  };
+
+  const handleMaintenanceSave = async (maintenance) => {
+    try {
+      if (maintenance._deleted) {
+        // Suppression
+        await api.deleteMaintenance(maintenance.id);
+        setMaintenances(maintenances.filter(m => m.id !== maintenance.id));
+      } else if (maintenances.find(m => m.id === maintenance.id)) {
+        // Mise à jour
+        await api.updateMaintenance(maintenance.id, maintenance);
+        setMaintenances(maintenances.map(m => m.id === maintenance.id ? maintenance : m));
+      } else {
+        // Ajout
+        const created = await api.createMaintenance(maintenance);
+        setMaintenances([...maintenances, created]);
+      }
+    } catch (error) {
+      console.error('❌ Erreur gestion maintenance:', error);
+      alert(`Erreur: ${error.message}`);
+    }
+  };
+
+  const handleLogin = async (email, password) => {
+    try {
+      const result = await api.login(email, password);
+      setIsAuthenticated(true);
+      setCurrentUser(result.user);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleLogout = () => {
+    api.logout();
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setVehicles([]);
+    setReservations([]);
+    setClients([]);
+    setDrivers([]);
+    setLocations([]);
+    setGarages([]);
+    setMaintenances([]);
   };
 
   if (isLoading) {
@@ -324,6 +379,14 @@ function App() {
           <div className="loading-spinner"></div>
           <p>Chargement des données...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="app">
+        <LoginForm onLogin={handleLogin} />
       </div>
     );
   }
@@ -374,6 +437,8 @@ function App() {
           setSelectedVehicleForMaintenance(vehicle);
           setMaintenanceToEdit(maintenanceId);
         }}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
       
       <GoogleCalendarBanner 

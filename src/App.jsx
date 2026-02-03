@@ -631,6 +631,7 @@ function App() {
           reservations={reservations}
           maintenanceToEdit={maintenanceToEdit}
           actionType={maintenanceActionType}
+          currentUser={currentUser}
           onSave={handleMaintenanceSave}
           onClose={() => {
             setSelectedVehicleForMaintenance(null);
@@ -644,6 +645,7 @@ function App() {
         <VehicleDetailsModal
           vehicle={selectedVehicleForDetails}
           maintenances={maintenances}
+          currentUser={currentUser}
           onClose={() => setSelectedVehicleForDetails(null)}
           onRequestMaintenance={handleRequestMaintenance}
           onReportBreakdown={handleReportBreakdown}

@@ -293,6 +293,136 @@ app.delete('/api/reservations/:id', authenticateToken, (req, res) => {
   }
 });
 
+// ============ DEMANDES DE RÉSERVATION ============
+
+app.get('/api/reservation-requests', authenticateToken, (req, res) => {
+  try {
+    const stmt = db.prepare(`
+      SELECT rr.*, u.name as requester_name, u.email as requester_email
+      FROM reservation_requests rr
+      LEFT JOIN users u ON rr.requested_by = u.id
+      ORDER BY rr.requested_at DESC
+    `);
+    const requests = stmt.all();
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/reservation-requests', authenticateToken, (req, res) => {
+  try {
+    const request = req.body;
+    const stmt = db.prepare(`
+      INSERT INTO reservation_requests (id, vehicle_id, start_date, start_period, end_date, end_period,
+                                       client_name, driver_name, location_name, prestation_name, notes, requested_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run(
+      request.id,
+      request.vehicle_id,
+      request.start_date,
+      request.start_period || 'AM',
+      request.end_date,
+      request.end_period || 'PM',
+      request.client_name || '',
+      request.driver_name || '',
+      request.location_name || '',
+      request.prestation_name || '',
+      request.notes || '',
+      req.user.id
+    );
+    
+    res.json({ success: true, id: request.id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/reservation-requests/:id/approve', authenticateToken, (req, res) => {
+  try {
+    // Vérifier que l'utilisateur est admin
+    const userStmt = db.prepare('SELECT is_admin FROM users WHERE id = ?');
+    const user = userStmt.get(req.user.id);
+    
+    if (!user || !user.is_admin) {
+      return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+    }
+
+    // Récupérer la demande
+    const requestStmt = db.prepare('SELECT * FROM reservation_requests WHERE id = ?');
+    const request = requestStmt.get(req.params.id);
+    
+    if (!request) {
+      return res.status(404).json({ error: 'Demande introuvable' });
+    }
+
+    // Créer la réservation
+    const insertStmt = db.prepare(`
+      INSERT INTO reservations (id, vehicle_id, start_date, start_period, end_date, end_period,
+                               client_name, driver_name, location_name, prestation_name, notes,
+                               created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    insertStmt.run(
+      request.id,
+      request.vehicle_id,
+      request.start_date,
+      request.start_period,
+      request.end_date,
+      request.end_period,
+      request.client_name,
+      request.driver_name,
+      request.location_name,
+      request.prestation_name,
+      request.notes,
+      req.user.id,
+      req.user.id
+    );
+
+    // Mettre à jour le statut de la demande
+    const updateStmt = db.prepare(`
+      UPDATE reservation_requests 
+      SET status = 'approved', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    updateStmt.run(req.user.id, req.params.id);
+    
+    addToHistory('reservation_request', req.params.id, 'approved', request, req.user.id, req.user.name);
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/reservation-requests/:id/reject', authenticateToken, (req, res) => {
+  try {
+    // Vérifier que l'utilisateur est admin
+    const userStmt = db.prepare('SELECT is_admin FROM users WHERE id = ?');
+    const user = userStmt.get(req.user.id);
+    
+    if (!user || !user.is_admin) {
+      return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+    }
+
+    const updateStmt = db.prepare(`
+      UPDATE reservation_requests 
+      SET status = 'rejected', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, rejection_reason = ?
+      WHERE id = ?
+    `);
+    updateStmt.run(req.user.id, req.body.reason || '', req.params.id);
+    
+    addToHistory('reservation_request', req.params.id, 'rejected', { reason: req.body.reason }, req.user.id, req.user.name);
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============ MAINTENANCES ============
 
 app.get('/api/maintenances', authenticateToken, (req, res) => {
@@ -638,6 +768,120 @@ app.get('/api/access-requests/count/pending', authenticateToken, (req, res) => {
     res.json({ count: result.count });
   } catch (error) {
     console.error('Erreur comptage demandes:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ============ GESTION DES EMAILS AUTORISÉS (ADMIN) ============
+
+// Récupérer tous les emails autorisés
+app.get('/api/authorized-emails', authenticateToken, (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT * FROM authorized_emails ORDER BY created_at DESC');
+    const emails = stmt.all();
+    res.json(emails);
+  } catch (error) {
+    console.error('Erreur récupération emails:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Ajouter un email autorisé (admin)
+app.post('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+    
+    // Vérifier si l'email existe déjà
+    const checkStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ?');
+    const existing = checkStmt.get(email);
+    
+    if (existing) {
+      return res.status(400).json({ error: 'Cet email est déjà autorisé' });
+    }
+    
+    const stmt = db.prepare('INSERT INTO authorized_emails (email, status) VALUES (?, ?)');
+    const result = stmt.run(email, 'pending');
+    
+    res.json({ id: result.lastInsertRowid, email, status: 'pending' });
+  } catch (error) {
+    console.error('Erreur ajout email:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer un email autorisé (admin)
+app.delete('/api/authorized-emails/:id', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const stmt = db.prepare('DELETE FROM authorized_emails WHERE id = ?');
+    stmt.run(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur suppression email:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ============ GESTION DES UTILISATEURS (ADMIN) ============
+
+// Récupérer tous les utilisateurs
+app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT id, email, name, is_admin, created_at FROM users ORDER BY created_at DESC');
+    const users = stmt.all();
+    res.json(users.map(u => ({
+      ...u,
+      isAdmin: u.is_admin === 1
+    })));
+  } catch (error) {
+    console.error('Erreur récupération utilisateurs:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Mettre à jour un utilisateur (admin)
+app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isAdmin, newPassword } = req.body;
+    
+    if (isAdmin !== undefined) {
+      const stmt = db.prepare('UPDATE users SET is_admin = ? WHERE id = ?');
+      stmt.run(isAdmin ? 1 : 0, id);
+    }
+    
+    if (newPassword) {
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+      stmt.run(passwordHash, id);
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur mise à jour utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer un utilisateur (admin)
+app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Empêcher la suppression de son propre compte
+    if (parseInt(id) === req.user.id) {
+      return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' });
+    }
+    
+    const stmt = db.prepare('DELETE FROM users WHERE id = ?');
+    stmt.run(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur suppression utilisateur:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

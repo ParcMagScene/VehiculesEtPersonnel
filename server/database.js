@@ -230,6 +230,32 @@ function initializeDatabase() {
     )
   `);
 
+  // Table des demandes de réservation (pour les non-admins)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reservation_requests (
+      id TEXT PRIMARY KEY,
+      vehicle_id TEXT NOT NULL,
+      start_date TEXT NOT NULL,
+      start_period TEXT DEFAULT 'AM',
+      end_date TEXT NOT NULL,
+      end_period TEXT DEFAULT 'PM',
+      client_name TEXT,
+      driver_name TEXT,
+      location_name TEXT,
+      prestation_name TEXT,
+      notes TEXT,
+      status TEXT DEFAULT 'pending',
+      requested_by INTEGER NOT NULL,
+      requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      reviewed_by INTEGER,
+      reviewed_at DATETIME,
+      rejection_reason TEXT,
+      FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+      FOREIGN KEY (requested_by) REFERENCES users(id),
+      FOREIGN KEY (reviewed_by) REFERENCES users(id)
+    )
+  `);
+
   console.log('✅ Base de données initialisée');
 }
 

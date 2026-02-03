@@ -182,9 +182,12 @@ function MobilePlanning({
     switch(status) {
       case 'reported': return '#ef4444';
       case 'scheduled': return '#f59e0b';
-      case 'in_progress': return '#3b82f6';
-      case 'pending': return '#8b5cf6';
-      case 'completed': return '#10b981';
+      case 'in_progress':
+      case 'IN_PROGRESS': return '#3b82f6';
+      case 'pending':
+      case 'PENDING': return '#8b5cf6';
+      case 'completed':
+      case 'COMPLETED': return '#10b981';
       default: return '#6b7280';
     }
   };

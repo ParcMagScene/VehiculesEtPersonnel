@@ -59,6 +59,31 @@ const UserManagement = () => {
     }
   };
 
+  const handleToggleAdmin = async (userId, currentIsAdmin) => {
+    const action = currentIsAdmin ? 'retirer les droits admin' : 'donner les droits admin';
+    if (!confirm(`Voulez-vous vraiment ${action} à cet utilisateur ?`)) return;
+
+    try {
+      await api.updateUser(userId, { isAdmin: !currentIsAdmin });
+      alert('Droits modifiés avec succès');
+      loadData();
+    } catch (error) {
+      alert(`Erreur: ${error.message}`);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.')) return;
+
+    try {
+      await api.deleteUser(userId);
+      alert('Utilisateur supprimé avec succès');
+      loadData();
+    } catch (error) {
+      alert(`Erreur: ${error.message}`);
+    }
+  };
+
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!newPassword || newPassword.length < 4) {
@@ -67,7 +92,7 @@ const UserManagement = () => {
     }
 
     try {
-      await api.resetUserPassword(resetUserId, newPassword);
+      await api.updateUser(resetUserId, { newPassword });
       alert('Mot de passe réinitialisé avec succès');
       setResetUserId(null);
       setNewPassword('');
@@ -268,7 +293,7 @@ const UserManagement = () => {
                 <tr>
                   <th>Nom</th>
                   <th>Email</th>
-                  <th>Rôle</th>
+                  <th>Administrateur</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -278,51 +303,66 @@ const UserManagement = () => {
                     <td>{user.name}</td>
                     <td>{user.email}</td>
                     <td>
-                      {user.is_admin ? (
-                        <span className="role-badge admin">
-                          <Shield size={14} /> Admin
+                      <label className="admin-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={user.isAdmin || false}
+                          onChange={() => handleToggleAdmin(user.id, user.isAdmin)}
+                        />
+                        <span className="checkbox-label">
+                          {user.isAdmin ? (
+                            <><Shield size={14} /> Admin</>
+                          ) : (
+                            <><User size={14} /> Utilisateur</>
+                          )}
                         </span>
-                      ) : (
-                        <span className="role-badge user">
-                          <User size={14} /> Utilisateur
-                        </span>
-                      )}
+                      </label>
                     </td>
                     <td>
-                      {resetUserId === user.id ? (
-                        <form onSubmit={handleResetPassword} className="inline-form">
-                          <input
-                            type="text"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="Nouveau mot de passe"
-                            autoFocus
-                            minLength={4}
-                          />
-                          <button type="submit" className="btn-sm btn-primary">
-                            Valider
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setResetUserId(null);
-                              setNewPassword('');
-                            }}
-                            className="btn-sm btn-secondary"
-                          >
-                            Annuler
-                          </button>
-                        </form>
-                      ) : (
-                        <button
-                          onClick={() => setResetUserId(user.id)}
-                          className="btn-icon btn-warning"
-                          title="Réinitialiser le mot de passe"
-                          disabled={user.is_admin}
-                        >
-                          <RefreshCw size={16} />
-                        </button>
-                      )}
+                      <div className="action-buttons">
+                        {resetUserId === user.id ? (
+                          <form onSubmit={handleResetPassword} className="inline-form">
+                            <input
+                              type="text"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="Nouveau mot de passe"
+                              autoFocus
+                              minLength={4}
+                            />
+                            <button type="submit" className="btn-sm btn-primary">
+                              Valider
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setResetUserId(null);
+                                setNewPassword('');
+                              }}
+                              className="btn-sm btn-secondary"
+                            >
+                              Annuler
+                            </button>
+                          </form>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setResetUserId(user.id)}
+                              className="btn-icon btn-warning"
+                              title="Réinitialiser le mot de passe"
+                            >
+                              <RefreshCw size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="btn-icon btn-danger"
+                              title="Supprimer l'utilisateur"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

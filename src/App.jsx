@@ -273,7 +273,29 @@ function App() {
         return false;
       }
       
-      // Créer la réservation via l'API
+      // Si l'utilisateur n'est pas admin, créer une demande au lieu d'une réservation
+      if (!currentUser?.isAdmin) {
+        try {
+          await api.createReservationRequest({
+            id: `${Date.now()}.${Math.random()}`,
+            vehicleId,
+            date,
+            period,
+            endDate,
+            endPeriod,
+            ...otherData
+          });
+          
+          alert(`✅ Demande de réservation envoyée !\n\nVotre demande a été transmise aux administrateurs pour validation.\nVous serez notifié une fois qu'elle sera traitée.`);
+          return true;
+        } catch (error) {
+          console.error('❌ Erreur création demande:', error);
+          alert(`Erreur lors de la création de la demande: ${error.message}`);
+          return false;
+        }
+      }
+      
+      // Créer la réservation via l'API (admin uniquement)
       try {
         const createdReservation = await api.createReservation({
           vehicleId,

@@ -97,14 +97,27 @@ const UserManagement = () => {
       setResetUserId(null);
       setNewPassword('');
     } catch (error) {
-    
+      alert(`Erreur: ${error.message}`);
+    }
+  };
 
-  const handleApproveRequest = async (requestId) => {
-    if (!confirm('Approuver cette demande d\'accès ?')) return;
+  const handleApproveRequest = async (requestId, requestEmail) => {
+    // Demander confirmation d'approbation d'abord
+    if (!confirm(`Approuver la demande de ${requestEmail} ?`)) return;
+    
+    // Demander si on veut donner les droits admin
+    const giveAdminResponse = prompt(
+      `Donner les droits administrateur à cet utilisateur ?\n\nTapez "oui" pour administrateur, "non" pour utilisateur standard :`,
+      'non'
+    );
+    
+    if (giveAdminResponse === null) return; // Annulation
+    
+    const giveAdmin = giveAdminResponse.toLowerCase().trim() === 'oui';
 
     try {
-      await api.updateAccessRequest(requestId, 'approved');
-      alert('✅ Demande approuvée ! L\'utilisateur peut maintenant créer son compte.');
+      await api.updateAccessRequest(requestId, 'approved', giveAdmin);
+      alert(`✅ Demande approuvée ! L'utilisateur ${requestEmail} peut maintenant créer son compte${giveAdmin ? ' avec des droits administrateur' : ''}.`);
       loadData();
     } catch (error) {
       alert(`Erreur: ${error.message}`);
@@ -120,8 +133,6 @@ const UserManagement = () => {
       loadData();
     } catch (error) {
       alert(`Erreur: ${error.message}`);
-    }
-  };  alert(`Erreur: ${error.message}`);
     }
   };
 
@@ -158,7 +169,7 @@ const UserManagement = () => {
                 <div className="request-actions">
                   <button 
                     className="btn-approve"
-                    onClick={() => handleApproveRequest(request.id)}
+                    onClick={() => handleApproveRequest(request.id, request.email)}
                     title="Approuver"
                   >
                     <UserCheck size={18} /> Approuver
@@ -293,7 +304,7 @@ const UserManagement = () => {
                 <tr>
                   <th>Nom</th>
                   <th>Email</th>
-                  <th>Administrateur</th>
+                  <th>Droits</th>
                   <th>Actions</th>
                 </tr>
               </thead>

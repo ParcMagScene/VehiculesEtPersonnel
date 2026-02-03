@@ -43,6 +43,19 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, name, password } = req.body;
     
+    // Vérifier si la colonne is_admin existe dans authorized_emails
+    try {
+      const columns = db.prepare("PRAGMA table_info(authorized_emails)").all();
+      const hasIsAdminColumn = columns.some(col => col.name === 'is_admin');
+      
+      if (!hasIsAdminColumn) {
+        db.prepare("ALTER TABLE authorized_emails ADD COLUMN is_admin INTEGER DEFAULT 0").run();
+        console.log('✅ Colonne is_admin ajoutée à authorized_emails');
+      }
+    } catch (error) {
+      console.log('Info: Colonne is_admin déjà présente');
+    }
+    
     // Vérifier si l'email est autorisé
     const authStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = ?');
     const authorized = authStmt.get(email, 'pending');
@@ -53,14 +66,18 @@ app.post('/api/auth/register', async (req, res) => {
     
     const passwordHash = await bcrypt.hash(password, 10);
     
-    const stmt = db.prepare('INSERT INTO users (email, name, password_hash, is_admin) VALUES (?, ?, ?, 0)');
-    const result = stmt.run(email, name, passwordHash);
+    // Utiliser le flag is_admin de authorized_emails (ou 0 par défaut)
+    const isAdmin = authorized.is_admin || 0;
+    const stmt = db.prepare('INSERT INTO users (email, name, password_hash, is_admin) VALUES (?, ?, ?, ?)');
+    const result = stmt.run(email, name, passwordHash, isAdmin);
     
     // Marquer l'email comme activé
     const updateStmt = db.prepare('UPDATE authorized_emails SET status = ?, activated_at = CURRENT_TIMESTAMP WHERE email = ?');
     updateStmt.run('activated', email);
     
-    res.json({ id: result.lastInsertRowid, email, name });
+    console.log(`✅ Nouvel utilisateur enregistré: ${email} (admin: ${isAdmin ? 'oui' : 'non'})`);
+    
+    res.json({ id: result.lastInsertRowid, email, name, isAdmin: isAdmin === 1 });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -747,7 +764,7 @@ app.get('/api/access-requests', authenticateToken, (req, res) => {
 app.patch('/api/access-requests/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, is_admin } = req.body;
     
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Status invalide' });
@@ -774,16 +791,30 @@ app.patch('/api/access-requests/:id', authenticateToken, async (req, res) => {
 
     // Si approuvée, créer l'email autorisé
     if (status === 'approved') {
+      // Vérifier si la colonne is_admin existe, sinon l'ajouter
+      try {
+        const columns = db.prepare("PRAGMA table_info(authorized_emails)").all();
+        const hasIsAdminColumn = columns.some(col => col.name === 'is_admin');
+        
+        if (!hasIsAdminColumn) {
+          db.prepare("ALTER TABLE authorized_emails ADD COLUMN is_admin INTEGER DEFAULT 0").run();
+          console.log('✅ Colonne is_admin ajoutée à authorized_emails');
+        }
+      } catch (error) {
+        console.log('Info: Colonne is_admin déjà présente ou erreur:', error.message);
+      }
+
       const authStmt = db.prepare(`
-        INSERT INTO authorized_emails (email, name, status)
-        VALUES (?, ?, 'pending')
+        INSERT INTO authorized_emails (email, status, is_admin)
+        VALUES (?, 'pending', ?)
+        ON CONFLICT(email) DO UPDATE SET is_admin = excluded.is_admin
       `);
       
       try {
-        authStmt.run(request.email, request.name);
+        authStmt.run(request.email, is_admin ? 1 : 0);
+        console.log(`✅ Email autorisé: ${request.email} (admin: ${is_admin ? 'oui' : 'non'})`);
       } catch (error) {
-        // Si l'email existe déjà dans authorized_emails, pas grave
-        console.log('Email déjà autorisé:', request.email);
+        console.error('Erreur ajout email autorisé:', error);
       }
     }
 

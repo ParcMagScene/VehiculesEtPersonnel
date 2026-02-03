@@ -4,12 +4,20 @@ import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import './MaintenanceDialog.css';
 
-function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garages = [], reservations = [], maintenanceToEdit = null, actionType = null }) {
+function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garages = [], reservations = [], maintenanceToEdit = null, actionType = null, currentUser = null }) {
   // Trouver la maintenance à éditer dès le départ
   const maintenanceToEditData = maintenanceToEdit ? maintenances.find(m => m.id === maintenanceToEdit) : null;
   
-  // Déterminer le statut et le mode initial en fonction de actionType
+  // Vérifier les droits - les non-admins ne peuvent que signaler des pannes
+  const isAdmin = currentUser?.isAdmin === true;
+  const canSchedule = isAdmin;
+  const canOnlyReport = !isAdmin;
+  
+  // Déterminer le statut et le mode initial en fonction de actionType ET des droits
   const getInitialStatus = () => {
+    // Si l'utilisateur n'est pas admin, forcer le statut 'reported'
+    if (canOnlyReport) return 'reported';
+    
     if (maintenanceToEditData) return maintenanceToEditData.status;
     if (actionType === 'schedule') return 'scheduled';
     if (actionType === 'request') return 'pending';
@@ -18,6 +26,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
   
   const getInitialQuickReport = () => {
+    // Si l'utilisateur n'est pas admin, toujours en mode signalement rapide
+    if (canOnlyReport) return true;
+    
     if (maintenanceToEditData) return maintenanceToEditData.isQuickReport || false;
     return actionType === 'breakdown' || actionType === 'request';
   };
@@ -170,6 +181,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // RESTRICTION : Les non-admins ne peuvent créer que des signalements
+    if (canOnlyReport && formData.status !== 'reported') {
+      alert('❌ Accès refusé\n\nVous ne pouvez que signaler des pannes.\nPour programmer une intervention, contactez un administrateur.');
+      return;
+    }
     
     // Vérifier les conflits pour les interventions programmées
     if (!isQuickReport && !conflictWarning) {
@@ -324,35 +341,39 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               {!actionType && !(editingId && (maintenanceToEditData?.status === 'pending' || maintenanceToEditData?.status === 'reported' || maintenanceToEditData?.status === 'scheduled')) && 
                !formData.status && (
                 <div className="form-mode-selector">
-                  {/* Pour nouvelle intervention : afficher tous les choix */}
+                  {/* Pour nouvelle intervention : afficher les choix selon les droits */}
                   {!editingId && (
                     <>
-                      <label className="mode-option">
-                        <input
-                          type="radio"
-                          checked={!isQuickReport && formData.status === 'scheduled'}
-                          onChange={() => {
-                            setIsQuickReport(false);
-                            handleChange('isQuickReport', false);
-                            handleChange('status', 'scheduled');
-                          }}
-                        />
-                        <span>📅 Programmer une intervention</span>
-                      </label>
-                      <label className="mode-option">
-                        <input
-                          type="radio"
-                          checked={!isQuickReport && formData.status === 'pending'}
-                          onChange={() => {
-                            setIsQuickReport(false);
-                            handleChange('isQuickReport', false);
-                            handleChange('status', 'pending');
-                            handleChange('startDate', '');
-                            handleChange('endDate', '');
-                          }}
-                        />
-                        <span>📝 Demander une intervention</span>
-                      </label>
+                      {canSchedule && (
+                        <>
+                          <label className="mode-option">
+                            <input
+                              type="radio"
+                              checked={!isQuickReport && formData.status === 'scheduled'}
+                              onChange={() => {
+                                setIsQuickReport(false);
+                                handleChange('isQuickReport', false);
+                                handleChange('status', 'scheduled');
+                              }}
+                            />
+                            <span>📅 Programmer une intervention</span>
+                          </label>
+                          <label className="mode-option">
+                            <input
+                              type="radio"
+                              checked={!isQuickReport && formData.status === 'pending'}
+                              onChange={() => {
+                                setIsQuickReport(false);
+                                handleChange('isQuickReport', false);
+                                handleChange('status', 'pending');
+                                handleChange('startDate', '');
+                                handleChange('endDate', '');
+                              }}
+                            />
+                            <span>📝 Demander une intervention</span>
+                          </label>
+                        </>
+                      )}
                       <label className="mode-option">
                         <input
                           type="radio"
@@ -367,6 +388,11 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                         />
                         <span>⚠️ Signaler une panne</span>
                       </label>
+                      {canOnlyReport && (
+                        <p className="info-message">
+                          ℹ️ Vous ne pouvez que signaler des pannes. Pour programmer une intervention, contactez un administrateur.
+                        </p>
+                      )}
                     </>
                   )}
                 </div>

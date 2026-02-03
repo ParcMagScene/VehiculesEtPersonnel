@@ -8,9 +8,13 @@ const VehicleDetailsModal = ({
   onClose, 
   onRequestMaintenance,
   onReportBreakdown,
-  onScheduleMaintenance
+  onScheduleMaintenance,
+  currentUser
 }) => {
   if (!vehicle) return null;
+  
+  // Vérifier les droits d'administration
+  const isAdmin = currentUser?.isAdmin === true;
 
   // Filtrer les maintenances de ce véhicule
   const vehicleMaintenances = maintenances
@@ -134,26 +138,30 @@ const VehicleDetailsModal = ({
 
           {/* Boutons d'action */}
           <div className="action-buttons">
-            <button 
-              className="action-btn schedule-btn"
-              onClick={() => {
-                onScheduleMaintenance(vehicle);
-                onClose();
-              }}
-            >
-              <Calendar size={20} />
-              Programmer une intervention
-            </button>
-            <button 
-              className="action-btn maintenance-btn"
-              onClick={() => {
-                onRequestMaintenance(vehicle);
-                onClose();
-              }}
-            >
-              <Wrench size={20} />
-              Demander une intervention
-            </button>
+            {isAdmin && (
+              <>
+                <button 
+                  className="action-btn schedule-btn"
+                  onClick={() => {
+                    onScheduleMaintenance(vehicle);
+                    onClose();
+                  }}
+                >
+                  <Calendar size={20} />
+                  Programmer une intervention
+                </button>
+                <button 
+                  className="action-btn maintenance-btn"
+                  onClick={() => {
+                    onRequestMaintenance(vehicle);
+                    onClose();
+                  }}
+                >
+                  <Wrench size={20} />
+                  Demander une intervention
+                </button>
+              </>
+            )}
             <button 
               className="action-btn breakdown-btn"
               onClick={() => {
@@ -164,6 +172,11 @@ const VehicleDetailsModal = ({
               <AlertTriangle size={20} />
               Signaler une panne
             </button>
+            {!isAdmin && (
+              <p className="info-message">
+                ℹ️ Vous ne pouvez que signaler des pannes. Pour programmer une intervention, contactez un administrateur.
+              </p>
+            )}
           </div>
 
           {/* Section Historique */}

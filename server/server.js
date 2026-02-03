@@ -461,6 +461,15 @@ app.get('/api/maintenances', authenticateToken, (req, res) => {
 app.post('/api/maintenances', authenticateToken, (req, res) => {
   try {
     const maintenance = req.body;
+    
+    // VALIDATION : Les non-admins ne peuvent créer que des signalements (status='reported')
+    if (!req.user.is_admin && maintenance.status !== 'reported') {
+      return res.status(403).json({ 
+        error: 'Accès refusé',
+        message: 'Vous ne pouvez que signaler des pannes. Pour programmer une intervention, contactez un administrateur.'
+      });
+    }
+    
     const stmt = db.prepare(`
       INSERT INTO maintenances (id, vehicle_id, vehicle_name, type, status, date, end_date, 
                                description, garage_id, cost, mileage, notes, is_immobilized, 
@@ -497,6 +506,31 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
 app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
   try {
     const maintenance = req.body;
+    
+    // VALIDATION : Les non-admins ne peuvent modifier que leurs propres signalements
+    if (!req.user.is_admin) {
+      // Vérifier si la maintenance appartient à l'utilisateur
+      const existing = db.prepare('SELECT created_by, status FROM maintenances WHERE id = ?').get(req.params.id);
+      
+      if (!existing) {
+        return res.status(404).json({ error: 'Maintenance introuvable' });
+      }
+      
+      if (existing.created_by !== req.user.id) {
+        return res.status(403).json({ 
+          error: 'Accès refusé',
+          message: 'Vous ne pouvez modifier que vos propres signalements.'
+        });
+      }
+      
+      if (maintenance.status !== 'reported') {
+        return res.status(403).json({ 
+          error: 'Accès refusé',
+          message: 'Vous ne pouvez que signaler des pannes.'
+        });
+      }
+    }
+    
     const stmt = db.prepare(`
       UPDATE maintenances 
       SET vehicle_id = ?, type = ?, status = ?, date = ?, end_date = ?, description = ?, 

@@ -197,6 +197,10 @@ class ApiClient {
     return this.request('/reservation-requests');
   }
 
+  async getReservationRequests() {
+    return this.request('/reservation-requests');
+  }
+
   async createReservationRequest(request) {
     return this.request('/reservation-requests', {
       method: 'POST',

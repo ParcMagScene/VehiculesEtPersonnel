@@ -81,15 +81,17 @@ function QRCodeModal({ onClose }) {
               margin-bottom: 6px;
             }
             .qr-logo {
-              width: 50px;
+              width: 80px;
               height: 50px;
               margin: 0 auto 6px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              border-radius: 10px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 24px;
+            }
+            .qr-logo img {
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
             }
             .qr-header h1 {
               font-size: 16px;
@@ -160,7 +162,9 @@ function QRCodeModal({ onClose }) {
             ${[1, 2, 3, 4].map(() => `
               <div class="qr-card">
                 <div class="qr-header">
-                  <div class="qr-logo">🚗</div>
+                  <div class="qr-logo">
+                    <img src="/Logos/LogoMagSceneBLACK.gif" alt="MagScene Logo" />
+                  </div>
                   <h1>MagScene</h1>
                   <h2>Interface Mobile</h2>
                 </div>

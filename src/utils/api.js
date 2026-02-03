@@ -452,10 +452,10 @@ class ApiClient {
     return this.request('/access-requests');
   }
 
-  async updateAccessRequest(requestId, status) {
+  async updateAccessRequest(requestId, status, isAdmin = false) {
     return this.request(`/access-requests/${requestId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, is_admin: isAdmin }),
     });
   }
 

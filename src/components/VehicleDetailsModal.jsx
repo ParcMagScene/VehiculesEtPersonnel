@@ -31,9 +31,13 @@ const VehicleDetailsModal = ({
       'planned': { label: 'Planifiée', className: 'status-planned' },
       'scheduled': { label: 'Programmée', className: 'status-planned' },
       'in-progress': { label: 'En cours', className: 'status-in-progress' },
+      'in_progress': { label: 'En cours', className: 'status-in-progress' },
+      'IN_PROGRESS': { label: 'En cours', className: 'status-in-progress' },
       'completed': { label: 'Terminée', className: 'status-completed' },
+      'COMPLETED': { label: 'Terminée', className: 'status-completed' },
       'cancelled': { label: 'Annulée', className: 'status-cancelled' },
       'pending': { label: 'En attente', className: 'status-in-progress' },
+      'PENDING': { label: 'En attente', className: 'status-in-progress' },
       'reported': { label: 'Signalée', className: 'status-cancelled' }
     };
     
@@ -47,7 +51,11 @@ const VehicleDetailsModal = ({
       'repair': 'Réparation',
       'inspection': 'Contrôle technique',
       'technical_inspection': 'Contrôle technique',
-      'breakdown': 'Panne'
+      'breakdown': 'Panne',
+      'revision': 'Révision',
+      'internal': 'Intervention interne',
+      'external': 'Intervention externe',
+      'other': 'Panne'
     };
     return types[type] || type;
   };

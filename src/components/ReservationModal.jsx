@@ -17,6 +17,7 @@ const ReservationModal = ({
   onClose,
   googleEvent, // Événement Google pour mode multi-véhicules
   googleEvents = [], // Liste de tous les événements Google disponibles
+  currentUser,
 }) => {
   const isEdit = !!reservation;
   const isMultiVehicle = !!googleEvent && !isEdit; // Mode multi-véhicules seulement en création
@@ -1003,7 +1004,7 @@ const ReservationModal = ({
             </button>
             {!isEdit && (
               <button type="submit" className="submit-button">
-                Créer
+                {currentUser?.isAdmin ? 'Créer' : 'Demander'}
               </button>
             )}
             {isEdit && (hasChanges || formData.isTournee) && (

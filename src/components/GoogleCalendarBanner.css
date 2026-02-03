@@ -16,6 +16,7 @@
 
 .google-calendar-banner-grid.closed {
   border-bottom: 2px solid #3b82f6;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 /* Mode fermé : une seule ligne avec le bouton */
@@ -27,6 +28,7 @@
 .google-calendar-banner-grid.closed .calendar-banner {
   height: 35px;
   min-height: 35px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .google-calendar-banner-grid.closed .banner-vehicle-header {
@@ -34,6 +36,8 @@
   font-size: 0.8rem;
   padding: 0 1rem;
   align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
 .google-calendar-banner-grid.closed .banner-grid,

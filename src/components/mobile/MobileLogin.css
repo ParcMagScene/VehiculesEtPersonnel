@@ -107,6 +107,43 @@
   cursor: not-allowed;
 }
 
+.toggle-mode-button {
+  padding: 0.75rem;
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-mode-button:hover {
+  background: #667eea;
+  color: white;
+}
+
+.access-request-button {
+  padding: 0.75rem;
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.access-request-button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
 .login-footer {
   margin-top: 2rem;
   text-align: center;

@@ -5,6 +5,19 @@ import { ArrowLeft, Car, Calendar, Users, MapPin, Plus } from 'lucide-react';
 import api from '../../utils/api';
 import './MobileReservations.css';
 
+// Fonction pour formater une date en toute sécurité
+const safeFormatDate = (dateValue, formatStr = 'dd MMM yyyy') => {
+  try {
+    if (!dateValue) return 'Date invalide';
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return 'Date invalide';
+    return format(date, formatStr, { locale: fr });
+  } catch (error) {
+    console.error('Erreur formatage date:', dateValue, error);
+    return 'Date invalide';
+  }
+};
+
 const MobileReservations = forwardRef(({ vehicles, reservations, clients, drivers, currentUser, onReservationCreated, onBack }, ref) => {
   const [showForm, setShowForm] = useState(false);
   const [openedDirectly, setOpenedDirectly] = useState(false);
@@ -56,9 +69,14 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
     }
   };
 
-  const myReservations = reservations
-    .filter(r => new Date(r.endDate) >= new Date())
-    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+  const myReservations = (reservations || [])
+    .filter(r => r && r.startDate && r.endDate) // Filtrer les réservations avec dates valides
+    .sort((a, b) => {
+      const dateA = new Date(a.startDate);
+      const dateB = new Date(b.startDate);
+      if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+      return dateB - dateA;
+    });
 
   const availableVehicles = vehicles.filter(v => {
     if (!formData.startDate || !formData.endDate) return true;
@@ -212,7 +230,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
       </div>
 
       <div className="reservations-list">
-        {myReservations.length === 0 ? (
+        {(!myReservations || myReservations.length === 0) ? (
           <div className="empty-state">
             <Car size={48} />
             <p>Aucune réservation</p>
@@ -223,8 +241,6 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
         ) : (
           myReservations.map(reservation => {
             const vehicle = vehicles.find(v => v.id === reservation.vehicleId);
-            const client = clients.find(c => c.id === reservation.clientId);
-            const driver = drivers.find(d => d.id === reservation.driverId);
             
             return (
               <div key={reservation.id} className="reservation-card">
@@ -235,20 +251,24 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                 
                 <div className="reservation-dates">
                   <Calendar size={16} />
-                  {format(new Date(reservation.startDate), 'dd MMM yyyy', { locale: fr })} 
+                  {safeFormatDate(reservation.startDate)} 
                   {' → '}
-                  {format(new Date(reservation.endDate), 'dd MMM yyyy', { locale: fr })}
+                  {safeFormatDate(reservation.endDate)}
                 </div>
 
                 <div className="reservation-details">
-                  <div className="detail-item">
-                    <Users size={16} />
-                    <span>{client?.name || 'Client'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <Users size={16} />
-                    <span>{driver?.name || 'Conducteur'}</span>
-                  </div>
+                  {(reservation.clientName || reservation.prestationName) && (
+                    <div className="detail-item">
+                      <Users size={16} />
+                      <span>{reservation.clientName || reservation.prestationName}</span>
+                    </div>
+                  )}
+                  {reservation.driverName && (
+                    <div className="detail-item">
+                      <Users size={16} />
+                      <span>{reservation.driverName}</span>
+                    </div>
+                  )}
                 </div>
 
                 {reservation.notes && (

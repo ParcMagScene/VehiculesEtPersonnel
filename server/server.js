@@ -187,6 +187,10 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
       status: r.status,
       comment: r.comment,
       affaire: r.affaire,
+      googleEventId: r.google_event_id,
+      isTournee: r.is_tournee === 1,
+      linkedEventIds: r.linked_event_ids ? JSON.parse(r.linked_event_ids) : null,
+      notes: r.notes,
       createdBy: r.created_by,
       modifiedBy: r.modified_by,
       createdAt: r.created_at,
@@ -205,8 +209,8 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
     const stmt = db.prepare(`
       INSERT INTO reservations (id, vehicle_id, start_date, start_period, end_date, end_period, 
                                client_name, driver_name, location_name, prestation_name, 
-                               notes, google_event_id, affaire, is_tournee, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               notes, google_event_id, affaire, is_tournee, linked_event_ids, created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     stmt.run(
@@ -224,6 +228,7 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
       reservation.google_event_id || '',
       reservation.affaire || '',
       reservation.is_tournee ? 1 : 0,
+      reservation.linked_event_ids ? JSON.stringify(reservation.linked_event_ids) : null,
       req.user.id,
       req.user.id
     );
@@ -243,7 +248,7 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
       UPDATE reservations 
       SET vehicle_id = ?, start_date = ?, start_period = ?, end_date = ?, end_period = ?,
           client_name = ?, driver_name = ?, location_name = ?, prestation_name = ?,
-          notes = ?, google_event_id = ?, affaire = ?, is_tournee = ?,
+          notes = ?, google_event_id = ?, affaire = ?, is_tournee = ?, linked_event_ids = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
@@ -262,6 +267,7 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
       reservation.googleEventId || reservation.google_event_id || '',
       reservation.affaire || '',
       reservation.isTournee || reservation.is_tournee ? 1 : 0,
+      (reservation.linkedEventIds || reservation.linked_event_ids) ? JSON.stringify(reservation.linkedEventIds || reservation.linked_event_ids) : null,
       req.user.id,
       req.params.id
     );

@@ -10,6 +10,7 @@ import VehicleDetailsModal from './components/VehicleDetailsModal';
 import LoginForm from './components/LoginForm';
 import MobileApp from './components/mobile/MobileApp';
 import PlanningView from './components/PlanningView';
+import ErrorBoundary from './components/ErrorBoundary';
 import api from './utils/api';
 import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
@@ -31,7 +32,11 @@ function App() {
   
   // Si mobile, afficher uniquement MobileApp
   if (isMobilePath) {
-    return <MobileApp />;
+    return (
+      <ErrorBoundary>
+        <MobileApp />
+      </ErrorBoundary>
+    );
   }
   
   const [view, setView] = useState('week'); // 'week', 'month', 'year'

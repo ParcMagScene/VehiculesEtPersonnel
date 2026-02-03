@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format, addDays, startOfDay } from 'date-fns';
+import { format, addDays, startOfDay, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Car, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import './MobileAvailability.css';

@@ -36,6 +36,11 @@ function toCamelCase(obj) {
 // Convertir camelCase en snake_case
 function toSnakeCase(obj) {
   if (Array.isArray(obj)) {
+    // Si tous les éléments sont des primitives (strings, numbers, etc.), retourner tel quel
+    if (obj.every(item => typeof item !== 'object' || item === null)) {
+      return obj;
+    }
+    // Sinon convertir récursivement les objets du tableau
     return obj.map(item => toSnakeCase(item));
   }
   

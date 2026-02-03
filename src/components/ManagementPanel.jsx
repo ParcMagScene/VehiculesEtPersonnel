@@ -7,6 +7,7 @@ import GoogleCalendarConfig from './GoogleCalendarConfig';
 import ChangePassword from './ChangePassword';
 import MobileAccess from './MobileAccess';
 import LocationDialog from './LocationDialog';
+import ReservationRequestsPanel from './ReservationRequestsPanel';
 import api from '../utils/api';
 import './ManagementPanel.css';
 
@@ -149,6 +150,7 @@ const ManagementPanel = ({
     { id: 'sync', label: 'Synchronisation', icon: Cloud, color: '#ec4899' },
     { id: 'account', label: 'Mon compte', icon: Lock, color: '#6b7280' },
     ...(currentUser?.isAdmin ? [
+      { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
       { id: 'users', label: 'Utilisateurs', icon: Shield, color: '#ef4444' },
       { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
       { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
@@ -608,7 +610,7 @@ const ManagementPanel = ({
 
         <div className="management-content">
           {/* Formulaire d'ajout */}
-          {activeTab !== 'sync' && (
+          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
             <div className="add-section">
               <div className="add-section-header">
                 <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : activeTab === 'garages' ? 'un garage' : 'un lieu'}</h3>
@@ -943,8 +945,21 @@ const ManagementPanel = ({
             <MobileAccess />
           )}
 
+          {/* Demandes de réservation (Admin uniquement) */}
+          {activeTab === 'requests' && currentUser?.isAdmin && (
+            <ReservationRequestsPanel 
+              onRequestProcessed={() => {
+                // Recharger les réservations si besoin
+                if (setReservations) {
+                  // Cette fonction sera appelée quand une demande est approuvée
+                  // pour rafraîchir la liste des réservations
+                }
+              }}
+            />
+          )}
+
           {/* Liste des éléments */}
-          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && (
+          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
           <div className="items-section">
             {activeTab === 'vehicles' ? (
               <>

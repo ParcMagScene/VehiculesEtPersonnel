@@ -204,8 +204,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     const labels = {
       scheduled: 'Programmée',
       in_progress: 'En cours',
+      IN_PROGRESS: 'En cours',
       completed: 'Effectuée',
-      reported: 'Signalée'
+      COMPLETED: 'Effectuée',
+      reported: 'Signalée',
+      pending: 'En attente',
+      PENDING: 'En attente'
     };
     return labels[status] || status;
   };
@@ -214,8 +218,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     const colors = {
       scheduled: '#3b82f6',
       in_progress: '#f59e0b',
+      IN_PROGRESS: '#f59e0b',
       completed: '#10b981',
-      reported: '#ef4444'
+      COMPLETED: '#10b981',
+      reported: '#ef4444',
+      pending: '#8b5cf6',
+      PENDING: '#8b5cf6'
     };
     return colors[status] || '#6b7280';
   };
@@ -225,7 +233,11 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       revision: 'Révision',
       technical_inspection: 'Contrôle technique',
       internal: 'Intervention interne',
-      external: 'Intervention externe'
+      external: 'Intervention externe',
+      breakdown: 'Panne',
+      other: 'Panne',
+      maintenance: 'Maintenance',
+      repair: 'Réparation'
     };
     return labels[type] || type;
   };

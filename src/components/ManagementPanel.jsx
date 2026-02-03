@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2 } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
 import UserManagement from './UserManagement';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
 import ChangePassword from './ChangePassword';
 import MobileAccess from './MobileAccess';
+import LocationDialog from './LocationDialog';
+import api from '../utils/api';
 import './ManagementPanel.css';
 
 const ManagementPanel = ({
@@ -49,9 +51,25 @@ const ManagementPanel = ({
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggedSection, setDraggedSection] = useState(null);
   const [importStatus, setImportStatus] = useState('');
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
+  const [locationToEdit, setLocationToEdit] = useState(null);
+  const [companyAddress, setCompanyAddress] = useState('');
   const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Charger l'adresse de MagScène depuis la config
+  useEffect(() => {
+    const loadCompanyAddress = async () => {
+      try {
+        const config = await loadFromIndexedDB('calendarConfig', {});
+        setCompanyAddress(config.companyAddress || '');
+      } catch (error) {
+        console.error('Erreur chargement adresse entreprise:', error);
+      }
+    };
+    loadCompanyAddress();
+  }, []);
 
   // Charger la liste des photos au montage du composant
   useEffect(() => {
@@ -123,17 +141,17 @@ const ManagementPanel = ({
   }, [activeTab]);
 
   const tabs = [
-    { id: 'vehicles', label: 'Véhicules', icon: Truck },
-    { id: 'clients', label: 'Clients', icon: Users },
-    { id: 'drivers', label: 'Conducteurs', icon: Users },
-    { id: 'locations', label: 'Lieux', icon: MapPin },
-    { id: 'garages', label: 'Garages', icon: MapPin },
-    { id: 'sync', label: 'Synchronisation', icon: Calendar },
-    { id: 'account', label: 'Mon compte', icon: Lock },
+    { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
+    { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
+    { id: 'drivers', label: 'Conducteurs', icon: Users, color: '#06b6d4' },
+    { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
+    { id: 'garages', label: 'Garages', icon: Building2, color: '#f59e0b' },
+    { id: 'sync', label: 'Synchronisation', icon: Cloud, color: '#ec4899' },
+    { id: 'account', label: 'Mon compte', icon: Lock, color: '#6b7280' },
     ...(currentUser?.isAdmin ? [
-      { id: 'users', label: 'Utilisateurs', icon: Shield },
-      { id: 'google-config', label: 'Config Google', icon: Settings },
-      { id: 'mobile', label: 'Accès Mobile', icon: Smartphone },
+      { id: 'users', label: 'Utilisateurs', icon: Shield, color: '#ef4444' },
+      { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
+      { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
     ] : []),
   ];
 
@@ -158,22 +176,44 @@ const ManagementPanel = ({
     }
   };
 
-  const handleAdd = () => {
+  const generateUUID = () => {
+    // Fonction compatible avec tous les navigateurs
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  const handleAdd = async () => {
     if (!newItem.name.trim()) return;
 
     const currentList = getCurrentList();
-    const maxId = currentList.length > 0 ? Math.max(...currentList.map(item => item.id)) : 0;
+    // Générer un ID approprié selon le type d'entité
+    let newId;
+    if (activeTab === 'vehicles') {
+      newId = generateUUID();
+    } else {
+      // Pour les autres entités (clients, drivers, etc.), utiliser un ID numérique
+      const numericIds = currentList
+        .map(item => typeof item.id === 'number' ? item.id : 0)
+        .filter(id => id > 0);
+      const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
+      newId = maxId + 1;
+    }
     
     const itemToAdd = {
-      id: maxId + 1,
+      id: newId,
       name: newItem.name,
       ...(activeTab === 'vehicles' && { 
         type: newItem.type || 'Véhicule',
         color: newItem.color,
         displayColor: newItem.color,
-        immatriculation: newItem.immatriculation || '',
-        marque: newItem.marque || '',
-        couleurVehicule: newItem.couleurVehicule || '',
+        registration: newItem.immatriculation || '',
+        brand: newItem.marque || '',
+        model: '',
+        owner: '',
+        comment: '',
         photo: newItem.photo || '',
         order: currentList.length,
         isLocation: false
@@ -186,24 +226,50 @@ const ManagementPanel = ({
       })
     };
 
-    const newList = [...currentList, itemToAdd];
-    
-    // Mettre à jour l'état ET sauvegarder
-    if (activeTab === 'vehicles') {
-      setVehicles(newList);
-      saveToIndexedDB(STORES.vehicles, newList);
-    } else if (activeTab === 'clients') {
-      setClients(newList);
-      saveToIndexedDB(STORES.clients, newList);
-    } else if (activeTab === 'drivers') {
-      setDrivers(newList);
-      saveToIndexedDB(STORES.drivers, newList);
-    } else if (activeTab === 'locations') {
-      setLocations(newList);
-      saveToIndexedDB(STORES.locations, newList);
-    } else if (activeTab === 'garages') {
-      setGarages(newList);
-      saveToIndexedDB(STORES.garages, newList);
+    // Appeler l'API backend pour créer l'élément
+    try {
+      console.log('🔄 Création élément:', activeTab, itemToAdd);
+      
+      if (activeTab === 'vehicles') {
+        const createdVehicle = await api.createVehicle(itemToAdd);
+        console.log('✅ Véhicule créé:', createdVehicle);
+        const vehicleWithId = { ...itemToAdd, id: createdVehicle.id || itemToAdd.id };
+        const newList = [...currentList, vehicleWithId];
+        setVehicles(newList);
+        saveToIndexedDB(STORES.vehicles, newList);
+      } else if (activeTab === 'clients') {
+        const createdClient = await api.createClient(itemToAdd);
+        console.log('✅ Client créé:', createdClient);
+        const clientWithId = { ...itemToAdd, id: createdClient.id || itemToAdd.id };
+        const newList = [...currentList, clientWithId];
+        setClients(newList);
+        saveToIndexedDB(STORES.clients, newList);
+      } else if (activeTab === 'drivers') {
+        const createdDriver = await api.createDriver(itemToAdd);
+        console.log('✅ Conducteur créé:', createdDriver);
+        const driverWithId = { ...itemToAdd, id: createdDriver.id || itemToAdd.id };
+        const newList = [...currentList, driverWithId];
+        setDrivers(newList);
+        saveToIndexedDB(STORES.drivers, newList);
+      } else if (activeTab === 'locations') {
+        const createdLocation = await api.createLocation(itemToAdd);
+        console.log('✅ Lieu créé:', createdLocation);
+        const locationWithId = { ...itemToAdd, id: createdLocation.id || itemToAdd.id };
+        const newList = [...currentList, locationWithId];
+        setLocations(newList);
+        saveToIndexedDB(STORES.locations, newList);
+      } else if (activeTab === 'garages') {
+        const createdGarage = await api.createGarage(itemToAdd);
+        console.log('✅ Garage créé:', createdGarage);
+        const garageWithId = { ...itemToAdd, id: createdGarage.id || itemToAdd.id };
+        const newList = [...currentList, garageWithId];
+        setGarages(newList);
+        saveToIndexedDB(STORES.garages, newList);
+      }
+    } catch (error) {
+      console.error('❌ Erreur création:', error);
+      alert(`Erreur lors de la création: ${error.message}`);
+      return;
     }
     
     setNewItem({ 
@@ -223,57 +289,114 @@ const ManagementPanel = ({
   };
 
   const handleEdit = (item) => {
-    setEditingItem({ ...item });
+    if (activeTab === 'locations') {
+      setLocationToEdit(item);
+      setShowLocationDialog(true);
+    } else {
+      setEditingItem({ ...item });
+    }
   };
 
-  const handleSaveEdit = () => {
+  const handleAddLocation = () => {
+    setLocationToEdit(null);
+    setShowLocationDialog(true);
+  };
+
+  const handleSaveLocation = async (locationData) => {
+    try {
+      if (locationToEdit) {
+        // Mise à jour
+        await api.updateLocation(locationToEdit.id, locationData);
+        const newList = locations.map(loc => 
+          loc.id === locationToEdit.id ? { ...locationData, id: locationToEdit.id } : loc
+        );
+        setLocations(newList);
+        saveToIndexedDB(STORES.locations, newList);
+      } else {
+        // Création
+        const createdLocation = await api.createLocation(locationData);
+        const newLocation = { ...locationData, id: createdLocation.id || Date.now() };
+        const newList = [...locations, newLocation];
+        setLocations(newList);
+        saveToIndexedDB(STORES.locations, newList);
+      }
+      setShowLocationDialog(false);
+      setLocationToEdit(null);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde lieu:', error);
+      alert(`Erreur lors de la sauvegarde: ${error.message}`);
+    }
+  };
+
+  const handleSaveEdit = async () => {
     if (!editingItem.name.trim()) return;
 
     const currentList = getCurrentList();
     const newList = currentList.map(item => item.id === editingItem.id ? editingItem : item);
     
-    // Mettre à jour l'état ET sauvegarder
-    if (activeTab === 'vehicles') {
-      setVehicles(newList);
-      saveToIndexedDB(STORES.vehicles, newList);
-    } else if (activeTab === 'clients') {
-      setClients(newList);
-      saveToIndexedDB(STORES.clients, newList);
-    } else if (activeTab === 'drivers') {
-      setDrivers(newList);
-      saveToIndexedDB(STORES.drivers, newList);
-    } else if (activeTab === 'locations') {
-      setLocations(newList);
-      saveToIndexedDB(STORES.locations, newList);
-    } else if (activeTab === 'garages') {
-      setGarages(newList);
-      saveToIndexedDB(STORES.garages, newList);
+    // Appeler l'API backend pour mettre à jour
+    try {
+      if (activeTab === 'vehicles') {
+        await api.updateVehicle(editingItem.id, editingItem);
+        setVehicles(newList);
+        saveToIndexedDB(STORES.vehicles, newList);
+      } else if (activeTab === 'clients') {
+        await api.updateClient(editingItem.id, editingItem);
+        setClients(newList);
+        saveToIndexedDB(STORES.clients, newList);
+      } else if (activeTab === 'drivers') {
+        await api.updateDriver(editingItem.id, editingItem);
+        setDrivers(newList);
+        saveToIndexedDB(STORES.drivers, newList);
+      } else if (activeTab === 'locations') {
+        await api.updateLocation(editingItem.id, editingItem);
+        setLocations(newList);
+        saveToIndexedDB(STORES.locations, newList);
+      } else if (activeTab === 'garages') {
+        await api.updateGarage(editingItem.id, editingItem);
+        setGarages(newList);
+        saveToIndexedDB(STORES.garages, newList);
+      }
+    } catch (error) {
+      console.error('❌ Erreur modification:', error);
+      alert(`Erreur lors de la modification: ${error.message}`);
+      return;
     }
     
     setEditingItem(null);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
       const currentList = getCurrentList();
       const newList = currentList.filter(item => item.id !== id);
       
-      // Mettre à jour l'état ET sauvegarder
-      if (activeTab === 'vehicles') {
-        setVehicles(newList);
-        saveToIndexedDB(STORES.vehicles, newList);
-      } else if (activeTab === 'clients') {
-        setClients(newList);
-        saveToIndexedDB(STORES.clients, newList);
-      } else if (activeTab === 'drivers') {
-        setDrivers(newList);
-        saveToIndexedDB(STORES.drivers, newList);
-      } else if (activeTab === 'locations') {
-        setLocations(newList);
-        saveToIndexedDB(STORES.locations, newList);
-      } else if (activeTab === 'garages') {
-        setGarages(newList);
-        saveToIndexedDB(STORES.garages, newList);
+      // Appeler l'API backend pour supprimer
+      try {
+        if (activeTab === 'vehicles') {
+          await api.deleteVehicle(id);
+          setVehicles(newList);
+          saveToIndexedDB(STORES.vehicles, newList);
+        } else if (activeTab === 'clients') {
+          await api.deleteClient(id);
+          setClients(newList);
+          saveToIndexedDB(STORES.clients, newList);
+        } else if (activeTab === 'drivers') {
+          await api.deleteDriver(id);
+          setDrivers(newList);
+          saveToIndexedDB(STORES.drivers, newList);
+        } else if (activeTab === 'locations') {
+          await api.deleteLocation(id);
+          setLocations(newList);
+          saveToIndexedDB(STORES.locations, newList);
+        } else if (activeTab === 'garages') {
+          await api.deleteGarage(id);
+          setGarages(newList);
+          saveToIndexedDB(STORES.garages, newList);
+        }
+      } catch (error) {
+        console.error('❌ Erreur suppression:', error);
+        alert(`Erreur lors de la suppression: ${error.message}`);
       }
     }
   };
@@ -470,9 +593,14 @@ const ManagementPanel = ({
                 key={tab.id}
                 className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
+                style={{
+                  '--tab-color': tab.color
+                }}
               >
-                <Icon size={20} />
-                {tab.label}
+                <div className="tab-icon" style={{ backgroundColor: activeTab === tab.id ? tab.color : 'transparent' }}>
+                  <Icon size={20} style={{ color: activeTab === tab.id ? 'white' : tab.color }} />
+                </div>
+                <span className="tab-label">{tab.label}</span>
               </button>
             );
           })}
@@ -486,13 +614,19 @@ const ManagementPanel = ({
                 <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : activeTab === 'garages' ? 'un garage' : 'un lieu'}</h3>
                 <button 
                   className="toggle-add-form-btn"
-                  onClick={() => setShowAddForm(!showAddForm)}
-                  title={showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire'}
+                  onClick={() => {
+                    if (activeTab === 'locations') {
+                      handleAddLocation();
+                    } else {
+                      setShowAddForm(!showAddForm);
+                    }
+                  }}
+                  title={activeTab === 'locations' ? 'Ajouter un lieu' : (showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire')}
                 >
-                  {showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  {activeTab === 'locations' ? <Plus size={20} /> : (showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
                 </button>
               </div>
-            {showAddForm && (
+            {showAddForm && activeTab !== 'locations' && (
               <div className="add-form">
               <input
                 type="text"
@@ -750,7 +884,58 @@ const ManagementPanel = ({
 
           {/* Configuration Google Calendar (Admin uniquement) */}
           {activeTab === 'google-config' && currentUser?.isAdmin && (
-            <GoogleCalendarConfig />
+            <>
+              <GoogleCalendarConfig />
+              
+              <div className="company-address-section" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '8px' }}>
+                <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <MapPin size={20} />
+                  Adresse de MagScène
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
+                  Cette adresse sera utilisée pour calculer les distances et temps de trajet vers les lieux enregistrés.
+                </p>
+                <input
+                  id="company-address-input"
+                  type="text"
+                  value={companyAddress}
+                  onChange={(e) => setCompanyAddress(e.target.value)}
+                  placeholder="Adresse complète de MagScène"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    marginBottom: '0.75rem'
+                  }}
+                />
+                <button
+                  onClick={async () => {
+                    try {
+                      const config = await loadFromIndexedDB('calendarConfig', {});
+                      config.companyAddress = companyAddress;
+                      await saveToIndexedDB('calendarConfig', config);
+                      alert('Adresse de MagScène sauvegardée !');
+                    } catch (error) {
+                      console.error('Erreur sauvegarde adresse:', error);
+                      alert('Erreur lors de la sauvegarde');
+                    }
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Enregistrer l'adresse
+                </button>
+              </div>
+            </>
           )}
 
           {/* Accès Mobile (Admin uniquement) */}
@@ -1141,6 +1326,19 @@ const ManagementPanel = ({
           )}
         </div>
       </div>
+
+      {/* Dialog pour les lieux */}
+      {showLocationDialog && (
+        <LocationDialog
+          location={locationToEdit}
+          onSave={handleSaveLocation}
+          onClose={() => {
+            setShowLocationDialog(false);
+            setLocationToEdit(null);
+          }}
+          companyAddress={companyAddress}
+        />
+      )}
     </div>
   );
 };

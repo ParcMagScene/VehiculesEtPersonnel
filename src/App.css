@@ -193,6 +193,102 @@
   animation: pulse 2s infinite;
 }
 
+/* Badge de notification unifié */
+.notification-badge.unified {
+  position: relative;
+  padding: 0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  animation: pulse 2s infinite;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.notification-badge.unified.has-critical {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.notification-badge.unified.has-conflict {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.notification-badge.unified.has-reported {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.notification-badge.unified.has-pending {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.notification-badge.unified.has-scheduled {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.notification-badge.unified:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.notification-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: white;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 0.625rem;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  border: 2px solid currentColor;
+  padding: 0 3px;
+}
+
+.notification-alert-badge {
+  position: absolute;
+  bottom: -2px;
+  left: -2px;
+  background: #fbbf24;
+  color: #78350f;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
 @keyframes pulse {
   0%, 100% {
     transform: scale(1);
@@ -464,7 +560,7 @@
 
 .view-button {
   padding: 0.5rem 1rem;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   border-radius: 0.375rem;
   cursor: pointer;
@@ -476,22 +572,26 @@
 .view-button:hover {
   background: #e5e7eb;
   color: #374151;
+  border-color: #d1d5db;
 }
 
 .view-button.active {
   background: white;
   color: #3b82f6;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-color: #e5e7eb;
 }
 
 .date-navigation {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex: 1;
+  max-width: 600px;
 }
 
 .nav-button {
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   border: 1px solid #e5e7eb;
   background: white;
   border-radius: 0.375rem;
@@ -500,6 +600,11 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  white-space: nowrap;
+  gap: 0.375rem;
+  font-size: 0.9375rem;
+  width: auto;
+  min-width: auto;
 }
 
 .nav-button:hover {
@@ -507,11 +612,26 @@
   border-color: #d1d5db;
 }
 
+.nav-button svg:only-child {
+  margin: 0;
+}
+
+.nav-button:has(svg:only-child) {
+  padding: 0.5rem;
+  width: 40px;
+  height: 40px;
+}
+
+/* Bouton Aujourd'hui - Version forcée pour cache refresh */
 .date-navigation .nav-button.today-highlight {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
   color: white !important;
   border-color: #3b82f6 !important;
-  font-weight: 600;
+  font-weight: 600 !important;
+  min-width: 150px !important;
+  width: auto !important;
+  padding: 0.5rem 1.5rem !important;
+  white-space: nowrap !important;
 }
 
 .date-navigation .nav-button.today-highlight:hover {
@@ -530,8 +650,17 @@
 .current-date.clickable {
   cursor: pointer;
   padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   transition: all 0.2s;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #3b82f6;
+}
+
+.current-date.clickable:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #2563eb;
 }
 
 .current-date.clickable:hover {
@@ -694,11 +823,96 @@
   align-items: center;
   justify-content: center;
   font-weight: 500;
+  position: relative;
 }
 
 .reservation:hover {
   opacity: 0.8;
   transform: translateY(-1px);
+}
+
+/* Pastille utilisateur créateur */
+.user-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Tooltip au survol */
+.reservation-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17, 24, 39, 0.95);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  min-width: 200px;
+  max-width: 300px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+  white-space: normal;
+  text-align: left;
+}
+
+/* Afficher le tooltip au survol de la réservation ou intervention */
+.time-slot:hover .reservation-tooltip,
+.reservation:hover > .reservation-tooltip,
+.maintenance-block:hover > .reservation-tooltip {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.reservation-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(17, 24, 39, 0.95);
+}
+
+.reservation-tooltip .tooltip-row {
+  display: flex;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.reservation-tooltip .tooltip-row:last-child {
+  margin-bottom: 0;
+}
+
+.reservation-tooltip .tooltip-label {
+  font-weight: 600;
+  margin-right: 0.5rem;
+  min-width: 60px;
+  color: #9ca3af;
+}
+
+.reservation-tooltip .tooltip-value {
+  color: white;
+  flex: 1;
 }
 
 /* ============================================
@@ -855,7 +1069,16 @@
   }
 
   .nav-button {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .nav-button:has(svg:only-child) {
     padding: 0.4rem;
+  }
+
+  .date-navigation .nav-button.today-highlight {
+    min-width: 95px;
   }
 
   .management-button {

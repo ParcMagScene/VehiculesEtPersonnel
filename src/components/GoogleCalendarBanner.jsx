@@ -288,6 +288,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   useEffect(() => {
     const savedToken = localStorage.getItem('google_access_token');
     const tokenExpiry = localStorage.getItem('google_token_expiry');
+    const refreshToken = localStorage.getItem('google_refresh_token');
+    const autoSignin = localStorage.getItem('google_auto_signin');
     
     if (savedToken && tokenExpiry) {
       const expiryTime = parseInt(tokenExpiry, 10);
@@ -296,23 +298,33 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       
       console.log('🔍 Vérification du token sauvegardé, expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
       
-      // Vérifier si le token est encore valide (avec une marge de 10 minutes)
-      if (timeUntilExpiry > 10 * 60 * 1000) {
+      // Si le token est encore valide (avec une marge de 5 minutes)
+      if (timeUntilExpiry > 5 * 60 * 1000) {
         console.log('✅ Token valide, restauration de la session');
         setAccessToken(savedToken);
         setIsSignedIn(true);
         testToken(savedToken);
+      } else if (autoSignin === 'true') {
+        // Token expiré mais auto-signin activé, on demande un nouveau token silencieusement
+        console.log('🔄 Token expiré, renouvellement automatique silencieux...');
+        // Le token sera renouvelé par le useEffect suivant quand tokenClient sera prêt
       } else {
-        console.log('⏰ Token expiré ou proche de l\'expiration, nettoyage');
-        // Token expiré, nettoyer et forcer une nouvelle connexion
+        console.log('⏰ Token expiré, nettoyage');
         localStorage.removeItem('google_access_token');
         localStorage.removeItem('google_token_expiry');
-        localStorage.removeItem('google_auto_signin');
         setIsSignedIn(false);
         setAccessToken(null);
       }
+    } else if (autoSignin === 'true' && tokenClient) {
+      // Pas de token sauvegardé mais auto-signin activé
+      console.log('🔐 Auto-signin activé, demande silencieuse d\'un nouveau token...');
+      setTimeout(() => {
+        if (tokenClient) {
+          tokenClient.requestAccessToken({ prompt: '' });
+        }
+      }, 1000);
     }
-  }, []);
+  }, [tokenClient]);
 
   // Configurer le renouvellement automatique du token avant expiration
   useEffect(() => {
@@ -327,12 +339,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     
     console.log('⏰ Token expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
     
-    // Renouveler 10 minutes avant l'expiration (au lieu de 5) pour plus de marge
-    const renewalTime = Math.max(0, timeUntilExpiry - 10 * 60 * 1000);
+    // Renouveler 15 minutes avant l'expiration pour avoir une grande marge
+    const renewalTime = Math.max(0, timeUntilExpiry - 15 * 60 * 1000);
     
     const timer = setTimeout(() => {
-      console.log('⏰ Renouvellement programmé déclenché');
-      // Renouvellement automatique silencieux
+      console.log('⏰ Renouvellement programmé déclenché (silencieux)');
+      // Renouvellement automatique silencieux - ne demande pas de consentement
       tokenClient.requestAccessToken({ prompt: '' });
     }, renewalTime);
 
@@ -407,16 +419,24 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         ux_mode: 'popup',
         callback: (response) => {
           if (response.error) {
-            console.error('Erreur OAuth:', response.error);
-            // Si c'est une erreur de consentement, nettoyer et forcer une nouvelle connexion
-            if (response.error === 'access_denied' || response.error === 'consent_required') {
+            console.error('❌ Erreur OAuth:', response.error);
+            // Si c'est une erreur de consentement et que ce n'est pas un renouvellement silencieux
+            if (response.error === 'access_denied') {
+              console.log('⚠️ Accès refusé par l\'utilisateur');
+              localStorage.removeItem('google_auto_signin');
+              setError('Accès refusé. Veuillez autoriser l\'accès à Google Calendar.');
+            } else if (response.error === 'popup_closed_by_user') {
+              console.log('⚠️ Popup fermée par l\'utilisateur');
+              setError('Connexion annulée');
+            } else if (response.error === 'immediate_failed') {
+              // Le renouvellement silencieux a échoué, on demande une nouvelle autorisation
+              console.log('🔄 Renouvellement silencieux échoué, nouvelle autorisation nécessaire');
               localStorage.removeItem('google_auto_signin');
             }
-            setError('Erreur d\'authentification: ' + response.error);
             return;
           }
           
-          console.log('✅ Token reçu, expiration dans:', response.expires_in, 'secondes');
+          console.log('✅ Token reçu, expiration dans:', response.expires_in, 'secondes (≈', Math.round(response.expires_in / 60), 'minutes)');
           
           // Sauvegarder le token et sa date d'expiration dans localStorage
           const expiryTime = Date.now() + (response.expires_in || 3600) * 1000;
@@ -437,13 +457,23 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       // Auto-reconnexion si l'utilisateur était connecté précédemment
       const autoSignin = localStorage.getItem('google_auto_signin');
       const savedToken = localStorage.getItem('google_access_token');
+      const tokenExpiry = localStorage.getItem('google_token_expiry');
       
-      if (autoSignin === 'true') {
-        setTimeout(() => {
-          // Essayer de renouveler le token silencieusement avec prompt: 'none'
-          // Cela permet une connexion automatique sans popup
-          client.requestAccessToken({ prompt: 'none' });
-        }, 500);
+      if (autoSignin === 'true' && savedToken && tokenExpiry) {
+        const expiryTime = parseInt(tokenExpiry, 10);
+        const now = Date.now();
+        const timeUntilExpiry = expiryTime - now;
+        
+        // Si le token est encore valide, pas besoin de redemander
+        if (timeUntilExpiry > 5 * 60 * 1000) {
+          console.log('✅ Token existant encore valide, pas de renouvellement nécessaire');
+        } else {
+          // Token expiré ou proche de l'expiration, renouvellement silencieux
+          console.log('🔄 Token proche de l\'expiration, renouvellement silencieux...');
+          setTimeout(() => {
+            client.requestAccessToken({ prompt: '' });
+          }, 500);
+        }
       }
     } catch (err) {
       setError('Erreur d\'initialisation: ' + err.message);

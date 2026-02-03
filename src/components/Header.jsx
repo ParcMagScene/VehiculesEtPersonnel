@@ -51,6 +51,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   
   // Fonction pour détecter les conflits entre une intervention et les réservations
   const getMaintenanceConflicts = (maintenance) => {
@@ -154,71 +155,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
           <img src="/Logos/LogoMagSceneBLACK.gif" alt="Mag Scène" className="header-logo" />
           <h1 className="header-title"><Truck className="title-icon" strokeWidth={2.5} size={32} /> Véhicules</h1>
         </div>
-        
-        {/* Notifications de pannes */}
-        {(reportedMaintenances.length > 0 || scheduledMaintenances.length > 0 || pendingMaintenances.length > 0 || inProgressMaintenances.length > 0) && (
-          <div className="maintenance-notifications">
-            {immobilizedVehicles.length > 0 && (
-              <div 
-                className="notification-badge immobilized"
-                onClick={() => {
-                  setNotificationFilter('reported');
-                  setShowNotificationsPopup(true);
-                }}
-              >
-                <XCircle size={18} strokeWidth={2.5} /> {immobilizedVehicles.length} véhicule{immobilizedVehicles.length > 1 ? 's' : ''} immobilisé{immobilizedVehicles.length > 1 ? 's' : ''}
-              </div>
-            )}
-            {pendingMaintenances.length > 0 && (
-              <div 
-                className="notification-badge pending"
-                onClick={() => {
-                  setNotificationFilter('pending');
-                  setShowNotificationsPopup(true);
-                }}
-              >
-                <ClipboardList size={18} strokeWidth={2.5} /> {pendingMaintenances.length} demande{pendingMaintenances.length > 1 ? 's' : ''} d'intervention
-              </div>
-            )}
-            {inProgressMaintenances.length > 0 && (
-              <div 
-                className="notification-badge in-progress"
-                onClick={() => {
-                  setNotificationFilter('in_progress');
-                  setShowNotificationsPopup(true);
-                }}
-              >
-                <CalendarCheck size={18} strokeWidth={2.5} /> {inProgressMaintenances.length} intervention{inProgressMaintenances.length > 1 ? 's' : ''} en cours
-              </div>
-            )}
-            {reportedMaintenances.length > immobilizedVehicles.length && (
-              <div 
-                className="notification-badge reported"
-                onClick={() => {
-                  setNotificationFilter('reported');
-                  setShowNotificationsPopup(true);
-                }}
-              >
-                <AlertTriangle size={18} strokeWidth={2.5} /> {reportedMaintenances.length - immobilizedVehicles.length} panne{reportedMaintenances.length - immobilizedVehicles.length > 1 ? 's' : ''} signalée{reportedMaintenances.length - immobilizedVehicles.length > 1 ? 's' : ''}
-              </div>
-            )}
-            {scheduledMaintenances.length > 0 && (
-              <div 
-                className={`notification-badge ${conflictingMaintenances.length > 0 ? 'conflict' : 'scheduled'}`}
-                onClick={() => {
-                  setNotificationFilter('scheduled');
-                  setShowNotificationsPopup(true);
-                }}
-                style={{ position: 'relative' }}
-              >
-                <CalendarCheck size={18} strokeWidth={2.5} /> {scheduledMaintenances.length} intervention{scheduledMaintenances.length > 1 ? 's' : ''} programmée{scheduledMaintenances.length > 1 ? 's' : ''}
-                {conflictingMaintenances.length > 0 && (
-                  <span className="conflict-badge"><AlertTriangle size={14} strokeWidth={2.5} /></span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
         
         {/* Popup des notifications */}
         {showNotificationsPopup && (
@@ -444,12 +380,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               className={`nav-button ${showTodayHighlight ? 'today-highlight' : ''}`}
               onClick={goToToday} 
               aria-label="Revenir à aujourd'hui"
-              style={showTodayHighlight ? {
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                color: 'white',
-                borderColor: '#3b82f6',
-                fontWeight: 600
-              } : {}}
             >
               Aujourd'hui
             </button>
@@ -477,67 +407,180 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
           </div>
 
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {/* Badge de notification unifié */}
+            {allNotifications.length > 0 && (
+              <div 
+                className={`notification-badge unified ${
+                  immobilizedVehicles.length > 0 ? 'has-critical' : 
+                  conflictingMaintenances.length > 0 ? 'has-conflict' : 
+                  reportedMaintenances.length > 0 ? 'has-reported' : 
+                  pendingMaintenances.length > 0 ? 'has-pending' : 
+                  'has-scheduled'
+                }`}
+                onClick={() => {
+                  setNotificationFilter('all');
+                  setShowNotificationsPopup(true);
+                }}
+                style={{ position: 'relative' }}
+              >
+                <Bell size={16} strokeWidth={2.5} />
+                <span className="notification-count">{allNotifications.length}</span>
+                {(immobilizedVehicles.length > 0 || conflictingMaintenances.length > 0) && (
+                  <span className="notification-alert-badge">
+                    <AlertTriangle size={10} strokeWidth={3} />
+                  </span>
+                )}
+              </div>
+            )}
+            
             {currentUser && (
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '12px',
-                padding: '8px 12px',
-                background: 'rgba(255, 255, 255, 0.15)',
-                borderRadius: '10px',
-                fontSize: '14px',
-                color: 'white',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-              }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${getColorFromName(currentUser.name)} 0%, ${adjustColor(getColorFromName(currentUser.name), -20)} 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  color: 'white',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)'
-                }}>
-                  {getInitials(currentUser.name)}
-                </div>
-                <span style={{ fontWeight: '500' }}>{currentUser.name}</span>
-                <button 
-                  onClick={onLogout}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  title={currentUser.name}
+                  aria-label={`Menu utilisateur (${currentUser.name})`}
                   style={{
-                    background: 'rgba(239, 68, 68, 0.9)',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '6px 12px',
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${getColorFromName(currentUser.name)} 0%, ${adjustColor(getColorFromName(currentUser.name), -20)} 100%)`,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    color: 'white',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    padding: 0
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = 'rgba(220, 38, 38, 1)';
-                    e.target.style.transform = 'scale(1.05)';
+                    e.target.style.transform = 'scale(1.1)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(239, 68, 68, 0.9)';
                     e.target.style.transform = 'scale(1)';
+                    e.target.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                  </svg>
-                  Déconnexion
+                  {getInitials(currentUser.name)}
                 </button>
+
+                {showUserMenu && (
+                  <>
+                    <div 
+                      style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 999
+                      }}
+                      onClick={() => setShowUserMenu(false)}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '50px',
+                        right: 0,
+                        background: 'white',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+                        overflow: 'hidden',
+                        minWidth: '200px',
+                        zIndex: 1000
+                      }}
+                    >
+                      <div style={{
+                        padding: '12px 16px',
+                        borderBottom: '1px solid #e5e7eb',
+                        background: '#f9fafb'
+                      }}>
+                        <div style={{ fontWeight: 600, color: '#1f2937' }}>{currentUser.name}</div>
+                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                          {currentUser.isAdmin ? 'Administrateur' : 'Utilisateur'}
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          // Recharger la page pour afficher à nouveau le sélecteur d'utilisateur
+                          window.location.reload();
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: 'none',
+                          background: 'white',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          color: '#374151',
+                          transition: 'background 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                        onMouseLeave={(e) => e.target.style.background = 'white'}
+                      >
+                        <LayoutGrid size={16} />
+                        Changer d'utilisateur
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          onLogout();
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: 'none',
+                          background: 'white',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          color: '#dc2626',
+                          transition: 'background 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          fontWeight: 500
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
+                        onMouseLeave={(e) => e.target.style.background = 'white'}
+                      >
+                        <XCircle size={16} />
+                        Se déconnecter
+                      </button>
+
+                      <button
+                        onClick={() => setShowUserMenu(false)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: 'none',
+                          borderTop: '1px solid #e5e7eb',
+                          background: '#f9fafb',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          color: '#6b7280',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#f3f4f6'}
+                        onMouseLeave={(e) => e.target.style.background = '#f9fafb'}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

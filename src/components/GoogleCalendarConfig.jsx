@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Save, AlertCircle } from 'lucide-react';
+import { Calendar, Save, AlertCircle, LogOut, RefreshCw } from 'lucide-react';
 import api from '../utils/api';
 import './GoogleCalendarConfig.css';
 
 const GoogleCalendarConfig = () => {
   const [clientId, setClientId] = useState('');
   const [calendarId, setCalendarId] = useState('');
+  const [mapsApiKey, setMapsApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -16,12 +17,14 @@ const GoogleCalendarConfig = () => {
   const loadConfig = async () => {
     try {
       setIsLoading(true);
-      const [clientIdData, calendarIdData] = await Promise.all([
+      const [clientIdData, calendarIdData, mapsApiKeyData] = await Promise.all([
         api.getGoogleClientId(),
-        api.getGoogleCalendarId()
+        api.getGoogleCalendarId(),
+        api.getGoogleMapsApiKey()
       ]);
       setClientId(clientIdData.value || '');
       setCalendarId(calendarIdData.value || '');
+      setMapsApiKey(mapsApiKeyData.value || '');
     } catch (error) {
       console.error('Erreur chargement config:', error);
       alert('Erreur lors du chargement de la configuration');
@@ -34,7 +37,7 @@ const GoogleCalendarConfig = () => {
     e.preventDefault();
     
     if (!clientId || !calendarId) {
-      alert('Veuillez remplir tous les champs');
+      alert('Veuillez remplir au moins le Client ID et l\'ID du calendrier');
       return;
     }
 
@@ -42,14 +45,38 @@ const GoogleCalendarConfig = () => {
       setIsSaving(true);
       await Promise.all([
         api.saveGoogleClientId(clientId),
-        api.saveGoogleCalendarId(calendarId)
+        api.saveGoogleCalendarId(calendarId),
+        mapsApiKey ? api.saveGoogleMapsApiKey(mapsApiKey) : Promise.resolve()
       ]);
-      alert('Configuration enregistrée avec succès');
+      alert('✅ Configuration enregistrée avec succès\n\nSi vous avez changé le Client ID, cliquez sur "Déconnecter OAuth" puis reconnectez-vous.');
     } catch (error) {
       alert(`Erreur: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleRevokeOAuth = () => {
+    if (!confirm('⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nVous devrez autoriser à nouveau l\'accès après cette action.')) {
+      return;
+    }
+
+    // Supprimer les données du localStorage
+    localStorage.removeItem('google_access_token');
+    localStorage.removeItem('google_token_expiry');
+    localStorage.removeItem('google_token_client');
+    
+    // Révoquer l'accès sur le compte Google
+    alert('✅ Déconnexion effectuée\n\nVeuillez :\n1. Recharger la page (F5)\n2. Aller sur https://myaccount.google.com/permissions\n3. Révoquer l\'accès à cette application\n4. Revenir et vous reconnecter avec le nouveau Client ID');
+    
+    // Recharger après 2 secondes
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  };
+
+  const handleOpenGooglePermissions = () => {
+    window.open('https://myaccount.google.com/permissions', '_blank');
   };
 
   if (isLoading) {
@@ -64,6 +91,72 @@ const GoogleCalendarConfig = () => {
           Ces paramètres sont partagés pour tous les utilisateurs. 
           Chaque utilisateur devra cependant autoriser l'accès avec son compte Google.
         </p>
+      </div>
+
+      <div className="environment-info">
+        <h4>📍 Environnement détecté</h4>
+        <div className="env-details">
+          <div className="env-item">
+            <strong>URL actuelle (origin):</strong>
+            <code>{window.location.origin}</code>
+          </div>
+          <div className="env-item">
+            <strong>Hostname:</strong>
+            <code>{window.location.hostname}</code>
+          </div>
+          <div className="env-item">
+            <strong>Port:</strong>
+            <code>{window.location.port}</code>
+          </div>
+          <div className="env-item">
+            <strong>Recommandation:</strong>
+            {window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? (
+              <span className="env-local">
+                🔧 Utilisez le Client ID de <strong>Véhicules Local Dev</strong>
+              </span>
+            ) : (
+              <span className="env-prod">
+                🌐 Utilisez le Client ID de <strong>ParcMagScene</strong>
+              </span>
+            )}
+          </div>
+          <div className="env-item env-warning">
+            <strong>⚠️ URI à configurer dans Google Cloud Console :</strong>
+            <div className="uri-list">
+              <div className="uri-item">
+                <strong>Origines JavaScript autorisées :</strong>
+                <code className="selectable">{window.location.origin}</code>
+                <button 
+                  type="button"
+                  className="btn-copy-small"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.origin);
+                    alert('✅ URL copiée dans le presse-papiers');
+                  }}
+                >
+                  📋 Copier
+                </button>
+              </div>
+              <div className="uri-item">
+                <strong>URI de redirection autorisés :</strong>
+                <code className="selectable">{window.location.origin}</code>
+                <button 
+                  type="button"
+                  className="btn-copy-small"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.origin);
+                    alert('✅ URL copiée dans le presse-papiers');
+                  }}
+                >
+                  📋 Copier
+                </button>
+              </div>
+            </div>
+            <small>
+              👆 Ajoutez cette URL exactement dans les deux sections de votre OAuth Client ID
+            </small>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="config-form">
@@ -82,8 +175,26 @@ const GoogleCalendarConfig = () => {
           />
           <p className="field-hint">
             <AlertCircle size={14} />
-            Obtenu depuis la Google Cloud Console
+            Choisissez le bon Client ID selon votre environnement (voir ci-dessus)
           </p>
+          <details className="client-id-help">
+            <summary>📝 J'ai deux Client IDs - Lequel utiliser ?</summary>
+            <div className="help-content">
+              <p><strong>Véhicules Local Dev</strong> (localhost)</p>
+              <ul>
+                <li>Pour développement local : http://localhost:4173</li>
+                <li>Origines autorisées : localhost uniquement</li>
+              </ul>
+              <p><strong>ParcMagScene</strong> (production)</p>
+              <ul>
+                <li>Pour accès réseau/internet : http://magsav.duckdns.org:4173</li>
+                <li>Origines autorisées : votre domaine ou IP publique</li>
+              </ul>
+              <p className="warning-note">
+                ⚠️ Si vous changez de Client ID, utilisez le bouton "Déconnecter OAuth" ci-dessous puis reconnectez-vous.
+              </p>
+            </div>
+          </details>
         </div>
 
         <div className="form-group">
@@ -105,6 +216,24 @@ const GoogleCalendarConfig = () => {
           </p>
         </div>
 
+        <div className="form-group">
+          <label htmlFor="mapsApiKey">
+            Clé API Google Maps
+            <span className="optional"> (optionnel)</span>
+          </label>
+          <input
+            id="mapsApiKey"
+            type="text"
+            value={mapsApiKey}
+            onChange={(e) => setMapsApiKey(e.target.value)}
+            placeholder="AIzaSy..."
+          />
+          <p className="field-hint">
+            <AlertCircle size={14} />
+            Nécessaire pour la carte des lieux et le calcul de distances
+          </p>
+        </div>
+
         <div className="form-actions">
           <button 
             type="submit" 
@@ -117,14 +246,41 @@ const GoogleCalendarConfig = () => {
         </div>
       </form>
 
+      <div className="oauth-actions">
+        <h4>🔐 Gestion OAuth</h4>
+        <div className="oauth-buttons">
+          <button 
+            type="button"
+            className="btn-revoke"
+            onClick={handleRevokeOAuth}
+          >
+            <LogOut size={18} />
+            Déconnecter OAuth
+          </button>
+          <button 
+            type="button"
+            className="btn-secondary"
+            onClick={handleOpenGooglePermissions}
+          >
+            <RefreshCw size={18} />
+            Gérer les autorisations
+          </button>
+        </div>
+        <p className="oauth-hint">
+          <AlertCircle size={14} />
+          Utilisez ces boutons si vous avez changé de Client ID ou en cas d'erreur 401
+        </p>
+      </div>
+
       <div className="config-info">
         <h4>📝 Instructions</h4>
         <ol>
           <li>Créez un projet dans <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
-          <li>Activez l'API Google Calendar</li>
+          <li>Activez les API : Google Calendar, Maps JavaScript API, Places API, Distance Matrix API</li>
           <li>Créez des identifiants OAuth 2.0 (Client ID)</li>
+          <li>Créez une clé API pour Google Maps</li>
           <li>Ajoutez l'origine autorisée : <code>http://192.168.205.75:4173</code></li>
-          <li>Copiez le Client ID ici</li>
+          <li>Copiez le Client ID et la clé API ici</li>
           <li>Récupérez l'ID de votre calendrier dans Google Calendar (Paramètres → Calendrier)</li>
         </ol>
       </div>

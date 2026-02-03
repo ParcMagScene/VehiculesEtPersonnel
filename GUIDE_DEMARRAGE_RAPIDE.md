@@ -133,24 +133,29 @@ L'application fonctionne en mode déconnecté :
 ### 👤 Utilisateur Standard
 
 **Permissions** :
-- ✅ Consulter le calendrier
-- ✅ Créer ses propres réservations
-- ✅ Modifier/supprimer ses réservations
+- ✅ Consulter le calendrier (lecture seule)
+- ✅ Voir toutes les réservations
 - ✅ Voir les détails des véhicules
-- ✅ Signaler des problèmes
+- ✅ Accéder à l'interface mobile
+- ❌ Créer des réservations
+- ❌ Modifier des réservations
+- ❌ Supprimer des réservations
 - ❌ Gérer les utilisateurs
-- ❌ Modifier les réservations des autres
-- ❌ Supprimer des véhicules
+- ❌ Gérer les véhicules
+- ❌ Planifier des interventions
+
+> 💡 **Note** : Les utilisateurs standard ont un accès en **lecture seule** au planning. Pour créer ou modifier des réservations, ils doivent demander les droits administrateur.
 
 ### 🔑 Administrateur
 
-**Permissions supplémentaires** :
+**Permissions complètes** :
 - ✅ **Gérer tous les utilisateurs** :
   - Approuver/rejeter les demandes d'accès
   - Attribuer les droits administrateur
   - Réinitialiser les mots de passe
   - Désactiver des comptes
 - ✅ **Gérer toutes les réservations** :
+  - Créer des réservations
   - Modifier n'importe quelle réservation
   - Supprimer des réservations
   - Résoudre les conflits
@@ -158,6 +163,7 @@ L'application fonctionne en mode déconnecté :
   - Ajouter/supprimer des véhicules
   - Mettre à jour les informations
   - Gérer la maintenance
+  - Planifier les interventions
 - ✅ **Notification badge** : Voir les demandes d'accès en attente
 
 ### Passage Administrateur

@@ -279,8 +279,8 @@ function App() {
           await api.createReservationRequest({
             id: `${Date.now()}.${Math.random()}`,
             vehicleId,
-            date,
-            period,
+            startDate: date,
+            startPeriod: period,
             endDate,
             endPeriod,
             ...otherData

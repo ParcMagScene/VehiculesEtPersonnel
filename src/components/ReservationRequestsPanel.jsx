@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Check, X, Clock, User } from 'lucide-react';
-import * as api from '../utils/api';
+import api from '../utils/api';
 import './ReservationRequestsPanel.css';
 
 const ReservationRequestsPanel = ({ onRequestProcessed }) => {

@@ -291,12 +291,29 @@ function App() {
   };
 
   const updateReservation = async (id, updatedReservation) => {
+    console.log('📝 updateReservation appelé - ID:', id, 'Objet:', updatedReservation);
+    
+    // Vérifier que l'objet a un ID valide
+    if (!id || (!updatedReservation.id && id)) {
+      console.warn('⚠️ Objet sans ID détecté, ajout de l\'ID:', id);
+      updatedReservation = { ...updatedReservation, id };
+    }
+    
     // Trouver la réservation à modifier
     const oldReservation = reservations.find(r => r.id === id);
-    if (!oldReservation) return false;
+    if (!oldReservation) {
+      console.error('❌ Réservation introuvable:', id);
+      return false;
+    }
 
     // Vérifier les chevauchements (en excluant la réservation en cours de modification)
     const { vehicleId, date, period, endDate, endPeriod } = updatedReservation;
+    
+    if (!vehicleId) {
+      console.error('❌ vehicleId manquant dans updatedReservation:', updatedReservation);
+      return false;
+    }
+    
     const conflicts = checkOverlap(vehicleId, date, period, endDate, endPeriod, id);
     
     if (conflicts.length > 0) {
@@ -311,11 +328,14 @@ function App() {
 
     // Mettre à jour via l'API
     try {
-      await api.updateReservation(id, { ...updatedReservation, id });
+      const finalReservation = { ...updatedReservation, id };
+      console.log('✅ Envoi API - Objet final:', finalReservation);
+      
+      await api.updateReservation(id, finalReservation);
       
       // Mettre à jour localement
       const updatedReservations = reservations.map(r => 
-        r.id === id ? { ...updatedReservation, id } : r
+        r.id === id ? finalReservation : r
       );
 
       setReservations(updatedReservations);
@@ -337,18 +357,57 @@ function App() {
     }
   };
 
+  // Fonction wrapper pour la mise à jour des maintenances depuis le resize
+  const updateMaintenanceFromResize = async (id, updatedData) => {
+    try {
+      // Trouver la maintenance existante pour conserver toutes ses propriétés
+      const existingMaintenance = maintenances.find(m => m.id === id);
+      if (!existingMaintenance) {
+        console.error('❌ Maintenance introuvable:', id);
+        return false;
+      }
+      
+      // Fusionner les données existantes avec les nouvelles
+      // Assurer que startDate met à jour date pour la DB
+      const fullMaintenance = {
+        ...existingMaintenance,
+        ...updatedData,
+        id, // S'assurer que l'id est bien présent
+        date: updatedData.startDate || updatedData.date, // Utiliser startDate pour date (DB)
+        end_date: updatedData.endDate // Mapper endDate vers end_date (DB)
+      };
+      
+      console.log('🔄 Mise à jour maintenance - Dates:', {
+        avant: { date: existingMaintenance.date, endDate: existingMaintenance.endDate },
+        après: { date: fullMaintenance.date, endDate: fullMaintenance.endDate }
+      });
+      
+      await handleMaintenanceSave(fullMaintenance);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur mise à jour maintenance:', error);
+      alert(`Erreur lors de la mise à jour: ${error.message}`);
+      return false;
+    }
+  };
+
   const handleMaintenanceSave = async (maintenance) => {
     try {
+      console.log('🔧 handleMaintenanceSave appelé avec:', maintenance);
+      console.log('🔧 Maintenances actuelles:', maintenances.map(m => ({ id: m.id, name: m.prestationName })));
+      
       if (maintenance._deleted) {
         // Suppression
         await api.deleteMaintenance(maintenance.id);
         setMaintenances(maintenances.filter(m => m.id !== maintenance.id));
       } else if (maintenances.find(m => m.id === maintenance.id)) {
         // Mise à jour
+        console.log('✅ Mise à jour de la maintenance existante:', maintenance.id);
         await api.updateMaintenance(maintenance.id, maintenance);
         setMaintenances(maintenances.map(m => m.id === maintenance.id ? maintenance : m));
       } else {
         // Ajout
+        console.log('➕ Création d\'une nouvelle maintenance:', maintenance.id);
         const created = await api.createMaintenance(maintenance);
         setMaintenances([...maintenances, created]);
       }
@@ -493,6 +552,7 @@ function App() {
           maintenances={maintenances}
           onAddReservation={addReservation}
           onUpdateReservation={updateReservation}
+          onUpdateMaintenance={updateMaintenanceFromResize}
           onScroll={handleCalendarScroll}
           onDeleteReservation={deleteReservation}
           clients={clients}
@@ -505,6 +565,11 @@ function App() {
           reservationToEdit={reservationToEdit}
           onReservationEditComplete={() => setReservationToEdit(null)}
           onVehicleClick={setSelectedVehicleForDetails}
+          onMaintenanceClick={(vehicle, maintenanceId) => {
+            setSelectedVehicleForMaintenance(vehicle);
+            setMaintenanceToEdit(maintenanceId);
+          }}
+          currentUser={currentUser}
         />
       )}
 

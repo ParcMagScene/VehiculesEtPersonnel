@@ -169,7 +169,31 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
   try {
     const stmt = db.prepare('SELECT * FROM reservations');
     const reservations = stmt.all();
-    res.json(reservations);
+    
+    // Mapper snake_case vers camelCase
+    const mappedReservations = reservations.map(r => ({
+      id: r.id,
+      vehicleId: r.vehicle_id,
+      clientName: r.client_name,
+      driverName: r.driver_name,
+      locationName: r.location_name,
+      prestationName: r.prestation_name,
+      date: r.start_date,
+      startDate: r.start_date,
+      period: r.start_period,
+      startPeriod: r.start_period,
+      endDate: r.end_date,
+      endPeriod: r.end_period,
+      status: r.status,
+      comment: r.comment,
+      affaire: r.affaire,
+      createdBy: r.created_by,
+      modifiedBy: r.modified_by,
+      createdAt: r.created_at,
+      modifiedAt: r.modified_at
+    }));
+    
+    res.json(mappedReservations);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -217,16 +241,29 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
     const reservation = req.body;
     const stmt = db.prepare(`
       UPDATE reservations 
-      SET vehicle_id = ?, start_date = ?, end_date = ?, client_name = ?, driver_name = ?,
-          pickup_location = ?, return_location = ?, notes = ?, google_event_id = ?,
+      SET vehicle_id = ?, start_date = ?, start_period = ?, end_date = ?, end_period = ?,
+          client_name = ?, driver_name = ?, location_name = ?, prestation_name = ?,
+          notes = ?, google_event_id = ?, affaire = ?, is_tournee = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
     
     stmt.run(
-      reservation.vehicleId, reservation.startDate, reservation.endDate, reservation.clientName,
-      reservation.driverName, reservation.pickupLocation, reservation.returnLocation,
-      reservation.notes, reservation.googleEventId, req.user.id, req.params.id
+      reservation.vehicleId || reservation.vehicle_id,
+      reservation.date || reservation.start_date,
+      reservation.period || reservation.start_period || 'AM',
+      reservation.endDate || reservation.end_date,
+      reservation.endPeriod || reservation.end_period || 'PM',
+      reservation.clientName || reservation.client_name || '',
+      reservation.driverName || reservation.driver_name || '',
+      reservation.locationName || reservation.location_name || '',
+      reservation.prestationName || reservation.prestation_name || '',
+      reservation.notes || '',
+      reservation.googleEventId || reservation.google_event_id || '',
+      reservation.affaire || '',
+      reservation.isTournee || reservation.is_tournee ? 1 : 0,
+      req.user.id,
+      req.params.id
     );
     
     addToHistory('reservation', req.params.id, 'updated', reservation, req.user.id, req.user.name);
@@ -257,10 +294,26 @@ app.get('/api/maintenances', authenticateToken, (req, res) => {
     const stmt = db.prepare('SELECT * FROM maintenances');
     const maintenances = stmt.all();
     
-    // Mapper 'date' vers 'start_date' pour compatibilité frontend
+    // Mapper snake_case vers camelCase pour compatibilité frontend
     const mappedMaintenances = maintenances.map(m => ({
-      ...m,
-      start_date: m.date
+      id: m.id,
+      vehicleId: m.vehicle_id,
+      vehicleName: m.vehicle_name,
+      type: m.type,
+      status: m.status,
+      date: m.date,
+      startDate: m.date,
+      endDate: m.end_date,
+      description: m.description,
+      garageId: m.garage_id,
+      cost: m.cost,
+      mileage: m.mileage,
+      notes: m.notes,
+      isImmobilized: m.is_immobilized,
+      createdBy: m.created_by,
+      modifiedBy: m.modified_by,
+      createdAt: m.created_at,
+      modifiedAt: m.modified_at
     }));
     
     res.json(mappedMaintenances);
@@ -310,14 +363,26 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
     const maintenance = req.body;
     const stmt = db.prepare(`
       UPDATE maintenances 
-      SET vehicle_id = ?, type = ?, status = ?, date = ?, description = ?, garage = ?, cost = ?,
+      SET vehicle_id = ?, type = ?, status = ?, date = ?, end_date = ?, description = ?, 
+          garage_id = ?, cost = ?, mileage = ?, notes = ?, is_immobilized = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
     
     stmt.run(
-      maintenance.vehicleId, maintenance.type, maintenance.status, maintenance.date,
-      maintenance.description, maintenance.garage, maintenance.cost, req.user.id, req.params.id
+      maintenance.vehicleId || maintenance.vehicle_id,
+      maintenance.type,
+      maintenance.status,
+      maintenance.startDate || maintenance.date,
+      maintenance.endDate || maintenance.end_date || maintenance.startDate || maintenance.date,
+      maintenance.description,
+      maintenance.garageId || maintenance.garage_id || null,
+      maintenance.cost || null,
+      maintenance.mileage || null,
+      maintenance.notes || null,
+      maintenance.isImmobilized || maintenance.is_immobilized ? 1 : 0,
+      req.user.id,
+      req.params.id
     );
     
     addToHistory('maintenance', req.params.id, 'updated', maintenance, req.user.id, req.user.name);

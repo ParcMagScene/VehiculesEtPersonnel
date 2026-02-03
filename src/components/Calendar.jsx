@@ -21,6 +21,79 @@ import { getPeriodTimestamp, formatLocalDate } from '../utils/dateUtils';
 import ReservationModal from './ReservationModal';
 import './Calendar.css';
 
+// Fonction pour obtenir les initiales d'un utilisateur
+const getUserInitials = (userId, currentUser) => {
+  if (currentUser && userId === currentUser.id) {
+    return currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  }
+  return `U${userId.toString().slice(-1)}`;
+};
+
+// Composant Tooltip pour les réservations
+const ReservationTooltip = ({ block, currentUser }) => {
+  const creatorName = currentUser && block.createdBy === currentUser.id 
+    ? currentUser.name 
+    : `Utilisateur ${block.createdBy}`;
+
+  return (
+    <div className="reservation-tooltip">
+      <div className="tooltip-row">
+        <span className="tooltip-label">Type:</span>
+        <span className="tooltip-value">{block.isMaintenance ? 'Intervention' : 'Réservation'}</span>
+      </div>
+      {block.isMaintenance ? (
+        <>
+          <div className="tooltip-row">
+            <span className="tooltip-label">Prestation:</span>
+            <span className="tooltip-value">{block.prestationName || 'Non spécifiée'}</span>
+          </div>
+          <div className="tooltip-row">
+            <span className="tooltip-label">Garage:</span>
+            <span className="tooltip-value">{block.garageName || 'Non spécifié'}</span>
+          </div>
+          <div className="tooltip-row">
+            <span className="tooltip-label">Début:</span>
+            <span className="tooltip-value">{block.start_date || block.startDate || 'Non spécifié'}</span>
+          </div>
+          <div className="tooltip-row">
+            <span className="tooltip-label">Fin:</span>
+            <span className="tooltip-value">{block.end_date || block.endDate || 'Non spécifiée'}</span>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="tooltip-row">
+            <span className="tooltip-label">Client:</span>
+            <span className="tooltip-value">{block.clientName || 'Non spécifié'}</span>
+          </div>
+          <div className="tooltip-row">
+            <span className="tooltip-label">Date:</span>
+            <span className="tooltip-value">{new Date(block.date).toLocaleDateString('fr-FR')}</span>
+          </div>
+          <div className="tooltip-row">
+            <span className="tooltip-label">Période:</span>
+            <span className="tooltip-value">{block.period === 'AM' ? 'Matin' : 'Après-midi'}</span>
+          </div>
+          <div className="tooltip-row">
+            <span className="tooltip-label">Départ:</span>
+            <span className="tooltip-value">{block.locationName || 'Non spécifié'}</span>
+          </div>
+        </>
+      )}
+      {block.description && (
+        <div className="tooltip-row">
+          <span className="tooltip-label">Description:</span>
+          <span className="tooltip-value">{block.description}</span>
+        </div>
+      )}
+      <div className="tooltip-row">
+        <span className="tooltip-label">Créé par:</span>
+        <span className="tooltip-value">{creatorName}</span>
+      </div>
+    </div>
+  );
+};
+
 // Helper pour afficher les affaires d'une réservation alignées avec leur position
 const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartIndex) => {
   // Mode tournée : créer une grille interne alignée sur les slots
@@ -214,6 +287,7 @@ const Calendar = ({
   reservationToEdit,
   onReservationEditComplete,
   onVehicleClick,
+  currentUser,
 }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
@@ -415,7 +489,11 @@ const Calendar = ({
           isMaintenance: true,
           maintenanceId: m.id,
           maintenanceType: m.type,
-          maintenanceStatus: m.status
+          maintenanceStatus: m.status,
+          createdBy: m.createdBy,
+          description: m.description,
+          garageName: m.garageName,
+          startDate: m.startDate
         };
         
         return pseudoReservation;
@@ -1031,6 +1109,7 @@ const Calendar = ({
                             })}
                           </div>
                         </div>
+                          
                       );
                     })}
                   </div>
@@ -1053,6 +1132,7 @@ const Calendar = ({
                           <div className="day-number">{format(day, 'd MMM', { locale: fr })}</div>
                         </div>
                       </div>
+                          
                     ))}
                   </div>
 
@@ -1073,6 +1153,7 @@ const Calendar = ({
               )}
             </div>
           </div>
+                          
         </div>
 
         {/* Ligne du contenu scrollable */}
@@ -1280,6 +1361,9 @@ const Calendar = ({
                           cursor: block.isMaintenance ? 'pointer' : 'default'
                         }}
                         onMouseDown={(e) => {
+                          // Ignorer le clic droit
+                          if (e.button === 2) return;
+                          
                           if (block.isMaintenance) {
                             e.preventDefault();
                             if (onVehicleClick) {
@@ -1307,6 +1391,14 @@ const Calendar = ({
                             color: '#1f2937', position: 'relative',
                           }}
                         >
+                          {/* Pastille utilisateur créateur */}
+                          {block.createdBy && (
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : "Utilisateur " + block.createdBy}`}>
+                              {getUserInitials(block.createdBy, currentUser)}
+                            </div>
+                          )}
+                          
+                          
                           <div className="reservation-content-wrapper">
                             <div className="reservation-content">
                               <div className="reservation-name">
@@ -1316,7 +1408,11 @@ const Calendar = ({
                               {block.locationName && <div className="reservation-location">{block.locationName}</div>}
                               {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex)}
                             </div>
+                          
+                          {/* Tooltip avec informations complètes */}
+                          <ReservationTooltip block={block} currentUser={currentUser} />
                           </div>
+                          
                         </div>
                       {view !== 'year' && !isBeingResized && (
                             <>
@@ -1510,6 +1606,9 @@ const Calendar = ({
                           cursor: block.isMaintenance ? 'pointer' : 'default'
                         }}
                         onMouseDown={(e) => {
+                          // Ignorer le clic droit
+                          if (e.button === 2) return;
+                          
                           if (block.isMaintenance) {
                             e.preventDefault();
                             if (onVehicleClick) {
@@ -1537,6 +1636,14 @@ const Calendar = ({
                             color: '#1f2937', position: 'relative',
                           }}
                         >
+                          {/* Pastille utilisateur créateur */}
+                          {block.createdBy && (
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : "Utilisateur " + block.createdBy}`}>
+                              {getUserInitials(block.createdBy, currentUser)}
+                            </div>
+                          )}
+                          
+                          
                           <div className="reservation-content-wrapper">
                             <div className="reservation-content">
                               <div className="reservation-name">
@@ -1546,7 +1653,11 @@ const Calendar = ({
                               {block.locationName && <div className="reservation-location">{block.locationName}</div>}
                               {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex)}
                             </div>
+                          
+                          {/* Tooltip avec informations complètes */}
+                          <ReservationTooltip block={block} currentUser={currentUser} />
                           </div>
+                          
                         </div>
                       {view !== 'year' && !isBeingResized && (
                             <>
@@ -1589,8 +1700,10 @@ const Calendar = ({
           })}
             </div>
           </div>
+                          
         </div>
       </div>
+                          
 
       {(selectedSlot || selectedReservation) && (
         <ReservationModal

@@ -52,8 +52,12 @@ export const saveToIndexedDB = async (storeName, data) => {
     // Ajouter toutes les données après le clear
     if (Array.isArray(data)) {
       for (const item of data) {
-        // Utiliser put au lieu de add pour gérer les IDs existants
-        store.put(item);
+        // Vérifier que l'objet a un ID valide avant de le sauvegarder
+        if (item && (item.id !== undefined && item.id !== null)) {
+          store.put(item);
+        } else {
+          console.warn('⚠️ IndexedDB: Objet sans ID ignoré dans', storeName, ':', item);
+        }
       }
     } else if (data && typeof data === 'object') {
       // Pour les objets simples comme calendarConfig

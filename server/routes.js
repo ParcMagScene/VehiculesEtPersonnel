@@ -305,6 +305,16 @@ export function setupConfigRoutes(app, authenticateToken) {
     }
   });
 
+  app.get('/api/config/google/maps-api-key', authenticateToken, (req, res) => {
+    try {
+      const stmt = db.prepare('SELECT value FROM config WHERE key = ?');
+      const config = stmt.get('google_maps_api_key');
+      res.json({ value: config ? config.value : '' });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post('/api/config/google/client-id', authenticateToken, (req, res) => {
     try {
       const { value } = req.body;
@@ -327,6 +337,20 @@ export function setupConfigRoutes(app, authenticateToken) {
         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
       `);
       stmt.run('google_calendar_id', value, req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/config/google/maps-api-key', authenticateToken, (req, res) => {
+    try {
+      const { value } = req.body;
+      const stmt = db.prepare(`
+        INSERT OR REPLACE INTO config (key, value, modified_by, modified_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      `);
+      stmt.run('google_maps_api_key', value, req.user.id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: error.message });

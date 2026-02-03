@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X, Trash2 } from 'lucide-react';
+import { useAutocomplete } from '../hooks/useAutocomplete';
 import './ReservationModal.css';
 
 const ReservationModal = ({
@@ -75,6 +76,13 @@ const ReservationModal = ({
   const [hasChanges, setHasChanges] = useState(false);
 
   const [newAffaire, setNewAffaire] = useState('');
+
+  // Hooks pour l'autocomplétion
+  const { suggestions: clientSuggestions, addToHistory: addClient } = useAutocomplete('clients');
+  const { suggestions: driverSuggestions, addToHistory: addDriver } = useAutocomplete('drivers');
+  const { suggestions: locationSuggestions, addToHistory: addLocation } = useAutocomplete('locations');
+  const { suggestions: prestationSuggestions, addToHistory: addPrestation } = useAutocomplete('prestations');
+  const { suggestions: affaireSuggestions, addToHistory: addAffaire } = useAutocomplete('affaires');
 
   // État pour la sélection multiple de véhicules
   const [selectedVehicleIds, setSelectedVehicleIds] = useState(
@@ -209,6 +217,13 @@ const ReservationModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Ajouter les valeurs à l'historique d'autocomplétion
+    if (formData.clientName) addClient(formData.clientName);
+    if (formData.driverName) addDriver(formData.driverName);
+    if (formData.locationName) addLocation(formData.locationName);
+    if (formData.prestationName) addPrestation(formData.prestationName);
+    formData.affaires.forEach(affaire => addAffaire(affaire));
     
     if (isMultiVehicle) {
       // Mode multi-véhicules : créer une réservation par véhicule sélectionné
@@ -770,9 +785,12 @@ const ReservationModal = ({
               value={formData.clientName}
               onChange={handleChange}
               placeholder="Nom du client ou de la prestation"
-              list="clients-list"
+              list="clients-autocomplete"
             />
-            <datalist id="clients-list">
+            <datalist id="clients-autocomplete">
+              {clientSuggestions.map((suggestion, idx) => (
+                <option key={idx} value={suggestion} />
+              ))}
               {clients.map((client) => (
                 <option key={client.id} value={client.name} />
               ))}
@@ -788,7 +806,13 @@ const ReservationModal = ({
               value={formData.prestationName}
               onChange={handleChange}
               placeholder="Nom de la prestation"
+              list="prestations-autocomplete"
             />
+            <datalist id="prestations-autocomplete">
+              {prestationSuggestions.map((suggestion, idx) => (
+                <option key={idx} value={suggestion} />
+              ))}
+            </datalist>
           </div>
 
           <div className="form-row">
@@ -801,9 +825,12 @@ const ReservationModal = ({
                 value={formData.driverName}
                 onChange={handleChange}
                 placeholder="Nom du conducteur"
-                list="drivers-list"
+                list="drivers-autocomplete"
               />
-              <datalist id="drivers-list">
+              <datalist id="drivers-autocomplete">
+                {driverSuggestions.map((suggestion, idx) => (
+                  <option key={idx} value={suggestion} />
+                ))}
                 {drivers.map((driver) => (
                   <option key={driver.id} value={driver.name} />
                 ))}
@@ -819,9 +846,12 @@ const ReservationModal = ({
                 value={formData.locationName}
                 onChange={handleChange}
                 placeholder="Lieu de la prestation"
-                list="locations-list"
+                list="locations-autocomplete"
               />
-              <datalist id="locations-list">
+              <datalist id="locations-autocomplete">
+                {locationSuggestions.map((suggestion, idx) => (
+                  <option key={idx} value={suggestion} />
+                ))}
                 {locations.map((location) => (
                   <option key={location.id} value={location.name} />
                 ))}
@@ -897,6 +927,9 @@ const ReservationModal = ({
                   }}
                 />
                 <datalist id="affaires-suggestions">
+                  {affaireSuggestions.map((suggestion, idx) => (
+                    <option key={`history-${idx}`} value={suggestion} />
+                  ))}
                   {googleEvents
                     .filter(event => event.affaire && !formData.affaires.includes(event.affaire))
                     .map((event, index) => (

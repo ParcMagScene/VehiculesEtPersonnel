@@ -8,15 +8,6 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   // Trouver la maintenance à éditer dès le départ
   const maintenanceToEditData = maintenanceToEdit ? maintenances.find(m => m.id === maintenanceToEdit) : null;
   
-  console.log('🔍 MaintenanceDialog debug:', {
-    maintenanceToEdit,
-    maintenanceToEditData,
-    actionType,
-    startDate: maintenanceToEditData?.startDate,
-    endDate: maintenanceToEditData?.endDate,
-    date: maintenanceToEditData?.date
-  });
-  
   // Déterminer le statut et le mode initial en fonction de actionType
   const getInitialStatus = () => {
     if (maintenanceToEditData) return maintenanceToEditData.status;

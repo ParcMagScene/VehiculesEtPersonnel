@@ -369,6 +369,10 @@ class ApiClient {
     return this.request('/config/google/calendar-id');
   }
 
+  async getGoogleMapsApiKey() {
+    return this.request('/config/google/maps-api-key');
+  }
+
   async saveGoogleClientId(value) {
     return this.request('/config/google/client-id', {
       method: 'POST',
@@ -378,6 +382,13 @@ class ApiClient {
 
   async saveGoogleCalendarId(value) {
     return this.request('/config/google/calendar-id', {
+      method: 'POST',
+      body: JSON.stringify({ value }),
+    });
+  }
+
+  async saveGoogleMapsApiKey(value) {
+    return this.request('/config/google/maps-api-key', {
       method: 'POST',
       body: JSON.stringify({ value }),
     });

@@ -20,6 +20,7 @@ function initializeDatabase() {
       email TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
+      is_admin BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -80,6 +81,7 @@ function initializeDatabase() {
       google_event_id TEXT,
       affaire TEXT,
       is_tournee BOOLEAN DEFAULT 0,
+      linked_event_ids TEXT,
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
@@ -166,20 +168,26 @@ function initializeDatabase() {
       vehicle_name TEXT,
       type TEXT,
       status TEXT,
-      date TEXT NOT NULL,
+      date TEXT,
       end_date TEXT,
+      start_date_period TEXT,
+      end_date_period TEXT,
       description TEXT,
       garage_id INTEGER,
       cost REAL,
       mileage INTEGER,
       notes TEXT,
       is_immobilized BOOLEAN DEFAULT 0,
+      is_quick_report BOOLEAN DEFAULT 0,
+      reported_date DATETIME,
+      reported_by INTEGER,
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
       FOREIGN KEY (garage_id) REFERENCES garages(id),
+      FOREIGN KEY (reported_by) REFERENCES users(id),
       FOREIGN KEY (created_by) REFERENCES users(id),
       FOREIGN KEY (modified_by) REFERENCES users(id)
     )
@@ -208,6 +216,17 @@ function initializeDatabase() {
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (modified_by) REFERENCES users(id)
+    )
+  `);
+
+  // Table des emails autorisés
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS authorized_emails (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      status TEXT DEFAULT 'pending',
+      activated_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 

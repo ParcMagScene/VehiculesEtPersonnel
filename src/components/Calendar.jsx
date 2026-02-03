@@ -297,6 +297,13 @@ const Calendar = ({
   const [resizePreview, setResizePreview] = useState(null); // { vehicleId, startDate, startPeriod, endDate, endPeriod }
   const [collapsedSections, setCollapsedSections] = useState({ magScene: false, location: false });
 
+  // Debug: log les maintenances reçues
+  useEffect(() => {
+    console.log('🔍 Calendar - Maintenances reçues:', maintenances);
+    const reported = maintenances.filter(m => m.status === 'reported');
+    console.log('🔍 Calendar - Pannes signalées:', reported);
+  }, [maintenances]);
+
   // Ouvrir le modal automatiquement quand un événement Google est sélectionné
   useEffect(() => {
     if (googleEvent) {
@@ -1163,7 +1170,15 @@ const Calendar = ({
             {/* Section Véhicules Mag Scène */}
             {vehicleGroups.magSceneVehicles.length > 0 && (
               <>
-                {!collapsedSections.magScene && vehicleGroups.magSceneVehicles.map((vehicle) => (
+                {!collapsedSections.magScene && vehicleGroups.magSceneVehicles.map((vehicle) => {
+                  // Vérifier si le véhicule a une panne signalée
+                  const hasBreakdown = maintenances.some(m => 
+                    m.vehicleId === vehicle.id && 
+                    (m.status === 'reported' || m.type === 'breakdown') &&
+                    m.status !== 'completed'
+                  );
+                  
+                  return (
                   <div 
                     key={vehicle.id} 
                     className="vehicle-cell"
@@ -1174,14 +1189,22 @@ const Calendar = ({
                       className="vehicle-color"
                       style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
                     />
-                    <div className="vehicle-info"><span className="vehicle-name">{vehicle.name}</span>{vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}{vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}</div>
+                    <div className="vehicle-info">
+                      <span className="vehicle-name">{vehicle.name}</span>
+                      {vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}
+                      {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
+                    </div>
                     {vehicle.photo && (
                       <div className="vehicle-photo">
                         <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
+                        {hasBreakdown && (
+                          <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
+                        )}
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </>
             )}
             
@@ -1199,7 +1222,15 @@ const Calendar = ({
                     {collapsedSections.location ? '▼' : '▲'}
                   </button>
                 </div>
-                {!collapsedSections.location && vehicleGroups.locationVehicles.map((vehicle) => (
+                {!collapsedSections.location && vehicleGroups.locationVehicles.map((vehicle) => {
+                  // Vérifier si le véhicule a une panne signalée
+                  const hasBreakdown = maintenances.some(m => 
+                    m.vehicleId === vehicle.id && 
+                    (m.status === 'reported' || m.type === 'breakdown') &&
+                    m.status !== 'completed'
+                  );
+                  
+                  return (
                   <div 
                     key={vehicle.id} 
                     className="vehicle-cell"
@@ -1210,14 +1241,22 @@ const Calendar = ({
                       className="vehicle-color"
                       style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
                     />
-                    <div className="vehicle-info"><span className="vehicle-name">{vehicle.name}</span>{vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}{vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}</div>
+                    <div className="vehicle-info">
+                      <span className="vehicle-name">{vehicle.name}</span>
+                      {vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}
+                      {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
+                    </div>
                     {vehicle.photo && (
                       <div className="vehicle-photo">
                         <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
+                        {hasBreakdown && (
+                          <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
+                        )}
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </>
             )}
           </div>

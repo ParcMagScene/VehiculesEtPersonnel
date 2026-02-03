@@ -16,6 +16,14 @@ function MobilePlanning({
   const [selectedMonth, setSelectedMonth] = useState(currentDate);
   const scrollWrapperRef = useRef(null);
 
+  console.log('MobilePlanning - Données reçues:');
+  console.log('  Vehicles:', vehicles?.length);
+  console.log('  Reservations:', reservations?.length);
+  console.log('  Maintenances:', maintenances?.length);
+  if (reservations?.length > 0) {
+    console.log('  Première réservation:', reservations[0]);
+  }
+
   // Filtrer les véhicules propres (pas de location)
   const ownVehicles = vehicles.filter(v => v.type !== 'location');
 
@@ -32,14 +40,26 @@ function MobilePlanning({
     return days;
   }, [selectedMonth]);
 
-  // Obtenir les réservations qui commencent un jour donné
-  const getReservationsStartingOnDay = (vehicleId, day) => {
+  // Obtenir les réservations qui commencent un jour donné OU qui sont en cours ce jour
+  const getReservationsForDay = (vehicleId, day) => {
     const dayStart = startOfDay(day);
     
     return reservations.filter(r => {
       if (r.vehicleId !== vehicleId) return false;
-      const resStart = startOfDay(new Date(r.startDate));
-      return resStart.getTime() === dayStart.getTime();
+      if (!r.startDate || !r.endDate) return false;
+      try {
+        const resStart = startOfDay(new Date(r.startDate));
+        const resEnd = startOfDay(new Date(r.endDate));
+        if (isNaN(resStart.getTime()) || isNaN(resEnd.getTime())) return false;
+        
+        // Afficher la réservation si elle commence ce jour OU si elle est en cours ce jour
+        const startsOnDay = resStart.getTime() === dayStart.getTime();
+        const isOngoingOnDay = resStart.getTime() <= dayStart.getTime() && resEnd.getTime() >= dayStart.getTime();
+        
+        return startsOnDay || isOngoingOnDay;
+      } catch (e) {
+        return false;
+      }
     });
   };
 
@@ -96,9 +116,12 @@ function MobilePlanning({
   const calculateRows = (vehicleId, days) => {
     const allElements = [];
     
+    console.log(`Planning pour véhicule ${vehicleId}, mois:`, format(selectedMonth, 'MMMM yyyy', { locale: fr }));
+    
     // Collecter toutes les réservations
     days.forEach((day, dayIndex) => {
-      const dayReservations = getReservationsStartingOnDay(vehicleId, day);
+      const dayReservations = getReservationsForDay(vehicleId, day);
+      console.log(`  Jour ${format(day, 'dd MMM')} - ${dayReservations.length} réservations trouvées`);
       dayReservations.forEach(res => {
         allElements.push({
           ...res,
@@ -265,6 +288,11 @@ function MobilePlanning({
                 // Calculer le nombre exact de colonnes
                 const gridTemplateColumns = monthDays.map(() => '80px').join(' ');
                 
+                // Calculer les rows pour ce véhicule
+                const vehicleElements = calculateRows(vehicle.id, monthDays);
+                const reservationsWithRows = vehicleElements.filter(e => e.type === 'reservation');
+                const maintenancesWithRows = vehicleElements.filter(e => e.type === 'maintenance');
+                
                 return (
                 <div key={vehicle.id} className="mobile-vehicle-row">
                   <div className="mobile-vehicle-label-wrapper">
@@ -281,74 +309,72 @@ function MobilePlanning({
                       </div>
                     ))}
                     {/* Réservations (affichées en premier, en arrière-plan) */}
-                    {monthDays.map((day, dayIndex) => {
-                      const dayReservations = getReservationsStartingOnDay(vehicle.id, day);
-                      
-                      return dayReservations.map(reservation => {
-                        const duration = calculateDuration(reservation.startDate, reservation.endDate);
+                    {reservationsWithRows.map(reservation => {
                         return (
                           <div
                             key={reservation.id}
                             className="mobile-reservation"
                             style={{ 
-                              gridColumn: `${dayIndex + 1} / span ${duration}`,
-                              gridRow: 1,
+                              gridColumn: `${reservation.dayIndex + 1} / span ${reservation.duration}`,
+                              gridRow: reservation.row,
                               backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6'
                             }}
                           >
-                            <div className="mobile-item-icon">
-                              <Calendar size={12} />
-                            </div>
-                            <div className="mobile-item-content">
-                              <div className="mobile-item-title">
-                                {reservation.clientName || reservation.driverName || 'Réservation'}
-                              </div>
-                              <div className="mobile-item-subtitle">
-                                {format(new Date(reservation.startDate), 'dd/MM')}
-                                {reservation.endDate && reservation.endDate !== reservation.startDate && ` - ${format(new Date(reservation.endDate), 'dd/MM')}`}
+                            <div className="mobile-reservation-content-wrapper">
+                              <div className="mobile-reservation-inner">
+                                <div className="mobile-item-icon">
+                                  <Calendar size={12} />
+                                </div>
+                                <div className="mobile-item-content">
+                                  <div className="mobile-item-title">
+                                    {reservation.clientName || reservation.driverName || 'Réservation'}
+                                  </div>
+                                  <div className="mobile-item-subtitle">
+                                    {format(new Date(reservation.startDate), 'dd/MM')}
+                                    {reservation.endDate && reservation.endDate !== reservation.startDate && ` - ${format(new Date(reservation.endDate), 'dd/MM')}`}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
                         );
-                      });
-                    })}
+                      })}
 
                     {/* Interventions (affichées par-dessus les réservations) */}
-                    {monthDays.map((day, dayIndex) => {
-                      const dayMaintenances = getMaintenancesStartingOnDay(vehicle.id, day);
-                      
-                      return dayMaintenances.map(maintenance => {
-                        const duration = calculateDuration(maintenance.startDate, maintenance.endDate);
+                    {maintenancesWithRows.map(maintenance => {
                         return (
                           <div
                             key={maintenance.id}
                             className={`mobile-maintenance mobile-maintenance-${maintenance.status}`}
                             style={{ 
                               borderLeftColor: getStatusColor(maintenance.status),
-                              gridColumn: `${dayIndex + 1} / span ${duration}`,
-                              gridRow: 1
+                              gridColumn: `${maintenance.dayIndex + 1} / span ${maintenance.duration}`,
+                              gridRow: maintenance.row
                             }}
                           >
-                            <div className="mobile-item-icon">
-                              {maintenance.status === 'reported' ? (
-                                <AlertTriangle size={12} />
-                              ) : (
-                                <Wrench size={12} />
-                              )}
-                            </div>
-                            <div className="mobile-item-content">
-                              <div className="mobile-item-title">
-                                {maintenance.description?.substring(0, 20) || 'Maintenance'}
-                              </div>
-                              <div className="mobile-item-subtitle">
-                                {format(new Date(maintenance.startDate), 'dd/MM')}
-                                {maintenance.endDate && ` - ${format(new Date(maintenance.endDate), 'dd/MM')}`}
+                            <div className="mobile-maintenance-content-wrapper">
+                              <div className="mobile-maintenance-inner">
+                                <div className="mobile-item-icon">
+                                  {maintenance.status === 'reported' ? (
+                                    <AlertTriangle size={12} />
+                                  ) : (
+                                    <Wrench size={12} />
+                                  )}
+                                </div>
+                                <div className="mobile-item-content">
+                                  <div className="mobile-item-title">
+                                    {maintenance.description?.substring(0, 20) || 'Maintenance'}
+                                  </div>
+                                  <div className="mobile-item-subtitle">
+                                    {format(new Date(maintenance.startDate), 'dd/MM')}
+                                    {maintenance.endDate && ` - ${format(new Date(maintenance.endDate), 'dd/MM')}`}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
                         );
-                      });
-                    })}
+                      })}
                   </div>
                 </div>
               );

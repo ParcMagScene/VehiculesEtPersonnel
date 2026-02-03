@@ -21,6 +21,7 @@ function MobileApp() {
   const [garages, setGarages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   
   // Refs pour contrôler les formulaires
   const reservationFormRef = useRef(null);
@@ -131,8 +132,127 @@ function MobileApp() {
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
         <h1>Véhicules</h1>
-        <div className="user-info">
-          <span className="user-initial">{currentUser?.name?.charAt(0)}</span>
+        <div className="user-info" style={{ position: 'relative' }}>
+          <button 
+            className="user-initial"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            style={{ cursor: 'pointer', border: 'none', background: 'none', padding: 0 }}
+          >
+            {currentUser?.name?.charAt(0)}
+          </button>
+
+          {showUserMenu && (
+            <>
+              <div 
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 999
+                }}
+                onClick={() => setShowUserMenu(false)}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50px',
+                  right: 0,
+                  background: 'white',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+                  overflow: 'hidden',
+                  minWidth: '200px',
+                  zIndex: 1000
+                }}
+              >
+                <div style={{
+                  padding: '12px 16px',
+                  borderBottom: '1px solid #e5e7eb',
+                  background: '#f9fafb'
+                }}>
+                  <div style={{ fontWeight: 600, color: '#1f2937' }}>{currentUser?.name}</div>
+                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                    {currentUser?.email}
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    window.location.reload();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'white',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    color: '#374151',
+                    transition: 'background 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                  onTouchStart={(e) => e.currentTarget.style.background = '#f9fafb'}
+                  onTouchEnd={(e) => e.currentTarget.style.background = 'white'}
+                >
+                  <LayoutGrid size={16} />
+                  Changer d'utilisateur
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    handleLogout();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'white',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    color: '#dc2626',
+                    transition: 'background 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontWeight: 500
+                  }}
+                  onTouchStart={(e) => e.currentTarget.style.background = '#fef2f2'}
+                  onTouchEnd={(e) => e.currentTarget.style.background = 'white'}
+                >
+                  <LogOut size={16} />
+                  Se déconnecter
+                </button>
+
+                <button
+                  onClick={() => setShowUserMenu(false)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    borderTop: '1px solid #e5e7eb',
+                    background: '#f9fafb',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    color: '#6b7280',
+                    transition: 'background 0.2s'
+                  }}
+                  onTouchStart={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                  onTouchEnd={(e) => e.currentTarget.style.background = '#f9fafb'}
+                >
+                  Annuler
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </header>
 

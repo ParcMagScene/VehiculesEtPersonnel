@@ -2,6 +2,24 @@ import React, { useState } from 'react';
 import { X, Mail, User, Send } from 'lucide-react';
 import './AccessRequestModal.css';
 
+// Détection automatique de l'URL du backend (même logique que api.js)
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
+  
+  // Si on accède via DuckDNS, utiliser DuckDNS pour le backend aussi
+  if (hostname === 'magsav.duckdns.org') {
+    return 'http://magsav.duckdns.org:3002';
+  }
+  
+  // Si on est en développement local (localhost), utiliser localhost
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3002';
+  }
+  
+  // Sinon utiliser l'IP locale
+  return 'http://192.168.205.75:3002';
+};
+
 function AccessRequestModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     email: '',
@@ -25,7 +43,8 @@ function AccessRequestModal({ onClose, onSuccess }) {
     setError('');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3002'}/api/access-requests`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/access-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

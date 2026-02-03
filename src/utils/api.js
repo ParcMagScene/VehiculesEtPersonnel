@@ -9,6 +9,11 @@ const getApiUrl = () => {
     return 'http://magsav.duckdns.org:3002/api';
   }
   
+  // Si on est en développement local (localhost), utiliser localhost
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3002/api';
+  }
+  
   // Sinon utiliser l'IP locale
   return 'http://192.168.205.75:3002/api';
 };
@@ -187,6 +192,31 @@ class ApiClient {
     });
   }
 
+  // Demandes de réservation (pour non-admins)
+  async getReservationRequests() {
+    return this.request('/reservation-requests');
+  }
+
+  async createReservationRequest(request) {
+    return this.request('/reservation-requests', {
+      method: 'POST',
+      body: JSON.stringify(toSnakeCase(request)),
+    });
+  }
+
+  async approveReservationRequest(id) {
+    return this.request(`/reservation-requests/${id}/approve`, {
+      method: 'PUT',
+    });
+  }
+
+  async rejectReservationRequest(id, reason) {
+    return this.request(`/reservation-requests/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
   // Maintenances
   async getMaintenances() {
     return this.request('/maintenances');
@@ -331,28 +361,41 @@ class ApiClient {
 
   // Gestion des utilisateurs (admin)
   async getAuthorizedEmails() {
-    return this.request('/admin/authorized-emails');
+    return this.request('/authorized-emails');
   }
 
   async addAuthorizedEmail(email) {
-    return this.request('/admin/authorized-emails', {
+    return this.request('/authorized-emails', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
   }
 
   async removeAuthorizedEmail(id) {
-    return this.request(`/admin/authorized-emails/${id}`, {
+    return this.request(`/authorized-emails/${id}`, {
       method: 'DELETE',
     });
   }
 
   async getUsers() {
-    return this.request('/admin/users');
+    return this.request('/users');
+  }
+
+  async updateUser(id, updates) {
+    return this.request(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteUser(id) {
+    return this.request(`/users/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   async resetUserPassword(userId, newPassword) {
-    return this.request('/admin/reset-password', {
+    return this.request('/users/reset-password', {
       method: 'POST',
       body: JSON.stringify({ userId, newPassword }),
     });

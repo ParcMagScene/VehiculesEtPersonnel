@@ -30,7 +30,172 @@ function QRCodeModal({ onClose }) {
   };
 
   const handlePrint = () => {
-    window.print();
+    const printWindow = window.open('', '_blank');
+    const canvas = canvasRef.current;
+    const qrDataUrl = canvas.toDataURL('image/png');
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Codes - Accès Mobile MagScene</title>
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 10mm;
+            }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+              padding: 0;
+              margin: 0;
+            }
+            .print-container {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              grid-template-rows: 1fr 1fr;
+              gap: 8mm;
+              width: 190mm;
+              height: 277mm;
+              page-break-after: avoid;
+            }
+            .qr-card {
+              border: 2px solid #667eea;
+              border-radius: 8px;
+              padding: 8px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: space-between;
+              background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+              page-break-inside: avoid;
+              height: 128mm;
+            }
+            .qr-header {
+              text-align: center;
+              width: 100%;
+              margin-bottom: 6px;
+            }
+            .qr-logo {
+              width: 50px;
+              height: 50px;
+              margin: 0 auto 6px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              border-radius: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 24px;
+            }
+            .qr-header h1 {
+              font-size: 16px;
+              font-weight: 700;
+              color: #667eea;
+              margin-bottom: 2px;
+            }
+            .qr-header h2 {
+              font-size: 12px;
+              font-weight: 600;
+              color: #333;
+              margin-bottom: 6px;
+            }
+            .qr-image-container {
+              background: white;
+              padding: 10px;
+              border-radius: 6px;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+              margin: 6px 0;
+            }
+            .qr-image-container img {
+              display: block;
+              width: 140px;
+              height: 140px;
+            }
+            .qr-info {
+              width: 100%;
+              text-align: center;
+              margin-top: 6px;
+            }
+            .qr-url {
+              font-family: Monaco, monospace;
+              font-size: 8px;
+              color: #3b82f6;
+              background: white;
+              padding: 4px 6px;
+              border-radius: 3px;
+              border: 1px solid #ddd;
+              margin-bottom: 6px;
+              word-break: break-all;
+            }
+            .qr-features {
+              font-size: 8px;
+              text-align: left;
+              color: #555;
+              line-height: 1.4;
+            }
+            .qr-features ul {
+              list-style: none;
+              padding-left: 0;
+            }
+            .qr-features li {
+              padding: 1px 0;
+            }
+            .qr-footer {
+              width: 100%;
+              text-align: center;
+              margin-top: 4px;
+              font-size: 9px;
+              color: #888;
+              border-top: 1px solid #eee;
+              padding-top: 4px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-container">
+            ${[1, 2, 3, 4].map(() => `
+              <div class="qr-card">
+                <div class="qr-header">
+                  <div class="qr-logo">🚗</div>
+                  <h1>MagScene</h1>
+                  <h2>Interface Mobile</h2>
+                </div>
+                <div class="qr-image-container">
+                  <img src="${qrDataUrl}" alt="QR Code" />
+                </div>
+                <div class="qr-info">
+                  <div class="qr-url">${mobileUrl}</div>
+                  <div class="qr-features">
+                    <ul>
+                      <li>✓ Consultation des réservations</li>
+                      <li>✓ Demandes de réservation</li>
+                      <li>✓ Signalement de pannes</li>
+                      <li>✓ Demandes d'intervention</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="qr-footer">
+                  Scannez avec votre smartphone
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleOverlayClick = (e) => {

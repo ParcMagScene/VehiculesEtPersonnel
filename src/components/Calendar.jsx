@@ -1757,6 +1757,7 @@ const Calendar = ({
           onClose={closeModal}
           googleEvent={selectedSlot?.googleEvent || googleEvent}
           googleEvents={googleEvents}
+          currentUser={currentUser}
         />
       )}
     </div>

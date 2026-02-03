@@ -10,7 +10,8 @@ export default defineConfig({
   },
   preview: {
     host: '0.0.0.0', // Accessible sur réseau local en mode production
-    port: 4173
+    port: 4173,
+    allowedHosts: ['magsav.duckdns.org', '.duckdns.org']
   },
   optimizeDeps: {
     include: ['pdfjs-dist']

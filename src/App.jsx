@@ -466,6 +466,7 @@ function App() {
     setLocations([]);
     setGarages([]);
     setMaintenances([]);
+    // Ne pas effacer calendarConfig pour conserver la configuration Google Calendar
   };
 
   if (isLoading) {

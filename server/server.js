@@ -252,7 +252,40 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
     
     addToHistory('reservation', reservation.id, 'created', reservation, req.user.id, req.user.name);
     
-    res.json({ success: true, id: reservation.id });
+    // Récupérer la réservation complète avec les infos du véhicule
+    const createdReservation = db.prepare(`
+      SELECT r.*, v.name as vehicle_name, v.type as vehicle_type, v.immatriculation
+      FROM reservations r
+      JOIN vehicles v ON r.vehicle_id = v.id
+      WHERE r.id = ?
+    `).get(reservation.id);
+    
+    // Mapper au format attendu par le frontend
+    const mappedReservation = {
+      id: createdReservation.id,
+      vehicleId: createdReservation.vehicle_id,
+      vehicleName: createdReservation.vehicle_name,
+      vehicleType: createdReservation.vehicle_type,
+      immatriculation: createdReservation.immatriculation,
+      startDate: createdReservation.start_date,
+      startPeriod: createdReservation.start_period,
+      endDate: createdReservation.end_date,
+      endPeriod: createdReservation.end_period,
+      // Rétrocompatibilité
+      date: createdReservation.start_date,
+      period: createdReservation.start_period,
+      clientName: createdReservation.client_name,
+      driverName: createdReservation.driver_name,
+      locationName: createdReservation.location_name,
+      prestationName: createdReservation.prestation_name,
+      notes: createdReservation.notes,
+      googleEventId: createdReservation.google_event_id,
+      affaire: createdReservation.affaire,
+      isTournee: Boolean(createdReservation.is_tournee),
+      linkedEventIds: createdReservation.linked_event_ids ? JSON.parse(createdReservation.linked_event_ids) : []
+    };
+    
+    res.json(mappedReservation);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

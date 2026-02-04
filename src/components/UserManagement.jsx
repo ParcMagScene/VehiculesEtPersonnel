@@ -8,8 +8,6 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
   const [newEmail, setNewEmail] = useState('');
-  const [resetUserId, setResetUserId] = useState(null);
-  const [newPassword, setNewPassword] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -91,18 +89,28 @@ const UserManagement = () => {
     }
   };
 
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    if (!newPassword || newPassword.length < 4) {
-      alert('Le mot de passe doit contenir au moins 4 caractères');
+  const handleResetPassword = async (userId) => {
+    if (!confirm('Marquer ce compte pour réinitialisation ? L\'utilisateur devra définir un nouveau mot de passe lors de sa prochaine connexion.')) {
       return;
     }
 
     try {
-      await api.updateUser(resetUserId, { newPassword });
-      alert('Mot de passe réinitialisé avec succès');
-      setResetUserId(null);
-      setNewPassword('');
+      const response = await fetch(`http://localhost:3002/api/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erreur lors de la réinitialisation');
+      }
+
+      const data = await response.json();
+      alert(`✅ Réinitialisation demandée\n\nL'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`);
+      loadData();
     } catch (error) {
       alert(`Erreur: ${error.message}`);
     }
@@ -149,6 +157,175 @@ const UserManagement = () => {
 
   return (
     <div className="user-management">
+      {/* Utilisateurs enregistrés */}
+      <div className="user-management-section">
+        <h3><User size={20} /> Utilisateurs</h3>
+
+        <div className="users-list">
+          {users.length === 0 ? (
+            <p className="no-data">Aucun utilisateur</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Email</th>
+                  <th>Droits</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>
+                      <label className="admin-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={user.isAdmin || false}
+                          onChange={() => handleToggleAdmin(user.id, user.isAdmin)}
+                        />
+                        <span className="checkbox-label">
+                          {user.isAdmin ? (
+                            <><Shield size={14} /> Admin</>
+                          ) : (
+                            <><User size={14} /> Utilisateur</>
+                          )}
+                        </span>
+                      </label>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          onClick={() => handleResetPassword(user.id)}
+                          className="btn-icon btn-warning"
+                          title="Réinitialiser - l'utilisateur devra définir un nouveau mot de passe"
+                        >
+                          <RefreshCw size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="btn-icon btn-danger"
+                          title="Supprimer l'utilisateur"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Emails autorisés */}
+      <div className="user-management-section">
+        <h3><Mail size={20} /> Emails autorisés</h3>
+        
+        <form onSubmit={handleAddEmail} className="add-email-form">
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="email@example.com"
+            required
+          />
+          <button type="submit">
+            <UserPlus size={18} /> Autoriser
+          </button>
+        </form>
+
+        <div className="emails-list">
+          {authorizedEmails.length === 0 ? (
+            <p className="no-data">Aucun email autorisé</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Statut</th>
+                  <th>Utilisateur</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {authorizedEmails.map((email) => (
+                  <tr key={email.id}>
+                    <td>{email.email}</td>
+                    <td>
+                      <span className={`status-badge ${email.status}`}>
+                        {email.status === 'activated' ? (
+                          <><Check size={14} /> Activé</>
+                        ) : (
+                          <><Clock size={14} /> En attente</>
+                        )}
+                      </span>
+                    </td>
+                    <td>{email.userName || '-'}</td>
+                    <td>
+                      <button
+                        onClick={() => handleRemoveEmail(email.id)}
+                        className="btn-icon btn-danger"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Historique des demandes traitées */}
+      {accessRequests.filter(r => r.status !== 'pending').length > 0 && (
+        <div className="user-management-section">
+          <h3>Historique des demandes</h3>
+          <div className="requests-history">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Email</th>
+                  <th>Date demande</th>
+                  <th>Statut</th>
+                  <th>Traité par</th>
+                  <th>Date traitement</th>
+                </tr>
+              </thead>
+              <tbody>
+                {accessRequests.filter(r => r.status !== 'pending').map((request) => (
+                  <tr key={request.id}>
+                    <td>{request.name}</td>
+                    <td>{request.email}</td>
+                    <td>
+                      {new Date(request.createdAt).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td>
+                      <span className={`status-badge ${request.status}`}>
+                        {request.status === 'approved' ? '✓ Approuvée' : '✗ Rejetée'}
+                      </span>
+                    </td>
+                    <td>{request.reviewedByName || '-'}</td>
+                    <td>
+                      {request.reviewedAt 
+                        ? new Date(request.reviewedAt).toLocaleDateString('fr-FR')
+                        : '-'
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Demandes d'accès en attente */}
       {accessRequests.filter(r => r.status === 'pending').length > 0 && (
         <div className="user-management-section access-requests-section">
@@ -194,201 +371,6 @@ const UserManagement = () => {
           </div>
         </div>
       )}
-
-      {/* Historique des demandes traitées */}
-      {accessRequests.filter(r => r.status !== 'pending').length > 0 && (
-        <div className="user-management-section">
-          <h3>Historique des demandes</h3>
-          <div className="requests-history">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nom</th>
-                  <th>Email</th>
-                  <th>Date demande</th>
-                  <th>Statut</th>
-                  <th>Traité par</th>
-                  <th>Date traitement</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accessRequests.filter(r => r.status !== 'pending').map((request) => (
-                  <tr key={request.id}>
-                    <td>{request.name}</td>
-                    <td>{request.email}</td>
-                    <td>
-                      {new Date(request.created_at).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td>
-                      <span className={`status-badge ${request.status}`}>
-                        {request.status === 'approved' ? '✓ Approuvée' : '✗ Rejetée'}
-                      </span>
-                    </td>
-                    <td>{request.reviewed_by_name || '-'}</td>
-                    <td>
-                      {request.reviewed_at 
-                        ? new Date(request.reviewed_at).toLocaleDateString('fr-FR')
-                        : '-'
-                      }
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <div className="user-management-section">
-        <h3><Mail size={20} /> Emails autorisés</h3>
-        
-        <form onSubmit={handleAddEmail} className="add-email-form">
-          <input
-            type="email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            placeholder="email@example.com"
-            required
-          />
-          <button type="submit">
-            <UserPlus size={18} /> Autoriser
-          </button>
-        </form>
-
-        <div className="emails-list">
-          {authorizedEmails.length === 0 ? (
-            <p className="no-data">Aucun email autorisé</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Statut</th>
-                  <th>Utilisateur</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {authorizedEmails.map((email) => (
-                  <tr key={email.id}>
-                    <td>{email.email}</td>
-                    <td>
-                      <span className={`status-badge ${email.status}`}>
-                        {email.status === 'activated' ? (
-                          <><Check size={14} /> Activé</>
-                        ) : (
-                          <><Clock size={14} /> En attente</>
-                        )}
-                      </span>
-                    </td>
-                    <td>{email.user_name || '-'}</td>
-                    <td>
-                      <button
-                        onClick={() => handleRemoveEmail(email.id)}
-                        className="btn-icon btn-danger"
-                        title="Supprimer"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-
-      <div className="user-management-section">
-        <h3><User size={20} /> Utilisateurs</h3>
-
-        <div className="users-list">
-          {users.length === 0 ? (
-            <p className="no-data">Aucun utilisateur</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Nom</th>
-                  <th>Email</th>
-                  <th>Droits</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>
-                      <label className="admin-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={user.isAdmin || false}
-                          onChange={() => handleToggleAdmin(user.id, user.isAdmin)}
-                        />
-                        <span className="checkbox-label">
-                          {user.isAdmin ? (
-                            <><Shield size={14} /> Admin</>
-                          ) : (
-                            <><User size={14} /> Utilisateur</>
-                          )}
-                        </span>
-                      </label>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        {resetUserId === user.id ? (
-                          <form onSubmit={handleResetPassword} className="inline-form">
-                            <input
-                              type="text"
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              placeholder="Nouveau mot de passe"
-                              autoFocus
-                              minLength={4}
-                            />
-                            <button type="submit" className="btn-sm btn-primary">
-                              Valider
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setResetUserId(null);
-                                setNewPassword('');
-                              }}
-                              className="btn-sm btn-secondary"
-                            >
-                              Annuler
-                            </button>
-                          </form>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setResetUserId(user.id)}
-                              className="btn-icon btn-warning"
-                              title="Réinitialiser le mot de passe"
-                            >
-                              <RefreshCw size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="btn-icon btn-danger"
-                              title="Supprimer l'utilisateur"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
     </div>
   );
 };

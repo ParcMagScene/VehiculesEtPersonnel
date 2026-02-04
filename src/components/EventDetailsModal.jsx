@@ -4,18 +4,36 @@ import { fr } from 'date-fns/locale';
 import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon } from 'lucide-react';
 import './EventDetailsModal.css';
 
+// Détection automatique de l'URL du backend
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
+  if (hostname === 'magsav.duckdns.org') {
+    return 'http://magsav.duckdns.org:3002';
+  }
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3002';
+  }
+  return 'http://192.168.205.75:3002';
+};
+
+const API_BASE_URL = getApiUrl();
+
 function EventDetailsModal({ 
   isOpen, 
   onClose, 
   event, 
   reservations = [], 
   onRequestEditReservation,
+  onRequestCreateReservation,
   onEventCreated,
   onEventUpdated
 }) {
   const [linkedReservations, setLinkedReservations] = useState([]);
   const [attachmentFiles, setAttachmentFiles] = useState([]);
   const [showActions, setShowActions] = useState(true);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [showFolderView, setShowFolderView] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (event && reservations) {
@@ -34,36 +52,76 @@ function EventDetailsModal({
 
   const scanAttachmentFolder = async (affaire) => {
     try {
-      // Implémenter la recherche de fichiers dans le dossier public/attachments/{affaire}
-      // Pour l'instant, simuler avec des exemples
-      setAttachmentFiles([
-        // { name: 'BL_001.pdf', type: 'pdf', size: '2.3 MB' },
-        // { name: 'Facture.pdf', type: 'pdf', size: '1.1 MB' }
-      ]);
+      const response = await fetch(`${API_BASE_URL}/api/attachments/${affaire}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAttachmentFiles(data.files || []);
+      } else {
+        setAttachmentFiles([]);
+      }
     } catch (error) {
-      console.error('Erreur scan dossier:', error);
+      console.error('Erreur chargement fichiers:', error);
+      setAttachmentFiles([]);
     }
   };
 
   const handleOpenFolder = () => {
     if (!event || !event.affaire) return;
+    setShowFolderView(true);
+  };
+
+  const handleFileClick = (file) => {
+    setPreviewFile(file);
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length || !event.affaire) return;
+
+    setUploading(true);
     
-    // Ouvrir le dossier dans le Finder (macOS) ou Explorer (Windows)
-    const folderPath = `/Users/reunion/Resevation Véhicules/public/attachments/${event.affaire}`;
-    
-    // Utiliser l'API Electron ou shell si disponible, sinon afficher un message
-    if (window.electron && window.electron.shell) {
-      window.electron.shell.openPath(folderPath);
-    } else {
-      alert(`Dossier: ${folderPath}\n\nVeuillez ouvrir ce dossier manuellement.`);
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('affaireId', event.affaire);
+
+        const response = await fetch(`${API_BASE_URL}/api/upload-attachment`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Échec de l'upload de ${file.name}`);
+        }
+      }
+      
+      // Recharger la liste des fichiers
+      await scanAttachmentFolder(event.affaire);
+      alert(`${files.length} fichier(s) uploadé(s) avec succès`);
+    } catch (error) {
+      console.error('Erreur upload:', error);
+      alert('Erreur lors de l\'upload des fichiers');
+    } finally {
+      setUploading(false);
+      e.target.value = ''; // Reset input
     }
   };
 
   const handleCreateReservation = () => {
-    // Ouvrir le modal AffaireImportModal ou créer une réservation
+    // Ouvrir le modal de création de réservation classique
+    if (onRequestCreateReservation) {
+      onRequestCreateReservation(event);
+    }
+    onClose();
+  };
+
+  const handleImportBL = () => {
+    // Ouvrir le modal d'import de BL (AffaireImportModal)
     if (onEventCreated) {
       onEventCreated(event);
     }
+    onClose();
   };
 
   const handleEditReservation = (reservation) => {
@@ -202,15 +260,41 @@ function EventDetailsModal({
                 <Folder size={18} />
                 Pièces jointes {event.affaire && `(${event.affaire})`}
               </h3>
-              <button 
-                className="btn-open-folder" 
-                onClick={handleOpenFolder}
-                title="Ouvrir le dossier"
-                disabled={!event.affaire}
-              >
-                <Folder size={16} />
-                Ouvrir dossier
-              </button>
+              <div className="section-actions">
+                <button 
+                  className="btn-import-bl" 
+                  onClick={handleImportBL}
+                  title="Importer un BL"
+                  disabled={!event.affaire}
+                >
+                  <FileText size={16} />
+                  Importer BL
+                </button>
+                <label 
+                  className={`btn-open-folder ${!event.affaire || uploading ? 'disabled' : ''}`}
+                  title="Joindre des fichiers"
+                  style={{ cursor: !event.affaire || uploading ? 'not-allowed' : 'pointer' }}
+                >
+                  <Plus size={16} />
+                  {uploading ? 'Upload...' : 'Joindre fichiers'}
+                  <input 
+                    type="file" 
+                    multiple 
+                    onChange={handleFileUpload}
+                    disabled={!event.affaire || uploading}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                <button 
+                  className="btn-open-folder" 
+                  onClick={handleOpenFolder}
+                  title="Ouvrir le dossier"
+                  disabled={!event.affaire}
+                >
+                  <Folder size={16} />
+                  Ouvrir dossier
+                </button>
+              </div>
             </div>
             
             {attachmentFiles.length === 0 ? (
@@ -218,15 +302,19 @@ function EventDetailsModal({
                 <p>Aucune pièce jointe trouvée</p>
                 {event.affaire && (
                   <p className="hint">
-                    Les fichiers doivent être placés dans : 
-                    <code>public/attachments/{event.affaire}/</code>
+                    Cliquez sur "Joindre fichiers" pour ajouter des documents
                   </p>
                 )}
               </div>
             ) : (
               <div className="attachments-list">
                 {attachmentFiles.map((file, index) => (
-                  <div key={index} className="attachment-item">
+                  <div 
+                    key={index} 
+                    className="attachment-item clickable"
+                    onClick={() => handleFileClick(file)}
+                    title="Cliquer pour prévisualiser"
+                  >
                     <FileText size={16} />
                     <span className="file-name">{file.name}</span>
                     <span className="file-size">{file.size}</span>
@@ -258,6 +346,111 @@ function EventDetailsModal({
           </div>
         </div>
       </div>
+
+      {/* Modal d'aperçu de fichier */}
+      {previewFile && (
+        <div className="modal-overlay" onClick={() => setPreviewFile(null)}>
+          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="preview-header">
+              <h3>{previewFile.name}</h3>
+              <button onClick={() => setPreviewFile(null)} className="btn-close">×</button>
+            </div>
+            <div className="preview-body">
+              {previewFile.name.toLowerCase().endsWith('.pdf') ? (
+                <iframe 
+                  src={previewFile.url} 
+                  title={previewFile.name}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                />
+              ) : previewFile.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                <img 
+                  src={previewFile.url} 
+                  alt={previewFile.name}
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                />
+              ) : (
+                <div className="unsupported-preview">
+                  <FileText size={48} />
+                  <p>Aperçu non disponible pour ce type de fichier</p>
+                  <a href={previewFile.url} download className="btn-primary">
+                    Télécharger
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="preview-footer">
+              <span className="file-info">{previewFile.size}</span>
+              <a href={previewFile.url} download className="btn-secondary">
+                Télécharger
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de vue dossier virtuel */}
+      {showFolderView && (
+        <div className="modal-overlay" onClick={() => setShowFolderView(false)}>
+          <div className="folder-view-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="folder-header">
+              <h3>
+                <Folder size={20} />
+                Dossier : {event.affaire}
+              </h3>
+              <button onClick={() => setShowFolderView(false)} className="btn-close">×</button>
+            </div>
+            <div className="folder-body">
+              {attachmentFiles.length === 0 ? (
+                <div className="empty-folder">
+                  <Folder size={48} />
+                  <p>Aucun fichier dans ce dossier</p>
+                </div>
+              ) : (
+                <div className="folder-files-grid">
+                  {attachmentFiles.map((file, index) => (
+                    <div 
+                      key={index} 
+                      className="folder-file-card"
+                      onClick={() => {
+                        setShowFolderView(false);
+                        handleFileClick(file);
+                      }}
+                    >
+                      <div className="file-icon">
+                        {file.name.toLowerCase().endsWith('.pdf') ? (
+                          <FileText size={32} />
+                        ) : file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                          <img src={file.url} alt={file.name} className="file-thumbnail" />
+                        ) : (
+                          <FileText size={32} />
+                        )}
+                      </div>
+                      <div className="file-info">
+                        <p className="file-name" title={file.name}>{file.name}</p>
+                        <p className="file-size">{file.size}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="folder-footer">
+              <span>{attachmentFiles.length} fichier(s)</span>
+              <label className="btn-primary">
+                <Plus size={16} />
+                Ajouter fichiers
+                <input 
+                  type="file" 
+                  multiple 
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

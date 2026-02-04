@@ -84,8 +84,8 @@ function MobileApp() {
     setCurrentUser(user);
   };
 
-  const handleLogout = () => {
-    api.logout();
+  const handleLogout = async () => {
+    await api.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
     setCurrentScreen('home');

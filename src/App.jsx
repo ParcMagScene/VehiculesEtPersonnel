@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy, useRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Calendar from './components/Calendar';
 import Header from './components/Header';
-import ManagementPanel from './components/ManagementPanel';
 import GoogleCalendarBanner from './components/GoogleCalendarBanner';
-import MaintenanceDialog from './components/MaintenanceDialog';
 import VehicleDetailsModal from './components/VehicleDetailsModal';
 import LoginForm from './components/LoginForm';
 import MobileApp from './components/mobile/MobileApp';
@@ -14,7 +12,12 @@ import ErrorBoundary from './components/ErrorBoundary';
 import api from './utils/api';
 import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
+import logger, { dataLogger } from './utils/logger';
 import './App.css';
+
+// Code splitting - Lazy loading des composants lourds
+const ManagementPanel = lazy(() => import('./components/ManagementPanel'));
+const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
 
 // Fonction utilitaire pour formater une date en YYYY-MM-DD
 const formatDateToString = (date) => {
@@ -61,6 +64,7 @@ function App() {
   const [maintenanceActionType, setMaintenanceActionType] = useState(null); // 'schedule', 'request', 'breakdown'
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const openEventDetailsModalRef = useRef(null); // Référence à la fonction pour ouvrir EventDetailsModal
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {
@@ -319,11 +323,11 @@ function App() {
   };
 
   const updateReservation = async (id, updatedReservation) => {
-    console.log('📝 updateReservation appelé - ID:', id, 'Objet:', updatedReservation);
+    logger.log('📝 updateReservation appelé - ID:', id, 'Objet:', updatedReservation);
     
     // Vérifier que l'objet a un ID valide
     if (!id || (!updatedReservation.id && id)) {
-      console.warn('⚠️ Objet sans ID détecté, ajout de l\'ID:', id);
+      logger.warn('⚠️ Objet sans ID détecté, ajout de l\'ID:', id);
       updatedReservation = { ...updatedReservation, id };
     }
     
@@ -357,7 +361,7 @@ function App() {
     // Mettre à jour via l'API
     try {
       const finalReservation = { ...updatedReservation, id };
-      console.log('✅ Envoi API - Objet final:', finalReservation);
+      logger.log('✅ Envoi API - Objet final:', finalReservation);
       
       await api.updateReservation(id, finalReservation);
       
@@ -376,12 +380,12 @@ function App() {
   };
 
   const deleteReservation = async (id) => {
-    console.log('🗑️ deleteReservation appelé - ID:', id);
+    logger.log('🗑️ deleteReservation appelé - ID:', id);
     try {
       const result = await api.deleteReservation(id);
-      console.log('✅ Suppression API réussie:', result);
+      logger.log('✅ Suppression API réussie:', result);
       setReservations(reservations.filter(r => r.id !== id));
-      console.log('✅ État local mis à jour');
+      logger.log('✅ État local mis à jour');
     } catch (error) {
       console.error('❌ Erreur suppression réservation:', error);
       alert(`Erreur lors de la suppression: ${error.message}`);
@@ -408,7 +412,7 @@ function App() {
         end_date: updatedData.endDate // Mapper endDate vers end_date (DB)
       };
       
-      console.log('🔄 Mise à jour maintenance - Dates:', {
+      logger.log('🔄 Mise à jour maintenance - Dates:', {
         avant: { date: existingMaintenance.date, endDate: existingMaintenance.endDate },
         après: { date: fullMaintenance.date, endDate: fullMaintenance.endDate }
       });
@@ -424,8 +428,8 @@ function App() {
 
   const handleMaintenanceSave = async (maintenance) => {
     try {
-      console.log('🔧 handleMaintenanceSave appelé avec:', maintenance);
-      console.log('🔧 Maintenances actuelles:', maintenances.map(m => ({ id: m.id, name: m.prestationName })));
+      logger.log('🔧 handleMaintenanceSave appelé avec:', maintenance);
+      logger.log('🔧 Maintenances actuelles:', maintenances.map(m => ({ id: m.id, name: m.prestationName })));
       
       if (maintenance._deleted) {
         // Suppression
@@ -433,12 +437,12 @@ function App() {
         setMaintenances(maintenances.filter(m => m.id !== maintenance.id));
       } else if (maintenances.find(m => m.id === maintenance.id)) {
         // Mise à jour
-        console.log('✅ Mise à jour de la maintenance existante:', maintenance.id);
+        logger.log('✅ Mise à jour de la maintenance existante:', maintenance.id);
         await api.updateMaintenance(maintenance.id, maintenance);
         setMaintenances(maintenances.map(m => m.id === maintenance.id ? maintenance : m));
       } else {
         // Ajout
-        console.log('➕ Création d\'une nouvelle maintenance:', maintenance.id);
+        logger.log('➕ Création d\'une nouvelle maintenance:', maintenance.id);
         const created = await api.createMaintenance(maintenance);
         setMaintenances([...maintenances, created]);
       }
@@ -459,8 +463,8 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
-    api.logout();
+  const handleLogout = async () => {
+    await api.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
     setVehicles([]);
@@ -554,6 +558,7 @@ function App() {
         reservations={reservations}
         onEventHover={setHoveredEventId}
         onRequestEditReservation={setReservationToEdit}
+        onRequestViewEvent={(fn) => { openEventDetailsModalRef.current = fn; }}
       />
 
       {view === 'planning' ? (
@@ -566,7 +571,7 @@ function App() {
             const vehicle = vehicles.find(v => v.id === reservation.vehicleId);
             if (vehicle) {
               // TODO: Ouvrir modal de réservation si besoin
-              console.log('Open reservation', reservation);
+              logger.log('Open reservation', reservation);
             }
           }}
           onOpenMaintenance={setSelectedVehicleForMaintenance}
@@ -601,49 +606,64 @@ function App() {
             setSelectedVehicleForMaintenance(vehicle);
             setMaintenanceToEdit(maintenanceId);
           }}
+          onRequestViewEvent={(event) => openEventDetailsModalRef.current?.(event)}
           currentUser={currentUser}
         />
       )}
 
       {showManagement && (
-        <ManagementPanel
-          vehicles={vehicles}
-          setVehicles={setVehicles}
-          reservations={reservations}
-          setReservations={setReservations}
-          clients={clients}
-          setClients={setClients}
-          drivers={drivers}
-          setDrivers={setDrivers}
-          locations={locations}
-          setLocations={setLocations}
-          calendarConfig={calendarConfig}
-          setCalendarConfig={setCalendarConfig}
-          garages={garages}
-          setGarages={setGarages}
-          maintenances={maintenances}
-          setMaintenances={setMaintenances}
-          currentUser={currentUser}
-          onClose={() => setShowManagement(false)}
-        />
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement du panneau de gestion...</p>
+          </div>
+        }>
+          <ManagementPanel
+            vehicles={vehicles}
+            setVehicles={setVehicles}
+            reservations={reservations}
+            setReservations={setReservations}
+            clients={clients}
+            setClients={setClients}
+            drivers={drivers}
+            setDrivers={setDrivers}
+            locations={locations}
+            setLocations={setLocations}
+            calendarConfig={calendarConfig}
+            setCalendarConfig={setCalendarConfig}
+            garages={garages}
+            setGarages={setGarages}
+            maintenances={maintenances}
+            setMaintenances={setMaintenances}
+            currentUser={currentUser}
+            onClose={() => setShowManagement(false)}
+          />
+        </Suspense>
       )}
 
       {selectedVehicleForMaintenance && (
-        <MaintenanceDialog
-          vehicle={selectedVehicleForMaintenance}
-          maintenances={maintenances}
-          garages={garages}
-          reservations={reservations}
-          maintenanceToEdit={maintenanceToEdit}
-          actionType={maintenanceActionType}
-          currentUser={currentUser}
-          onSave={handleMaintenanceSave}
-          onClose={() => {
-            setSelectedVehicleForMaintenance(null);
-            setMaintenanceToEdit(null);
-            setMaintenanceActionType(null);
-          }}
-        />
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement...</p>
+          </div>
+        }>
+          <MaintenanceDialog
+            vehicle={selectedVehicleForMaintenance}
+            maintenances={maintenances}
+            garages={garages}
+            reservations={reservations}
+            maintenanceToEdit={maintenanceToEdit}
+            actionType={maintenanceActionType}
+            currentUser={currentUser}
+            onSave={handleMaintenanceSave}
+            onClose={() => {
+              setSelectedVehicleForMaintenance(null);
+              setMaintenanceToEdit(null);
+              setMaintenanceActionType(null);
+            }}
+          />
+        </Suspense>
       )}
 
       {selectedVehicleForDetails && (

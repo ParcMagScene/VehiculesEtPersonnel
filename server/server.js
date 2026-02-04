@@ -2,8 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import multer from 'multer';
 import db, { addToHistory, getHistory } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3002;
@@ -11,6 +18,10 @@ const JWT_SECRET = 'your-secret-key-change-in-production';
 
 app.use(cors());
 app.use(express.json());
+
+// Servir les fichiers statiques depuis le dossier public/attachments
+const attachmentsPath = path.join(__dirname, '..', 'public', 'attachments');
+app.use('/attachments', express.static(attachmentsPath));
 
 // Middleware d'authentification
 function authenticateToken(req, res, next) {
@@ -91,8 +102,57 @@ app.post('/api/auth/login', async (req, res) => {
     const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
     const user = stmt.get(email);
     
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    if (!user) {
+      console.log(`❌ Tentative de connexion - Utilisateur non trouvé: ${email}`);
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+    
+    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatch) {
+      console.log(`❌ Tentative de connexion - Mot de passe incorrect pour: ${email}`);
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+    
+    console.log(`✅ Authentification réussie pour: ${email}`);
+    
+    // Vérifier que l'email est autorisé
+    const authorizedEmailStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = \'activated\'');
+    const authorizedEmail = authorizedEmailStmt.get(email);
+    
+    if (!authorizedEmail) {
+      console.log(`❌ Accès refusé - Email non autorisé: ${email}`);
+      return res.status(403).json({ 
+        error: 'EMAIL_NOT_AUTHORIZED',
+        message: 'Votre email n\'est pas autorisé à accéder à cette application. Veuillez contacter un administrateur.' 
+      });
+    }
+    
+    // Vérifier si une réinitialisation est requise
+    if (user.password_reset_required === 1) {
+      return res.status(403).json({
+        error: 'PASSWORD_RESET_REQUIRED',
+        message: 'Votre compte a été réinitialisé. Vous devez définir un nouveau mot de passe.',
+        userId: user.id,
+        email: user.email
+      });
+    }
+    
+    // Vérifier s'il y a déjà une session active pour cet utilisateur
+    const activeSessionStmt = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM active_sessions 
+      WHERE user_id = ? AND expires_at > datetime('now')
+    `);
+    const activeSession = activeSessionStmt.get(user.id);
+    
+    if (activeSession.count > 0) {
+      // Il y a déjà une session active
+      return res.status(409).json({ 
+        error: 'SESSION_ALREADY_ACTIVE',
+        message: 'Une session est déjà active avec ces identifiants sur un autre appareil.',
+        userId: user.id,
+        email: user.email
+      });
     }
     
     const token = jwt.sign(
@@ -101,8 +161,91 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '30d' }
     );
     
+    // Enregistrer la session
+    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const insertSessionStmt = db.prepare(`
+      INSERT INTO active_sessions (user_id, token_hash, expires_at)
+      VALUES (?, ?, ?)
+    `);
+    insertSessionStmt.run(user.id, tokenHash, expiresAt);
+    
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 } });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Forcer une nouvelle connexion en fermant les sessions actives
+app.post('/api/auth/force-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    const user = stmt.get(email);
+    
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+    
+    // Vérifier que l'email est autorisé
+    const authorizedEmailStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = \'activated\'');
+    const authorizedEmail = authorizedEmailStmt.get(email);
+    
+    if (!authorizedEmail) {
+      console.log(`❌ Force-login refusé - Email non autorisé: ${email}`);
+      return res.status(403).json({ 
+        error: 'EMAIL_NOT_AUTHORIZED',
+        message: 'Votre email n\'est pas autorisé à accéder à cette application. Veuillez contacter un administrateur.' 
+      });
+    }
+    
+    // Supprimer toutes les sessions actives de cet utilisateur
+    const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    deleteSessionsStmt.run(user.id);
+    
+    // Créer un nouveau token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+    
+    // Enregistrer la nouvelle session
+    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const insertSessionStmt = db.prepare(`
+      INSERT INTO active_sessions (user_id, token_hash, expires_at)
+      VALUES (?, ?, ?)
+    `);
+    insertSessionStmt.run(user.id, tokenHash, expiresAt);
+    
+    res.json({ 
+      token, 
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      message: 'Toutes les autres sessions ont été fermées'
+    });
+  } catch (error) {
+    console.error('Erreur force-login:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Déconnexion (nettoyer la session)
+app.post('/api/auth/logout', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userEmail = req.user.email;
+    
+    // Supprimer toutes les sessions de cet utilisateur
+    const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    const result = deleteSessionsStmt.run(userId);
+    
+    console.log(`🚪 Déconnexion: ${userEmail} - ${result.changes} session(s) fermée(s)`);
+    
+    res.json({ message: 'Déconnexion réussie', sessionsClosed: result.changes });
+  } catch (error) {
+    console.error('Erreur logout:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -980,17 +1123,142 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
     if (isAdmin !== undefined) {
       const stmt = db.prepare('UPDATE users SET is_admin = ? WHERE id = ?');
       stmt.run(isAdmin ? 1 : 0, id);
+      
+      // Invalider toutes les sessions de cet utilisateur pour qu'il se reconnecte avec le nouveau statut
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      const result = deleteSessionsStmt.run(id);
+      console.log(`🔄 Statut admin modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
     }
     
     if (newPassword) {
       const passwordHash = await bcrypt.hash(newPassword, 10);
       const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
       stmt.run(passwordHash, id);
+      
+      // Invalider toutes les sessions lors du changement de mot de passe
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      const result = deleteSessionsStmt.run(id);
+      console.log(`🔑 Mot de passe modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
     }
     
-    res.json({ success: true });
+    res.json({ success: true, message: 'Utilisateur mis à jour. Les sessions actives ont été fermées.' });
   } catch (error) {
     console.error('Erreur mise à jour utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Demander une réinitialisation de mot de passe (admin)
+app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Marquer le compte comme nécessitant une réinitialisation
+    const stmt = db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?');
+    stmt.run(id);
+    
+    // Invalider toutes les sessions
+    const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    const result = deleteSessionsStmt.run(id);
+    
+    // Récupérer l'email pour le retour
+    const userStmt = db.prepare('SELECT email FROM users WHERE id = ?');
+    const user = userStmt.get(id);
+    
+    console.log(`🔄 Réinitialisation demandée pour user ${id} (${user?.email}) - ${result.changes} session(s) fermée(s)`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Réinitialisation demandée. L\'utilisateur devra définir un nouveau mot de passe.',
+      email: user?.email
+    });
+  } catch (error) {
+    console.error('Erreur demande réinitialisation:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Vérifier si un compte nécessite une réinitialisation
+app.post('/api/auth/check-reset', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    const stmt = db.prepare('SELECT id, email, name, password_reset_required FROM users WHERE email = ?');
+    const user = stmt.get(email);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    res.json({ 
+      resetRequired: user.password_reset_required === 1,
+      user: { id: user.id, email: user.email, name: user.name }
+    });
+  } catch (error) {
+    console.error('Erreur check reset:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Définir un nouveau mot de passe après réinitialisation
+app.post('/api/auth/set-new-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    }
+    
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    const user = stmt.get(email);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    if (user.password_reset_required !== 1) {
+      return res.status(400).json({ error: 'Aucune réinitialisation en attente pour ce compte' });
+    }
+    
+    // Mettre à jour le mot de passe et retirer le flag
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const updateStmt = db.prepare(`
+      UPDATE users 
+      SET password_hash = ?, password_reset_required = 0 
+      WHERE id = ?
+    `);
+    updateStmt.run(passwordHash, user.id);
+    
+    // Supprimer toutes les anciennes sessions avant d'en créer une nouvelle
+    const deleteOldSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    deleteOldSessionsStmt.run(user.id);
+    
+    // Créer un token pour connecter directement l'utilisateur
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+    
+    // Enregistrer la session
+    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const insertSessionStmt = db.prepare(`
+      INSERT INTO active_sessions (user_id, token_hash, expires_at)
+      VALUES (?, ?, ?)
+    `);
+    insertSessionStmt.run(user.id, tokenHash, expiresAt);
+    
+    console.log(`✅ Nouveau mot de passe défini pour ${user.email}`);
+    
+    res.json({ 
+      success: true,
+      token,
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      message: 'Mot de passe défini avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur définition mot de passe:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1020,6 +1288,189 @@ setupDriversRoutes(app, authenticateToken);
 setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
 setupConfigRoutes(app, authenticateToken);
+
+// Endpoint pour créer un dossier
+app.post('/api/create-folder', (req, res) => {
+  try {
+    const { path: folderPath } = req.body;
+    
+    if (!folderPath) {
+      return res.status(400).json({ error: 'Chemin du dossier manquant' });
+    }
+    
+    // Créer le dossier récursivement (avec tous les parents)
+    fs.mkdirSync(folderPath, { recursive: true });
+    
+    res.json({ success: true, path: folderPath });
+  } catch (error) {
+    console.error('Erreur création dossier:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Configuration de multer pour l'upload de fichiers
+// Configuration de multer pour l'upload de fichiers - upload temporaire
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '..', 'public', 'attachments', 'TEMP');
+    
+    // Créer le dossier temporaire s'il n'existe pas
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Nom temporaire unique
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    // Accepter uniquement les PDF
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Seuls les fichiers PDF sont acceptés'));
+    }
+  }
+});
+
+// Endpoint pour uploader un BL
+app.post('/api/upload-bl', upload.single('pdf'), (req, res) => {
+  console.log('📤 POST /api/upload-bl reçu');
+  console.log('  - affaireId:', req.body.affaireId);
+  console.log('  - file:', req.file ? req.file.originalname : 'AUCUN');
+  
+  try {
+    if (!req.file) {
+      console.error('❌ Aucun fichier dans la requête');
+      return res.status(400).json({ error: 'Aucun fichier fourni' });
+    }
+    
+    if (!req.body.affaireId) {
+      console.error('❌ affaireId manquant');
+      return res.status(400).json({ error: 'affaireId requis' });
+    }
+    
+    // Déplacer le fichier du dossier TEMP vers le dossier de l'affaire
+    const affaireDir = path.join(__dirname, '..', 'public', 'attachments', req.body.affaireId);
+    if (!fs.existsSync(affaireDir)) {
+      fs.mkdirSync(affaireDir, { recursive: true });
+      console.log('📁 Dossier créé:', affaireDir);
+    }
+    
+    // Extraire le nom de fichier original (enlever le timestamp)
+    const originalName = req.file.originalname.replace(/^\d+-/, '');
+    const finalPath = path.join(affaireDir, originalName);
+    
+    // Déplacer le fichier
+    fs.renameSync(req.file.path, finalPath);
+    console.log('✅ Fichier déplacé vers:', finalPath);
+    
+    const relativePath = path.join('attachments', req.body.affaireId, originalName);
+    
+    res.json({ 
+      success: true, 
+      path: relativePath,
+      filename: originalName
+    });
+  } catch (error) {
+    console.error('❌ Erreur upload BL:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint pour uploader des pièces jointes génériques
+app.post('/api/upload-attachment', upload.single('file'), (req, res) => {
+  console.log('📤 POST /api/upload-attachment reçu');
+  console.log('  - affaireId:', req.body.affaireId);
+  console.log('  - file:', req.file ? req.file.originalname : 'AUCUN');
+  
+  try {
+    if (!req.file) {
+      console.error('❌ Aucun fichier dans la requête');
+      return res.status(400).json({ error: 'Aucun fichier fourni' });
+    }
+    
+    if (!req.body.affaireId) {
+      console.error('❌ affaireId manquant');
+      return res.status(400).json({ error: 'affaireId requis' });
+    }
+    
+    // Déplacer le fichier du dossier TEMP vers le dossier de l'affaire
+    const affaireDir = path.join(__dirname, '..', 'public', 'attachments', req.body.affaireId);
+    if (!fs.existsSync(affaireDir)) {
+      fs.mkdirSync(affaireDir, { recursive: true });
+      console.log('📁 Dossier créé:', affaireDir);
+    }
+    
+    // Extraire le nom de fichier original (enlever le timestamp)
+    const originalName = req.file.originalname.replace(/^\d+-/, '');
+    const finalPath = path.join(affaireDir, originalName);
+    
+    // Déplacer le fichier
+    fs.renameSync(req.file.path, finalPath);
+    console.log('✅ Fichier attaché sauvegardé:', finalPath);
+    
+    const relativePath = path.join('attachments', req.body.affaireId, originalName);
+    
+    res.json({ 
+      success: true, 
+      path: relativePath,
+      filename: originalName,
+      url: `/attachments/${req.body.affaireId}/${originalName}`
+    });
+  } catch (error) {
+    console.error('❌ Erreur upload attachment:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint pour lister les fichiers d'une affaire
+app.get('/api/attachments/:affaireId', (req, res) => {
+  try {
+    const affaireId = req.params.affaireId;
+    const dirPath = path.join(__dirname, '..', 'public', 'attachments', affaireId);
+    
+    // Vérifier si le dossier existe
+    if (!fs.existsSync(dirPath)) {
+      return res.json({ files: [] });
+    }
+    
+    // Fonction pour formater la taille
+    const formatSize = (bytes) => {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+    
+    // Lire les fichiers du dossier
+    const files = fs.readdirSync(dirPath)
+      .filter(file => !file.startsWith('.')) // Ignorer les fichiers cachés
+      .map(file => {
+        const filePath = path.join(dirPath, file);
+        const stats = fs.statSync(filePath);
+        return {
+          name: file,
+          size: formatSize(stats.size),
+          sizeBytes: stats.size,
+          url: `/attachments/${affaireId}/${file}`,
+          createdAt: stats.birthtime
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt); // Trier par date décroissante
+    
+    res.json({ files });
+  } catch (error) {
+    console.error('Erreur liste fichiers:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);

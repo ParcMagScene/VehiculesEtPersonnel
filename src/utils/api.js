@@ -96,7 +96,10 @@ class ApiClient {
       headers,
     });
 
-    if (response.status === 401 || response.status === 403) {
+    // Ne pas traiter les erreurs 401/403 comme "session expirée" pour les endpoints de connexion
+    const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/force-login';
+    
+    if ((response.status === 401 || response.status === 403) && !isAuthEndpoint) {
       this.clearAuth();
       window.location.reload();
       throw new Error('Session expirée');
@@ -105,7 +108,10 @@ class ApiClient {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.error || 'Erreur serveur');
+      // Créer une erreur avec la réponse complète pour les erreurs spécifiques
+      const error = new Error(data.error || 'Erreur serveur');
+      error.response = { status: response.status, data };
+      throw error;
     }
 
     // Convertir les données de snake_case en camelCase
@@ -129,7 +135,23 @@ class ApiClient {
     return data;
   }
 
-  logout() {
+  async logout() {
+    // Appeler le endpoint backend pour supprimer la session
+    if (this.token) {
+      try {
+        await fetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('✅ Déconnexion côté serveur réussie');
+      } catch (err) {
+        console.error('❌ Erreur lors de la déconnexion côté serveur:', err);
+      }
+    }
+    
     this.clearAuth();
     // Pas de window.location.reload() - laisser React gérer le changement d'état
   }
@@ -466,3 +488,4 @@ class ApiClient {
 
 export const api = new ApiClient();
 export default api;
+export { getApiUrl };

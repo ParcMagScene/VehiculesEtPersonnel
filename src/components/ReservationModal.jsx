@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X, Trash2 } from 'lucide-react';
 import { useAutocomplete } from '../hooks/useAutocomplete';
+import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
 import './ReservationModal.css';
 
 const ReservationModal = ({
@@ -18,6 +19,7 @@ const ReservationModal = ({
   googleEvent, // Événement Google pour mode multi-véhicules
   googleEvents = [], // Liste de tous les événements Google disponibles
   currentUser,
+  onRequestViewEvent, // Callback pour ouvrir l'EventDetailsModal
 }) => {
   const isEdit = !!reservation;
   const isMultiVehicle = !!googleEvent && !isEdit; // Mode multi-véhicules seulement en création
@@ -77,6 +79,20 @@ const ReservationModal = ({
   const [hasChanges, setHasChanges] = useState(false);
 
   const [newAffaire, setNewAffaire] = useState('');
+
+  // Autocomplétion Google Places pour le champ lieu
+  const { inputRef: locationInputRef } = useGooglePlacesAutocomplete(
+    (place) => {
+      setFormData(prev => ({
+        ...prev,
+        locationName: place.address || place.name
+      }));
+      if (place.address) {
+        addLocation(place.address);
+      }
+    },
+    { types: ['geocode'] }
+  );
 
   // Hooks pour l'autocomplétion
   const { suggestions: clientSuggestions, addToHistory: addClient } = useAutocomplete('clients');
@@ -348,7 +364,7 @@ const ReservationModal = ({
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 id="modal-title">{isEdit ? 'Modifier la réservation' : 'Nouvelle réservation'}</h2>
+          <h2 id="modal-title">Réservation</h2>
           <button className="close-button" onClick={onClose} aria-label="Fermer la fenêtre">
             <X size={24} />
           </button>
@@ -430,7 +446,19 @@ const ReservationModal = ({
                           const dateRange = startDate ? format(startDate, 'dd/MM', { locale: fr }) : '';
                           
                           return (
-                            <div key={eventId} className="selected-event-display" style={{ backgroundColor: getEventColor(event) + '20', padding: '0.25rem 0.5rem' }}>
+                            <div 
+                              key={eventId} 
+                              className="selected-event-display clickable-event" 
+                              style={{ backgroundColor: getEventColor(event) + '20', padding: '0.25rem 0.5rem', cursor: 'pointer' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onRequestViewEvent) {
+                                  onRequestViewEvent(event);
+                                  onClose(); // Fermer le modal de réservation
+                                }
+                              }}
+                              title="Cliquer pour voir l'événement"
+                            >
                               <span className="event-dates" style={{ fontSize: '0.7rem' }}>{dateRange}</span>
                               {event.affaire && <span className="event-affaire" style={{ fontSize: '0.7rem' }}>{event.affaire}</span>}
                             </div>
@@ -471,7 +499,18 @@ const ReservationModal = ({
                         if (!cleanTitle) cleanTitle = '(Sans titre)';
                         
                         return (
-                          <div className="selected-event-display" style={{ backgroundColor: getEventColor(event) + '20' }}>
+                          <div 
+                            className="selected-event-display clickable-event" 
+                            style={{ backgroundColor: getEventColor(event) + '20', cursor: 'pointer' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onRequestViewEvent) {
+                                onRequestViewEvent(event);
+                                onClose(); // Fermer le modal de réservation
+                              }
+                            }}
+                            title="Cliquer pour voir l'événement"
+                          >
                             <span className="event-dates">{dateRange}</span>
                             <span className="event-title">{cleanTitle}</span>
                             {event.affaire && <span className="event-affaire">{event.affaire}</span>}
@@ -634,6 +673,7 @@ const ReservationModal = ({
                   .map(({ eventId, event, dateRange, cleanTitle }) => (
                     <div 
                       key={eventId}
+                      className="clickable-event"
                       style={{ 
                         backgroundColor: getEventColor(event) + '20',
                         padding: '0.75rem',
@@ -641,8 +681,17 @@ const ReservationModal = ({
                         border: '1px solid ' + getEventColor(event) + '40',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.375rem'
+                        gap: '0.375rem',
+                        cursor: 'pointer'
                       }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onRequestViewEvent) {
+                          onRequestViewEvent(event);
+                          onClose();
+                        }
+                      }}
+                      title="Cliquer pour voir l'événement"
                     >
                       <div style={{ 
                         display: 'flex',
@@ -865,6 +914,7 @@ const ReservationModal = ({
                 onChange={handleChange}
                 placeholder="Lieu de la prestation"
                 list="locations-autocomplete"
+                ref={locationInputRef}
               />
               <datalist id="locations-autocomplete">
                 {locationSuggestions.map((suggestion, idx) => (

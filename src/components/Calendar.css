@@ -423,7 +423,8 @@
   display: flex;
   gap: 0.75rem;
   align-items: center;
-  height: 80px;
+  min-height: 90px;
+  height: auto;
   z-index: 1;
   position: relative;
   transition: background-color 0.2s;
@@ -442,11 +443,12 @@
 
 .vehicle-info {
   flex: 1;
-  min-width: 0;
+  min-width: 180px;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 4px;
   justify-content: center;
+  padding: 4px 0;
 }
 
 .vehicle-photo {
@@ -514,8 +516,8 @@
   font-size: 0.95rem;
   font-weight: 700;
   color: #6b7280;
-  line-height: 0.9;
-  margin-top: -2px;
+  line-height: 1.2;
+  margin-top: 2px;
   background: none !important;
   border-radius: 0 !important;
   padding: 0 !important;
@@ -527,8 +529,8 @@
   font-weight: 900 !important;
   color: #8b5cf6 !important;
   font-family: monospace;
-  line-height: 0.9;
-  margin-top: -4px;
+  line-height: 1.2;
+  margin-top: 3px;
   background: none !important;
   border-radius: 0 !important;
   padding: 0 !important;

@@ -7,6 +7,7 @@ import GoogleCalendarConfig from './GoogleCalendarConfig';
 import ChangePassword from './ChangePassword';
 import MobileAccess from './MobileAccess';
 import LocationDialog from './LocationDialog';
+import ClientDialog from './ClientDialog';
 import ReservationRequestsPanel from './ReservationRequestsPanel';
 import api from '../utils/api';
 import './ManagementPanel.css';
@@ -54,9 +55,12 @@ const ManagementPanel = ({
   const [importStatus, setImportStatus] = useState('');
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [locationToEdit, setLocationToEdit] = useState(null);
+  const [showClientDialog, setShowClientDialog] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState(null);
   const [companyAddress, setCompanyAddress] = useState('');
   const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
+  const companyAddressInputRef = useRef(null);
   const fileInputRef = useRef(null);
 
   // Charger l'adresse de MagScène depuis la config
@@ -71,6 +75,70 @@ const ManagementPanel = ({
     };
     loadCompanyAddress();
   }, []);
+
+  // Initialiser l'autocomplétion pour le champ Adresse de MagScène
+  useEffect(() => {
+    if (activeTab !== 'locations' || !companyAddressInputRef.current) return;
+
+    const initCompanyAddressAutocomplete = async () => {
+      try {
+        // Vérifier si Google Maps est déjà chargé
+        if (!window.google || !window.google.maps) {
+          const configData = await api.getGoogleMapsApiKey();
+          const apiKey = configData.value;
+          
+          if (!apiKey) return;
+
+          // Charger Google Maps
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr`;
+          script.async = true;
+          script.defer = true;
+          script.onload = () => {
+            if (window.google && window.google.maps && companyAddressInputRef.current) {
+              const autocomplete = new window.google.maps.places.Autocomplete(
+                companyAddressInputRef.current,
+                {
+                  types: ['address'],
+                  componentRestrictions: { country: 'fr' },
+                  fields: ['formatted_address', 'geometry', 'place_id']
+                }
+              );
+              
+              autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place.formatted_address) {
+                  setCompanyAddress(place.formatted_address);
+                }
+              });
+            }
+          };
+          document.head.appendChild(script);
+        } else {
+          // Google Maps déjà chargé
+          const autocomplete = new window.google.maps.places.Autocomplete(
+            companyAddressInputRef.current,
+            {
+              types: ['address'],
+              componentRestrictions: { country: 'fr' },
+              fields: ['formatted_address', 'geometry', 'place_id']
+            }
+          );
+          
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place.formatted_address) {
+              setCompanyAddress(place.formatted_address);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Erreur initialisation autocomplete:', error);
+      }
+    };
+
+    initCompanyAddressAutocomplete();
+  }, [activeTab]);
 
   // Charger la liste des photos au montage du composant
   useEffect(() => {
@@ -294,6 +362,9 @@ const ManagementPanel = ({
     if (activeTab === 'locations') {
       setLocationToEdit(item);
       setShowLocationDialog(true);
+    } else if (activeTab === 'clients') {
+      setClientToEdit(item);
+      setShowClientDialog(true);
     } else {
       setEditingItem({ ...item });
     }
@@ -326,6 +397,32 @@ const ManagementPanel = ({
       setLocationToEdit(null);
     } catch (error) {
       console.error('❌ Erreur sauvegarde lieu:', error);
+      alert(`Erreur lors de la sauvegarde: ${error.message}`);
+    }
+  };
+
+  const handleSaveClient = async (clientData) => {
+    try {
+      if (clientToEdit) {
+        // Mise à jour
+        await api.updateClient(clientToEdit.id, clientData);
+        const newList = clients.map(cli => 
+          cli.id === clientToEdit.id ? { ...clientData, id: clientToEdit.id } : cli
+        );
+        setClients(newList);
+        saveToIndexedDB(STORES.clients, newList);
+      } else {
+        // Création
+        const createdClient = await api.createClient(clientData);
+        const newClient = { ...clientData, id: createdClient.id || Date.now() };
+        const newList = [...clients, newClient];
+        setClients(newList);
+        saveToIndexedDB(STORES.clients, newList);
+      }
+      setShowClientDialog(false);
+      setClientToEdit(null);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde client:', error);
       alert(`Erreur lors de la sauvegarde: ${error.message}`);
     }
   };
@@ -619,16 +716,19 @@ const ManagementPanel = ({
                   onClick={() => {
                     if (activeTab === 'locations') {
                       handleAddLocation();
+                    } else if (activeTab === 'clients') {
+                      setClientToEdit(null);
+                      setShowClientDialog(true);
                     } else {
                       setShowAddForm(!showAddForm);
                     }
                   }}
-                  title={activeTab === 'locations' ? 'Ajouter un lieu' : (showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire')}
+                  title={activeTab === 'locations' ? 'Ajouter un lieu' : activeTab === 'clients' ? 'Ajouter un client' : (showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire')}
                 >
-                  {activeTab === 'locations' ? <Plus size={20} /> : (showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
+                  {(activeTab === 'locations' || activeTab === 'clients') ? <Plus size={20} /> : (showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
                 </button>
               </div>
-            {showAddForm && activeTab !== 'locations' && (
+            {showAddForm && activeTab !== 'locations' && activeTab !== 'clients' && (
               <div className="add-form">
               <input
                 type="text"
@@ -886,58 +986,7 @@ const ManagementPanel = ({
 
           {/* Configuration Google Calendar (Admin uniquement) */}
           {activeTab === 'google-config' && currentUser?.isAdmin && (
-            <>
-              <GoogleCalendarConfig />
-              
-              <div className="company-address-section" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '8px' }}>
-                <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <MapPin size={20} />
-                  Adresse de MagScène
-                </h3>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
-                  Cette adresse sera utilisée pour calculer les distances et temps de trajet vers les lieux enregistrés.
-                </p>
-                <input
-                  id="company-address-input"
-                  type="text"
-                  value={companyAddress}
-                  onChange={(e) => setCompanyAddress(e.target.value)}
-                  placeholder="Adresse complète de MagScène"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    marginBottom: '0.75rem'
-                  }}
-                />
-                <button
-                  onClick={async () => {
-                    try {
-                      const config = await loadFromIndexedDB('calendarConfig', {});
-                      config.companyAddress = companyAddress;
-                      await saveToIndexedDB('calendarConfig', config);
-                      alert('Adresse de MagScène sauvegardée !');
-                    } catch (error) {
-                      console.error('Erreur sauvegarde adresse:', error);
-                      alert('Erreur lors de la sauvegarde');
-                    }
-                  }}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Enregistrer l'adresse
-                </button>
-              </div>
-            </>
+            <GoogleCalendarConfig />
           )}
 
           {/* Accès Mobile (Admin uniquement) */}
@@ -1073,6 +1122,32 @@ const ManagementPanel = ({
                               )}
                               {item.brand && (
                                 <div className="item-detail">🚗 {item.brand} {item.model}</div>
+                              )}                            </>
+                          )}
+                          {activeTab === 'clients' && (
+                            <>
+                              {item.email && (
+                                <div className="item-detail">@ {item.email}</div>
+                              )}
+                              {item.phone && (
+                                <div className="item-detail">📞 {item.phone}</div>
+                              )}
+                              {item.address && (
+                                <div className="item-detail">📍 {item.address}</div>
+                              )}
+                              {item.lat && item.lng && (
+                                <div className="item-detail coordinates-detail">
+                                  🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
+                                  <a 
+                                    href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="map-link"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Voir sur Google Maps
+                                  </a>
+                                </div>
                               )}
                             </>
                           )}
@@ -1337,6 +1412,59 @@ const ManagementPanel = ({
                 </div>
               </>
             )}
+
+            {/* Adresse de MagScène */}
+            {activeTab === 'locations' && (
+              <div className="company-address-section" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '8px' }}>
+                <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Building2 size={20} />
+                  Adresse de MagScène
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
+                  Cette adresse sera utilisée pour calculer les distances et temps de trajet vers les lieux enregistrés.
+                </p>
+                <input
+                  id="company-address-input"
+                  ref={companyAddressInputRef}
+                  type="text"
+                  value={companyAddress}
+                  onChange={(e) => setCompanyAddress(e.target.value)}
+                  placeholder="Adresse complète de MagScène"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    marginBottom: '0.75rem'
+                  }}
+                />
+                <button
+                  onClick={async () => {
+                    try {
+                      const config = await loadFromIndexedDB('calendarConfig', {});
+                      config.companyAddress = companyAddress;
+                      await saveToIndexedDB('calendarConfig', config);
+                      alert('Adresse de MagScène sauvegardée !');
+                    } catch (error) {
+                      console.error('Erreur sauvegarde adresse:', error);
+                      alert('Erreur lors de la sauvegarde');
+                    }
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Enregistrer l'adresse
+                </button>
+              </div>
+            )}
           </div>
           )}
         </div>
@@ -1350,6 +1478,19 @@ const ManagementPanel = ({
           onClose={() => {
             setShowLocationDialog(false);
             setLocationToEdit(null);
+          }}
+          companyAddress={companyAddress}
+        />
+      )}
+
+      {/* Dialog pour les clients */}
+      {showClientDialog && (
+        <ClientDialog
+          client={clientToEdit}
+          onSave={handleSaveClient}
+          onClose={() => {
+            setShowClientDialog(false);
+            setClientToEdit(null);
           }}
           companyAddress={companyAddress}
         />

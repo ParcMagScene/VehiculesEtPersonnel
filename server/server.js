@@ -254,7 +254,7 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
     
     // Récupérer la réservation complète avec les infos du véhicule
     const createdReservation = db.prepare(`
-      SELECT r.*, v.name as vehicle_name, v.type as vehicle_type, v.immatriculation
+      SELECT r.*, v.name as vehicle_name, v.type as vehicle_type, v.registration as immatriculation
       FROM reservations r
       JOIN vehicles v ON r.vehicle_id = v.id
       WHERE r.id = ?

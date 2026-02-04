@@ -3,6 +3,7 @@ import { format, addDays, parseISO, isToday, isTomorrow, isSameDay, startOfWeek,
 import { fr } from 'date-fns/locale';
 import './GoogleCalendarBanner.css';
 import AffaireImportModal from './AffaireImportModal';
+import EventDetailsModal from './EventDetailsModal';
 import api from '../utils/api';
 
 function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation }) {
@@ -16,6 +17,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   const [bannerHeight, setBannerHeight] = useState(200);
   const [isResizing, setIsResizing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [clickedCell, setClickedCell] = useState(null);
   const [googleClientId, setGoogleClientId] = useState(null);
@@ -187,8 +189,20 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     setDisplayMode(prev => prev === 'closed' ? 'compact' : 'closed');
   };
 
-  // Ouvrir le modal pour créer/modifier une affaire
+  // Ouvrir le modal de détails d'événement
   const handleCellClick = (event = null) => {
+    setSelectedEvent(event);
+    setEventDetailsOpen(true);
+  };
+
+  const handleCloseEventDetails = () => {
+    setEventDetailsOpen(false);
+    setSelectedEvent(null);
+  };
+
+  // Ouvrir l'ancien modal d'import d'affaire depuis le modal de détails
+  const handleOpenAffaireImport = (event) => {
+    setEventDetailsOpen(false);
     setSelectedEvent(event);
     setModalOpen(true);
   };
@@ -997,7 +1011,18 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       </div>
     </div>
     
-    {/* Modal d'import d'affaires */}
+    {/* Modal de détails d'événement */}
+    <EventDetailsModal
+      isOpen={eventDetailsOpen}
+      onClose={handleCloseEventDetails}
+      event={selectedEvent}
+      reservations={reservations}
+      onRequestEditReservation={onRequestEditReservation}
+      onEventCreated={handleOpenAffaireImport}
+      onEventUpdated={handleEventUpdated}
+    />
+    
+    {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}
     <AffaireImportModal
       isOpen={modalOpen}
       onClose={handleCloseModal}

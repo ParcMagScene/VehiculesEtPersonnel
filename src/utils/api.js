@@ -131,7 +131,7 @@ class ApiClient {
 
   logout() {
     this.clearAuth();
-    window.location.reload();
+    // Pas de window.location.reload() - laisser React gérer le changement d'état
   }
 
   isAuthenticated() {

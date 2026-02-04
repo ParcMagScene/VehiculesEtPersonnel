@@ -529,8 +529,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                       <button
                         onClick={() => {
                           setShowUserMenu(false);
-                          // Recharger la page pour afficher à nouveau le sélecteur d'utilisateur
-                          window.location.reload();
+                          onLogout();
                         }}
                         style={{
                           width: '100%',

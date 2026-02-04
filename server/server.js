@@ -107,6 +107,22 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Liste des utilisateurs (pour le sélecteur de connexion)
+app.get('/api/auth/users', (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT id, email, name, is_admin FROM users ORDER BY name');
+    const users = stmt.all();
+    res.json(users.map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      isAdmin: u.is_admin === 1
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============ VÉHICULES ============
 
 app.get('/api/vehicles', authenticateToken, (req, res) => {

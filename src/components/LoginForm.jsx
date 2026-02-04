@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, User } from 'lucide-react';
-import api from '../utils/api';
+import api, { getApiUrl } from '../utils/api';
 import AccessRequestModal from './AccessRequestModal';
 import './LoginForm.css';
 
@@ -15,12 +15,17 @@ const LoginForm = ({ onLogin }) => {
   const [users, setUsers] = useState([]);
   const [showUserList, setShowUserList] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showSessionConflict, setShowSessionConflict] = useState(false);
+  const [conflictUser, setConflictUser] = useState(null);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   // Charger la liste des utilisateurs
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const response = await fetch('http://localhost:3002/api/auth/users');
+        const response = await fetch(`${getApiUrl()}/auth/users`);
         if (response.ok) {
           const data = await response.json();
           setUsers(data);
@@ -72,12 +77,95 @@ const LoginForm = ({ onLogin }) => {
         await onLogin(email, password);
       }
     } catch (err) {
-      setError(err.message);
+      // Vérifier si c'est une erreur de session déjà active
+      if (err.response?.status === 409 && err.response?.data?.error === 'SESSION_ALREADY_ACTIVE') {
+        setConflictUser({ email, password });
+        setShowSessionConflict(true);
+        setError('');
+      } 
+      // Vérifier si c'est une demande de réinitialisation de mot de passe
+      else if (err.response?.status === 403 && err.response?.data?.error === 'PASSWORD_RESET_REQUIRED') {
+        setResetEmail(email);
+        setShowPasswordReset(true);
+        setError('');
+      } 
+      else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleForceLogin = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch(`${getApiUrl()}/auth/force-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: conflictUser.email, 
+          password: conflictUser.password 
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erreur lors de la connexion forcée');
+      }
+
+      const data = await response.json();
+      
+      // Sauvegarder le token
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Fermer le modal et informer le parent
+      setShowSessionConflict(false);
+      window.location.reload(); // Recharger l'application
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleSetNewPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch(`${getApiUrl()}/auth/set-new-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: resetEmail, 
+          newPassword: newPassword 
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erreur lors de la définition du mot de passe');
+      }
+
+      const data = await response.json();
+      
+      // Sauvegarder le token (auto-login)
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Fermer le modal et recharger
+      setShowPasswordReset(false);
+      window.location.reload();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="login-overlay">
       <div className="login-container">
@@ -287,6 +375,120 @@ const LoginForm = ({ onLogin }) => {
               alert('✅ Demande envoyée avec succès !\n\nVous recevrez un email dès qu\'un administrateur aura validé votre demande.');
             }}
           />
+        )}
+
+        {showSessionConflict && (
+          <div className="modal-overlay" onClick={() => setShowSessionConflict(false)}>
+            <div className="modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>⚠️ Session déjà active</h3>
+              </div>
+              <div className="modal-body">
+                <p style={{ marginBottom: '16px', color: '#374151' }}>
+                  Une session est déjà ouverte avec ces identifiants sur un autre appareil ou navigateur.
+                </p>
+                <p style={{ marginBottom: '24px', color: '#6b7280', fontSize: '14px' }}>
+                  Vous pouvez :<br/>
+                  • <strong>Fermer les autres sessions</strong> et vous connecter ici (recommandé)<br/>
+                  • Annuler et vous déconnecter de l'autre appareil d'abord
+                </p>
+                
+                {error && (
+                  <div className="error-message" style={{ marginBottom: '16px' }}>
+                    {error}
+                  </div>
+                )}
+                
+                <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      setShowSessionConflict(false);
+                      setConflictUser(null);
+                    }}
+                    disabled={loading}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleForceLogin}
+                    disabled={loading}
+                    style={{ background: '#ef4444' }}
+                  >
+                    {loading ? 'Connexion...' : 'Fermer les autres sessions et se connecter'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showPasswordReset && (
+          <div className="modal-overlay" onClick={() => setShowPasswordReset(false)}>
+            <div className="modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>🔐 Compte réinitialisé</h3>
+              </div>
+              <div className="modal-body">
+                <p style={{ marginBottom: '16px', color: '#374151' }}>
+                  Votre administrateur a réinitialisé votre compte.
+                </p>
+                <p style={{ marginBottom: '24px', color: '#6b7280', fontSize: '14px' }}>
+                  Veuillez définir un nouveau mot de passe pour continuer.<br/>
+                  Le mot de passe doit contenir au moins 6 caractères.
+                </p>
+                
+                <form onSubmit={handleSetNewPassword}>
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label htmlFor="new-password" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                      Nouveau mot de passe
+                    </label>
+                    <input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Entrez votre nouveau mot de passe"
+                      minLength={6}
+                      required
+                      autoFocus
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="error-message" style={{ marginBottom: '16px' }}>
+                      {error}
+                    </div>
+                  )}
+                  
+                  <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        setShowPasswordReset(false);
+                        setNewPassword('');
+                      }}
+                      disabled={loading}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      disabled={loading || newPassword.length < 6}
+                    >
+                      {loading ? 'Définition...' : 'Définir mon mot de passe'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

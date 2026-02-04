@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import logger from "../utils/logger";
 import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
 import api from '../utils/api';
 import './LocationDialog.css';
@@ -71,7 +72,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           return;
         }
 
-        console.log('✅ Google Maps API chargée avec succès');
+        logger.log('✅ Google Maps API chargée avec succès');
 
         // Créer la carte
     const map = new window.google.maps.Map(mapRef.current, {
@@ -255,15 +256,15 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {error && (
+            <div className="error-banner">
+              <strong>⚠️ Erreur Google Maps</strong>
+              <p>{error}</p>
+              <small>Consultez le fichier <code>GOOGLE_MAPS_ACTIVATION.md</code> pour activer l'API.</small>
+            </div>
+          )}
+
           <div className="location-dialog-content">
-            {error && (
-              <div className="error-banner">
-                <strong>⚠️ Erreur Google Maps</strong>
-                <p>{error}</p>
-                <small>Consultez le fichier <code>GOOGLE_MAPS_ACTIVATION.md</code> pour activer l'API.</small>
-              </div>
-            )}
-            
             <div className="form-section">
               <div className="form-group">
                 <label htmlFor="location-name">Nom du lieu *</label>
@@ -329,10 +330,19 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                   )}
                 </div>
               )}
-            </div>
 
-            <div className="map-section">
-              <div ref={mapRef} className="google-map"></div>
+              <div className="map-preview-container">
+                <h4 className="map-preview-title">
+                  <MapPin size={16} />
+                  Aperçu de la localisation
+                </h4>
+                <div className="map-preview-wrapper">
+                  <div ref={mapRef} className="google-map"></div>
+                </div>
+                <small className="help-text">
+                  Déplacez le marqueur pour ajuster la position
+                </small>
+              </div>
             </div>
           </div>
 

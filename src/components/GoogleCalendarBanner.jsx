@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { format, addDays, parseISO, isToday, isTomorrow, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './GoogleCalendarBanner.css';
-import AffaireImportModal from './AffaireImportModal';
 import EventDetailsModal from './EventDetailsModal';
 import api from '../utils/api';
+import logger, { oauthLogger } from '../utils/logger';
 
-function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation }) {
+// Code splitting - Lazy loading
+const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
+
+function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,16 +34,16 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   useEffect(() => {
     const loadGoogleConfig = async () => {
       try {
-        console.log('🔧 Chargement de la config Google...');
+        oauthLogger.log('🔧 Chargement de la config Google...');
         const [clientIdData, calendarIdData] = await Promise.all([
           api.getGoogleClientId(),
           api.getGoogleCalendarId()
         ]);
-        console.log('📦 Données reçues:', { clientIdData, calendarIdData });
+        oauthLogger.log('📦 Données reçues:', { clientIdData, calendarIdData });
         // Extraire juste la valeur, pas l'objet entier
         setGoogleClientId(clientIdData?.value || null);
         setGoogleCalendarId(calendarIdData?.value || null);
-        console.log('✅ Config Google chargée - clientId:', clientIdData?.value, 'calendarId:', calendarIdData?.value);
+        oauthLogger.log('✅ Config Google chargée - clientId:', clientIdData?.value, 'calendarId:', calendarIdData?.value);
       } catch (error) {
         console.error('Erreur lors du chargement de la configuration Google:', error);
       }
@@ -54,6 +57,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       onEventsChange(events);
     }
   }, [events, onEventsChange]);
+
+  // Exposer la fonction pour ouvrir un événement depuis l'extérieur
+  useEffect(() => {
+    if (onRequestViewEvent) {
+      onRequestViewEvent(handleCellClick);
+    }
+  }, [onRequestViewEvent]);
 
   // Synchroniser les largeurs avec le calendrier principal
   useEffect(() => {
@@ -69,7 +79,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         const columnWidths = gridColumns.split(' ').map(width => width);
         bannerGrid.style.gridTemplateColumns = columnWidths.join(' ');
         
-        console.log('📏 Synchronisation colonnes banner:', view, 'Colonnes:', columnWidths.length);
+        oauthLogger.log('📏 Synchronisation colonnes banner:', view, 'Colonnes:', columnWidths.length);
       }
     };
 
@@ -207,6 +217,15 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     setModalOpen(true);
   };
 
+  // Ouvrir le modal de création de réservation classique
+  const handleCreateReservationFromEvent = (event) => {
+    // Fermer le modal de détails et notifier le parent pour ouvrir ReservationModal
+    setEventDetailsOpen(false);
+    if (onEventClick) {
+      onEventClick(event);
+    }
+  };
+
   const handleCloseModal = () => {
     setModalOpen(false);
     setSelectedEvent(null);
@@ -310,20 +329,20 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       const now = Date.now();
       const timeUntilExpiry = expiryTime - now;
       
-      console.log('🔍 Vérification du token sauvegardé, expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
+      oauthLogger.log('🔍 Vérification du token sauvegardé, expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
       
       // Si le token est encore valide (avec une marge de 5 minutes)
       if (timeUntilExpiry > 5 * 60 * 1000) {
-        console.log('✅ Token valide, restauration de la session');
+        oauthLogger.log('✅ Token valide, restauration de la session');
         setAccessToken(savedToken);
         setIsSignedIn(true);
         testToken(savedToken);
       } else if (autoSignin === 'true') {
         // Token expiré mais auto-signin activé, on demande un nouveau token silencieusement
-        console.log('🔄 Token expiré, renouvellement automatique silencieux...');
+        oauthLogger.log('🔄 Token expiré, renouvellement automatique silencieux...');
         // Le token sera renouvelé par le useEffect suivant quand tokenClient sera prêt
       } else {
-        console.log('⏰ Token expiré, nettoyage');
+        oauthLogger.log('⏰ Token expiré, nettoyage');
         localStorage.removeItem('google_access_token');
         localStorage.removeItem('google_token_expiry');
         setIsSignedIn(false);
@@ -331,7 +350,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       }
     } else if (autoSignin === 'true' && tokenClient) {
       // Pas de token sauvegardé mais auto-signin activé
-      console.log('🔐 Auto-signin activé, demande silencieuse d\'un nouveau token...');
+      oauthLogger.log('🔐 Auto-signin activé, demande silencieuse d\'un nouveau token...');
       setTimeout(() => {
         if (tokenClient) {
           tokenClient.requestAccessToken({ prompt: '' });
@@ -351,13 +370,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     const now = Date.now();
     const timeUntilExpiry = expiryTime - now;
     
-    console.log('⏰ Token expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
+    oauthLogger.log('⏰ Token expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
     
     // Renouveler 15 minutes avant l'expiration pour avoir une grande marge
     const renewalTime = Math.max(0, timeUntilExpiry - 15 * 60 * 1000);
     
     const timer = setTimeout(() => {
-      console.log('⏰ Renouvellement programmé déclenché (silencieux)');
+      oauthLogger.log('⏰ Renouvellement programmé déclenché (silencieux)');
       // Renouvellement automatique silencieux - ne demande pas de consentement
       tokenClient.requestAccessToken({ prompt: '' });
     }, renewalTime);
@@ -367,20 +386,20 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
 
   const renewAccessToken = () => {
     if (tokenClient) {
-      console.log('🔄 Renouvellement du token...');
+      oauthLogger.log('🔄 Renouvellement du token...');
       const lastRefresh = localStorage.getItem('google_last_refresh');
       const now = Date.now();
       
       // Éviter les renouvellements trop fréquents (minimum 30 secondes entre chaque)
       if (lastRefresh && (now - parseInt(lastRefresh, 10)) < 30000) {
-        console.log('⏳ Renouvellement trop récent, on attend...');
+        oauthLogger.log('⏳ Renouvellement trop récent, on attend...');
         return;
       }
       
       // Demander un nouveau token de manière silencieuse (sans popup si possible)
       tokenClient.requestAccessToken({ prompt: '' });
     } else {
-      console.warn('⚠️ Token client non disponible pour le renouvellement');
+      oauthLogger.warn('⚠️ Token client non disponible pour le renouvellement');
     }
   };
 
@@ -436,21 +455,21 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
             console.error('❌ Erreur OAuth:', response.error);
             // Si c'est une erreur de consentement et que ce n'est pas un renouvellement silencieux
             if (response.error === 'access_denied') {
-              console.log('⚠️ Accès refusé par l\'utilisateur');
+              oauthLogger.log('⚠️ Accès refusé par l\'utilisateur');
               localStorage.removeItem('google_auto_signin');
               setError('Accès refusé. Veuillez autoriser l\'accès à Google Calendar.');
             } else if (response.error === 'popup_closed_by_user') {
-              console.log('⚠️ Popup fermée par l\'utilisateur');
+              oauthLogger.log('⚠️ Popup fermée par l\'utilisateur');
               setError('Connexion annulée');
             } else if (response.error === 'immediate_failed') {
               // Le renouvellement silencieux a échoué, on demande une nouvelle autorisation
-              console.log('🔄 Renouvellement silencieux échoué, nouvelle autorisation nécessaire');
+              oauthLogger.log('🔄 Renouvellement silencieux échoué, nouvelle autorisation nécessaire');
               localStorage.removeItem('google_auto_signin');
             }
             return;
           }
           
-          console.log('✅ Token reçu, expiration dans:', response.expires_in, 'secondes (≈', Math.round(response.expires_in / 60), 'minutes)');
+          oauthLogger.log('✅ Token reçu, expiration dans:', response.expires_in, 'secondes (≈', Math.round(response.expires_in / 60), 'minutes)');
           
           // Sauvegarder le token et sa date d'expiration dans localStorage
           const expiryTime = Date.now() + (response.expires_in || 3600) * 1000;
@@ -480,10 +499,10 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         
         // Si le token est encore valide, pas besoin de redemander
         if (timeUntilExpiry > 5 * 60 * 1000) {
-          console.log('✅ Token existant encore valide, pas de renouvellement nécessaire');
+          oauthLogger.log('✅ Token existant encore valide, pas de renouvellement nécessaire');
         } else {
           // Token expiré ou proche de l'expiration, renouvellement silencieux
-          console.log('🔄 Token proche de l\'expiration, renouvellement silencieux...');
+          oauthLogger.log('🔄 Token proche de l\'expiration, renouvellement silencieux...');
           setTimeout(() => {
             client.requestAccessToken({ prompt: '' });
           }, 500);
@@ -496,7 +515,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
 
   // Refetch events when view or currentDate changes
   useEffect(() => {
-    if (!isSignedIn || !accessToken || loading) return;
+    if (!isSignedIn || !accessToken) return;
     
     // Debouncing - attendre 300ms avant de charger
     if (fetchTimeoutRef.current) {
@@ -509,10 +528,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       
       // Vérifier si on a déjà ces données en cache
       if (eventsCache.current[cacheKey]) {
+        oauthLogger.log('📦 Utilisation du cache pour:', cacheKey);
         setEvents(eventsCache.current[cacheKey]);
         return;
       }
       
+      oauthLogger.log('🔄 Chargement événements pour:', cacheKey);
       fetchEvents(accessToken);
     }, 300);
     
@@ -575,12 +596,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         `maxResults=2500&` +
         `orderBy=startTime`;
 
-      console.log('🔍 Récupération événements Google Calendar');
-      console.log('   Vue:', view);
-      console.log('   Plage:', timeMin.toISOString(), '→', timeMax.toISOString());
-      console.log('   googleCalendarId state:', googleCalendarId);
-      console.log('   Calendar ID utilisé:', calendarId);
-      console.log('   URL:', url);
+      oauthLogger.log('🔍 Récupération événements Google Calendar');
+      oauthLogger.log('   Vue:', view);
+      oauthLogger.log('   Plage:', timeMin.toISOString(), '→', timeMax.toISOString());
+      oauthLogger.log('   googleCalendarId state:', googleCalendarId);
+      oauthLogger.log('   Calendar ID utilisé:', calendarId);
+      oauthLogger.log('   URL:', url);
 
       const response = await fetch(url, {
         headers: {
@@ -595,9 +616,9 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       }
 
       const data = await response.json();
-      console.log('✅ Événements reçus:', data.items?.length || 0);
+      oauthLogger.log('✅ Événements reçus:', data.items?.length || 0);
       if (data.items && data.items.length > 0) {
-        console.log('   Premiers événements:', data.items.slice(0, 3).map(e => ({
+        oauthLogger.log('   Premiers événements:', data.items.slice(0, 3).map(e => ({
           summary: e.summary,
           start: e.start,
           end: e.end
@@ -669,7 +690,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         start: startOfYear(currentDate),
         end: endOfYear(currentDate)
       });
-      console.log('📅 Mois affichés en vue année:', months.length, 'Premier:', format(months[0], 'yyyy-MM-dd'), 'Dernier:', format(months[11], 'yyyy-MM-dd'));
+      oauthLogger.log('📅 Mois affichés en vue année:', months.length, 'Premier:', format(months[0], 'yyyy-MM-dd'), 'Dernier:', format(months[11], 'yyyy-MM-dd'));
       return months;
     }
     return [];
@@ -688,7 +709,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         })
       : events;
 
-    console.log('🎯 getEventBlocks appelé - Vue:', view, 'Événements disponibles:', events.length, view === 'year' ? `Filtrés pour ${currentDate.getFullYear()}: ${filteredEvents.length}` : '', 'Jours:', days.length);
+    oauthLogger.log('🎯 getEventBlocks appelé - Vue:', view, 'Événements disponibles:', events.length, view === 'year' ? `Filtrés pour ${currentDate.getFullYear()}: ${filteredEvents.length}` : '', 'Jours:', days.length);
 
     // Mapping des colorId Google Calendar vers des couleurs hexadécimales
     const googleColorMap = {
@@ -741,7 +762,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         });
 
         if (startMonthIndex !== -1) {
-          console.log('📅 Événement année:', event.summary, 'Début:', eventStart.toISOString().slice(0,10), 'Fin:', eventEnd.toISOString().slice(0,10), 'StartIndex:', startMonthIndex, 'Span:', span);
+          oauthLogger.log('📅 Événement année:', event.summary, 'Début:', eventStart.toISOString().slice(0,10), 'Fin:', eventEnd.toISOString().slice(0,10), 'StartIndex:', startMonthIndex, 'Span:', span);
           
           // Nettoyer le titre en supprimant le numéro d'affaire
           let cleanTitle = event.summary || '(Sans titre)';
@@ -808,7 +829,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       return b.span - a.span;
     });
 
-    console.log('📊 Blocs événements générés:', eventBlocks.length, 'pour vue:', view);
+    oauthLogger.log('📊 Blocs événements générés:', eventBlocks.length, 'pour vue:', view);
     
     return eventBlocks;
   };
@@ -816,7 +837,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   const days = getDaysToShow();
   const eventBlocks = getEventBlocks();
   
-  console.log('🔄 Rendu GoogleCalendarBanner - Vue:', view, 'Events state:', events.length, 'EventBlocks:', eventBlocks.length);
+  oauthLogger.log('🔄 Rendu GoogleCalendarBanner - Vue:', view, 'Events state:', events.length, 'EventBlocks:', eventBlocks.length);
 
   // Toujours afficher le banner, même sans clientId configuré (pour permettre la configuration)
   if (!googleClientId) {
@@ -1018,19 +1039,24 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       event={selectedEvent}
       reservations={reservations}
       onRequestEditReservation={onRequestEditReservation}
+      onRequestCreateReservation={handleCreateReservationFromEvent}
       onEventCreated={handleOpenAffaireImport}
       onEventUpdated={handleEventUpdated}
     />
     
     {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}
-    <AffaireImportModal
-      isOpen={modalOpen}
-      onClose={handleCloseModal}
-      event={selectedEvent}
-      onEventCreated={handleEventCreated}
-      onEventUpdated={handleEventUpdated}
-      onRequestEditReservation={onRequestEditReservation}
-    />
+    {modalOpen && (
+      <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div></div>}>
+        <AffaireImportModal
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+          event={selectedEvent}
+          onEventCreated={handleEventCreated}
+          onEventUpdated={handleEventUpdated}
+          onRequestEditReservation={onRequestEditReservation}
+        />
+      </Suspense>
+    )}
     </>
   );
 }

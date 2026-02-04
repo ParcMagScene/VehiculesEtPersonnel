@@ -287,6 +287,7 @@ const Calendar = ({
   reservationToEdit,
   onReservationEditComplete,
   onVehicleClick,
+  onRequestViewEvent,
   currentUser,
 }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -296,13 +297,6 @@ const Calendar = ({
   const [resizeState, setResizeState] = useState(null); // { reservation, edge: 'start' | 'end', currentDay, currentPeriod }
   const [resizePreview, setResizePreview] = useState(null); // { vehicleId, startDate, startPeriod, endDate, endPeriod }
   const [collapsedSections, setCollapsedSections] = useState({ magScene: false, location: false });
-
-  // Debug: log les maintenances reçues
-  useEffect(() => {
-    console.log('🔍 Calendar - Maintenances reçues:', maintenances);
-    const reported = maintenances.filter(m => m.status === 'reported');
-    console.log('🔍 Calendar - Pannes signalées:', reported);
-  }, [maintenances]);
 
   // Ouvrir le modal automatiquement quand un événement Google est sélectionné
   useEffect(() => {
@@ -479,7 +473,9 @@ const Calendar = ({
   const maintenancesAsReservations = useMemo(() => {
     const converted = maintenances
       .filter(m => {
-        const isValid = m.status !== 'reported' && m.status !== 'completed' && m.startDate && m.endDate;
+        // Afficher toutes les maintenances SAUF les pannes signalées (reported)
+        // Inclut: 'scheduled', 'in_progress', 'completed', 'pending'
+        const isValid = m.status !== 'reported' && m.startDate && m.endDate;
         return isValid;
       })
       .map(m => {
@@ -1757,6 +1753,7 @@ const Calendar = ({
           onClose={closeModal}
           googleEvent={selectedSlot?.googleEvent || googleEvent}
           googleEvents={googleEvents}
+          onRequestViewEvent={onRequestViewEvent}
           currentUser={currentUser}
         />
       )}

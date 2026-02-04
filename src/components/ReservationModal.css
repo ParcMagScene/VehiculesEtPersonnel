@@ -153,12 +153,18 @@
 }
 
 .vehicle-color-indicator {
-  width: 1rem;
-  height: 1rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.vehicle-color-indicator:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .multi-vehicle-preview {
@@ -657,4 +663,19 @@
 .add-affaire-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* Événements cliquables */
+.selected-event-display.clickable-event {
+  transition: all 0.2s ease;
+}
+
+.selected-event-display.clickable-event:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  filter: brightness(0.95);
+}
+
+.selected-event-display.clickable-event:active {
+  transform: translateX(1px);
 }

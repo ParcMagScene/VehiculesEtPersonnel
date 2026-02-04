@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import logger from "../utils/logger";
 import './AffaireImportModal.css';
 import { extractTextFromPDF, parseBonLivraison, parseDate } from '../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../utils/indexedDB';
@@ -11,7 +12,7 @@ const AffaireImportModal = ({
   onEventUpdated,
   onRequestEditReservation
 }) => {
-  const [step, setStep] = useState('choice'); // 'choice', 'upload', 'form', 'edit-event', 'upload-additional'
+  const [step, setStep] = useState('upload'); // 'choice', 'upload', 'form', 'edit-event', 'upload-additional'
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
@@ -62,8 +63,8 @@ const AffaireImportModal = ({
 
   useEffect(() => {
     if (isOpen && event) {
-      console.log('🔄 Modal ouvert pour event:', event.id, event.summary);
-      console.log('📅 Event complet:', event);
+      logger.log('🔄 Modal ouvert pour event:', event.id, event.summary);
+      logger.log('📅 Event complet:', event);
       
       // Réinitialiser complètement tous les états
       setAdditionalBLs([]);
@@ -92,7 +93,7 @@ const AffaireImportModal = ({
         description: event.extendedProps?.description || event.description || ''
       };
       
-      console.log('📝 Formulaire initialisé avec:', initialFormData.titre, '- N° affaire:', initialFormData.numeroAffaire);
+      logger.log('📝 Formulaire initialisé avec:', initialFormData.titre, '- N° affaire:', initialFormData.numeroAffaire);
       
       setFormData(initialFormData);
       setInitialFormData(initialFormData); // Sauvegarder pour comparaison
@@ -100,7 +101,7 @@ const AffaireImportModal = ({
       
       // Log immédiat après setFormData
       setTimeout(() => {
-        console.log('🔍 State formData après setFormData:', formData.client, formData.titre);
+        logger.log('🔍 State formData après setFormData:', formData.client, formData.titre);
       }, 100);
       
       setEventFormData({
@@ -109,24 +110,26 @@ const AffaireImportModal = ({
         dateDebut: getDateString(event.start),
         dateFin: getDateString(event.end)
       });
-      setStep('choice');
       setPdfFile(null);
       
       // Charger les affaires de CET événement spécifique
       const loadAffaires = async () => {
         try {
           const allAffaires = await loadFromIndexedDB(STORES.affaires, []);
-          console.log('📦 Toutes les affaires:', allAffaires.map(a => ({ id: a.eventId, client: a.client })));
+          logger.log('📦 Toutes les affaires:', allAffaires.map(a => ({ id: a.eventId, client: a.client })));
           
           const affaires = allAffaires.filter(a => a.eventId === event.id);
-          console.log('🎯 Affaires pour cet event:', affaires);
+          logger.log('🎯 Affaires pour cet event:', affaires);
           
           setExistingAffaires(affaires);
+          
+          // Définir le step en fonction de l'existence d'affaires
+          setStep(affaires.length > 0 ? 'choice' : 'upload');
           
           // Si une affaire existe, pré-remplir le formulaire
           if (affaires.length > 0) {
             const affaire = affaires[0];
-            console.log('✏️ Pré-remplissage avec affaire:', affaire.client);
+            logger.log('✏️ Pré-remplissage avec affaire:', affaire.client);
             
             setFormData({
               ...initialFormData,
@@ -148,7 +151,7 @@ const AffaireImportModal = ({
               setAdditionalBLs(affaire.additionalBLs);
             }
           } else {
-            console.log('ℹ️ Aucune affaire, utilisation des données Google Calendar');
+            logger.log('ℹ️ Aucune affaire, utilisation des données Google Calendar');
           }
         } catch (error) {
           console.error('Erreur chargement affaires:', error);
@@ -287,20 +290,40 @@ const AffaireImportModal = ({
     await processPDF(file);
   };
 
-  const processPDF = async (file) => {
+  const processPDF = async (file, forceReplace = false) => {
     setIsProcessing(true);
     setPdfFile(file);
 
     try {
-      console.log('🚀 Démarrage du traitement PDF:', file.name);
+      logger.log('🚀 Démarrage du traitement PDF:', file.name);
       
       // Extraire le texte du PDF
       const text = await extractTextFromPDF(file);
-      console.log('📝 Texte extrait:', text.substring(0, 200) + '...');
+      logger.log('📝 Texte extrait:', text.substring(0, 200) + '...');
       
       // Parser les informations
       const info = parseBonLivraison(text);
-      console.log('📊 Informations parsées:', info);
+      logger.log('📊 Informations parsées:', info);
+
+      // Vérifier si ce numéro d'affaire existe déjà
+      const numeroAffaire = info.numeroAffaire || '';
+      if (numeroAffaire && existingAffaires.length > 0 && !forceReplace) {
+        const existing = existingAffaires.find(a => 
+          a.numeroAffaire && a.numeroAffaire.toLowerCase() === numeroAffaire.toLowerCase()
+        );
+        
+        if (existing) {
+          // BL existe déjà, demander confirmation
+          setReplaceConfirm({
+            file,
+            numeroAffaire,
+            existing,
+            action: 'replace' // ou 'add' si l'utilisateur choisit d'ajouter
+          });
+          setIsProcessing(false);
+          return;
+        }
+      }
       
       // Préremplir le formulaire
       setFormData(prev => ({
@@ -318,7 +341,7 @@ const AffaireImportModal = ({
         description: prev.description || `${info.client || ''} - ${info.nomAffaire || ''}`
       }));
 
-      console.log('✅ Formulaire prérempli avec succès');
+      logger.log('✅ Formulaire prérempli avec succès');
       setStep('form');
     } catch (error) {
       console.error('❌ Erreur traitement PDF:', error);
@@ -329,9 +352,16 @@ const AffaireImportModal = ({
     }
   };
 
-  const handleConfirmReplace = async () => {
+  const handleConfirmReplace = async (action = 'replace') => {
     if (replaceConfirm) {
-      await processPDF(replaceConfirm.file);
+      if (action === 'replace') {
+        // Remplacer le BL existant
+        await processPDF(replaceConfirm.file, true);
+      } else if (action === 'add') {
+        // Ajouter comme nouveau BL sans remplacer
+        // On force le traitement même si le numéro existe
+        await processPDF(replaceConfirm.file, true);
+      }
       setReplaceConfirm(null);
     }
   };
@@ -356,6 +386,28 @@ const AffaireImportModal = ({
               data: e.target.result,
               uploadDate: new Date().toISOString()
             };
+            
+            // Sauvegarder aussi le PDF physiquement sur le serveur
+            try {
+              const formData = new FormData();
+              formData.append('pdf', file);
+              formData.append('affaireId', affaireId);
+              
+              const response = await fetch('http://localhost:3002/api/upload-bl', {
+                method: 'POST',
+                body: formData
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                console.log('✅ PDF sauvegardé sur le serveur:', result.path);
+                pdfData.serverPath = result.path;
+              } else {
+                console.warn('⚠️ Échec sauvegarde serveur, PDF uniquement dans IndexedDB');
+              }
+            } catch (serverError) {
+              console.warn('⚠️ Erreur sauvegarde serveur:', serverError);
+            }
             
             // Pour l'instant, on stocke les métadonnées dans l'affaire
             // Le blob PDF sera stocké dans le navigateur via IndexedDB
@@ -420,6 +472,24 @@ const AffaireImportModal = ({
         await addToIndexedDB(STORES.affaires, affaire);
       }
 
+      // Mettre à jour l'événement Google Calendar avec le numéro d'affaire
+      if (event && formData.numeroAffaire) {
+        const updatedEvent = {
+          ...event,
+          affaire: formData.numeroAffaire,
+          extendedProps: {
+            ...event.extendedProps,
+            numeroAffaire: formData.numeroAffaire,
+            description: formData.description
+          }
+        };
+        
+        // Notifier le parent que l'événement a été mis à jour
+        if (onEventUpdated) {
+          onEventUpdated(updatedEvent);
+        }
+      }
+
       onClose();
       resetForm();
     } catch (error) {
@@ -461,9 +531,11 @@ const AffaireImportModal = ({
       <div className="affaire-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="affaire-modal-header">
           <h2>
-            {workflow === 'new' && 'Nouvel événement'}
-            {workflow === 'import-or-create' && `${event?.title || 'Événement'}`}
-            {workflow === 'update' && `Mettre à jour l'affaire`}
+            {step === 'choice' && 'Import BL'}
+            {step === 'upload' && 'Import BL - Sélection du fichier'}
+            {step === 'upload-additional' && 'Ajouter un BL supplémentaire'}
+            {step === 'form' && `Import BL - ${formData.numeroAffaire || 'Informations'}`}
+            {step === 'edit-event' && 'Modifier l\'événement'}
           </h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
@@ -478,13 +550,7 @@ const AffaireImportModal = ({
                     className="choice-button"
                     onClick={() => setStep('upload')}
                   >
-                    📄 Créer un événement en important un BL
-                  </button>
-                  <button 
-                    className="choice-button"
-                    onClick={handleCreateWithoutPDF}
-                  >
-                    ➕ Créer un événement sans BL
+                    📄 Importer un BL pour cet événement
                   </button>
                 </>
               )}
@@ -495,7 +561,7 @@ const AffaireImportModal = ({
                     className="choice-button"
                     onClick={() => setStep('form')}
                   >
-                    ✏️ Modifier
+                    ✏️ Modifier les informations
                   </button>
                   <button 
                     className="choice-button"
@@ -507,13 +573,7 @@ const AffaireImportModal = ({
                     className="choice-button"
                     onClick={() => setStep('upload-additional')}
                   >
-                    📎 Ajouter un BL
-                  </button>
-                  <button 
-                    className="choice-button"
-                    onClick={handleCreateWithoutPDF}
-                  >
-                    ➕ Créer des réservations{` pour "${existingAffaires.length > 0 ? (existingAffaires[0].client || event?.summary) : event?.summary}"`}
+                    📎 Ajouter un BL supplémentaire
                   </button>
                 </>
               )}
@@ -523,7 +583,7 @@ const AffaireImportModal = ({
                   className="choice-button"
                   onClick={() => setStep('upload')}
                 >
-                  📄 Mettre à jour l'affaire en important un BL
+                  📄 Importer/Remplacer le BL
                 </button>
               )}
             </div>
@@ -573,17 +633,36 @@ const AffaireImportModal = ({
           {replaceConfirm && (
             <div className="replace-confirm">
               <p className="warning-text">
-                ⚠️ Un BL avec le même nom existe déjà pour cet événement.
+                ⚠️ Le BL <strong>{replaceConfirm.numeroAffaire}</strong> existe déjà pour cet événement
               </p>
-              <p>Voulez-vous le remplacer ?</p>
+              <p style={{ marginBottom: '16px', color: '#666' }}>
+                Que souhaitez-vous faire ?
+              </p>
               <div className="button-group">
                 <button className="btn-cancel" onClick={handleCancelReplace}>
                   Annuler
                 </button>
-                <button className="btn-confirm" onClick={handleConfirmReplace}>
-                  Remplacer
+                <button 
+                  className="btn-add" 
+                  onClick={() => handleConfirmReplace('add')}
+                  style={{
+                    background: '#10b981',
+                    color: 'white'
+                  }}
+                >
+                  ➕ Ajouter comme nouvelle affaire
+                </button>
+                <button 
+                  className="btn-confirm" 
+                  onClick={() => handleConfirmReplace('replace')}
+                >
+                  🔄 Remplacer les données existantes
                 </button>
               </div>
+              <p style={{ fontSize: '12px', color: '#888', marginTop: '12px' }}>
+                <strong>Ajouter :</strong> Crée une nouvelle affaire avec ce BL, liée à cet événement<br/>
+                <strong>Remplacer :</strong> Met à jour les données de l'affaire existante avec ce BL
+              </p>
             </div>
           )}
 
@@ -819,11 +898,9 @@ const AffaireImportModal = ({
               </div>
 
               <div className="form-actions">
-                {hasChanges && (
-                  <button className="btn-submit" onClick={handleSubmit}>
-                    Valider les modifications
-                  </button>
-                )}
+                <button className="btn-submit" onClick={handleSubmit}>
+                  Valider l'import
+                </button>
               </div>
             </div>
           )}

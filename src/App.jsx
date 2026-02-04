@@ -376,9 +376,12 @@ function App() {
   };
 
   const deleteReservation = async (id) => {
+    console.log('🗑️ deleteReservation appelé - ID:', id);
     try {
-      await api.deleteReservation(id);
+      const result = await api.deleteReservation(id);
+      console.log('✅ Suppression API réussie:', result);
       setReservations(reservations.filter(r => r.id !== id));
+      console.log('✅ État local mis à jour');
     } catch (error) {
       console.error('❌ Erreur suppression réservation:', error);
       alert(`Erreur lors de la suppression: ${error.message}`);

@@ -276,6 +276,10 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
       WHERE r.id = ?
     `).get(reservation.id);
     
+    if (!createdReservation) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération de la réservation créée' });
+    }
+    
     // Mapper au format attendu par le frontend
     const mappedReservation = {
       id: createdReservation.id,

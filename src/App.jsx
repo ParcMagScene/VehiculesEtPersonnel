@@ -298,6 +298,7 @@ function App() {
       // Créer la réservation via l'API (admin uniquement)
       try {
         const createdReservation = await api.createReservation({
+          id: `${Date.now()}.${Math.random()}`,
           vehicleId,
           startDate: date,
           startPeriod: period,

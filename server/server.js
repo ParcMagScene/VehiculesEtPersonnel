@@ -239,6 +239,13 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
 app.post('/api/reservations', authenticateToken, (req, res) => {
   try {
     const reservation = req.body;
+    
+    // Générer un ID côté serveur si non fourni ou invalide
+    if (!reservation.id || reservation.id === 'null' || reservation.id === null) {
+      reservation.id = `${Date.now()}.${Math.random()}`;
+      console.log('⚠️ ID manquant, génération côté serveur:', reservation.id);
+    }
+    
     const stmt = db.prepare(`
       INSERT INTO reservations (id, vehicle_id, start_date, start_period, end_date, end_period, 
                                client_name, driver_name, location_name, prestation_name, 
@@ -352,13 +359,16 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
 
 app.delete('/api/reservations/:id', authenticateToken, (req, res) => {
   try {
+    console.log('🗑️ DELETE /api/reservations/:id - ID:', req.params.id);
     const stmt = db.prepare('DELETE FROM reservations WHERE id = ?');
-    stmt.run(req.params.id);
+    const result = stmt.run(req.params.id);
+    console.log('✅ Suppression DB - changes:', result.changes);
     
     addToHistory('reservation', req.params.id, 'deleted', null, req.user.id, req.user.name);
     
     res.json({ success: true });
   } catch (error) {
+    console.error('❌ Erreur suppression réservation:', error);
     res.status(500).json({ error: error.message });
   }
 });

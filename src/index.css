@@ -45,6 +45,54 @@ code {
   background-clip: padding-box;
 }
 
+/* Scrollbar améliorée pour les dialogs/modals */
+.modal-content::-webkit-scrollbar,
+.dialog-content::-webkit-scrollbar,
+[class*="modal"]::-webkit-scrollbar,
+[class*="dialog"]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track,
+.dialog-content::-webkit-scrollbar-track,
+[class*="modal"]::-webkit-scrollbar-track,
+[class*="dialog"]::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.modal-content::-webkit-scrollbar-thumb,
+.dialog-content::-webkit-scrollbar-thumb,
+[class*="modal"]::-webkit-scrollbar-thumb,
+[class*="dialog"]::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 2px solid #f1f5f9;
+  background-clip: padding-box;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover,
+.dialog-content::-webkit-scrollbar-thumb:hover,
+[class*="modal"]::-webkit-scrollbar-thumb:hover,
+[class*="dialog"]::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  border: 2px solid #f1f5f9;
+  background-clip: padding-box;
+}
+
+/* Padding pour éviter que le contenu touche les bords avec scrollbar */
+.modal-content,
+.dialog-content,
+[class*="modal-body"],
+[class*="dialog-body"] {
+  padding-right: 4px !important;
+  scroll-padding: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 /* Animation pour les modals */
 @keyframes fadeIn {
   from {

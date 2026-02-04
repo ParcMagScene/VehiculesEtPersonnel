@@ -299,8 +299,8 @@ function App() {
       try {
         const createdReservation = await api.createReservation({
           vehicleId,
-          date,
-          period,
+          startDate: date,
+          startPeriod: period,
           endDate,
           endPeriod,
           ...otherData

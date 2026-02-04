@@ -17,8 +17,29 @@
   max-width: 1400px;
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
   animation: slideIn 0.3s ease-out;
+  scroll-padding: 12px;
+}
+
+.management-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.management-panel::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+.management-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.management-panel::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 @keyframes slideIn {

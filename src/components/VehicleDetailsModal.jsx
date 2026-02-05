@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Wrench, AlertTriangle, Calendar, FileText } from 'lucide-react';
+import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge } from 'lucide-react';
 import './VehicleDetailsModal.css';
 
 const VehicleDetailsModal = ({ 
@@ -9,6 +9,7 @@ const VehicleDetailsModal = ({
   onRequestMaintenance,
   onReportBreakdown,
   onScheduleMaintenance,
+  onOpenMaintenance,
   currentUser
 }) => {
   if (!vehicle) return null;
@@ -162,6 +163,18 @@ const VehicleDetailsModal = ({
                 </button>
               </>
             )}
+            
+            {/* Bouton Kilométrage accessible à tous */}
+            <button 
+              className="action-btn kilometrage-btn"
+              onClick={() => {
+                onOpenMaintenance(vehicle);
+              }}
+            >
+              <Gauge size={20} />
+              Kilométrage & Contrôles techniques
+            </button>
+            
             <button 
               className="action-btn breakdown-btn"
               onClick={() => {

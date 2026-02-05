@@ -109,11 +109,16 @@ export const parseBonLivraison = (text) => {
     }
 
     // Extraction du client - mots en MAJUSCULES entre l'interlocuteur et l'adresse
-    // Deux patterns possibles
+    // Trois patterns possibles
+    // Pattern 1: Recherche simple après "Client"
+    const clientMatch0 = text.match(/Client\s*:?\s*([A-Z][A-Z\s'.-]+?)(?=\s+(?:Monsieur|Madame|Tél|Fax|\d+\s+(?:Rue|Place|Avenue|Boulevard)|$))/i);
     const clientMatch1 = text.match(/(?:Monsieur|Madame)\s+[A-Z][a-z]+\s+[A-Z]+\s+([A-Z']+(?:\s+[A-Z']+)*?)\s+(?=\d+\s+(?:Place|Rue|Avenue|Boulevard))/i);
     const clientMatch2 = text.match(/(?:Monsieur|Madame)\s+[A-Z][a-z]+\s+[A-Z]+\s+([A-Z']+(?:\s+[A-Z']+)*?)\s+(?=Place|Rue|Avenue|Boulevard)/i);
     
-    if (clientMatch1) {
+    if (clientMatch0) {
+      info.client = clientMatch0[1].trim();
+      console.log('✅ Client trouvé (après "Client"):', info.client);
+    } else if (clientMatch1) {
       info.client = clientMatch1[1].trim();
       console.log('✅ Client trouvé:', info.client);
     } else if (clientMatch2) {
@@ -158,6 +163,12 @@ export const parseBonLivraison = (text) => {
       const ville = adresseMatch2[2].trim();
       info.adresseLivraison = `${rue}\n${ville}`;
       console.log('✅ Adresse trouvée:', info.adresseLivraison);
+    }
+
+    // Si le client n'est pas trouvé, utiliser le nom de l'affaire comme client
+    if (!info.client && info.nomAffaire) {
+      info.client = info.nomAffaire;
+      console.log('ℹ️ Client non trouvé, utilisation du nom d\'affaire:', info.client);
     }
 
     console.log('📊 Résultat final du parsing:', info);

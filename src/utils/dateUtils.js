@@ -24,3 +24,50 @@ export const formatLocalDate = (date) => {
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
+
+/**
+ * Capitalise intelligemment un texte en détectant les noms propres
+ * @param {string} text - Le texte à capitaliser
+ * @returns {string} Texte avec première lettre en majuscule et noms propres capitalisés
+ */
+export const capitalizeText = (text) => {
+  if (!text) return '';
+  
+  // Mots qui indiquent qu'un nom propre suit
+  const properNounIndicators = ['à', 'de', 'pour', 'avec', 'chez', 'par', 'vers', 'sur'];
+  
+  // Mots à ne pas capitaliser (articles, prépositions courtes)
+  const lowercaseWords = ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'de', 'et', 'ou', 'en', 'au', 'aux'];
+  
+  const words = text.split(/\s+/);
+  
+  return words.map((word, index) => {
+    if (!word) return word;
+    
+    // Première lettre toujours en majuscule
+    if (index === 0) {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }
+    
+    const lowerWord = word.toLowerCase();
+    
+    // Si c'est un mot à ne pas capitaliser et pas après un indicateur
+    if (lowercaseWords.includes(lowerWord) && index > 0 && 
+        !properNounIndicators.includes(words[index - 1]?.toLowerCase())) {
+      return lowerWord;
+    }
+    
+    // Si le mot précédent indique un nom propre, capitaliser
+    if (index > 0 && properNounIndicators.includes(words[index - 1]?.toLowerCase())) {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }
+    
+    // Si le mot contient des majuscules (acronyme), le garder tel quel
+    if (word.match(/[A-Z]{2,}/)) {
+      return word;
+    }
+    
+    // Sinon, capitaliser la première lettre
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
+};

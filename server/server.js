@@ -2,8 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import multer from 'multer';
 import db, { addToHistory, getHistory } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3002;
@@ -11,6 +18,10 @@ const JWT_SECRET = 'your-secret-key-change-in-production';
 
 app.use(cors());
 app.use(express.json());
+
+// Servir les fichiers statiques depuis le dossier public/attachments
+const attachmentsPath = path.join(__dirname, '..', 'public', 'attachments');
+app.use('/attachments', express.static(attachmentsPath));
 
 // Middleware d'authentification
 function authenticateToken(req, res, next) {
@@ -43,6 +54,19 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, name, password } = req.body;
     
+    // Vérifier si la colonne is_admin existe dans authorized_emails
+    try {
+      const columns = db.prepare("PRAGMA table_info(authorized_emails)").all();
+      const hasIsAdminColumn = columns.some(col => col.name === 'is_admin');
+      
+      if (!hasIsAdminColumn) {
+        db.prepare("ALTER TABLE authorized_emails ADD COLUMN is_admin INTEGER DEFAULT 0").run();
+        console.log('✅ Colonne is_admin ajoutée à authorized_emails');
+      }
+    } catch (error) {
+      console.log('Info: Colonne is_admin déjà présente');
+    }
+    
     // Vérifier si l'email est autorisé
     const authStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = ?');
     const authorized = authStmt.get(email, 'pending');
@@ -53,14 +77,18 @@ app.post('/api/auth/register', async (req, res) => {
     
     const passwordHash = await bcrypt.hash(password, 10);
     
-    const stmt = db.prepare('INSERT INTO users (email, name, password_hash, is_admin) VALUES (?, ?, ?, 0)');
-    const result = stmt.run(email, name, passwordHash);
+    // Utiliser le flag is_admin de authorized_emails (ou 0 par défaut)
+    const isAdmin = authorized.is_admin || 0;
+    const stmt = db.prepare('INSERT INTO users (email, name, password_hash, is_admin) VALUES (?, ?, ?, ?)');
+    const result = stmt.run(email, name, passwordHash, isAdmin);
     
     // Marquer l'email comme activé
     const updateStmt = db.prepare('UPDATE authorized_emails SET status = ?, activated_at = CURRENT_TIMESTAMP WHERE email = ?');
     updateStmt.run('activated', email);
     
-    res.json({ id: result.lastInsertRowid, email, name });
+    console.log(`✅ Nouvel utilisateur enregistré: ${email} (admin: ${isAdmin ? 'oui' : 'non'})`);
+    
+    res.json({ id: result.lastInsertRowid, email, name, isAdmin: isAdmin === 1 });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -74,9 +102,44 @@ app.post('/api/auth/login', async (req, res) => {
     const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
     const user = stmt.get(email);
     
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    if (!user) {
+      console.log(`❌ Tentative de connexion - Utilisateur non trouvé: ${email}`);
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
+    
+    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatch) {
+      console.log(`❌ Tentative de connexion - Mot de passe incorrect pour: ${email}`);
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+    
+    console.log(`✅ Authentification réussie pour: ${email}`);
+    
+    // Vérifier que l'email est autorisé
+    const authorizedEmailStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = \'activated\'');
+    const authorizedEmail = authorizedEmailStmt.get(email);
+    
+    if (!authorizedEmail) {
+      console.log(`❌ Accès refusé - Email non autorisé: ${email}`);
+      return res.status(403).json({ 
+        error: 'EMAIL_NOT_AUTHORIZED',
+        message: 'Votre email n\'est pas autorisé à accéder à cette application. Veuillez contacter un administrateur.' 
+      });
+    }
+    
+    // Vérifier si une réinitialisation est requise
+    if (user.password_reset_required === 1) {
+      return res.status(403).json({
+        error: 'PASSWORD_RESET_REQUIRED',
+        message: 'Votre compte a été réinitialisé. Vous devez définir un nouveau mot de passe.',
+        userId: user.id,
+        email: user.email
+      });
+    }
+    
+    // PERMETTRE LES SESSIONS MULTIPLES
+    // Les utilisateurs peuvent maintenant se connecter sur plusieurs appareils simultanément
+    // Pas de vérification de session active, on crée simplement un nouveau token
     
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
@@ -84,7 +147,106 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '30d' }
     );
     
+    // Enregistrer la session
+    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const insertSessionStmt = db.prepare(`
+      INSERT INTO active_sessions (user_id, token_hash, expires_at)
+      VALUES (?, ?, ?)
+    `);
+    insertSessionStmt.run(user.id, tokenHash, expiresAt);
+    
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Forcer une nouvelle connexion en fermant les sessions actives
+app.post('/api/auth/force-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    const user = stmt.get(email);
+    
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+    
+    // Vérifier que l'email est autorisé
+    const authorizedEmailStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = \'activated\'');
+    const authorizedEmail = authorizedEmailStmt.get(email);
+    
+    if (!authorizedEmail) {
+      console.log(`❌ Force-login refusé - Email non autorisé: ${email}`);
+      return res.status(403).json({ 
+        error: 'EMAIL_NOT_AUTHORIZED',
+        message: 'Votre email n\'est pas autorisé à accéder à cette application. Veuillez contacter un administrateur.' 
+      });
+    }
+    
+    // Supprimer toutes les sessions actives de cet utilisateur
+    const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    deleteSessionsStmt.run(user.id);
+    
+    // Créer un nouveau token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+    
+    // Enregistrer la nouvelle session
+    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const insertSessionStmt = db.prepare(`
+      INSERT INTO active_sessions (user_id, token_hash, expires_at)
+      VALUES (?, ?, ?)
+    `);
+    insertSessionStmt.run(user.id, tokenHash, expiresAt);
+    
+    res.json({ 
+      token, 
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      message: 'Toutes les autres sessions ont été fermées'
+    });
+  } catch (error) {
+    console.error('Erreur force-login:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Déconnexion (nettoyer la session)
+app.post('/api/auth/logout', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userEmail = req.user.email;
+    
+    // Supprimer toutes les sessions de cet utilisateur
+    const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    const result = deleteSessionsStmt.run(userId);
+    
+    console.log(`🚪 Déconnexion: ${userEmail} - ${result.changes} session(s) fermée(s)`);
+    
+    res.json({ message: 'Déconnexion réussie', sessionsClosed: result.changes });
+  } catch (error) {
+    console.error('Erreur logout:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Liste des utilisateurs (pour le sélecteur de connexion)
+app.get('/api/auth/users', (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT id, email, name, is_admin FROM users ORDER BY name');
+    const users = stmt.all();
+    res.json(users.map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      isAdmin: u.is_admin === 1
+    })));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -96,7 +258,31 @@ app.get('/api/vehicles', authenticateToken, (req, res) => {
   try {
     const stmt = db.prepare('SELECT * FROM vehicles ORDER BY order_index');
     const vehicles = stmt.all();
-    res.json(vehicles);
+    
+    // Mapper snake_case vers camelCase
+    const mappedVehicles = vehicles.map(v => ({
+      id: v.id,
+      name: v.name,
+      type: v.type,
+      registration: v.registration,
+      brand: v.brand,
+      model: v.model,
+      color: v.color,
+      owner: v.owner,
+      comment: v.comment,
+      displayColor: v.display_color,
+      photo: v.photo,
+      order: v.order_index,
+      isLocation: v.is_location === 1,
+      kilometrage: v.kilometrage || 0,
+      controles_techniques: v.controles_techniques || '[]',
+      createdBy: v.created_by,
+      modifiedBy: v.modified_by,
+      createdAt: v.created_at,
+      modifiedAt: v.modified_at
+    }));
+    
+    res.json(mappedVehicles);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -107,19 +293,46 @@ app.post('/api/vehicles', authenticateToken, (req, res) => {
     const vehicle = req.body;
     const stmt = db.prepare(`
       INSERT INTO vehicles (id, name, type, registration, brand, model, color, owner, comment, 
-                           display_color, photo, order_index, is_location, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                           display_color, photo, order_index, is_location, kilometrage, controles_techniques, created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     stmt.run(
       vehicle.id, vehicle.name, vehicle.type, vehicle.registration, vehicle.brand,
       vehicle.model, vehicle.color, vehicle.owner, vehicle.comment, vehicle.displayColor,
-      vehicle.photo, vehicle.order || 0, vehicle.isLocation ? 1 : 0, req.user.id, req.user.id
+      vehicle.photo, vehicle.order || 0, vehicle.isLocation ? 1 : 0, 
+      vehicle.kilometrage || 0, vehicle.controles_techniques || '[]', req.user.id, req.user.id
     );
     
     addToHistory('vehicle', vehicle.id, 'created', vehicle, req.user.id, req.user.name);
     
-    res.json({ success: true, id: vehicle.id });
+    // Récupérer le véhicule créé et le mapper
+    const getStmt = db.prepare('SELECT * FROM vehicles WHERE id = ?');
+    const createdVehicle = getStmt.get(vehicle.id);
+    
+    const mappedVehicle = {
+      id: createdVehicle.id,
+      name: createdVehicle.name,
+      type: createdVehicle.type,
+      registration: createdVehicle.registration,
+      brand: createdVehicle.brand,
+      model: createdVehicle.model,
+      color: createdVehicle.color,
+      owner: createdVehicle.owner,
+      comment: createdVehicle.comment,
+      displayColor: createdVehicle.display_color,
+      photo: createdVehicle.photo,
+      order: createdVehicle.order_index,
+      isLocation: createdVehicle.is_location === 1,
+      kilometrage: createdVehicle.kilometrage || 0,
+      controles_techniques: createdVehicle.controles_techniques || '[]',
+      createdBy: createdVehicle.created_by,
+      modifiedBy: createdVehicle.modified_by,
+      createdAt: createdVehicle.created_at,
+      modifiedAt: createdVehicle.modified_at
+    };
+    
+    res.json(mappedVehicle);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -132,19 +345,46 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
       UPDATE vehicles 
       SET name = ?, type = ?, registration = ?, brand = ?, model = ?, color = ?,
           owner = ?, comment = ?, display_color = ?, photo = ?, order_index = ?,
-          is_location = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
+          is_location = ?, kilometrage = ?, controles_techniques = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
     
     stmt.run(
       vehicle.name, vehicle.type, vehicle.registration, vehicle.brand, vehicle.model,
       vehicle.color, vehicle.owner, vehicle.comment, vehicle.displayColor, vehicle.photo,
-      vehicle.order || 0, vehicle.isLocation ? 1 : 0, req.user.id, req.params.id
+      vehicle.order || 0, vehicle.isLocation ? 1 : 0, 
+      vehicle.kilometrage || 0, vehicle.controles_techniques || '[]', req.user.id, req.params.id
     );
     
     addToHistory('vehicle', req.params.id, 'updated', vehicle, req.user.id, req.user.name);
     
-    res.json({ success: true });
+    // Récupérer le véhicule mis à jour et le mapper
+    const getStmt = db.prepare('SELECT * FROM vehicles WHERE id = ?');
+    const updatedVehicle = getStmt.get(req.params.id);
+    
+    const mappedVehicle = {
+      id: updatedVehicle.id,
+      name: updatedVehicle.name,
+      type: updatedVehicle.type,
+      registration: updatedVehicle.registration,
+      brand: updatedVehicle.brand,
+      model: updatedVehicle.model,
+      color: updatedVehicle.color,
+      owner: updatedVehicle.owner,
+      comment: updatedVehicle.comment,
+      displayColor: updatedVehicle.display_color,
+      photo: updatedVehicle.photo,
+      order: updatedVehicle.order_index,
+      isLocation: updatedVehicle.is_location === 1,
+      kilometrage: updatedVehicle.kilometrage || 0,
+      controles_techniques: updatedVehicle.controles_techniques || '[]',
+      createdBy: updatedVehicle.created_by,
+      modifiedBy: updatedVehicle.modified_by,
+      createdAt: updatedVehicle.created_at,
+      modifiedAt: updatedVehicle.modified_at
+    };
+    
+    res.json(mappedVehicle);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -206,6 +446,13 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
 app.post('/api/reservations', authenticateToken, (req, res) => {
   try {
     const reservation = req.body;
+    
+    // Générer un ID côté serveur si non fourni ou invalide
+    if (!reservation.id || reservation.id === 'null' || reservation.id === null) {
+      reservation.id = `${Date.now()}.${Math.random()}`;
+      console.log('⚠️ ID manquant, génération côté serveur:', reservation.id);
+    }
+    
     const stmt = db.prepare(`
       INSERT INTO reservations (id, vehicle_id, start_date, start_period, end_date, end_period, 
                                client_name, driver_name, location_name, prestation_name, 
@@ -235,7 +482,44 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
     
     addToHistory('reservation', reservation.id, 'created', reservation, req.user.id, req.user.name);
     
-    res.json({ success: true, id: reservation.id });
+    // Récupérer la réservation complète avec les infos du véhicule
+    const createdReservation = db.prepare(`
+      SELECT r.*, v.name as vehicle_name, v.type as vehicle_type, v.registration as immatriculation
+      FROM reservations r
+      JOIN vehicles v ON r.vehicle_id = v.id
+      WHERE r.id = ?
+    `).get(reservation.id);
+    
+    if (!createdReservation) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération de la réservation créée' });
+    }
+    
+    // Mapper au format attendu par le frontend
+    const mappedReservation = {
+      id: createdReservation.id,
+      vehicleId: createdReservation.vehicle_id,
+      vehicleName: createdReservation.vehicle_name,
+      vehicleType: createdReservation.vehicle_type,
+      immatriculation: createdReservation.immatriculation,
+      startDate: createdReservation.start_date,
+      startPeriod: createdReservation.start_period,
+      endDate: createdReservation.end_date,
+      endPeriod: createdReservation.end_period,
+      // Rétrocompatibilité
+      date: createdReservation.start_date,
+      period: createdReservation.start_period,
+      clientName: createdReservation.client_name,
+      driverName: createdReservation.driver_name,
+      locationName: createdReservation.location_name,
+      prestationName: createdReservation.prestation_name,
+      notes: createdReservation.notes,
+      googleEventId: createdReservation.google_event_id,
+      affaire: createdReservation.affaire,
+      isTournee: Boolean(createdReservation.is_tournee),
+      linkedEventIds: createdReservation.linked_event_ids ? JSON.parse(createdReservation.linked_event_ids) : []
+    };
+    
+    res.json(mappedReservation);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -282,13 +566,16 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
 
 app.delete('/api/reservations/:id', authenticateToken, (req, res) => {
   try {
+    console.log('🗑️ DELETE /api/reservations/:id - ID:', req.params.id);
     const stmt = db.prepare('DELETE FROM reservations WHERE id = ?');
-    stmt.run(req.params.id);
+    const result = stmt.run(req.params.id);
+    console.log('✅ Suppression DB - changes:', result.changes);
     
     addToHistory('reservation', req.params.id, 'deleted', null, req.user.id, req.user.name);
     
     res.json({ success: true });
   } catch (error) {
+    console.error('❌ Erreur suppression réservation:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -446,6 +733,7 @@ app.get('/api/maintenances', authenticateToken, (req, res) => {
       mileage: m.mileage,
       notes: m.notes,
       isImmobilized: m.is_immobilized,
+      technicalControlType: m.technical_control_type,
       createdBy: m.created_by,
       modifiedBy: m.modified_by,
       createdAt: m.created_at,
@@ -473,8 +761,8 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
     const stmt = db.prepare(`
       INSERT INTO maintenances (id, vehicle_id, vehicle_name, type, status, date, end_date, 
                                description, garage_id, cost, mileage, notes, is_immobilized, 
-                               created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               technical_control_type, created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     stmt.run(
@@ -491,6 +779,7 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
       maintenance.mileage || null,
       maintenance.notes || '',
       maintenance.is_immobilized ? 1 : 0,
+      maintenance.technical_control_type || null,
       req.user.id,
       req.user.id
     );
@@ -535,7 +824,7 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
       UPDATE maintenances 
       SET vehicle_id = ?, type = ?, status = ?, date = ?, end_date = ?, description = ?, 
           garage_id = ?, cost = ?, mileage = ?, notes = ?, is_immobilized = ?,
-          modified_by = ?, modified_at = CURRENT_TIMESTAMP
+          technical_control_type = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
     
@@ -551,9 +840,67 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
       maintenance.mileage || null,
       maintenance.notes || null,
       maintenance.isImmobilized || maintenance.is_immobilized ? 1 : 0,
+      maintenance.technicalControlType || maintenance.technical_control_type || null,
       req.user.id,
       req.params.id
     );
+    
+    // Si l'intervention est de type technical_inspection et passe à "completed",
+    // mettre à jour la deadline du contrôle technique correspondant
+    if (maintenance.type === 'technical_inspection' && 
+        maintenance.status === 'completed' && 
+        (maintenance.technicalControlType || maintenance.technical_control_type)) {
+      
+      const vehicleId = maintenance.vehicleId || maintenance.vehicle_id;
+      const controlType = maintenance.technicalControlType || maintenance.technical_control_type;
+      const completionDate = maintenance.endDate || maintenance.end_date || maintenance.startDate || maintenance.date;
+      
+      // Récupérer le véhicule pour mettre à jour ses contrôles techniques
+      const vehicle = db.prepare('SELECT controles_techniques FROM vehicles WHERE id = ?').get(vehicleId);
+      
+      if (vehicle) {
+        let controles = [];
+        try {
+          controles = vehicle.controles_techniques ? JSON.parse(vehicle.controles_techniques) : [];
+        } catch (e) {
+          console.error('Erreur parsing controles_techniques:', e);
+          controles = [];
+        }
+        
+        // Trouver le contrôle correspondant
+        const controleIndex = controles.findIndex(c => c.type === controlType);
+        
+        if (controleIndex >= 0) {
+          // Calculer la nouvelle deadline selon le type de contrôle
+          const periodicDelays = {
+            'VL': 24,      // 24 mois
+            'PL': 12,      // 12 mois
+            'SEMI': 12,    // 12 mois
+            'SCENE': 12,   // 12 mois
+            'POLLUTION': 12, // 12 mois
+            'HAYON': 6     // 6 mois
+          };
+          
+          const delayMonths = periodicDelays[controlType] || 12;
+          const date = new Date(completionDate);
+          date.setMonth(date.getMonth() + delayMonths);
+          const newDeadline = date.toISOString().split('T')[0];
+          
+          // Mettre à jour le contrôle
+          controles[controleIndex] = {
+            ...controles[controleIndex],
+            date: completionDate,
+            deadline: newDeadline
+          };
+          
+          // Sauvegarder les contrôles mis à jour
+          const updateStmt = db.prepare('UPDATE vehicles SET controles_techniques = ? WHERE id = ?');
+          updateStmt.run(JSON.stringify(controles), vehicleId);
+          
+          console.log(`✅ Deadline CT ${controlType} mise à jour pour véhicule ${vehicleId}: ${newDeadline}`);
+        }
+      }
+    }
     
     addToHistory('maintenance', req.params.id, 'updated', maintenance, req.user.id, req.user.name);
     
@@ -747,7 +1094,7 @@ app.get('/api/access-requests', authenticateToken, (req, res) => {
 app.patch('/api/access-requests/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, is_admin } = req.body;
     
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Status invalide' });
@@ -774,16 +1121,30 @@ app.patch('/api/access-requests/:id', authenticateToken, async (req, res) => {
 
     // Si approuvée, créer l'email autorisé
     if (status === 'approved') {
+      // Vérifier si la colonne is_admin existe, sinon l'ajouter
+      try {
+        const columns = db.prepare("PRAGMA table_info(authorized_emails)").all();
+        const hasIsAdminColumn = columns.some(col => col.name === 'is_admin');
+        
+        if (!hasIsAdminColumn) {
+          db.prepare("ALTER TABLE authorized_emails ADD COLUMN is_admin INTEGER DEFAULT 0").run();
+          console.log('✅ Colonne is_admin ajoutée à authorized_emails');
+        }
+      } catch (error) {
+        console.log('Info: Colonne is_admin déjà présente ou erreur:', error.message);
+      }
+
       const authStmt = db.prepare(`
-        INSERT INTO authorized_emails (email, name, status)
-        VALUES (?, ?, 'pending')
+        INSERT INTO authorized_emails (email, status, is_admin)
+        VALUES (?, 'pending', ?)
+        ON CONFLICT(email) DO UPDATE SET is_admin = excluded.is_admin
       `);
       
       try {
-        authStmt.run(request.email, request.name);
+        authStmt.run(request.email, is_admin ? 1 : 0);
+        console.log(`✅ Email autorisé: ${request.email} (admin: ${is_admin ? 'oui' : 'non'})`);
       } catch (error) {
-        // Si l'email existe déjà dans authorized_emails, pas grave
-        console.log('Email déjà autorisé:', request.email);
+        console.error('Erreur ajout email autorisé:', error);
       }
     }
 
@@ -862,7 +1223,19 @@ app.delete('/api/authorized-emails/:id', authenticateToken, requireAdmin, (req, 
 
 // ============ GESTION DES UTILISATEURS (ADMIN) ============
 
-// Récupérer tous les utilisateurs
+// Récupérer les noms des utilisateurs (tous les utilisateurs authentifiés)
+app.get('/api/users/names', authenticateToken, (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT id, name, email FROM users ORDER BY name');
+    const users = stmt.all();
+    res.json(users);
+  } catch (error) {
+    console.error('Erreur récupération noms utilisateurs:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer tous les utilisateurs (admin uniquement)
 app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, email, name, is_admin, created_at FROM users ORDER BY created_at DESC');
@@ -886,17 +1259,142 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
     if (isAdmin !== undefined) {
       const stmt = db.prepare('UPDATE users SET is_admin = ? WHERE id = ?');
       stmt.run(isAdmin ? 1 : 0, id);
+      
+      // Invalider toutes les sessions de cet utilisateur pour qu'il se reconnecte avec le nouveau statut
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      const result = deleteSessionsStmt.run(id);
+      console.log(`🔄 Statut admin modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
     }
     
     if (newPassword) {
       const passwordHash = await bcrypt.hash(newPassword, 10);
       const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
       stmt.run(passwordHash, id);
+      
+      // Invalider toutes les sessions lors du changement de mot de passe
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      const result = deleteSessionsStmt.run(id);
+      console.log(`🔑 Mot de passe modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
     }
     
-    res.json({ success: true });
+    res.json({ success: true, message: 'Utilisateur mis à jour. Les sessions actives ont été fermées.' });
   } catch (error) {
     console.error('Erreur mise à jour utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Demander une réinitialisation de mot de passe (admin)
+app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Marquer le compte comme nécessitant une réinitialisation
+    const stmt = db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?');
+    stmt.run(id);
+    
+    // Invalider toutes les sessions
+    const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    const result = deleteSessionsStmt.run(id);
+    
+    // Récupérer l'email pour le retour
+    const userStmt = db.prepare('SELECT email FROM users WHERE id = ?');
+    const user = userStmt.get(id);
+    
+    console.log(`🔄 Réinitialisation demandée pour user ${id} (${user?.email}) - ${result.changes} session(s) fermée(s)`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Réinitialisation demandée. L\'utilisateur devra définir un nouveau mot de passe.',
+      email: user?.email
+    });
+  } catch (error) {
+    console.error('Erreur demande réinitialisation:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Vérifier si un compte nécessite une réinitialisation
+app.post('/api/auth/check-reset', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    const stmt = db.prepare('SELECT id, email, name, password_reset_required FROM users WHERE email = ?');
+    const user = stmt.get(email);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    res.json({ 
+      resetRequired: user.password_reset_required === 1,
+      user: { id: user.id, email: user.email, name: user.name }
+    });
+  } catch (error) {
+    console.error('Erreur check reset:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Définir un nouveau mot de passe après réinitialisation
+app.post('/api/auth/set-new-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    }
+    
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    const user = stmt.get(email);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    if (user.password_reset_required !== 1) {
+      return res.status(400).json({ error: 'Aucune réinitialisation en attente pour ce compte' });
+    }
+    
+    // Mettre à jour le mot de passe et retirer le flag
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const updateStmt = db.prepare(`
+      UPDATE users 
+      SET password_hash = ?, password_reset_required = 0 
+      WHERE id = ?
+    `);
+    updateStmt.run(passwordHash, user.id);
+    
+    // Supprimer toutes les anciennes sessions avant d'en créer une nouvelle
+    const deleteOldSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    deleteOldSessionsStmt.run(user.id);
+    
+    // Créer un token pour connecter directement l'utilisateur
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+    
+    // Enregistrer la session
+    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const insertSessionStmt = db.prepare(`
+      INSERT INTO active_sessions (user_id, token_hash, expires_at)
+      VALUES (?, ?, ?)
+    `);
+    insertSessionStmt.run(user.id, tokenHash, expiresAt);
+    
+    console.log(`✅ Nouveau mot de passe défini pour ${user.email}`);
+    
+    res.json({ 
+      success: true,
+      token,
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      message: 'Mot de passe défini avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur définition mot de passe:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -911,12 +1409,56 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
       return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' });
     }
     
-    const stmt = db.prepare('DELETE FROM users WHERE id = ?');
-    stmt.run(id);
+    // Avant de supprimer l'utilisateur, réassigner toutes ses données à l'admin qui fait la suppression
+    const userId = parseInt(id);
+    const adminId = req.user.id;
+    
+    // Réassigner les enregistrements dans toutes les tables qui référencent l'utilisateur
+    const reassignQueries = [
+      'UPDATE access_requests SET reviewed_by = ? WHERE reviewed_by = ?',
+      'UPDATE vehicles SET created_by = ? WHERE created_by = ?',
+      'UPDATE vehicles SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE reservations SET created_by = ? WHERE created_by = ?',
+      'UPDATE reservations SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE clients SET created_by = ? WHERE created_by = ?',
+      'UPDATE clients SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE drivers SET created_by = ? WHERE created_by = ?',
+      'UPDATE drivers SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE locations SET created_by = ? WHERE created_by = ?',
+      'UPDATE locations SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE garages SET created_by = ? WHERE created_by = ?',
+      'UPDATE garages SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE maintenances SET reported_by = ? WHERE reported_by = ?',
+      'UPDATE maintenances SET created_by = ? WHERE created_by = ?',
+      'UPDATE maintenances SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE modification_history SET user_id = ? WHERE user_id = ?',
+      'UPDATE config SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE reservation_requests SET requested_by = ? WHERE requested_by = ?',
+      'UPDATE reservation_requests SET reviewed_by = ? WHERE reviewed_by = ?'
+    ];
+    
+    // Exécuter toutes les mises à jour dans une transaction
+    const transaction = db.transaction(() => {
+      for (const query of reassignQueries) {
+        const stmt = db.prepare(query);
+        stmt.run(adminId, userId);
+      }
+      
+      // Supprimer les sessions actives de l'utilisateur
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      deleteSessionsStmt.run(userId);
+      
+      // Enfin supprimer l'utilisateur
+      const deleteUserStmt = db.prepare('DELETE FROM users WHERE id = ?');
+      deleteUserStmt.run(userId);
+    });
+    
+    transaction();
+    
     res.json({ success: true });
   } catch (error) {
     console.error('Erreur suppression utilisateur:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: error.message || 'Erreur serveur' });
   }
 });
 
@@ -925,7 +1467,190 @@ setupClientsRoutes(app, authenticateToken);
 setupDriversRoutes(app, authenticateToken);
 setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
-setupConfigRoutes(app, authenticateToken);
+setupConfigRoutes(app, authenticateToken, requireAdmin);
+
+// Endpoint pour créer un dossier
+app.post('/api/create-folder', (req, res) => {
+  try {
+    const { path: folderPath } = req.body;
+    
+    if (!folderPath) {
+      return res.status(400).json({ error: 'Chemin du dossier manquant' });
+    }
+    
+    // Créer le dossier récursivement (avec tous les parents)
+    fs.mkdirSync(folderPath, { recursive: true });
+    
+    res.json({ success: true, path: folderPath });
+  } catch (error) {
+    console.error('Erreur création dossier:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Configuration de multer pour l'upload de fichiers
+// Configuration de multer pour l'upload de fichiers - upload temporaire
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '..', 'public', 'attachments', 'TEMP');
+    
+    // Créer le dossier temporaire s'il n'existe pas
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Nom temporaire unique
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    // Accepter uniquement les PDF
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Seuls les fichiers PDF sont acceptés'));
+    }
+  }
+});
+
+// Endpoint pour uploader un BL
+app.post('/api/upload-bl', upload.single('pdf'), (req, res) => {
+  console.log('📤 POST /api/upload-bl reçu');
+  console.log('  - affaireId:', req.body.affaireId);
+  console.log('  - file:', req.file ? req.file.originalname : 'AUCUN');
+  
+  try {
+    if (!req.file) {
+      console.error('❌ Aucun fichier dans la requête');
+      return res.status(400).json({ error: 'Aucun fichier fourni' });
+    }
+    
+    if (!req.body.affaireId) {
+      console.error('❌ affaireId manquant');
+      return res.status(400).json({ error: 'affaireId requis' });
+    }
+    
+    // Déplacer le fichier du dossier TEMP vers le dossier de l'affaire
+    const affaireDir = path.join(__dirname, '..', 'public', 'attachments', req.body.affaireId);
+    if (!fs.existsSync(affaireDir)) {
+      fs.mkdirSync(affaireDir, { recursive: true });
+      console.log('📁 Dossier créé:', affaireDir);
+    }
+    
+    // Extraire le nom de fichier original (enlever le timestamp)
+    const originalName = req.file.originalname.replace(/^\d+-/, '');
+    const finalPath = path.join(affaireDir, originalName);
+    
+    // Déplacer le fichier
+    fs.renameSync(req.file.path, finalPath);
+    console.log('✅ Fichier déplacé vers:', finalPath);
+    
+    const relativePath = path.join('attachments', req.body.affaireId, originalName);
+    
+    res.json({ 
+      success: true, 
+      path: relativePath,
+      filename: originalName
+    });
+  } catch (error) {
+    console.error('❌ Erreur upload BL:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint pour uploader des pièces jointes génériques
+app.post('/api/upload-attachment', upload.single('file'), (req, res) => {
+  console.log('📤 POST /api/upload-attachment reçu');
+  console.log('  - affaireId:', req.body.affaireId);
+  console.log('  - file:', req.file ? req.file.originalname : 'AUCUN');
+  
+  try {
+    if (!req.file) {
+      console.error('❌ Aucun fichier dans la requête');
+      return res.status(400).json({ error: 'Aucun fichier fourni' });
+    }
+    
+    if (!req.body.affaireId) {
+      console.error('❌ affaireId manquant');
+      return res.status(400).json({ error: 'affaireId requis' });
+    }
+    
+    // Déplacer le fichier du dossier TEMP vers le dossier de l'affaire
+    const affaireDir = path.join(__dirname, '..', 'public', 'attachments', req.body.affaireId);
+    if (!fs.existsSync(affaireDir)) {
+      fs.mkdirSync(affaireDir, { recursive: true });
+      console.log('📁 Dossier créé:', affaireDir);
+    }
+    
+    // Extraire le nom de fichier original (enlever le timestamp)
+    const originalName = req.file.originalname.replace(/^\d+-/, '');
+    const finalPath = path.join(affaireDir, originalName);
+    
+    // Déplacer le fichier
+    fs.renameSync(req.file.path, finalPath);
+    console.log('✅ Fichier attaché sauvegardé:', finalPath);
+    
+    const relativePath = path.join('attachments', req.body.affaireId, originalName);
+    
+    res.json({ 
+      success: true, 
+      path: relativePath,
+      filename: originalName,
+      url: `/attachments/${req.body.affaireId}/${originalName}`
+    });
+  } catch (error) {
+    console.error('❌ Erreur upload attachment:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint pour lister les fichiers d'une affaire
+app.get('/api/attachments/:affaireId', (req, res) => {
+  try {
+    const affaireId = req.params.affaireId;
+    const dirPath = path.join(__dirname, '..', 'public', 'attachments', affaireId);
+    
+    // Vérifier si le dossier existe
+    if (!fs.existsSync(dirPath)) {
+      return res.json({ files: [] });
+    }
+    
+    // Fonction pour formater la taille
+    const formatSize = (bytes) => {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+    
+    // Lire les fichiers du dossier
+    const files = fs.readdirSync(dirPath)
+      .filter(file => !file.startsWith('.')) // Ignorer les fichiers cachés
+      .map(file => {
+        const filePath = path.join(dirPath, file);
+        const stats = fs.statSync(filePath);
+        return {
+          name: file,
+          size: formatSize(stats.size),
+          sizeBytes: stats.size,
+          url: `/attachments/${affaireId}/${file}`,
+          createdAt: stats.birthtime
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt); // Trier par date décroissante
+    
+    res.json({ files });
+  } catch (error) {
+    console.error('Erreur liste fichiers:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);

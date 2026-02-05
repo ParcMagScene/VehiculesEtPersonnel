@@ -8,12 +8,17 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
   const [newEmail, setNewEmail] = useState('');
-  const [resetUserId, setResetUserId] = useState(null);
-  const [newPassword, setNewPassword] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadData();
+    
+    // Rafraîchir les données toutes les 30 secondes
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
@@ -84,27 +89,50 @@ const UserManagement = () => {
     }
   };
 
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    if (!newPassword || newPassword.length < 4) {
-      alert('Le mot de passe doit contenir au moins 4 caractères');
+  const handleResetPassword = async (userId) => {
+    if (!confirm('Marquer ce compte pour réinitialisation ? L\'utilisateur devra définir un nouveau mot de passe lors de sa prochaine connexion.')) {
       return;
     }
 
     try {
-      await api.updateUser(resetUserId, { newPassword });
-      alert('Mot de passe réinitialisé avec succès');
-      setResetUserId(null);
-      setNewPassword('');
-    } catch (error) {
-    
+      const response = await fetch(`http://localhost:3002/api/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-  const handleApproveRequest = async (requestId) => {
-    if (!confirm('Approuver cette demande d\'accès ?')) return;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erreur lors de la réinitialisation');
+      }
+
+      const data = await response.json();
+      alert(`✅ Réinitialisation demandée\n\nL'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`);
+      loadData();
+    } catch (error) {
+      alert(`Erreur: ${error.message}`);
+    }
+  };
+
+  const handleApproveRequest = async (requestId, requestEmail) => {
+    // Demander confirmation d'approbation d'abord
+    if (!confirm(`Approuver la demande de ${requestEmail} ?`)) return;
+    
+    // Demander si on veut donner les droits admin
+    const giveAdminResponse = prompt(
+      `Donner les droits administrateur à cet utilisateur ?\n\nTapez "oui" pour administrateur, "non" pour utilisateur standard :`,
+      'non'
+    );
+    
+    if (giveAdminResponse === null) return; // Annulation
+    
+    const giveAdmin = giveAdminResponse.toLowerCase().trim() === 'oui';
 
     try {
-      await api.updateAccessRequest(requestId, 'approved');
-      alert('✅ Demande approuvée ! L\'utilisateur peut maintenant créer son compte.');
+      await api.updateAccessRequest(requestId, 'approved', giveAdmin);
+      alert(`✅ Demande approuvée ! L'utilisateur ${requestEmail} peut maintenant créer son compte${giveAdmin ? ' avec des droits administrateur' : ''}.`);
       loadData();
     } catch (error) {
       alert(`Erreur: ${error.message}`);
@@ -121,8 +149,6 @@ const UserManagement = () => {
     } catch (error) {
       alert(`Erreur: ${error.message}`);
     }
-  };  alert(`Erreur: ${error.message}`);
-    }
   };
 
   if (isLoading) {
@@ -131,96 +157,71 @@ const UserManagement = () => {
 
   return (
     <div className="user-management">
-      {/* Demandes d'accès en attente */}
-      {accessRequests.filter(r => r.status === 'pending').length > 0 && (
-        <div className="user-management-section access-requests-section">
-          <h3>
-            <Bell size={20} className="notification-icon" />
-            Demandes d'accès en attente ({accessRequests.filter(r => r.status === 'pending').length})
-          </h3>
-          
-          <div className="requests-list">
-            {accessRequests.filter(r => r.status === 'pending').map((request) => (
-              <div key={request.id} className="request-card">
-                <div className="request-info">
-                  <div className="request-name">{request.name}</div>
-                  <div className="request-email">{request.email}</div>
-                  <div className="request-date">
-                    Demande le {new Date(request.created_at).toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                </div>
-                <div className="request-actions">
-                  <button 
-                    className="btn-approve"
-                    onClick={() => handleApproveRequest(request.id)}
-                    title="Approuver"
-                  >
-                    <UserCheck size={18} /> Approuver
-                  </button>
-                  <button 
-                    className="btn-reject"
-                    onClick={() => handleRejectRequest(request.id)}
-                    title="Rejeter"
-                  >
-                    <UserX size={18} /> Rejeter
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Utilisateurs enregistrés */}
+      <div className="user-management-section">
+        <h3><User size={20} /> Utilisateurs</h3>
 
-      {/* Historique des demandes traitées */}
-      {accessRequests.filter(r => r.status !== 'pending').length > 0 && (
-        <div className="user-management-section">
-          <h3>Historique des demandes</h3>
-          <div className="requests-history">
+        <div className="users-list">
+          {users.length === 0 ? (
+            <p className="no-data">Aucun utilisateur</p>
+          ) : (
             <table>
               <thead>
                 <tr>
                   <th>Nom</th>
                   <th>Email</th>
-                  <th>Date demande</th>
-                  <th>Statut</th>
-                  <th>Traité par</th>
-                  <th>Date traitement</th>
+                  <th>Droits</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {accessRequests.filter(r => r.status !== 'pending').map((request) => (
-                  <tr key={request.id}>
-                    <td>{request.name}</td>
-                    <td>{request.email}</td>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
                     <td>
-                      {new Date(request.created_at).toLocaleDateString('fr-FR')}
+                      <label className="admin-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={user.isAdmin || false}
+                          onChange={() => handleToggleAdmin(user.id, user.isAdmin)}
+                        />
+                        <span className="checkbox-label">
+                          {user.isAdmin ? (
+                            <><Shield size={14} /> Admin</>
+                          ) : (
+                            <><User size={14} /> Utilisateur</>
+                          )}
+                        </span>
+                      </label>
                     </td>
                     <td>
-                      <span className={`status-badge ${request.status}`}>
-                        {request.status === 'approved' ? '✓ Approuvée' : '✗ Rejetée'}
-                      </span>
-                    </td>
-                    <td>{request.reviewed_by_name || '-'}</td>
-                    <td>
-                      {request.reviewed_at 
-                        ? new Date(request.reviewed_at).toLocaleDateString('fr-FR')
-                        : '-'
-                      }
+                      <div className="action-buttons">
+                        <button
+                          onClick={() => handleResetPassword(user.id)}
+                          className="btn-icon btn-warning"
+                          title="Réinitialiser - l'utilisateur devra définir un nouveau mot de passe"
+                        >
+                          <RefreshCw size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="btn-icon btn-danger"
+                          title="Supprimer l'utilisateur"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
+      {/* Emails autorisés */}
       <div className="user-management-section">
         <h3><Mail size={20} /> Emails autorisés</h3>
         
@@ -263,7 +264,7 @@ const UserManagement = () => {
                         )}
                       </span>
                     </td>
-                    <td>{email.user_name || '-'}</td>
+                    <td>{email.userName || '-'}</td>
                     <td>
                       <button
                         onClick={() => handleRemoveEmail(email.id)}
@@ -281,96 +282,95 @@ const UserManagement = () => {
         </div>
       </div>
 
-      <div className="user-management-section">
-        <h3><User size={20} /> Utilisateurs</h3>
-
-        <div className="users-list">
-          {users.length === 0 ? (
-            <p className="no-data">Aucun utilisateur</p>
-          ) : (
+      {/* Historique des demandes traitées */}
+      {accessRequests.filter(r => r.status !== 'pending').length > 0 && (
+        <div className="user-management-section">
+          <h3>Historique des demandes</h3>
+          <div className="requests-history">
             <table>
               <thead>
                 <tr>
                   <th>Nom</th>
                   <th>Email</th>
-                  <th>Administrateur</th>
-                  <th>Actions</th>
+                  <th>Date demande</th>
+                  <th>Statut</th>
+                  <th>Traité par</th>
+                  <th>Date traitement</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
+                {accessRequests.filter(r => r.status !== 'pending').map((request) => (
+                  <tr key={request.id}>
+                    <td>{request.name}</td>
+                    <td>{request.email}</td>
                     <td>
-                      <label className="admin-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={user.isAdmin || false}
-                          onChange={() => handleToggleAdmin(user.id, user.isAdmin)}
-                        />
-                        <span className="checkbox-label">
-                          {user.isAdmin ? (
-                            <><Shield size={14} /> Admin</>
-                          ) : (
-                            <><User size={14} /> Utilisateur</>
-                          )}
-                        </span>
-                      </label>
+                      {new Date(request.createdAt).toLocaleDateString('fr-FR')}
                     </td>
                     <td>
-                      <div className="action-buttons">
-                        {resetUserId === user.id ? (
-                          <form onSubmit={handleResetPassword} className="inline-form">
-                            <input
-                              type="text"
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              placeholder="Nouveau mot de passe"
-                              autoFocus
-                              minLength={4}
-                            />
-                            <button type="submit" className="btn-sm btn-primary">
-                              Valider
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setResetUserId(null);
-                                setNewPassword('');
-                              }}
-                              className="btn-sm btn-secondary"
-                            >
-                              Annuler
-                            </button>
-                          </form>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setResetUserId(user.id)}
-                              className="btn-icon btn-warning"
-                              title="Réinitialiser le mot de passe"
-                            >
-                              <RefreshCw size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="btn-icon btn-danger"
-                              title="Supprimer l'utilisateur"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        )}
-                      </div>
+                      <span className={`status-badge ${request.status}`}>
+                        {request.status === 'approved' ? '✓ Approuvée' : '✗ Rejetée'}
+                      </span>
+                    </td>
+                    <td>{request.reviewedByName || '-'}</td>
+                    <td>
+                      {request.reviewedAt 
+                        ? new Date(request.reviewedAt).toLocaleDateString('fr-FR')
+                        : '-'
+                      }
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Demandes d'accès en attente */}
+      {accessRequests.filter(r => r.status === 'pending').length > 0 && (
+        <div className="user-management-section access-requests-section">
+          <h3>
+            <Bell size={20} className="notification-icon" />
+            Demandes d'accès en attente ({accessRequests.filter(r => r.status === 'pending').length})
+          </h3>
+          
+          <div className="requests-list">
+            {accessRequests.filter(r => r.status === 'pending').map((request) => (
+              <div key={request.id} className="request-card">
+                <div className="request-info">
+                  <div className="request-name">{request.name}</div>
+                  <div className="request-email">{request.email}</div>
+                  <div className="request-date">
+                    Demande le {new Date(request.created_at).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+                <div className="request-actions">
+                  <button 
+                    className="btn-approve"
+                    onClick={() => handleApproveRequest(request.id, request.email)}
+                    title="Approuver"
+                  >
+                    <UserCheck size={18} /> Approuver
+                  </button>
+                  <button 
+                    className="btn-reject"
+                    onClick={() => handleRejectRequest(request.id)}
+                    title="Rejeter"
+                  >
+                    <UserX size={18} /> Rejeter
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

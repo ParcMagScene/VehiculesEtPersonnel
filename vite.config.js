@@ -4,13 +4,26 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0', // Accessible sur réseau local
+    host: '0.0.0.0',
     port: 5174,
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true
+      }
+    }
   },
   preview: {
-    host: '0.0.0.0', // Accessible sur réseau local en mode production
-    port: 4173
+    host: '0.0.0.0',
+    port: 4173,
+    allowedHosts: ['magsav.duckdns.org', '.duckdns.org'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true
+      }
+    }
   },
   optimizeDeps: {
     include: ['pdfjs-dist']

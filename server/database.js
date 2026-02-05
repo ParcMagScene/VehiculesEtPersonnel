@@ -21,6 +21,7 @@ function initializeDatabase() {
       name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       is_admin BOOLEAN DEFAULT 0,
+      password_reset_required BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -36,6 +37,19 @@ function initializeDatabase() {
       reviewed_by INTEGER,
       reviewed_at DATETIME,
       FOREIGN KEY (reviewed_by) REFERENCES users(id)
+    )
+  `);
+
+  // Table des sessions actives
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS active_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token_hash TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME NOT NULL,
+      last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
 
@@ -179,6 +193,7 @@ function initializeDatabase() {
       notes TEXT,
       is_immobilized BOOLEAN DEFAULT 0,
       is_quick_report BOOLEAN DEFAULT 0,
+      technical_control_type TEXT,
       reported_date DATETIME,
       reported_by INTEGER,
       created_by INTEGER,
@@ -255,6 +270,65 @@ function initializeDatabase() {
       FOREIGN KEY (reviewed_by) REFERENCES users(id)
     )
   `);
+
+  // Ajouter les colonnes kilométrage et contrôle technique si elles n'existent pas
+  try {
+    const columns = db.prepare("PRAGMA table_info(vehicles)").all();
+    const hasKilometrage = columns.some(col => col.name === 'kilometrage');
+    const hasControleTechniqueType = columns.some(col => col.name === 'controle_technique_type');
+    const hasControleTechniqueDate = columns.some(col => col.name === 'controle_technique_date');
+    const hasControleTechniqueDeadline = columns.some(col => col.name === 'controle_technique_deadline');
+    const hasControlesTechniques = columns.some(col => col.name === 'controles_techniques');
+    
+    if (!hasKilometrage) {
+      db.prepare("ALTER TABLE vehicles ADD COLUMN kilometrage INTEGER DEFAULT 0").run();
+      console.log('✅ Colonne kilometrage ajoutée');
+    }
+    
+    if (!hasControleTechniqueType) {
+      db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_type TEXT").run();
+      console.log('✅ Colonne controle_technique_type ajoutée');
+    }
+    
+    if (!hasControleTechniqueDate) {
+      db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_date TEXT").run();
+      console.log('✅ Colonne controle_technique_date ajoutée');
+    }
+    
+    if (!hasControleTechniqueDeadline) {
+      db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_deadline TEXT").run();
+      console.log('✅ Colonne controle_technique_deadline ajoutée');
+    }
+
+    // Ajouter la nouvelle colonne pour les contrôles multiples
+    if (!hasControlesTechniques) {
+      db.prepare("ALTER TABLE vehicles ADD COLUMN controles_techniques TEXT DEFAULT '[]'").run();
+      console.log('✅ Colonne controles_techniques ajoutée');
+      
+      // Migrer les anciennes données vers le nouveau format
+      const vehiclesWithOldData = db.prepare(`
+        SELECT id, controle_technique_type, controle_technique_date, controle_technique_deadline 
+        FROM vehicles 
+        WHERE controle_technique_type IS NOT NULL AND controle_technique_type != ''
+      `).all();
+      
+      for (const vehicle of vehiclesWithOldData) {
+        const controles = [{
+          type: vehicle.controle_technique_type,
+          date: vehicle.controle_technique_date,
+          deadline: vehicle.controle_technique_deadline
+        }];
+        db.prepare("UPDATE vehicles SET controles_techniques = ? WHERE id = ?")
+          .run(JSON.stringify(controles), vehicle.id);
+      }
+      
+      if (vehiclesWithOldData.length > 0) {
+        console.log(`✅ Migration de ${vehiclesWithOldData.length} contrôles techniques vers le nouveau format`);
+      }
+    }
+  } catch (error) {
+    console.log('Info: Colonnes véhicules déjà présentes');
+  }
 
   console.log('✅ Base de données initialisée');
 }

@@ -241,13 +241,29 @@
   display: grid;
   grid-template-columns: subgrid;
   pointer-events: none;
-  z-index: 0;
+  z-index: 100;
   min-height: 50px;
 }
 
 .grid-line {
   border-right: 1px solid rgba(226, 232, 240, 0.6);
   min-height: 50px;
+}
+
+.grid-line.today {
+  background-color: transparent;
+}
+
+.grid-line.today.today-left {
+  border-left: 3px solid rgba(16, 185, 129, 0.7);
+}
+
+.grid-line.today.today-right {
+  border-right: 3px solid rgba(16, 185, 129, 0.7);
+}
+
+.banner-grid-lines .grid-line.today {
+  border-bottom: 3px solid rgba(16, 185, 129, 0.7);
 }
 
 /* En-tête (cachée mais garde l'espace) */
@@ -374,6 +390,21 @@
 
 .event-block-span.linked {
   border-left-width: 4px !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%) !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.event-block-span.linked::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid rgba(16, 185, 129, 0.4);
+  border-radius: 4px;
+  pointer-events: none;
 }
 
 /* État d'authentification */

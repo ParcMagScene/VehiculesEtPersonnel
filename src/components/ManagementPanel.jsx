@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2 } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2, Gauge } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
+import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
 import UserManagement from './UserManagement';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
 import ChangePassword from './ChangePassword';
@@ -9,6 +10,7 @@ import MobileAccess from './MobileAccess';
 import LocationDialog from './LocationDialog';
 import ClientDialog from './ClientDialog';
 import ReservationRequestsPanel from './ReservationRequestsPanel';
+import VehicleMaintenanceModal from './VehicleMaintenanceModal';
 import api from '../utils/api';
 import './ManagementPanel.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
@@ -59,6 +61,8 @@ const ManagementPanel = ({
   const [locationToEdit, setLocationToEdit] = useState(null);
   const [showClientDialog, setShowClientDialog] = useState(false);
   const [clientToEdit, setClientToEdit] = useState(null);
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const [vehicleToMaintain, setVehicleToMaintain] = useState(null);
   const [companyAddress, setCompanyAddress] = useState('');
   const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
@@ -98,8 +102,14 @@ const ManagementPanel = ({
         }
 
         // Vérifier que l'API est bien chargée
-        if (!window.google?.maps?.places) {
+        if (!window.google?.maps?.places?.Autocomplete) {
           console.error('Google Maps Places API pas disponible');
+          return;
+        }
+
+        // Vérifier que le ref existe
+        if (!companyAddressInputRef.current) {
+          console.error('Référence input adresse non disponible');
           return;
         }
 
@@ -150,11 +160,11 @@ const ManagementPanel = ({
     { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
     { id: 'drivers', label: 'Conducteurs', icon: Users, color: '#06b6d4' },
     { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
-    { id: 'sync', label: 'Synchronisation', icon: Cloud, color: '#ec4899' },
     { id: 'account', label: 'Mon compte', icon: Lock, color: '#6b7280' },
     ...(currentUser?.isAdmin ? [
       { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
       { id: 'users', label: 'Utilisateurs', icon: Shield, color: '#ef4444' },
+      { id: 'sync', label: 'Import/Export', icon: Cloud, color: '#ec4899' },
       { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
       { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
     ] : []),
@@ -371,6 +381,27 @@ const ManagementPanel = ({
     }
   };
 
+  const handleOpenMaintenance = (vehicle) => {
+    setVehicleToMaintain(vehicle);
+    setShowMaintenanceModal(true);
+  };
+
+  const handleSaveMaintenance = async (updatedVehicle) => {
+    try {
+      const response = await api.updateVehicle(updatedVehicle.id, updatedVehicle);
+      const newList = vehicles.map(v => 
+        v.id === updatedVehicle.id ? response : v
+      );
+      setVehicles(newList);
+      saveToIndexedDB(STORES.vehicles, newList);
+      setShowMaintenanceModal(false);
+      setVehicleToMaintain(null);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde maintenance:', error);
+      alert(`Erreur lors de la sauvegarde: ${error.message}`);
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (!editingItem.name.trim()) return;
 
@@ -489,7 +520,7 @@ const ManagementPanel = ({
     e.preventDefault();
   };
 
-  const handleDrop = (dropIndex, dropSection) => {
+  const handleDrop = async (dropIndex, dropSection) => {
     if (draggedIndex === null || draggedSection !== dropSection) return;
     
     if (activeTab === 'vehicles') {
@@ -512,9 +543,29 @@ const ManagementPanel = ({
         ? [...sectionVehicles, ...otherVehicles]
         : [...otherVehicles, ...sectionVehicles];
       
+      // Mettre à jour l'ordre de tous les véhicules
       newList.forEach((v, i) => v.order = i);
+      
+      // Sauvegarder localement immédiatement pour une UI réactive
       setVehicles(newList);
       saveToIndexedDB(STORES.vehicles, newList);
+      
+      // Sauvegarder l'ordre sur le serveur uniquement pour la section modifiée
+      try {
+        // Ne mettre à jour que les véhicules de la section qui a été réorganisée
+        const vehiclesToUpdate = newList.filter(v => 
+          dropSection === 'magscene' ? !v.isLocation : v.isLocation
+        );
+        
+        await Promise.all(
+          vehiclesToUpdate.map(vehicle => 
+            api.updateVehicle(vehicle.id, vehicle)
+          )
+        );
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde de l\'ordre des véhicules:', error);
+        alert('Erreur lors de la sauvegarde de l\'ordre. Veuillez réessayer.');
+      }
     }
     
     setDraggedIndex(null);
@@ -761,9 +812,10 @@ const ManagementPanel = ({
           )}
 
           {/* Configuration Google Calendar */}
-          {activeTab === 'sync' && (
+          {/* Import/Export (Admin uniquement) */}
+          {activeTab === 'sync' && currentUser?.isAdmin && (
             <div className="sync-section">
-              <h3>� Import / Export des données</h3>
+              <h3>📦 Import / Export des données</h3>
               <div className="sync-info">
                 <p>Sauvegardez ou restaurez toutes vos données (véhicules, réservations, clients, etc.)</p>
               </div>
@@ -802,106 +854,6 @@ const ManagementPanel = ({
                     <li><strong>⚠️ Attention :</strong> L'import écrase complètement les données existantes</li>
                     <li>Utile pour transférer vos données entre différents navigateurs ou appareils</li>
                   </ul>
-                </div>
-              </div>
-
-              <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
-
-              <h3>�🗓️ Synchronisation Google Calendar</h3>
-              <div className="sync-info">
-                <p>Affichez vos événements Google Calendar personnels au-dessus du planning de réservation.</p>
-              </div>
-              
-              <div className="sync-form">
-                <div className="form-group">
-                  <label>
-                    Client ID OAuth 2.0
-                    <span className="label-hint">
-                      (<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Obtenir un Client ID</a>)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="1234567890-abcdefgh.apps.googleusercontent.com"
-                    value={calendarConfig?.clientId || ''}
-                    onChange={(e) => setCalendarConfig({ ...calendarConfig, clientId: e.target.value })}
-                  />
-                  <small className="help-text">
-                    Créez un "ID client OAuth 2.0" de type "Application Web" dans Google Cloud Console
-                  </small>
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    ID du Calendrier (optionnel)
-                    <span className="label-hint">
-                      (laissez vide pour utiliser votre calendrier principal)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="primary (par défaut) ou votre.email@gmail.com"
-                    value={calendarConfig?.calendarId || ''}
-                    onChange={(e) => {
-                      let value = e.target.value;
-                      // Extraire l'ID si c'est une URL
-                      const srcMatch = value.match(/src=([^&]+)/);
-                      if (srcMatch) {
-                        value = decodeURIComponent(srcMatch[1]);
-                      }
-                      setCalendarConfig({ ...calendarConfig, calendarId: value });
-                    }}
-                  />
-                  <small className="help-text">
-                    Par défaut, votre calendrier principal sera utilisé
-                  </small>
-                </div>
-
-                {calendarConfig?.clientId && (
-                  <div className="sync-status success">
-                    ✅ Configuration enregistrée - Connectez-vous depuis le bandeau pour voir vos événements
-                  </div>
-                )}
-                
-                {!calendarConfig?.clientId && (
-                  <div className="sync-status info">
-                    ℹ️ Remplissez le Client ID pour activer la synchronisation OAuth
-                  </div>
-                )}
-
-                <div className="sync-tips">
-                  <h4>🔍 Dépannage :</h4>
-                  <ul>
-                    <li><strong>Erreur OAuth :</strong> Vérifiez que l'origine JavaScript est bien configurée dans Google Cloud Console</li>
-                    <li><strong>Pas de bouton de connexion :</strong> Vérifiez que le Client ID est correct</li>
-                    <li><strong>Pas d'événements :</strong> Le calendrier par défaut sera utilisé (laissez le champ ID vide)</li>
-                    <li>Ouvrez la console du navigateur (F12) pour voir les logs détaillés</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="sync-instructions">
-                <h4>📋 Instructions de configuration OAuth 2.0 :</h4>
-                <ol>
-                  <li>Allez sur <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
-                  <li>Créez un nouveau projet ou sélectionnez-en un existant</li>
-                  <li>Activez l'<strong>API Google Calendar</strong></li>
-                  <li>Allez dans <strong>Identifiants → Créer des identifiants → ID client OAuth 2.0</strong></li>
-                  <li>Type d'application : <strong>Application Web</strong></li>
-                  <li><strong>⚠️ IMPORTANT - Origines JavaScript autorisées :</strong>
-                    <div className="origins-box">
-                      <code>http://localhost:5174</code>
-                    </div>
-                    Ajoutez exactement cette URL (sans slash à la fin)
-                  </li>
-                  <li><strong>URI de redirection :</strong> Laissez vide ou ignorez ce champ</li>
-                  <li>Cliquez sur <strong>Créer</strong></li>
-                  <li>Copiez le <strong>Client ID</strong> (format: xxx.apps.googleusercontent.com)</li>
-                  <li>Collez-le dans le champ ci-dessus et sauvegardez</li>
-                  <li>Rechargez complètement la page (Ctrl+Shift+R ou Cmd+Shift+R)</li>
-                </ol>
-                <div className="sync-example">
-                  <strong>🔒 Sécurisé :</strong> Avec OAuth 2.0, vous vous connectez avec votre compte Google et autorisez l'application à lire votre calendrier. Votre calendrier reste privé et vous pouvez révoquer l'accès à tout moment depuis <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">vos paramètres Google</a>.
                 </div>
               </div>
             </div>
@@ -1042,20 +994,33 @@ const ManagementPanel = ({
                         {activeTab === 'vehicles' && (
                           <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || '#3b82f6' }} />
                         )}
+                        {activeTab === 'vehicles' && (
+                          <div className="item-photo">
+                            {item.photo ? (
+                              <img src={`/Photos/${item.photo}`} alt={item.name} />
+                            ) : (
+                              <div className="photo-placeholder">
+                                <Truck size={24} color="#9ca3af" />
+                              </div>
+                            )}
+                            {hasExpiredTechnicalControl(item, maintenances) && (
+                              <div 
+                                className="expired-control-badge"
+                                title={`Contrôle technique expiré: ${getExpiredTechnicalControls(item, maintenances).map(c => `${c.type} (${c.daysExpired}j)`).join(', ')}`}
+                              >
+                                🚫
+                              </div>
+                            )}
+                          </div>
+                        )}
                           <div>
                           <div className="item-name">{item.name}</div>
                           {activeTab === 'vehicles' && (
                             <>
                               <div className="item-type">{item.type}</div>
-                              {(item.immatriculation || item.registration) && (
-                                <div className="item-detail">📋 {item.immatriculation || item.registration}</div>
-                              )}
-                              {item.marque && (
-                                <div className="item-detail">🚗 {item.marque} {item.couleurVehicule}</div>
-                              )}
-                              {item.brand && (
-                                <div className="item-detail">🚗 {item.brand} {item.model}</div>
-                              )}                            </>
+                              <div className="item-registration">📋 {item.immatriculation || item.registration || ''}</div>
+                              <div className="item-brand">🚗 {item.marque || item.brand || ''} {item.couleurVehicule || item.model || ''}</div>
+                            </>
                           )}
                           {activeTab === 'clients' && (
                             <>
@@ -1106,16 +1071,18 @@ const ManagementPanel = ({
                             </>
                           )}
                         </div>
-                        {activeTab === 'vehicles' && item.photo && (
-                          <div className="item-photo">
-                            <img src={`/Photos/${item.photo}`} alt={item.name} />
-                          </div>
-                        )}
                       </div>
                       <div className="item-actions">
                         <div className="drag-handle" title="Glisser pour réorganiser">
                           <GripVertical size={20} />
                         </div>
+                        <button 
+                          className="maintenance-button" 
+                          onClick={(e) => { e.stopPropagation(); handleOpenMaintenance(item); }}
+                          title="Maintenance et contrôle technique"
+                        >
+                          <Gauge size={16} />
+                        </button>
                         <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                           <Edit2 size={16} />
                         </button>
@@ -1226,31 +1193,35 @@ const ManagementPanel = ({
                           </div>
                         ) : (
                           <>
-                            <div className="item-content">
+                            <div className="item-info">
                               <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || '#3b82f6' }} />
+                              <div className="item-photo">
+                                {item.photo ? (
+                                  <img src={`/Photos/${item.photo}`} alt={item.name} />
+                                ) : (
+                                  <div className="photo-placeholder">
+                                    <Truck size={24} color="#9ca3af" />
+                                  </div>
+                                )}
+                              </div>
                               <div>
                                 <div className="item-name">{item.name}</div>
                                 <div className="item-type">{item.type}</div>
-                                {(item.immatriculation || item.registration) && (
-                                  <div className="item-detail">📋 {item.immatriculation || item.registration}</div>
-                                )}
-                                {item.marque && (
-                                  <div className="item-detail">🚗 {item.marque} {item.couleurVehicule}</div>
-                                )}
-                                {item.brand && (
-                                  <div className="item-detail">🏭 {item.brand} {item.model || ''}</div>
-                                )}
+                                <div className="item-registration">📋 {item.immatriculation || item.registration || ''}</div>
+                                <div className="item-brand">🚗 {item.marque || item.brand || ''} {item.couleurVehicule || item.model || ''}</div>
                               </div>
-                              {item.photo && (
-                                <div className="item-photo">
-                                  <img src={`/Photos/${item.photo}`} alt={item.name} />
-                                </div>
-                              )}
                             </div>
                             <div className="item-actions">
                               <div className="drag-handle" title="Glisser pour réorganiser">
                                 <GripVertical size={20} />
                               </div>
+                              <button 
+                                className="maintenance-button" 
+                                onClick={(e) => { e.stopPropagation(); handleOpenMaintenance(item); }}
+                                title="Maintenance et contrôle technique"
+                              >
+                                <Gauge size={16} />
+                              </button>
                               <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                                 <Edit2 size={16} />
                               </button>
@@ -1468,6 +1439,18 @@ const ManagementPanel = ({
             setClientToEdit(null);
           }}
           companyAddress={companyAddress}
+        />
+      )}
+
+      {/* Modal de maintenance des véhicules */}
+      {showMaintenanceModal && vehicleToMaintain && (
+        <VehicleMaintenanceModal
+          vehicle={vehicleToMaintain}
+          onSave={handleSaveMaintenance}
+          onClose={() => {
+            setShowMaintenanceModal(false);
+            setVehicleToMaintain(null);
+          }}
         />
       )}
     </div>

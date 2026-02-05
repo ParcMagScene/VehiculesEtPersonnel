@@ -639,30 +639,38 @@ const ReservationModal = ({
               </div>
             )}
           </div>
+          <label 
+            className="checkbox-label" 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.25rem', 
+              cursor: 'pointer',
+              padding: '0.375rem 0.625rem',
+              background: 'rgba(255, 255, 255, 0.15)',
+              borderRadius: '0.375rem',
+              fontSize: '0.875rem',
+              whiteSpace: 'nowrap',
+              marginLeft: '0.75rem',
+              alignSelf: 'flex-start',
+              border: '1px solid rgba(255, 255, 255, 0.3)'
+            }}
+            title="En mode tournée, les détails (client, conducteur, lieu) seront définis individuellement pour chaque événement lié."
+          >
+            <input
+              type="checkbox"
+              checked={formData.isTournee}
+              onChange={(e) => setFormData(prev => ({ ...prev, isTournee: e.target.checked }))}
+              style={{ margin: 0, cursor: 'pointer' }}
+            />
+            <span style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.95)' }}>🚐 Tournée</span>
+          </label>
           <button className="close-button" onClick={onClose} aria-label="Fermer la fenêtre">
             <X size={24} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {/* Option Tournée en premier */}
-          <div className="form-group tournee-toggle">
-            <label 
-              className="checkbox-label" 
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
-              title="En mode tournée, les détails (client, conducteur, lieu) seront définis individuellement pour chaque événement lié."
-            >
-              <input
-                type="checkbox"
-                checked={formData.isTournee}
-                onChange={(e) => setFormData(prev => ({ ...prev, isTournee: e.target.checked }))}
-              />
-              <span style={{ fontWeight: '500' }}>🚐 Tournée (réservation longue durée avec plusieurs affaires)</span>
-            </label>
-          </div>
-
-          <div className="form-divider" />
-
           {googleEvent && (
             <div className="google-event-badge">
               📅 Lié à : <strong>{googleEvent.summary}</strong>

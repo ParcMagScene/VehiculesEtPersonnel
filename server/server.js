@@ -258,7 +258,31 @@ app.get('/api/vehicles', authenticateToken, (req, res) => {
   try {
     const stmt = db.prepare('SELECT * FROM vehicles ORDER BY order_index');
     const vehicles = stmt.all();
-    res.json(vehicles);
+    
+    // Mapper snake_case vers camelCase
+    const mappedVehicles = vehicles.map(v => ({
+      id: v.id,
+      name: v.name,
+      type: v.type,
+      registration: v.registration,
+      brand: v.brand,
+      model: v.model,
+      color: v.color,
+      owner: v.owner,
+      comment: v.comment,
+      displayColor: v.display_color,
+      photo: v.photo,
+      order: v.order_index,
+      isLocation: v.is_location === 1,
+      kilometrage: v.kilometrage || 0,
+      controles_techniques: v.controles_techniques || '[]',
+      createdBy: v.created_by,
+      modifiedBy: v.modified_by,
+      createdAt: v.created_at,
+      modifiedAt: v.modified_at
+    }));
+    
+    res.json(mappedVehicles);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -269,19 +293,46 @@ app.post('/api/vehicles', authenticateToken, (req, res) => {
     const vehicle = req.body;
     const stmt = db.prepare(`
       INSERT INTO vehicles (id, name, type, registration, brand, model, color, owner, comment, 
-                           display_color, photo, order_index, is_location, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                           display_color, photo, order_index, is_location, kilometrage, controles_techniques, created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     stmt.run(
       vehicle.id, vehicle.name, vehicle.type, vehicle.registration, vehicle.brand,
       vehicle.model, vehicle.color, vehicle.owner, vehicle.comment, vehicle.displayColor,
-      vehicle.photo, vehicle.order || 0, vehicle.isLocation ? 1 : 0, req.user.id, req.user.id
+      vehicle.photo, vehicle.order || 0, vehicle.isLocation ? 1 : 0, 
+      vehicle.kilometrage || 0, vehicle.controles_techniques || '[]', req.user.id, req.user.id
     );
     
     addToHistory('vehicle', vehicle.id, 'created', vehicle, req.user.id, req.user.name);
     
-    res.json({ success: true, id: vehicle.id });
+    // Récupérer le véhicule créé et le mapper
+    const getStmt = db.prepare('SELECT * FROM vehicles WHERE id = ?');
+    const createdVehicle = getStmt.get(vehicle.id);
+    
+    const mappedVehicle = {
+      id: createdVehicle.id,
+      name: createdVehicle.name,
+      type: createdVehicle.type,
+      registration: createdVehicle.registration,
+      brand: createdVehicle.brand,
+      model: createdVehicle.model,
+      color: createdVehicle.color,
+      owner: createdVehicle.owner,
+      comment: createdVehicle.comment,
+      displayColor: createdVehicle.display_color,
+      photo: createdVehicle.photo,
+      order: createdVehicle.order_index,
+      isLocation: createdVehicle.is_location === 1,
+      kilometrage: createdVehicle.kilometrage || 0,
+      controles_techniques: createdVehicle.controles_techniques || '[]',
+      createdBy: createdVehicle.created_by,
+      modifiedBy: createdVehicle.modified_by,
+      createdAt: createdVehicle.created_at,
+      modifiedAt: createdVehicle.modified_at
+    };
+    
+    res.json(mappedVehicle);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -294,19 +345,46 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
       UPDATE vehicles 
       SET name = ?, type = ?, registration = ?, brand = ?, model = ?, color = ?,
           owner = ?, comment = ?, display_color = ?, photo = ?, order_index = ?,
-          is_location = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
+          is_location = ?, kilometrage = ?, controles_techniques = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
     
     stmt.run(
       vehicle.name, vehicle.type, vehicle.registration, vehicle.brand, vehicle.model,
       vehicle.color, vehicle.owner, vehicle.comment, vehicle.displayColor, vehicle.photo,
-      vehicle.order || 0, vehicle.isLocation ? 1 : 0, req.user.id, req.params.id
+      vehicle.order || 0, vehicle.isLocation ? 1 : 0, 
+      vehicle.kilometrage || 0, vehicle.controles_techniques || '[]', req.user.id, req.params.id
     );
     
     addToHistory('vehicle', req.params.id, 'updated', vehicle, req.user.id, req.user.name);
     
-    res.json({ success: true });
+    // Récupérer le véhicule mis à jour et le mapper
+    const getStmt = db.prepare('SELECT * FROM vehicles WHERE id = ?');
+    const updatedVehicle = getStmt.get(req.params.id);
+    
+    const mappedVehicle = {
+      id: updatedVehicle.id,
+      name: updatedVehicle.name,
+      type: updatedVehicle.type,
+      registration: updatedVehicle.registration,
+      brand: updatedVehicle.brand,
+      model: updatedVehicle.model,
+      color: updatedVehicle.color,
+      owner: updatedVehicle.owner,
+      comment: updatedVehicle.comment,
+      displayColor: updatedVehicle.display_color,
+      photo: updatedVehicle.photo,
+      order: updatedVehicle.order_index,
+      isLocation: updatedVehicle.is_location === 1,
+      kilometrage: updatedVehicle.kilometrage || 0,
+      controles_techniques: updatedVehicle.controles_techniques || '[]',
+      createdBy: updatedVehicle.created_by,
+      modifiedBy: updatedVehicle.modified_by,
+      createdAt: updatedVehicle.created_at,
+      modifiedAt: updatedVehicle.modified_at
+    };
+    
+    res.json(mappedVehicle);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -655,6 +733,7 @@ app.get('/api/maintenances', authenticateToken, (req, res) => {
       mileage: m.mileage,
       notes: m.notes,
       isImmobilized: m.is_immobilized,
+      technicalControlType: m.technical_control_type,
       createdBy: m.created_by,
       modifiedBy: m.modified_by,
       createdAt: m.created_at,
@@ -682,8 +761,8 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
     const stmt = db.prepare(`
       INSERT INTO maintenances (id, vehicle_id, vehicle_name, type, status, date, end_date, 
                                description, garage_id, cost, mileage, notes, is_immobilized, 
-                               created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               technical_control_type, created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     stmt.run(
@@ -700,6 +779,7 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
       maintenance.mileage || null,
       maintenance.notes || '',
       maintenance.is_immobilized ? 1 : 0,
+      maintenance.technical_control_type || null,
       req.user.id,
       req.user.id
     );
@@ -744,7 +824,7 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
       UPDATE maintenances 
       SET vehicle_id = ?, type = ?, status = ?, date = ?, end_date = ?, description = ?, 
           garage_id = ?, cost = ?, mileage = ?, notes = ?, is_immobilized = ?,
-          modified_by = ?, modified_at = CURRENT_TIMESTAMP
+          technical_control_type = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
     
@@ -760,9 +840,67 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
       maintenance.mileage || null,
       maintenance.notes || null,
       maintenance.isImmobilized || maintenance.is_immobilized ? 1 : 0,
+      maintenance.technicalControlType || maintenance.technical_control_type || null,
       req.user.id,
       req.params.id
     );
+    
+    // Si l'intervention est de type technical_inspection et passe à "completed",
+    // mettre à jour la deadline du contrôle technique correspondant
+    if (maintenance.type === 'technical_inspection' && 
+        maintenance.status === 'completed' && 
+        (maintenance.technicalControlType || maintenance.technical_control_type)) {
+      
+      const vehicleId = maintenance.vehicleId || maintenance.vehicle_id;
+      const controlType = maintenance.technicalControlType || maintenance.technical_control_type;
+      const completionDate = maintenance.endDate || maintenance.end_date || maintenance.startDate || maintenance.date;
+      
+      // Récupérer le véhicule pour mettre à jour ses contrôles techniques
+      const vehicle = db.prepare('SELECT controles_techniques FROM vehicles WHERE id = ?').get(vehicleId);
+      
+      if (vehicle) {
+        let controles = [];
+        try {
+          controles = vehicle.controles_techniques ? JSON.parse(vehicle.controles_techniques) : [];
+        } catch (e) {
+          console.error('Erreur parsing controles_techniques:', e);
+          controles = [];
+        }
+        
+        // Trouver le contrôle correspondant
+        const controleIndex = controles.findIndex(c => c.type === controlType);
+        
+        if (controleIndex >= 0) {
+          // Calculer la nouvelle deadline selon le type de contrôle
+          const periodicDelays = {
+            'VL': 24,      // 24 mois
+            'PL': 12,      // 12 mois
+            'SEMI': 12,    // 12 mois
+            'SCENE': 12,   // 12 mois
+            'POLLUTION': 12, // 12 mois
+            'HAYON': 6     // 6 mois
+          };
+          
+          const delayMonths = periodicDelays[controlType] || 12;
+          const date = new Date(completionDate);
+          date.setMonth(date.getMonth() + delayMonths);
+          const newDeadline = date.toISOString().split('T')[0];
+          
+          // Mettre à jour le contrôle
+          controles[controleIndex] = {
+            ...controles[controleIndex],
+            date: completionDate,
+            deadline: newDeadline
+          };
+          
+          // Sauvegarder les contrôles mis à jour
+          const updateStmt = db.prepare('UPDATE vehicles SET controles_techniques = ? WHERE id = ?');
+          updateStmt.run(JSON.stringify(controles), vehicleId);
+          
+          console.log(`✅ Deadline CT ${controlType} mise à jour pour véhicule ${vehicleId}: ${newDeadline}`);
+        }
+      }
+    }
     
     addToHistory('maintenance', req.params.id, 'updated', maintenance, req.user.id, req.user.name);
     
@@ -1329,7 +1467,7 @@ setupClientsRoutes(app, authenticateToken);
 setupDriversRoutes(app, authenticateToken);
 setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
-setupConfigRoutes(app, authenticateToken);
+setupConfigRoutes(app, authenticateToken, requireAdmin);
 
 // Endpoint pour créer un dossier
 app.post('/api/create-folder', (req, res) => {

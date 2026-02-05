@@ -213,7 +213,7 @@ const TripDetailsModal = ({
 
   // Initialiser l'autocomplétion Google Maps pour les champs de pause
   useEffect(() => {
-    if (!isGoogleMapsLoaded || !window.google?.maps?.places) return;
+    if (!isGoogleMapsLoaded || !window.google?.maps?.places?.Autocomplete) return;
 
     pauses.forEach(pause => {
       const inputElement = document.getElementById(`pause-location-${pause.id}`);
@@ -269,7 +269,7 @@ const TripDetailsModal = ({
 
   // Initialiser l'autocomplétion Google Maps sur les champs principaux
   useEffect(() => {
-    if (!isGoogleMapsLoaded || !window.google?.maps?.places) return;
+    if (!isGoogleMapsLoaded || !window.google?.maps?.places?.Autocomplete) return;
 
     const fieldsToAutocomplete = [
       'departureLocation',

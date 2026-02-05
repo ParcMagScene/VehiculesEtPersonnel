@@ -32,7 +32,6 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
   animation: slideUp 0.3s ease-out;
 }
 
@@ -45,6 +44,43 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Style pour les nouveaux Web Components PlaceAutocompleteElement */
+.autocomplete-container {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.autocomplete-container gmp-place-autocomplete {
+  width: 100%;
+}
+
+.autocomplete-container input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.autocomplete-container input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Forcer le z-index du dropdown Google Maps autocomplete */
+.pac-container {
+  z-index: 10001 !important;
+  background: white !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
 }
 
 .location-dialog-header {
@@ -64,6 +100,58 @@
   gap: 0.75rem;
   font-size: 1.5rem;
   font-weight: 600;
+  flex-wrap: wrap;
+}
+
+.gps-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 2px solid #10b981;
+}
+
+.coordinates-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.coordinates-badge.success {
+  background: #ecfdf5;
+  border: 2px solid #10b981;
+  color: #065f46;
+}
+
+.coordinates-badge span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.coordinates-badge strong {
+  color: #047857;
+  font-size: 0.875rem;
+}
+
+.coordinates-badge small {
+  color: #059669;
+  font-size: 0.75rem;
+  font-family: 'Courier New', monospace;
+}
+
+.help-text.warning {
+  color: #d97706;
+  font-weight: 500;
 }
 
 .location-dialog-header .close-button {
@@ -84,9 +172,16 @@
   transform: scale(1.05);
 }
 
-.location-dialog-content {
+.location-dialog form {
   flex: 1;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.location-dialog-content {
   display: flex;
   flex-direction: column;
 }
@@ -99,6 +194,34 @@
   margin: 1.5rem;
   color: #991b1b;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+}
+
+.success-banner {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem;
+  color: #065f46;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+  animation: slideInDown 0.3s ease-out;
+}
+
+.success-banner strong {
+  display: block;
+  font-size: 1.1rem;
+  color: #047857;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .location-error {
@@ -142,28 +265,7 @@
 
 .form-section {
   padding: 2rem;
-  overflow-y: auto;
-  overflow-x: hidden;
   background: #fafbfc;
-}
-
-.form-section::-webkit-scrollbar {
-  width: 8px;
-}
-
-.form-section::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-  margin: 8px 0;
-}
-
-.form-section::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.form-section::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
 
 .form-section h3 {
@@ -277,6 +379,19 @@
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.readonly-input {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+  color: #374151 !important;
+  font-weight: 500;
+  cursor: not-allowed;
+  border: 2px solid #d1d5db !important;
+}
+
+.readonly-input:focus {
+  border-color: #9ca3af !important;
+  box-shadow: 0 0 0 4px rgba(156, 163, 175, 0.1) !important;
 }
 
 .help-text {
@@ -395,6 +510,10 @@
   padding: 2rem;
   border-top: 1px solid #e5e7eb;
   background: #f9fafb;
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  z-index: 10;
 }
 
 .location-dialog-footer button,

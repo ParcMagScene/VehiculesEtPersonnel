@@ -9,7 +9,7 @@ import logger, { oauthLogger } from '../utils/logger';
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
 
-function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent }) {
+function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -337,6 +337,10 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         setAccessToken(savedToken);
         setIsSignedIn(true);
         testToken(savedToken);
+        // Charger immédiatement les événements
+        if (googleCalendarId) {
+          fetchEvents(savedToken);
+        }
       } else if (autoSignin === 'true') {
         // Token expiré mais auto-signin activé, on demande un nouveau token silencieusement
         oauthLogger.log('🔄 Token expiré, renouvellement automatique silencieux...');
@@ -350,14 +354,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       }
     } else if (autoSignin === 'true' && tokenClient) {
       // Pas de token sauvegardé mais auto-signin activé
-      oauthLogger.log('🔐 Auto-signin activé, demande silencieuse d\'un nouveau token...');
-      setTimeout(() => {
-        if (tokenClient) {
-          tokenClient.requestAccessToken({ prompt: '' });
-        }
-      }, 1000);
+      // Ne pas lancer automatiquement car ça peut être bloqué par le navigateur
+      // L'utilisateur devra cliquer sur "Se connecter"
+      oauthLogger.log('🔐 Auto-signin activé mais pas de token - l\'utilisateur doit se reconnecter');
     }
-  }, [tokenClient]);
+  }, [tokenClient, googleCalendarId]);
 
   // Configurer le renouvellement automatique du token avant expiration
   useEffect(() => {
@@ -413,12 +414,17 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       });
 
       if (response.ok) {
-        // Token valide - les événements seront chargés par le useEffect
+        oauthLogger.log('✅ Token valide, événements prêts à être chargés');
+        // Token valide - les événements sont chargés automatiquement
       } else {
+        oauthLogger.log('⚠️ Token invalide (status ' + response.status + '), renouvellement...');
         // Token invalide, essayer de renouveler
+        localStorage.removeItem('google_access_token');
+        localStorage.removeItem('google_token_expiry');
         renewAccessToken();
       }
     } catch (err) {
+      oauthLogger.log('❌ Erreur test token:', err.message);
       // Erreur réseau ou autre, essayer de renouveler
       renewAccessToken();
     }
@@ -503,9 +509,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         } else {
           // Token expiré ou proche de l'expiration, renouvellement silencieux
           oauthLogger.log('🔄 Token proche de l\'expiration, renouvellement silencieux...');
-          setTimeout(() => {
+          try {
             client.requestAccessToken({ prompt: '' });
-          }, 500);
+          } catch (err) {
+            oauthLogger.log('⚠️ Renouvellement silencieux échoué (popup bloquée?), l\'utilisateur devra se reconnecter');
+          }
         }
       }
     } catch (err) {
@@ -547,8 +555,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   const handleSignIn = () => {
     if (tokenClient) {
       setError(null);
-      // prompt: '' permet une reconnexion silencieuse si l'utilisateur a déjà autorisé
-      tokenClient.requestAccessToken({ prompt: '' });
+      const hasAuthorized = localStorage.getItem('google_auto_signin');
+      // Si l'utilisateur a déjà autorisé, tentative silencieuse, sinon demande explicite
+      const promptType = hasAuthorized === 'true' ? '' : 'consent';
+      oauthLogger.log('🔐 Connexion Google - prompt:', promptType || 'silencieux');
+      tokenClient.requestAccessToken({ prompt: promptType });
     }
   };
 
@@ -617,15 +628,42 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
 
       const data = await response.json();
       oauthLogger.log('✅ Événements reçus:', data.items?.length || 0);
+      oauthLogger.log('👤 CurrentUser:', currentUser?.email || 'non défini');
+      
       if (data.items && data.items.length > 0) {
         oauthLogger.log('   Premiers événements:', data.items.slice(0, 3).map(e => ({
           summary: e.summary,
           start: e.start,
-          end: e.end
+          end: e.end,
+          creator: e.creator?.email,
+          organizer: e.organizer?.email
         })));
       }
       
-      const enrichedEvents = (data.items || []).map(event => analyzeEventTitle(event));
+      // Essayer de filtrer les événements pour l'utilisateur actuel
+      let filteredItems = data.items || [];
+      if (currentUser && currentUser.email) {
+        const userFilteredItems = filteredItems.filter(event => {
+          const creatorEmail = event.creator?.email || event.organizer?.email;
+          const isCreator = creatorEmail === currentUser.email;
+          if (isCreator) {
+            oauthLogger.log('✅ Match:', event.summary, '| Créateur:', creatorEmail);
+          }
+          return isCreator;
+        });
+        
+        // Si le filtrage donne des résultats, les utiliser, sinon afficher tous les événements
+        if (userFilteredItems.length > 0) {
+          filteredItems = userFilteredItems;
+          oauthLogger.log('🎯 Événements filtrés pour', currentUser.email, ':', filteredItems.length, '/', data.items?.length);
+        } else {
+          oauthLogger.log('⚠️ Aucun événement trouvé pour', currentUser.email, '- affichage de tous les événements');
+        }
+      } else {
+        oauthLogger.log('⚠️ CurrentUser non défini - affichage de tous les événements');
+      }
+      
+      const enrichedEvents = filteredItems.map(event => analyzeEventTitle(event));
       setEvents(enrichedEvents);
       
       // Mettre en cache les événements
@@ -642,6 +680,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   // Analyse le titre de l'événement pour extraire client, lieu et affaire
   const analyzeEventTitle = (event) => {
     const title = event.summary || '';
+    const eventLocation = event.location || '';
     const enrichedEvent = { ...event };
 
     // Détecter le numéro d'affaire (formats: "af 32744", "AF 32744", "af32744", "AF32744")
@@ -660,13 +699,33 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       }
     }
 
-    // Détecter un lieu existant (recherche insensible à la casse)
+    // Détecter un lieu existant (recherche insensible à la casse dans le titre ET dans le champ location de l'événement)
     if (locations && locations.length > 0) {
-      const foundLocation = locations.find(location => 
-        title.toLowerCase().includes(location.name.toLowerCase())
-      );
+      const foundLocation = locations.find(location => {
+        const titleMatch = title.toLowerCase().includes(location.name.toLowerCase());
+        const locationFieldMatch = eventLocation.toLowerCase().includes(location.name.toLowerCase());
+        
+        // Chercher aussi par adresse si elle existe
+        let addressMatch = false;
+        if (location.address && eventLocation) {
+          // Recherche partielle dans l'adresse (POI)
+          const locationParts = eventLocation.toLowerCase().split(',').map(p => p.trim());
+          const addressParts = location.address.toLowerCase().split(',').map(p => p.trim());
+          
+          // Vérifier si au moins une partie de l'adresse correspond
+          addressMatch = addressParts.some(addrPart => 
+            locationParts.some(locPart => 
+              locPart.includes(addrPart) || addrPart.includes(locPart)
+            )
+          );
+        }
+        
+        return titleMatch || locationFieldMatch || addressMatch;
+      });
+      
       if (foundLocation) {
         enrichedEvent.detectedLocation = foundLocation.name;
+        oauthLogger.log('📍 Lieu détecté:', foundLocation.name, 'pour événement:', title, '| Location field:', eventLocation);
       }
     }
 

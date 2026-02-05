@@ -484,6 +484,12 @@ class ApiClient {
   async getPendingAccessRequestsCount() {
     return this.request('/access-requests/count/pending');
   }
+
+  // ============ UTILISATEURS ============
+
+  async getUsersNames() {
+    return this.request('/users/names');
+  }
 }
 
 export const api = new ApiClient();

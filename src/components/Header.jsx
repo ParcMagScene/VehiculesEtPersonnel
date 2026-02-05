@@ -173,7 +173,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     <div className="header">
       <div className="header-content">
         <div className="header-title-container">
-          <img src="/Logos/LogoMagSceneBLACK.gif" alt="Mag Scène" className="header-logo" />
+          <img src="/Logos/LogoMagSav.svg" alt="Mag Scène" className="header-logo" />
           <h1 className="header-title"><Truck className="title-icon" strokeWidth={2.5} size={32} /> Véhicules</h1>
         </div>
         

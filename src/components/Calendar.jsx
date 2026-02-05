@@ -22,18 +22,33 @@ import ReservationModal from './ReservationModal';
 import './Calendar.css';
 
 // Fonction pour obtenir les initiales d'un utilisateur
-const getUserInitials = (userId, currentUser) => {
+const getUserInitials = (userId, currentUser, users = []) => {
   if (currentUser && userId === currentUser.id) {
     return currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
+  
+  // Chercher dans la liste des utilisateurs
+  const user = users.find(u => u.id === userId);
+  if (user && user.name) {
+    return user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  }
+  
   return `U${userId.toString().slice(-1)}`;
 };
 
 // Composant Tooltip pour les réservations
-const ReservationTooltip = ({ block, currentUser }) => {
-  const creatorName = currentUser && block.createdBy === currentUser.id 
-    ? currentUser.name 
-    : `Utilisateur ${block.createdBy}`;
+const ReservationTooltip = ({ block, currentUser, users = [] }) => {
+  let creatorName = `Utilisateur ${block.createdBy}`;
+  
+  if (currentUser && block.createdBy === currentUser.id) {
+    creatorName = currentUser.name;
+  } else {
+    // Chercher dans la liste des utilisateurs
+    const creator = users.find(u => u.id === block.createdBy);
+    if (creator && creator.name) {
+      creatorName = creator.name;
+    }
+  }
 
   return (
     <div className="reservation-tooltip">
@@ -250,9 +265,24 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
   }
   
   // Mode normal : affichage standard
-  const affaires = block.affaires && Array.isArray(block.affaires) 
+  // Si pas une tournée mais liée à un événement, récupérer l'affaire depuis l'événement
+  let affaires = block.affaires && Array.isArray(block.affaires) 
     ? block.affaires 
     : block.affaire ? [block.affaire] : [];
+  
+  // Si pas de tournée et qu'il y a des événements liés, récupérer leurs numéros d'affaire
+  if (!block.isTournee && block.linkedEventIds && Array.isArray(block.linkedEventIds) && block.linkedEventIds.length > 0 && googleEvents) {
+    const eventAffaires = block.linkedEventIds
+      .map(eventId => {
+        const event = googleEvents.find(e => e.id === eventId);
+        return event?.affaire;
+      })
+      .filter(Boolean);
+    
+    if (eventAffaires.length > 0) {
+      affaires = eventAffaires;
+    }
+  }
   
   if (affaires.length > 0) {
     return (
@@ -279,6 +309,7 @@ const Calendar = ({
   clients,
   drivers,
   locations,
+  users = [],
   onScroll,
   googleEvent,
   onCloseGoogleEvent,
@@ -1428,8 +1459,8 @@ const Calendar = ({
                         >
                           {/* Pastille utilisateur créateur */}
                           {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : "Utilisateur " + block.createdBy}`}>
-                              {getUserInitials(block.createdBy, currentUser)}
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : users.find(u => u.id === block.createdBy)?. name || "Utilisateur " + block.createdBy}`}>
+                              {getUserInitials(block.createdBy, currentUser, users)}
                             </div>
                           )}
                           
@@ -1445,7 +1476,7 @@ const Calendar = ({
                             </div>
                           
                           {/* Tooltip avec informations complètes */}
-                          <ReservationTooltip block={block} currentUser={currentUser} />
+                          <ReservationTooltip block={block} currentUser={currentUser} users={users} />
                           </div>
                           
                         </div>
@@ -1673,8 +1704,8 @@ const Calendar = ({
                         >
                           {/* Pastille utilisateur créateur */}
                           {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : "Utilisateur " + block.createdBy}`}>
-                              {getUserInitials(block.createdBy, currentUser)}
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : users.find(u => u.id === block.createdBy)?. name || "Utilisateur " + block.createdBy}`}>
+                              {getUserInitials(block.createdBy, currentUser, users)}
                             </div>
                           )}
                           
@@ -1690,7 +1721,7 @@ const Calendar = ({
                             </div>
                           
                           {/* Tooltip avec informations complètes */}
-                          <ReservationTooltip block={block} currentUser={currentUser} />
+                          <ReservationTooltip block={block} currentUser={currentUser} users={users} />
                           </div>
                           
                         </div>

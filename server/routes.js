@@ -145,15 +145,26 @@ export function setupLocationsRoutes(app, authenticateToken) {
     try {
       const location = req.body;
       const stmt = db.prepare(`
-        INSERT INTO locations (name, address, lat, lng, place_id, created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO locations (name, address, lat, lng, place_id, type, created_by, modified_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
-      const result = stmt.run(location.name, location.address, location.lat, location.lng, location.place_id, req.user.id, req.user.id);
+      const result = stmt.run(location.name, location.address, location.lat, location.lng, location.place_id, location.type || 'Salle de spectacle', req.user.id, req.user.id);
       
       addToHistory('location', result.lastInsertRowid, 'created', location, req.user.id, req.user.name);
       
-      res.json({ success: true, id: result.lastInsertRowid });
+      // Renvoyer l'objet complet
+      const createdLocation = {
+        id: result.lastInsertRowid,
+        name: location.name,
+        address: location.address,
+        lat: location.lat,
+        lng: location.lng,
+        place_id: location.place_id,
+        type: location.type || 'Salle de spectacle'
+      };
+      
+      res.json(createdLocation);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -164,15 +175,26 @@ export function setupLocationsRoutes(app, authenticateToken) {
       const location = req.body;
       const stmt = db.prepare(`
         UPDATE locations 
-        SET name = ?, address = ?, lat = ?, lng = ?, place_id = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
+        SET name = ?, address = ?, lat = ?, lng = ?, place_id = ?, type = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
       
-      stmt.run(location.name, location.address, location.lat, location.lng, location.place_id, req.user.id, req.params.id);
+      stmt.run(location.name, location.address, location.lat, location.lng, location.place_id, location.type || 'Salle de spectacle', req.user.id, req.params.id);
       
       addToHistory('location', req.params.id, 'updated', location, req.user.id, req.user.name);
       
-      res.json({ success: true });
+      // Renvoyer l'objet complet
+      const updatedLocation = {
+        id: parseInt(req.params.id),
+        name: location.name,
+        address: location.address,
+        lat: location.lat,
+        lng: location.lng,
+        place_id: location.place_id,
+        type: location.type || 'Salle de spectacle'
+      };
+      
+      res.json(updatedLocation);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -351,6 +373,161 @@ export function setupConfigRoutes(app, authenticateToken) {
         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
       `);
       stmt.run('google_maps_api_key', value, req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Routes pour les détails de trajets
+  app.get('/api/trip-details/:reservationId', authenticateToken, (req, res) => {
+    try {
+      const stmt = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? ORDER BY event_order');
+      const tripDetails = stmt.all(req.params.reservationId);
+      
+      // Récupérer les pauses pour chaque trajet
+      const pausesStmt = db.prepare('SELECT * FROM trip_pauses WHERE trip_detail_id = ?');
+      const enrichedDetails = tripDetails.map(detail => ({
+        ...detail,
+        pauses: pausesStmt.all(detail.id)
+      }));
+      
+      res.json(enrichedDetails);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/trip-details', authenticateToken, (req, res) => {
+    try {
+      const detail = req.body;
+      
+      // Convertir en nombre (REAL)
+      const reservationId = Number(detail.reservationId);
+      
+      // Vérifier que la réservation existe
+      const reservation = db.prepare('SELECT id FROM reservations WHERE id = ?').get(reservationId);
+      if (!reservation) {
+        return res.status(400).json({ error: 'Réservation non trouvée' });
+      }
+      
+      const stmt = db.prepare(`
+        INSERT INTO trip_details (
+          reservation_id, event_id, event_order,
+          departure_location, departure_date, departure_time,
+          arrival_location, arrival_date, arrival_time,
+          return_departure_location, return_departure_date, return_departure_time,
+          return_arrival_location, return_arrival_date, return_arrival_time,
+          driver_name, outbound_duration, return_duration,
+          has_junction_with_next, junction_location
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const result = stmt.run(
+        reservationId, detail.eventId, detail.eventOrder,
+        detail.departureLocation, detail.departureDate, detail.departureTime,
+        detail.arrivalLocation, detail.arrivalDate, detail.arrivalTime,
+        detail.returnDepartureLocation, detail.returnDepartureDate, detail.returnDepartureTime,
+        detail.returnArrivalLocation, detail.returnArrivalDate, detail.returnArrivalTime,
+        detail.driverName, detail.outboundDuration, detail.returnDuration,
+        detail.hasJunctionWithNext ? 1 : 0, detail.junctionLocation
+      );
+      
+      // Ajouter les pauses
+      if (detail.pauses && detail.pauses.length > 0) {
+        const pauseStmt = db.prepare(`
+          INSERT INTO trip_pauses (trip_detail_id, pause_type, location, start_time, duration, notes)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        
+        for (const pause of detail.pauses) {
+          pauseStmt.run(
+            result.lastInsertRowid,
+            pause.pauseType,
+            pause.location,
+            pause.startTime,
+            pause.duration,
+            pause.notes
+          );
+        }
+      }
+      
+      // Récupérer les données complètes sauvegardées avec les pauses
+      const savedDetail = db.prepare(`
+        SELECT * FROM trip_details WHERE id = ?
+      `).get(result.lastInsertRowid);
+      
+      const savedPauses = db.prepare(`
+        SELECT * FROM trip_pauses WHERE trip_detail_id = ?
+      `).all(result.lastInsertRowid);
+      
+      // Retourner les données complètes
+      res.json({
+        ...savedDetail,
+        pauses: savedPauses
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put('/api/trip-details/:id', authenticateToken, (req, res) => {
+    try {
+      const detail = req.body;
+      const stmt = db.prepare(`
+        UPDATE trip_details SET
+          departure_location = ?, departure_date = ?, departure_time = ?,
+          arrival_location = ?, arrival_date = ?, arrival_time = ?,
+          return_departure_location = ?, return_departure_date = ?, return_departure_time = ?,
+          return_arrival_location = ?, return_arrival_date = ?, return_arrival_time = ?,
+          driver_name = ?, outbound_duration = ?, return_duration = ?,
+          has_junction_with_next = ?, junction_location = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `);
+      
+      stmt.run(
+        detail.departureLocation, detail.departureDate, detail.departureTime,
+        detail.arrivalLocation, detail.arrivalDate, detail.arrivalTime,
+        detail.returnDepartureLocation, detail.returnDepartureDate, detail.returnDepartureTime,
+        detail.returnArrivalLocation, detail.returnArrivalDate, detail.returnArrivalTime,
+        detail.driverName, detail.outboundDuration, detail.returnDuration,
+        detail.hasJunctionWithNext ? 1 : 0, detail.junctionLocation,
+        req.params.id
+      );
+      
+      // Supprimer les anciennes pauses et ajouter les nouvelles
+      const deletePausesStmt = db.prepare('DELETE FROM trip_pauses WHERE trip_detail_id = ?');
+      deletePausesStmt.run(req.params.id);
+      
+      if (detail.pauses && detail.pauses.length > 0) {
+        const pauseStmt = db.prepare(`
+          INSERT INTO trip_pauses (trip_detail_id, pause_type, location, start_time, duration, notes)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        
+        for (const pause of detail.pauses) {
+          pauseStmt.run(
+            req.params.id,
+            pause.pauseType,
+            pause.location,
+            pause.startTime,
+            pause.duration,
+            pause.notes
+          );
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete('/api/trip-details/:id', authenticateToken, (req, res) => {
+    try {
+      const stmt = db.prepare('DELETE FROM trip_details WHERE id = ?');
+      stmt.run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: error.message });

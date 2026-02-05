@@ -53,13 +53,26 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
 
     loadGoogleMaps()
       .then(async () => {
-        if (!window.google || !window.google.maps) {
+        if (!window.google || !window.google.maps || !window.google.maps.Map) {
           console.error('❌ Google Maps API non disponible');
           setError('Google Maps API non disponible');
           return;
         }
 
+        // Vérifier que toutes les classes nécessaires sont disponibles
+        if (!window.google.maps.Marker || !window.google.maps.places || !window.google.maps.places.Autocomplete) {
+          console.error('❌ Classes Google Maps non disponibles');
+          setError('Erreur de chargement de Google Maps. Veuillez recharger la page.');
+          return;
+        }
+
         logger.log('✅ Google Maps API chargée avec succès');
+
+        // Vérifier que mapRef.current existe
+        if (!mapRef.current) {
+          console.error('❌ Référence carte non disponible');
+          return;
+        }
 
         // Importer l'API Places (Autocomplete classique)
         // Note: on n'a plus besoin d'importLibrary pour l'ancienne API

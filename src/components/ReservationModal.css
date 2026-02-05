@@ -26,6 +26,13 @@
   flex-direction: column;
 }
 
+.modal-form {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding: 1.5rem;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;

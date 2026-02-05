@@ -170,7 +170,7 @@ const LoginForm = ({ onLogin }) => {
     <div className="login-overlay">
       <div className="login-container">
         <div className="login-header">
-          <h1>Planning Véhicules MagScene</h1>
+          <img src="/Logos/LogoMagSav.svg" alt="Mag Scène" style={{ maxWidth: '200px', height: 'auto', margin: '0 auto 1rem' }} />
           <p>{isRegister ? 'Créer un compte' : 'Connexion'}</p>
           {isRegister && (
             <small style={{ color: '#6b7280', fontSize: '13px', display: 'block', marginTop: '8px' }}>

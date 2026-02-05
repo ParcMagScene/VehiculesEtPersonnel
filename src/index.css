@@ -83,7 +83,7 @@ code {
 }
 
 /* Padding pour éviter que le contenu touche les bords avec scrollbar */
-.modal-content,
+.modal-form,
 .dialog-content,
 [class*="modal-body"],
 [class*="dialog-body"] {

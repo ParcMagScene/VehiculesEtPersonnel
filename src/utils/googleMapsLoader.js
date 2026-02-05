@@ -48,19 +48,29 @@ export const loadGoogleMapsAPI = (apiKey) => {
   return new Promise((resolve, reject) => {
     try {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr&loading=async`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr`;
       script.async = true;
       script.defer = true;
 
       script.onload = () => {
-        isLoaded = true;
-        isLoading = false;
+        // Attendre que l'API soit complètement initialisée
+        const checkApiReady = () => {
+          if (window.google?.maps?.Map && window.google?.maps?.Marker && window.google?.maps?.places?.Autocomplete) {
+            isLoaded = true;
+            isLoading = false;
+            
+            // Résoudre toutes les promesses en attente
+            loadPromises.forEach(({ resolve: res }) => res());
+            loadPromises.length = 0;
+            
+            resolve();
+          } else {
+            // Réessayer après un court délai
+            setTimeout(checkApiReady, 50);
+          }
+        };
         
-        // Résoudre toutes les promesses en attente
-        loadPromises.forEach(({ resolve: res }) => res());
-        loadPromises.length = 0;
-        
-        resolve();
+        checkApiReady();
       };
 
       script.onerror = (error) => {
@@ -86,7 +96,10 @@ export const loadGoogleMapsAPI = (apiKey) => {
  * @returns {boolean}
  */
 export const isGoogleMapsLoaded = () => {
-  return isLoaded && window.google?.maps !== undefined;
+  return isLoaded && 
+         window.google?.maps?.Map !== undefined &&
+         window.google?.maps?.Marker !== undefined &&
+         window.google?.maps?.places?.Autocomplete !== undefined;
 };
 
 /**

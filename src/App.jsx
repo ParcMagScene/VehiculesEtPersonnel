@@ -18,6 +18,7 @@ import './App.css';
 // Code splitting - Lazy loading des composants lourds
 const ManagementPanel = lazy(() => import('./components/ManagementPanel'));
 const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
+const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenanceModal'));
 
 // Fonction utilitaire pour formater une date en YYYY-MM-DD
 const formatDateToString = (date) => {
@@ -62,6 +63,7 @@ function App() {
   const [selectedVehicleForMaintenance, setSelectedVehicleForMaintenance] = useState(null);
   const [maintenanceToEdit, setMaintenanceToEdit] = useState(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
+  const [selectedVehicleForKilometrageControl, setSelectedVehicleForKilometrageControl] = useState(null);
   const [maintenanceActionType, setMaintenanceActionType] = useState(null); // 'schedule', 'request', 'breakdown'
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -681,7 +683,37 @@ function App() {
           onRequestMaintenance={handleRequestMaintenance}
           onReportBreakdown={handleReportBreakdown}
           onScheduleMaintenance={handleScheduleMaintenance}
+          onOpenMaintenance={(vehicle) => {
+            setSelectedVehicleForKilometrageControl(vehicle);
+            setSelectedVehicleForDetails(null);
+          }}
         />
+      )}
+
+      {selectedVehicleForKilometrageControl && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement...</p>
+          </div>
+        }>
+          <VehicleMaintenanceModal
+            vehicle={selectedVehicleForKilometrageControl}
+            onSave={async (updatedVehicle) => {
+              try {
+                const response = await api.updateVehicle(updatedVehicle.id, updatedVehicle);
+                setVehicles(prevVehicles => 
+                  prevVehicles.map(v => v.id === response.id ? response : v)
+                );
+                setSelectedVehicleForKilometrageControl(null);
+              } catch (error) {
+                console.error('Erreur lors de la mise à jour du véhicule:', error);
+                alert('Erreur lors de la mise à jour du véhicule');
+              }
+            }}
+            onClose={() => setSelectedVehicleForKilometrageControl(null)}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -280,7 +280,7 @@ export function setupGaragesRoutes(app, authenticateToken) {
 
 // ============ CONFIGURATION ============
 
-export function setupConfigRoutes(app, authenticateToken) {
+export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/config/:key', authenticateToken, (req, res) => {
     try {
       const stmt = db.prepare('SELECT value FROM config WHERE key = ?');
@@ -306,7 +306,7 @@ export function setupConfigRoutes(app, authenticateToken) {
     }
   });
 
-  // Routes spécifiques pour Google Calendar (admin uniquement via middleware)
+  // Routes spécifiques pour Google Calendar (lecture pour tous, modification admin uniquement)
   app.get('/api/config/google/client-id', authenticateToken, (req, res) => {
     try {
       const stmt = db.prepare('SELECT value FROM config WHERE key = ?');
@@ -337,7 +337,7 @@ export function setupConfigRoutes(app, authenticateToken) {
     }
   });
 
-  app.post('/api/config/google/client-id', authenticateToken, (req, res) => {
+  app.post('/api/config/google/client-id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { value } = req.body;
       const stmt = db.prepare(`
@@ -351,7 +351,7 @@ export function setupConfigRoutes(app, authenticateToken) {
     }
   });
 
-  app.post('/api/config/google/calendar-id', authenticateToken, (req, res) => {
+  app.post('/api/config/google/calendar-id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { value } = req.body;
       const stmt = db.prepare(`
@@ -365,7 +365,7 @@ export function setupConfigRoutes(app, authenticateToken) {
     }
   });
 
-  app.post('/api/config/google/maps-api-key', authenticateToken, (req, res) => {
+  app.post('/api/config/google/maps-api-key', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { value } = req.body;
       const stmt = db.prepare(`

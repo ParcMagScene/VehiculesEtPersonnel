@@ -11,6 +11,7 @@
 
 .trip-details-form {
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1.5rem;
   flex: 1;
 }

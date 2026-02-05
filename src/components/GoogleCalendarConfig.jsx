@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Save, AlertCircle, LogOut, RefreshCw } from 'lucide-react';
 import api from '../utils/api';
+import { saveToIndexedDB, loadFromIndexedDB } from '../utils/indexedDB';
 import './GoogleCalendarConfig.css';
 
 const GoogleCalendarConfig = () => {
@@ -48,6 +49,13 @@ const GoogleCalendarConfig = () => {
         api.saveGoogleCalendarId(calendarId),
         mapsApiKey ? api.saveGoogleMapsApiKey(mapsApiKey) : Promise.resolve()
       ]);
+      
+      // Sauvegarder aussi dans IndexedDB pour l'accès sans token
+      const config = await loadFromIndexedDB('calendarConfig', {});
+      config.googleMapsApiKey = mapsApiKey;
+      await saveToIndexedDB('calendarConfig', config);
+      console.log('📝 GoogleCalendarConfig: Clé API sauvegardée dans IndexedDB');
+      
       alert('✅ Configuration enregistrée avec succès\n\nSi vous avez changé le Client ID, cliquez sur "Déconnecter OAuth" puis reconnectez-vous.');
     } catch (error) {
       alert(`Erreur: ${error.message}`);

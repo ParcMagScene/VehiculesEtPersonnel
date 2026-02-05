@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../utils/api';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
 /**
  * Hook pour activer l'autocomplétion Google Places sur un champ input
@@ -13,15 +14,13 @@ export const useGooglePlacesAutocomplete = (onPlaceSelected, options = {}) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let scriptLoaded = false;
-
     const loadGoogleMaps = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
         // Vérifier si l'API est déjà chargée
-        if (window.google && window.google.maps && window.google.maps.places) {
+        if (isGoogleMapsLoaded()) {
           initAutocomplete();
           return;
         }
@@ -36,35 +35,12 @@ export const useGooglePlacesAutocomplete = (onPlaceSelected, options = {}) => {
           return;
         }
 
-        // Charger le script Google Maps
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr&callback=initGoogleMaps`;
-        script.async = true;
-        script.defer = true;
+        // Charger l'API avec le loader centralisé
+        await loadGoogleMapsAPI(apiKey);
+        initAutocomplete();
 
-        window.initGoogleMaps = () => {
-          scriptLoaded = true;
-          initAutocomplete();
-        };
-
-        script.onerror = () => {
-          setError('Erreur de chargement Google Maps');
-          setIsLoading(false);
-        };
-
-        document.head.appendChild(script);
-
-        return () => {
-          if (script.parentNode) {
-            script.parentNode.removeChild(script);
-          }
-          if (autocompleteRef.current) {
-            window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
-          }
-        };
       } catch (err) {
-        console.error('Erreur chargement Google Maps:', err);
-        setError(err.message);
+        setError('Erreur de chargement Google Maps');
         setIsLoading(false);
       }
     };

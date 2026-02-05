@@ -137,23 +137,9 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
     
-    // Vérifier s'il y a déjà une session active pour cet utilisateur
-    const activeSessionStmt = db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM active_sessions 
-      WHERE user_id = ? AND expires_at > datetime('now')
-    `);
-    const activeSession = activeSessionStmt.get(user.id);
-    
-    if (activeSession.count > 0) {
-      // Il y a déjà une session active
-      return res.status(409).json({ 
-        error: 'SESSION_ALREADY_ACTIVE',
-        message: 'Une session est déjà active avec ces identifiants sur un autre appareil.',
-        userId: user.id,
-        email: user.email
-      });
-    }
+    // PERMETTRE LES SESSIONS MULTIPLES
+    // Les utilisateurs peuvent maintenant se connecter sur plusieurs appareils simultanément
+    // Pas de vérification de session active, on crée simplement un nouveau token
     
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
@@ -1099,7 +1085,19 @@ app.delete('/api/authorized-emails/:id', authenticateToken, requireAdmin, (req, 
 
 // ============ GESTION DES UTILISATEURS (ADMIN) ============
 
-// Récupérer tous les utilisateurs
+// Récupérer les noms des utilisateurs (tous les utilisateurs authentifiés)
+app.get('/api/users/names', authenticateToken, (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT id, name, email FROM users ORDER BY name');
+    const users = stmt.all();
+    res.json(users);
+  } catch (error) {
+    console.error('Erreur récupération noms utilisateurs:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer tous les utilisateurs (admin uniquement)
 app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, email, name, is_admin, created_at FROM users ORDER BY created_at DESC');
@@ -1273,12 +1271,56 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
       return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' });
     }
     
-    const stmt = db.prepare('DELETE FROM users WHERE id = ?');
-    stmt.run(id);
+    // Avant de supprimer l'utilisateur, réassigner toutes ses données à l'admin qui fait la suppression
+    const userId = parseInt(id);
+    const adminId = req.user.id;
+    
+    // Réassigner les enregistrements dans toutes les tables qui référencent l'utilisateur
+    const reassignQueries = [
+      'UPDATE access_requests SET reviewed_by = ? WHERE reviewed_by = ?',
+      'UPDATE vehicles SET created_by = ? WHERE created_by = ?',
+      'UPDATE vehicles SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE reservations SET created_by = ? WHERE created_by = ?',
+      'UPDATE reservations SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE clients SET created_by = ? WHERE created_by = ?',
+      'UPDATE clients SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE drivers SET created_by = ? WHERE created_by = ?',
+      'UPDATE drivers SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE locations SET created_by = ? WHERE created_by = ?',
+      'UPDATE locations SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE garages SET created_by = ? WHERE created_by = ?',
+      'UPDATE garages SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE maintenances SET reported_by = ? WHERE reported_by = ?',
+      'UPDATE maintenances SET created_by = ? WHERE created_by = ?',
+      'UPDATE maintenances SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE modification_history SET user_id = ? WHERE user_id = ?',
+      'UPDATE config SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE reservation_requests SET requested_by = ? WHERE requested_by = ?',
+      'UPDATE reservation_requests SET reviewed_by = ? WHERE reviewed_by = ?'
+    ];
+    
+    // Exécuter toutes les mises à jour dans une transaction
+    const transaction = db.transaction(() => {
+      for (const query of reassignQueries) {
+        const stmt = db.prepare(query);
+        stmt.run(adminId, userId);
+      }
+      
+      // Supprimer les sessions actives de l'utilisateur
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      deleteSessionsStmt.run(userId);
+      
+      // Enfin supprimer l'utilisateur
+      const deleteUserStmt = db.prepare('DELETE FROM users WHERE id = ?');
+      deleteUserStmt.run(userId);
+    });
+    
+    transaction();
+    
     res.json({ success: true });
   } catch (error) {
     console.error('Erreur suppression utilisateur:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: error.message || 'Erreur serveur' });
   }
 });
 

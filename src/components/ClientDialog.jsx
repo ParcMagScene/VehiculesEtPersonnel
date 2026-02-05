@@ -3,6 +3,7 @@ import logger from "../utils/logger";
 import { X, MapPin, Navigation, Clock, Route, Mail, Phone, User } from 'lucide-react';
 import api from '../utils/api';
 import './LocationDialog.css';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
 const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
   useEffect(() => {
     // Fonction pour charger Google Maps
     const loadGoogleMaps = async () => {
-      if (window.google && window.google.maps) {
+      if (isGoogleMapsLoaded()) {
         return Promise.resolve();
       }
 
@@ -43,26 +44,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           throw new Error('Clé API Google Maps non configurée.\n\nAllez dans:\nGestion → Config Google → Clé API Google Maps\n\nPuis ajoutez votre clé API.');
         }
 
-        return new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr&callback=Function.prototype`;
-          script.async = true;
-          script.defer = true;
-          script.onload = () => {
-            // Vérifier si l'API est bien chargée
-            if (window.google && window.google.maps) {
-              resolve();
-            } else {
-              reject(new Error('Google Maps API chargée mais non disponible'));
-            }
-          };
-          script.onerror = () => {
-            reject(new Error('Échec du chargement de Google Maps.\n\nVérifiez:\n1. Votre connexion internet\n2. Que la clé API est valide\n3. Que Maps JavaScript API est activée dans Google Cloud Console'));
-          };
-          document.head.appendChild(script);
-        });
+        await loadGoogleMapsAPI(apiKey);
       } catch (error) {
-        throw new Error(`Erreur configuration: ${error.message}`);
+        console.error('Erreur chargement Google Maps:', error);
+        throw error;
       }
     };
 
@@ -424,7 +409,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 <div className="route-info">
                   <h3>
                     <Route size={18} />
-                    Distance depuis MagScène
+                    Distance depuis Mag Scène
                   </h3>
                   <div className="route-info">
                     {distance && (

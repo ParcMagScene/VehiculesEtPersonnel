@@ -49,6 +49,7 @@ function App() {
   const [clients, setClients] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [users, setUsers] = useState([]);
   const [calendarConfig, setCalendarConfig] = useState({ apiKey: '', calendarId: '' });
   const [showManagement, setShowManagement] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,7 +105,8 @@ function App() {
           locationsData,
           garagesData,
           maintenancesData,
-          configData
+          configData,
+          usersData
         ] = await Promise.all([
           api.getVehicles(),
           api.getReservations(),
@@ -113,7 +115,8 @@ function App() {
           api.getLocations(),
           api.getGarages(),
           api.getMaintenances(),
-          api.getConfig('googleCalendar')
+          api.getConfig('googleCalendar'),
+          api.getUsersNames()
         ]);
 
         // Trier les véhicules par ordre
@@ -126,6 +129,7 @@ function App() {
         setLocations(locationsData);
         setGarages(garagesData);
         setMaintenances(maintenancesData);
+        setUsers(usersData);
         
         // Parser la configuration du calendrier
         if (configData && configData.value) {
@@ -550,6 +554,7 @@ function App() {
         calendarConfig={calendarConfig} 
         view={view}
         currentDate={currentDate}
+        currentUser={currentUser}
         onScroll={handleBannerScroll}
         onEventClick={(event) => setGoogleEventForReservation(event)}
         onEventsChange={setGoogleEvents}
@@ -595,6 +600,7 @@ function App() {
           clients={clients}
           drivers={drivers}
           locations={locations}
+          users={users}
           googleEvent={googleEventForReservation}
           onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
           googleEvents={googleEvents}

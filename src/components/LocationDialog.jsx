@@ -3,6 +3,7 @@ import logger from "../utils/logger";
 import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
 import api from '../utils/api';
 import './LocationDialog.css';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
 const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   const [formData, setFormData] = useState({
@@ -10,25 +11,27 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     address: location?.address || '',
     lat: location?.lat || null,
     lng: location?.lng || null,
-    placeId: location?.placeId || ''
+    placeId: location?.placeId || '',
+    type: location?.type || 'Salle de spectacle'
   });
 
   const [distance, setDistance] = useState(null);
   const [duration, setDuration] = useState(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
-  const autocompleteRef = useRef(null);
-  const inputRef = useRef(null);
+  const addressAutocompleteContainerRef = useRef(null);
 
-  // Initialiser Google Maps
+  // Initialiser Google Maps avec la nouvelle API PlaceAutocompleteElement
   useEffect(() => {
     // Fonction pour charger Google Maps
     const loadGoogleMaps = async () => {
-      if (window.google && window.google.maps) {
+      if (isGoogleMapsLoaded()) {
         return Promise.resolve();
       }
 
@@ -41,31 +44,15 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           throw new Error('Clé API Google Maps non configurée.\n\nAllez dans:\nGestion → Config Google → Clé API Google Maps\n\nPuis ajoutez votre clé API.');
         }
 
-        return new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr&callback=Function.prototype`;
-          script.async = true;
-          script.defer = true;
-          script.onload = () => {
-            // Vérifier si l'API est bien chargée
-            if (window.google && window.google.maps) {
-              resolve();
-            } else {
-              reject(new Error('Google Maps API chargée mais non disponible'));
-            }
-          };
-          script.onerror = () => {
-            reject(new Error('Échec du chargement de Google Maps.\n\nVérifiez:\n1. Votre connexion internet\n2. Que la clé API est valide\n3. Que Maps JavaScript API est activée dans Google Cloud Console'));
-          };
-          document.head.appendChild(script);
-        });
+        await loadGoogleMapsAPI(apiKey);
       } catch (error) {
-        throw new Error(`Erreur configuration: ${error.message}`);
+        console.error('Erreur chargement Google Maps:', error);
+        throw error;
       }
     };
 
     loadGoogleMaps()
-      .then(() => {
+      .then(async () => {
         if (!window.google || !window.google.maps) {
           console.error('❌ Google Maps API non disponible');
           setError('Google Maps API non disponible');
@@ -74,6 +61,9 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
 
         logger.log('✅ Google Maps API chargée avec succès');
 
+        // Importer l'API Places (Autocomplete classique)
+        // Note: on n'a plus besoin d'importLibrary pour l'ancienne API
+        
         // Créer la carte
     const map = new window.google.maps.Map(mapRef.current, {
       center: formData.lat && formData.lng 
@@ -111,64 +101,106 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
       });
     }
 
-    // Configurer l'autocomplétion
-    if (inputRef.current) {
-      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['address'],
-        componentRestrictions: { country: 'fr' },
-        fields: ['formatted_address', 'geometry', 'name', 'place_id']
-      });
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
+    // === API PLACES : Autocomplete classique (fonctionne partout) ===
+    // Attendre que le DOM soit prêt avec un setTimeout
+    setTimeout(() => {
+      if (!addressAutocompleteContainerRef.current) {
+        console.error('❌ Conteneur autocomplete non trouvé dans le DOM');
+        return;
+      }
+      
+      if (!window.google?.maps?.places) {
+        console.error('❌ Google Places API non disponible');
+        return;
+      }
+      
+      try {
+        console.log('🔧 Initialisation de l\'autocomplétion...');
         
-        if (!place.geometry) {
-          console.error('Pas de géométrie pour ce lieu');
-          return;
+        // Vérifier si un input existe déjà
+        let input = addressAutocompleteContainerRef.current.querySelector('#address-autocomplete-input');
+        
+        if (!input) {
+          addressAutocompleteContainerRef.current.innerHTML = '';
+          input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = 'Rechercher une adresse...';
+          input.className = 'autocomplete-input';
+          input.id = 'address-autocomplete-input';
+          input.style.cssText = 'width: 100%; padding: 0.75rem; border: 2px solid #3b82f6; border-radius: 8px; font-size: 1rem; display: block; box-sizing: border-box; margin-bottom: 0.5rem; background: white; color: black; font-family: inherit;';
+          addressAutocompleteContainerRef.current.appendChild(input);
+          console.log('✅ Input créé:', input);
+          console.log('✅ Input visible:', input.offsetWidth, 'x', input.offsetHeight);
         }
+        
+        const autocomplete = new window.google.maps.places.Autocomplete(input, {
+          componentRestrictions: { country: 'fr' },
+          fields: ['name', 'formatted_address', 'geometry', 'place_id']
+        });
+        
+        console.log('✅ Autocomplete créé');
+        
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          
+          if (!place.geometry || !place.geometry.location) {
+            console.error('Pas de localisation pour ce lieu');
+            return;
+          }
 
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
 
-        setFormData(prev => ({
-          ...prev,
-          address: place.formatted_address,
-          lat: lat,
-          lng: lng,
-          placeId: place.place_id
-        }));
+          console.log('📍 Lieu sélectionné:', place.formatted_address);
 
-        // Mettre à jour la carte et le marqueur
-        map.setCenter({ lat, lng });
-        map.setZoom(15);
+          setFormData(prev => ({
+            ...prev,
+            address: place.formatted_address,
+            lat: lat,
+            lng: lng,
+            placeId: place.place_id
+          }));
 
-        if (markerRef.current) {
-          markerRef.current.setPosition({ lat, lng });
-        } else {
-          const marker = new window.google.maps.Marker({
-            position: { lat, lng },
-            map: map,
-            draggable: true,
-            title: formData.name
-          });
+          // Mettre à jour la carte
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setCenter({ lat, lng });
+            mapInstanceRef.current.setZoom(15);
+          }
 
-          marker.addListener('dragend', (event) => {
-            const newLat = event.latLng.lat();
-            const newLng = event.latLng.lng();
-            setFormData(prev => ({
-              ...prev,
-              lat: newLat,
-              lng: newLng
-            }));
-            reverseGeocode(newLat, newLng);
-          });
+          // Mettre à jour le marqueur
+          if (markerRef.current) {
+            markerRef.current.setPosition({ lat, lng });
+          } else if (mapInstanceRef.current) {
+            const marker = new window.google.maps.Marker({
+              position: { lat, lng },
+              map: mapInstanceRef.current,
+              draggable: true,
+              title: place.name
+            });
 
-          markerRef.current = marker;
-        }
-      });
+            marker.addListener('dragend', (event) => {
+              const newLat = event.latLng.lat();
+              const newLng = event.latLng.lng();
+              setFormData(prev => ({
+                ...prev,
+                lat: newLat,
+                lng: newLng
+              }));
+              reverseGeocode(newLat, newLng);
+            });
 
-      autocompleteRef.current = autocomplete;
-    }
+            markerRef.current = marker;
+          }
+
+          logger.log('📍 Lieu sélectionné:', place.formatted_address);
+        });
+        
+        logger.log('✅ Autocomplete initialisé avec succès');
+      } catch (error) {
+        console.error('❌ Erreur lors de l\'initialisation de l\'autocomplétion:', error);
+        setError('Erreur lors de l\'initialisation de l\'autocomplétion');
+      }
+    }, 500); // Délai de 500ms pour attendre que le DOM soit monté
 
       })
       .catch(error => {
@@ -191,7 +223,48 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     };
   }, []);
 
-  // Calculer la distance et le temps depuis MagScène
+  // Mettre à jour la carte et le marqueur quand les coordonnées changent
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    
+    const map = mapInstanceRef.current;
+    
+    if (formData.lat && formData.lng) {
+      const position = { lat: formData.lat, lng: formData.lng };
+      
+      // Centrer la carte sur la nouvelle position avec zoom
+      map.setCenter(position);
+      map.setZoom(15);
+      
+      // Mettre à jour ou créer le marqueur
+      if (markerRef.current) {
+        markerRef.current.setPosition(position);
+        markerRef.current.setTitle(formData.name);
+      } else {
+        const marker = new window.google.maps.Marker({
+          position,
+          map,
+          draggable: true,
+          title: formData.name
+        });
+
+        marker.addListener('dragend', (event) => {
+          const newLat = event.latLng.lat();
+          const newLng = event.latLng.lng();
+          setFormData(prev => ({
+            ...prev,
+            lat: newLat,
+            lng: newLng
+          }));
+          reverseGeocode(newLat, newLng);
+        });
+
+        markerRef.current = marker;
+      }
+    }
+  }, [formData.lat, formData.lng, formData.name]);
+
+  // Calculer la distance et le temps depuis Mag Scène
   useEffect(() => {
     if (!formData.lat || !formData.lng || !companyAddress) return;
 
@@ -233,22 +306,85 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    console.log('🟢 handleSubmit appelé');
+    console.log('📍 formData:', formData);
+    
     if (!formData.name.trim()) {
       alert('Le nom du lieu est obligatoire');
       return;
     }
-    onSave(formData);
+    
+    setIsSaving(true);
+    setSuccessMessage(null);
+    setError(null);
+    
+    try {
+      // Mapper placeId → place_id pour l'API backend
+      const locationData = {
+        name: formData.name,
+        address: formData.address,
+        lat: formData.lat,
+        lng: formData.lng,
+        place_id: formData.placeId,
+        type: formData.type
+      };
+      
+      console.log('📤 Envoi des données:', locationData);
+      
+      let savedLocation;
+      if (location?.id) {
+        // Mise à jour d'un lieu existant
+        savedLocation = await api.updateLocation(location.id, locationData);
+        setSuccessMessage('✅ Lieu mis à jour avec succès !');
+      } else {
+        // Création d'un nouveau lieu
+        const response = await api.createLocation(locationData);
+        // Transformer place_id en placeId pour compatibilité frontend
+        savedLocation = {
+          ...response,
+          placeId: response.place_id
+        };
+        console.log('✅ Lieu créé:', savedLocation);
+        setSuccessMessage('✅ Lieu créé avec succès !');
+      }
+      
+      // Mettre à jour formData avec l'ID pour permettre des modifications ultérieures
+      setFormData(prev => ({
+        ...prev,
+        id: savedLocation.id
+      }));
+      
+      // Appeler onSave pour mettre à jour le parent
+      if (onSave) {
+        onSave(savedLocation);
+      }
+      
+      // Effacer le message après 3 secondes
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du lieu:', error);
+      setError('Erreur lors de la sauvegarde du lieu : ' + error.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="location-dialog-overlay" onClick={onClose}>
+    <div className="location-dialog-overlay" onClick={(e) => e.stopPropagation()}>
       <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="location-dialog-header">
           <h2>
             <MapPin size={24} />
             {location ? 'Modifier le lieu' : 'Nouveau lieu'}
+            {formData.lat && formData.lng && (
+              <span className="gps-badge" title="Position GPS enregistrée">
+                <Navigation size={16} />
+                GPS
+              </span>
+            )}
           </h2>
           <button className="close-button" onClick={onClose}>
             <X size={24} />
@@ -258,9 +394,14 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         <form onSubmit={handleSubmit}>
           {error && (
             <div className="error-banner">
-              <strong>⚠️ Erreur Google Maps</strong>
+              <strong>⚠️ Erreur</strong>
               <p>{error}</p>
-              <small>Consultez le fichier <code>GOOGLE_MAPS_ACTIVATION.md</code> pour activer l'API.</small>
+            </div>
+          )}
+          
+          {successMessage && (
+            <div className="success-banner">
+              <strong>{successMessage}</strong>
             </div>
           )}
 
@@ -279,36 +420,63 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="location-address">Adresse</label>
-                <input
-                  id="location-address"
-                  ref={inputRef}
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Tapez une adresse et sélectionnez dans la liste..."
-                />
+                <label htmlFor="location-type">Type de lieu *</label>
+                <select
+                  id="location-type"
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  required
+                >
+                  <option value="Salle de spectacle">Salle de spectacle</option>
+                  <option value="Prestataire">Prestataire</option>
+                  <option value="Dépôt">Dépôt</option>
+                  <option value="Garage">Garage</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="location-address">Rechercher une adresse</label>
+                <div ref={addressAutocompleteContainerRef} className="autocomplete-container"></div>
                 <small className="help-text">
-                  Utilisez l'autocomplétion ou déplacez le marqueur sur la carte
+                  Utilisez l'autocomplétion pour trouver une adresse précise
                 </small>
               </div>
 
-              {formData.lat && formData.lng && (
-                <div className="coordinates-info">
-                  <div className="coordinate-item">
-                    <strong>Latitude:</strong> {formData.lat.toFixed(6)}
-                  </div>
-                  <div className="coordinate-item">
-                    <strong>Longitude:</strong> {formData.lng.toFixed(6)}
-                  </div>
+              {formData.address && (
+                <div className="form-group">
+                  <label htmlFor="location-address-display">Adresse sélectionnée</label>
+                  <input
+                    id="location-address-display"
+                    type="text"
+                    value={formData.address}
+                    readOnly
+                    className="readonly-input"
+                  />
                 </div>
               )}
+
+              <div className="form-group">
+                {formData.lat && formData.lng ? (
+                  <div className="coordinates-badge success">
+                    <Navigation size={16} />
+                    <span>
+                      <strong>Position GPS enregistrée</strong>
+                      <small>Lat: {formData.lat.toFixed(6)}, Lng: {formData.lng.toFixed(6)}</small>
+                    </span>
+                  </div>
+                ) : (
+                  <small className="help-text warning">
+                    ⚠️ Recherchez une adresse pour enregistrer les coordonnées GPS
+                  </small>
+                )}
+              </div>
 
               {companyAddress && formData.lat && formData.lng && (
                 <div className="route-info">
                   <h3>
                     <Navigation size={18} />
-                    Depuis MagScène
+                    Depuis Mag Scène
                   </h3>
                   {isLoadingRoute ? (
                     <div className="loading">Calcul en cours...</div>
@@ -348,10 +516,10 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
 
           <div className="location-dialog-footer">
             <button type="button" className="btn-cancel" onClick={onClose}>
-              Annuler
+              Fermer
             </button>
-            <button type="submit" className="btn-save">
-              {location ? 'Mettre à jour' : 'Ajouter'}
+            <button type="submit" className="btn-save" disabled={isSaving}>
+              {isSaving ? 'Enregistrement...' : (location ? 'Mettre à jour' : 'Ajouter')}
             </button>
           </div>
         </form>

@@ -11,6 +11,7 @@ import ClientDialog from './ClientDialog';
 import ReservationRequestsPanel from './ReservationRequestsPanel';
 import api from '../utils/api';
 import './ManagementPanel.css';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
 const ManagementPanel = ({
   vehicles,
@@ -45,7 +46,8 @@ const ManagementPanel = ({
     address: '',
     lat: null,
     lng: null,
-    placeId: ''
+    placeId: '',
+    locationType: 'Salle de spectacle'
   });
   const [availablePhotos, setAvailablePhotos] = useState(getPhotosSync());
   const [isRefreshingPhotos, setIsRefreshingPhotos] = useState(false);
@@ -63,12 +65,14 @@ const ManagementPanel = ({
   const companyAddressInputRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Charger l'adresse de MagScène depuis la config
+  // Charger l'adresse de Mag Scène depuis la config
   useEffect(() => {
     const loadCompanyAddress = async () => {
       try {
         const config = await loadFromIndexedDB('calendarConfig', {});
-        setCompanyAddress(config.companyAddress || '');
+        const address = config.companyAddress || '';
+        console.log('📍 Adresse Mag Scène chargée:', address);
+        setCompanyAddress(address);
       } catch (error) {
         console.error('Erreur chargement adresse entreprise:', error);
       }
@@ -76,62 +80,41 @@ const ManagementPanel = ({
     loadCompanyAddress();
   }, []);
 
-  // Initialiser l'autocomplétion pour le champ Adresse de MagScène
+  // Initialiser l'autocomplétion pour le champ Adresse de Mag Scène
   useEffect(() => {
     if (activeTab !== 'locations' || !companyAddressInputRef.current) return;
 
     const initCompanyAddressAutocomplete = async () => {
       try {
         // Vérifier si Google Maps est déjà chargé
-        if (!window.google || !window.google.maps) {
+        if (!isGoogleMapsLoaded()) {
           const configData = await api.getGoogleMapsApiKey();
           const apiKey = configData.value;
           
           if (!apiKey) return;
 
-          // Charger Google Maps
-          const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr`;
-          script.async = true;
-          script.defer = true;
-          script.onload = () => {
-            if (window.google && window.google.maps && companyAddressInputRef.current) {
-              const autocomplete = new window.google.maps.places.Autocomplete(
-                companyAddressInputRef.current,
-                {
-                  types: ['address'],
-                  componentRestrictions: { country: 'fr' },
-                  fields: ['formatted_address', 'geometry', 'place_id']
-                }
-              );
-              
-              autocomplete.addListener('place_changed', () => {
-                const place = autocomplete.getPlace();
-                if (place.formatted_address) {
-                  setCompanyAddress(place.formatted_address);
-                }
-              });
-            }
-          };
-          document.head.appendChild(script);
-        } else {
-          // Google Maps déjà chargé
-          const autocomplete = new window.google.maps.places.Autocomplete(
-            companyAddressInputRef.current,
-            {
-              types: ['address'],
-              componentRestrictions: { country: 'fr' },
-              fields: ['formatted_address', 'geometry', 'place_id']
-            }
-          );
-          
-          autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            if (place.formatted_address) {
-              setCompanyAddress(place.formatted_address);
-            }
-          });
+          // Charger Google Maps avec le loader centralisé
+          await loadGoogleMapsAPI(apiKey);
         }
+
+        // Vérifier que l'API est bien chargée
+        if (!window.google?.maps?.places) {
+          console.error('Google Maps Places API pas disponible');
+          return;
+        }
+
+        // Utiliser l'ancienne API Autocomplete (plus fiable)
+        const autocomplete = new window.google.maps.places.Autocomplete(companyAddressInputRef.current, {
+          componentRestrictions: { country: 'fr' },
+          fields: ['formatted_address']
+        });
+        
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place.formatted_address) {
+            setCompanyAddress(place.formatted_address);
+          }
+        });
       } catch (error) {
         console.error('Erreur initialisation autocomplete:', error);
       }
@@ -160,61 +143,13 @@ const ManagementPanel = ({
     }
   };
 
-  // Initialiser Google Maps Autocomplete pour les lieux
-  useEffect(() => {
-    if (activeTab !== 'locations') return;
-
-    // Charger le script Google Maps si pas déjà chargé
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&language=fr`;
-      script.async = true;
-      script.defer = true;
-      script.onload = initAutocomplete;
-      document.head.appendChild(script);
-    } else {
-      initAutocomplete();
-    }
-
-    function initAutocomplete() {
-      const input = document.getElementById('location-autocomplete-input');
-      if (!input || !window.google) return;
-
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(input, {
-        types: ['geocode', 'establishment'],
-        componentRestrictions: { country: 'fr' },
-        fields: ['place_id', 'geometry', 'name', 'formatted_address']
-      });
-
-      autocompleteRef.current.addListener('place_changed', () => {
-        const place = autocompleteRef.current.getPlace();
-        
-        if (place.geometry && place.geometry.location) {
-          setNewItem(prev => ({
-            ...prev,
-            name: place.name || prev.name,
-            address: place.formatted_address || '',
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-            placeId: place.place_id || ''
-          }));
-        }
-      });
-    }
-
-    return () => {
-      if (autocompleteRef.current && window.google) {
-        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
-      }
-    };
-  }, [activeTab]);
+  // Les lieux utilisent maintenant LocationDialog avec PlaceAutocompleteElement
 
   const tabs = [
     { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
     { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
     { id: 'drivers', label: 'Conducteurs', icon: Users, color: '#06b6d4' },
     { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
-    { id: 'garages', label: 'Garages', icon: Building2, color: '#f59e0b' },
     { id: 'sync', label: 'Synchronisation', icon: Cloud, color: '#ec4899' },
     { id: 'account', label: 'Mon compte', icon: Lock, color: '#6b7280' },
     ...(currentUser?.isAdmin ? [
@@ -230,8 +165,23 @@ const ManagementPanel = ({
       case 'vehicles': return vehicles;
       case 'clients': return clients;
       case 'drivers': return drivers;
-      case 'locations': return locations;
-      case 'garages': return garages;
+      case 'locations': {
+        // Ajouter Mag Scène comme premier lieu si une adresse est configurée
+        console.log('🏢 Chargement lieux, companyAddress:', companyAddress);
+        if (companyAddress) {
+          const magSceneLocation = {
+            id: 'mag-scene',
+            name: 'Mag Scène',
+            address: companyAddress,
+            type: 'Dépôt',
+            isCompanyLocation: true
+          };
+          console.log('✅ Mag Scène ajouté à la liste');
+          return [magSceneLocation, ...locations];
+        }
+        console.log('❌ Pas d\'adresse Mag Scène configurée');
+        return locations;
+      }
       default: return [];
     }
   };
@@ -242,7 +192,6 @@ const ManagementPanel = ({
       case 'clients': setClients(newList); break;
       case 'drivers': setDrivers(newList); break;
       case 'locations': setLocations(newList); break;
-      case 'garages': setGarages(newList); break;
     }
   };
 
@@ -328,13 +277,6 @@ const ManagementPanel = ({
         const newList = [...currentList, locationWithId];
         setLocations(newList);
         saveToIndexedDB(STORES.locations, newList);
-      } else if (activeTab === 'garages') {
-        const createdGarage = await api.createGarage(itemToAdd);
-        console.log('✅ Garage créé:', createdGarage);
-        const garageWithId = { ...itemToAdd, id: createdGarage.id || itemToAdd.id };
-        const newList = [...currentList, garageWithId];
-        setGarages(newList);
-        saveToIndexedDB(STORES.garages, newList);
       }
     } catch (error) {
       console.error('❌ Erreur création:', error);
@@ -353,7 +295,8 @@ const ManagementPanel = ({
       address: '',
       lat: null,
       lng: null,
-      placeId: ''
+      placeId: '',
+      locationType: 'Salle de spectacle'
     });
     setShowAddForm(false);
   };
@@ -393,8 +336,9 @@ const ManagementPanel = ({
         setLocations(newList);
         saveToIndexedDB(STORES.locations, newList);
       }
-      setShowLocationDialog(false);
-      setLocationToEdit(null);
+      // Ne PAS fermer le dialog - LocationDialog le gère lui-même avec message de succès
+      // setShowLocationDialog(false);
+      // setLocationToEdit(null);
     } catch (error) {
       console.error('❌ Erreur sauvegarde lieu:', error);
       alert(`Erreur lors de la sauvegarde: ${error.message}`);
@@ -451,10 +395,6 @@ const ManagementPanel = ({
         await api.updateLocation(editingItem.id, editingItem);
         setLocations(newList);
         saveToIndexedDB(STORES.locations, newList);
-      } else if (activeTab === 'garages') {
-        await api.updateGarage(editingItem.id, editingItem);
-        setGarages(newList);
-        saveToIndexedDB(STORES.garages, newList);
       }
     } catch (error) {
       console.error('❌ Erreur modification:', error);
@@ -488,10 +428,6 @@ const ManagementPanel = ({
           await api.deleteLocation(id);
           setLocations(newList);
           saveToIndexedDB(STORES.locations, newList);
-        } else if (activeTab === 'garages') {
-          await api.deleteGarage(id);
-          setGarages(newList);
-          saveToIndexedDB(STORES.garages, newList);
         }
       } catch (error) {
         console.error('❌ Erreur suppression:', error);
@@ -540,8 +476,6 @@ const ManagementPanel = ({
         setDrivers(currentList);
       } else if (activeTab === 'locations') {
         setLocations(currentList);
-      } else if (activeTab === 'garages') {
-        setGarages(currentList);
       }
     }
   };
@@ -590,7 +524,7 @@ const ManagementPanel = ({
   // Fonction d'export des données
   const handleExportData = async () => {
     try {
-      const stores = ['vehicles', 'reservations', 'clients', 'drivers', 'locations', 'garages', 'maintenances', 'calendarConfig'];
+      const stores = ['vehicles', 'reservations', 'clients', 'drivers', 'locations', 'maintenances', 'calendarConfig'];
       const data = {};
       
       for (const storeName of stores) {
@@ -638,7 +572,6 @@ const ManagementPanel = ({
       if (backupData.clients) setClients(backupData.clients);
       if (backupData.drivers) setDrivers(backupData.drivers);
       if (backupData.locations) setLocations(backupData.locations);
-      if (backupData.garages) setGarages(backupData.garages);
       if (backupData.maintenances) setMaintenances(backupData.maintenances);
       if (backupData.calendarConfig) setCalendarConfig(backupData.calendarConfig);
       
@@ -710,7 +643,7 @@ const ManagementPanel = ({
           {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
             <div className="add-section">
               <div className="add-section-header">
-                <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : activeTab === 'garages' ? 'un garage' : 'un lieu'}</h3>
+                <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : 'un lieu'}</h3>
                 <button 
                   className="toggle-add-form-btn"
                   onClick={() => {
@@ -732,7 +665,7 @@ const ManagementPanel = ({
               <div className="add-form">
               <input
                 type="text"
-                placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : activeTab === 'garages' ? 'garage' : 'lieu'}`}
+                placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : 'lieu'}`}
                 value={newItem.name}
                 onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                 onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
@@ -1342,7 +1275,97 @@ const ManagementPanel = ({
               <>
                 <h3>Liste ({getCurrentList().length})</h3>
                 <div className="items-list">
-                  {getCurrentList().map((item, index) => (
+                  {activeTab === 'locations' ? (
+                    // Grouper les lieux par type
+                    (() => {
+                      const allLocations = getCurrentList();
+                      const locationTypes = ['Salle de spectacle', 'Prestataire', 'Dépôt', 'Garage', 'Autre'];
+                      const groupedLocations = {};
+                      locationTypes.forEach(type => {
+                        groupedLocations[type] = allLocations.filter(loc => loc.type === type);
+                      });
+                      // Ajouter les lieux sans type ou avec type inconnu dans "Autre"
+                      const untyped = allLocations.filter(loc => !loc.type || !locationTypes.includes(loc.type));
+                      if (untyped.length > 0) {
+                        groupedLocations['Autre'] = [...(groupedLocations['Autre'] || []), ...untyped];
+                      }
+                      
+                      return locationTypes.map(type => {
+                        const typeLocations = groupedLocations[type] || [];
+                        if (typeLocations.length === 0) return null;
+                        
+                        return (
+                          <div key={type} className="locations-group">
+                            <h4 className="group-title">{type} ({typeLocations.length})</h4>
+                            {typeLocations.map((item, index) => (
+                              <div key={item.id} className="item-card">
+                                {editingItem?.id === item.id ? (
+                                  <div className="edit-form">
+                                    <input
+                                      type="text"
+                                      value={editingItem.name}
+                                      onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                                      onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                                      placeholder="Nom"
+                                    />
+                                    <div className="edit-actions">
+                                      <button className="save-button" onClick={handleSaveEdit}>
+                                        Enregistrer
+                                      </button>
+                                      <button className="cancel-edit-button" onClick={() => setEditingItem(null)}>
+                                        Annuler
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="item-content">
+                                      <div>
+                                        <div className="item-name">
+                                          {item.name}
+                                          {item.isCompanyLocation && (
+                                            <span style={{ 
+                                              marginLeft: '8px', 
+                                              padding: '2px 8px', 
+                                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                                              color: 'white', 
+                                              borderRadius: '4px', 
+                                              fontSize: '0.75rem',
+                                              fontWeight: '600'
+                                            }}>
+                                              Lieu principal
+                                            </span>
+                                          )}
+                                        </div>
+                                        {item.type && (
+                                          <div className="item-detail">🏢 {item.type}</div>
+                                        )}
+                                        {item.address && (
+                                          <div className="item-detail">📍 {item.address}</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="item-actions">
+                                      <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                                        <Edit2 size={16} />
+                                      </button>
+                                      {!item.isCompanyLocation && (
+                                        <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                                          <Trash2 size={16} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      });
+                    })()
+                  ) : (
+                    // Affichage normal pour les autres onglets
+                    getCurrentList().map((item, index) => (
                     <div key={item.id} className="item-card">
                       {editingItem?.id === item.id ? (
                         <div className="edit-form">
@@ -1369,6 +1392,9 @@ const ManagementPanel = ({
                               <div className="item-name">{item.name}</div>
                               {activeTab === 'locations' && (
                                 <>
+                                  {item.type && (
+                                    <div className="item-detail">🏢 {item.type}</div>
+                                  )}
                                   {item.address && (
                                     <div className="item-detail">📍 {item.address}</div>
                                   )}
@@ -1401,9 +1427,10 @@ const ManagementPanel = ({
                         </>
                       )}
                     </div>
-                  ))}
+                  ))
+                  )}
                   
-                  {getCurrentList().length === 0 && (
+                  {getCurrentList().length === 0 && activeTab !== 'locations' && (
                     <div className="empty-state">
                       <p>Aucun élément pour le moment</p>
                       <p className="empty-hint">Utilisez le formulaire ci-dessus pour en ajouter</p>
@@ -1412,59 +1439,7 @@ const ManagementPanel = ({
                 </div>
               </>
             )}
-
-            {/* Adresse de MagScène */}
-            {activeTab === 'locations' && (
-              <div className="company-address-section" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '8px' }}>
-                <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Building2 size={20} />
-                  Adresse de MagScène
-                </h3>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
-                  Cette adresse sera utilisée pour calculer les distances et temps de trajet vers les lieux enregistrés.
-                </p>
-                <input
-                  id="company-address-input"
-                  ref={companyAddressInputRef}
-                  type="text"
-                  value={companyAddress}
-                  onChange={(e) => setCompanyAddress(e.target.value)}
-                  placeholder="Adresse complète de MagScène"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    marginBottom: '0.75rem'
-                  }}
-                />
-                <button
-                  onClick={async () => {
-                    try {
-                      const config = await loadFromIndexedDB('calendarConfig', {});
-                      config.companyAddress = companyAddress;
-                      await saveToIndexedDB('calendarConfig', config);
-                      alert('Adresse de MagScène sauvegardée !');
-                    } catch (error) {
-                      console.error('Erreur sauvegarde adresse:', error);
-                      alert('Erreur lors de la sauvegarde');
-                    }
-                  }}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Enregistrer l'adresse
-                </button>
-              </div>
-            )}
+            
           </div>
           )}
         </div>

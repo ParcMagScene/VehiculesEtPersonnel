@@ -68,6 +68,8 @@
   gap: 0;
   background: white;
   min-width: max-content;
+  position: relative;
+  z-index: 100;
 }
 
 .calendar-content-row {

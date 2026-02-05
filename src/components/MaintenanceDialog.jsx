@@ -53,7 +53,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       status: maintenanceToEditData.status,
       notes: maintenanceToEditData.notes || '',
       isImmobilized: maintenanceToEditData.isImmobilized || false,
-      isQuickReport: maintenanceToEditData.isQuickReport || false
+      isQuickReport: maintenanceToEditData.isQuickReport || false,
+      technicalControlType: maintenanceToEditData.technicalControlType || ''
     } : {
       type: actionType === 'breakdown' ? 'breakdown' : 'revision',
       startDate: '',
@@ -67,12 +68,62 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       status: getInitialStatus(),
       notes: '',
       isImmobilized: actionType === 'breakdown',
-      isQuickReport: getInitialQuickReport()
+      isQuickReport: getInitialQuickReport(),
+      technicalControlType: ''
     }
   );
 
   // Filtrer les maintenances pour ce véhicule
   const vehicleMaintenances = maintenances.filter(m => m.vehicleId === vehicle.id);
+
+  // Types de contrôles techniques disponibles
+  const allControleTechniqueTypes = [
+    { value: 'VL', label: 'VL (Véhicule Léger)', vehicleTypes: ['VL', 'VOITURE', 'CAMIONNETTE'] },
+    { value: 'PL', label: 'PL (Poids Lourd)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'SEMI', 'SEMI-REMORQUE'] },
+    { value: 'SEMI', label: 'Semi-remorque', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'] },
+    { value: 'SCENE', label: 'Scène mobile', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'] },
+    { value: 'POLLUTION', label: 'Pollution', vehicleTypes: ['ALL_MOTORIZED'] },
+    { value: 'HAYON', label: 'Hayon (contrôle VGP)', vehicleTypes: ['ALL'] }
+  ];
+
+  // Filtrer les types de contrôles selon le type de véhicule
+  const getAvailableControlTypes = () => {
+    if (!vehicle?.type) return allControleTechniqueTypes;
+    
+    const vehicleType = vehicle.type.toUpperCase();
+    
+    // Déterminer si c'est un véhicule motorisé
+    const isMotorized = !['SCENE', 'SCÈNE', 'REMORQUE'].some(t => vehicleType.includes(t));
+    
+    // Déterminer le type principal du véhicule
+    const isVL = ['VL', 'VOITURE', 'CAMIONNETTE'].some(t => vehicleType.includes(t));
+    const isPL = ['PL', 'CAMION', 'PORTEUR'].some(t => vehicleType.includes(t));
+    const isSemi = ['SEMI'].some(t => vehicleType.includes(t));
+    
+    return allControleTechniqueTypes.filter(ct => {
+      // Hayon disponible pour TOUS les véhicules
+      if (ct.value === 'HAYON') return true;
+      
+      // Pollution disponible pour tous les véhicules motorisés
+      if (ct.value === 'POLLUTION') return isMotorized;
+      
+      // VL pour les véhicules légers
+      if (ct.value === 'VL') return isVL;
+      
+      // PL pour poids lourds et semi-remorques
+      if (ct.value === 'PL') return isPL || isSemi;
+      
+      // SEMI pour semi-remorques
+      if (ct.value === 'SEMI') return isSemi;
+      
+      // SCENE pour remorques non motorisées
+      if (ct.value === 'SCENE') {
+        return ['SCENE', 'SCÈNE', 'REMORQUE'].some(t => vehicleType.includes(t));
+      }
+      
+      return false;
+    });
+  };
 
   // Sauvegarder les données initiales lors de l'édition
   useEffect(() => {
@@ -88,7 +139,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
         status: maintenanceToEditData.status,
         notes: maintenanceToEditData.notes || '',
         isImmobilized: maintenanceToEditData.isImmobilized || false,
-        isQuickReport: maintenanceToEditData.isQuickReport || false
+        isQuickReport: maintenanceToEditData.isQuickReport || false,
+        technicalControlType: maintenanceToEditData.technicalControlType || ''
       };
       setInitialFormData(initial);
       setFormData(initial); // Mettre à jour formData
@@ -122,7 +174,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       status: maintenance.status,
       notes: maintenance.notes || '',
       isImmobilized: maintenance.isImmobilized || false,
-      isQuickReport: maintenance.isQuickReport || false
+      isQuickReport: maintenance.isQuickReport || false,
+      technicalControlType: maintenance.technicalControlType || ''
     });
     setActiveTab('new');
   };
@@ -430,6 +483,28 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                         <option value="external">Intervention externe</option>
                       </select>
                     </div>
+
+                    {/* Sélecteur de type de contrôle technique */}
+                    {formData.type === 'technical_inspection' && (
+                      <div className="form-group">
+                        <label>Type de contrôle technique *</label>
+                        <select
+                          value={formData.technicalControlType}
+                          onChange={(e) => handleChange('technicalControlType', e.target.value)}
+                          required
+                        >
+                          <option value="">Sélectionner...</option>
+                          {getAvailableControlTypes().map(ct => (
+                            <option key={ct.value} value={ct.value}>
+                              {ct.label}
+                            </option>
+                          ))}
+                        </select>
+                        <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                          ℹ️ Cette intervention sera liée à la deadline du contrôle sélectionné
+                        </small>
+                      </div>
+                    )}
                   </>
                 )}
 

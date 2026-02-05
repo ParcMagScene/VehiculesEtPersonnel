@@ -17,23 +17,39 @@ import {
   setMonth,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { getPeriodTimestamp, formatLocalDate } from '../utils/dateUtils';
+import { Truck } from 'lucide-react';
+import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../utils/dateUtils';
+import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
 import ReservationModal from './ReservationModal';
 import './Calendar.css';
 
 // Fonction pour obtenir les initiales d'un utilisateur
-const getUserInitials = (userId, currentUser) => {
+const getUserInitials = (userId, currentUser, users = []) => {
   if (currentUser && userId === currentUser.id) {
     return currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
+  
+  // Chercher dans la liste des utilisateurs
+  const user = users.find(u => u.id === userId);
+  if (user && user.name) {
+    return user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  }
+  
   return `U${userId.toString().slice(-1)}`;
 };
 
 // Composant Tooltip pour les réservations
-const ReservationTooltip = ({ block, currentUser }) => {
-  const creatorName = currentUser && block.createdBy === currentUser.id 
-    ? currentUser.name 
-    : `Utilisateur ${block.createdBy}`;
+const ReservationTooltip = ({ block, currentUser, users = [] }) => {
+  let creatorName = `Utilisateur ${block.createdBy}`;
+  
+  if (currentUser && block.createdBy === currentUser.id) {
+    creatorName = currentUser.name;
+  } else {
+    const creator = users.find(u => u.id === block.createdBy);
+    if (creator && creator.name) {
+      creatorName = creator.name;
+    }
+  }
 
   return (
     <div className="reservation-tooltip">
@@ -197,6 +213,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
           cleanTitle = cleanTitle.replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
         }
         if (!cleanTitle) cleanTitle = '(Sans titre)';
+        cleanTitle = capitalizeText(cleanTitle);
         
         const eventBlock = {
           startSlot: firstSlotIdx,
@@ -250,9 +267,24 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
   }
   
   // Mode normal : affichage standard
-  const affaires = block.affaires && Array.isArray(block.affaires) 
+  // Si pas une tournée mais liée à un événement, récupérer l'affaire depuis l'événement
+  let affaires = block.affaires && Array.isArray(block.affaires) 
     ? block.affaires 
     : block.affaire ? [block.affaire] : [];
+  
+  // Si pas de tournée et qu'il y a des événements liés, récupérer leurs numéros d'affaire
+  if (!block.isTournee && block.linkedEventIds && Array.isArray(block.linkedEventIds) && block.linkedEventIds.length > 0 && googleEvents) {
+    const eventAffaires = block.linkedEventIds
+      .map(eventId => {
+        const event = googleEvents.find(e => e.id === eventId);
+        return event?.affaire;
+      })
+      .filter(Boolean);
+    
+    if (eventAffaires.length > 0) {
+      affaires = eventAffaires;
+    }
+  }
   
   if (affaires.length > 0) {
     return (
@@ -279,6 +311,7 @@ const Calendar = ({
   clients,
   drivers,
   locations,
+  users = [],
   onScroll,
   googleEvent,
   onCloseGoogleEvent,
@@ -287,6 +320,7 @@ const Calendar = ({
   reservationToEdit,
   onReservationEditComplete,
   onVehicleClick,
+  onRequestViewEvent,
   currentUser,
 }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -296,13 +330,9 @@ const Calendar = ({
   const [resizeState, setResizeState] = useState(null); // { reservation, edge: 'start' | 'end', currentDay, currentPeriod }
   const [resizePreview, setResizePreview] = useState(null); // { vehicleId, startDate, startPeriod, endDate, endPeriod }
   const [collapsedSections, setCollapsedSections] = useState({ magScene: false, location: false });
-
-  // Debug: log les maintenances reçues
-  useEffect(() => {
-    console.log('🔍 Calendar - Maintenances reçues:', maintenances);
-    const reported = maintenances.filter(m => m.status === 'reported');
-    console.log('🔍 Calendar - Pannes signalées:', reported);
-  }, [maintenances]);
+  
+  // État pour le tooltip global
+  const [tooltipState, setTooltipState] = useState({ visible: false, block: null, x: 0, y: 0 });
 
   // Ouvrir le modal automatiquement quand un événement Google est sélectionné
   useEffect(() => {
@@ -338,6 +368,21 @@ const Calendar = ({
     document.addEventListener('mouseup', handleGlobalMouseUp);
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
   }, [isDragging, dragState, resizeState]);
+
+  // Fonctions de gestion du tooltip
+  const handleTooltipShow = useCallback((event, block) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltipState({
+      visible: true,
+      block,
+      x: rect.left + rect.width / 2,
+      y: rect.top
+    });
+  }, []);
+
+  const handleTooltipHide = useCallback(() => {
+    setTooltipState({ visible: false, block: null, x: 0, y: 0 });
+  }, []);
 
   // Centrer sur le début du mois/année visible lors des changements, sauf si on revient à aujourd'hui
   useEffect(() => {
@@ -479,7 +524,9 @@ const Calendar = ({
   const maintenancesAsReservations = useMemo(() => {
     const converted = maintenances
       .filter(m => {
-        const isValid = m.status !== 'reported' && m.status !== 'completed' && m.startDate && m.endDate;
+        // Afficher toutes les maintenances SAUF les pannes signalées (reported)
+        // Inclut: 'scheduled', 'in_progress', 'completed', 'pending'
+        const isValid = m.status !== 'reported' && m.startDate && m.endDate;
         return isValid;
       })
       .map(m => {
@@ -1177,6 +1224,10 @@ const Calendar = ({
                     (m.status === 'reported' || m.type === 'breakdown') &&
                     m.status !== 'completed'
                   );
+
+                  // Vérifier si le véhicule a un contrôle technique expiré
+                  const hasExpiredControl = hasExpiredTechnicalControl(vehicle, maintenances);
+                  const expiredControls = hasExpiredControl ? getExpiredTechnicalControls(vehicle, maintenances) : [];
                   
                   return (
                   <div 
@@ -1189,19 +1240,32 @@ const Calendar = ({
                       className="vehicle-color"
                       style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
                     />
+                    <div className="vehicle-photo">
+                      {vehicle.photo ? (
+                        <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
+                      ) : (
+                        <div className="photo-placeholder">
+                          <Truck size={20} color="#9ca3af" />
+                        </div>
+                      )}
+                      {hasBreakdown && (
+                        <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
+                      )}
+                      {hasExpiredControl && (
+                        <div 
+                          className="expired-control-indicator" 
+                          title={`Contrôle technique expiré: ${expiredControls.map(c => `${c.type} (${c.daysExpired}j)`).join(', ')}`}
+                        >
+                          🚫
+                        </div>
+                      )}
+                    </div>
                     <div className="vehicle-info">
                       <span className="vehicle-name">{vehicle.name}</span>
-                      {vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}
-                      {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
+                      <span className="vehicle-brand">{vehicle.brand || vehicle.marque || ''}</span>
+                      <span className="vehicle-type">{vehicle.type || ''}</span>
+                      <span className="vehicle-registration">{vehicle.registration || vehicle.immatriculation || ''}</span>
                     </div>
-                    {vehicle.photo && (
-                      <div className="vehicle-photo">
-                        <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
-                        {hasBreakdown && (
-                          <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
-                        )}
-                      </div>
-                    )}
                   </div>
                   );
                 })}
@@ -1229,6 +1293,10 @@ const Calendar = ({
                     (m.status === 'reported' || m.type === 'breakdown') &&
                     m.status !== 'completed'
                   );
+
+                  // Vérifier si le véhicule a un contrôle technique expiré
+                  const hasExpiredControl = hasExpiredTechnicalControl(vehicle, maintenances);
+                  const expiredControls = hasExpiredControl ? getExpiredTechnicalControls(vehicle, maintenances) : [];
                   
                   return (
                   <div 
@@ -1241,19 +1309,32 @@ const Calendar = ({
                       className="vehicle-color"
                       style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
                     />
+                    <div className="vehicle-photo">
+                      {vehicle.photo ? (
+                        <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
+                      ) : (
+                        <div className="photo-placeholder">
+                          <Truck size={20} color="#9ca3af" />
+                        </div>
+                      )}
+                      {hasBreakdown && (
+                        <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
+                      )}
+                      {hasExpiredControl && (
+                        <div 
+                          className="expired-control-indicator" 
+                          title={`Contrôle technique expiré: ${expiredControls.map(c => `${c.type} (${c.daysExpired}j)`).join(', ')}`}
+                        >
+                          🚫
+                        </div>
+                      )}
+                    </div>
                     <div className="vehicle-info">
                       <span className="vehicle-name">{vehicle.name}</span>
-                      {vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}
-                      {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
+                      <span className="vehicle-brand">{vehicle.brand || vehicle.marque || ''}</span>
+                      <span className="vehicle-type">{vehicle.type || ''}</span>
+                      <span className="vehicle-registration">{vehicle.registration || vehicle.immatriculation || ''}</span>
                     </div>
-                    {vehicle.photo && (
-                      <div className="vehicle-photo">
-                        <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
-                        {hasBreakdown && (
-                          <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
-                        )}
-                      </div>
-                    )}
                   </div>
                   );
                 })}
@@ -1419,7 +1500,7 @@ const Calendar = ({
                         data-reservation-id={block.id}
                       >
                         <div
-                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? 'maintenance-block' : ''}`}
+                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? 'maintenance-block' : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
                           style={{
                             backgroundColor: block.isMaintenance 
                               ? (getMaintenanceConflicts(block).length > 0 ? '#fee2e2' : '#f3f4f6')
@@ -1432,8 +1513,8 @@ const Calendar = ({
                         >
                           {/* Pastille utilisateur créateur */}
                           {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : "Utilisateur " + block.createdBy}`}>
-                              {getUserInitials(block.createdBy, currentUser)}
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : users.find(u => u.id === block.createdBy)?. name || "Utilisateur " + block.createdBy}`}>
+                              {getUserInitials(block.createdBy, currentUser, users)}
                             </div>
                           )}
                           
@@ -1447,9 +1528,6 @@ const Calendar = ({
                               {block.locationName && <div className="reservation-location">{block.locationName}</div>}
                               {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex)}
                             </div>
-                          
-                          {/* Tooltip avec informations complètes */}
-                          <ReservationTooltip block={block} currentUser={currentUser} />
                           </div>
                           
                         </div>
@@ -1664,7 +1742,7 @@ const Calendar = ({
                         data-reservation-id={block.id}
                       >
                         <div
-                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? 'maintenance-block' : ''}`}
+                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? 'maintenance-block' : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
                           style={{
                             backgroundColor: block.isMaintenance 
                               ? (getMaintenanceConflicts(block).length > 0 ? '#fee2e2' : '#f3f4f6')
@@ -1677,8 +1755,8 @@ const Calendar = ({
                         >
                           {/* Pastille utilisateur créateur */}
                           {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : "Utilisateur " + block.createdBy}`}>
-                              {getUserInitials(block.createdBy, currentUser)}
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : users.find(u => u.id === block.createdBy)?. name || "Utilisateur " + block.createdBy}`}>
+                              {getUserInitials(block.createdBy, currentUser, users)}
                             </div>
                           )}
                           
@@ -1692,9 +1770,6 @@ const Calendar = ({
                               {block.locationName && <div className="reservation-location">{block.locationName}</div>}
                               {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex)}
                             </div>
-                          
-                          {/* Tooltip avec informations complètes */}
-                          <ReservationTooltip block={block} currentUser={currentUser} />
                           </div>
                           
                         </div>
@@ -1757,8 +1832,80 @@ const Calendar = ({
           onClose={closeModal}
           googleEvent={selectedSlot?.googleEvent || googleEvent}
           googleEvents={googleEvents}
+          onRequestViewEvent={onRequestViewEvent}
           currentUser={currentUser}
         />
+      )}
+
+      {/* Tooltip global */}
+      {tooltipState.visible && tooltipState.block && (
+        <div
+          className="reservation-tooltip"
+          style={{
+            left: `${tooltipState.x}px`,
+            top: `${tooltipState.y}px`,
+            opacity: 1,
+            visibility: 'visible'
+          }}
+        >
+          <div className="tooltip-row">
+            <span className="tooltip-label">Type:</span>
+            <span className="tooltip-value">{tooltipState.block.isMaintenance ? 'Intervention' : 'Réservation'}</span>
+          </div>
+          {tooltipState.block.isMaintenance ? (
+            <>
+              <div className="tooltip-row">
+                <span className="tooltip-label">Prestation:</span>
+                <span className="tooltip-value">{tooltipState.block.prestationName || 'Non spécifiée'}</span>
+              </div>
+              <div className="tooltip-row">
+                <span className="tooltip-label">Garage:</span>
+                <span className="tooltip-value">{tooltipState.block.garageName || 'Non spécifié'}</span>
+              </div>
+              <div className="tooltip-row">
+                <span className="tooltip-label">Début:</span>
+                <span className="tooltip-value">{tooltipState.block.start_date || tooltipState.block.startDate || 'Non spécifié'}</span>
+              </div>
+              <div className="tooltip-row">
+                <span className="tooltip-label">Fin:</span>
+                <span className="tooltip-value">{tooltipState.block.end_date || tooltipState.block.endDate || 'Non spécifiée'}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="tooltip-row">
+                <span className="tooltip-label">Client:</span>
+                <span className="tooltip-value">{tooltipState.block.clientName || 'Non spécifié'}</span>
+              </div>
+              <div className="tooltip-row">
+                <span className="tooltip-label">Date:</span>
+                <span className="tooltip-value">{new Date(tooltipState.block.date).toLocaleDateString('fr-FR')}</span>
+              </div>
+              <div className="tooltip-row">
+                <span className="tooltip-label">Période:</span>
+                <span className="tooltip-value">{tooltipState.block.period === 'AM' ? 'Matin' : 'Après-midi'}</span>
+              </div>
+              <div className="tooltip-row">
+                <span className="tooltip-label">Départ:</span>
+                <span className="tooltip-value">{tooltipState.block.locationName || 'Non spécifié'}</span>
+              </div>
+            </>
+          )}
+          {tooltipState.block.description && (
+            <div className="tooltip-row">
+              <span className="tooltip-label">Description:</span>
+              <span className="tooltip-value">{tooltipState.block.description}</span>
+            </div>
+          )}
+          <div className="tooltip-row">
+            <span className="tooltip-label">Créé par:</span>
+            <span className="tooltip-value">
+              {currentUser && tooltipState.block.createdBy === currentUser.id 
+                ? currentUser.name 
+                : users.find(u => u.id === tooltipState.block.createdBy)?.name || `Utilisateur ${tooltipState.block.createdBy}`}
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );

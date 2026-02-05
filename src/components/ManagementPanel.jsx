@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2 } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2, Gauge } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
+import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
 import UserManagement from './UserManagement';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
 import ChangePassword from './ChangePassword';
 import MobileAccess from './MobileAccess';
 import LocationDialog from './LocationDialog';
+import ClientDialog from './ClientDialog';
 import ReservationRequestsPanel from './ReservationRequestsPanel';
+import VehicleMaintenanceModal from './VehicleMaintenanceModal';
 import api from '../utils/api';
 import './ManagementPanel.css';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
 const ManagementPanel = ({
   vehicles,
@@ -44,7 +48,8 @@ const ManagementPanel = ({
     address: '',
     lat: null,
     lng: null,
-    placeId: ''
+    placeId: '',
+    locationType: 'Salle de spectacle'
   });
   const [availablePhotos, setAvailablePhotos] = useState(getPhotosSync());
   const [isRefreshingPhotos, setIsRefreshingPhotos] = useState(false);
@@ -54,23 +59,79 @@ const ManagementPanel = ({
   const [importStatus, setImportStatus] = useState('');
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [locationToEdit, setLocationToEdit] = useState(null);
+  const [showClientDialog, setShowClientDialog] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState(null);
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const [vehicleToMaintain, setVehicleToMaintain] = useState(null);
   const [companyAddress, setCompanyAddress] = useState('');
   const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
+  const companyAddressInputRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Charger l'adresse de MagScène depuis la config
+  // Charger l'adresse de Mag Scène depuis la config
   useEffect(() => {
     const loadCompanyAddress = async () => {
       try {
         const config = await loadFromIndexedDB('calendarConfig', {});
-        setCompanyAddress(config.companyAddress || '');
+        const address = config.companyAddress || '';
+        console.log('📍 Adresse Mag Scène chargée:', address);
+        setCompanyAddress(address);
       } catch (error) {
         console.error('Erreur chargement adresse entreprise:', error);
       }
     };
     loadCompanyAddress();
   }, []);
+
+  // Initialiser l'autocomplétion pour le champ Adresse de Mag Scène
+  useEffect(() => {
+    if (activeTab !== 'locations' || !companyAddressInputRef.current) return;
+
+    const initCompanyAddressAutocomplete = async () => {
+      try {
+        // Vérifier si Google Maps est déjà chargé
+        if (!isGoogleMapsLoaded()) {
+          const configData = await api.getGoogleMapsApiKey();
+          const apiKey = configData.value;
+          
+          if (!apiKey) return;
+
+          // Charger Google Maps avec le loader centralisé
+          await loadGoogleMapsAPI(apiKey);
+        }
+
+        // Vérifier que l'API est bien chargée
+        if (!window.google?.maps?.places?.Autocomplete) {
+          console.error('Google Maps Places API pas disponible');
+          return;
+        }
+
+        // Vérifier que le ref existe
+        if (!companyAddressInputRef.current) {
+          console.error('Référence input adresse non disponible');
+          return;
+        }
+
+        // Utiliser l'ancienne API Autocomplete (plus fiable)
+        const autocomplete = new window.google.maps.places.Autocomplete(companyAddressInputRef.current, {
+          componentRestrictions: { country: 'fr' },
+          fields: ['formatted_address']
+        });
+        
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place.formatted_address) {
+            setCompanyAddress(place.formatted_address);
+          }
+        });
+      } catch (error) {
+        console.error('Erreur initialisation autocomplete:', error);
+      }
+    };
+
+    initCompanyAddressAutocomplete();
+  }, [activeTab]);
 
   // Charger la liste des photos au montage du composant
   useEffect(() => {
@@ -92,66 +153,18 @@ const ManagementPanel = ({
     }
   };
 
-  // Initialiser Google Maps Autocomplete pour les lieux
-  useEffect(() => {
-    if (activeTab !== 'locations') return;
-
-    // Charger le script Google Maps si pas déjà chargé
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&language=fr`;
-      script.async = true;
-      script.defer = true;
-      script.onload = initAutocomplete;
-      document.head.appendChild(script);
-    } else {
-      initAutocomplete();
-    }
-
-    function initAutocomplete() {
-      const input = document.getElementById('location-autocomplete-input');
-      if (!input || !window.google) return;
-
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(input, {
-        types: ['geocode', 'establishment'],
-        componentRestrictions: { country: 'fr' },
-        fields: ['place_id', 'geometry', 'name', 'formatted_address']
-      });
-
-      autocompleteRef.current.addListener('place_changed', () => {
-        const place = autocompleteRef.current.getPlace();
-        
-        if (place.geometry && place.geometry.location) {
-          setNewItem(prev => ({
-            ...prev,
-            name: place.name || prev.name,
-            address: place.formatted_address || '',
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-            placeId: place.place_id || ''
-          }));
-        }
-      });
-    }
-
-    return () => {
-      if (autocompleteRef.current && window.google) {
-        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
-      }
-    };
-  }, [activeTab]);
+  // Les lieux utilisent maintenant LocationDialog avec PlaceAutocompleteElement
 
   const tabs = [
     { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
     { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
     { id: 'drivers', label: 'Conducteurs', icon: Users, color: '#06b6d4' },
     { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
-    { id: 'garages', label: 'Garages', icon: Building2, color: '#f59e0b' },
-    { id: 'sync', label: 'Synchronisation', icon: Cloud, color: '#ec4899' },
     { id: 'account', label: 'Mon compte', icon: Lock, color: '#6b7280' },
     ...(currentUser?.isAdmin ? [
       { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
       { id: 'users', label: 'Utilisateurs', icon: Shield, color: '#ef4444' },
+      { id: 'sync', label: 'Import/Export', icon: Cloud, color: '#ec4899' },
       { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
       { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
     ] : []),
@@ -162,8 +175,23 @@ const ManagementPanel = ({
       case 'vehicles': return vehicles;
       case 'clients': return clients;
       case 'drivers': return drivers;
-      case 'locations': return locations;
-      case 'garages': return garages;
+      case 'locations': {
+        // Ajouter Mag Scène comme premier lieu si une adresse est configurée
+        console.log('🏢 Chargement lieux, companyAddress:', companyAddress);
+        if (companyAddress) {
+          const magSceneLocation = {
+            id: 'mag-scene',
+            name: 'Mag Scène',
+            address: companyAddress,
+            type: 'Dépôt',
+            isCompanyLocation: true
+          };
+          console.log('✅ Mag Scène ajouté à la liste');
+          return [magSceneLocation, ...locations];
+        }
+        console.log('❌ Pas d\'adresse Mag Scène configurée');
+        return locations;
+      }
       default: return [];
     }
   };
@@ -174,7 +202,6 @@ const ManagementPanel = ({
       case 'clients': setClients(newList); break;
       case 'drivers': setDrivers(newList); break;
       case 'locations': setLocations(newList); break;
-      case 'garages': setGarages(newList); break;
     }
   };
 
@@ -260,13 +287,6 @@ const ManagementPanel = ({
         const newList = [...currentList, locationWithId];
         setLocations(newList);
         saveToIndexedDB(STORES.locations, newList);
-      } else if (activeTab === 'garages') {
-        const createdGarage = await api.createGarage(itemToAdd);
-        console.log('✅ Garage créé:', createdGarage);
-        const garageWithId = { ...itemToAdd, id: createdGarage.id || itemToAdd.id };
-        const newList = [...currentList, garageWithId];
-        setGarages(newList);
-        saveToIndexedDB(STORES.garages, newList);
       }
     } catch (error) {
       console.error('❌ Erreur création:', error);
@@ -285,7 +305,8 @@ const ManagementPanel = ({
       address: '',
       lat: null,
       lng: null,
-      placeId: ''
+      placeId: '',
+      locationType: 'Salle de spectacle'
     });
     setShowAddForm(false);
   };
@@ -294,6 +315,9 @@ const ManagementPanel = ({
     if (activeTab === 'locations') {
       setLocationToEdit(item);
       setShowLocationDialog(true);
+    } else if (activeTab === 'clients') {
+      setClientToEdit(item);
+      setShowClientDialog(true);
     } else {
       setEditingItem({ ...item });
     }
@@ -322,10 +346,58 @@ const ManagementPanel = ({
         setLocations(newList);
         saveToIndexedDB(STORES.locations, newList);
       }
-      setShowLocationDialog(false);
-      setLocationToEdit(null);
+      // Ne PAS fermer le dialog - LocationDialog le gère lui-même avec message de succès
+      // setShowLocationDialog(false);
+      // setLocationToEdit(null);
     } catch (error) {
       console.error('❌ Erreur sauvegarde lieu:', error);
+      alert(`Erreur lors de la sauvegarde: ${error.message}`);
+    }
+  };
+
+  const handleSaveClient = async (clientData) => {
+    try {
+      if (clientToEdit) {
+        // Mise à jour
+        await api.updateClient(clientToEdit.id, clientData);
+        const newList = clients.map(cli => 
+          cli.id === clientToEdit.id ? { ...clientData, id: clientToEdit.id } : cli
+        );
+        setClients(newList);
+        saveToIndexedDB(STORES.clients, newList);
+      } else {
+        // Création
+        const createdClient = await api.createClient(clientData);
+        const newClient = { ...clientData, id: createdClient.id || Date.now() };
+        const newList = [...clients, newClient];
+        setClients(newList);
+        saveToIndexedDB(STORES.clients, newList);
+      }
+      setShowClientDialog(false);
+      setClientToEdit(null);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde client:', error);
+      alert(`Erreur lors de la sauvegarde: ${error.message}`);
+    }
+  };
+
+  const handleOpenMaintenance = (vehicle) => {
+    setVehicleToMaintain(vehicle);
+    setShowMaintenanceModal(true);
+  };
+
+  const handleSaveMaintenance = async (updatedVehicle) => {
+    try {
+      const response = await api.updateVehicle(updatedVehicle.id, updatedVehicle);
+      const newList = vehicles.map(v => 
+        v.id === updatedVehicle.id ? response : v
+      );
+      setVehicles(newList);
+      saveToIndexedDB(STORES.vehicles, newList);
+      setShowMaintenanceModal(false);
+      setVehicleToMaintain(null);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde maintenance:', error);
       alert(`Erreur lors de la sauvegarde: ${error.message}`);
     }
   };
@@ -354,10 +426,6 @@ const ManagementPanel = ({
         await api.updateLocation(editingItem.id, editingItem);
         setLocations(newList);
         saveToIndexedDB(STORES.locations, newList);
-      } else if (activeTab === 'garages') {
-        await api.updateGarage(editingItem.id, editingItem);
-        setGarages(newList);
-        saveToIndexedDB(STORES.garages, newList);
       }
     } catch (error) {
       console.error('❌ Erreur modification:', error);
@@ -391,10 +459,6 @@ const ManagementPanel = ({
           await api.deleteLocation(id);
           setLocations(newList);
           saveToIndexedDB(STORES.locations, newList);
-        } else if (activeTab === 'garages') {
-          await api.deleteGarage(id);
-          setGarages(newList);
-          saveToIndexedDB(STORES.garages, newList);
         }
       } catch (error) {
         console.error('❌ Erreur suppression:', error);
@@ -443,8 +507,6 @@ const ManagementPanel = ({
         setDrivers(currentList);
       } else if (activeTab === 'locations') {
         setLocations(currentList);
-      } else if (activeTab === 'garages') {
-        setGarages(currentList);
       }
     }
   };
@@ -458,7 +520,7 @@ const ManagementPanel = ({
     e.preventDefault();
   };
 
-  const handleDrop = (dropIndex, dropSection) => {
+  const handleDrop = async (dropIndex, dropSection) => {
     if (draggedIndex === null || draggedSection !== dropSection) return;
     
     if (activeTab === 'vehicles') {
@@ -481,9 +543,29 @@ const ManagementPanel = ({
         ? [...sectionVehicles, ...otherVehicles]
         : [...otherVehicles, ...sectionVehicles];
       
+      // Mettre à jour l'ordre de tous les véhicules
       newList.forEach((v, i) => v.order = i);
+      
+      // Sauvegarder localement immédiatement pour une UI réactive
       setVehicles(newList);
       saveToIndexedDB(STORES.vehicles, newList);
+      
+      // Sauvegarder l'ordre sur le serveur uniquement pour la section modifiée
+      try {
+        // Ne mettre à jour que les véhicules de la section qui a été réorganisée
+        const vehiclesToUpdate = newList.filter(v => 
+          dropSection === 'magscene' ? !v.isLocation : v.isLocation
+        );
+        
+        await Promise.all(
+          vehiclesToUpdate.map(vehicle => 
+            api.updateVehicle(vehicle.id, vehicle)
+          )
+        );
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde de l\'ordre des véhicules:', error);
+        alert('Erreur lors de la sauvegarde de l\'ordre. Veuillez réessayer.');
+      }
     }
     
     setDraggedIndex(null);
@@ -493,7 +575,7 @@ const ManagementPanel = ({
   // Fonction d'export des données
   const handleExportData = async () => {
     try {
-      const stores = ['vehicles', 'reservations', 'clients', 'drivers', 'locations', 'garages', 'maintenances', 'calendarConfig'];
+      const stores = ['vehicles', 'reservations', 'clients', 'drivers', 'locations', 'maintenances', 'calendarConfig'];
       const data = {};
       
       for (const storeName of stores) {
@@ -541,7 +623,6 @@ const ManagementPanel = ({
       if (backupData.clients) setClients(backupData.clients);
       if (backupData.drivers) setDrivers(backupData.drivers);
       if (backupData.locations) setLocations(backupData.locations);
-      if (backupData.garages) setGarages(backupData.garages);
       if (backupData.maintenances) setMaintenances(backupData.maintenances);
       if (backupData.calendarConfig) setCalendarConfig(backupData.calendarConfig);
       
@@ -613,26 +694,29 @@ const ManagementPanel = ({
           {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
             <div className="add-section">
               <div className="add-section-header">
-                <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : activeTab === 'garages' ? 'un garage' : 'un lieu'}</h3>
+                <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : 'un lieu'}</h3>
                 <button 
                   className="toggle-add-form-btn"
                   onClick={() => {
                     if (activeTab === 'locations') {
                       handleAddLocation();
+                    } else if (activeTab === 'clients') {
+                      setClientToEdit(null);
+                      setShowClientDialog(true);
                     } else {
                       setShowAddForm(!showAddForm);
                     }
                   }}
-                  title={activeTab === 'locations' ? 'Ajouter un lieu' : (showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire')}
+                  title={activeTab === 'locations' ? 'Ajouter un lieu' : activeTab === 'clients' ? 'Ajouter un client' : (showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire')}
                 >
-                  {activeTab === 'locations' ? <Plus size={20} /> : (showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
+                  {(activeTab === 'locations' || activeTab === 'clients') ? <Plus size={20} /> : (showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
                 </button>
               </div>
-            {showAddForm && activeTab !== 'locations' && (
+            {showAddForm && activeTab !== 'locations' && activeTab !== 'clients' && (
               <div className="add-form">
               <input
                 type="text"
-                placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : activeTab === 'garages' ? 'garage' : 'lieu'}`}
+                placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : 'lieu'}`}
                 value={newItem.name}
                 onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                 onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
@@ -728,9 +812,10 @@ const ManagementPanel = ({
           )}
 
           {/* Configuration Google Calendar */}
-          {activeTab === 'sync' && (
+          {/* Import/Export (Admin uniquement) */}
+          {activeTab === 'sync' && currentUser?.isAdmin && (
             <div className="sync-section">
-              <h3>� Import / Export des données</h3>
+              <h3>📦 Import / Export des données</h3>
               <div className="sync-info">
                 <p>Sauvegardez ou restaurez toutes vos données (véhicules, réservations, clients, etc.)</p>
               </div>
@@ -771,106 +856,6 @@ const ManagementPanel = ({
                   </ul>
                 </div>
               </div>
-
-              <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
-
-              <h3>�🗓️ Synchronisation Google Calendar</h3>
-              <div className="sync-info">
-                <p>Affichez vos événements Google Calendar personnels au-dessus du planning de réservation.</p>
-              </div>
-              
-              <div className="sync-form">
-                <div className="form-group">
-                  <label>
-                    Client ID OAuth 2.0
-                    <span className="label-hint">
-                      (<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Obtenir un Client ID</a>)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="1234567890-abcdefgh.apps.googleusercontent.com"
-                    value={calendarConfig?.clientId || ''}
-                    onChange={(e) => setCalendarConfig({ ...calendarConfig, clientId: e.target.value })}
-                  />
-                  <small className="help-text">
-                    Créez un "ID client OAuth 2.0" de type "Application Web" dans Google Cloud Console
-                  </small>
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    ID du Calendrier (optionnel)
-                    <span className="label-hint">
-                      (laissez vide pour utiliser votre calendrier principal)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="primary (par défaut) ou votre.email@gmail.com"
-                    value={calendarConfig?.calendarId || ''}
-                    onChange={(e) => {
-                      let value = e.target.value;
-                      // Extraire l'ID si c'est une URL
-                      const srcMatch = value.match(/src=([^&]+)/);
-                      if (srcMatch) {
-                        value = decodeURIComponent(srcMatch[1]);
-                      }
-                      setCalendarConfig({ ...calendarConfig, calendarId: value });
-                    }}
-                  />
-                  <small className="help-text">
-                    Par défaut, votre calendrier principal sera utilisé
-                  </small>
-                </div>
-
-                {calendarConfig?.clientId && (
-                  <div className="sync-status success">
-                    ✅ Configuration enregistrée - Connectez-vous depuis le bandeau pour voir vos événements
-                  </div>
-                )}
-                
-                {!calendarConfig?.clientId && (
-                  <div className="sync-status info">
-                    ℹ️ Remplissez le Client ID pour activer la synchronisation OAuth
-                  </div>
-                )}
-
-                <div className="sync-tips">
-                  <h4>🔍 Dépannage :</h4>
-                  <ul>
-                    <li><strong>Erreur OAuth :</strong> Vérifiez que l'origine JavaScript est bien configurée dans Google Cloud Console</li>
-                    <li><strong>Pas de bouton de connexion :</strong> Vérifiez que le Client ID est correct</li>
-                    <li><strong>Pas d'événements :</strong> Le calendrier par défaut sera utilisé (laissez le champ ID vide)</li>
-                    <li>Ouvrez la console du navigateur (F12) pour voir les logs détaillés</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="sync-instructions">
-                <h4>📋 Instructions de configuration OAuth 2.0 :</h4>
-                <ol>
-                  <li>Allez sur <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
-                  <li>Créez un nouveau projet ou sélectionnez-en un existant</li>
-                  <li>Activez l'<strong>API Google Calendar</strong></li>
-                  <li>Allez dans <strong>Identifiants → Créer des identifiants → ID client OAuth 2.0</strong></li>
-                  <li>Type d'application : <strong>Application Web</strong></li>
-                  <li><strong>⚠️ IMPORTANT - Origines JavaScript autorisées :</strong>
-                    <div className="origins-box">
-                      <code>http://localhost:5174</code>
-                    </div>
-                    Ajoutez exactement cette URL (sans slash à la fin)
-                  </li>
-                  <li><strong>URI de redirection :</strong> Laissez vide ou ignorez ce champ</li>
-                  <li>Cliquez sur <strong>Créer</strong></li>
-                  <li>Copiez le <strong>Client ID</strong> (format: xxx.apps.googleusercontent.com)</li>
-                  <li>Collez-le dans le champ ci-dessus et sauvegardez</li>
-                  <li>Rechargez complètement la page (Ctrl+Shift+R ou Cmd+Shift+R)</li>
-                </ol>
-                <div className="sync-example">
-                  <strong>🔒 Sécurisé :</strong> Avec OAuth 2.0, vous vous connectez avec votre compte Google et autorisez l'application à lire votre calendrier. Votre calendrier reste privé et vous pouvez révoquer l'accès à tout moment depuis <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">vos paramètres Google</a>.
-                </div>
-              </div>
             </div>
           )}
 
@@ -886,58 +871,7 @@ const ManagementPanel = ({
 
           {/* Configuration Google Calendar (Admin uniquement) */}
           {activeTab === 'google-config' && currentUser?.isAdmin && (
-            <>
-              <GoogleCalendarConfig />
-              
-              <div className="company-address-section" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '8px' }}>
-                <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <MapPin size={20} />
-                  Adresse de MagScène
-                </h3>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
-                  Cette adresse sera utilisée pour calculer les distances et temps de trajet vers les lieux enregistrés.
-                </p>
-                <input
-                  id="company-address-input"
-                  type="text"
-                  value={companyAddress}
-                  onChange={(e) => setCompanyAddress(e.target.value)}
-                  placeholder="Adresse complète de MagScène"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    marginBottom: '0.75rem'
-                  }}
-                />
-                <button
-                  onClick={async () => {
-                    try {
-                      const config = await loadFromIndexedDB('calendarConfig', {});
-                      config.companyAddress = companyAddress;
-                      await saveToIndexedDB('calendarConfig', config);
-                      alert('Adresse de MagScène sauvegardée !');
-                    } catch (error) {
-                      console.error('Erreur sauvegarde adresse:', error);
-                      alert('Erreur lors de la sauvegarde');
-                    }
-                  }}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Enregistrer l'adresse
-                </button>
-              </div>
-            </>
+            <GoogleCalendarConfig />
           )}
 
           {/* Accès Mobile (Admin uniquement) */}
@@ -1060,19 +994,58 @@ const ManagementPanel = ({
                         {activeTab === 'vehicles' && (
                           <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || '#3b82f6' }} />
                         )}
+                        {activeTab === 'vehicles' && (
+                          <div className="item-photo">
+                            {item.photo ? (
+                              <img src={`/Photos/${item.photo}`} alt={item.name} />
+                            ) : (
+                              <div className="photo-placeholder">
+                                <Truck size={24} color="#9ca3af" />
+                              </div>
+                            )}
+                            {hasExpiredTechnicalControl(item, maintenances) && (
+                              <div 
+                                className="expired-control-badge"
+                                title={`Contrôle technique expiré: ${getExpiredTechnicalControls(item, maintenances).map(c => `${c.type} (${c.daysExpired}j)`).join(', ')}`}
+                              >
+                                🚫
+                              </div>
+                            )}
+                          </div>
+                        )}
                           <div>
                           <div className="item-name">{item.name}</div>
                           {activeTab === 'vehicles' && (
                             <>
                               <div className="item-type">{item.type}</div>
-                              {(item.immatriculation || item.registration) && (
-                                <div className="item-detail">📋 {item.immatriculation || item.registration}</div>
+                              <div className="item-registration">📋 {item.immatriculation || item.registration || ''}</div>
+                              <div className="item-brand">🚗 {item.marque || item.brand || ''} {item.couleurVehicule || item.model || ''}</div>
+                            </>
+                          )}
+                          {activeTab === 'clients' && (
+                            <>
+                              {item.email && (
+                                <div className="item-detail">@ {item.email}</div>
                               )}
-                              {item.marque && (
-                                <div className="item-detail">🚗 {item.marque} {item.couleurVehicule}</div>
+                              {item.phone && (
+                                <div className="item-detail">📞 {item.phone}</div>
                               )}
-                              {item.brand && (
-                                <div className="item-detail">🚗 {item.brand} {item.model}</div>
+                              {item.address && (
+                                <div className="item-detail">📍 {item.address}</div>
+                              )}
+                              {item.lat && item.lng && (
+                                <div className="item-detail coordinates-detail">
+                                  🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
+                                  <a 
+                                    href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="map-link"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Voir sur Google Maps
+                                  </a>
+                                </div>
                               )}
                             </>
                           )}
@@ -1098,16 +1071,18 @@ const ManagementPanel = ({
                             </>
                           )}
                         </div>
-                        {activeTab === 'vehicles' && item.photo && (
-                          <div className="item-photo">
-                            <img src={`/Photos/${item.photo}`} alt={item.name} />
-                          </div>
-                        )}
                       </div>
                       <div className="item-actions">
                         <div className="drag-handle" title="Glisser pour réorganiser">
                           <GripVertical size={20} />
                         </div>
+                        <button 
+                          className="maintenance-button" 
+                          onClick={(e) => { e.stopPropagation(); handleOpenMaintenance(item); }}
+                          title="Maintenance et contrôle technique"
+                        >
+                          <Gauge size={16} />
+                        </button>
                         <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                           <Edit2 size={16} />
                         </button>
@@ -1218,31 +1193,35 @@ const ManagementPanel = ({
                           </div>
                         ) : (
                           <>
-                            <div className="item-content">
+                            <div className="item-info">
                               <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || '#3b82f6' }} />
+                              <div className="item-photo">
+                                {item.photo ? (
+                                  <img src={`/Photos/${item.photo}`} alt={item.name} />
+                                ) : (
+                                  <div className="photo-placeholder">
+                                    <Truck size={24} color="#9ca3af" />
+                                  </div>
+                                )}
+                              </div>
                               <div>
                                 <div className="item-name">{item.name}</div>
                                 <div className="item-type">{item.type}</div>
-                                {(item.immatriculation || item.registration) && (
-                                  <div className="item-detail">📋 {item.immatriculation || item.registration}</div>
-                                )}
-                                {item.marque && (
-                                  <div className="item-detail">🚗 {item.marque} {item.couleurVehicule}</div>
-                                )}
-                                {item.brand && (
-                                  <div className="item-detail">🏭 {item.brand} {item.model || ''}</div>
-                                )}
+                                <div className="item-registration">📋 {item.immatriculation || item.registration || ''}</div>
+                                <div className="item-brand">🚗 {item.marque || item.brand || ''} {item.couleurVehicule || item.model || ''}</div>
                               </div>
-                              {item.photo && (
-                                <div className="item-photo">
-                                  <img src={`/Photos/${item.photo}`} alt={item.name} />
-                                </div>
-                              )}
                             </div>
                             <div className="item-actions">
                               <div className="drag-handle" title="Glisser pour réorganiser">
                                 <GripVertical size={20} />
                               </div>
+                              <button 
+                                className="maintenance-button" 
+                                onClick={(e) => { e.stopPropagation(); handleOpenMaintenance(item); }}
+                                title="Maintenance et contrôle technique"
+                              >
+                                <Gauge size={16} />
+                              </button>
                               <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                                 <Edit2 size={16} />
                               </button>
@@ -1267,7 +1246,97 @@ const ManagementPanel = ({
               <>
                 <h3>Liste ({getCurrentList().length})</h3>
                 <div className="items-list">
-                  {getCurrentList().map((item, index) => (
+                  {activeTab === 'locations' ? (
+                    // Grouper les lieux par type
+                    (() => {
+                      const allLocations = getCurrentList();
+                      const locationTypes = ['Salle de spectacle', 'Prestataire', 'Dépôt', 'Garage', 'Autre'];
+                      const groupedLocations = {};
+                      locationTypes.forEach(type => {
+                        groupedLocations[type] = allLocations.filter(loc => loc.type === type);
+                      });
+                      // Ajouter les lieux sans type ou avec type inconnu dans "Autre"
+                      const untyped = allLocations.filter(loc => !loc.type || !locationTypes.includes(loc.type));
+                      if (untyped.length > 0) {
+                        groupedLocations['Autre'] = [...(groupedLocations['Autre'] || []), ...untyped];
+                      }
+                      
+                      return locationTypes.map(type => {
+                        const typeLocations = groupedLocations[type] || [];
+                        if (typeLocations.length === 0) return null;
+                        
+                        return (
+                          <div key={type} className="locations-group">
+                            <h4 className="group-title">{type} ({typeLocations.length})</h4>
+                            {typeLocations.map((item, index) => (
+                              <div key={item.id} className="item-card">
+                                {editingItem?.id === item.id ? (
+                                  <div className="edit-form">
+                                    <input
+                                      type="text"
+                                      value={editingItem.name}
+                                      onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                                      onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                                      placeholder="Nom"
+                                    />
+                                    <div className="edit-actions">
+                                      <button className="save-button" onClick={handleSaveEdit}>
+                                        Enregistrer
+                                      </button>
+                                      <button className="cancel-edit-button" onClick={() => setEditingItem(null)}>
+                                        Annuler
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="item-content">
+                                      <div>
+                                        <div className="item-name">
+                                          {item.name}
+                                          {item.isCompanyLocation && (
+                                            <span style={{ 
+                                              marginLeft: '8px', 
+                                              padding: '2px 8px', 
+                                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                                              color: 'white', 
+                                              borderRadius: '4px', 
+                                              fontSize: '0.75rem',
+                                              fontWeight: '600'
+                                            }}>
+                                              Lieu principal
+                                            </span>
+                                          )}
+                                        </div>
+                                        {item.type && (
+                                          <div className="item-detail">🏢 {item.type}</div>
+                                        )}
+                                        {item.address && (
+                                          <div className="item-detail">📍 {item.address}</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="item-actions">
+                                      <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                                        <Edit2 size={16} />
+                                      </button>
+                                      {!item.isCompanyLocation && (
+                                        <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                                          <Trash2 size={16} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      });
+                    })()
+                  ) : (
+                    // Affichage normal pour les autres onglets
+                    getCurrentList().map((item, index) => (
                     <div key={item.id} className="item-card">
                       {editingItem?.id === item.id ? (
                         <div className="edit-form">
@@ -1294,6 +1363,9 @@ const ManagementPanel = ({
                               <div className="item-name">{item.name}</div>
                               {activeTab === 'locations' && (
                                 <>
+                                  {item.type && (
+                                    <div className="item-detail">🏢 {item.type}</div>
+                                  )}
                                   {item.address && (
                                     <div className="item-detail">📍 {item.address}</div>
                                   )}
@@ -1326,9 +1398,10 @@ const ManagementPanel = ({
                         </>
                       )}
                     </div>
-                  ))}
+                  ))
+                  )}
                   
-                  {getCurrentList().length === 0 && (
+                  {getCurrentList().length === 0 && activeTab !== 'locations' && (
                     <div className="empty-state">
                       <p>Aucun élément pour le moment</p>
                       <p className="empty-hint">Utilisez le formulaire ci-dessus pour en ajouter</p>
@@ -1337,6 +1410,7 @@ const ManagementPanel = ({
                 </div>
               </>
             )}
+            
           </div>
           )}
         </div>
@@ -1352,6 +1426,31 @@ const ManagementPanel = ({
             setLocationToEdit(null);
           }}
           companyAddress={companyAddress}
+        />
+      )}
+
+      {/* Dialog pour les clients */}
+      {showClientDialog && (
+        <ClientDialog
+          client={clientToEdit}
+          onSave={handleSaveClient}
+          onClose={() => {
+            setShowClientDialog(false);
+            setClientToEdit(null);
+          }}
+          companyAddress={companyAddress}
+        />
+      )}
+
+      {/* Modal de maintenance des véhicules */}
+      {showMaintenanceModal && vehicleToMaintain && (
+        <VehicleMaintenanceModal
+          vehicle={vehicleToMaintain}
+          onSave={handleSaveMaintenance}
+          onClose={() => {
+            setShowMaintenanceModal(false);
+            setVehicleToMaintain(null);
+          }}
         />
       )}
     </div>

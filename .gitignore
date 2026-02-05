@@ -7,6 +7,11 @@ dist/
 .vscode/
 .idea/
 
+# Base de données (données de production)
+server/*.db
+server/*.db-shm
+server/*.db-wal
+
 # Fichiers temporaires de développement
 check_localstorage.html
 test_*.js

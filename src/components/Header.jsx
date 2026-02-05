@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users } from 'lucide-react';
+import api from '../utils/api';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
@@ -52,6 +53,26 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
+
+  // Charger le nombre de demandes d'accès en attente (pour admins uniquement)
+  useEffect(() => {
+    const loadPendingRequests = async () => {
+      if (currentUser?.isAdmin) {
+        try {
+          const data = await api.getPendingAccessRequestsCount();
+          setPendingAccessRequests(data.count || 0);
+        } catch (error) {
+          console.error('Erreur chargement demandes:', error);
+        }
+      }
+    };
+    
+    loadPendingRequests();
+    // Recharger toutes les 30 secondes
+    const interval = setInterval(loadPendingRequests, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
   
   // Fonction pour détecter les conflits entre une intervention et les réservations
   const getMaintenanceConflicts = (maintenance) => {
@@ -152,7 +173,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     <div className="header">
       <div className="header-content">
         <div className="header-title-container">
-          <img src="/Logos/LogoMagSceneBLACK.gif" alt="Mag Scène" className="header-logo" />
+          <img src="/Logos/LogoMagSav.svg" alt="Mag Scène" className="header-logo" />
           <h1 className="header-title"><Truck className="title-icon" strokeWidth={2.5} size={32} /> Véhicules</h1>
         </div>
         
@@ -508,8 +529,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                       <button
                         onClick={() => {
                           setShowUserMenu(false);
-                          // Recharger la page pour afficher à nouveau le sélecteur d'utilisateur
-                          window.location.reload();
+                          onLogout();
                         }}
                         style={{
                           width: '100%',
@@ -588,9 +608,37 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <QrCode size={20} />
             </button>
 
-            <button className="management-button" onClick={onOpenManagement} aria-label="Ouvrir le panneau de gestion">
+            <button 
+              className="management-button" 
+              onClick={onOpenManagement} 
+              aria-label="Ouvrir le panneau de gestion"
+              style={{ position: 'relative' }}
+            >
               <Settings size={20} />
               Gestion
+              {currentUser?.isAdmin && pendingAccessRequests > 0 && (
+                <span 
+                  style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    background: '#ef4444',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '20px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  {pendingAccessRequests}
+                </span>
+              )}
             </button>
           </div>
         </div>

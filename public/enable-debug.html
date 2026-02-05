@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activer le mode debug</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 8px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .status {
+            margin-top: 1rem;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Mode Debug</h1>
+        <p>Activez le mode debug pour voir tous les logs dans la console du navigateur.</p>
+        
+        <button onclick="enableDebug()">✅ Activer le debug</button>
+        <button onclick="disableDebug()">❌ Désactiver le debug</button>
+        
+        <div class="status" id="status">
+            État actuel: <strong id="currentStatus">Chargement...</strong>
+        </div>
+        
+        <p style="margin-top: 1rem; font-size: 14px; color: #6b7280;">
+            Après avoir activé/désactivé, retournez sur la page principale et actualisez (Cmd+R ou F5).
+        </p>
+        
+        <button onclick="goBack()" style="background: #6b7280;">← Retour à l'application</button>
+    </div>
+
+    <script>
+        function updateStatus() {
+            const isDebug = localStorage.getItem('debug_mode') === 'true';
+            document.getElementById('currentStatus').textContent = isDebug ? 'Debug activé ✅' : 'Debug désactivé ❌';
+            document.getElementById('currentStatus').style.color = isDebug ? '#10b981' : '#ef4444';
+        }
+
+        function enableDebug() {
+            localStorage.setItem('debug_mode', 'true');
+            updateStatus();
+            alert('✅ Mode debug activé!\n\nRetournez sur la page principale et actualisez (Cmd+R ou F5) pour voir les logs.');
+        }
+
+        function disableDebug() {
+            localStorage.removeItem('debug_mode');
+            updateStatus();
+            alert('❌ Mode debug désactivé!\n\nLes logs ne s\'afficheront plus en production.');
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        // Afficher le statut actuel au chargement
+        updateStatus();
+    </script>
+</body>
+</html>

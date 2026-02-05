@@ -1,0 +1,304 @@
+import React, { useState, useEffect } from 'react';
+import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
+import './VehicleMaintenanceModal.css';
+
+const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
+  const [kilometrage, setKilometrage] = useState(vehicle?.kilometrage || 0);
+  
+  // Charger les contrôles existants ou initialiser un tableau vide
+  const initialControles = vehicle?.controles_techniques 
+    ? (typeof vehicle.controles_techniques === 'string' 
+        ? JSON.parse(vehicle.controles_techniques) 
+        : vehicle.controles_techniques)
+    : [];
+  
+  const [controles, setControles] = useState(initialControles);
+  const [newControle, setNewControle] = useState({
+    type: '',
+    date: '',
+    deadline: ''
+  });
+
+  // Tous les types de contrôles disponibles
+  const allControleTechniqueTypes = [
+    { value: 'VL', label: 'VL (Véhicule Léger)', firstDelay: 48, periodicDelay: 24, note: 'CV 24h/2mois', vehicleTypes: ['VL', 'VOITURE', 'CAMIONNETTE'] },
+    { value: 'PL', label: 'PL (Poids Lourd)', firstDelay: 12, periodicDelay: 12, note: 'Contrôle annuel', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'SEMI', 'SEMI-REMORQUE'] },
+    { value: 'SEMI', label: 'Semi-remorque', firstDelay: 12, periodicDelay: 12, note: 'Comme PL', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'] },
+    { value: 'SCENE', label: 'Scène mobile', firstDelay: 12, periodicDelay: 12, note: 'Véhicule spécial remorqué', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'] },
+    { value: 'POLLUTION', label: 'Pollution', firstDelay: 12, periodicDelay: 12, note: 'Contrôle des émissions', vehicleTypes: ['ALL_MOTORIZED'] },
+    { value: 'HAYON', label: 'Hayon', firstDelay: 0, periodicDelay: 6, note: 'VGP obligatoire', vehicleTypes: ['ALL'] }
+  ];
+
+  // Filtrer les types de contrôles selon le type de véhicule
+  const getAvailableControlTypes = () => {
+    if (!vehicle?.type) return allControleTechniqueTypes;
+    
+    const vehicleType = vehicle.type.toUpperCase();
+    
+    // Déterminer si c'est un véhicule motorisé
+    const isMotorized = !['SCENE', 'SCÈNE', 'REMORQUE'].some(t => vehicleType.includes(t));
+    
+    // Déterminer le type principal du véhicule
+    const isVL = ['VL', 'VOITURE', 'CAMIONNETTE'].some(t => vehicleType.includes(t));
+    const isPL = ['PL', 'CAMION', 'PORTEUR'].some(t => vehicleType.includes(t));
+    const isSemi = ['SEMI'].some(t => vehicleType.includes(t));
+    const isScene = ['SCENE', 'SCÈNE', 'REMORQUE'].some(t => vehicleType.includes(t));
+    
+    return allControleTechniqueTypes.filter(ct => {
+      // Hayon disponible pour TOUS les véhicules
+      if (ct.value === 'HAYON') {
+        return true;
+      }
+      
+      // Pollution disponible pour tous les véhicules motorisés
+      if (ct.value === 'POLLUTION') {
+        return isMotorized;
+      }
+      
+      // VL pour les véhicules légers
+      if (ct.value === 'VL') {
+        return isVL;
+      }
+      
+      // PL pour poids lourds et semi-remorques
+      if (ct.value === 'PL') {
+        return isPL || isSemi;
+      }
+      
+      // SEMI pour semi-remorques
+      if (ct.value === 'SEMI') {
+        return isSemi;
+      }
+      
+      // SCENE pour scènes mobiles et remorques
+      if (ct.value === 'SCENE') {
+        return isScene;
+      }
+      
+      return false;
+    });
+  };
+
+  const availableControlTypes = getAvailableControlTypes();
+
+  // Calculer automatiquement la deadline quand la date du contrôle change
+  useEffect(() => {
+    if (newControle.date && newControle.type) {
+      const typeConfig = allControleTechniqueTypes.find(t => t.value === newControle.type);
+      if (typeConfig) {
+        const date = new Date(newControle.date);
+        date.setMonth(date.getMonth() + typeConfig.periodicDelay);
+        setNewControle(prev => ({
+          ...prev,
+          deadline: date.toISOString().split('T')[0]
+        }));
+      }
+    }
+  }, [newControle.date, newControle.type]);
+
+  const handleAddControle = () => {
+    if (newControle.type && newControle.date && newControle.deadline) {
+      // Vérifier si ce type existe déjà
+      const exists = controles.some(c => c.type === newControle.type);
+      if (exists) {
+        alert('Un contrôle de ce type existe déjà. Supprimez-le d\'abord si vous voulez le remplacer.');
+        return;
+      }
+      
+      setControles([...controles, { ...newControle }]);
+      setNewControle({ type: '', date: '', deadline: '' });
+    }
+  };
+
+  const handleRemoveControle = (index) => {
+    setControles(controles.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    const updatedVehicle = {
+      ...vehicle,
+      kilometrage: parseInt(kilometrage) || 0,
+      controles_techniques: JSON.stringify(controles)
+    };
+    
+    onSave(updatedVehicle);
+  };
+
+  const selectedType = allControleTechniqueTypes.find(t => t.value === newControle.type);
+
+  // Vérifier si le contrôle technique est expiré ou proche
+  const getDeadlineStatus = (deadline) => {
+    if (!deadline) return null;
+    
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return { status: 'expired', message: `Expiré depuis ${Math.abs(diffDays)} jours`, color: '#ef4444' };
+    } else if (diffDays <= 30) {
+      return { status: 'warning', message: `Expire dans ${diffDays} jours`, color: '#f59e0b' };
+    } else {
+      return { status: 'ok', message: `Valide encore ${diffDays} jours`, color: '#10b981' };
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>🔧 Maintenance - {vehicle?.name}</h2>
+          <button className="close-button" onClick={onClose}>
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="maintenance-form">
+          {/* Kilométrage */}
+          <div className="form-section">
+            <h3><Gauge size={18} /> Kilométrage</h3>
+            <div className="form-group">
+              <label htmlFor="kilometrage">Kilométrage actuel (km)</label>
+              <input
+                id="kilometrage"
+                type="number"
+                value={kilometrage}
+                onChange={(e) => setKilometrage(e.target.value)}
+                min="0"
+                step="1"
+              />
+            </div>
+          </div>
+
+          {/* Contrôles techniques existants */}
+          {controles.length > 0 && (
+            <div className="form-section">
+              <h3><Calendar size={18} /> Contrôles techniques enregistrés</h3>
+              <div className="controles-list">
+                {controles.map((controle, index) => {
+                  const typeConfig = allControleTechniqueTypes.find(t => t.value === controle.type);
+                  const status = getDeadlineStatus(controle.deadline);
+                  return (
+                    <div key={index} className="controle-item">
+                      <div className="controle-header">
+                        <strong>{typeConfig?.label || controle.type}</strong>
+                        <button 
+                          type="button" 
+                          className="btn-remove"
+                          onClick={() => handleRemoveControle(index)}
+                          title="Supprimer ce contrôle"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <div className="controle-details">
+                        <div>
+                          <span className="label">Dernier contrôle :</span>
+                          <span>{new Date(controle.date).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                        <div>
+                          <span className="label">Prochaine échéance :</span>
+                          <span>{new Date(controle.deadline).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                        {status && (
+                          <div className="controle-status" style={{ color: status.color }}>
+                            {status.status === 'expired' && '⚠️ '}
+                            {status.status === 'warning' && '⏰ '}
+                            {status.status === 'ok' && '✅ '}
+                            {status.message}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Ajouter un nouveau contrôle technique */}
+          <div className="form-section">
+            <h3><Plus size={18} /> Ajouter un contrôle technique</h3>
+            
+            {availableControlTypes.length === 0 ? (
+              <p className="info-message">
+                ℹ️ Définissez d'abord le type du véhicule pour voir les contrôles disponibles
+              </p>
+            ) : (
+              <>
+                <div className="form-group">
+                  <label htmlFor="ct-type">Type d'équipement</label>
+                  <select
+                    id="ct-type"
+                    value={newControle.type}
+                    onChange={(e) => setNewControle({ ...newControle, type: e.target.value })}
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    {availableControlTypes.map(type => (
+                      <option 
+                        key={type.value} 
+                        value={type.value}
+                        disabled={controles.some(c => c.type === type.value)}
+                      >
+                        {type.label} {controles.some(c => c.type === type.value) ? '(déjà ajouté)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedType && (
+                    <p className="form-note">
+                      📋 Périodicité : {selectedType.periodicDelay} mois - {selectedType.note}
+                    </p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="ct-date">Date du dernier contrôle</label>
+                  <input
+                    id="ct-date"
+                    type="date"
+                    value={newControle.date}
+                    onChange={(e) => setNewControle({ ...newControle, date: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="ct-deadline">Prochaine échéance</label>
+                  <input
+                    id="ct-deadline"
+                    type="date"
+                    value={newControle.deadline}
+                    onChange={(e) => setNewControle({ ...newControle, deadline: e.target.value })}
+                  />
+                </div>
+
+                <button 
+                  type="button" 
+                  className="btn-add-controle"
+                  onClick={handleAddControle}
+                  disabled={!newControle.type || !newControle.date || !newControle.deadline}
+                >
+                  <Plus size={18} />
+                  Ajouter ce contrôle
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="modal-actions">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Annuler
+            </button>
+            <button type="submit" className="btn-primary">
+              <Save size={18} />
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default VehicleMaintenanceModal;

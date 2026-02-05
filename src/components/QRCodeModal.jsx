@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { X, QrCode, Printer, Link as LinkIcon } from 'lucide-react';
+import { X, QrCode, Printer, Link as LinkIcon, Download } from 'lucide-react';
 import './QRCodeModal.css';
 
 function QRCodeModal({ onClose }) {
@@ -81,15 +81,17 @@ function QRCodeModal({ onClose }) {
               margin-bottom: 6px;
             }
             .qr-logo {
-              width: 50px;
+              width: 80px;
               height: 50px;
               margin: 0 auto 6px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              border-radius: 10px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 24px;
+            }
+            .qr-logo img {
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
             }
             .qr-header h1 {
               font-size: 16px;
@@ -160,7 +162,9 @@ function QRCodeModal({ onClose }) {
             ${[1, 2, 3, 4].map(() => `
               <div class="qr-card">
                 <div class="qr-header">
-                  <div class="qr-logo">🚗</div>
+                  <div class="qr-logo">
+                    <img src="/Logos/LogoMagSceneBLACK.gif" alt="MagScene Logo" />
+                  </div>
                   <h1>MagScene</h1>
                   <h2>Interface Mobile</h2>
                 </div>
@@ -196,6 +200,36 @@ function QRCodeModal({ onClose }) {
       </html>
     `);
     printWindow.document.close();
+  };
+
+  const handleDownloadJPG = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Créer un nouveau canvas pour ajouter un fond blanc (JPG ne supporte pas la transparence)
+    const exportCanvas = document.createElement('canvas');
+    const ctx = exportCanvas.getContext('2d');
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+
+    // Remplir avec un fond blanc
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    // Dessiner le QR code par-dessus
+    ctx.drawImage(canvas, 0, 0);
+
+    // Convertir en JPG et télécharger
+    exportCanvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'qrcode-magscene-mobile.jpg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 'image/jpeg', 0.95);
   };
 
   const handleOverlayClick = (e) => {
@@ -255,6 +289,10 @@ function QRCodeModal({ onClose }) {
           <button className="print-button" onClick={handlePrint}>
             <Printer size={20} />
             Imprimer
+          </button>
+          <button className="print-button" onClick={handleDownloadJPG}>
+            <Download size={20} />
+            Télécharger JPG
           </button>
         </div>
       </div>

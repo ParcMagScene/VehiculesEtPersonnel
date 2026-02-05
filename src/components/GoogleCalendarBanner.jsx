@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { format, addDays, parseISO, isToday, isTomorrow, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './GoogleCalendarBanner.css';
-import AffaireImportModal from './AffaireImportModal';
+import EventDetailsModal from './EventDetailsModal';
 import api from '../utils/api';
+import logger, { oauthLogger } from '../utils/logger';
+import { capitalizeText } from '../utils/dateUtils';
 
-function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation }) {
+// Code splitting - Lazy loading
+const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
+
+function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -16,6 +21,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   const [bannerHeight, setBannerHeight] = useState(200);
   const [isResizing, setIsResizing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [clickedCell, setClickedCell] = useState(null);
   const [googleClientId, setGoogleClientId] = useState(null);
@@ -24,21 +30,23 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   // Cache pour éviter de recharger les mêmes données
   const eventsCache = useRef({});
   const fetchTimeoutRef = useRef(null);
+  // Ref pour stocker le resolver des Promises de renouvellement de token
+  const renewalResolverRef = useRef(null);
 
   // Charger la configuration Google depuis le backend
   useEffect(() => {
     const loadGoogleConfig = async () => {
       try {
-        console.log('🔧 Chargement de la config Google...');
+        oauthLogger.log('🔧 Chargement de la config Google...');
         const [clientIdData, calendarIdData] = await Promise.all([
           api.getGoogleClientId(),
           api.getGoogleCalendarId()
         ]);
-        console.log('📦 Données reçues:', { clientIdData, calendarIdData });
+        oauthLogger.log('📦 Données reçues:', { clientIdData, calendarIdData });
         // Extraire juste la valeur, pas l'objet entier
         setGoogleClientId(clientIdData?.value || null);
         setGoogleCalendarId(calendarIdData?.value || null);
-        console.log('✅ Config Google chargée - clientId:', clientIdData?.value, 'calendarId:', calendarIdData?.value);
+        oauthLogger.log('✅ Config Google chargée - clientId:', clientIdData?.value, 'calendarId:', calendarIdData?.value);
       } catch (error) {
         console.error('Erreur lors du chargement de la configuration Google:', error);
       }
@@ -52,6 +60,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       onEventsChange(events);
     }
   }, [events, onEventsChange]);
+
+  // Exposer la fonction pour ouvrir un événement depuis l'extérieur
+  useEffect(() => {
+    if (onRequestViewEvent) {
+      onRequestViewEvent(handleCellClick);
+    }
+  }, [onRequestViewEvent]);
 
   // Synchroniser les largeurs avec le calendrier principal
   useEffect(() => {
@@ -67,7 +82,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         const columnWidths = gridColumns.split(' ').map(width => width);
         bannerGrid.style.gridTemplateColumns = columnWidths.join(' ');
         
-        console.log('📏 Synchronisation colonnes banner:', view, 'Colonnes:', columnWidths.length);
+        oauthLogger.log('📏 Synchronisation colonnes banner:', view, 'Colonnes:', columnWidths.length);
       }
     };
 
@@ -187,10 +202,31 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     setDisplayMode(prev => prev === 'closed' ? 'compact' : 'closed');
   };
 
-  // Ouvrir le modal pour créer/modifier une affaire
+  // Ouvrir le modal de détails d'événement
   const handleCellClick = (event = null) => {
     setSelectedEvent(event);
+    setEventDetailsOpen(true);
+  };
+
+  const handleCloseEventDetails = () => {
+    setEventDetailsOpen(false);
+    setSelectedEvent(null);
+  };
+
+  // Ouvrir l'ancien modal d'import d'affaire depuis le modal de détails
+  const handleOpenAffaireImport = (event) => {
+    setEventDetailsOpen(false);
+    setSelectedEvent(event);
     setModalOpen(true);
+  };
+
+  // Ouvrir le modal de création de réservation classique
+  const handleCreateReservationFromEvent = (event) => {
+    // Fermer le modal de détails et notifier le parent pour ouvrir ReservationModal
+    setEventDetailsOpen(false);
+    if (onEventClick) {
+      onEventClick(event);
+    }
   };
 
   const handleCloseModal = () => {
@@ -199,15 +235,57 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     setClickedCell(null);
   };
 
+  // Fonction helper pour les appels API Google avec gestion du retry en cas d'erreur 401
+  const googleApiCall = async (url, options = {}, retryCount = 0) => {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401 && retryCount === 0) {
+        // Token invalide, essayer de renouveler et réessayer une fois
+        oauthLogger.log('⚠️ API call 401, tentative de renouvellement...');
+        try {
+          const newToken = await renewAccessToken();
+          if (newToken) {
+            oauthLogger.log('✅ Token renouvelé, nouvelle tentative API...');
+            // Réessayer avec le nouveau token
+            const retryOptions = {
+              ...options,
+              headers: {
+                ...options.headers,
+                'Authorization': `Bearer ${newToken}`,
+              },
+            };
+            return fetch(url, retryOptions);
+          }
+        } catch (err) {
+          oauthLogger.log('❌ Échec du renouvellement:', err.message);
+          setIsSignedIn(false);
+          setAccessToken(null);
+          localStorage.removeItem('google_access_token');
+          localStorage.removeItem('google_token_expiry');
+          throw new Error('Session expirée. Veuillez vous reconnecter.');
+        }
+      }
+      return response; // Retourner la réponse même si erreur pour que l'appelant puisse la gérer
+    }
+
+    return response;
+  };
+
   const handleEventCreated = async (newEventData) => {
     // Créer l'événement dans Google Calendar
     try {
-      const response = await fetch(
+      const response = await googleApiCall(
         `https://www.googleapis.com/calendar/v3/calendars/${googleCalendarId || 'primary'}/events`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(newEventData),
@@ -226,7 +304,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       return createdEvent;
     } catch (error) {
       console.error('Erreur création événement:', error);
-      alert('Erreur lors de la création de l\'événement');
+      alert('Erreur lors de la création de l\'événement: ' + error.message);
       throw error;
     }
   };
@@ -237,12 +315,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       const eventToUpdate = events.find(e => e.id === eventId);
       if (!eventToUpdate) return;
 
-      const response = await fetch(
+      const response = await googleApiCall(
         `https://www.googleapis.com/calendar/v3/calendars/${googleCalendarId || 'primary'}/events/${eventId}`,
         {
           method: 'PATCH',
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(updates),
@@ -257,7 +334,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       await fetchEvents(accessToken);
     } catch (error) {
       console.error('Erreur mise à jour événement:', error);
-      alert('Erreur lors de la mise à jour de l\'événement');
+      alert('Erreur lors de la mise à jour de l\'événement: ' + error.message);
       throw error;
     }
   };
@@ -296,20 +373,24 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       const now = Date.now();
       const timeUntilExpiry = expiryTime - now;
       
-      console.log('🔍 Vérification du token sauvegardé, expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
+      oauthLogger.log('🔍 Vérification du token sauvegardé, expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
       
       // Si le token est encore valide (avec une marge de 5 minutes)
       if (timeUntilExpiry > 5 * 60 * 1000) {
-        console.log('✅ Token valide, restauration de la session');
+        oauthLogger.log('✅ Token valide, restauration de la session');
         setAccessToken(savedToken);
         setIsSignedIn(true);
         testToken(savedToken);
+        // Charger immédiatement les événements
+        if (googleCalendarId) {
+          fetchEvents(savedToken);
+        }
       } else if (autoSignin === 'true') {
         // Token expiré mais auto-signin activé, on demande un nouveau token silencieusement
-        console.log('🔄 Token expiré, renouvellement automatique silencieux...');
+        oauthLogger.log('🔄 Token expiré, renouvellement automatique silencieux...');
         // Le token sera renouvelé par le useEffect suivant quand tokenClient sera prêt
       } else {
-        console.log('⏰ Token expiré, nettoyage');
+        oauthLogger.log('⏰ Token expiré, nettoyage');
         localStorage.removeItem('google_access_token');
         localStorage.removeItem('google_token_expiry');
         setIsSignedIn(false);
@@ -317,14 +398,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       }
     } else if (autoSignin === 'true' && tokenClient) {
       // Pas de token sauvegardé mais auto-signin activé
-      console.log('🔐 Auto-signin activé, demande silencieuse d\'un nouveau token...');
-      setTimeout(() => {
-        if (tokenClient) {
-          tokenClient.requestAccessToken({ prompt: '' });
-        }
-      }, 1000);
+      // Ne pas lancer automatiquement car ça peut être bloqué par le navigateur
+      // L'utilisateur devra cliquer sur "Se connecter"
+      oauthLogger.log('🔐 Auto-signin activé mais pas de token - l\'utilisateur doit se reconnecter');
     }
-  }, [tokenClient]);
+  }, [tokenClient, googleCalendarId]);
 
   // Configurer le renouvellement automatique du token avant expiration
   useEffect(() => {
@@ -337,15 +415,23 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     const now = Date.now();
     const timeUntilExpiry = expiryTime - now;
     
-    console.log('⏰ Token expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
+    oauthLogger.log('⏰ Token expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
     
     // Renouveler 15 minutes avant l'expiration pour avoir une grande marge
     const renewalTime = Math.max(0, timeUntilExpiry - 15 * 60 * 1000);
     
-    const timer = setTimeout(() => {
-      console.log('⏰ Renouvellement programmé déclenché (silencieux)');
-      // Renouvellement automatique silencieux - ne demande pas de consentement
-      tokenClient.requestAccessToken({ prompt: '' });
+    const timer = setTimeout(async () => {
+      oauthLogger.log('⏰ Renouvellement programmé déclenché (silencieux)');
+      try {
+        await renewAccessToken();
+        oauthLogger.log('✅ Renouvellement programmé réussi');
+      } catch (err) {
+        oauthLogger.log('❌ Échec du renouvellement programmé:', err.message);
+        // En cas d'échec, on peut laisser l'utilisateur se reconnecter manuellement
+        setError('Session expirée. Veuillez vous reconnecter.');
+        setIsSignedIn(false);
+        setAccessToken(null);
+      }
     }, renewalTime);
 
     return () => clearTimeout(timer);
@@ -353,20 +439,33 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
 
   const renewAccessToken = () => {
     if (tokenClient) {
-      console.log('🔄 Renouvellement du token...');
+      oauthLogger.log('🔄 Renouvellement du token...');
       const lastRefresh = localStorage.getItem('google_last_refresh');
       const now = Date.now();
       
       // Éviter les renouvellements trop fréquents (minimum 30 secondes entre chaque)
       if (lastRefresh && (now - parseInt(lastRefresh, 10)) < 30000) {
-        console.log('⏳ Renouvellement trop récent, on attend...');
-        return;
+        oauthLogger.log('⏳ Renouvellement trop récent, on attend...');
+        return Promise.reject(new Error('Renouvellement trop récent'));
       }
       
-      // Demander un nouveau token de manière silencieuse (sans popup si possible)
-      tokenClient.requestAccessToken({ prompt: '' });
+      return new Promise((resolve, reject) => {
+        try {
+          // Stocker le resolver pour que le callback principal puisse le résoudre
+          renewalResolverRef.current = { resolve, reject };
+          localStorage.setItem('google_last_refresh', now.toString());
+          
+          // Demander un nouveau token de manière silencieuse (le callback principal gèrera la réponse)
+          tokenClient.requestAccessToken({ prompt: '' });
+        } catch (err) {
+          oauthLogger.log('❌ Exception renouvellement:', err);
+          renewalResolverRef.current = null;
+          reject(err);
+        }
+      });
     } else {
-      console.warn('⚠️ Token client non disponible pour le renouvellement');
+      oauthLogger.warn('⚠️ Token client non disponible pour le renouvellement');
+      return Promise.reject(new Error('Token client non disponible'));
     }
   };
 
@@ -380,14 +479,33 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       });
 
       if (response.ok) {
-        // Token valide - les événements seront chargés par le useEffect
-      } else {
+        oauthLogger.log('✅ Token valide, événements prêts à être chargés');
+        // Token valide - les événements sont chargés automatiquement
+        return true;
+      } else if (response.status === 401) {
+        oauthLogger.log('⚠️ Token invalide (401), tentative de renouvellement...');
         // Token invalide, essayer de renouveler
-        renewAccessToken();
+        localStorage.removeItem('google_access_token');
+        localStorage.removeItem('google_token_expiry');
+        try {
+          const newToken = await renewAccessToken();
+          if (newToken) {
+            oauthLogger.log('✅ Token renouvelé avec succès');
+            return true;
+          }
+        } catch (err) {
+          oauthLogger.log('❌ Échec du renouvellement:', err.message);
+          setIsSignedIn(false);
+          setAccessToken(null);
+        }
+        return false;
+      } else {
+        oauthLogger.log('⚠️ Token invalide (status ' + response.status + ')');
+        return false;
       }
     } catch (err) {
-      // Erreur réseau ou autre, essayer de renouveler
-      renewAccessToken();
+      oauthLogger.log('❌ Erreur test token:', err.message);
+      return false;
     }
   };
 
@@ -420,23 +538,30 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         callback: (response) => {
           if (response.error) {
             console.error('❌ Erreur OAuth:', response.error);
+            
+            // Si une Promise de renouvellement est en attente, la rejeter
+            if (renewalResolverRef.current) {
+              renewalResolverRef.current.reject(new Error(response.error));
+              renewalResolverRef.current = null;
+            }
+            
             // Si c'est une erreur de consentement et que ce n'est pas un renouvellement silencieux
             if (response.error === 'access_denied') {
-              console.log('⚠️ Accès refusé par l\'utilisateur');
+              oauthLogger.log('⚠️ Accès refusé par l\'utilisateur');
               localStorage.removeItem('google_auto_signin');
               setError('Accès refusé. Veuillez autoriser l\'accès à Google Calendar.');
             } else if (response.error === 'popup_closed_by_user') {
-              console.log('⚠️ Popup fermée par l\'utilisateur');
+              oauthLogger.log('⚠️ Popup fermée par l\'utilisateur');
               setError('Connexion annulée');
             } else if (response.error === 'immediate_failed') {
               // Le renouvellement silencieux a échoué, on demande une nouvelle autorisation
-              console.log('🔄 Renouvellement silencieux échoué, nouvelle autorisation nécessaire');
+              oauthLogger.log('🔄 Renouvellement silencieux échoué, nouvelle autorisation nécessaire');
               localStorage.removeItem('google_auto_signin');
             }
             return;
           }
           
-          console.log('✅ Token reçu, expiration dans:', response.expires_in, 'secondes (≈', Math.round(response.expires_in / 60), 'minutes)');
+          oauthLogger.log('✅ Token reçu, expiration dans:', response.expires_in, 'secondes (≈', Math.round(response.expires_in / 60), 'minutes)');
           
           // Sauvegarder le token et sa date d'expiration dans localStorage
           const expiryTime = Date.now() + (response.expires_in || 3600) * 1000;
@@ -449,6 +574,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
           setIsSignedIn(true);
           setError(null);
           fetchEvents(response.access_token);
+          
+          // Si une Promise de renouvellement est en attente, la résoudre
+          if (renewalResolverRef.current) {
+            oauthLogger.log('✅ Résolution de la Promise de renouvellement');
+            renewalResolverRef.current.resolve(response.access_token);
+            renewalResolverRef.current = null;
+          }
         },
       });
 
@@ -466,13 +598,15 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         
         // Si le token est encore valide, pas besoin de redemander
         if (timeUntilExpiry > 5 * 60 * 1000) {
-          console.log('✅ Token existant encore valide, pas de renouvellement nécessaire');
+          oauthLogger.log('✅ Token existant encore valide, pas de renouvellement nécessaire');
         } else {
           // Token expiré ou proche de l'expiration, renouvellement silencieux
-          console.log('🔄 Token proche de l\'expiration, renouvellement silencieux...');
-          setTimeout(() => {
+          oauthLogger.log('🔄 Token proche de l\'expiration, renouvellement silencieux...');
+          try {
             client.requestAccessToken({ prompt: '' });
-          }, 500);
+          } catch (err) {
+            oauthLogger.log('⚠️ Renouvellement silencieux échoué (popup bloquée?), l\'utilisateur devra se reconnecter');
+          }
         }
       }
     } catch (err) {
@@ -482,7 +616,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
 
   // Refetch events when view or currentDate changes
   useEffect(() => {
-    if (!isSignedIn || !accessToken || loading) return;
+    if (!isSignedIn || !accessToken) return;
     
     // Debouncing - attendre 300ms avant de charger
     if (fetchTimeoutRef.current) {
@@ -495,10 +629,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       
       // Vérifier si on a déjà ces données en cache
       if (eventsCache.current[cacheKey]) {
+        oauthLogger.log('📦 Utilisation du cache pour:', cacheKey);
         setEvents(eventsCache.current[cacheKey]);
         return;
       }
       
+      oauthLogger.log('🔄 Chargement événements pour:', cacheKey);
       fetchEvents(accessToken);
     }, 300);
     
@@ -512,8 +648,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   const handleSignIn = () => {
     if (tokenClient) {
       setError(null);
-      // prompt: '' permet une reconnexion silencieuse si l'utilisateur a déjà autorisé
-      tokenClient.requestAccessToken({ prompt: '' });
+      const hasAuthorized = localStorage.getItem('google_auto_signin');
+      // Si l'utilisateur a déjà autorisé, tentative silencieuse, sinon demande explicite
+      const promptType = hasAuthorized === 'true' ? '' : 'consent';
+      oauthLogger.log('🔐 Connexion Google - prompt:', promptType || 'silencieux');
+      tokenClient.requestAccessToken({ prompt: promptType });
     }
   };
 
@@ -530,7 +669,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
     setEvents([]);
   };
 
-  const fetchEvents = async (token) => {
+  const fetchEvents = async (token, retryCount = 0) => {
     setLoading(true);
     setError(null);
 
@@ -561,12 +700,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         `maxResults=2500&` +
         `orderBy=startTime`;
 
-      console.log('🔍 Récupération événements Google Calendar');
-      console.log('   Vue:', view);
-      console.log('   Plage:', timeMin.toISOString(), '→', timeMax.toISOString());
-      console.log('   googleCalendarId state:', googleCalendarId);
-      console.log('   Calendar ID utilisé:', calendarId);
-      console.log('   URL:', url);
+      oauthLogger.log('🔍 Récupération événements Google Calendar (tentative', retryCount + 1, ')');
+      oauthLogger.log('   Vue:', view);
+      oauthLogger.log('   Plage:', timeMin.toISOString(), '→', timeMax.toISOString());
+      oauthLogger.log('   googleCalendarId state:', googleCalendarId);
+      oauthLogger.log('   Calendar ID utilisé:', calendarId);
+      oauthLogger.log('   URL:', url);
 
       const response = await fetch(url, {
         headers: {
@@ -575,22 +714,68 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       });
 
       if (!response.ok) {
+        if (response.status === 401 && retryCount === 0) {
+          // Token invalide, essayer de renouveler et réessayer une fois
+          oauthLogger.log('⚠️ Token invalide (401), tentative de renouvellement...');
+          try {
+            const newToken = await renewAccessToken();
+            if (newToken) {
+              oauthLogger.log('✅ Token renouvelé, nouvelle tentative de récupération...');
+              // Réessayer avec le nouveau token
+              return fetchEvents(newToken, retryCount + 1);
+            }
+          } catch (err) {
+            oauthLogger.log('❌ Échec du renouvellement:', err.message);
+            setIsSignedIn(false);
+            setAccessToken(null);
+            localStorage.removeItem('google_access_token');
+            localStorage.removeItem('google_token_expiry');
+            throw new Error('Session expirée. Veuillez vous reconnecter.');
+          }
+        }
         const errorText = await response.text();
         console.error('❌ Erreur API:', response.status, errorText);
         throw new Error(`Erreur ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ Événements reçus:', data.items?.length || 0);
+      oauthLogger.log('✅ Événements reçus:', data.items?.length || 0);
+      oauthLogger.log('👤 CurrentUser:', currentUser?.email || 'non défini');
+      
       if (data.items && data.items.length > 0) {
-        console.log('   Premiers événements:', data.items.slice(0, 3).map(e => ({
+        oauthLogger.log('   Premiers événements:', data.items.slice(0, 3).map(e => ({
           summary: e.summary,
           start: e.start,
-          end: e.end
+          end: e.end,
+          creator: e.creator?.email,
+          organizer: e.organizer?.email
         })));
       }
       
-      const enrichedEvents = (data.items || []).map(event => analyzeEventTitle(event));
+      // Essayer de filtrer les événements pour l'utilisateur actuel
+      let filteredItems = data.items || [];
+      if (currentUser && currentUser.email) {
+        const userFilteredItems = filteredItems.filter(event => {
+          const creatorEmail = event.creator?.email || event.organizer?.email;
+          const isCreator = creatorEmail === currentUser.email;
+          if (isCreator) {
+            oauthLogger.log('✅ Match:', event.summary, '| Créateur:', creatorEmail);
+          }
+          return isCreator;
+        });
+        
+        // Si le filtrage donne des résultats, les utiliser, sinon afficher tous les événements
+        if (userFilteredItems.length > 0) {
+          filteredItems = userFilteredItems;
+          oauthLogger.log('🎯 Événements filtrés pour', currentUser.email, ':', filteredItems.length, '/', data.items?.length);
+        } else {
+          oauthLogger.log('⚠️ Aucun événement trouvé pour', currentUser.email, '- affichage de tous les événements');
+        }
+      } else {
+        oauthLogger.log('⚠️ CurrentUser non défini - affichage de tous les événements');
+      }
+      
+      const enrichedEvents = filteredItems.map(event => analyzeEventTitle(event));
       setEvents(enrichedEvents);
       
       // Mettre en cache les événements
@@ -607,6 +792,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   // Analyse le titre de l'événement pour extraire client, lieu et affaire
   const analyzeEventTitle = (event) => {
     const title = event.summary || '';
+    const eventLocation = event.location || '';
     const enrichedEvent = { ...event };
 
     // Détecter le numéro d'affaire (formats: "af 32744", "AF 32744", "af32744", "AF32744")
@@ -625,13 +811,33 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       }
     }
 
-    // Détecter un lieu existant (recherche insensible à la casse)
+    // Détecter un lieu existant (recherche insensible à la casse dans le titre ET dans le champ location de l'événement)
     if (locations && locations.length > 0) {
-      const foundLocation = locations.find(location => 
-        title.toLowerCase().includes(location.name.toLowerCase())
-      );
+      const foundLocation = locations.find(location => {
+        const titleMatch = title.toLowerCase().includes(location.name.toLowerCase());
+        const locationFieldMatch = eventLocation.toLowerCase().includes(location.name.toLowerCase());
+        
+        // Chercher aussi par adresse si elle existe
+        let addressMatch = false;
+        if (location.address && eventLocation) {
+          // Recherche partielle dans l'adresse (POI)
+          const locationParts = eventLocation.toLowerCase().split(',').map(p => p.trim());
+          const addressParts = location.address.toLowerCase().split(',').map(p => p.trim());
+          
+          // Vérifier si au moins une partie de l'adresse correspond
+          addressMatch = addressParts.some(addrPart => 
+            locationParts.some(locPart => 
+              locPart.includes(addrPart) || addrPart.includes(locPart)
+            )
+          );
+        }
+        
+        return titleMatch || locationFieldMatch || addressMatch;
+      });
+      
       if (foundLocation) {
         enrichedEvent.detectedLocation = foundLocation.name;
+        oauthLogger.log('📍 Lieu détecté:', foundLocation.name, 'pour événement:', title, '| Location field:', eventLocation);
       }
     }
 
@@ -655,7 +861,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         start: startOfYear(currentDate),
         end: endOfYear(currentDate)
       });
-      console.log('📅 Mois affichés en vue année:', months.length, 'Premier:', format(months[0], 'yyyy-MM-dd'), 'Dernier:', format(months[11], 'yyyy-MM-dd'));
+      oauthLogger.log('📅 Mois affichés en vue année:', months.length, 'Premier:', format(months[0], 'yyyy-MM-dd'), 'Dernier:', format(months[11], 'yyyy-MM-dd'));
       return months;
     }
     return [];
@@ -674,7 +880,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         })
       : events;
 
-    console.log('🎯 getEventBlocks appelé - Vue:', view, 'Événements disponibles:', events.length, view === 'year' ? `Filtrés pour ${currentDate.getFullYear()}: ${filteredEvents.length}` : '', 'Jours:', days.length);
+    oauthLogger.log('🎯 getEventBlocks appelé - Vue:', view, 'Événements disponibles:', events.length, view === 'year' ? `Filtrés pour ${currentDate.getFullYear()}: ${filteredEvents.length}` : '', 'Jours:', days.length);
 
     // Mapping des colorId Google Calendar vers des couleurs hexadécimales
     const googleColorMap = {
@@ -727,7 +933,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
         });
 
         if (startMonthIndex !== -1) {
-          console.log('📅 Événement année:', event.summary, 'Début:', eventStart.toISOString().slice(0,10), 'Fin:', eventEnd.toISOString().slice(0,10), 'StartIndex:', startMonthIndex, 'Span:', span);
+          oauthLogger.log('📅 Événement année:', event.summary, 'Début:', eventStart.toISOString().slice(0,10), 'Fin:', eventEnd.toISOString().slice(0,10), 'StartIndex:', startMonthIndex, 'Span:', span);
           
           // Nettoyer le titre en supprimant le numéro d'affaire
           let cleanTitle = event.summary || '(Sans titre)';
@@ -794,7 +1000,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       return b.span - a.span;
     });
 
-    console.log('📊 Blocs événements générés:', eventBlocks.length, 'pour vue:', view);
+    oauthLogger.log('📊 Blocs événements générés:', eventBlocks.length, 'pour vue:', view);
     
     return eventBlocks;
   };
@@ -802,7 +1008,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
   const days = getDaysToShow();
   const eventBlocks = getEventBlocks();
   
-  console.log('🔄 Rendu GoogleCalendarBanner - Vue:', view, 'Events state:', events.length, 'EventBlocks:', eventBlocks.length);
+  oauthLogger.log('🔄 Rendu GoogleCalendarBanner - Vue:', view, 'Events state:', events.length, 'EventBlocks:', eventBlocks.length);
 
   // Toujours afficher le banner, même sans clientId configuré (pour permettre la configuration)
   if (!googleClientId) {
@@ -900,14 +1106,20 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
           <div className={`banner-grid ${view}-view`}>
             {/* Lignes de séparation alignées sur les colonnes */}
             <div className="banner-grid-lines">
-              {view === 'week' && days.flatMap((day, dayIndex) => [
-                <div key={`${dayIndex}-am`} className="grid-line" />,
-                <div key={`${dayIndex}-pm`} className="grid-line" />
-              ])}
-              {view === 'month' && days.flatMap((day, dayIndex) => [
-                <div key={`${dayIndex}-am`} className="grid-line" />,
-                <div key={`${dayIndex}-pm`} className="grid-line" />
-              ])}
+              {view === 'week' && days.flatMap((day, dayIndex) => {
+                const dayIsToday = isToday(day);
+                return [
+                  <div key={`${dayIndex}-am`} className={`grid-line ${dayIsToday ? 'today today-left' : ''}`} />,
+                  <div key={`${dayIndex}-pm`} className={`grid-line ${dayIsToday ? 'today today-right' : ''}`} />
+                ];
+              })}
+              {view === 'month' && days.flatMap((day, dayIndex) => {
+                const dayIsToday = isToday(day);
+                return [
+                  <div key={`${dayIndex}-am`} className={`grid-line ${dayIsToday ? 'today today-left' : ''}`} />,
+                  <div key={`${dayIndex}-pm`} className={`grid-line ${dayIsToday ? 'today today-right' : ''}`} />
+                ];
+              })}
               {view === 'year' && days.map((month, index) => (
                 <div key={index} className="grid-line" />
               ))}
@@ -955,7 +1167,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
                       </div>
                     )}
                     <div className="event-content">
-                      <span className="event-summary">{eventBlock.summary}</span>
+                      <span className="event-summary">{capitalizeText(eventBlock.summary)}</span>
                       {eventBlock.affaire && <span className="event-affaire">{eventBlock.affaire}</span>}
                       {eventBlock.time && <span className="event-time">{eventBlock.time}</span>}
                     </div>
@@ -997,15 +1209,31 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, onScroll, onE
       </div>
     </div>
     
-    {/* Modal d'import d'affaires */}
-    <AffaireImportModal
-      isOpen={modalOpen}
-      onClose={handleCloseModal}
+    {/* Modal de détails d'événement */}
+    <EventDetailsModal
+      isOpen={eventDetailsOpen}
+      onClose={handleCloseEventDetails}
       event={selectedEvent}
-      onEventCreated={handleEventCreated}
-      onEventUpdated={handleEventUpdated}
+      reservations={reservations}
       onRequestEditReservation={onRequestEditReservation}
+      onRequestCreateReservation={handleCreateReservationFromEvent}
+      onEventCreated={handleOpenAffaireImport}
+      onEventUpdated={handleEventUpdated}
     />
+    
+    {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}
+    {modalOpen && (
+      <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div></div>}>
+        <AffaireImportModal
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+          event={selectedEvent}
+          onEventCreated={handleEventCreated}
+          onEventUpdated={handleEventUpdated}
+          onRequestEditReservation={onRequestEditReservation}
+        />
+      </Suspense>
+    )}
     </>
   );
 }

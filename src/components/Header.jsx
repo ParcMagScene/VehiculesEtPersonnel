@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar } from 'lucide-react';
 import api from '../utils/api';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -81,10 +81,10 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     return () => clearInterval(interval);
   }, [currentUser, maintenances]);
 
-  // Charger les demandes de réservation en attente quand le popup s'ouvre
+  // Charger les demandes de réservation en attente quand un popup s'ouvre
   useEffect(() => {
     const loadPendingReservations = async () => {
-      if (showRequestsPopup && currentUser?.isAdmin) {
+      if ((showRequestsPopup || showNotificationsPopup) && currentUser?.isAdmin) {
         try {
           const data = await api.getPendingReservationRequests();
           setPendingReservationRequests(data);
@@ -94,7 +94,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     };
     loadPendingReservations();
-  }, [showRequestsPopup, currentUser]);
+  }, [showRequestsPopup, showNotificationsPopup, currentUser]);
 
   // Charger le nombre de demandes d'accès en attente (pour admins uniquement)
   useEffect(() => {
@@ -139,6 +139,24 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     return conflicts;
   };
   
+  // Détecter les conflits pour une demande de réservation
+  const getRequestConflicts = (request) => {
+    if (!request.start_date || !request.end_date) return [];
+    const reqStart = getPeriodTimestamp(request.start_date, request.start_period || 'AM');
+    const reqEnd = getPeriodTimestamp(request.end_date, request.end_period || 'PM');
+    
+    const conflicts = [];
+    for (const r of reservations) {
+      if (String(r.vehicleId) !== String(request.vehicle_id)) continue;
+      const existingStart = getPeriodTimestamp(r.date, r.period);
+      const existingEnd = getPeriodTimestamp(r.endDate || r.date, r.endPeriod || r.period);
+      if (Math.max(reqStart, existingStart) <= Math.min(reqEnd, existingEnd)) {
+        conflicts.push(r);
+      }
+    }
+    return conflicts;
+  };
+
   // Compter les pannes signalées, interventions programmées et demandes d'intervention
   const reportedMaintenances = maintenances.filter(m => m.status === 'reported');
   const scheduledMaintenances = maintenances.filter(m => m.status === 'scheduled');
@@ -306,6 +324,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   notificationFilter === 'reported' ? 'Pannes signalées' :
                   notificationFilter === 'pending' ? "Demandes d'intervention / CT" :
                   notificationFilter === 'active' ? 'Interventions actives' :
+                  notificationFilter === 'reservations' ? 'Demandes de réservation' :
                   'Notifications'
                 }</h3>
                 <button className="close-popup-button" onClick={() => setShowNotificationsPopup(false)}>✕</button>
@@ -313,7 +332,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <div className="notifications-popup-content">
                 {((notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
                   (notificationFilter === 'pending' && pendingMaintenances.length === 0) ||
-                  (notificationFilter === 'active' && activeInterventions.length === 0)) ? (
+                  (notificationFilter === 'active' && activeInterventions.length === 0) ||
+                  (notificationFilter === 'reservations' && pendingReservationRequests.length === 0)) ? (
                   <p className="no-notifications">Aucune notification</p>
                 ) : (
                   <>
@@ -553,6 +573,166 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                         </div>
                       </div>
                     )}
+
+                    {/* Section Demandes de réservation */}
+                    {(notificationFilter === 'all' || notificationFilter === 'reservations') && currentUser?.isAdmin && pendingReservationRequests.length > 0 && (
+                      <div className="notification-section">
+                        <h4 className="notification-section-title">
+                          <CalendarCheck size={18} strokeWidth={2.5} /> 
+                          Demandes de réservation 
+                          <span className="section-count">{pendingReservationRequests.length}</span>
+                        </h4>
+                        <div className="notifications-list">
+                          {pendingReservationRequests.map(request => {
+                            const isRejecting = rejectingRequestId === request.id;
+                            const conflicts = getRequestConflicts(request);
+                            const periodLabel = (p) => p === 'AM' ? 'Matin' : 'Après-midi';
+                            
+                            return (
+                            <div 
+                              key={`notif-resreq-${request.id}`}
+                              className={`notification-item reservation-request ${conflicts.length > 0 ? 'has-conflict' : ''}`}
+                            >
+                              <div className="notification-item-header">
+                                <span className="notification-vehicle-name">
+                                  {request.vehicle_name || 'Véhicule inconnu'}
+                                </span>
+                                <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
+                                  {conflicts.length > 0 ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}` : 'En attente'}
+                                </span>
+                              </div>
+                              {/* Période demandée */}
+                              {request.start_date && (
+                                <div className="request-period-info">
+                                  <Calendar size={13} className="request-period-icon" />
+                                  <span className="request-period-dates">
+                                    {request.start_date === request.end_date 
+                                      ? (
+                                        <>
+                                          <strong>{format(new Date(request.start_date), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.start_period)}{request.start_period !== request.end_period ? ` → ${periodLabel(request.end_period)}` : ''}</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <strong>{format(new Date(request.start_date), 'EEE d MMM', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.start_period)}</span>
+                                          <span className="request-period-arrow">→</span>
+                                          <strong>{format(new Date(request.end_date), 'EEE d MMM yyyy', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.end_period)}</span>
+                                        </>
+                                      )
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {/* Conflits détectés */}
+                              {conflicts.length > 0 && (
+                                <div className="request-conflicts-box">
+                                  <div className="request-conflicts-title">
+                                    <AlertTriangle size={13} /> Conflits avec réservations existantes :
+                                  </div>
+                                  {conflicts.slice(0, 3).map((c, ci) => (
+                                    <div key={ci} className="request-conflict-item">
+                                      <span className="conflict-client">{c.clientName || c.prestationName || 'Réservation'}</span>
+                                      <span className="conflict-dates">
+                                        {format(new Date(c.date), 'dd/MM')} {c.period}
+                                        {(c.endDate && c.endDate !== c.date) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {conflicts.length > 3 && (
+                                    <span className="conflict-more">+ {conflicts.length - 3} autre(s)…</span>
+                                  )}
+                                </div>
+                              )}
+                              <p className="notification-description">
+                                {request.client_name && `Client: ${request.client_name}`}
+                                {request.prestation_name && ` • ${request.prestation_name}`}
+                              </p>
+                              <div className="notification-request-details">
+                                {request.requester_name && (
+                                  <span className="notification-requester">
+                                    <Users size={12} /> {request.requester_name}
+                                  </span>
+                                )}
+                              </div>
+                              {request.registration && (
+                                <span className="notification-registration">{request.registration}</span>
+                              )}
+                              {isRejecting ? (
+                                <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
+                                  <textarea
+                                    className="reject-reason-input"
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                    placeholder="Motif du refus..."
+                                    rows={2}
+                                    autoFocus
+                                  />
+                                  <div className="reject-form-buttons">
+                                    <button
+                                      className="notif-action-btn confirm-reject"
+                                      disabled={!rejectionReason.trim()}
+                                      onClick={async () => {
+                                        try {
+                                          await api.rejectReservationRequest(request.id, rejectionReason);
+                                          setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
+                                          setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
+                                          setRejectingRequestId(null);
+                                          setRejectionReason('');
+                                        } catch (error) {
+                                          console.error('Erreur refus:', error);
+                                          alert('Erreur lors du refus de la demande');
+                                        }
+                                      }}
+                                    >
+                                      Confirmer le refus
+                                    </button>
+                                    <button
+                                      className="notif-action-btn cancel-reject"
+                                      onClick={() => {
+                                        setRejectingRequestId(null);
+                                        setRejectionReason('');
+                                      }}
+                                    >
+                                      Annuler
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    className="notif-action-btn approve"
+                                    onClick={async () => {
+                                      try {
+                                        await api.approveReservationRequest(request.id);
+                                        setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
+                                        setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
+                                        if (onReservationUpdate) onReservationUpdate();
+                                      } catch (error) {
+                                        console.error('Erreur approbation:', error);
+                                        alert('Erreur lors de l\'approbation');
+                                      }
+                                    }}
+                                  >
+                                    <Check size={14} />
+                                    Approuver
+                                  </button>
+                                  <button
+                                    className="notif-action-btn reject"
+                                    onClick={() => setRejectingRequestId(request.id)}
+                                  >
+                                    <X size={14} />
+                                    Refuser
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -584,33 +764,71 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                         <div className="notifications-list">
                           {pendingReservationRequests.map(request => {
                             const isRejecting = rejectingRequestId === request.id;
+                            const conflicts = getRequestConflicts(request);
+                            const periodLabel = (p) => p === 'AM' ? 'Matin' : 'Après-midi';
                             
                             return (
                             <div 
                               key={`resreq-${request.id}`}
-                              className="notification-item reservation-request"
+                              className={`notification-item reservation-request ${conflicts.length > 0 ? 'has-conflict' : ''}`}
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
                                   {request.vehicle_name || 'Véhicule inconnu'}
                                 </span>
-                                <span className="notification-status pending">
-                                  En attente
+                                <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
+                                  {conflicts.length > 0 ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}` : 'En attente'}
                                 </span>
                               </div>
+                              {/* Période demandée */}
+                              {request.start_date && (
+                                <div className="request-period-info">
+                                  <Calendar size={13} className="request-period-icon" />
+                                  <span className="request-period-dates">
+                                    {request.start_date === request.end_date 
+                                      ? (
+                                        <>
+                                          <strong>{format(new Date(request.start_date), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.start_period)}{request.start_period !== request.end_period ? ` → ${periodLabel(request.end_period)}` : ''}</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <strong>{format(new Date(request.start_date), 'EEE d MMM', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.start_period)}</span>
+                                          <span className="request-period-arrow">→</span>
+                                          <strong>{format(new Date(request.end_date), 'EEE d MMM yyyy', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.end_period)}</span>
+                                        </>
+                                      )
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                              {/* Conflits détectés */}
+                              {conflicts.length > 0 && (
+                                <div className="request-conflicts-box">
+                                  <div className="request-conflicts-title">
+                                    <AlertTriangle size={13} /> Conflits avec réservations existantes :
+                                  </div>
+                                  {conflicts.slice(0, 3).map((c, ci) => (
+                                    <div key={ci} className="request-conflict-item">
+                                      <span className="conflict-client">{c.clientName || c.prestationName || 'Réservation'}</span>
+                                      <span className="conflict-dates">
+                                        {format(new Date(c.date), 'dd/MM')} {c.period}
+                                        {(c.endDate && c.endDate !== c.date) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {conflicts.length > 3 && (
+                                    <span className="conflict-more">+ {conflicts.length - 3} autre(s)…</span>
+                                  )}
+                                </div>
+                              )}
                               <p className="notification-description">
                                 {request.client_name && `Client: ${request.client_name}`}
                                 {request.prestation_name && ` • ${request.prestation_name}`}
                               </p>
                               <div className="notification-request-details">
-                                {request.start_date && (
-                                  <span className="notification-date">
-                                    {request.start_date === request.end_date 
-                                      ? format(new Date(request.start_date), 'dd/MM/yyyy')
-                                      : `${format(new Date(request.start_date), 'dd/MM')} - ${format(new Date(request.end_date), 'dd/MM/yyyy')}`
-                                    }
-                                  </span>
-                                )}
                                 {request.requester_name && (
                                   <span className="notification-requester">
                                     <Users size={12} /> {request.requester_name}
@@ -802,7 +1020,10 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             {currentUser?.isAdmin && pendingRequestsCounts.reservationRequests > 0 && (
               <div 
                 className="notification-badge unified requests-badge"
-                onClick={() => setShowRequestsPopup(true)}
+                onClick={() => {
+                  setNotificationFilter('reservations');
+                  setShowNotificationsPopup(true);
+                }}
                 style={{ position: 'relative' }}
                 title={`${pendingRequestsCounts.reservationRequests} demande(s) de réservation`}
               >

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "deploy": "bash scripts/safe-deploy.sh",
     "lint": "eslint . --ext js,jsx",
     "update-photos": "node scripts/generate-photo-list.js",
     "watch-photos": "node scripts/watch-photos.js"

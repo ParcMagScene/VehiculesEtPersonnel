@@ -419,8 +419,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
           return_departure_location, return_departure_date, return_departure_time,
           return_arrival_location, return_arrival_date, return_arrival_time,
           driver_name, outbound_duration, return_duration,
-          has_junction_with_next, junction_location
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          has_junction_with_next, junction_location, trip_group_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       const result = stmt.run(
@@ -430,7 +430,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
         detail.returnDepartureLocation, detail.returnDepartureDate, detail.returnDepartureTime,
         detail.returnArrivalLocation, detail.returnArrivalDate, detail.returnArrivalTime,
         detail.driverName, detail.outboundDuration, detail.returnDuration,
-        detail.hasJunctionWithNext ? 1 : 0, detail.junctionLocation
+        detail.hasJunctionWithNext ? 1 : 0, detail.junctionLocation,
+        detail.tripGroupId || null
       );
       
       // Ajouter les pauses
@@ -482,6 +483,7 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
           return_arrival_location = ?, return_arrival_date = ?, return_arrival_time = ?,
           driver_name = ?, outbound_duration = ?, return_duration = ?,
           has_junction_with_next = ?, junction_location = ?,
+          trip_group_id = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
@@ -493,6 +495,7 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
         detail.returnArrivalLocation, detail.returnArrivalDate, detail.returnArrivalTime,
         detail.driverName, detail.outboundDuration, detail.returnDuration,
         detail.hasJunctionWithNext ? 1 : 0, detail.junctionLocation,
+        detail.tripGroupId || null,
         req.params.id
       );
       
@@ -529,6 +532,111 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       const stmt = db.prepare('DELETE FROM trip_details WHERE id = ?');
       stmt.run(req.params.id);
       res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lier les trajets de deux événements (leur donner le même trip_group_id)
+  app.post('/api/trip-details/link', authenticateToken, (req, res) => {
+    try {
+      const { reservationId, eventId1, eventId2 } = req.body;
+      
+      if (!reservationId || !eventId1 || !eventId2) {
+        return res.status(400).json({ error: 'reservationId, eventId1 et eventId2 sont requis' });
+      }
+
+      const numReservationId = Number(reservationId);
+
+      // Chercher les trip_details existants pour ces événements
+      let td1 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(numReservationId, eventId1);
+      let td2 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(numReservationId, eventId2);
+
+      // Créer automatiquement les trip_details manquants (entrées minimales)
+      const insertMinimalStmt = db.prepare(`
+        INSERT INTO trip_details (reservation_id, event_id, event_order, departure_location, departure_date, departure_time, arrival_location, arrival_date, arrival_time, return_departure_location, return_departure_date, return_departure_time, return_arrival_location, return_arrival_date, return_arrival_time, driver_name, outbound_duration, return_duration, has_junction_with_next, junction_location, trip_group_id)
+        VALUES (?, ?, ?, '', '', '', '', '', '', '', '', '', '', '', '', '', NULL, NULL, 0, '', NULL)
+      `);
+
+      if (!td1) {
+        const maxOrder = db.prepare('SELECT COALESCE(MAX(event_order), 0) + 1 as next_order FROM trip_details WHERE reservation_id = ?').get(numReservationId);
+        insertMinimalStmt.run(numReservationId, eventId1, maxOrder.next_order);
+        td1 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(numReservationId, eventId1);
+      }
+
+      if (!td2) {
+        const maxOrder = db.prepare('SELECT COALESCE(MAX(event_order), 0) + 1 as next_order FROM trip_details WHERE reservation_id = ?').get(numReservationId);
+        insertMinimalStmt.run(numReservationId, eventId2, maxOrder.next_order);
+        td2 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(numReservationId, eventId2);
+      }
+
+      // Déterminer le trip_group_id à utiliser
+      let groupId = td1?.trip_group_id || td2?.trip_group_id || `tg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Mettre à jour td1
+      db.prepare('UPDATE trip_details SET trip_group_id = ?, has_junction_with_next = 1 WHERE id = ?').run(groupId, td1.id);
+
+      // Mettre à jour td2
+      db.prepare('UPDATE trip_details SET trip_group_id = ? WHERE id = ?').run(groupId, td2.id);
+
+      // Fusionner les groupes existants si nécessaire
+      // Si td1 ou td2 avait déjà un autre group_id, mettre à jour tous les membres de l'ancien groupe
+      if (td1.trip_group_id && td1.trip_group_id !== groupId) {
+        db.prepare('UPDATE trip_details SET trip_group_id = ? WHERE trip_group_id = ?').run(groupId, td1.trip_group_id);
+      }
+      if (td2.trip_group_id && td2.trip_group_id !== groupId) {
+        db.prepare('UPDATE trip_details SET trip_group_id = ? WHERE trip_group_id = ?').run(groupId, td2.trip_group_id);
+      }
+
+      // Récupérer tous les trip_details mis à jour pour cette réservation
+      const allDetails = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? ORDER BY event_order').all(numReservationId);
+      const pausesStmt = db.prepare('SELECT * FROM trip_pauses WHERE trip_detail_id = ?');
+      const enrichedDetails = allDetails.map(detail => ({
+        ...detail,
+        pauses: pausesStmt.all(detail.id)
+      }));
+
+      res.json({ success: true, groupId, tripDetails: enrichedDetails });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Délier un événement de son groupe de trajets
+  app.post('/api/trip-details/unlink', authenticateToken, (req, res) => {
+    try {
+      const { reservationId, eventId } = req.body;
+      
+      if (!reservationId || !eventId) {
+        return res.status(400).json({ error: 'reservationId et eventId sont requis' });
+      }
+
+      const td = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(Number(reservationId), eventId);
+      
+      if (td) {
+        const oldGroupId = td.trip_group_id;
+        
+        // Retirer du groupe
+        db.prepare('UPDATE trip_details SET trip_group_id = NULL, has_junction_with_next = 0 WHERE id = ?').run(td.id);
+        
+        // Si l'ancien groupe ne contient plus qu'un seul membre, le dissoudre
+        if (oldGroupId) {
+          const remaining = db.prepare('SELECT COUNT(*) as count FROM trip_details WHERE trip_group_id = ?').get(oldGroupId);
+          if (remaining.count <= 1) {
+            db.prepare('UPDATE trip_details SET trip_group_id = NULL WHERE trip_group_id = ?').run(oldGroupId);
+          }
+        }
+      }
+
+      // Récupérer tous les trip_details mis à jour
+      const allDetails = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? ORDER BY event_order').all(Number(reservationId));
+      const pausesStmt = db.prepare('SELECT * FROM trip_pauses WHERE trip_detail_id = ?');
+      const enrichedDetails = allDetails.map(detail => ({
+        ...detail,
+        pauses: pausesStmt.all(detail.id)
+      }));
+
+      res.json({ success: true, tripDetails: enrichedDetails });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

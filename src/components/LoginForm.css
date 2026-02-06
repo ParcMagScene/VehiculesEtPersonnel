@@ -18,6 +18,8 @@
   width: 90%;
   max-width: 400px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 .login-header {
@@ -173,11 +175,14 @@
   align-items: center;
   justify-content: center;
   z-index: 10001;
+  isolation: isolate;
 }
 
 .modal-content {
   background: white;
   border-radius: 12px;
+  position: relative;
+  z-index: 1;
   width: 90%;
   max-width: 500px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);

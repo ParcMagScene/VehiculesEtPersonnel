@@ -386,7 +386,12 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   };
 
   return (
-    <div className="location-dialog-overlay" onClick={(e) => e.stopPropagation()}>
+    <div className="location-dialog-overlay" onClick={(e) => {
+      // Fermer seulement si on clique sur l'overlay, pas sur le contenu
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    }}>
       <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="location-dialog-header">
           <h2>

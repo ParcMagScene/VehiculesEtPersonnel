@@ -297,6 +297,25 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
   return null;
 };
 
+// Couleurs des interventions selon le statut
+const getMaintenanceStatusStyle = (status, hasConflict) => {
+  // Les interventions terminées ou annulées ne montrent pas les conflits
+  if (hasConflict && status !== 'completed' && status !== 'cancelled') {
+    return { bg: '#fee2e2', border: '2px solid #dc2626', icon: '⚠️' };
+  }
+  const styles = {
+    scheduled:   { bg: '#dbeafe', border: '2px dashed #3b82f6', icon: '📅' },
+    completed:   { bg: '#d1fae5', border: '2px solid #10b981', icon: '✅' },
+    reported:    { bg: '#fee2e2', border: '2px solid #ef4444', icon: '⚠️' },
+    pending:     { bg: '#ede9fe', border: '2px dashed #8b5cf6', icon: '📝' },
+    in_progress: { bg: '#fef3c7', border: '2px solid #f59e0b', icon: '🔧' },
+    IN_PROGRESS: { bg: '#fef3c7', border: '2px solid #f59e0b', icon: '🔧' },
+    cancelled:   { bg: '#f3f4f6', border: '2px dashed #6b7280', icon: '❌' },
+    rescheduled: { bg: '#ffedd5', border: '2px dashed #f97316', icon: '🔄' },
+  };
+  return styles[status] || { bg: '#f3f4f6', border: '2px dashed #6b7280', icon: '🔧' };
+};
+
 const Calendar = ({
   view,
   setView,
@@ -307,6 +326,7 @@ const Calendar = ({
   maintenances = [],
   onAddReservation,
   onUpdateReservation,
+  onUpdateMaintenance,
   onDeleteReservation,
   clients,
   drivers,
@@ -320,6 +340,7 @@ const Calendar = ({
   reservationToEdit,
   onReservationEditComplete,
   onVehicleClick,
+  onMaintenanceClick,
   onRequestViewEvent,
   currentUser,
 }) => {
@@ -524,9 +545,9 @@ const Calendar = ({
   const maintenancesAsReservations = useMemo(() => {
     const converted = maintenances
       .filter(m => {
-        // Afficher toutes les maintenances SAUF les pannes signalées (reported)
-        // Inclut: 'scheduled', 'in_progress', 'completed', 'pending'
-        const isValid = m.status !== 'reported' && m.startDate && m.endDate;
+        // Afficher les maintenances qui ont des dates définies (exclut reported et pending sans dates)
+        // Inclut: 'scheduled', 'in_progress', 'completed', 'rescheduled', 'cancelled' (si dates)
+        const isValid = m.startDate && m.endDate;
         return isValid;
       })
       .map(m => {
@@ -1486,9 +1507,9 @@ const Calendar = ({
                           
                           if (block.isMaintenance) {
                             e.preventDefault();
-                            if (onVehicleClick) {
+                            if (onMaintenanceClick) {
                               const maintenanceId = block.maintenanceId || block.id.replace('maint-', '');
-                              onVehicleClick(vehicle, maintenanceId);
+                              onMaintenanceClick(vehicle, maintenanceId);
                             }
                             return;
                           }
@@ -1500,14 +1521,10 @@ const Calendar = ({
                         data-reservation-id={block.id}
                       >
                         <div
-                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? 'maintenance-block' : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
+                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
                           style={{
-                            backgroundColor: block.isMaintenance 
-                              ? (getMaintenanceConflicts(block).length > 0 ? '#fee2e2' : '#f3f4f6')
-                              : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
-                            border: block.isMaintenance
-                              ? (getMaintenanceConflicts(block).length > 0 ? '2px solid #dc2626' : '2px dashed #6b7280')
-                              : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
+                            backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
+                            border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
                             color: '#1f2937', position: 'relative',
                           }}
                         >
@@ -1522,7 +1539,7 @@ const Calendar = ({
                           <div className="reservation-content-wrapper">
                             <div className="reservation-content">
                               <div className="reservation-name">
-                                {block.isMaintenance && getMaintenanceConflicts(block).length > 0 && '⚠️ '}
+                                {block.isMaintenance && getMaintenanceStatusStyle(block.maintenanceStatus, getMaintenanceConflicts(block).length > 0).icon + ' '}
                                 {block.clientName || block.prestationName}
                               </div>
                               {block.locationName && <div className="reservation-location">{block.locationName}</div>}
@@ -1728,9 +1745,9 @@ const Calendar = ({
                           
                           if (block.isMaintenance) {
                             e.preventDefault();
-                            if (onVehicleClick) {
+                            if (onMaintenanceClick) {
                               const maintenanceId = block.maintenanceId || block.id.replace('maint-', '');
-                              onVehicleClick(vehicle, maintenanceId);
+                              onMaintenanceClick(vehicle, maintenanceId);
                             }
                             return;
                           }
@@ -1742,14 +1759,10 @@ const Calendar = ({
                         data-reservation-id={block.id}
                       >
                         <div
-                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? 'maintenance-block' : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
+                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
                           style={{
-                            backgroundColor: block.isMaintenance 
-                              ? (getMaintenanceConflicts(block).length > 0 ? '#fee2e2' : '#f3f4f6')
-                              : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
-                            border: block.isMaintenance
-                              ? (getMaintenanceConflicts(block).length > 0 ? '2px solid #dc2626' : '2px dashed #6b7280')
-                              : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
+                            backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
+                            border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
                             color: '#1f2937', position: 'relative',
                           }}
                         >
@@ -1764,7 +1777,7 @@ const Calendar = ({
                           <div className="reservation-content-wrapper">
                             <div className="reservation-content">
                               <div className="reservation-name">
-                                {block.isMaintenance && getMaintenanceConflicts(block).length > 0 && '⚠️ '}
+                                {block.isMaintenance && getMaintenanceStatusStyle(block.maintenanceStatus, getMaintenanceConflicts(block).length > 0).icon + ' '}
                                 {block.clientName || block.prestationName}
                               </div>
                               {block.locationName && <div className="reservation-location">{block.locationName}</div>}

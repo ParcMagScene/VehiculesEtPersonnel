@@ -10,6 +10,7 @@
   justify-content: center;
   z-index: 2000;
   backdrop-filter: blur(4px);
+  isolation: isolate;
 }
 
 .vehicle-maintenance-modal {
@@ -19,8 +20,12 @@
   max-width: 600px;
   width: 90%;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   animation: slideUp 0.3s ease-out;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes slideUp {
@@ -42,7 +47,7 @@
   align-items: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 12px 12px 0 0;
+  border-radius: 11px 11px 0 0;
 }
 
 .vehicle-maintenance-modal .modal-header h2 {
@@ -71,6 +76,27 @@
 
 .maintenance-form {
   padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.maintenance-form::-webkit-scrollbar {
+  width: 6px;
+}
+
+.maintenance-form::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+  margin: 8px 0;
+}
+
+.maintenance-form::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.maintenance-form::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .form-section {
@@ -140,6 +166,32 @@
   justify-content: flex-end;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.save-success-message {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeInOut 2s ease-in-out;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-50%) scale(0.9); }
+  15% { opacity: 1; transform: translateY(-50%) scale(1); }
+  85% { opacity: 1; transform: translateY(-50%) scale(1); }
+  100% { opacity: 0; transform: translateY(-50%) scale(0.9); }
 }
 
 .btn-primary,

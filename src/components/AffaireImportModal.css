@@ -10,6 +10,7 @@
   justify-content: center;
   z-index: 10000;
   animation: fadeIn 0.2s ease-in-out;
+  isolation: isolate;
 }
 
 @keyframes fadeIn {
@@ -28,6 +29,8 @@
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  position: relative;
+  z-index: 1;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
 }
@@ -348,13 +351,17 @@
 .btn-cancel,
 .btn-submit,
 .btn-confirm {
-  padding: 10px 24px;
+  height: 40px;
+  padding: 0 24px;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .btn-cancel {

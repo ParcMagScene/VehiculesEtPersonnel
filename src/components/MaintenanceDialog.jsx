@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Clock, CheckCircle, AlertTriangle, FileText, Loader, X, User, Calendar } from 'lucide-react';
 import { getPeriodTimestamp } from '../utils/dateUtils';
+import ConfirmDialog from './ConfirmDialog';
 import './MaintenanceDialog.css';
 
 function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garages = [], reservations = [], maintenanceToEdit = null, actionType = null, currentUser = null }) {
@@ -39,6 +41,10 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   const [conflictWarning, setConflictWarning] = useState(null); // Avertissement de conflit
   const [initialFormData, setInitialFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [statusReason, setStatusReason] = useState(''); // Motif pour pending/cancelled/rescheduled
+  const [confirmDialog, setConfirmDialog] = useState(null); // { message, onConfirm }
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const startDateInputRef = useRef(null);
   const [formData, setFormData] = useState(
     maintenanceToEditData ? {
       type: maintenanceToEditData.type,
@@ -78,12 +84,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
 
   // Types de contrôles techniques disponibles
   const allControleTechniqueTypes = [
-    { value: 'VL', label: 'VL (Véhicule Léger)', vehicleTypes: ['VL', 'VOITURE', 'CAMIONNETTE'] },
-    { value: 'PL', label: 'PL (Poids Lourd)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'SEMI', 'SEMI-REMORQUE'] },
-    { value: 'SEMI', label: 'Semi-remorque', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'] },
-    { value: 'SCENE', label: 'Scène mobile', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'] },
-    { value: 'POLLUTION', label: 'Pollution', vehicleTypes: ['ALL_MOTORIZED'] },
-    { value: 'HAYON', label: 'Hayon (contrôle VGP)', vehicleTypes: ['ALL'] }
+    { value: 'VL', label: 'VL (Véhicule Léger)', vehicleTypes: ['VL', 'VOITURE', 'CAMIONNETTE'], periodicity: '4 ans après 1ère mise en circulation, puis tous les 2 ans' },
+    { value: 'PL', label: 'PL (Poids Lourd)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans (1ère visite dans les 6 mois suivant la mise en circulation)' },
+    { value: 'SEMI', label: 'Semi-remorque', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans' },
+    { value: 'SCENE', label: 'Scène mobile', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'], periodicity: 'Tous les ans (remorque > 500 kg PTAC)' },
+    { value: 'POLLUTION', label: 'Pollution', vehicleTypes: ['ALL_MOTORIZED'], periodicity: 'Tous les ans (inclus dans le CT pour les VL, séparé pour les PL)' },
+    { value: 'HAYON', label: 'Hayon (contrôle VGP)', vehicleTypes: ['ALL'], periodicity: 'Tous les 6 mois (Vérification Générale Périodique)' }
   ];
 
   // Filtrer les types de contrôles selon le type de véhicule
@@ -255,6 +261,11 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       vehicleId: vehicle.id,
       vehicleName: vehicle.name,
       ...formData,
+      // Ajouter le motif de changement de statut aux notes si renseigné
+      notes: statusReason 
+        ? (formData.notes ? formData.notes + '\n\n' : '') + 
+          `[${getStatusLabel(formData.status)}] ${statusReason}`
+        : formData.notes,
       createdAt: editingId ? maintenances.find(m => m.id === editingId)?.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -279,9 +290,27 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       COMPLETED: 'Effectuée',
       reported: 'Signalée',
       pending: 'En attente',
-      PENDING: 'En attente'
+      PENDING: 'En attente',
+      cancelled: 'Annulée',
+      rescheduled: 'Reportée'
     };
     return labels[status] || status;
+  };
+
+  const getStatusIcon = (status) => {
+    const icons = {
+      scheduled: <Clock size={14} />,
+      in_progress: <Loader size={14} />,
+      IN_PROGRESS: <Loader size={14} />,
+      completed: <CheckCircle size={14} />,
+      COMPLETED: <CheckCircle size={14} />,
+      reported: <AlertTriangle size={14} />,
+      pending: <FileText size={14} />,
+      PENDING: <FileText size={14} />,
+      cancelled: <X size={14} />,
+      rescheduled: <Calendar size={14} />
+    };
+    return icons[status] || null;
   };
 
   const getStatusColor = (status) => {
@@ -293,7 +322,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       COMPLETED: '#10b981',
       reported: '#ef4444',
       pending: '#8b5cf6',
-      PENDING: '#8b5cf6'
+      PENDING: '#8b5cf6',
+      rescheduled: '#f97316',
+      cancelled: '#6b7280'
     };
     return colors[status] || '#6b7280';
   };
@@ -321,10 +352,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
 
   const deleteMaintenance = (maintenanceId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet entretien ?')) {
-      // L'ID négatif indique une suppression
-      onSave({ id: maintenanceId, _deleted: true });
-    }
+    setConfirmDialog({
+      message: 'Attention, si vous supprimez cette intervention, elle n\'apparaîtra plus dans l\'historique du véhicule. Cette action est irréversible.\n\nSupprimer quand même ?',
+      onConfirm: () => {
+        setConfirmDialog(null);
+        onSave({ id: maintenanceId, _deleted: true });
+      }
+    });
   };
 
   const cancelEditing = () => {
@@ -356,7 +390,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   return (
     <div className="maintenance-dialog-overlay" onClick={onClose}>
       <div className="maintenance-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="maintenance-dialog-header">
+        <div 
+          className="maintenance-dialog-header"
+          style={editingId ? {
+            borderBottom: `3px solid ${getStatusColor(formData.status)}`,
+            background: `linear-gradient(135deg, ${getStatusColor(formData.status)}08 0%, ${getStatusColor(formData.status)}15 100%)`
+          } : {}}
+        >
           <div className="maintenance-dialog-title">
             <h2>{getDialogTitle()} - {vehicle.name}</h2>
             <div className="vehicle-info">
@@ -383,13 +423,89 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
             className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
             onClick={() => setActiveTab('history')}
           >
-            📋 Historique ({vehicleMaintenances.length})
+            📋 Historique véhicule ({vehicleMaintenances.length})
           </button>
         </div>
 
         <div className="maintenance-dialog-content">
           {activeTab === 'new' ? (
-            <form onSubmit={handleSubmit} className="maintenance-form">
+            <form id="maintenance-form" onSubmit={handleSubmit} className="maintenance-form">
+              {/* Détails de l'intervention en mode édition */}
+              {editingId && maintenanceToEditData && (
+                <div className="intervention-details-card">
+                  <div className="intervention-details-header">
+                    <span 
+                      className="intervention-status-badge"
+                      style={{ 
+                        backgroundColor: getStatusColor(formData.status) + '15',
+                        color: getStatusColor(formData.status),
+                        borderColor: getStatusColor(formData.status)
+                      }}
+                    >
+                      {getStatusIcon(formData.status)}
+                      {getStatusLabel(formData.status)}
+                    </span>
+                    {formData.status !== maintenanceToEditData.status && (
+                      <span className="status-changed-indicator">
+                        ← {getStatusLabel(maintenanceToEditData.status)}
+                      </span>
+                    )}
+                    <span className="intervention-type-label">
+                      {getTypeLabel(formData.type || maintenanceToEditData.type)}
+                      {(formData.technicalControlType || maintenanceToEditData.technicalControlType) && (
+                        <span className="ct-type"> — {formData.technicalControlType || maintenanceToEditData.technicalControlType}</span>
+                      )}
+                    </span>
+                  </div>
+                  {maintenanceToEditData.description && (
+                    <div className="intervention-details-title">
+                      {maintenanceToEditData.description}
+                    </div>
+                  )}
+                  <div className="intervention-details-grid">
+                    <div className="intervention-detail-item">
+                      <User size={14} />
+                      <span className="detail-key">Créée par</span>
+                      <span className="detail-val">{maintenanceToEditData.creatorName || 'Inconnu'}</span>
+                    </div>
+                    <div className="intervention-detail-item">
+                      <Calendar size={14} />
+                      <span className="detail-key">Créée le</span>
+                      <span className="detail-val">
+                        {maintenanceToEditData.createdAt 
+                          ? format(parseISO(maintenanceToEditData.createdAt), 'dd MMMM yyyy à HH:mm', { locale: fr })
+                          : '—'}
+                      </span>
+                    </div>
+                    {maintenanceToEditData.startDate && (
+                      <div className="intervention-detail-item">
+                        <Clock size={14} />
+                        <span className="detail-key">Début</span>
+                        <span className="detail-val">
+                          {format(parseISO(maintenanceToEditData.startDate), 'dd MMMM yyyy', { locale: fr })}
+                          {' '}<span className="period-tag">{maintenanceToEditData.startDatePeriod === 'PM' ? 'Après-midi' : 'Matin'}</span>
+                        </span>
+                      </div>
+                    )}
+                    {maintenanceToEditData.endDate && (
+                      <div className="intervention-detail-item">
+                        <Clock size={14} />
+                        <span className="detail-key">Fin</span>
+                        <span className="detail-val">
+                          {format(parseISO(maintenanceToEditData.endDate), 'dd MMMM yyyy', { locale: fr })}
+                          {' '}<span className="period-tag">{maintenanceToEditData.endDatePeriod === 'PM' ? 'Après-midi' : 'Matin'}</span>
+                        </span>
+                      </div>
+                    )}
+                    {maintenanceToEditData.isImmobilized && (
+                      <div className="intervention-detail-item immobilized-alert">
+                        <AlertTriangle size={14} />
+                        <span className="detail-val">🚫 Véhicule immobilisé</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {/* Mode de saisie - masquer si actionType est défini ou si on édite une intervention */}
               {!actionType && !(editingId && (maintenanceToEditData?.status === 'pending' || maintenanceToEditData?.status === 'reported' || maintenanceToEditData?.status === 'scheduled')) && 
                !formData.status && (
@@ -468,7 +584,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               )}
 
               <div className="form-row">
-                {formData.status === 'scheduled' && (
+                {(formData.status === 'scheduled' || formData.status === 'in_progress' || formData.status === 'completed' || formData.status === 'rescheduled') && (
                   <>
                     <div className="form-group">
                       <label>Type d'intervention *</label>
@@ -500,17 +616,30 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                             </option>
                           ))}
                         </select>
-                        <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                          ℹ️ Cette intervention sera liée à la deadline du contrôle sélectionné
-                        </small>
+                        {formData.technicalControlType && (() => {
+                          const selectedCT = allControleTechniqueTypes.find(ct => ct.value === formData.technicalControlType);
+                          return selectedCT?.periodicity ? (
+                            <div className="ct-periodicity-info">
+                              <span className="ct-periodicity-icon">🔄</span>
+                              <span className="ct-periodicity-text">
+                                <strong>Périodicité :</strong> {selectedCT.periodicity}
+                              </span>
+                            </div>
+                          ) : null;
+                        })()}
+                        {!formData.technicalControlType && (
+                          <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                            ℹ️ Sélectionnez un type pour voir sa périodicité
+                          </small>
+                        )}
                       </div>
                     )}
                   </>
                 )}
 
-                {(formData.status === 'pending' || isQuickReport) && (
+                {formData.status === 'pending' && !isQuickReport && (
                   <div className="form-group full-width">
-                    <label>Type {isQuickReport ? 'de panne' : "d'intervention"}</label>
+                    <label>Type d'intervention</label>
                     <select
                       value={formData.type}
                       onChange={(e) => handleChange('type', e.target.value)}
@@ -525,13 +654,14 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 )}
               </div>
 
-              {formData.status === 'scheduled' && (
+              {(formData.status === 'scheduled' || formData.status === 'in_progress' || formData.status === 'completed' || formData.status === 'rescheduled') && (
                 <>
                   <div className="form-row">
                     <div className="form-group">
                       <label>Date de début *</label>
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <input
+                          ref={startDateInputRef}
                           type="date"
                           value={formData.startDate}
                           onChange={(e) => handleChange('startDate', e.target.value)}
@@ -572,23 +702,6 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                     </div>
                   </div>
                 </>
-              )}
-
-              {formData.status === 'scheduled' && (
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Statut *</label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => handleChange('status', e.target.value)}
-                      required
-                    >
-                      <option value="scheduled">Programmée</option>
-                      <option value="in_progress">En cours</option>
-                      <option value="completed">Effectuée</option>
-                    </select>
-                  </div>
-                </div>
               )}
 
               <div className="form-row">
@@ -658,68 +771,42 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 </div>
               </div>
 
-              <div className="form-actions">
-                <button type="button" className="cancel-button" onClick={editingId ? cancelEditing : onClose}>
-                  Annuler
-                </button>
-                {editingId && (
-                  <button 
-                    type="button" 
-                    className="delete-button"
-                    onClick={() => deleteMaintenance(editingId)}
-                  >
-                    🗑️ Supprimer
-                  </button>
-                )}
-                {/* Boutons spécifiques pour panne signalée */}
-                {editingId && maintenanceToEditData?.status === 'reported' ? (
-                  <>
-                    <button 
-                      type="button" 
-                      className="submit-button"
-                      style={{ flex: 1, marginRight: '8px' }}
+              {/* Formulaire motif d'annulation (affiché au-dessus des boutons) */}
+              {editingId && isAdmin && showCancelForm && formData.status !== 'cancelled' && (
+                <div className="status-reason-field" style={{ marginBottom: '12px' }}>
+                  <label>❌ Motif d'annulation :</label>
+                  <textarea
+                    value={statusReason}
+                    onChange={(e) => setStatusReason(e.target.value)}
+                    rows={2}
+                    placeholder="Pourquoi annuler cette intervention ?"
+                    autoFocus
+                  />
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      className="cancel-button"
                       onClick={() => {
-                        handleChange('status', 'pending');
-                        handleChange('isQuickReport', false);
-                        setIsQuickReport(false);
-                        handleChange('startDate', '');
-                        handleChange('endDate', '');
-                        // Soumettre le formulaire
-                        handleSubmit({ preventDefault: () => {} });
+                        setShowCancelForm(false);
+                        setStatusReason('');
                       }}
                     >
-                      📝 Demander une intervention
+                      Retour
                     </button>
-                    <button 
-                      type="button" 
-                      className="submit-button"
-                      style={{ flex: 1 }}
+                    <button
+                      type="button"
+                      className="delete-button"
                       onClick={() => {
-                        handleChange('status', 'scheduled');
-                        handleChange('isQuickReport', false);
-                        setIsQuickReport(false);
-                        // Rediriger vers le formulaire de programmation
-                        setActiveTab('new');
+                        handleChange('status', 'cancelled');
+                        setShowCancelForm(false);
                       }}
                     >
-                      📅 Programmer une intervention
+                      ❌ Confirmer l'annulation
                     </button>
-                  </>
-                ) : (
-                  /* Bouton de soumission conditionnel pour intervention programmée */
-                  editingId && maintenanceToEditData?.status === 'scheduled' ? (
-                    hasChanges && (
-                      <button type="submit" className="submit-button">
-                        Valider les modifications
-                      </button>
-                    )
-                  ) : (
-                    <button type="submit" className="submit-button">
-                      {editingId ? 'Mettre à jour' : (isQuickReport ? 'Signaler' : formData.status === 'pending' ? 'Enregistrer la demande' : 'Enregistrer')}
-                    </button>
-                  )
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
+
             </form>
           ) : (
             <div className="maintenance-history">
@@ -743,7 +830,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       return new Date(dateB) - new Date(dateA);
                     })
                     .map(maintenance => (
-                      <div key={maintenance.id} className="maintenance-card">
+                      <div key={maintenance.id} className={`maintenance-card status-${maintenance.status}`}>
                         <div className="maintenance-card-header">
                           <div className="maintenance-card-title">
                             <h3>
@@ -772,6 +859,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                                 borderColor: getStatusColor(maintenance.status)
                               }}
                             >
+                              {getStatusIcon(maintenance.status)}
                               {getStatusLabel(maintenance.status)}
                             </span>
                             <button
@@ -781,13 +869,15 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                             >
                               ✏️
                             </button>
-                            <button
-                              className="delete-maintenance-button"
-                              onClick={() => deleteMaintenance(maintenance.id)}
-                              title="Supprimer"
-                            >
-                              🗑️
-                            </button>
+                            {isAdmin && (
+                              <button
+                                className="delete-maintenance-button"
+                                onClick={() => deleteMaintenance(maintenance.id)}
+                                title="Supprimer"
+                              >
+                                🗑️
+                              </button>
+                            )}
                           </div>
                         </div>
                         
@@ -831,6 +921,73 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
             </div>
           )}
         </div>
+
+        {/* Footer boutons - fixé en bas */}
+        {activeTab === 'new' && (
+          <div className="form-actions">
+            {editingId ? (
+              <>
+                <div className="form-actions-left">
+                  {isAdmin && (
+                    <button 
+                      type="button" 
+                      className="delete-button"
+                      onClick={() => deleteMaintenance(editingId)}
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  )}
+                  {isAdmin && formData.status !== 'cancelled' && !showCancelForm && (
+                    <button
+                      type="button"
+                      className="cancel-intervention-button"
+                      onClick={() => setShowCancelForm(true)}
+                    >
+                      ❌ Annuler l'intervention
+                    </button>
+                  )}
+                  {isAdmin && formData.status === 'cancelled' && (
+                    <button
+                      type="button"
+                      className="reschedule-button"
+                      onClick={() => {
+                        handleChange('status', 'scheduled');
+                        setStatusReason('');
+                      }}
+                    >
+                      📅 Reprogrammer
+                    </button>
+                  )}
+                </div>
+                <div className="form-actions-right">
+                  {isAdmin && formData.status !== 'cancelled' && (
+                    <button 
+                      type="button" 
+                      className="reschedule-button"
+                      onClick={() => {
+                        handleChange('status', 'rescheduled');
+                      }}
+                    >
+                      <Clock size={16} />
+                      Reporter
+                    </button>
+                  )}
+                  {hasChanges && (
+                    <button type="submit" form="maintenance-form" className="submit-button">
+                      ✓ Valider les modifications
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <button type="submit" form="maintenance-form" className="submit-button">
+                  {isQuickReport ? '⚠️ Signaler' : formData.status === 'pending' ? '📝 Enregistrer la demande' : '📅 Enregistrer'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Dialogue d'avertissement de conflit */}
         {conflictWarning && conflictWarning.length > 0 && (
@@ -919,6 +1076,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           </div>
         )}
       </div>
+      {confirmDialog && (
+        <ConfirmDialog
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

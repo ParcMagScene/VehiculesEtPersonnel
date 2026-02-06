@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
-import db, { addToHistory, getHistory } from './database.js';
+import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -275,7 +275,7 @@ app.get('/api/vehicles', authenticateToken, (req, res) => {
       order: v.order_index,
       isLocation: v.is_location === 1,
       kilometrage: v.kilometrage || 0,
-      controles_techniques: v.controles_techniques || '[]',
+      controlesTechniques: v.controles_techniques || '[]',
       createdBy: v.created_by,
       modifiedBy: v.modified_by,
       createdAt: v.created_at,
@@ -325,7 +325,7 @@ app.post('/api/vehicles', authenticateToken, (req, res) => {
       order: createdVehicle.order_index,
       isLocation: createdVehicle.is_location === 1,
       kilometrage: createdVehicle.kilometrage || 0,
-      controles_techniques: createdVehicle.controles_techniques || '[]',
+      controlesTechniques: createdVehicle.controles_techniques || '[]',
       createdBy: createdVehicle.created_by,
       modifiedBy: createdVehicle.modified_by,
       createdAt: createdVehicle.created_at,
@@ -341,6 +341,11 @@ app.post('/api/vehicles', authenticateToken, (req, res) => {
 app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
   try {
     const vehicle = req.body;
+    
+    // Debug : log des contrôles techniques
+    console.log('🔧 Mise à jour véhicule:', vehicle.id || req.params.id);
+    console.log('🔧 Contrôles techniques reçus:', vehicle.controles_techniques);
+    
     const stmt = db.prepare(`
       UPDATE vehicles 
       SET name = ?, type = ?, registration = ?, brand = ?, model = ?, color = ?,
@@ -362,6 +367,9 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
     const getStmt = db.prepare('SELECT * FROM vehicles WHERE id = ?');
     const updatedVehicle = getStmt.get(req.params.id);
     
+    console.log('🔧 Contrôles techniques en DB:', updatedVehicle.controles_techniques);
+    console.log('🔧 Véhicule complet:', JSON.stringify(updatedVehicle, null, 2));
+    
     const mappedVehicle = {
       id: updatedVehicle.id,
       name: updatedVehicle.name,
@@ -377,12 +385,14 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
       order: updatedVehicle.order_index,
       isLocation: updatedVehicle.is_location === 1,
       kilometrage: updatedVehicle.kilometrage || 0,
-      controles_techniques: updatedVehicle.controles_techniques || '[]',
+      controlesTechniques: updatedVehicle.controles_techniques || '[]',
       createdBy: updatedVehicle.created_by,
       modifiedBy: updatedVehicle.modified_by,
       createdAt: updatedVehicle.created_at,
       modifiedAt: updatedVehicle.modified_at
     };
+    
+    console.log('🔧 Mapped vehicle controles_techniques:', mappedVehicle.controles_techniques);
     
     res.json(mappedVehicle);
   } catch (error) {
@@ -714,7 +724,11 @@ app.put('/api/reservation-requests/:id/reject', authenticateToken, (req, res) =>
 
 app.get('/api/maintenances', authenticateToken, (req, res) => {
   try {
-    const stmt = db.prepare('SELECT * FROM maintenances');
+    const stmt = db.prepare(`
+      SELECT m.*, u.name as creator_name 
+      FROM maintenances m 
+      LEFT JOIN users u ON m.created_by = u.id
+    `);
     const maintenances = stmt.all();
     
     // Mapper snake_case vers camelCase pour compatibilité frontend
@@ -727,14 +741,18 @@ app.get('/api/maintenances', authenticateToken, (req, res) => {
       date: m.date,
       startDate: m.date,
       endDate: m.end_date,
+      startDatePeriod: m.start_date_period || 'AM',
+      endDatePeriod: m.end_date_period || 'PM',
       description: m.description,
       garageId: m.garage_id,
       cost: m.cost,
       mileage: m.mileage,
       notes: m.notes,
       isImmobilized: m.is_immobilized,
+      isQuickReport: m.is_quick_report,
       technicalControlType: m.technical_control_type,
       createdBy: m.created_by,
+      creatorName: m.creator_name || 'Inconnu',
       modifiedBy: m.modified_by,
       createdAt: m.created_at,
       modifiedAt: m.modified_at
@@ -760,10 +778,15 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
     
     const stmt = db.prepare(`
       INSERT INTO maintenances (id, vehicle_id, vehicle_name, type, status, date, end_date, 
+                               start_date_period, end_date_period,
                                description, garage_id, cost, mileage, notes, is_immobilized, 
-                               technical_control_type, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               is_quick_report, technical_control_type, created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
+    
+    // Résoudre les champs date (supporte camelCase ET snake_case depuis toSnakeCase)
+    const resolvedDate = maintenance.start_date || maintenance.startDate || maintenance.date || null;
+    const resolvedEndDate = maintenance.end_date || maintenance.endDate || resolvedDate;
     
     stmt.run(
       maintenance.id,
@@ -771,14 +794,17 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
       maintenance.vehicle_name || '',
       maintenance.type || 'other',
       maintenance.status || 'pending',
-      maintenance.date,
-      maintenance.end_date || maintenance.date,
+      resolvedDate,
+      resolvedEndDate,
+      maintenance.start_date_period || 'AM',
+      maintenance.end_date_period || 'PM',
       maintenance.description || '',
       maintenance.garage_id || null,
       maintenance.cost || null,
       maintenance.mileage || null,
       maintenance.notes || '',
       maintenance.is_immobilized ? 1 : 0,
+      maintenance.is_quick_report ? 1 : 0,
       maintenance.technical_control_type || null,
       req.user.id,
       req.user.id
@@ -796,15 +822,15 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
   try {
     const maintenance = req.body;
     
-    // VALIDATION : Les non-admins ne peuvent modifier que leurs propres signalements
+    // VALIDATION : Les non-admins ne peuvent que modifier leurs propres signalements
     if (!req.user.is_admin) {
-      // Vérifier si la maintenance appartient à l'utilisateur
       const existing = db.prepare('SELECT created_by, status FROM maintenances WHERE id = ?').get(req.params.id);
       
       if (!existing) {
         return res.status(404).json({ error: 'Maintenance introuvable' });
       }
       
+      // Les non-admins peuvent uniquement modifier leurs propres signalements
       if (existing.created_by !== req.user.id) {
         return res.status(403).json({ 
           error: 'Accès refusé',
@@ -812,34 +838,43 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
         });
       }
       
-      if (maintenance.status !== 'reported') {
+      // Empêcher le changement de statut pour les non-admins
+      if (maintenance.status !== existing.status) {
         return res.status(403).json({ 
           error: 'Accès refusé',
-          message: 'Vous ne pouvez que signaler des pannes.'
+          message: 'Seuls les administrateurs peuvent changer le statut d\'une intervention.'
         });
       }
     }
     
     const stmt = db.prepare(`
       UPDATE maintenances 
-      SET vehicle_id = ?, type = ?, status = ?, date = ?, end_date = ?, description = ?, 
-          garage_id = ?, cost = ?, mileage = ?, notes = ?, is_immobilized = ?,
-          technical_control_type = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
+      SET vehicle_id = ?, type = ?, status = ?, date = ?, end_date = ?, 
+          start_date_period = ?, end_date_period = ?,
+          description = ?, garage_id = ?, cost = ?, mileage = ?, notes = ?, is_immobilized = ?,
+          is_quick_report = ?, technical_control_type = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
+    
+    // Résoudre les champs date (supporte camelCase ET snake_case depuis toSnakeCase)
+    const resolvedDate = maintenance.startDate || maintenance.start_date || maintenance.date || null;
+    const resolvedEndDate = maintenance.endDate || maintenance.end_date || resolvedDate;
     
     stmt.run(
       maintenance.vehicleId || maintenance.vehicle_id,
       maintenance.type,
       maintenance.status,
-      maintenance.startDate || maintenance.date,
-      maintenance.endDate || maintenance.end_date || maintenance.startDate || maintenance.date,
+      resolvedDate,
+      resolvedEndDate,
+      maintenance.startDatePeriod || maintenance.start_date_period || 'AM',
+      maintenance.endDatePeriod || maintenance.end_date_period || 'PM',
       maintenance.description,
       maintenance.garageId || maintenance.garage_id || null,
       maintenance.cost || null,
       maintenance.mileage || null,
       maintenance.notes || null,
       maintenance.isImmobilized || maintenance.is_immobilized ? 1 : 0,
+      maintenance.isQuickReport || maintenance.is_quick_report ? 1 : 0,
       maintenance.technicalControlType || maintenance.technical_control_type || null,
       req.user.id,
       req.params.id
@@ -1163,6 +1198,45 @@ app.get('/api/access-requests/count/pending', authenticateToken, (req, res) => {
     res.json({ count: result.count });
   } catch (error) {
     console.error('Erreur comptage demandes:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Compter les demandes en attente (interventions + réservations) pour badge admin
+app.get('/api/pending-requests-count', authenticateToken, (req, res) => {
+  try {
+    const interventionStmt = db.prepare("SELECT COUNT(*) as count FROM maintenances WHERE status IN ('pending', 'reported')");
+    const interventionResult = interventionStmt.get();
+    
+    const reservationStmt = db.prepare("SELECT COUNT(*) as count FROM reservation_requests WHERE status = 'pending'");
+    const reservationResult = reservationStmt.get();
+    
+    res.json({
+      interventionRequests: interventionResult.count,
+      reservationRequests: reservationResult.count,
+      total: interventionResult.count + reservationResult.count
+    });
+  } catch (error) {
+    console.error('Erreur comptage demandes:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer les demandes de réservation en attente (pour le popup)
+app.get('/api/reservation-requests/pending', authenticateToken, (req, res) => {
+  try {
+    const stmt = db.prepare(`
+      SELECT rr.*, u.name as requester_name, v.name as vehicle_name, v.registration
+      FROM reservation_requests rr
+      LEFT JOIN users u ON rr.requested_by = u.id
+      LEFT JOIN vehicles v ON rr.vehicle_id = v.id
+      WHERE rr.status = 'pending'
+      ORDER BY rr.requested_at DESC
+    `);
+    const requests = stmt.all();
+    res.json(requests);
+  } catch (error) {
+    console.error('Erreur récupération demandes:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1511,11 +1585,37 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   fileFilter: function (req, file, cb) {
-    // Accepter uniquement les PDF
+    // Accepter uniquement les PDF (pour l'upload de BL)
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
     } else {
       cb(new Error('Seuls les fichiers PDF sont acceptés'));
+    }
+  }
+});
+
+// Upload de pièces jointes génériques (tous types de fichiers acceptés)
+const uploadAttachment = multer({
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max
+  fileFilter: function (req, file, cb) {
+    // Accepter tous les types de fichiers courants
+    const allowedMimes = [
+      'application/pdf',
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain', 'text/csv',
+      'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+      'video/mp4', 'video/quicktime', 'video/x-msvideo',
+      'audio/mpeg', 'audio/wav',
+      'application/octet-stream'
+    ];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(null, true); // Accepter quand même pour ne pas bloquer des types inconnus
     }
   }
 });
@@ -1566,49 +1666,56 @@ app.post('/api/upload-bl', upload.single('pdf'), (req, res) => {
 });
 
 // Endpoint pour uploader des pièces jointes génériques
-app.post('/api/upload-attachment', upload.single('file'), (req, res) => {
-  console.log('📤 POST /api/upload-attachment reçu');
-  console.log('  - affaireId:', req.body.affaireId);
-  console.log('  - file:', req.file ? req.file.originalname : 'AUCUN');
-  
-  try {
-    if (!req.file) {
-      console.error('❌ Aucun fichier dans la requête');
-      return res.status(400).json({ error: 'Aucun fichier fourni' });
+app.post('/api/upload-attachment', (req, res) => {
+  uploadAttachment.single('file')(req, res, function (err) {
+    if (err) {
+      console.error('❌ Erreur multer upload-attachment:', err.message);
+      return res.status(400).json({ error: err.message });
     }
     
-    if (!req.body.affaireId) {
-      console.error('❌ affaireId manquant');
-      return res.status(400).json({ error: 'affaireId requis' });
+    console.log('📤 POST /api/upload-attachment reçu');
+    console.log('  - affaireId:', req.body.affaireId);
+    console.log('  - file:', req.file ? req.file.originalname : 'AUCUN');
+    
+    try {
+      if (!req.file) {
+        console.error('❌ Aucun fichier dans la requête');
+        return res.status(400).json({ error: 'Aucun fichier fourni' });
+      }
+      
+      if (!req.body.affaireId) {
+        console.error('❌ affaireId manquant');
+        return res.status(400).json({ error: 'affaireId requis' });
+      }
+      
+      // Déplacer le fichier du dossier TEMP vers le dossier de l'affaire
+      const affaireDir = path.join(__dirname, '..', 'public', 'attachments', req.body.affaireId);
+      if (!fs.existsSync(affaireDir)) {
+        fs.mkdirSync(affaireDir, { recursive: true });
+        console.log('📁 Dossier créé:', affaireDir);
+      }
+      
+      // Extraire le nom de fichier original (enlever le timestamp)
+      const originalName = req.file.originalname.replace(/^\d+-/, '');
+      const finalPath = path.join(affaireDir, originalName);
+      
+      // Déplacer le fichier
+      fs.renameSync(req.file.path, finalPath);
+      console.log('✅ Fichier attaché sauvegardé:', finalPath);
+      
+      const relativePath = path.join('attachments', req.body.affaireId, originalName);
+      
+      res.json({ 
+        success: true, 
+        path: relativePath,
+        filename: originalName,
+        url: `/attachments/${req.body.affaireId}/${originalName}`
+      });
+    } catch (error) {
+      console.error('❌ Erreur upload attachment:', error);
+      res.status(500).json({ error: error.message });
     }
-    
-    // Déplacer le fichier du dossier TEMP vers le dossier de l'affaire
-    const affaireDir = path.join(__dirname, '..', 'public', 'attachments', req.body.affaireId);
-    if (!fs.existsSync(affaireDir)) {
-      fs.mkdirSync(affaireDir, { recursive: true });
-      console.log('📁 Dossier créé:', affaireDir);
-    }
-    
-    // Extraire le nom de fichier original (enlever le timestamp)
-    const originalName = req.file.originalname.replace(/^\d+-/, '');
-    const finalPath = path.join(affaireDir, originalName);
-    
-    // Déplacer le fichier
-    fs.renameSync(req.file.path, finalPath);
-    console.log('✅ Fichier attaché sauvegardé:', finalPath);
-    
-    const relativePath = path.join('attachments', req.body.affaireId, originalName);
-    
-    res.json({ 
-      success: true, 
-      path: relativePath,
-      filename: originalName,
-      url: `/attachments/${req.body.affaireId}/${originalName}`
-    });
-  } catch (error) {
-    console.error('❌ Erreur upload attachment:', error);
-    res.status(500).json({ error: error.message });
-  }
+  });
 });
 
 // Endpoint pour lister les fichiers d'une affaire
@@ -1652,7 +1759,79 @@ app.get('/api/attachments/:affaireId', (req, res) => {
   }
 });
 
+// Endpoint pour lister les affaires ayant des pièces jointes
+app.get('/api/attachments-index', (req, res) => {
+  try {
+    const attachDir = path.join(__dirname, '..', 'public', 'attachments');
+    if (!fs.existsSync(attachDir)) {
+      return res.json({ affaires: [] });
+    }
+    const affaires = fs.readdirSync(attachDir)
+      .filter(name => {
+        if (name.startsWith('.') || name === 'TEMP') return false;
+        const subDir = path.join(attachDir, name);
+        if (!fs.statSync(subDir).isDirectory()) return false;
+        const files = fs.readdirSync(subDir).filter(f => !f.startsWith('.'));
+        return files.length > 0;
+      });
+    res.json({ affaires });
+  } catch (error) {
+    console.error('Erreur attachments-index:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint pour supprimer une pièce jointe
+app.delete('/api/attachments/:affaireId/:filename', (req, res) => {
+  try {
+    const { affaireId, filename } = req.params;
+    const filePath = path.join(__dirname, '..', 'public', 'attachments', affaireId, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Fichier non trouvé' });
+    }
+    
+    fs.unlinkSync(filePath);
+    console.log('🗑️ Pièce jointe supprimée:', filePath);
+    
+    res.json({ success: true, message: `${filename} supprimé` });
+  } catch (error) {
+    console.error('❌ Erreur suppression pièce jointe:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
   console.log(`📡 Accessible depuis le réseau sur http://192.168.205.75:${PORT}`);
+});
+
+// Gestion de l'arrêt propre du serveur
+function gracefulShutdown(signal) {
+  console.log(`\n⚠️  Signal ${signal} reçu - Arrêt en cours...`);
+  
+  // Faire un dernier checkpoint de la base de données
+  console.log('💾 Sauvegarde finale de la base de données...');
+  checkpointDatabase();
+  
+  // Fermer proprement la base de données
+  closeDatabase();
+  
+  console.log('✅ Arrêt propre terminé');
+  process.exit(0);
+}
+
+// Intercept les signaux d'arrêt
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Gestion des erreurs non capturées
+process.on('uncaughtException', (error) => {
+  console.error('❌ Exception non capturée:', error);
+  gracefulShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Promesse rejetée non gérée:', reason);
+  gracefulShutdown('unhandledRejection');
 });

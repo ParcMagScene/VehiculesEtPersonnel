@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, Trash2, MapPin } from 'lucide-react';
+import { X, Trash2, MapPin, Link2, Unlink, Paperclip } from 'lucide-react';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
 import TripDetailsModal from './TripDetailsModal';
@@ -107,8 +107,15 @@ const ReservationModal = ({
 
   // États pour TripDetailsModal
   const [selectedEventForTrip, setSelectedEventForTrip] = useState(null);
+  const [selectedEventsForCombinedTrip, setSelectedEventsForCombinedTrip] = useState(null);
   const [tripDetails, setTripDetails] = useState({});
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState('');
+  
+  // État pour la liaison de trajets
+  const [linkEventComboboxOpen, setLinkEventComboboxOpen] = useState(null); // eventId source ou null
+  
+  // Index des affaires ayant des pièces jointes
+  const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
   
   // État pour LocationDialog
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
@@ -179,6 +186,22 @@ const ReservationModal = ({
     fetchGoogleMapsApiKey();
   }, []);
 
+  // Charger l'index des pièces jointes
+  useEffect(() => {
+    const loadAttachmentsIndex = async () => {
+      try {
+        const response = await fetch('/api/attachments-index');
+        if (response.ok) {
+          const data = await response.json();
+          setAffairesWithAttachments(data.affaires || []);
+        }
+      } catch (e) {
+        // silencieux
+      }
+    };
+    loadAttachmentsIndex();
+  }, []);
+
   // Charger les détails de trajet existants lors de l'édition
   useEffect(() => {
     const loadTripDetails = async () => {
@@ -216,7 +239,8 @@ const ReservationModal = ({
                 hasJunctionWithNext: detail.has_junction_with_next,
                 junctionLocation: detail.junction_location,
                 outboundDuration: detail.outbound_duration,
-                returnDuration: detail.return_duration
+                returnDuration: detail.return_duration,
+                tripGroupId: detail.trip_group_id
               };
             });
             setTripDetails(detailsMap);
@@ -439,7 +463,8 @@ const ReservationModal = ({
         hasJunctionWithNext: savedData.has_junction_with_next,
         junctionLocation: savedData.junction_location,
         outboundDuration: savedData.outbound_duration,
-        returnDuration: savedData.return_duration
+        returnDuration: savedData.return_duration,
+        tripGroupId: savedData.trip_group_id
       };
       
       // Mettre à jour l'état local avec les données transformées
@@ -464,6 +489,175 @@ const ReservationModal = ({
       alert(`Erreur technique: ${error.message}`);
       return null;
     }
+  };
+
+  // Helper: convertir les trip_details snake_case en camelCase
+  const transformTripDetail = (detail) => ({
+    ...detail,
+    departureLocation: detail.departure_location,
+    departureDate: detail.departure_date,
+    departureTime: detail.departure_time,
+    arrivalLocation: detail.arrival_location,
+    arrivalDate: detail.arrival_date,
+    arrivalTime: detail.arrival_time,
+    returnDepartureLocation: detail.return_departure_location,
+    returnDepartureDate: detail.return_departure_date,
+    returnDepartureTime: detail.return_departure_time,
+    returnArrivalLocation: detail.return_arrival_location,
+    returnArrivalDate: detail.return_arrival_date,
+    returnArrivalTime: detail.return_arrival_time,
+    driverName: detail.driver_name,
+    hasJunctionWithNext: detail.has_junction_with_next,
+    junctionLocation: detail.junction_location,
+    outboundDuration: detail.outbound_duration,
+    returnDuration: detail.return_duration,
+    tripGroupId: detail.trip_group_id
+  });
+
+  // Lier deux événements (leurs trajets partagent le même groupe)
+  const handleLinkTrips = async (eventId1, eventId2) => {
+    if (!reservation?.id) {
+      alert('Vous devez d\'abord enregistrer la réservation');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      
+      const response = await fetch('/api/trip-details/link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          reservationId: reservation.id,
+          eventId1,
+          eventId2
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Mettre à jour tripDetails avec les données retournées
+        const detailsMap = {};
+        data.tripDetails.forEach(detail => {
+          detailsMap[detail.event_id] = transformTripDetail(detail);
+        });
+        setTripDetails(detailsMap);
+      } else {
+        alert('Erreur lors de la liaison des trajets');
+      }
+    } catch (error) {
+      console.error('Erreur liaison trajets:', error);
+    }
+  };
+
+  // Délier un événement de son groupe
+  const handleUnlinkTrip = async (eventId) => {
+    if (!reservation?.id) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      
+      const response = await fetch('/api/trip-details/unlink', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          reservationId: reservation.id,
+          eventId
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const detailsMap = {};
+        data.tripDetails.forEach(detail => {
+          detailsMap[detail.event_id] = transformTripDetail(detail);
+        });
+        setTripDetails(detailsMap);
+      }
+    } catch (error) {
+      console.error('Erreur déliaison trajet:', error);
+    }
+  };
+
+  // Lier un événement du banner (et l'ajouter à la tournée si nécessaire)
+  const handleLinkBannerEvent = async (sourceEventId, targetEvent) => {
+    // Vérifier si l'événement cible est déjà dans la tournée
+    if (!formData.linkedEventIds.includes(targetEvent.id)) {
+      // L'ajouter à la tournée
+      setFormData(prev => {
+        const newLinkedEventIds = [...prev.linkedEventIds, targetEvent.id];
+        const newAffaires = [...prev.affaires];
+        if (targetEvent.affaire && !newAffaires.includes(targetEvent.affaire)) {
+          newAffaires.push(targetEvent.affaire);
+        }
+        return {
+          ...prev,
+          linkedEventIds: newLinkedEventIds,
+          affaires: newAffaires,
+          isTournee: true
+        };
+      });
+    }
+    
+    // Puis lier les trajets
+    if (reservation?.id) {
+      await handleLinkTrips(sourceEventId, targetEvent.id);
+    }
+    setLinkEventComboboxOpen(null);
+  };
+
+  // Obtenir les groupes de trajets liés
+  const getTripGroups = () => {
+    const groups = {};
+    const ungrouped = [];
+    
+    const sortedEventIds = formData.linkedEventIds
+      .map(eventId => {
+        const event = googleEvents.find(e => e.id === eventId);
+        if (!event) return null;
+        const startDate = event.start?.dateTime 
+          ? new Date(event.start.dateTime) 
+          : event.start?.date 
+            ? new Date(event.start.date) 
+            : null;
+        return { eventId, event, startDate };
+      })
+      .filter(item => item !== null)
+      .sort((a, b) => {
+        if (!a.startDate) return 1;
+        if (!b.startDate) return -1;
+        return a.startDate - b.startDate;
+      });
+    
+    sortedEventIds.forEach(item => {
+      const td = tripDetails[item.eventId];
+      const groupId = td?.tripGroupId || td?.trip_group_id;
+      
+      if (groupId) {
+        if (!groups[groupId]) groups[groupId] = [];
+        groups[groupId].push(item);
+      } else {
+        ungrouped.push(item);
+      }
+    });
+    
+    return { groups, ungrouped, sortedEventIds };
+  };
+
+  // Ouvrir le modal de trajet combiné pour un groupe
+  const handleOpenCombinedTripDetails = (groupEventItems) => {
+    setSelectedEventsForCombinedTrip(groupEventItems.map((item, index) => ({
+      event: item.event,
+      eventIndex: formData.linkedEventIds.indexOf(item.eventId)
+    })));
   };
 
   const handleSubmit = (e) => {
@@ -670,7 +864,7 @@ const ReservationModal = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
+        <form id="reservation-form" onSubmit={handleSubmit} className="modal-form">
           {googleEvent && (
             <div className="google-event-badge">
               📅 Lié à : <strong>{googleEvent.summary}</strong>
@@ -1127,174 +1321,344 @@ const ReservationModal = ({
               </div>
             )}
 
-            {formData.isTournee && formData.linkedEventIds.length > 0 && (
-              <div className="linked-events-display" style={{ 
-                marginTop: '1rem',
-                padding: '1rem',
-                backgroundColor: '#f9fafb',
-                borderRadius: '0.5rem',
-                border: '1px solid #e5e7eb'
-              }}>
-                <div style={{ 
-                  fontWeight: '600',
-                  fontSize: '0.875rem',
-                  color: '#374151',
-                  marginBottom: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span>🗓️ Événements liés à cette tournée</span>
-                  <span style={{ 
-                    fontWeight: 'normal',
-                    color: '#6b7280',
-                    fontSize: '0.8rem'
-                  }}>({formData.linkedEventIds.length})</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {formData.linkedEventIds
-                    .map(eventId => {
-                      const event = googleEvents.find(e => e.id === eventId);
-                      if (!event) return null;
-                      
-                      const startDate = event.start?.dateTime 
-                        ? new Date(event.start.dateTime) 
-                        : event.start?.date 
-                          ? new Date(event.start.date) 
-                          : null;
-                      
-                      const endDate = event.end?.dateTime 
-                        ? new Date(event.end.dateTime) 
-                        : event.end?.date 
-                          ? new Date(event.end.date) 
-                          : null;
-                      
-                      const dateRange = startDate && endDate
-                        ? `${format(startDate, 'dd/MM/yy', { locale: fr })} → ${format(endDate, 'dd/MM/yy', { locale: fr })}`
-                        : startDate
-                          ? format(startDate, 'dd/MM/yy', { locale: fr })
-                          : '';
-                      
-                      let cleanTitle = event.summary || '(Sans titre)';
-                      if (event.affaire) {
-                        cleanTitle = cleanTitle.replace(/\baf\s*\d+\b/gi, '').trim();
-                        cleanTitle = cleanTitle.replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
-                      }
-                      if (!cleanTitle) cleanTitle = '(Sans titre)';
-                      
-                      return {
-                        eventId,
-                        event,
-                        startDate,
-                        dateRange,
-                        cleanTitle
-                      };
-                    })
-                    .filter(item => item !== null)
-                    .sort((a, b) => {
-                      if (!a.startDate) return 1;
-                      if (!b.startDate) return -1;
-                      return a.startDate - b.startDate;
-                    })
-                    .map(({ eventId, event, dateRange, cleanTitle }, eventIndex) => {
-                      // Vérifier si les détails du trajet sont enregistrés
-                      const hasTripDetails = !!tripDetails[event.id];
-                      
-                      return (
-                        <div 
-                          key={eventId}
-                          className="event-card-with-trip"
-                          style={{ 
-                            backgroundColor: hasTripDetails ? '#ecfdf5' : getEventColor(event) + '20',
-                            padding: '0.75rem',
-                            borderRadius: '0.375rem',
-                            border: hasTripDetails ? '2px solid #10b981' : '1px solid ' + getEventColor(event) + '40',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.375rem',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                      );
-                        <div 
-                          className="clickable-event"
-                          style={{ 
-                            cursor: 'pointer',
-                            flex: 1
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onRequestViewEvent) {
-                              onRequestViewEvent(event);
-                              onClose();
-                            }
-                          }}
-                          title="Cliquer pour voir l'événement"
-                        >
-                          <div style={{ 
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '0.5rem',
-                            marginBottom: '0.375rem'
+            {formData.isTournee && formData.linkedEventIds.length > 0 && (() => {
+              const { groups, ungrouped, sortedEventIds } = getTripGroups();
+              
+              // Préparer les données enrichies pour chaque event
+              const enrichedEvents = sortedEventIds.map((item, idx) => {
+                const { eventId, event, startDate } = item;
+                const endDate = event.end?.dateTime 
+                  ? new Date(event.end.dateTime) 
+                  : event.end?.date ? new Date(event.end.date) : null;
+                
+                const dateRange = startDate && endDate
+                  ? `${format(startDate, 'dd/MM/yy', { locale: fr })} → ${format(endDate, 'dd/MM/yy', { locale: fr })}`
+                  : startDate ? format(startDate, 'dd/MM/yy', { locale: fr }) : '';
+                
+                let cleanTitle = event.summary || '(Sans titre)';
+                if (event.affaire) {
+                  cleanTitle = cleanTitle.replace(/\baf\s*\d+\b/gi, '').trim();
+                  cleanTitle = cleanTitle.replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
+                }
+                if (!cleanTitle) cleanTitle = '(Sans titre)';
+                
+                const td = tripDetails[eventId];
+                const groupId = td?.tripGroupId || td?.trip_group_id;
+                
+                return { ...item, dateRange, cleanTitle, groupId, originalIndex: idx };
+              });
+              
+              // Construire les segments : chaque segment est soit un groupe, soit un item solo
+              const segments = [];
+              let currentGroupId = null;
+              let currentGroupItems = [];
+              
+              enrichedEvents.forEach((item, idx) => {
+                if (item.groupId) {
+                  if (item.groupId === currentGroupId) {
+                    currentGroupItems.push(item);
+                  } else {
+                    // Terminer le groupe précédent
+                    if (currentGroupId && currentGroupItems.length > 0) {
+                      segments.push({ type: 'group', groupId: currentGroupId, items: currentGroupItems });
+                    }
+                    currentGroupId = item.groupId;
+                    currentGroupItems = [item];
+                  }
+                } else {
+                  // Terminer le groupe précédent si nécessaire
+                  if (currentGroupId && currentGroupItems.length > 0) {
+                    segments.push({ type: 'group', groupId: currentGroupId, items: currentGroupItems });
+                    currentGroupId = null;
+                    currentGroupItems = [];
+                  }
+                  segments.push({ type: 'solo', items: [item] });
+                }
+              });
+              // Terminer le dernier groupe
+              if (currentGroupId && currentGroupItems.length > 0) {
+                segments.push({ type: 'group', groupId: currentGroupId, items: currentGroupItems });
+              }
+              
+              // Fonction pour rendre une event card
+              const renderEventCard = (item, isInGroup = false) => {
+                const { eventId, event, dateRange, cleanTitle, originalIndex } = item;
+                const hasTripDetails = !!tripDetails[event.id];
+                
+                return (
+                  <div 
+                    key={eventId}
+                    className={`event-card-with-trip ${isInGroup ? 'in-group' : ''}`}
+                    style={{ 
+                      backgroundColor: hasTripDetails ? '#ecfdf5' : getEventColor(event) + '20',
+                      padding: '0.75rem',
+                      borderRadius: isInGroup ? '0' : '0.375rem',
+                      border: hasTripDetails ? '2px solid #10b981' : '1px solid ' + getEventColor(event) + '40',
+                      borderBottom: isInGroup ? 'none' : undefined,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.375rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <div 
+                      className="clickable-event"
+                      style={{ cursor: 'pointer', flex: 1 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onRequestViewEvent) {
+                          onRequestViewEvent(event);
+                          onClose();
+                        }
+                      }}
+                      title="Cliquer pour voir l'événement"
+                    >
+                      <div style={{ 
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        gap: '0.5rem', marginBottom: '0.375rem'
+                      }}>
+                        <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '500' }}>
+                          📅 {dateRange}
+                        </span>
+                        {event.affaire && (
+                          <span style={{ 
+                            fontSize: '0.75rem', fontWeight: '600', color: '#6366f1',
+                            backgroundColor: '#eef2ff', padding: '0.125rem 0.5rem', borderRadius: '0.25rem',
+                            display: 'flex', alignItems: 'center', gap: '0.25rem'
                           }}>
-                            <span style={{ 
-                              fontSize: '0.75rem',
-                              color: '#6b7280',
-                              fontWeight: '500'
-                            }}>
-                              📅 {dateRange}
-                            </span>
-                            {event.affaire && (
-                              <span style={{ 
-                                fontSize: '0.75rem',
-                                fontWeight: '600',
-                                color: '#6366f1',
-                                backgroundColor: '#eef2ff',
-                                padding: '0.125rem 0.5rem',
-                                borderRadius: '0.25rem'
-                              }}>
-                                {event.affaire}
-                              </span>
+                            {affairesWithAttachments.includes(event.affaire) && (
+                              <Paperclip size={11} style={{ opacity: 0.7 }} />
                             )}
-                          </div>
-                          <div style={{ 
-                            fontSize: '0.875rem',
-                            color: '#111827',
-                            fontWeight: '500',
-                            marginBottom: '0.375rem'
-                          }}>
-                            {cleanTitle}
-                          </div>
-                          {event.location && (
-                            <div style={{ 
-                              fontSize: '0.75rem',
-                              color: '#6b7280',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.25rem'
-                            }}>
-                              📍 {event.location}
-                            </div>
-                          )}
+                            {event.affaire}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: '500', marginBottom: '0.375rem' }}>
+                        {cleanTitle}
+                      </div>
+                      {event.location && (
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          📍 {event.location}
                         </div>
+                      )}
+                    </div>
+                    {/* Bouton trajet solo (seulement si pas dans un groupe) */}
+                    {!isInGroup && (
+                      <button
+                        type="button"
+                        className="trip-details-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenTripDetails(event, originalIndex);
+                        }}
+                      >
+                        <MapPin size={16} />
+                        Détails du trajet
+                      </button>
+                    )}
+                    {/* Boutons de liaison (seulement si solo et en mode édition) */}
+                    {!isInGroup && isEdit && (
+                      <div className="trip-link-actions">
+                        {originalIndex < sortedEventIds.length - 1 && (
+                          <button
+                            type="button"
+                            className="link-next-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const nextItem = sortedEventIds[originalIndex + 1];
+                              handleLinkTrips(eventId, nextItem.eventId);
+                            }}
+                            title="Lier à l'événement suivant de la tournée"
+                          >
+                            <Link2 size={14} />
+                            Lier au suivant
+                          </button>
+                        )}
                         <button
                           type="button"
-                          className="trip-details-btn"
+                          className="link-event-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenTripDetails(event, eventIndex);
+                            setLinkEventComboboxOpen(linkEventComboboxOpen === eventId ? null : eventId);
                           }}
+                          title="Lier à un autre événement du calendrier"
                         >
-                          <MapPin size={16} />
-                          Détails du trajet
+                          <Link2 size={14} />
+                          Lier à un événement
                         </button>
+                        {linkEventComboboxOpen === eventId && (
+                          <div className="link-event-combobox" onClick={(e) => e.stopPropagation()}>
+                            <div className="combobox-header">Choisir un événement à lier</div>
+                            <div className="combobox-list">
+                              {/* Événements déjà dans la tournée mais pas liés */}
+                              {formData.linkedEventIds
+                                .filter(eid => eid !== eventId)
+                                .map(eid => googleEvents.find(e => e.id === eid))
+                                .filter(Boolean)
+                                .filter(ge => {
+                                  const geTd = tripDetails[ge.id];
+                                  const geGroup = geTd?.tripGroupId || geTd?.trip_group_id;
+                                  const myTd = tripDetails[eventId];
+                                  const myGroup = myTd?.tripGroupId || myTd?.trip_group_id;
+                                  return !(geGroup && myGroup && geGroup === myGroup);
+                                })
+                                .map(ge => {
+                                  let geTitle = ge.summary || '(Sans titre)';
+                                  if (ge.affaire) geTitle = geTitle.replace(/\baf\s*\d+\b/gi, '').trim().replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
+                                  if (!geTitle) geTitle = '(Sans titre)';
+                                  const geStart = ge.start?.dateTime ? new Date(ge.start.dateTime) : ge.start?.date ? new Date(ge.start.date) : null;
+                                  
+                                  return (
+                                    <div key={ge.id} className="combobox-item combobox-item-tournee"
+                                      onClick={() => { handleLinkTrips(eventId, ge.id); setLinkEventComboboxOpen(null); }}>
+                                      <span className="combobox-date">🚐 {geStart ? format(geStart, 'dd/MM', { locale: fr }) : ''}</span>
+                                      <span className="combobox-title">{geTitle}</span>
+                                      {ge.affaire && <span className="combobox-affaire">{ge.affaire}</span>}
+                                    </div>
+                                  );
+                                })}
+                              {/* Séparateur si les deux listes ont des éléments */}
+                              {formData.linkedEventIds.filter(eid => eid !== eventId).length > 0 && 
+                               googleEvents.filter(ge => ge.id !== eventId && !formData.linkedEventIds.includes(ge.id)).length > 0 && (
+                                <div className="combobox-separator">Autres événements</div>
+                              )}
+                              {/* Événements du banner pas encore dans la tournée */}
+                              {googleEvents
+                                .filter(ge => ge.id !== eventId && !formData.linkedEventIds.includes(ge.id))
+                                .slice(0, 10)
+                                .map(ge => {
+                                  const geStart = ge.start?.dateTime ? new Date(ge.start.dateTime) : ge.start?.date ? new Date(ge.start.date) : null;
+                                  let geTitle = ge.summary || '(Sans titre)';
+                                  if (ge.affaire) geTitle = geTitle.replace(/\baf\s*\d+\b/gi, '').trim().replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
+                                  if (!geTitle) geTitle = '(Sans titre)';
+                                  
+                                  return (
+                                    <div key={ge.id} className="combobox-item"
+                                      onClick={() => handleLinkBannerEvent(eventId, ge)}>
+                                      <span className="combobox-date">{geStart ? format(geStart, 'dd/MM', { locale: fr }) : '—'}</span>
+                                      <span className="combobox-title">{geTitle}</span>
+                                      {ge.affaire && <span className="combobox-affaire">{ge.affaire}</span>}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                            <button type="button" className="combobox-close" onClick={() => setLinkEventComboboxOpen(null)}>
+                              Fermer
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
+                    )}
+                  </div>
+                );
+              };
+
+              // Rendu d'un bouton de liaison entre deux segments
+              const renderLinkButton = (lastEventId, firstEventId, key) => {
+                const td1 = tripDetails[lastEventId];
+                const td2 = tripDetails[firstEventId];
+                const g1 = td1?.tripGroupId || td1?.trip_group_id;
+                const g2 = td2?.tripGroupId || td2?.trip_group_id;
+                const areLinked = g1 && g1 === g2;
+                
+                return (
+                  <div key={key} className="trip-link-separator">
+                    {areLinked ? (
+                      <button type="button" className="unlink-btn"
+                        onClick={(e) => { e.stopPropagation(); handleUnlinkTrip(firstEventId); }}
+                        title="Délier ces événements">
+                        <Unlink size={14} />
+                        <span className="link-label">Liés</span>
+                      </button>
+                    ) : isEdit ? (
+                      <button type="button" className="link-btn"
+                        onClick={(e) => { e.stopPropagation(); handleLinkTrips(lastEventId, firstEventId); }}
+                        title="Lier les trajets de ces événements">
+                        <Link2 size={14} />
+                        <span className="link-label">Lier</span>
+                      </button>
+                    ) : (
+                      <div className="link-separator-line" />
+                    )}
+                  </div>
+                );
+              };
+              
+              return (
+                <div className="linked-events-display" style={{ 
+                  marginTop: '1rem', padding: '1rem',
+                  backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ 
+                    fontWeight: '600', fontSize: '0.875rem', color: '#374151',
+                    marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                  }}>
+                    <span>🗓️ Événements liés à cette tournée</span>
+                    <span style={{ fontWeight: 'normal', color: '#6b7280', fontSize: '0.8rem' }}>
+                      ({formData.linkedEventIds.length})
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                    {segments.map((segment, segIdx) => {
+                      const elements = [];
+                      
+                      // Bouton de liaison entre segments
+                      if (segIdx > 0) {
+                        const prevSegment = segments[segIdx - 1];
+                        const prevLastEventId = prevSegment.items[prevSegment.items.length - 1].eventId;
+                        const currFirstEventId = segment.items[0].eventId;
+                        elements.push(renderLinkButton(prevLastEventId, currFirstEventId, `link-seg-${segIdx}`));
+                      }
+                      
+                      if (segment.type === 'group') {
+                        // Rendu d'un groupe lié
+                        elements.push(
+                          <div key={`group-${segment.groupId}`} className="trip-group-wrapper">
+                            <div className="trip-group-header">
+                              <Link2 size={14} />
+                              <span>Trajets liés</span>
+                            </div>
+                            <div className="trip-group-cards">
+                              {segment.items.map((item, itemIdx) => (
+                                <React.Fragment key={item.eventId}>
+                                  {itemIdx > 0 && (
+                                    <div className="group-inner-separator">
+                                      <Unlink size={12} />
+                                      <button type="button" className="unlink-inner-btn"
+                                        onClick={(e) => { e.stopPropagation(); handleUnlinkTrip(item.eventId); }}
+                                        title="Délier cet événement du groupe">
+                                        Délier
+                                      </button>
+                                    </div>
+                                  )}
+                                  {renderEventCard(item, true)}
+                                </React.Fragment>
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              className="trip-details-btn combined-trip-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenCombinedTripDetails(segment.items);
+                              }}
+                            >
+                              <MapPin size={16} />
+                              Détails du trajet combiné ({segment.items.length} événements)
+                            </button>
+                          </div>
+                        );
+                      } else {
+                        // Rendu d'un event solo
+                        elements.push(renderEventCard(segment.items[0], false));
+                      }
+                      
+                      return <React.Fragment key={`seg-${segIdx}`}>{elements}</React.Fragment>;
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
           {/* Fin de la section ÉVÉNEMENTS LIÉS */}
 
@@ -1312,32 +1676,33 @@ const ReservationModal = ({
             />
           </div>
 
-          <div className="modal-actions">
-            {isEdit && (
-              <button
-                type="button"
-                className="delete-button"
-                onClick={onDelete}
-              >
-                <Trash2 size={18} />
-                Supprimer
-              </button>
-            )}
-            <button type="button" className="cancel-button" onClick={onClose}>
-              Annuler
-            </button>
-            {!isEdit && (
-              <button type="submit" className="submit-button">
-                {currentUser?.isAdmin ? 'Créer' : 'Demander'}
-              </button>
-            )}
-            {isEdit && (hasChanges || formData.isTournee) && (
-              <button type="submit" className="submit-button">
-                Valider les modifications
-              </button>
-            )}
-          </div>
         </form>
+
+        <div className="modal-actions">
+          {isEdit && currentUser?.isAdmin && (
+            <button
+              type="button"
+              className="delete-button"
+              onClick={onDelete}
+            >
+              <Trash2 size={18} />
+              Supprimer
+            </button>
+          )}
+          <button type="button" className="cancel-button" onClick={onClose}>
+            Annuler
+          </button>
+          {!isEdit && (
+            <button type="submit" form="reservation-form" className="submit-button">
+              {currentUser?.isAdmin ? 'Créer' : 'Demander'}
+            </button>
+          )}
+          {isEdit && (hasChanges || formData.isTournee) && (
+            <button type="submit" form="reservation-form" className="submit-button">
+              Valider les modifications
+            </button>
+          )}
+        </div>
       </div>
 
       {selectedEventForTrip && (() => {
@@ -1360,6 +1725,32 @@ const ReservationModal = ({
             googleMapsApiKey={googleMapsApiKey}
             companyAddress={companyAddress}
             initialLocations={allLocations}
+          />
+        );
+      })()}
+
+      {/* Modal trajet combiné pour les événements liés */}
+      {selectedEventsForCombinedTrip && (() => {
+        const selectedVehicle = vehicles.find(v => v.id === formData.vehicleId);
+        // Le premier événement du groupe sert d'événement principal
+        const primaryEvent = selectedEventsForCombinedTrip[0].event;
+        
+        return (
+          <TripDetailsModal
+            event={primaryEvent}
+            tripDetail={tripDetails[primaryEvent.id]}
+            onSave={handleSaveTripDetails}
+            onClose={() => setSelectedEventsForCombinedTrip(null)}
+            drivers={drivers}
+            vehicle={selectedVehicle}
+            nextEvent={selectedEventsForCombinedTrip.length > 1 ? selectedEventsForCombinedTrip[1].event : null}
+            googleMapsApiKey={googleMapsApiKey}
+            companyAddress={companyAddress}
+            initialLocations={allLocations}
+            combinedEvents={selectedEventsForCombinedTrip.map(item => ({
+              event: item.event,
+              tripDetail: tripDetails[item.event.id]
+            }))}
           />
         );
       })()}

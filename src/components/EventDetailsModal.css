@@ -5,8 +5,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
+  backdrop-filter: blur(4px);  isolation: isolate;  display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
@@ -41,7 +40,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 24px;
-  border-radius: 16px 16px 0 0;
+  border-radius: 15px 15px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -292,6 +291,27 @@ section h3 {
   font-size: 12px;
   color: #9ca3af;
   font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.btn-delete-attachment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.btn-delete-attachment:hover {
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 /* Empty State */

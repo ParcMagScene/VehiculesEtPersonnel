@@ -4,12 +4,13 @@ import './VehicleMaintenanceModal.css';
 
 const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   const [kilometrage, setKilometrage] = useState(vehicle?.kilometrage || 0);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   
   // Charger les contrôles existants ou initialiser un tableau vide
-  const initialControles = vehicle?.controles_techniques 
-    ? (typeof vehicle.controles_techniques === 'string' 
-        ? JSON.parse(vehicle.controles_techniques) 
-        : vehicle.controles_techniques)
+  const initialControles = vehicle?.controlesTechniques 
+    ? (typeof vehicle.controlesTechniques === 'string' 
+        ? JSON.parse(vehicle.controlesTechniques) 
+        : vehicle.controlesTechniques)
     : [];
   
   const [controles, setControles] = useState(initialControles);
@@ -18,6 +19,25 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     date: '',
     deadline: ''
   });
+
+  // Synchroniser les états quand le véhicule change
+  useEffect(() => {
+    console.log('🔄 useEffect déclenché - vehicle.id:', vehicle?.id);
+    console.log('🔄 controlesTechniques:', vehicle?.controlesTechniques);
+    
+    if (vehicle) {
+      setKilometrage(vehicle.kilometrage || 0);
+      
+      const updatedControles = vehicle.controlesTechniques 
+        ? (typeof vehicle.controlesTechniques === 'string' 
+            ? JSON.parse(vehicle.controlesTechniques) 
+            : vehicle.controlesTechniques)
+        : [];
+      
+      console.log('🔄 Contrôles parsés:', updatedControles);
+      setControles(updatedControles);
+    }
+  }, [vehicle?.id, vehicle?.controlesTechniques]);
 
   // Tous les types de contrôles disponibles
   const allControleTechniqueTypes = [
@@ -114,16 +134,27 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     setControles(controles.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     const updatedVehicle = {
       ...vehicle,
       kilometrage: parseInt(kilometrage) || 0,
-      controles_techniques: JSON.stringify(controles)
+      controlesTechniques: JSON.stringify(controles)
     };
     
-    onSave(updatedVehicle);
+    console.log('💾 Sauvegarde CT:', controles);
+    console.log('💾 JSON stringifié:', updatedVehicle.controlesTechniques);
+    
+    try {
+      await onSave(updatedVehicle);
+      // Afficher le message de succès
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert('Erreur lors de la sauvegarde des données');
+    }
   };
 
   const selectedType = allControleTechniqueTypes.find(t => t.value === newControle.type);
@@ -287,6 +318,11 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
           </div>
 
           <div className="modal-actions">
+            {saveSuccess && (
+              <div className="save-success-message">
+                ✅ Sauvegardé avec succès !
+              </div>
+            )}
             <button type="button" className="btn-secondary" onClick={onClose}>
               Annuler
             </button>

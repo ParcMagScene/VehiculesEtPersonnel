@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, MapPin, Clock, User } from 'lucide-react';
+import { X, Plus, Trash2, MapPin, Clock, User, ArrowRight, ArrowDown } from 'lucide-react';
 import './TripDetailsModal.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded as checkGoogleMapsLoaded } from '../utils/googleMapsLoader';
 import LocationDialog from './LocationDialog';
@@ -15,47 +15,97 @@ const TripDetailsModal = ({
   nextEvent, // Pour les jonctions
   googleMapsApiKey,
   companyAddress = '',
-  initialLocations = []
+  initialLocations = [],
+  combinedEvents = null // [{event, tripDetail}, ...] pour le mode combiné
 }) => {
+  const isCombinedMode = combinedEvents && combinedEvents.length > 1;
+  const [activeTab, setActiveTab] = useState(0); // Onglet actif en mode combiné
+  
+  // En mode combiné, utiliser l'événement/trip du tab actif
+  const currentEvent = isCombinedMode ? combinedEvents[activeTab].event : event;
+  const currentTripDetail = isCombinedMode ? combinedEvents[activeTab].tripDetail : tripDetail;
   const [formData, setFormData] = useState({
     // ALLER
-    departureLocation: tripDetail?.departureLocation || event?.location || '',
-    departureDate: tripDetail?.departureDate || event?.start?.date || '',
-    departureTime: tripDetail?.departureTime || '08:00',
-    arrivalLocation: tripDetail?.arrivalLocation || event?.location || '',
-    arrivalDate: tripDetail?.arrivalDate || event?.start?.date || '',
-    arrivalTime: tripDetail?.arrivalTime || '10:00',
+    departureLocation: currentTripDetail?.departureLocation || currentEvent?.location || '',
+    departureDate: currentTripDetail?.departureDate || currentEvent?.start?.date || '',
+    departureTime: currentTripDetail?.departureTime || '08:00',
+    arrivalLocation: currentTripDetail?.arrivalLocation || currentEvent?.location || '',
+    arrivalDate: currentTripDetail?.arrivalDate || currentEvent?.start?.date || '',
+    arrivalTime: currentTripDetail?.arrivalTime || '10:00',
     
     // RETOUR
-    returnDepartureLocation: tripDetail?.returnDepartureLocation || event?.location || '',
-    returnDepartureDate: tripDetail?.returnDepartureDate || event?.end?.date || '',
-    returnDepartureTime: tripDetail?.returnDepartureTime || '18:00',
-    returnArrivalLocation: tripDetail?.returnArrivalLocation || '',
-    returnArrivalDate: tripDetail?.returnArrivalDate || event?.end?.date || '',
-    returnArrivalTime: tripDetail?.returnArrivalTime || '20:00',
+    returnDepartureLocation: currentTripDetail?.returnDepartureLocation || currentEvent?.location || '',
+    returnDepartureDate: currentTripDetail?.returnDepartureDate || currentEvent?.end?.date || '',
+    returnDepartureTime: currentTripDetail?.returnDepartureTime || '18:00',
+    returnArrivalLocation: currentTripDetail?.returnArrivalLocation || '',
+    returnArrivalDate: currentTripDetail?.returnArrivalDate || currentEvent?.end?.date || '',
+    returnArrivalTime: currentTripDetail?.returnArrivalTime || '20:00',
     
     // Conducteur
-    driverName: tripDetail?.driverName || '',
+    driverName: currentTripDetail?.driverName || '',
     
     // Jonction
-    hasJunctionWithNext: tripDetail?.hasJunctionWithNext || false,
-    junctionLocation: tripDetail?.junctionLocation || '',
+    hasJunctionWithNext: currentTripDetail?.hasJunctionWithNext || false,
+    junctionLocation: currentTripDetail?.junctionLocation || '',
     
     // Temps calculés
-    outboundDuration: tripDetail?.outboundDuration || null,
-    returnDuration: tripDetail?.returnDuration || null
+    outboundDuration: currentTripDetail?.outboundDuration || null,
+    returnDuration: currentTripDetail?.returnDuration || null
   });
 
   const [pauses, setPauses] = useState([]);
   const [pausesWithValidatedLocation, setPausesWithValidatedLocation] = useState(new Set());
   const [isCalculating, setIsCalculating] = useState(false);
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
-  const [isSaved, setIsSaved] = useState(!!tripDetail);
+  const [isSaved, setIsSaved] = useState(!!currentTripDetail);
   const [locations, setLocations] = useState([]);
   const [allLocations, setAllLocations] = useState([]);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocationField, setEditingLocationField] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+
+  // Recharger le formulaire quand on change d'onglet en mode combiné
+  useEffect(() => {
+    if (isCombinedMode) {
+      const td = combinedEvents[activeTab].tripDetail;
+      const ev = combinedEvents[activeTab].event;
+      setFormData({
+        departureLocation: td?.departureLocation || ev?.location || '',
+        departureDate: td?.departureDate || ev?.start?.date || '',
+        departureTime: td?.departureTime || '08:00',
+        arrivalLocation: td?.arrivalLocation || ev?.location || '',
+        arrivalDate: td?.arrivalDate || ev?.start?.date || '',
+        arrivalTime: td?.arrivalTime || '10:00',
+        returnDepartureLocation: td?.returnDepartureLocation || ev?.location || '',
+        returnDepartureDate: td?.returnDepartureDate || ev?.end?.date || '',
+        returnDepartureTime: td?.returnDepartureTime || '18:00',
+        returnArrivalLocation: td?.returnArrivalLocation || '',
+        returnArrivalDate: td?.returnArrivalDate || ev?.end?.date || '',
+        returnArrivalTime: td?.returnArrivalTime || '20:00',
+        driverName: td?.driverName || '',
+        hasJunctionWithNext: td?.hasJunctionWithNext || false,
+        junctionLocation: td?.junctionLocation || '',
+        outboundDuration: td?.outboundDuration || null,
+        returnDuration: td?.returnDuration || null
+      });
+      setIsSaved(!!td);
+      
+      // Charger les pauses de l'onglet actif
+      if (td?.pauses && Array.isArray(td.pauses)) {
+        const loadedPauses = td.pauses.map(p => ({
+          id: p.id || Date.now() + Math.random(),
+          pauseType: p.pause_type || p.pauseType,
+          location: p.location || '',
+          startTime: p.start_time || p.startTime || '',
+          duration: p.duration || '',
+          notes: p.notes || ''
+        }));
+        setPauses(loadedPauses);
+      } else {
+        setPauses([]);
+      }
+    }
+  }, [activeTab, isCombinedMode]);
 
   // Fonctions pour gérer l'historique des lieux
   const saveLocationToHistory = (address) => {
@@ -165,10 +215,10 @@ const TripDetailsModal = ({
     loadLocationsAndCompanyAddress();
   }, [event, initialLocations, companyAddress]);
 
-  // Charger les pauses depuis tripDetail au montage
+  // Charger les pauses depuis currentTripDetail au montage
   useEffect(() => {
-    if (tripDetail?.pauses && Array.isArray(tripDetail.pauses)) {
-      const loadedPauses = tripDetail.pauses.map(p => ({
+    if (currentTripDetail?.pauses && Array.isArray(currentTripDetail.pauses)) {
+      const loadedPauses = currentTripDetail.pauses.map(p => ({
         id: p.id || Date.now() + Math.random(),
         pauseType: p.pause_type || p.pauseType,
         location: p.location || '',
@@ -187,7 +237,7 @@ const TripDetailsModal = ({
       });
       setPausesWithValidatedLocation(validatedIds);
     }
-  }, [tripDetail]);
+  }, [currentTripDetail]);
 
   // Charger le script Google Maps si nécessaire
   useEffect(() => {
@@ -634,6 +684,231 @@ const TripDetailsModal = ({
     borderWidth: '2px'
   } : {};
 
+  // Générer la timeline chronologique pour le mode combiné
+  const renderCombinedTimeline = () => {
+    if (!isCombinedMode) return null;
+    
+    const events = combinedEvents;
+    const totalEvents = events.length;
+    const steps = [];
+    
+    events.forEach((ce, idx) => {
+      const td = ce.tripDetail;
+      const ev = ce.event;
+      const isFirst = idx === 0;
+      const isLast = idx === totalEvents - 1;
+      const evTitle = ev.summary?.replace(/\baf\s*\d+\b/gi, '').trim().replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim() || '(Sans titre)';
+      const evPauses = td?.pauses || [];
+      const outboundPauses = evPauses.filter(p => (p.pause_type || p.pauseType) === 'outbound');
+      const returnPauses = evPauses.filter(p => (p.pause_type || p.pauseType) === 'return');
+      
+      if (isFirst) {
+        // === PREMIER ÉVÉNEMENT : DÉPART ALLER ===
+        steps.push({
+          type: 'departure',
+          icon: '🚗',
+          label: 'Départ ALLER',
+          location: td?.departureLocation || '—',
+          date: td?.departureDate || '',
+          time: td?.departureTime || '',
+          duration: td?.outboundDuration,
+          eventTitle: evTitle,
+          eventAffaire: ev.affaire,
+          eventIdx: idx
+        });
+        
+        // Pauses aller
+        outboundPauses.forEach(p => {
+          steps.push({
+            type: 'pause',
+            icon: '☕',
+            label: 'Pause',
+            location: p.location || '',
+            time: p.start_time || p.startTime || '',
+            duration: p.duration,
+            eventIdx: idx
+          });
+        });
+        
+        // Arrivée sur le premier événement
+        steps.push({
+          type: 'arrival',
+          icon: '📍',
+          label: `Arrivée - ${evTitle}`,
+          location: td?.arrivalLocation || ev.location || '—',
+          date: td?.arrivalDate || '',
+          time: td?.arrivalTime || '',
+          eventIdx: idx
+        });
+      }
+      
+      if (!isFirst) {
+        // === TRANSFERT depuis l'événement précédent ===
+        const prevCe = events[idx - 1];
+        const prevTd = prevCe.tripDetail;
+        const prevEv = prevCe.event;
+        const prevTitle = prevEv.summary?.replace(/\baf\s*\d+\b/gi, '').trim().replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim() || '(Sans titre)';
+        
+        // Départ transfert = retour du précédent ou arrivée du précédent
+        steps.push({
+          type: 'transfer',
+          icon: '🔄',
+          label: `Transfert : ${prevTitle} → ${evTitle}`,
+          fromLocation: prevTd?.returnDepartureLocation || prevTd?.arrivalLocation || prevEv.location || '—',
+          toLocation: td?.departureLocation || td?.arrivalLocation || ev.location || '—',
+          fromTime: prevTd?.returnDepartureTime || '',
+          toTime: td?.arrivalTime || td?.departureTime || '',
+          fromDate: prevTd?.returnDepartureDate || '',
+          toDate: td?.arrivalDate || td?.departureDate || '',
+          eventIdx: idx
+        });
+        
+        // Pauses aller (transfert) de cet événement
+        outboundPauses.forEach(p => {
+          steps.push({
+            type: 'pause',
+            icon: '☕',
+            label: 'Pause',
+            location: p.location || '',
+            time: p.start_time || p.startTime || '',
+            duration: p.duration,
+            eventIdx: idx
+          });
+        });
+        
+        // Arrivée sur cet événement
+        steps.push({
+          type: 'arrival',
+          icon: '📍',
+          label: `Arrivée - ${evTitle}`,
+          location: td?.arrivalLocation || ev.location || '—',
+          date: td?.arrivalDate || '',
+          time: td?.arrivalTime || '',
+          eventIdx: idx
+        });
+      }
+      
+      if (isLast) {
+        // === DERNIER ÉVÉNEMENT : DÉPART RETOUR ===
+        steps.push({
+          type: 'return-departure',
+          icon: '🏠',
+          label: 'Départ RETOUR',
+          location: td?.returnDepartureLocation || ev.location || '—',
+          date: td?.returnDepartureDate || '',
+          time: td?.returnDepartureTime || '',
+          duration: td?.returnDuration,
+          eventIdx: idx
+        });
+        
+        // Pauses retour
+        returnPauses.forEach(p => {
+          steps.push({
+            type: 'pause',
+            icon: '☕',
+            label: 'Pause retour',
+            location: p.location || '',
+            time: p.start_time || p.startTime || '',
+            duration: p.duration,
+            eventIdx: idx
+          });
+        });
+        
+        // Arrivée retour
+        steps.push({
+          type: 'final-arrival',
+          icon: '🏁',
+          label: 'Arrivée RETOUR',
+          location: td?.returnArrivalLocation || '—',
+          date: td?.returnArrivalDate || '',
+          time: td?.returnArrivalTime || '',
+          eventIdx: idx
+        });
+      }
+    });
+    
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+      } catch { return dateStr; }
+    };
+    
+    const formatDuration = (min) => {
+      if (!min) return '';
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return h > 0 ? `${h}h${m > 0 ? m.toString().padStart(2, '0') : ''}` : `${m} min`;
+    };
+    
+    return (
+      <div className="combined-timeline">
+        <h3 className="timeline-title">📋 Itinéraire complet</h3>
+        <div className="timeline-steps">
+          {steps.map((step, i) => (
+            <div 
+              key={i} 
+              className={`timeline-step timeline-step--${step.type}`}
+              onClick={() => setActiveTab(step.eventIdx)}
+            >
+              <div className="timeline-step-marker">
+                <span className="timeline-step-icon">{step.icon}</span>
+                {i < steps.length - 1 && <div className="timeline-step-line" />}
+              </div>
+              <div className="timeline-step-content">
+                <div className="timeline-step-header">
+                  <span className="timeline-step-label">{step.label}</span>
+                  {step.eventAffaire && (
+                    <span className="timeline-step-affaire">{step.eventAffaire}</span>
+                  )}
+                </div>
+                {step.type === 'transfer' ? (
+                  <div className="timeline-transfer-detail">
+                    <div className="timeline-transfer-from">
+                      <span className="timeline-loc">{step.fromLocation}</span>
+                      {(step.fromDate || step.fromTime) && (
+                        <span className="timeline-datetime">
+                          {formatDate(step.fromDate)} {step.fromTime}
+                        </span>
+                      )}
+                    </div>
+                    <ArrowDown size={14} className="timeline-transfer-arrow" />
+                    <div className="timeline-transfer-to">
+                      <span className="timeline-loc">{step.toLocation}</span>
+                      {(step.toDate || step.toTime) && (
+                        <span className="timeline-datetime">
+                          {formatDate(step.toDate)} {step.toTime}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {step.location && step.location !== '—' && (
+                      <span className="timeline-loc">{step.location}</span>
+                    )}
+                    <div className="timeline-step-meta">
+                      {(step.date || step.time) && (
+                        <span className="timeline-datetime">
+                          {formatDate(step.date)} {step.time}
+                        </span>
+                      )}
+                      {step.duration && (
+                        <span className="timeline-duration">⏱️ {formatDuration(step.duration)}</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="timeline-hint">Cliquez sur une étape pour éditer l'événement correspondant</p>
+      </div>
+    );
+  };
+
   return (
     <div className="modal-overlay" onClick={(e) => {
       // Fermer uniquement si on clique sur l'overlay (arrière-plan)
@@ -644,34 +919,59 @@ const TripDetailsModal = ({
       <div className="trip-details-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div style={{ flex: 1 }}>
-            <h2>📍 Détails du trajet</h2>
-            {/* Événement info */}
-            <div className="event-info" style={{ margin: '0.5rem 0 0 0', background: 'transparent', padding: 0 }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>{event.summary}</h3>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                {event.affaire && <span style={{ fontSize: '0.875rem' }}>{event.affaire}</span>}
-                {vehicle && (
-                  <span style={{
-                    padding: '0.25rem 0.5rem',
-                    background: vehicle.type?.toUpperCase().includes('PL') || 
-                               vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                               vehicle.type?.toUpperCase().includes('SEMI') 
-                      ? '#fef3c7' 
-                      : '#dbeafe',
-                    color: vehicle.type?.toUpperCase().includes('PL') || 
-                           vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                           vehicle.type?.toUpperCase().includes('SEMI')
-                      ? '#92400e'
-                      : '#1e40af',
-                    borderRadius: '0.25rem',
-                    fontSize: '0.75rem',
-                    fontWeight: '600'
-                  }}>
-                    🚛 {vehicle.name} ({vehicle.type})
-                  </span>
-                )}
+            <h2>📍 {isCombinedMode ? 'Trajets liés' : 'Détails du trajet'}</h2>
+            {/* Événement info (mode simple) */}
+            {!isCombinedMode && (
+              <div className="event-info" style={{ margin: '0.5rem 0 0 0', background: 'transparent', padding: 0 }}>
+                <h3 style={{ margin: 0, fontSize: '1rem' }}>{currentEvent.summary}</h3>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                  {currentEvent.affaire && <span style={{ fontSize: '0.875rem' }}>{currentEvent.affaire}</span>}
+                  {vehicle && (
+                    <span style={{
+                      padding: '0.25rem 0.5rem',
+                      background: vehicle.type?.toUpperCase().includes('PL') || 
+                                 vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                                 vehicle.type?.toUpperCase().includes('SEMI') 
+                        ? '#fef3c7' 
+                        : '#dbeafe',
+                      color: vehicle.type?.toUpperCase().includes('PL') || 
+                             vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                             vehicle.type?.toUpperCase().includes('SEMI')
+                        ? '#92400e'
+                        : '#1e40af',
+                      borderRadius: '0.25rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}>
+                      🚛 {vehicle.name} ({vehicle.type})
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+            {/* Véhicule info (mode combiné) */}
+            {isCombinedMode && vehicle && (
+              <span style={{
+                display: 'inline-flex',
+                padding: '0.25rem 0.5rem',
+                background: vehicle.type?.toUpperCase().includes('PL') || 
+                           vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                           vehicle.type?.toUpperCase().includes('SEMI') 
+                  ? '#fef3c7' 
+                  : '#dbeafe',
+                color: vehicle.type?.toUpperCase().includes('PL') || 
+                       vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                       vehicle.type?.toUpperCase().includes('SEMI')
+                  ? '#92400e'
+                  : '#1e40af',
+                borderRadius: '0.25rem',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                marginTop: '0.375rem'
+              }}>
+                🚛 {vehicle.name} ({vehicle.type})
+              </span>
+            )}
           </div>
           {/* Bandeau de confirmation si sauvegardé */}
           {isSaved && (
@@ -697,6 +997,57 @@ const TripDetailsModal = ({
             <X size={24} />
           </button>
         </div>
+
+        {/* Timeline chronologique pour les trajets liés */}
+        {isCombinedMode && renderCombinedTimeline()}
+
+        {/* Onglets d'édition en mode combiné */}
+        {isCombinedMode && (
+          <div className="combined-edit-tabs">
+            <span className="combined-edit-label">Éditer :</span>
+            {combinedEvents.map((ce, idx) => {
+              let tabTitle = ce.event.summary || '(Sans titre)';
+              if (ce.event.affaire) {
+                tabTitle = tabTitle.replace(/\baf\s*\d+\b/gi, '').trim().replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
+              }
+              if (!tabTitle) tabTitle = '(Sans titre)';
+              const hasData = !!ce.tripDetail;
+              const isFirst = idx === 0;
+              const isLast = idx === combinedEvents.length - 1;
+              
+              return (
+                <button
+                  key={ce.event.id}
+                  type="button"
+                  className={`combined-edit-tab ${activeTab === idx ? 'active' : ''} ${hasData ? 'has-data' : ''}`}
+                  onClick={() => setActiveTab(idx)}
+                >
+                  <span className="tab-number">{idx + 1}</span>
+                  <span className="tab-title">{tabTitle}</span>
+                  {ce.event.affaire && <span className="tab-affaire">{ce.event.affaire}</span>}
+                  <span className="tab-role">
+                    {isFirst ? '(Aller)' : isLast ? '(Retour)' : '(Transfert)'}
+                  </span>
+                  {hasData && <span className="tab-saved">✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Bandeau info événement en cours d'édition - mode combiné */}
+        {isCombinedMode && (
+          <div className="combined-editing-banner">
+            <span className="editing-badge">
+              Événement {activeTab + 1}/{combinedEvents.length}
+            </span>
+            <strong>{currentEvent.summary}</strong>
+            {currentEvent.affaire && <span className="editing-affaire">{currentEvent.affaire}</span>}
+            {activeTab === 0 && <span className="editing-role-tag editing-role-aller">Aller</span>}
+            {activeTab === combinedEvents.length - 1 && activeTab > 0 && <span className="editing-role-tag editing-role-retour">Retour</span>}
+            {activeTab > 0 && activeTab < combinedEvents.length - 1 && <span className="editing-role-tag editing-role-transfert">Transfert</span>}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="trip-details-form">
 
@@ -1122,32 +1473,6 @@ const TripDetailsModal = ({
               })()}
             </div>
           </div>
-
-          {/* Jonction avec événement suivant */}
-          {nextEvent && (
-            <div className="junction-section">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  name="hasJunctionWithNext"
-                  checked={formData.hasJunctionWithNext}
-                  onChange={handleChange}
-                />
-                <span>
-                  🔗 Jonction directe avec l'événement suivant ({nextEvent.summary})
-                </span>
-              </label>
-              {formData.hasJunctionWithNext && (
-                <input
-                  type="text"
-                  name="junctionLocation"
-                  value={formData.junctionLocation}
-                  onChange={handleChange}
-                  placeholder="Lieu de jonction"
-                />
-              )}
-            </div>
-          )}
 
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="cancel-button">

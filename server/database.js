@@ -11,6 +11,16 @@ const db = new Database(join(__dirname, 'vehicules.db'));
 // Activer les clés étrangères
 db.pragma('foreign_keys = ON');
 
+// Activer le mode WAL (Write-Ahead Logging) pour une meilleure durabilité
+// et permet des lectures pendant les écritures
+db.pragma('journal_mode = WAL');
+
+// Définir le mode de synchronisation pour garantir l'écriture sur disque
+db.pragma('synchronous = FULL');
+
+// Configurer le checkpoint automatique (tous les 1000 pages)
+db.pragma('wal_autocheckpoint = 1000');
+
 // Créer les tables
 function initializeDatabase() {
   // Table des utilisateurs
@@ -330,6 +340,20 @@ function initializeDatabase() {
     console.log('Info: Colonnes véhicules déjà présentes');
   }
 
+  // Migration: ajouter trip_group_id dans trip_details pour lier les trajets
+  try {
+    const tripDetailColumns = db.prepare("PRAGMA table_info(trip_details)").all();
+    const hasTripGroupId = tripDetailColumns.some(col => col.name === 'trip_group_id');
+    
+    if (!hasTripGroupId) {
+      db.prepare("ALTER TABLE trip_details ADD COLUMN trip_group_id TEXT").run();
+      db.exec("CREATE INDEX IF NOT EXISTS idx_trip_details_trip_group_id ON trip_details(trip_group_id)");
+      console.log('✅ Colonne trip_group_id ajoutée à trip_details');
+    }
+  } catch (error) {
+    console.log('Info: Colonne trip_group_id déjà présente ou table trip_details non créée');
+  }
+
   console.log('✅ Base de données initialisée');
 }
 
@@ -360,5 +384,32 @@ export function getHistory(entityType, entityId) {
 }
 
 initializeDatabase();
+
+// Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
+export function checkpointDatabase() {
+  try {
+    db.pragma('wal_checkpoint(FULL)');
+    console.log('✅ Checkpoint WAL effectué');
+  } catch (error) {
+    console.error('❌ Erreur checkpoint WAL:', error);
+  }
+}
+
+// Fonction pour fermer proprement la base de données
+export function closeDatabase() {
+  try {
+    // Faire un checkpoint final avant de fermer
+    checkpointDatabase();
+    db.close();
+    console.log('✅ Base de données fermée proprement');
+  } catch (error) {
+    console.error('❌ Erreur fermeture DB:', error);
+  }
+}
+
+// Checkpoint automatique toutes les 5 minutes
+setInterval(() => {
+  checkpointDatabase();
+}, 5 * 60 * 1000);
 
 export default db;

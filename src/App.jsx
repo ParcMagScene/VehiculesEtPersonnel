@@ -156,6 +156,16 @@ function App() {
     loadDataFromAPI();
   }, [isAuthenticated]);
 
+  // Fonction pour recharger uniquement les maintenances
+  const loadMaintenances = async () => {
+    try {
+      const maintenancesData = await api.getMaintenances();
+      setMaintenances(maintenancesData);
+    } catch (error) {
+      console.error('Erreur lors du rechargement des maintenances:', error);
+    }
+  };
+
   // Sauvegarder automatiquement
   useEffect(() => {
     if (!isLoading) {
@@ -435,26 +445,56 @@ function App() {
   const handleMaintenanceSave = async (maintenance) => {
     try {
       logger.log('🔧 handleMaintenanceSave appelé avec:', maintenance);
-      logger.log('🔧 Maintenances actuelles:', maintenances.map(m => ({ id: m.id, name: m.prestationName })));
       
       if (maintenance._deleted) {
         // Suppression
         await api.deleteMaintenance(maintenance.id);
-        setMaintenances(maintenances.filter(m => m.id !== maintenance.id));
-      } else if (maintenances.find(m => m.id === maintenance.id)) {
+        setMaintenances(maintenances.filter(m => String(m.id) !== String(maintenance.id)));
+      } else if (maintenances.find(m => String(m.id) === String(maintenance.id))) {
         // Mise à jour
         logger.log('✅ Mise à jour de la maintenance existante:', maintenance.id);
         await api.updateMaintenance(maintenance.id, maintenance);
-        setMaintenances(maintenances.map(m => m.id === maintenance.id ? maintenance : m));
+        // Rafraîchir depuis le serveur pour avoir les données à jour
+        const maintenancesData = await api.getMaintenances();
+        setMaintenances(maintenancesData);
       } else {
         // Ajout
         logger.log('➕ Création d\'une nouvelle maintenance:', maintenance.id);
         const created = await api.createMaintenance(maintenance);
-        setMaintenances([...maintenances, created]);
+        // Rafraîchir depuis le serveur
+        const maintenancesData = await api.getMaintenances();
+        setMaintenances(maintenancesData);
       }
     } catch (error) {
       console.error('❌ Erreur gestion maintenance:', error);
       alert(`Erreur: ${error.message}`);
+    }
+  };
+
+  const handleUpdateIntervention = async (updatedIntervention) => {
+    try {
+      logger.log('🔧 Mise à jour intervention:', updatedIntervention);
+      await api.updateMaintenance(updatedIntervention.id, updatedIntervention);
+      setMaintenances(maintenances.map(m => 
+        m.id === updatedIntervention.id ? updatedIntervention : m
+      ));
+      // Rafraîchir les maintenances
+      const maintenancesData = await api.getMaintenances();
+      setMaintenances(maintenancesData);
+    } catch (error) {
+      console.error('❌ Erreur mise à jour intervention:', error);
+      alert(`Erreur lors de la mise à jour: ${error.message}`);
+    }
+  };
+
+  const handleDeleteIntervention = async (interventionId) => {
+    try {
+      logger.log('🗑️ Suppression intervention:', interventionId);
+      await api.deleteMaintenance(interventionId);
+      setMaintenances(maintenances.filter(m => m.id !== interventionId));
+    } catch (error) {
+      console.error('❌ Erreur suppression intervention:', error);
+      alert(`Erreur lors de la suppression: ${error.message}`);
     }
   };
 
@@ -550,6 +590,8 @@ function App() {
         }}
         currentUser={currentUser}
         onLogout={handleLogout}
+        onUpdateMaintenance={handleUpdateIntervention}
+        onRefreshMaintenances={loadMaintenances}
       />
       
       <GoogleCalendarBanner 
@@ -683,6 +725,8 @@ function App() {
           onRequestMaintenance={handleRequestMaintenance}
           onReportBreakdown={handleReportBreakdown}
           onScheduleMaintenance={handleScheduleMaintenance}
+          onUpdateIntervention={handleUpdateIntervention}
+          onDeleteIntervention={handleDeleteIntervention}
           onOpenMaintenance={(vehicle) => {
             setSelectedVehicleForKilometrageControl(vehicle);
             setSelectedVehicleForDetails(null);
@@ -701,14 +745,18 @@ function App() {
             vehicle={selectedVehicleForKilometrageControl}
             onSave={async (updatedVehicle) => {
               try {
+                console.log('📤 Envoi mise à jour:', updatedVehicle.controlesTechniques);
                 const response = await api.updateVehicle(updatedVehicle.id, updatedVehicle);
+                console.log('📥 Réponse serveur:', response.controlesTechniques);
                 setVehicles(prevVehicles => 
                   prevVehicles.map(v => v.id === response.id ? response : v)
                 );
-                setSelectedVehicleForKilometrageControl(null);
+                // Mettre à jour le véhicule sélectionné avec la réponse pour que le modal affiche les nouvelles données
+                setSelectedVehicleForKilometrageControl(response);
               } catch (error) {
                 console.error('Erreur lors de la mise à jour du véhicule:', error);
                 alert('Erreur lors de la mise à jour du véhicule');
+                throw error;
               }
             }}
             onClose={() => setSelectedVehicleForKilometrageControl(null)}

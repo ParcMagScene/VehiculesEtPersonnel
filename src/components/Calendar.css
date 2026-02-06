@@ -443,12 +443,12 @@
   flex-shrink: 0;
 }
 
-.vehicle-info {
+.vehicle-cell .vehicle-info {
   flex: 1;
   min-width: 180px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   justify-content: center;
   padding: 4px 0;
 }
@@ -498,14 +498,7 @@
   animation: pulse-warning 2s ease-in-out infinite;
 }
 
-.vehicle-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.vehicle-name {
+.vehicle-cell .vehicle-name {
   display: block;
   font-weight: 700;
   font-size: 0.9rem;
@@ -563,29 +556,29 @@
   }
 }
 
-.vehicle-type {
+.vehicle-cell .vehicle-type {
   display: block;
   font-size: 0.85rem;
   font-weight: 600;
   color: #6b7280;
-  background: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
+  background: none;
+  border-radius: 0;
+  padding: 0;
 }
 
-.vehicle-registration {
+.vehicle-cell .vehicle-registration {
   display: block;
   font-size: 0.85rem;
-  font-weight: 900 !important;
-  color: #8b5cf6 !important;
+  font-weight: 900;
+  color: #8b5cf6;
   font-family: monospace;
   flex-shrink: 0;
-  background: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
+  background: none;
+  border-radius: 0;
+  padding: 0;
 }
 
-.vehicle-brand {
+.vehicle-cell .vehicle-brand {
   display: block;
   font-size: 0.85rem;
   font-weight: 500;
@@ -719,9 +712,44 @@
     45deg,
     transparent,
     transparent 10px,
-    rgba(0, 0, 0, 0.06) 10px,
-    rgba(0, 0, 0, 0.06) 20px
-  ) !important;
+    rgba(0, 0, 0, 0.05) 10px,
+    rgba(0, 0, 0, 0.05) 20px
+  );
+}
+
+/* Couleurs de statut pour les blocs de maintenance */
+.reservation.maintenance-block.maintenance-status-scheduled {
+  background-color: #dbeafe !important;
+  border: 2px dashed #3b82f6 !important;
+}
+.reservation.maintenance-block.maintenance-status-completed {
+  background-color: #d1fae5 !important;
+  border: 2px solid #10b981 !important;
+}
+.reservation.maintenance-block.maintenance-status-reported {
+  background-color: #fee2e2 !important;
+  border: 2px solid #ef4444 !important;
+}
+.reservation.maintenance-block.maintenance-status-pending {
+  background-color: #ede9fe !important;
+  border: 2px dashed #8b5cf6 !important;
+}
+.reservation.maintenance-block.maintenance-status-in_progress,
+.reservation.maintenance-block.maintenance-status-IN_PROGRESS {
+  background-color: #fef3c7 !important;
+  border: 2px solid #f59e0b !important;
+}
+.reservation.maintenance-block.maintenance-status-cancelled {
+  background-color: #f3f4f6 !important;
+  border: 2px dashed #6b7280 !important;
+}
+.reservation.maintenance-block.maintenance-status-rescheduled {
+  background-color: #ffedd5 !important;
+  border: 2px dashed #f97316 !important;
+}
+.reservation.maintenance-block.maintenance-conflict:not(.maintenance-status-completed):not(.maintenance-status-cancelled) {
+  background-color: #fee2e2 !important;
+  border: 2px solid #dc2626 !important;
 }
 
 .reservation.maintenance-block .resize-handle {

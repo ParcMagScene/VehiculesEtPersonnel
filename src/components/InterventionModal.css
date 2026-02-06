@@ -1,0 +1,303 @@
+.intervention-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.intervention-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 11px 11px 0 0;
+}
+
+.intervention-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.intervention-modal .close-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.intervention-modal .close-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.intervention-form {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 140px);
+}
+
+.intervention-form::-webkit-scrollbar {
+  width: 6px;
+}
+
+.intervention-form::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.intervention-form::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.intervention-form::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.deadline-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.deadline-alert.error {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 2px solid #fca5a5;
+}
+
+.deadline-alert.warning {
+  background: #fef3c7;
+  color: #d97706;
+  border: 2px solid #fcd34d;
+}
+
+.deadline-alert svg {
+  flex-shrink: 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.ct-periodicity-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #1e40af;
+}
+
+.ct-periodicity-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ct-periodicity-text {
+  color: #1e3a5f;
+}
+
+.ct-periodicity-text strong {
+  color: #1e40af;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 12px 12px;
+  flex-shrink: 0;
+}
+
+.right-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.intervention-modal .delete-button,
+.intervention-modal .cancel-button,
+.intervention-modal .save-button,
+.intervention-modal .completed-button,
+.intervention-modal .reschedule-button {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.intervention-modal .delete-button {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 2px solid #fca5a5;
+}
+
+.intervention-modal .delete-button:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.intervention-modal .cancel-button {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 2px solid #e5e7eb;
+}
+
+.intervention-modal .cancel-button:hover {
+  background: #e5e7eb;
+}
+
+.intervention-modal .completed-button {
+  background: #d1fae5;
+  color: #059669;
+  border: 2px solid #86efac;
+}
+
+.intervention-modal .completed-button:hover {
+  background: #a7f3d0;
+  transform: translateY(-1px);
+}
+
+.intervention-modal .reschedule-button {
+  background: #fef3c7;
+  color: #d97706;
+  border: 2px solid #fde68a;
+}
+
+.intervention-modal .reschedule-button:hover {
+  background: #fde68a;
+  transform: translateY(-1px);
+}
+
+.intervention-modal .save-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.intervention-modal .save-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .intervention-modal {
+    width: 95%;
+  }
+
+  .intervention-form {
+    padding: 16px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .right-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .intervention-modal .delete-button,
+  .intervention-modal .cancel-button,
+  .intervention-modal .save-button,
+  .intervention-modal .completed-button,
+  .intervention-modal .reschedule-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

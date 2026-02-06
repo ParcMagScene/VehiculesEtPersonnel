@@ -10,6 +10,7 @@
   justify-content: center;
   z-index: 1100;
   padding: 20px;
+  isolation: isolate;
 }
 
 .maintenance-dialog {
@@ -22,6 +23,8 @@
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes slideUp {
@@ -49,14 +52,14 @@
   color: #111827;
 }
 
-.vehicle-info {
+.maintenance-dialog-header .vehicle-info {
   display: flex;
   gap: 12px;
   margin-top: 8px;
 }
 
-.vehicle-type,
-.vehicle-registration {
+.maintenance-dialog-header .vehicle-type,
+.maintenance-dialog-header .vehicle-registration {
   font-size: 13px;
   padding: 4px 12px;
   border-radius: 6px;
@@ -65,7 +68,7 @@
   font-weight: 500;
 }
 
-.vehicle-registration {
+.maintenance-dialog-header .vehicle-registration {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   font-family: 'Courier New', monospace;
@@ -200,66 +203,130 @@
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  margin-top: 8px;
-  padding-top: 20px;
+  padding: 16px 24px;
   border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 16px 16px;
+  flex-shrink: 0;
 }
 
-.cancel-button,
-.submit-button,
-.delete-button {
-  padding: 10px 24px;
+.form-actions-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.form-actions-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.maintenance-dialog .cancel-button,
+.maintenance-dialog .submit-button,
+.maintenance-dialog .delete-button,
+.maintenance-dialog .completed-button,
+.maintenance-dialog .reschedule-button,
+.maintenance-dialog .cancel-intervention-button {
+  height: 40px;
+  padding: 0 20px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  border: none;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  box-shadow: none;
 }
 
-.cancel-button {
+.maintenance-dialog .cancel-button {
   background: #f3f4f6;
   color: #6b7280;
+  border-color: #d1d5db;
 }
 
-.cancel-button:hover {
+.maintenance-dialog .cancel-button:hover {
   background: #e5e7eb;
-}
-
-.delete-button {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-.delete-button:hover {
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
   transform: translateY(-1px);
 }
 
-.submit-button {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+.maintenance-dialog .delete-button {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
 }
 
-.submit-button:hover {
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+.maintenance-dialog .delete-button:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.maintenance-dialog .submit-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.maintenance-dialog .submit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.maintenance-dialog .completed-button {
+  background: #f0fdf4;
+  color: #059669;
+  border-color: #86efac;
+}
+
+.maintenance-dialog .completed-button:hover {
+  background: #a7f3d0;
+  transform: translateY(-1px);
+}
+
+.maintenance-dialog .reschedule-button {
+  background: #fef3c7;
+  color: #d97706;
+  border-color: #fde68a;
+}
+
+.maintenance-dialog .reschedule-button:hover {
+  background: #fde68a;
+  transform: translateY(-1px);
+}
+
+.maintenance-dialog .cancel-intervention-button {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.maintenance-dialog .cancel-intervention-button:hover {
+  background: #fca5a5;
+  color: #991b1b;
   transform: translateY(-1px);
 }
 
 .schedule-button {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   color: white;
-  padding: 10px 20px;
+  height: 40px;
+  padding: 0 20px;
   border: none;
   border-radius: 8px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
@@ -384,6 +451,44 @@
   border-radius: 12px;
   padding: 20px;
   transition: all 0.2s;
+  border-left: 4px solid #e5e7eb;
+}
+
+/* Couleurs de fond selon le statut */
+.maintenance-card.status-scheduled {
+  background: linear-gradient(to right, #eff6ff, #f9fafb);
+  border-left-color: #3b82f6;
+}
+
+.maintenance-card.status-completed {
+  background: linear-gradient(to right, #f0fdf4, #f9fafb);
+  border-left-color: #10b981;
+}
+
+.maintenance-card.status-reported {
+  background: linear-gradient(to right, #fef2f2, #f9fafb);
+  border-left-color: #ef4444;
+}
+
+.maintenance-card.status-pending {
+  background: linear-gradient(to right, #faf5ff, #f9fafb);
+  border-left-color: #8b5cf6;
+}
+
+.maintenance-card.status-in_progress,
+.maintenance-card.status-IN_PROGRESS {
+  background: linear-gradient(to right, #fffbeb, #f9fafb);
+  border-left-color: #f59e0b;
+}
+
+.maintenance-card.status-cancelled {
+  background: linear-gradient(to right, #f3f4f6, #f9fafb);
+  border-left-color: #6b7280;
+}
+
+.maintenance-card.status-rescheduled {
+  background: linear-gradient(to right, #fff7ed, #f9fafb);
+  border-left-color: #f97316;
 }
 
 .maintenance-card:hover {
@@ -436,6 +541,9 @@
   font-size: 12px;
   font-weight: 600;
   border: 2px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .edit-maintenance-button,
@@ -650,13 +758,17 @@
 }
 
 .conflict-button {
-  padding: 10px 20px;
+  height: 40px;
+  padding: 0 20px;
   border: none;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .conflict-cancel {
@@ -688,4 +800,266 @@
   background: #d97706;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Section de changement de statut */
+.status-change-section {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.status-change-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.status-btn {
+  padding: 5px 10px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.7;
+}
+
+.status-btn:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.status-btn.active {
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+  font-weight: 700;
+}
+
+.status-btn-scheduled {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.status-btn-in_progress {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.status-btn-completed {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+
+.status-btn-pending {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-color: #c4b5fd;
+}
+
+.status-btn-reported {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.status-btn-rescheduled {
+  background: #ffedd5;
+  color: #9a3412;
+  border-color: #fdba74;
+}
+
+.status-btn-cancelled {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+/* Champ motif pour changement de statut */
+.status-reason-field {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; transform: translateY(-8px); }
+  to { opacity: 1; max-height: 200px; transform: translateY(0); }
+}
+
+.status-reason-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #334155;
+}
+
+.status-reason-field textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.status-reason-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ===== Carte détails intervention en mode édition ===== */
+.intervention-details-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.intervention-details-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.intervention-details-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 8px 0 4px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.intervention-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1.5px solid;
+}
+
+.intervention-type-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.intervention-type-label .ct-type {
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.ct-periodicity-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #1e40af;
+}
+
+.ct-periodicity-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ct-periodicity-text {
+  color: #1e3a5f;
+}
+
+.ct-periodicity-text strong {
+  color: #1e40af;
+}
+
+.status-changed-indicator {
+  font-size: 12px;
+  color: #9ca3af;
+  font-style: italic;
+  text-decoration: line-through;
+}
+
+.intervention-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.intervention-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+  padding: 4px 0;
+}
+
+.intervention-detail-item svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.intervention-detail-item .detail-key {
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.intervention-detail-item .detail-val {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.intervention-detail-item.immobilized-alert {
+  color: #dc2626;
+}
+
+.intervention-detail-item.immobilized-alert svg {
+  color: #dc2626;
+}
+
+.period-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  background: #e0e7ff;
+  color: #4338ca;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
 }

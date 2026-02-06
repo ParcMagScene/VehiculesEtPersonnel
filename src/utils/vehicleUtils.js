@@ -14,13 +14,13 @@ export const hasExpiredTechnicalControl = (vehicle, maintenances = []) => {
   // Vérifier si le véhicule a des contrôles techniques
   let controles = [];
   
-  if (vehicle.controles_techniques) {
+  if (vehicle.controlesTechniques) {
     try {
-      controles = typeof vehicle.controles_techniques === 'string' 
-        ? JSON.parse(vehicle.controles_techniques)
-        : vehicle.controles_techniques;
+      controles = typeof vehicle.controlesTechniques === 'string' 
+        ? JSON.parse(vehicle.controlesTechniques)
+        : vehicle.controlesTechniques;
     } catch (error) {
-      console.error('Erreur parsing controles_techniques:', error);
+      console.error('Erreur parsing controlesTechniques:', error);
       return false;
     }
   }
@@ -79,13 +79,13 @@ export const getExpiredTechnicalControls = (vehicle, maintenances = []) => {
 
   let controles = [];
   
-  if (vehicle.controles_techniques) {
+  if (vehicle.controlesTechniques) {
     try {
-      controles = typeof vehicle.controles_techniques === 'string' 
-        ? JSON.parse(vehicle.controles_techniques)
-        : vehicle.controles_techniques;
+      controles = typeof vehicle.controlesTechniques === 'string' 
+        ? JSON.parse(vehicle.controlesTechniques)
+        : vehicle.controlesTechniques;
     } catch (error) {
-      console.error('Erreur parsing controles_techniques:', error);
+      console.error('Erreur parsing controlesTechniques:', error);
       return [];
     }
   }

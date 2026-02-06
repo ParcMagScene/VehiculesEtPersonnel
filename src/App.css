@@ -52,6 +52,7 @@
   align-items: center;
   z-index: 9999;
   backdrop-filter: blur(4px);
+  isolation: isolate;
 }
 
 .loading-overlay p {
@@ -92,7 +93,16 @@
 .header-title-container {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0;
+  height: 100%;
+}
+
+.header-logo-area {
+  width: calc(250px - 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   height: 100%;
 }
 
@@ -237,6 +247,24 @@
   transition: all 0.2s;
 }
 
+.notification-badge.unified.has-overdue {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  animation: pulse-overdue 2s ease-in-out infinite;
+}
+
+@keyframes pulse-overdue {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 2px 16px rgba(220, 38, 38, 0.8);
+    transform: scale(1.05);
+  }
+}
+
 .notification-badge.unified.has-critical {
   background: linear-gradient(135deg, #dc2626, #991b1b);
   color: white;
@@ -250,9 +278,21 @@
 }
 
 .notification-badge.unified.has-reported {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
+  animation: pulse-reported 2s ease-in-out infinite;
+}
+
+@keyframes pulse-reported {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 2px 14px rgba(239, 68, 68, 0.7);
+    transform: scale(1.04);
+  }
 }
 
 .notification-badge.unified.has-pending {
@@ -265,6 +305,19 @@
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Badge de demandes de réservation */
+.notification-badge.unified.requests-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  animation: none;
+}
+
+.notification-badge.unified.requests-badge:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 .notification-badge.unified:hover {
@@ -437,6 +490,21 @@
   gap: 8px;
 }
 
+.notification-section-title .section-count {
+  background: #4f46e5;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  margin-left: 4px;
+}
+
 .notifications-list {
   display: flex;
   flex-direction: column;
@@ -502,6 +570,27 @@
   color: #7c3aed;
 }
 
+.notification-status.in-progress {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.notification-status.overdue {
+  background: #fee2e2;
+  color: #dc2626;
+  font-weight: 700;
+  animation: pulse-status 2s ease-in-out infinite;
+}
+
+@keyframes pulse-status {
+  0%, 100% {
+    background: #fee2e2;
+  }
+  50% {
+    background: #fecaca;
+  }
+}
+
 .notification-status.conflict {
   background: #fef2f2;
   color: #b91c1c;
@@ -510,6 +599,163 @@
 .notification-item.has-conflict {
   border-left: 4px solid #b91c1c;
   background: #fef9f9;
+}
+
+.notification-item.overdue {
+  border-left: 4px solid #dc2626;
+  background: #fef2f2;
+  cursor: pointer;
+}
+
+.notification-item.overdue:hover {
+  background: #fee2e2;
+  border-left-color: #b91c1c;
+}
+
+.notification-item.reported {
+  border-left: 4px solid #ef4444;
+  background: #fef9f9;
+}
+
+.notification-item.pending {
+  border-left: 4px solid #8b5cf6;
+  background: #faf5ff;
+}
+
+.notification-item.reservation-request {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+
+.notification-item.reservation-request:hover {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+/* Actions dans les notifications */
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.notification-actions.reject-form {
+  flex-direction: column;
+}
+
+.reject-reason-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  resize: none;
+  font-family: inherit;
+}
+
+.reject-reason-input:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+
+.reject-form-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.notif-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.notif-action-btn.create-intervention {
+  background: #3b82f6;
+  color: white;
+  flex: 1;
+}
+
+.notif-action-btn.create-intervention:hover {
+  background: #2563eb;
+}
+
+.notif-action-btn.approve {
+  background: #10b981;
+  color: white;
+  flex: 1;
+}
+
+.notif-action-btn.approve:hover {
+  background: #059669;
+}
+
+.notif-action-btn.reject {
+  background: #ef4444;
+  color: white;
+  flex: 1;
+}
+
+.notif-action-btn.reject:hover {
+  background: #dc2626;
+}
+
+.notif-action-btn.confirm-reject {
+  background: #ef4444;
+  color: white;
+  flex: 1;
+}
+
+.notif-action-btn.confirm-reject:hover {
+  background: #dc2626;
+}
+
+.notif-action-btn.confirm-reject:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.notif-action-btn.dismiss {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.notif-action-btn.dismiss:hover {
+  background: #e5e7eb;
+}
+
+.notification-item.expanded {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.notification-requester {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.notification-request-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  flex-wrap: wrap;
 }
 
 .conflict-warning-text {
@@ -537,6 +783,12 @@
   padding: 2px 8px;
   border-radius: 4px;
   margin-right: 8px;
+}
+
+.notification-date.overdue-date {
+  color: #dc2626;
+  background: #fee2e2;
+  font-weight: 700;
 }
 
 .notification-registration {
@@ -683,6 +935,11 @@
   border: 1px solid #e5e7eb;
   background: white;
   color: #3b82f6;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .current-date.clickable:hover {
@@ -1006,6 +1263,10 @@
 
   .header-title-container {
     justify-content: center;
+  }
+
+  .header-logo-area {
+    width: auto;
   }
 
   .header-title {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon } from 'lucide-react';
+import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X } from 'lucide-react';
 import './EventDetailsModal.css';
 
 // Détection automatique de l'URL du backend
@@ -105,6 +105,26 @@ function EventDetailsModal({
     } finally {
       setUploading(false);
       e.target.value = ''; // Reset input
+    }
+  };
+
+  const handleDeleteAttachment = async (file) => {
+    if (!event.affaire) return;
+    if (!confirm(`Supprimer "${file.name}" ?`)) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/attachments/${encodeURIComponent(event.affaire)}/${encodeURIComponent(file.name)}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        await scanAttachmentFolder(event.affaire);
+      } else {
+        alert('Erreur lors de la suppression');
+      }
+    } catch (error) {
+      console.error('Erreur suppression pièce jointe:', error);
+      alert('Erreur lors de la suppression');
     }
   };
 
@@ -318,6 +338,13 @@ function EventDetailsModal({
                     <FileText size={16} />
                     <span className="file-name">{file.name}</span>
                     <span className="file-size">{file.size}</span>
+                    <button
+                      className="btn-delete-attachment"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(file); }}
+                      title="Supprimer cette pièce jointe"
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
                 ))}
               </div>

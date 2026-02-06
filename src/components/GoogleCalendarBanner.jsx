@@ -27,6 +27,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const [googleClientId, setGoogleClientId] = useState(null);
   const [googleCalendarId, setGoogleCalendarId] = useState(null);
   
+  const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
+
   // Cache pour éviter de recharger les mêmes données
   const eventsCache = useRef({});
   const fetchTimeoutRef = useRef(null);
@@ -37,21 +39,37 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   useEffect(() => {
     const loadGoogleConfig = async () => {
       try {
-        oauthLogger.log('🔧 Chargement de la config Google...');
         const [clientIdData, calendarIdData] = await Promise.all([
           api.getGoogleClientId(),
           api.getGoogleCalendarId()
         ]);
-        oauthLogger.log('📦 Données reçues:', { clientIdData, calendarIdData });
         // Extraire juste la valeur, pas l'objet entier
         setGoogleClientId(clientIdData?.value || null);
         setGoogleCalendarId(calendarIdData?.value || null);
-        oauthLogger.log('✅ Config Google chargée - clientId:', clientIdData?.value, 'calendarId:', calendarIdData?.value);
       } catch (error) {
         console.error('Erreur lors du chargement de la configuration Google:', error);
       }
     };
     loadGoogleConfig();
+  }, []);
+
+  // Charger l'index des affaires ayant des pièces jointes
+  useEffect(() => {
+    const loadAttachmentsIndex = async () => {
+      try {
+        const response = await fetch('/api/attachments-index');
+        if (response.ok) {
+          const data = await response.json();
+          setAffairesWithAttachments(data.affaires || []);
+        }
+      } catch (e) {
+        // silencieux
+      }
+    };
+    loadAttachmentsIndex();
+    // Rafraîchir toutes les 60s
+    const interval = setInterval(loadAttachmentsIndex, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   // Notifier le parent quand les événements changent
@@ -81,8 +99,6 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         const gridColumns = gridComputedStyle.gridTemplateColumns;
         const columnWidths = gridColumns.split(' ').map(width => width);
         bannerGrid.style.gridTemplateColumns = columnWidths.join(' ');
-        
-        oauthLogger.log('📏 Synchronisation colonnes banner:', view, 'Colonnes:', columnWidths.length);
       }
     };
 
@@ -373,11 +389,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       const now = Date.now();
       const timeUntilExpiry = expiryTime - now;
       
-      oauthLogger.log('🔍 Vérification du token sauvegardé, expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
-      
       // Si le token est encore valide (avec une marge de 5 minutes)
       if (timeUntilExpiry > 5 * 60 * 1000) {
-        oauthLogger.log('✅ Token valide, restauration de la session');
         setAccessToken(savedToken);
         setIsSignedIn(true);
         testToken(savedToken);
@@ -387,7 +400,6 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         }
       } else if (autoSignin === 'true') {
         // Token expiré mais auto-signin activé, on demande un nouveau token silencieusement
-        oauthLogger.log('🔄 Token expiré, renouvellement automatique silencieux...');
         // Le token sera renouvelé par le useEffect suivant quand tokenClient sera prêt
       } else {
         oauthLogger.log('⏰ Token expiré, nettoyage');
@@ -479,18 +491,15 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       });
 
       if (response.ok) {
-        oauthLogger.log('✅ Token valide, événements prêts à être chargés');
         // Token valide - les événements sont chargés automatiquement
         return true;
       } else if (response.status === 401) {
-        oauthLogger.log('⚠️ Token invalide (401), tentative de renouvellement...');
         // Token invalide, essayer de renouveler
         localStorage.removeItem('google_access_token');
         localStorage.removeItem('google_token_expiry');
         try {
           const newToken = await renewAccessToken();
           if (newToken) {
-            oauthLogger.log('✅ Token renouvelé avec succès');
             return true;
           }
         } catch (err) {
@@ -629,12 +638,10 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       
       // Vérifier si on a déjà ces données en cache
       if (eventsCache.current[cacheKey]) {
-        oauthLogger.log('📦 Utilisation du cache pour:', cacheKey);
         setEvents(eventsCache.current[cacheKey]);
         return;
       }
       
-      oauthLogger.log('🔄 Chargement événements pour:', cacheKey);
       fetchEvents(accessToken);
     }, 300);
     
@@ -700,13 +707,6 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         `maxResults=2500&` +
         `orderBy=startTime`;
 
-      oauthLogger.log('🔍 Récupération événements Google Calendar (tentative', retryCount + 1, ')');
-      oauthLogger.log('   Vue:', view);
-      oauthLogger.log('   Plage:', timeMin.toISOString(), '→', timeMax.toISOString());
-      oauthLogger.log('   googleCalendarId state:', googleCalendarId);
-      oauthLogger.log('   Calendar ID utilisé:', calendarId);
-      oauthLogger.log('   URL:', url);
-
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -720,7 +720,6 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
           try {
             const newToken = await renewAccessToken();
             if (newToken) {
-              oauthLogger.log('✅ Token renouvelé, nouvelle tentative de récupération...');
               // Réessayer avec le nouveau token
               return fetchEvents(newToken, retryCount + 1);
             }
@@ -739,18 +738,6 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       }
 
       const data = await response.json();
-      oauthLogger.log('✅ Événements reçus:', data.items?.length || 0);
-      oauthLogger.log('👤 CurrentUser:', currentUser?.email || 'non défini');
-      
-      if (data.items && data.items.length > 0) {
-        oauthLogger.log('   Premiers événements:', data.items.slice(0, 3).map(e => ({
-          summary: e.summary,
-          start: e.start,
-          end: e.end,
-          creator: e.creator?.email,
-          organizer: e.organizer?.email
-        })));
-      }
       
       // Essayer de filtrer les événements pour l'utilisateur actuel
       let filteredItems = data.items || [];
@@ -758,21 +745,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         const userFilteredItems = filteredItems.filter(event => {
           const creatorEmail = event.creator?.email || event.organizer?.email;
           const isCreator = creatorEmail === currentUser.email;
-          if (isCreator) {
-            oauthLogger.log('✅ Match:', event.summary, '| Créateur:', creatorEmail);
-          }
           return isCreator;
         });
         
         // Si le filtrage donne des résultats, les utiliser, sinon afficher tous les événements
         if (userFilteredItems.length > 0) {
           filteredItems = userFilteredItems;
-          oauthLogger.log('🎯 Événements filtrés pour', currentUser.email, ':', filteredItems.length, '/', data.items?.length);
-        } else {
-          oauthLogger.log('⚠️ Aucun événement trouvé pour', currentUser.email, '- affichage de tous les événements');
         }
-      } else {
-        oauthLogger.log('⚠️ CurrentUser non défini - affichage de tous les événements');
       }
       
       const enrichedEvents = filteredItems.map(event => analyzeEventTitle(event));
@@ -837,14 +816,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       
       if (foundLocation) {
         enrichedEvent.detectedLocation = foundLocation.name;
-        oauthLogger.log('📍 Lieu détecté:', foundLocation.name, 'pour événement:', title, '| Location field:', eventLocation);
       }
     }
 
     return enrichedEvent;
   };
 
-  const getDaysToShow = () => {
+  const days = useMemo(() => {
     if (view === 'week') {
       return eachDayOfInterval({
         start: startOfWeek(currentDate, { weekStartsOn: 1 }),
@@ -865,10 +843,9 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       return months;
     }
     return [];
-  };
+  }, [view, currentDate]);
 
-  const getEventBlocks = () => {
-    const days = getDaysToShow();
+  const eventBlocks = useMemo(() => {
     const eventBlocks = [];
     const processedEvents = new Set();
 
@@ -879,8 +856,6 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
           return eventStart.getFullYear() === currentDate.getFullYear();
         })
       : events;
-
-    oauthLogger.log('🎯 getEventBlocks appelé - Vue:', view, 'Événements disponibles:', events.length, view === 'year' ? `Filtrés pour ${currentDate.getFullYear()}: ${filteredEvents.length}` : '', 'Jours:', days.length);
 
     // Mapping des colorId Google Calendar vers des couleurs hexadécimales
     const googleColorMap = {
@@ -999,16 +974,9 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       // Si même index de début, trier par durée (plus long d'abord)
       return b.span - a.span;
     });
-
-    oauthLogger.log('📊 Blocs événements générés:', eventBlocks.length, 'pour vue:', view);
     
     return eventBlocks;
-  };
-
-  const days = getDaysToShow();
-  const eventBlocks = getEventBlocks();
-  
-  oauthLogger.log('🔄 Rendu GoogleCalendarBanner - Vue:', view, 'Events state:', events.length, 'EventBlocks:', eventBlocks.length);
+  }, [view, currentDate, events, days]);
 
   // Toujours afficher le banner, même sans clientId configuré (pour permettre la configuration)
   if (!googleClientId) {
@@ -1130,11 +1098,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                 // Trouver les réservations liées à cet événement
                 const linkedReservations = reservations.filter(r => r.googleEventId === eventBlock.eventId);
                 const hasLinkedReservations = linkedReservations.length > 0;
+                // Détecter si le titre contient "RDV" (insensible à la casse)
+                const isRdv = /\brdv\b/i.test(eventBlock.summary);
 
                 return (
                   <div 
                     key={`${eventBlock.eventId}-${idx}`}
-                    className={`event-block-span clickable ${hasLinkedReservations ? 'linked' : ''}`}
+                    className={`event-block-span clickable ${hasLinkedReservations ? 'linked' : ''} ${isRdv ? 'rdv-highlight' : ''}`}
                     style={{ 
                       gridColumn: `${eventBlock.startIndex + 1} / span ${eventBlock.span}`,
                       backgroundColor: eventBlock.color + '40',
@@ -1158,16 +1128,23 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                       handleCellClick(eventBlock.event);
                     }}
                   >
-                    {hasLinkedReservations && (
-                      <div className="event-linked-indicator" title={`${linkedReservations.length} réservation(s) liée(s)`}>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M13 8C13 5.79086 11.2091 4 9 4H7C4.79086 4 3 5.79086 3 8C3 10.2091 4.79086 12 7 12H9C11.2091 12 13 10.2091 13 8Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                          <path d="M6 8H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                      </div>
-                    )}
                     <div className="event-content">
                       <span className="event-summary">{capitalizeText(eventBlock.summary)}</span>
+                      {hasLinkedReservations && (
+                        <span className="event-linked-indicator" title={`${linkedReservations.length} réservation(s) liée(s)`}>
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M13 8C13 5.79086 11.2091 4 9 4H7C4.79086 4 3 5.79086 3 8C3 10.2091 4.79086 12 7 12H9C11.2091 12 13 10.2091 13 8Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                            <path d="M6 8H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        </span>
+                      )}
+                      {eventBlock.affaire && affairesWithAttachments.includes(eventBlock.affaire) && (
+                        <span className="event-attachment-indicator" title="Pièces jointes">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                          </svg>
+                        </span>
+                      )}
                       {eventBlock.affaire && <span className="event-affaire">{eventBlock.affaire}</span>}
                       {eventBlock.time && <span className="event-time">{eventBlock.time}</span>}
                     </div>

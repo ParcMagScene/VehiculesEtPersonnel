@@ -81,7 +81,9 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
       'IN_PROGRESS': { label: 'En cours', class: 'in-progress' },
       'completed': { label: 'Effectuée', class: 'completed' },
       'COMPLETED': { label: 'Effectuée', class: 'completed' },
-      'reported': { label: 'Signalée', class: 'reported' }
+      'reported': { label: 'Signalée', class: 'reported' },
+      'rescheduled': { label: 'Reportée', class: 'rescheduled' },
+      'cancelled': { label: 'Annulée', class: 'cancelled' }
     };
     return badges[status] || badges.pending;
   };

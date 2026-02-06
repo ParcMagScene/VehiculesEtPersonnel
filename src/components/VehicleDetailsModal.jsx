@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge } from 'lucide-react';
+import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader } from 'lucide-react';
+import InterventionModal from './InterventionModal';
 import './VehicleDetailsModal.css';
 
 const VehicleDetailsModal = ({ 
@@ -10,9 +11,13 @@ const VehicleDetailsModal = ({
   onReportBreakdown,
   onScheduleMaintenance,
   onOpenMaintenance,
+  onUpdateIntervention,
+  onDeleteIntervention,
   currentUser
 }) => {
   if (!vehicle) return null;
+  
+  const [selectedIntervention, setSelectedIntervention] = useState(null);
   
   // Vérifier les droits d'administration
   const isAdmin = currentUser?.isAdmin === true;
@@ -21,6 +26,13 @@ const VehicleDetailsModal = ({
   const vehicleMaintenances = maintenances
     .filter(m => m.vehicleId === vehicle.id)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Parser les contrôles techniques
+  const controlesTechniques = vehicle.controlesTechniques 
+    ? (typeof vehicle.controlesTechniques === 'string' 
+        ? JSON.parse(vehicle.controlesTechniques) 
+        : vehicle.controlesTechniques)
+    : [];
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -31,23 +43,88 @@ const VehicleDetailsModal = ({
     });
   };
 
+  const getDeadlineStatus = (deadline) => {
+    if (!deadline) return null;
+    
+    const now = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return { status: 'expired', label: `Expiré depuis ${Math.abs(diffDays)} jour(s)`, className: 'deadline-expired' };
+    } else if (diffDays <= 30) {
+      return { status: 'warning', label: `Dans ${diffDays} jour(s)`, className: 'deadline-warning' };
+    } else {
+      return { status: 'ok', label: `Dans ${diffDays} jour(s)`, className: 'deadline-ok' };
+    }
+  };
+
+  const getControleTypeLabel = (type) => {
+    const types = {
+      'VL': 'Contrôle technique VL',
+      'PL': 'Contrôle technique PL',
+      'SEMI': 'Contrôle technique Semi-remorque',
+      'SCENE': 'Contrôle technique Scène mobile',
+      'POLLUTION': 'Contrôle pollution',
+      'HAYON': 'Contrôle hayon (VGP)'
+    };
+    return types[type] || type;
+  };
+
+  const getControleTypePeriodicity = (type) => {
+    const periodicities = {
+      'VL': '4 ans après 1ère mise en circulation, puis tous les 2 ans',
+      'PL': 'Tous les ans (1ère visite dans les 6 mois suivant la mise en circulation)',
+      'SEMI': 'Tous les ans',
+      'SCENE': 'Tous les ans (remorque > 500 kg PTAC)',
+      'POLLUTION': 'Tous les ans (inclus dans le CT pour les VL, séparé pour les PL)',
+      'HAYON': 'Tous les 6 mois (Vérification Générale Périodique)'
+    };
+    return periodicities[type] || null;
+  };
+
+  const handleInterventionClick = (intervention) => {
+    setSelectedIntervention(intervention);
+  };
+
+  const handleSaveIntervention = async (updatedIntervention) => {
+    if (onUpdateIntervention) {
+      await onUpdateIntervention(updatedIntervention);
+    }
+    setSelectedIntervention(null);
+  };
+
+  const handleDeleteIntervention = async (interventionId) => {
+    if (onDeleteIntervention) {
+      await onDeleteIntervention(interventionId);
+    }
+    setSelectedIntervention(null);
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'planned': { label: 'Planifiée', className: 'status-planned' },
-      'scheduled': { label: 'Programmée', className: 'status-planned' },
-      'in-progress': { label: 'En cours', className: 'status-in-progress' },
-      'in_progress': { label: 'En cours', className: 'status-in-progress' },
-      'IN_PROGRESS': { label: 'En cours', className: 'status-in-progress' },
-      'completed': { label: 'Terminée', className: 'status-completed' },
-      'COMPLETED': { label: 'Terminée', className: 'status-completed' },
-      'cancelled': { label: 'Annulée', className: 'status-cancelled' },
-      'pending': { label: 'En attente', className: 'status-in-progress' },
-      'PENDING': { label: 'En attente', className: 'status-in-progress' },
-      'reported': { label: 'Signalée', className: 'status-cancelled' }
+      'planned': { label: 'Planifiée', className: 'status-planned', icon: <Clock size={14} /> },
+      'scheduled': { label: 'Programmée', className: 'status-planned', icon: <Clock size={14} /> },
+      'in-progress': { label: 'En cours', className: 'status-in-progress', icon: <Loader size={14} /> },
+      'in_progress': { label: 'En cours', className: 'status-in-progress', icon: <Loader size={14} /> },
+      'IN_PROGRESS': { label: 'En cours', className: 'status-in-progress', icon: <Loader size={14} /> },
+      'completed': { label: 'Terminée', className: 'status-completed', icon: <CheckCircle size={14} /> },
+      'COMPLETED': { label: 'Terminée', className: 'status-completed', icon: <CheckCircle size={14} /> },
+      'cancelled': { label: 'Annulée', className: 'status-cancelled', icon: <X size={14} /> },
+      'pending': { label: 'En attente', className: 'status-pending', icon: <FileText size={14} /> },
+      'PENDING': { label: 'En attente', className: 'status-pending', icon: <FileText size={14} /> },
+      'reported': { label: 'Signalée', className: 'status-reported', icon: <AlertTriangle size={14} /> },
+      'rescheduled': { label: 'Reportée', className: 'status-rescheduled', icon: <Clock size={14} /> }
     };
     
-    const config = statusConfig[status] || { label: status, className: '' };
-    return <span className={`status-badge ${config.className}`}>{config.label}</span>;
+    const config = statusConfig[status] || { label: status, className: '', icon: null };
+    return (
+      <span className={`status-badge ${config.className}`}>
+        {config.icon}
+        {config.label}
+      </span>
+    );
   };
 
   const getTypeLabel = (type) => {
@@ -161,19 +238,19 @@ const VehicleDetailsModal = ({
                   <Wrench size={20} />
                   Demander une intervention
                 </button>
+                
+                {/* Bouton Kilométrage accessible uniquement aux admins */}
+                <button 
+                  className="action-btn kilometrage-btn"
+                  onClick={() => {
+                    onOpenMaintenance(vehicle);
+                  }}
+                >
+                  <Gauge size={20} />
+                  Kilométrage & Contrôles techniques
+                </button>
               </>
             )}
-            
-            {/* Bouton Kilométrage accessible à tous */}
-            <button 
-              className="action-btn kilometrage-btn"
-              onClick={() => {
-                onOpenMaintenance(vehicle);
-              }}
-            >
-              <Gauge size={20} />
-              Kilométrage & Contrôles techniques
-            </button>
             
             <button 
               className="action-btn breakdown-btn"
@@ -187,8 +264,65 @@ const VehicleDetailsModal = ({
             </button>
             {!isAdmin && (
               <p className="info-message">
-                ℹ️ Vous ne pouvez que signaler des pannes. Pour programmer une intervention, contactez un administrateur.
+                ℹ️ Vous ne pouvez que signaler des pannes. Pour programmer une intervention ou gérer le kilométrage/contrôles techniques, contactez un administrateur.
               </p>
+            )}
+          </div>
+
+          {/* Section Deadlines */}
+          <div className="deadlines-section">
+            <h3><Calendar size={18} /> Échéances des contrôles techniques</h3>
+            {controlesTechniques.length > 0 ? (
+              <div className="deadlines-list">
+                {controlesTechniques.map((controle, index) => {
+                  const deadlineInfo = getDeadlineStatus(controle.deadline);
+                  return (
+                    <div key={index} className="deadline-item">
+                      <div className="deadline-header">
+                        <span className="deadline-type">{getControleTypeLabel(controle.type)}</span>
+                        {deadlineInfo && (
+                          <span className={`deadline-badge ${deadlineInfo.className}`}>
+                            {deadlineInfo.label}
+                          </span>
+                        )}
+                      </div>
+                      <div className="deadline-dates">
+                        <div className="deadline-date-item">
+                          <span className="deadline-date-label">Dernier contrôle :</span>
+                          <span className="deadline-date-value">{formatDate(controle.date)}</span>
+                        </div>
+                        {controle.deadline && (
+                          <div className="deadline-date-item">
+                            <span className="deadline-date-label">Échéance :</span>
+                            <span className="deadline-date-value">{formatDate(controle.deadline)}</span>
+                          </div>
+                        )}
+                      </div>
+                      {getControleTypePeriodicity(controle.type) && (
+                        <div className="ct-periodicity-info">
+                          <span className="ct-periodicity-icon">🔄</span>
+                          <span className="ct-periodicity-text">
+                            <strong>Périodicité :</strong> {getControleTypePeriodicity(controle.type)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-deadlines">
+                <p>Aucun contrôle technique enregistré</p>
+                {isAdmin && (
+                  <button 
+                    className="add-control-button"
+                    onClick={() => onOpenMaintenance(vehicle)}
+                  >
+                    <Calendar size={16} />
+                    Ajouter des contrôles techniques
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
@@ -198,7 +332,12 @@ const VehicleDetailsModal = ({
             {vehicleMaintenances.length > 0 ? (
               <div className="maintenance-list">
                 {vehicleMaintenances.map((maintenance) => (
-                  <div key={maintenance.id} className="maintenance-item">
+                  <div 
+                    key={maintenance.id} 
+                    className={`maintenance-item status-${maintenance.status} ${isAdmin ? 'clickable' : ''}`}
+                    onClick={isAdmin ? () => handleInterventionClick(maintenance) : undefined}
+                    title={isAdmin ? "Cliquer pour éditer" : undefined}
+                  >
                     <div className="maintenance-header">
                       <div className="maintenance-title">
                         <span className="maintenance-type">{getTypeLabel(maintenance.type)}</span>
@@ -230,6 +369,17 @@ const VehicleDetailsModal = ({
           </div>
         </div>
       </div>
+
+      {selectedIntervention && (
+        <InterventionModal
+          intervention={selectedIntervention}
+          vehicle={vehicle}
+          onClose={() => setSelectedIntervention(null)}
+          onSave={handleSaveIntervention}
+          onDelete={handleDeleteIntervention}
+          currentUser={currentUser}
+        />
+      )}
     </div>
   );
 };

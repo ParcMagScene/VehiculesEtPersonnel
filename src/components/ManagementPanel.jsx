@@ -1445,6 +1445,7 @@ const ManagementPanel = ({
       {/* Modal de maintenance des véhicules */}
       {showMaintenanceModal && vehicleToMaintain && (
         <VehicleMaintenanceModal
+          key={`${vehicleToMaintain.id}-${vehicleToMaintain.controlesTechniques || 'empty'}`}
           vehicle={vehicleToMaintain}
           onSave={handleSaveMaintenance}
           onClose={() => {

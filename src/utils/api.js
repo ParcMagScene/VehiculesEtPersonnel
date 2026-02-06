@@ -172,14 +172,14 @@ class ApiClient {
   async createVehicle(vehicle) {
     return this.request('/vehicles', {
       method: 'POST',
-      body: JSON.stringify(vehicle),
+      body: JSON.stringify(toSnakeCase(vehicle)),
     });
   }
 
   async updateVehicle(id, vehicle) {
     return this.request(`/vehicles/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(vehicle),
+      body: JSON.stringify(toSnakeCase(vehicle)),
     });
   }
 
@@ -483,6 +483,14 @@ class ApiClient {
 
   async getPendingAccessRequestsCount() {
     return this.request('/access-requests/count/pending');
+  }
+
+  async getPendingRequestsCount() {
+    return this.request('/pending-requests-count');
+  }
+
+  async getPendingReservationRequests() {
+    return this.request('/reservation-requests/pending');
   }
 
   // ============ UTILISATEURS ============

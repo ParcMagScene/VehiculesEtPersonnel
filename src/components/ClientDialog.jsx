@@ -114,7 +114,6 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         // Configurer l'autocomplétion
         if (inputRef.current) {
           const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-            types: ['address'],
             componentRestrictions: { country: 'fr' },
             fields: ['formatted_address', 'geometry', 'name', 'place_id']
           });
@@ -313,8 +312,13 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
   };
 
   return (
-    <div className="location-dialog-overlay">
-      <div className="location-dialog">
+    <div className="location-dialog-overlay" onClick={(e) => {
+      // Fermer seulement si on clique sur l'overlay, pas sur le contenu
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    }}>
+      <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="location-dialog-header">
           <h2>{client ? 'Modifier le client' : 'Nouveau client'}</h2>
           <button className="close-button" onClick={onClose}>

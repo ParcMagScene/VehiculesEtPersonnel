@@ -68,6 +68,7 @@ function PlanningView({
       case 'in_progress': return '#3b82f6';
       case 'pending': return '#8b5cf6';
       case 'completed': return '#10b981';
+      case 'rescheduled': return '#f97316';
       default: return '#6b7280';
     }
   };

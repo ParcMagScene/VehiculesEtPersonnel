@@ -365,21 +365,17 @@
   flex-shrink: 0;
 }
 
-/* Indicateur d'événement lié */
+/* Indicateurs inline (à gauche de l'affaire) */
 .event-linked-indicator {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
   color: #10b981;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  z-index: 10;
+  flex-shrink: 0;
   pointer-events: none;
 }
 
@@ -388,11 +384,34 @@
   height: 12px;
 }
 
+.event-attachment-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  color: #6366f1;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.event-attachment-indicator svg {
+  width: 11px;
+  height: 11px;
+}
+
 .event-block-span.linked {
   border-left-width: 4px !important;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%) !important;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
+}
+
+/* Mise en évidence des RDV */
+.event-block-span.rdv-highlight {
+  box-shadow: 0 0 0 2px #dc2626 inset !important;
 }
 
 .event-block-span.linked::before {

@@ -133,17 +133,125 @@
 }
 
 .banner-vehicle-header {
-  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 1rem;
+  flex-direction: column;
+  padding: 0.375rem 0.75rem;
   font-weight: 600;
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  gap: 0.375rem;
+}
+
+.banner-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.banner-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.banner-search-toggle {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.banner-search-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.banner-search-toggle.active {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+}
+
+/* Barre de recherche */
+.banner-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 0.375rem;
+  padding: 0.2rem 0.4rem;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.banner-search-bar:focus-within {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.banner-search-icon {
+  color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.banner-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 500;
+  min-width: 0;
+  padding: 0.15rem 0;
+}
+
+.banner-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+  font-style: italic;
+}
+
+.banner-search-clear {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.banner-search-clear:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.banner-search-count {
+  font-size: 0.6rem;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .banner-title-stack {

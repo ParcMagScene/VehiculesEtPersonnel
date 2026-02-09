@@ -231,52 +231,32 @@ const VehicleDetailsModal = ({
                     <span className="info-value">{vehicle.comment}</span>
                   </div>
                 )}
+                {/* Kilométrage intégré dans la grille */}
+                {(() => {
+                  const lastMaintenanceWithKm = vehicleMaintenances.find(m => m.mileage && parseInt(m.mileage) > 0);
+                  const vehicleKm = vehicle.kilometrage || 0;
+                  const maintenanceKm = lastMaintenanceWithKm ? parseInt(lastMaintenanceWithKm.mileage) : 0;
+                  const lastKm = Math.max(vehicleKm, maintenanceKm);
+                  const lastMileageEntry = mileageHistory.length > 0 ? mileageHistory[0] : null;
+                  const kmDate = lastMileageEntry?.timestamp || lastMileageEntry?.parsed?.date;
+                  const kmUser = lastMileageEntry?.userName || lastMileageEntry?.user_name;
+                  
+                  return lastKm > 0 ? (
+                    <div className="info-item info-item-km full-width">
+                      <span className="info-label"><Gauge size={14} /> Kilométrage</span>
+                      <span className="info-value info-value-km">{lastKm.toLocaleString('fr-FR')} km</span>
+                      {(kmDate || kmUser) && (
+                        <span className="info-km-meta">
+                          {kmDate && <span className="km-meta-item"><Calendar size={12} /> {formatDate(kmDate)}</span>}
+                          {kmUser && <span className="km-meta-item"><User size={12} /> {kmUser}</span>}
+                        </span>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
           </div>
-
-          {/* Carte Kilométrage */}
-          {(() => {
-            const lastMaintenanceWithKm = vehicleMaintenances.find(m => m.mileage && parseInt(m.mileage) > 0);
-            const vehicleKm = vehicle.kilometrage || 0;
-            const maintenanceKm = lastMaintenanceWithKm ? parseInt(lastMaintenanceWithKm.mileage) : 0;
-            const lastKm = Math.max(vehicleKm, maintenanceKm);
-            const lastMileageEntry = mileageHistory.length > 0 ? mileageHistory[0] : null;
-            const kmDate = lastMileageEntry?.timestamp || lastMileageEntry?.parsed?.date;
-            const kmUser = lastMileageEntry?.userName || lastMileageEntry?.user_name;
-            const kmSourceDesc = lastMileageEntry?.parsed?.description || '';
-            
-            return lastKm > 0 ? (
-              <div className="km-card">
-                <div className="km-card-icon">
-                  <Gauge size={28} />
-                </div>
-                <div className="km-card-content">
-                  <div className="km-card-value">{lastKm.toLocaleString('fr-FR')} km</div>
-                  <div className="km-card-meta">
-                    {kmDate && (
-                      <span className="km-meta-item">
-                        <Calendar size={13} /> {formatDate(kmDate)}
-                      </span>
-                    )}
-                    {kmUser && (
-                      <span className="km-meta-item">
-                        <User size={13} /> {kmUser}
-                      </span>
-                    )}
-                    {kmSourceDesc && (
-                      <span className="km-meta-item km-meta-source">{kmSourceDesc}</span>
-                    )}
-                  </div>
-                </div>
-                {mileageHistory.length > 1 && (
-                  <div className="km-card-history-count">
-                    {mileageHistory.length} relevés
-                  </div>
-                )}
-              </div>
-            ) : null;
-          })()}
 
           {/* Boutons d'action */}
           <div className="action-buttons">

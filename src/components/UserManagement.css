@@ -293,6 +293,14 @@
   background: #fef3c7;
 }
 
+.btn-icon.btn-primary {
+  color: #3b82f6;
+}
+
+.btn-icon.btn-primary:hover {
+  background: #dbeafe;
+}
+
 .btn-icon:disabled {
   opacity: 0.3;
   cursor: not-allowed;

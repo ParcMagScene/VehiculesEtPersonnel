@@ -671,13 +671,27 @@ const Calendar = ({
         r.period === period
     );
 
-    // Si une réservation existe, l'ouvrir directement
+    // Si une réservation existe, l'ouvrir directement (lecture seule pour non-admin)
     if (existing) {
       setSelectedReservation(existing);
       return;
     }
 
-    // Sinon, commencer le drag
+    // Non-admin : clic simple ou drag → ouvrir la modale en mode demande
+    if (!currentUser?.isAdmin) {
+      e.preventDefault();
+      setIsDragging(true);
+      setDragState({
+        vehicle,
+        startDay: date,
+        startPeriod: period,
+        endDay: date,
+        endPeriod: period
+      });
+      return;
+    }
+
+    // Admin : commencer le drag
     e.preventDefault();
     setIsDragging(true);
     setDragState({
@@ -739,6 +753,7 @@ const Calendar = ({
   // Fonctions de gestion du redimensionnement
   const handleResizeStart = (e, block, edge) => {
     if (view === 'year') return; // Pas de resize en vue année
+    if (!currentUser?.isAdmin) return; // Seuls les admins peuvent redimensionner
     e.preventDefault();
     e.stopPropagation();
     

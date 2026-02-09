@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell } from 'lucide-react';
+import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil } from 'lucide-react';
 import api from '../utils/api';
+import UserAvatar from './UserAvatar';
+import ProfileEditModal from './ProfileEditModal';
 import './UserManagement.css';
 
 const UserManagement = () => {
@@ -9,6 +11,7 @@ const UserManagement = () => {
   const [accessRequests, setAccessRequests] = useState([]);
   const [newEmail, setNewEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -177,7 +180,12 @@ const UserManagement = () => {
               <tbody>
                 {users.map((user) => (
                   <tr key={user.id}>
-                    <td>{user.name}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <UserAvatar name={user.name} avatar={user.avatar} size={32} />
+                        <span>{user.name}</span>
+                      </div>
+                    </td>
                     <td>{user.email}</td>
                     <td>
                       <label className="admin-checkbox">
@@ -197,6 +205,13 @@ const UserManagement = () => {
                     </td>
                     <td>
                       <div className="action-buttons">
+                        <button
+                          onClick={() => setEditingUser(user)}
+                          className="btn-icon btn-primary"
+                          title="Modifier le profil"
+                        >
+                          <Pencil size={16} />
+                        </button>
                         <button
                           onClick={() => handleResetPassword(user.id)}
                           className="btn-icon btn-warning"
@@ -370,6 +385,19 @@ const UserManagement = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Modal d'édition utilisateur */}
+      {editingUser && (
+        <ProfileEditModal
+          currentUser={editingUser}
+          targetUser={editingUser}
+          onClose={() => setEditingUser(null)}
+          onUserUpdate={() => {
+            setEditingUser(null);
+            loadData();
+          }}
+        />
       )}
     </div>
   );

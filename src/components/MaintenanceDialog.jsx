@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Clock, CheckCircle, AlertTriangle, FileText, Loader, X, User, Calendar } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, FileText, Loader, X, User, Calendar, Gauge } from 'lucide-react';
 import { getPeriodTimestamp } from '../utils/dateUtils';
+import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
 import './MaintenanceDialog.css';
 
@@ -42,6 +43,21 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
   
   const [activeTab, setActiveTab] = useState('new'); // 'new' ou 'history'
+  const [mileageHistory, setMileageHistory] = useState([]);
+
+  // Charger l'historique des relevés kilométriques
+  useEffect(() => {
+    if (vehicle?.id) {
+      api.getHistory('vehicle', vehicle.id).then(history => {
+        const kmEntries = (history || []).filter(h => h.action === 'mileage_update').map(h => {
+          let parsed = {};
+          try { parsed = typeof h.changes === 'string' ? JSON.parse(h.changes) : (h.changes || {}); } catch(e) {}
+          return { ...h, parsed };
+        });
+        setMileageHistory(kmEntries);
+      }).catch(() => {});
+    }
+  }, [vehicle?.id]);
   const [isQuickReport, setIsQuickReport] = useState(getInitialQuickReport());
   const [editingId, setEditingId] = useState(maintenanceToEditData?.id || null);
   const [conflictWarning, setConflictWarning] = useState(null); // Avertissement de conflit
@@ -433,6 +449,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           >
             📋 Historique véhicule ({vehicleMaintenances.length})
           </button>
+          <button 
+            className={`tab-button ${activeTab === 'km-history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('km-history')}
+          >
+            🔢 Relevés km ({mileageHistory.length})
+          </button>
         </div>
 
         <div className="maintenance-dialog-content">
@@ -818,8 +840,88 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
 
             </fieldset>
             </form>
+          ) : activeTab === 'km-history' ? (
+            <div className="maintenance-history">
+              {/* En-tête avec immatriculation */}
+              <div className="km-history-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '10px 14px', background: '#f0f4f8', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Gauge size={18} />
+                  <strong>Historique des relevés kilométriques</strong>
+                </div>
+                {vehicle.registration && (
+                  <span style={{ fontSize: '0.9em', color: '#475569', fontWeight: 600, background: '#e2e8f0', padding: '3px 10px', borderRadius: '6px' }}>
+                    🚛 {vehicle.registration}
+                  </span>
+                )}
+              </div>
+              {mileageHistory.length === 0 ? (
+                <div className="empty-state">
+                  <p>Aucun relevé kilométrique enregistré</p>
+                </div>
+              ) : (
+                <div className="maintenance-list">
+                  {mileageHistory.map((entry, idx) => (
+                    <div key={entry.id || idx} className="maintenance-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+                      <div className="maintenance-card-header">
+                        <div className="maintenance-card-title">
+                          <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Gauge size={16} />
+                            {entry.parsed.newKilometrage ? parseInt(entry.parsed.newKilometrage).toLocaleString('fr-FR') + ' km' : 'Relevé'}
+                          </h3>
+                          <span className="maintenance-date">
+                            {entry.timestamp ? format(parseISO(entry.timestamp), 'dd MMMM yyyy à HH:mm', { locale: fr }) : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="maintenance-card-body">
+                        <div className="maintenance-details">
+                          {entry.parsed.oldKilometrage !== undefined && (
+                            <div className="detail-item">
+                              <span className="detail-label">Ancien km :</span>
+                              <span className="detail-value">{parseInt(entry.parsed.oldKilometrage).toLocaleString('fr-FR')} km</span>
+                            </div>
+                          )}
+                          {entry.parsed.newKilometrage !== undefined && (
+                            <div className="detail-item">
+                              <span className="detail-label">Nouveau km :</span>
+                              <span className="detail-value" style={{ fontWeight: 600 }}>{parseInt(entry.parsed.newKilometrage).toLocaleString('fr-FR')} km</span>
+                            </div>
+                          )}
+                          {entry.parsed.oldKilometrage !== undefined && entry.parsed.newKilometrage !== undefined && (
+                            <div className="detail-item">
+                              <span className="detail-label">Différence :</span>
+                              <span className="detail-value" style={{ color: '#059669' }}>
+                                +{(parseInt(entry.parsed.newKilometrage) - parseInt(entry.parsed.oldKilometrage)).toLocaleString('fr-FR')} km
+                              </span>
+                            </div>
+                          )}
+                          {(entry.userName || entry.user_name) && (
+                            <div className="detail-item">
+                              <span className="detail-label"><User size={14} /> Relevé par :</span>
+                              <span className="detail-value">{entry.userName || entry.user_name}</span>
+                            </div>
+                          )}
+                          {entry.parsed.description && (
+                            <div className="detail-item">
+                              <span className="detail-label">Source :</span>
+                              <span className="detail-value" style={{ fontStyle: 'italic' }}>{entry.parsed.description}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
             <div className="maintenance-history">
+              {/* En-tête avec immatriculation */}
+              {vehicle.registration && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', padding: '6px 12px', background: '#f0f4f8', borderRadius: '6px', width: 'fit-content' }}>
+                  <span style={{ fontSize: '0.9em', color: '#475569', fontWeight: 600 }}>🚛 {vehicle.registration}</span>
+                </div>
+              )}
               {vehicleMaintenances.length === 0 ? (
                 <div className="empty-state">
                   <p>Aucun entretien enregistré pour ce véhicule</p>

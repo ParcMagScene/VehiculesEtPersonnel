@@ -5,7 +5,7 @@ import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 import './UserManagement.css';
 
-const UserManagement = () => {
+const UserManagement = ({ onAccessRequestChange }) => {
   const [authorizedEmails, setAuthorizedEmails] = useState([]);
   const [users, setUsers] = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
@@ -156,6 +156,7 @@ const UserManagement = () => {
       
       setApproveModal(null);
       loadData();
+      onAccessRequestChange?.();
     } catch (error) {
       alert(`Erreur: ${error.message}`);
     }
@@ -168,6 +169,7 @@ const UserManagement = () => {
       await api.updateAccessRequest(requestId, 'rejected');
       alert('Demande rejetée');
       loadData();
+      onAccessRequestChange?.();
     } catch (error) {
       alert(`Erreur: ${error.message}`);
     }

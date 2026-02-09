@@ -213,12 +213,15 @@ const VehicleDetailsModal = ({
                     <span className="info-value">{vehicle.model}</span>
                   </div>
                 )}
-                {(vehicle.couleurVehicule || vehicle.color) && (
-                  <div className="info-item">
-                    <span className="info-label">Couleur :</span>
-                    <span className="info-value">{vehicle.couleurVehicule || vehicle.color}</span>
-                  </div>
-                )}
+                {(() => {
+                  const realColor = vehicle.couleurVehicule || vehicle.color;
+                  return realColor && !realColor.startsWith('#') ? (
+                    <div className="info-item">
+                      <span className="info-label">Couleur :</span>
+                      <span className="info-value">{realColor}</span>
+                    </div>
+                  ) : null;
+                })()}
                 {vehicle.owner && (
                   <div className="info-item">
                     <span className="info-label">Propriétaire :</span>

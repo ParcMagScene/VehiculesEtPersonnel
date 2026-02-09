@@ -1101,4 +1101,4 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   );
 }
 
-export default MaintenanceDialog;
+export default React.memo(MaintenanceDialog);

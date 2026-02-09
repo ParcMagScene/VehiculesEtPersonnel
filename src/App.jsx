@@ -166,9 +166,11 @@ function App() {
     }
   };
 
-  // Sauvegarder automatiquement
+  // Sauvegarder automatiquement (débounce 500ms pour éviter les écritures excessives)
   useEffect(() => {
-    if (!isLoading) {
+    if (isLoading) return;
+    
+    const timer = setTimeout(() => {
       saveToIndexedDB(STORES.vehicles, vehicles);
       saveToIndexedDB(STORES.reservations, reservations);
       saveToIndexedDB(STORES.clients, clients);
@@ -179,7 +181,9 @@ function App() {
       }
       saveToIndexedDB(STORES.garages, garages);
       saveToIndexedDB(STORES.maintenances, maintenances);
-    }
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, [vehicles, reservations, clients, drivers, locations, calendarConfig, garages, maintenances, isLoading]);
 
   // NOTE: Cette sauvegarde IndexedDB est conservée temporairement pour la compatibilité

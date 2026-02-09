@@ -389,3 +389,116 @@
   gap: 6px;
   align-items: center;
 }
+
+/* ========== MODAL D'APPROBATION ========== */
+
+.approve-modal {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.approve-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.approve-modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.approve-modal-body {
+  padding: 1.5rem;
+}
+
+.approve-modal-info {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  border-left: 4px solid #10b981;
+}
+
+.approve-modal-user {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.approve-modal-user strong {
+  color: #111827;
+  font-size: 1rem;
+}
+
+.approve-modal-user span {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.approve-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.approve-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-wrap: wrap;
+}
+
+.approve-checkbox-label:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.approve-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: #10b981;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.approve-checkbox-label span {
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.approve-email-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-left: 28px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.approve-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}

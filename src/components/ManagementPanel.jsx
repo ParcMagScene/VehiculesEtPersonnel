@@ -36,6 +36,7 @@ const ManagementPanel = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState('vehicles');
+  const [pendingAccessCount, setPendingAccessCount] = useState(0);
   const [editingItem, setEditingItem] = useState(null);
   const [newItem, setNewItem] = useState({ 
     name: '', 
@@ -68,6 +69,20 @@ const ManagementPanel = ({
   const inputRef = useRef(null);
   const companyAddressInputRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Charger le nombre de demandes d'accès en attente
+  useEffect(() => {
+    if (!currentUser?.isAdmin) return;
+    const loadPendingCount = async () => {
+      try {
+        const data = await api.getPendingAccessRequestsCount();
+        setPendingAccessCount(data.count || 0);
+      } catch (_e) { /* silencieux */ }
+    };
+    loadPendingCount();
+    const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
 
   // Charger l'adresse de Mag Scène depuis la config
   useEffect(() => {
@@ -684,6 +699,9 @@ const ManagementPanel = ({
                   <Icon size={20} style={{ color: activeTab === tab.id ? 'white' : tab.color }} />
                 </div>
                 <span className="tab-label">{tab.label}</span>
+                {tab.id === 'users' && pendingAccessCount > 0 && (
+                  <span className="tab-badge">{pendingAccessCount}</span>
+                )}
               </button>
             );
           })}
@@ -866,7 +884,9 @@ const ManagementPanel = ({
 
           {/* Gestion des utilisateurs (Admin uniquement) */}
           {activeTab === 'users' && currentUser?.isAdmin && (
-            <UserManagement />
+            <UserManagement onAccessRequestChange={() => {
+              api.getPendingAccessRequestsCount().then(data => setPendingAccessCount(data.count || 0)).catch(() => {});
+            }} />
           )}
 
           {/* Configuration Google Calendar (Admin uniquement) */}
@@ -1458,4 +1478,4 @@ const ManagementPanel = ({
   );
 };
 
-export default ManagementPanel;
+export default React.memo(ManagementPanel);

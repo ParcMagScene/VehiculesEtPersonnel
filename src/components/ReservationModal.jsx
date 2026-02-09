@@ -1851,4 +1851,4 @@ const ReservationModal = ({
   );
 };
 
-export default ReservationModal;
+export default React.memo(ReservationModal);

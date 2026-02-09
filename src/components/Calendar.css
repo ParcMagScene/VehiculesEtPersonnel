@@ -40,8 +40,29 @@
 
 .calendar-headers-scroll-area {
   flex: 1;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
   overscroll-behavior: contain;
+  pointer-events: none;
+}
+
+.calendar-headers-scroll-area > * {
+  pointer-events: auto;
+}
+
+.calendar-headers-scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.calendar-headers-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.calendar-headers-scroll-area::-webkit-scrollbar-thumb {
+  background: transparent;
 }
 
 .calendar-grid-headers {
@@ -230,15 +251,15 @@
 }
 
 .week-view {
-  grid-template-columns: repeat(14, 100px);
+  grid-template-columns: repeat(14, minmax(100px, 1fr));
 }
 
 .month-view {
-  grid-template-columns: repeat(62, 55px);
+  grid-template-columns: repeat(62, minmax(55px, 1fr));
 }
 
 .year-view {
-  grid-template-columns: repeat(12, 150px) !important;
+  grid-template-columns: repeat(12, minmax(150px, 1fr)) !important;
   min-width: 1800px;
 }
 

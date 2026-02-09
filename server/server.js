@@ -34,6 +34,7 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
+import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1688,6 +1689,13 @@ setupDriversRoutes(app, authenticateToken);
 setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
 setupConfigRoutes(app, authenticateToken, requireAdmin);
+
+// Routes Planning Personnel — MagLog 1.0
+setupPersonsRoutes(app, authenticateToken, requireAdmin);
+setupSkillsRoutes(app, authenticateToken, requireAdmin);
+setupAvailabilitiesRoutes(app, authenticateToken);
+setupMissionsRoutes(app, authenticateToken, requireAdmin);
+setupAssignmentsRoutes(app, authenticateToken);
 
 // ============ PROFIL UTILISATEUR ============
 

@@ -3,13 +3,13 @@
 }
 
 /* Sélection du type */
-.type-selection {
+.mobile-maintenances .type-selection {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.type-card {
+.mobile-maintenances .type-card {
   width: 100%;
   background: white;
   border: none;
@@ -21,7 +21,7 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.type-card:active {
+.mobile-maintenances .type-card:active {
   transform: scale(0.98);
 }
 
@@ -61,89 +61,186 @@
 }
 
 /* Formulaire */
-.maintenance-form {
+.mobile-maintenances .maintenance-form {
   background: white;
   border-radius: 0.75rem;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Header et boutons partagés */
+.mobile-maintenances .screen-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.mobile-maintenances .screen-header h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1f2937;
+}
+
+.mobile-maintenances .back-button {
+  background: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  color: #374151;
+}
+
+.mobile-maintenances .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.mobile-maintenances .form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.mobile-maintenances .form-group input,
+.mobile-maintenances .form-group select,
+.mobile-maintenances .form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  box-shadow: none;
+}
+
+.mobile-maintenances .form-group input:focus,
+.mobile-maintenances .form-group select:focus,
+.mobile-maintenances .form-group textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: none;
+}
+
+.mobile-maintenances .form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.mobile-maintenances .btn-cancel,
+.mobile-maintenances .btn-submit {
+  flex: 1;
+  padding: 0.875rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.mobile-maintenances .btn-cancel {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.mobile-maintenances .btn-submit {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
 /* Liste des interventions */
-.maintenances-list {
+.mobile-maintenances .maintenances-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.maintenance-card {
+.mobile-maintenances .maintenance-card {
   background: white;
   border-radius: 0.75rem;
   padding: 1.25rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.maintenance-header {
+.mobile-maintenances .maintenance-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
 }
 
-.status-badge {
+.mobile-maintenances .status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
   font-weight: 600;
+  display: inline-block;
+  text-transform: none;
+  letter-spacing: normal;
+  gap: 0;
 }
 
-.status-badge.pending {
+.mobile-maintenances .status-badge.pending {
   background: #fef3c7;
   color: #92400e;
 }
 
-.status-badge.scheduled {
+.mobile-maintenances .status-badge.scheduled {
   background: #dbeafe;
   color: #1e40af;
 }
 
-.status-badge.in-progress {
+.mobile-maintenances .status-badge.in-progress {
   background: #e0e7ff;
   color: #4338ca;
 }
 
-.status-badge.completed {
+.mobile-maintenances .status-badge.completed {
   background: #d1fae5;
   color: #065f46;
 }
 
-.status-badge.reported {
+.mobile-maintenances .status-badge.reported {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.maintenance-date {
+.mobile-maintenances .maintenance-date {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: #6b7280;
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
+  font-weight: normal;
 }
 
-.maintenance-garage {
+.mobile-maintenances .maintenance-garage {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: #6b7280;
   font-size: 0.875rem;
   margin-bottom: 0.75rem;
+  margin-top: 0;
 }
 
-.maintenance-description {
+.mobile-maintenances .maintenance-description {
   margin-top: 0.75rem;
   padding: 0.75rem;
   background: #f9fafb;
   border-radius: 0.5rem;
   font-size: 0.875rem;
   color: #4b5563;
+  line-height: normal;
 }

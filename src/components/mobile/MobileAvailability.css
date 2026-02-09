@@ -52,7 +52,7 @@
   gap: 16px;
 }
 
-.nav-button {
+.mobile-availability .nav-button {
   background: #f3f4f6;
   border: none;
   width: 40px;
@@ -65,9 +65,18 @@
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
+  padding: 0;
+  font-size: inherit;
+  white-space: normal;
+  gap: 0;
+  min-width: 40px;
 }
 
-.nav-button:active {
+.mobile-availability .nav-button:hover {
+  background: #e5e7eb;
+}
+
+.mobile-availability .nav-button:active {
   background: #e5e7eb;
   transform: scale(0.95);
 }

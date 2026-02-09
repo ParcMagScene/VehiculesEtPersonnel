@@ -1,9 +1,16 @@
 import Database from 'better-sqlite3';
+import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// ⚠️ En ESM, les imports sont hoistés et exécutés AVANT le code de server.js.
+// On doit charger dotenv ici pour que DB_PATH soit défini au moment de la lecture.
+const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
+const envFile = isDev ? '.env.development' : '.env';
+dotenv.config({ path: join(__dirname, envFile) });
 
 // Chemin de la base de données — configurable via DB_PATH
 const DB_FILENAME = process.env.DB_PATH || 'vehicules.db';

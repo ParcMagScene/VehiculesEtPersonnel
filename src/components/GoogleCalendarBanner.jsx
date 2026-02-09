@@ -6,7 +6,7 @@ import EventDetailsModal from './EventDetailsModal';
 import api from '../utils/api';
 import logger, { oauthLogger } from '../utils/logger';
 import { capitalizeText } from '../utils/dateUtils';
-import { Search, X } from 'lucide-react';
+import { Search, X, RefreshCw } from 'lucide-react';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
@@ -665,6 +665,15 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     }
   };
 
+  const handleReconnect = () => {
+    if (tokenClient) {
+      setError(null);
+      oauthLogger.log('🔄 Reconnexion Google - sélection du compte');
+      // Forcer la sélection du compte Google
+      tokenClient.requestAccessToken({ prompt: 'select_account' });
+    }
+  };
+
   const handleSignOut = () => {
     if (accessToken) {
       window.google.accounts.oauth2.revoke(accessToken, () => {});
@@ -1105,6 +1114,14 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                   <span>Locations</span>
                   <span>Prestations</span>
                   <span>Installations</span>
+                  <button
+                    className="banner-reconnect-google"
+                    onClick={handleReconnect}
+                    title="Reconnecter / changer de compte Google"
+                  >
+                    <RefreshCw size={12} />
+                    <span>Compte Google</span>
+                  </button>
                 </div>
               )}
               <div className="banner-header-actions">

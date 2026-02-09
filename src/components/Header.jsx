@@ -81,10 +81,10 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     return () => clearInterval(interval);
   }, [currentUser, maintenances]);
 
-  // Charger les demandes de réservation en attente quand un popup s'ouvre
+  // Charger les demandes de réservation en attente (au démarrage + quand un popup s'ouvre)
   useEffect(() => {
     const loadPendingReservations = async () => {
-      if ((showRequestsPopup || showNotificationsPopup) && currentUser?.isAdmin) {
+      if (currentUser?.isAdmin) {
         try {
           const data = await api.getPendingReservationRequests();
           setPendingReservationRequests(data);
@@ -574,8 +574,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                       </div>
                     )}
 
-                    {/* Section Demandes de réservation */}
-                    {(notificationFilter === 'all' || notificationFilter === 'reservations') && currentUser?.isAdmin && pendingReservationRequests.length > 0 && (
+                    {/* Section Demandes de réservation - toujours visible pour admin */}
+                    {currentUser?.isAdmin && pendingReservationRequests.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title">
                           <CalendarCheck size={18} strokeWidth={2.5} /> 

@@ -25,7 +25,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   const checkEmailAuthorization = async (email) => {
     try {
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/api/access-requests/check-email`, {
+      const response = await fetch(`${apiUrl}/access-requests/check-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -55,7 +55,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
 
     try {
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/api/access-requests`, {
+      const response = await fetch(`${apiUrl}/access-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

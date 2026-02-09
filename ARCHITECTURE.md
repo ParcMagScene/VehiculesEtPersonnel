@@ -1,4 +1,4 @@
-# 🏗️ Architecture Complète — MagSav Réservation Véhicules
+# 🏗️ Architecture Complète — MagLog 1.0
 
 > **Dernière mise à jour** : 9 février 2026
 > **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
@@ -25,7 +25,7 @@
 
 ## 1. Vue d'ensemble
 
-Application web de **gestion de flotte de véhicules** pour Mag Scène (entreprise de prestations événementielles à La Réunion). Elle permet de :
+Application web de **gestion de flotte de véhicules et de planning du personnel** pour Mag Scène (entreprise de prestations événementielles à La Réunion). Elle permet de :
 
 - **Réserver** des véhicules sur un calendrier interactif (vue semaine/mois/année/planning)
 - **Gérer l'entretien** : maintenances programmées, signalements de pannes, contrôles techniques
@@ -33,6 +33,7 @@ Application web de **gestion de flotte de véhicules** pour Mag Scène (entrepri
 - **Administrer les utilisateurs** : inscription par invitation, rôles admin/user, demandes d'accès
 - **Importer des données** : BL (bons de livraison PDF), fichiers Excel, véhicules CSV
 - **Synchroniser Google Calendar** : lecture des événements, création de réservations depuis Google
+- **Gérer le personnel** : personnes, compétences, disponibilités, missions, affectations, planning
 - **Accès mobile** : interface dédiée avec QR code
 
 ---
@@ -101,7 +102,7 @@ Resevation Véhicules/
 │   ├── App.css                     # Styles globaux
 │   ├── index.css                   # Reset CSS
 │   │
-│   ├── components/                 # Composants React (59 fichiers)
+│   ├── components/                 # Composants React (61 fichiers)
 │   │   ├── Calendar.jsx            # Calendrier principal (semaine/mois/année)
 │   │   ├── Header.jsx              # Barre de navigation + notifications
 │   │   ├── LoginForm.jsx           # Formulaire de connexion
@@ -129,6 +130,7 @@ Resevation Véhicules/
 │   │   ├── MobileAccess.jsx        # QR code accès mobile
 │   │   ├── QRCodeModal.jsx         # Affichage QR code
 │   │   ├── UserAvatar.jsx          # Avatar utilisateur
+│   │   ├── PersonnelPanel.jsx      # Module personnel (4 sous-onglets)
 │   │   ├── ErrorBoundary.jsx       # Capture d'erreurs React
 │   │   ├── ConfirmDialog.jsx       # Dialog de confirmation
 │   │   ├── MonthSelector.jsx       # Sélecteur de mois
@@ -148,7 +150,7 @@ Resevation Véhicules/
 │   │   └── useGooglePlacesAutocomplete.js # Google Places
 │   │
 │   └── utils/                      # Fonctions utilitaires
-│       ├── api.js                  # Client API (506 lignes, ~60 méthodes)
+│       ├── api.js                  # Client API (~700 lignes, ~85 méthodes)
 │       ├── dateUtils.js            # Utilitaires de dates
 │       ├── excelImport.js          # Import Excel
 │       ├── googleMapsLoader.js     # Chargement Google Maps API
@@ -160,9 +162,10 @@ Resevation Véhicules/
 │       └── vehiclesCsvImport.js    # Import CSV véhicules
 │
 ├── server/                         # ══ CODE SOURCE BACKEND ══
-│   ├── server.js                   # Serveur Express principal (~2100 lignes)
+│   ├── server.js                   # Serveur Express principal (~2160 lignes)
 │   ├── routes.js                   # Routes additionnelles (~640 lignes)
-│   ├── database.js                 # Initialisation SQLite + schéma
+│   ├── personnelRoutes.js          # Routes module personnel (~530 lignes)
+│   ├── database.js                 # Initialisation SQLite + schéma (~540 lignes)
 │   ├── package.json                # Dépendances backend
 │   ├── ecosystem.config.js         # Configuration PM2
 │   ├── .env                        # Variables d'environnement (secrets)
@@ -177,6 +180,7 @@ Resevation Véhicules/
 │   └── migrations/                 # Migrations SQL
 │       ├── add_technical_control_type_to_maintenances.sql
 │       ├── add_trip_details.sql
+│       ├── add_personnel_module.sql
 │       ├── add_trip_group_id.sql
 │       ├── add_vehicle_maintenance_info.sql
 │       └── fix_trip_details_reservation_id_type.sql
@@ -252,13 +256,21 @@ Client HTTP
 │  │   - /api/garages      (CRUD)         │    │
 │  │   - /api/config/*     (settings)     │    │
 │  │   - /api/trip-details (CRUD)         │    │
+│  │                                      │    │
+│  │  personnelRoutes.js :                │    │
+│  │   - /api/persons      (CRUD)         │    │
+│  │   - /api/skills       (CRUD)         │    │
+│  │   - /api/availabilities (CRUD)       │    │
+│  │   - /api/missions     (CRUD)         │    │
+│  │   - /api/assignments  (CRUD)         │    │
+│  │   - /api/personnel/planning          │    │
 │  └───────────────┬──────────────────────┘    │
 │                  │                           │
 │                  ▼                           │
 │  ┌──────────────────────────────────────┐    │
 │  │ SQLite (better-sqlite3)              │    │
 │  │ vehicules.db — WAL mode             │    │
-│  │ 16 tables, FK enforced             │    │
+│  │ 22 tables, FK enforced             │    │
 │  └──────────────────────────────────────┘    │
 └─────────────────────────────────────────────┘
 ```
@@ -267,9 +279,10 @@ Client HTTP
 
 | Fichier | Lignes | Rôle |
 |---------|--------|------|
-| `server.js` | ~2100 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads) |
+| `server.js` | ~2160 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads) |
 | `routes.js` | ~640 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
-| `database.js` | ~250 | Initialisation schéma SQLite, pragmas, migrations dynamiques |
+| `personnelRoutes.js` | ~530 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations, planning) |
+| `database.js` | ~540 | Initialisation schéma SQLite, pragmas, migrations dynamiques |
 | `logger.js` | ~30 | Logger conditionnel |
 
 ### Variables d'environnement (`server/.env`)
@@ -332,12 +345,15 @@ Le frontend persiste les données dans IndexedDB (via `src/utils/indexedDB.js`) 
 | `garages` | Garages |
 | `maintenances` | Maintenances |
 | `calendarConfig` | Configuration Google |
+| `persons` | Personnel (personnes) |
+| `skills` | Compétences |
+| `missions` | Missions |
 
 Le debounce de sauvegarde est de **500ms** pour éviter des écritures trop fréquentes.
 
-### Client API (`src/utils/api.js` — 506 lignes)
+### Client API (`src/utils/api.js` — ~700 lignes)
 
-Classe `ApiClient` avec ~60 méthodes. Fonctionnalités :
+Classe `ApiClient` avec ~85 méthodes. Fonctionnalités :
 - Détection automatique de l'URL backend (DuckDNS / localhost / IP)
 - Injection automatique du Bearer token JWT
 - Conversion `snake_case` ↔ `camelCase` transparente
@@ -355,7 +371,7 @@ Classe `ApiClient` avec ~60 méthodes. Fonctionnalités :
 - `PRAGMA synchronous = FULL` — Durabilité maximale
 - Checkpoint automatique toutes les 5 minutes
 
-### Schéma complet (16 tables)
+### Schéma complet (22 tables)
 
 #### `users` — Utilisateurs
 | Colonne | Type | Contraintes |
@@ -599,6 +615,97 @@ Classe `ApiClient` avec ~60 méthodes. Fonctionnalités :
 | `duration` | TEXT | — |
 | `notes` | TEXT | — |
 
+#### `persons` — Personnel
+| Colonne | Type | Contraintes |
+|---------|------|-------------|
+| `id` | INTEGER | PK AUTOINCREMENT |
+| `first_name` | TEXT | NOT NULL |
+| `last_name` | TEXT | NOT NULL |
+| `email` | TEXT | — |
+| `phone` | TEXT | — |
+| `type` | TEXT | DEFAULT 'salarié' |
+| `position` | TEXT | — |
+| `is_active` | BOOLEAN | DEFAULT 1 |
+| `notes` | TEXT | — |
+| `created_by` | INTEGER | FK → users(id) |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| `modified_by` | INTEGER | FK → users(id) |
+| `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+> **Types possibles** : salarié, technicien, conducteur, intermittent, indépendant
+
+#### `skills` — Compétences
+| Colonne | Type | Contraintes |
+|---------|------|-------------|
+| `id` | INTEGER | PK AUTOINCREMENT |
+| `name` | TEXT | NOT NULL UNIQUE |
+| `category` | TEXT | NOT NULL |
+| `description` | TEXT | — |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+> **Catégories** : Son, Lumière, Vidéo, Régie, Transport, Structure, Électricité, Autre
+> **Seed** : 18 compétences pré-insérées (INSERT OR IGNORE)
+
+#### `person_skills` — Association personne ↔ compétence
+| Colonne | Type | Contraintes |
+|---------|------|-------------|
+| `id` | INTEGER | PK AUTOINCREMENT |
+| `person_id` | INTEGER | NOT NULL, FK → persons(id) ON DELETE CASCADE |
+| `skill_id` | INTEGER | NOT NULL, FK → skills(id) ON DELETE CASCADE |
+| `level` | TEXT | DEFAULT 'intermédiaire' |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+> **Niveaux** : débutant, intermédiaire, confirmé, expert
+> **Contrainte** : UNIQUE(person_id, skill_id)
+
+#### `availabilities` — Disponibilités / indisponibilités
+| Colonne | Type | Contraintes |
+|---------|------|-------------|
+| `id` | INTEGER | PK AUTOINCREMENT |
+| `person_id` | INTEGER | NOT NULL, FK → persons(id) ON DELETE CASCADE |
+| `type` | TEXT | NOT NULL |
+| `start_date` | TEXT | NOT NULL |
+| `end_date` | TEXT | NOT NULL |
+| `reason` | TEXT | — |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+> **Types** : available, unavailable, vacation, sick, training
+
+#### `missions` — Missions / prestations
+| Colonne | Type | Contraintes |
+|---------|------|-------------|
+| `id` | INTEGER | PK AUTOINCREMENT |
+| `title` | TEXT | NOT NULL |
+| `description` | TEXT | — |
+| `start_date` | TEXT | NOT NULL |
+| `end_date` | TEXT | NOT NULL |
+| `location` | TEXT | — |
+| `client_name` | TEXT | — |
+| `status` | TEXT | DEFAULT 'draft' |
+| `required_persons` | INTEGER | DEFAULT 1 |
+| `reservation_id` | TEXT | FK → reservations(id) |
+| `notes` | TEXT | — |
+| `created_by` | INTEGER | FK → users(id) |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| `modified_by` | INTEGER | FK → users(id) |
+| `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+> **Statuts** : draft, planned, confirmed, in_progress, completed, cancelled
+
+#### `mission_assignments` — Affectation personne → mission
+| Colonne | Type | Contraintes |
+|---------|------|-------------|
+| `id` | INTEGER | PK AUTOINCREMENT |
+| `mission_id` | INTEGER | NOT NULL, FK → missions(id) ON DELETE CASCADE |
+| `person_id` | INTEGER | NOT NULL, FK → persons(id) ON DELETE CASCADE |
+| `role` | TEXT | — |
+| `status` | TEXT | DEFAULT 'proposed' |
+| `notes` | TEXT | — |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+> **Statuts** : proposed, confirmed, declined, replaced, completed
+> **Contrainte** : UNIQUE(mission_id, person_id)
+
 ---
 
 ## 7. API — Catalogue des routes
@@ -736,7 +843,35 @@ Classe `ApiClient` avec ~60 méthodes. Fonctionnalités :
 | GET | `/api/pending-requests-count` | ✅ | Badge admin (interventions + réservations) |
 | GET | `/api/history/:entityType/:entityId` | ✅ | Historique des modifications |
 
-> **Total : ~80 routes API**
+### Personnel (`/api/persons`, `/api/skills`, `/api/availabilities`, `/api/missions`, `/api/assignments`)
+
+| Méthode | Route | Auth | Admin | Description |
+|---------|-------|:----:|:-----:|-------------|
+| GET | `/api/persons` | ✅ | ❌ | Liste toutes les personnes (avec compétences) |
+| GET | `/api/persons/:id` | ✅ | ❌ | Détail personne (compétences, dispos, affectations) |
+| POST | `/api/persons` | ✅ | ✅ | Créer une personne (avec compétences optionnelles) |
+| PUT | `/api/persons/:id` | ✅ | ✅ | Modifier une personne (avec compétences) |
+| DELETE | `/api/persons/:id` | ✅ | ✅ | Supprimer une personne |
+| GET | `/api/skills` | ✅ | ❌ | Liste toutes les compétences |
+| POST | `/api/skills` | ✅ | ✅ | Créer une compétence |
+| PUT | `/api/skills/:id` | ✅ | ✅ | Modifier une compétence |
+| DELETE | `/api/skills/:id` | ✅ | ✅ | Supprimer une compétence |
+| GET | `/api/availabilities` | ✅ | ❌ | Liste les disponibilités (filtres: person_id, start_date, end_date) |
+| POST | `/api/availabilities` | ✅ | ❌ | Créer une disponibilité |
+| PUT | `/api/availabilities/:id` | ✅ | ❌ | Modifier une disponibilité |
+| DELETE | `/api/availabilities/:id` | ✅ | ❌ | Supprimer une disponibilité |
+| GET | `/api/missions` | ✅ | ❌ | Liste les missions (filtres: start_date, end_date, status, reservation_id) |
+| GET | `/api/missions/:id` | ✅ | ❌ | Détail mission (avec affectations enrichies) |
+| POST | `/api/missions` | ✅ | ❌ | Créer une mission |
+| PUT | `/api/missions/:id` | ✅ | ❌ | Modifier une mission |
+| DELETE | `/api/missions/:id` | ✅ | ✅ | Supprimer une mission |
+| GET | `/api/assignments` | ✅ | ❌ | Liste les affectations (filtres: mission_id, person_id) |
+| POST | `/api/assignments` | ✅ | ❌ | Créer une affectation (détection conflits/indisponibilités) |
+| PUT | `/api/assignments/:id` | ✅ | ❌ | Modifier une affectation |
+| DELETE | `/api/assignments/:id` | ✅ | ❌ | Supprimer une affectation |
+| GET | `/api/personnel/planning` | ✅ | ❌ | Planning global (missions + disponibilités, filtres dates) |
+
+> **Total : ~105 routes API**
 
 ---
 
@@ -790,9 +925,24 @@ Classe `ApiClient` avec ~60 méthodes. Fonctionnalités :
 - **Accès** : Via `/mobile` ou QR code généré dans `MobileAccess` / `QRCodeModal`
 - **Fonctionnalités** : Planning, réservations, maintenances, disponibilité véhicules
 
+### 👷 Module Personnel (MagLog 1.0)
+- **Composants** : `PersonnelPanel` (4 sous-onglets : Personnes, Compétences, Missions, Planning)
+- **Backend** : `personnelRoutes.js` (5 groupes de routes : persons, skills, availabilities, missions, assignments)
+- **Tables DB** : `persons`, `skills`, `person_skills`, `availabilities`, `missions`, `mission_assignments`
+- **Sous-onglets** :
+  - **Personnes** : Recherche/filtre par type, CRUD avec sélecteur de compétences (chips + niveaux), cartes extensibles
+  - **Compétences** : Groupées par catégorie (8 couleurs), CRUD admin, 18 compétences seed
+  - **Missions** : Filtre par statut (6 statuts), CRUD, gestion des affectations inline avec détection de conflits
+  - **Planning** : Grille 2 semaines, personnes en lignes, jours en colonnes, chips missions colorés, navigation semaine
+- **Fonctionnalités clés** :
+  - Détection automatique de conflits d'affectation (chevauchement missions)
+  - Vérification des indisponibilités lors de l'affectation
+  - Passage automatique au statut `confirmed` quand toutes les affectations sont confirmées
+  - Composant autonome (charge ses propres données via API)
+
 ### ⚙️ Module Configuration
 - **Composants** : `GoogleCalendarConfig`, `ManagementPanel` (onglets)
-- **Onglets ManagementPanel** : Véhicules, Clients, Conducteurs, Lieux, Mon compte, Demandes, Utilisateurs, Import/Export, Config Google, Accès Mobile
+- **Onglets ManagementPanel** : Véhicules, Clients, Conducteurs, Lieux, Personnel, Mon compte, Demandes, Utilisateurs, Import/Export, Config Google, Accès Mobile
 - **Configuration stockée** : Google Client ID, Calendar ID, Maps API Key, adresse entreprise
 
 ---
@@ -991,20 +1141,29 @@ vehicles ───────┬──< reservations (vehicle_id, ON DELETE CAS
 garages ────────┬──< maintenances (garage_id)
 
 reservations ───┬──< trip_details (reservation_id)
+                └──< missions (reservation_id)
 
 trip_details ───┬──< trip_pauses (trip_detail_id)
+
+persons ────────┬──< person_skills (person_id, ON DELETE CASCADE)
+                ├──< availabilities (person_id, ON DELETE CASCADE)
+                └──< mission_assignments (person_id, ON DELETE CASCADE)
+
+skills ─────────┬──< person_skills (skill_id, ON DELETE CASCADE)
+
+missions ───────┬──< mission_assignments (mission_id, ON DELETE CASCADE)
 ```
 
 ### Résumé chiffré
 
 | Métrique | Valeur |
 |----------|--------|
-| Tables DB | 16 |
-| Routes API | ~80 |
-| Composants React | ~45 (desktop) + 7 (mobile) |
+| Tables DB | 22 (16 originales + 6 personnel) |
+| Routes API | ~105 |
+| Composants React | ~47 (desktop) + 7 (mobile) |
 | Utilitaires | 10 |
 | Hooks custom | 2 |
-| Méthodes API client | ~60 |
-| Fichiers source (src/) | ~80 |
+| Méthodes API client | ~85 |
+| Fichiers source (src/) | ~82 |
 | Code splitting (lazy) | 3 composants |
-| Stores IndexedDB | 8 |
+| Stores IndexedDB | 11 |

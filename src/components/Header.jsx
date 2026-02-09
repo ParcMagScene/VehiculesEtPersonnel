@@ -12,7 +12,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -875,6 +875,32 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         )}
         
         <div className="header-controls">
+          {/* Onglets modules */}
+          <div className="module-tabs" role="tablist" aria-label="Module principal">
+            <button
+              className={`module-tab ${activeModule === 'vehicles' ? 'active' : ''}`}
+              onClick={() => setActiveModule('vehicles')}
+              role="tab"
+              aria-selected={activeModule === 'vehicles'}
+            >
+              <Truck size={16} />
+              <span>Véhicules</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'personnel' ? 'active' : ''}`}
+              onClick={() => setActiveModule('personnel')}
+              role="tab"
+              aria-selected={activeModule === 'personnel'}
+            >
+              <Users size={16} />
+              <span>Personnel</span>
+            </button>
+          </div>
+
+          <div className="module-separator" />
+
+          {/* Sélecteur de vue (véhicules uniquement) */}
+          {activeModule === 'vehicles' && (
           <div className="view-selector" role="group" aria-label="Sélection de la vue">
             <button
               className={`view-button ${view === 'week' ? 'active' : ''}`}
@@ -901,7 +927,10 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               Année
             </button>
           </div>
+          )}
 
+          {/* Navigation de dates (véhicules uniquement) */}
+          {activeModule === 'vehicles' && (
           <div className="date-navigation" role="navigation" aria-label="Navigation de dates">
             <button className="nav-button" onClick={goToPrevious} aria-label="Période précédente">
               <ChevronLeft size={20} />
@@ -935,6 +964,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               {getDateLabel()}
             </div>
           </div>
+          )}
 
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginRight: '8px' }}>
@@ -1027,8 +1057,17 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               aria-label="Ouvrir le panneau de gestion"
               style={{ position: 'relative' }}
             >
-              <Settings size={20} />
+              {activeModule === 'vehicles' ? <Truck size={18} /> : <Users size={18} />}
               Gestion
+            </button>
+
+            <button 
+              className="settings-button" 
+              onClick={onOpenSettings} 
+              aria-label="Ouvrir les paramètres"
+              style={{ position: 'relative' }}
+            >
+              <Settings size={18} />
               {currentUser?.isAdmin && pendingAccessRequests > 0 && (
                 <span 
                   style={{

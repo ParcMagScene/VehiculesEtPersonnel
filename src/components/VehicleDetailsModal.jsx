@@ -210,6 +210,28 @@ const VehicleDetailsModal = ({
                     <span className="info-value">{vehicle.comment}</span>
                   </div>
                 )}
+                {(() => {
+                  // Chercher le dernier kilométrage : soit depuis le véhicule, soit depuis la dernière maintenance
+                  const lastMaintenanceWithKm = vehicleMaintenances.find(m => m.mileage && parseInt(m.mileage) > 0);
+                  const vehicleKm = vehicle.kilometrage || 0;
+                  const maintenanceKm = lastMaintenanceWithKm ? parseInt(lastMaintenanceWithKm.mileage) : 0;
+                  const lastKm = Math.max(vehicleKm, maintenanceKm);
+                  const kmSource = lastKm > 0 
+                    ? (maintenanceKm >= vehicleKm && lastMaintenanceWithKm 
+                        ? `(maintenance du ${formatDate(lastMaintenanceWithKm.date)})` 
+                        : '(relevé direct)')
+                    : null;
+                  
+                  return lastKm > 0 ? (
+                    <div className="info-item full-width">
+                      <span className="info-label"><Gauge size={14} /> Dernier kilométrage :</span>
+                      <span className="info-value">
+                        <strong>{lastKm.toLocaleString('fr-FR')} km</strong>
+                        {kmSource && <span style={{ fontSize: '0.85em', color: '#666', marginLeft: '6px' }}>{kmSource}</span>}
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
           </div>
@@ -351,6 +373,11 @@ const VehicleDetailsModal = ({
                     {maintenance.garage && (
                       <div className="maintenance-garage">
                         📍 {maintenance.garage}
+                      </div>
+                    )}
+                    {maintenance.mileage && parseInt(maintenance.mileage) > 0 && (
+                      <div className="maintenance-mileage">
+                        🔢 {parseInt(maintenance.mileage).toLocaleString('fr-FR')} km
                       </div>
                     )}
                     {maintenance.cost && (

@@ -112,8 +112,24 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
         ) : (
           availableVehicles.map(vehicle => (
             <div key={vehicle.id} className="vehicle-card">
+              <div className="vehicle-photo-thumb">
+                {vehicle.photo ? (
+                  <img
+                    src={`/Photos/${vehicle.photo}`}
+                    alt={vehicle.name}
+                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                  />
+                ) : null}
+                <div className="vehicle-photo-placeholder" style={vehicle.photo ? { display: 'none' } : {}}>
+                  <Car size={24} />
+                </div>
+              </div>
               <div className="vehicle-info">
                 <div className="vehicle-name">{vehicle.name}</div>
+                <div className="vehicle-meta-line">
+                  {vehicle.brand && <span className="vehicle-brand-tag">{vehicle.brand}</span>}
+                  <span className="vehicle-type-tag">{vehicle.type}</span>
+                </div>
                 <div className="vehicle-registration">{vehicle.registration}</div>
               </div>
               
@@ -169,6 +185,18 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
 
                 return (
                   <div key={vehicle.id} className="unavailable-item">
+                    <div className="vehicle-photo-thumb small">
+                      {vehicle.photo ? (
+                        <img
+                          src={`/Photos/${vehicle.photo}`}
+                          alt={vehicle.name}
+                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        />
+                      ) : null}
+                      <div className="vehicle-photo-placeholder" style={vehicle.photo ? { display: 'none' } : {}}>
+                        <Car size={18} />
+                      </div>
+                    </div>
                     <div className="vehicle-info">
                       <div className="vehicle-name">{vehicle.name}</div>
                       <div className="vehicle-registration">{vehicle.registration}</div>

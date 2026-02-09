@@ -26,7 +26,8 @@ function EventDetailsModal({
   onRequestEditReservation,
   onRequestCreateReservation,
   onEventCreated,
-  onEventUpdated
+  onEventUpdated,
+  currentUser
 }) {
   const [linkedReservations, setLinkedReservations] = useState([]);
   const [attachmentFiles, setAttachmentFiles] = useState([]);
@@ -231,14 +232,16 @@ function EventDetailsModal({
                 <LinkIcon size={18} />
                 Réservations liées ({linkedReservations.length})
               </h3>
-              <button 
-                className="btn-add-reservation" 
-                onClick={handleCreateReservation}
-                title="Créer une réservation"
-              >
-                <Plus size={16} />
-                Nouvelle réservation
-              </button>
+              {currentUser?.isAdmin && (
+                <button 
+                  className="btn-add-reservation" 
+                  onClick={handleCreateReservation}
+                  title="Créer une réservation"
+                >
+                  <Plus size={16} />
+                  Nouvelle réservation
+                </button>
+              )}
             </div>
             
             {linkedReservations.length === 0 ? (
@@ -263,7 +266,7 @@ function EventDetailsModal({
                     <button 
                       className="btn-edit-reservation" 
                       onClick={() => handleEditReservation(reservation)}
-                      title="Modifier"
+                      title={currentUser?.isAdmin ? "Modifier" : "Voir"}
                     >
                       <Edit size={16} />
                     </button>
@@ -281,30 +284,34 @@ function EventDetailsModal({
                 Pièces jointes {event.affaire && `(${event.affaire})`}
               </h3>
               <div className="section-actions">
-                <button 
-                  className="btn-import-bl" 
-                  onClick={handleImportBL}
-                  title="Importer un BL"
-                  disabled={!event.affaire}
-                >
-                  <FileText size={16} />
-                  Importer BL
-                </button>
-                <label 
-                  className={`btn-open-folder ${!event.affaire || uploading ? 'disabled' : ''}`}
-                  title="Joindre des fichiers"
-                  style={{ cursor: !event.affaire || uploading ? 'not-allowed' : 'pointer' }}
-                >
-                  <Plus size={16} />
-                  {uploading ? 'Upload...' : 'Joindre fichiers'}
-                  <input 
-                    type="file" 
-                    multiple 
-                    onChange={handleFileUpload}
-                    disabled={!event.affaire || uploading}
-                    style={{ display: 'none' }}
-                  />
-                </label>
+                {currentUser?.isAdmin && (
+                  <>
+                    <button 
+                      className="btn-import-bl" 
+                      onClick={handleImportBL}
+                      title="Importer un BL"
+                      disabled={!event.affaire}
+                    >
+                      <FileText size={16} />
+                      Importer BL
+                    </button>
+                    <label 
+                      className={`btn-open-folder ${!event.affaire || uploading ? 'disabled' : ''}`}
+                      title="Joindre des fichiers"
+                      style={{ cursor: !event.affaire || uploading ? 'not-allowed' : 'pointer' }}
+                    >
+                      <Plus size={16} />
+                      {uploading ? 'Upload...' : 'Joindre fichiers'}
+                      <input 
+                        type="file" 
+                        multiple 
+                        onChange={handleFileUpload}
+                        disabled={!event.affaire || uploading}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </>
+                )}
                 <button 
                   className="btn-open-folder" 
                   onClick={handleOpenFolder}
@@ -338,13 +345,15 @@ function EventDetailsModal({
                     <FileText size={16} />
                     <span className="file-name">{file.name}</span>
                     <span className="file-size">{file.size}</span>
-                    <button
-                      className="btn-delete-attachment"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(file); }}
-                      title="Supprimer cette pièce jointe"
-                    >
-                      <X size={14} />
-                    </button>
+                    {currentUser?.isAdmin && (
+                      <button
+                        className="btn-delete-attachment"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(file); }}
+                        title="Supprimer cette pièce jointe"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -443,6 +452,16 @@ function EventDetailsModal({
                         handleFileClick(file);
                       }}
                     >
+                      <button
+                        className="folder-file-delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteAttachment(file);
+                        }}
+                        title={`Supprimer ${file.name}`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                       <div className="file-icon">
                         {file.name.toLowerCase().endsWith('.pdf') ? (
                           <FileText size={32} />

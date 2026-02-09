@@ -11,6 +11,15 @@ dist/
 server/*.db
 server/*.db-shm
 server/*.db-wal
+server/*.db.backup-*
+*.db
+
+# Backups
+server/backups/
+
+# Fichiers temporaires
+public/attachments/TEMP/
+_archive/
 
 # Fichiers temporaires de développement
 check_localstorage.html

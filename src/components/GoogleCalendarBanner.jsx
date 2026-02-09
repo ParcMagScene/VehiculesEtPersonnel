@@ -6,6 +6,7 @@ import EventDetailsModal from './EventDetailsModal';
 import api from '../utils/api';
 import logger, { oauthLogger } from '../utils/logger';
 import { capitalizeText } from '../utils/dateUtils';
+import { Search, X } from 'lucide-react';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
@@ -28,6 +29,9 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const [googleCalendarId, setGoogleCalendarId] = useState(null);
   
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('');
+  const searchInputRef = useRef(null);
 
   // Cache pour éviter de recharger les mêmes données
   const eventsCache = useRef({});
@@ -876,9 +880,22 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     const fallbackColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
     let colorIndex = 0;
 
+    // Filtrer par recherche (nom ou numéro d'affaire)
+    const searchLower = searchFilter.trim().toLowerCase();
+
     events.forEach(event => {
       if (processedEvents.has(event.id)) return;
       processedEvents.add(event.id);
+
+      // Appliquer le filtre de recherche
+      if (searchLower) {
+        const summary = (event.summary || '').toLowerCase();
+        const affaire = (event.affaire || '').toLowerCase();
+        const location = (event.location || '').toLowerCase();
+        if (!summary.includes(searchLower) && !affaire.includes(searchLower) && !location.includes(searchLower)) {
+          return; // skip cet événement
+        }
+      }
 
       const eventStart = event.start.dateTime ? parseISO(event.start.dateTime) : parseISO(event.start.date);
       const eventEnd = event.end.dateTime ? parseISO(event.end.dateTime) : parseISO(event.end.date);
@@ -976,7 +993,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     });
     
     return eventBlocks;
-  }, [view, currentDate, events, days]);
+  }, [view, currentDate, events, days, searchFilter]);
 
   // Toujours afficher le banner, même sans clientId configuré (pour permettre la configuration)
   if (!googleClientId) {
@@ -1046,22 +1063,59 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         {/* Colonne véhicules fixe à gauche */}
         <div className="banner-vehicle-column">
           <div className="banner-vehicle-header">
-            {displayMode === 'closed' ? (
-              <span>Évènements</span>
-            ) : (
-              <div className="banner-title-stack">
-                <span>Locations</span>
-                <span>Prestations</span>
-                <span>Installations</span>
+            <div className="banner-header-top">
+              {displayMode === 'closed' ? (
+                <span>Évènements</span>
+              ) : (
+                <div className="banner-title-stack">
+                  <span>Locations</span>
+                  <span>Prestations</span>
+                  <span>Installations</span>
+                </div>
+              )}
+              <div className="banner-header-actions">
+                {displayMode !== 'closed' && (
+                  <button
+                    className={`banner-search-toggle ${searchOpen ? 'active' : ''}`}
+                    onClick={() => {
+                      setSearchOpen(prev => !prev);
+                      if (searchOpen) setSearchFilter('');
+                      else setTimeout(() => searchInputRef.current?.focus(), 100);
+                    }}
+                    title="Rechercher un événement"
+                  >
+                    <Search size={14} />
+                  </button>
+                )}
+                <button 
+                  className="toggle-banner-button" 
+                  onClick={cycleDisplayMode} 
+                  title={getModeLabel()}
+                >
+                  {getModeIcon()}
+                </button>
+              </div>
+            </div>
+            {searchOpen && displayMode !== 'closed' && (
+              <div className="banner-search-bar">
+                <Search size={13} className="banner-search-icon" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="banner-search-input"
+                  placeholder="Nom, n° affaire…"
+                  value={searchFilter}
+                  onChange={e => setSearchFilter(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Escape') { setSearchFilter(''); setSearchOpen(false); } }}
+                />
+                {searchFilter && (
+                  <button className="banner-search-clear" onClick={() => { setSearchFilter(''); searchInputRef.current?.focus(); }}>
+                    <X size={12} />
+                  </button>
+                )}
+                <span className="banner-search-count">{eventBlocks.length}</span>
               </div>
             )}
-            <button 
-              className="toggle-banner-button" 
-              onClick={cycleDisplayMode} 
-              title={getModeLabel()}
-            >
-              {getModeIcon()}
-            </button>
           </div>
         </div>
 
@@ -1196,6 +1250,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       onRequestCreateReservation={handleCreateReservationFromEvent}
       onEventCreated={handleOpenAffaireImport}
       onEventUpdated={handleEventUpdated}
+      currentUser={currentUser}
     />
     
     {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}

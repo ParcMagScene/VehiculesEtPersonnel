@@ -402,8 +402,7 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
     try {
       const detail = req.body;
       
-      // Convertir en nombre (REAL)
-      const reservationId = Number(detail.reservationId);
+      const reservationId = detail.reservationId;
       
       // Vérifier que la réservation existe
       const reservation = db.prepare('SELECT id FROM reservations WHERE id = ?').get(reservationId);
@@ -546,11 +545,9 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'reservationId, eventId1 et eventId2 sont requis' });
       }
 
-      const numReservationId = Number(reservationId);
-
       // Chercher les trip_details existants pour ces événements
-      let td1 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(numReservationId, eventId1);
-      let td2 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(numReservationId, eventId2);
+      let td1 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(reservationId, eventId1);
+      let td2 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(reservationId, eventId2);
 
       // Créer automatiquement les trip_details manquants (entrées minimales)
       const insertMinimalStmt = db.prepare(`
@@ -559,15 +556,15 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       `);
 
       if (!td1) {
-        const maxOrder = db.prepare('SELECT COALESCE(MAX(event_order), 0) + 1 as next_order FROM trip_details WHERE reservation_id = ?').get(numReservationId);
-        insertMinimalStmt.run(numReservationId, eventId1, maxOrder.next_order);
-        td1 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(numReservationId, eventId1);
+        const maxOrder = db.prepare('SELECT COALESCE(MAX(event_order), 0) + 1 as next_order FROM trip_details WHERE reservation_id = ?').get(reservationId);
+        insertMinimalStmt.run(reservationId, eventId1, maxOrder.next_order);
+        td1 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(reservationId, eventId1);
       }
 
       if (!td2) {
-        const maxOrder = db.prepare('SELECT COALESCE(MAX(event_order), 0) + 1 as next_order FROM trip_details WHERE reservation_id = ?').get(numReservationId);
-        insertMinimalStmt.run(numReservationId, eventId2, maxOrder.next_order);
-        td2 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(numReservationId, eventId2);
+        const maxOrder = db.prepare('SELECT COALESCE(MAX(event_order), 0) + 1 as next_order FROM trip_details WHERE reservation_id = ?').get(reservationId);
+        insertMinimalStmt.run(reservationId, eventId2, maxOrder.next_order);
+        td2 = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(reservationId, eventId2);
       }
 
       // Déterminer le trip_group_id à utiliser
@@ -589,7 +586,7 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // Récupérer tous les trip_details mis à jour pour cette réservation
-      const allDetails = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? ORDER BY event_order').all(numReservationId);
+      const allDetails = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? ORDER BY event_order').all(reservationId);
       const pausesStmt = db.prepare('SELECT * FROM trip_pauses WHERE trip_detail_id = ?');
       const enrichedDetails = allDetails.map(detail => ({
         ...detail,
@@ -611,7 +608,7 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'reservationId et eventId sont requis' });
       }
 
-      const td = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(Number(reservationId), eventId);
+      const td = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? AND event_id = ?').get(reservationId, eventId);
       
       if (td) {
         const oldGroupId = td.trip_group_id;
@@ -629,7 +626,7 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // Récupérer tous les trip_details mis à jour
-      const allDetails = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? ORDER BY event_order').all(Number(reservationId));
+      const allDetails = db.prepare('SELECT * FROM trip_details WHERE reservation_id = ? ORDER BY event_order').all(reservationId);
       const pausesStmt = db.prepare('SELECT * FROM trip_pauses WHERE trip_detail_id = ?');
       const enrichedDetails = allDetails.map(detail => ({
         ...detail,

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader, User } from 'lucide-react';
+import api from '../utils/api';
 import InterventionModal from './InterventionModal';
 import './VehicleDetailsModal.css';
 
@@ -18,6 +19,21 @@ const VehicleDetailsModal = ({
   if (!vehicle) return null;
   
   const [selectedIntervention, setSelectedIntervention] = useState(null);
+  const [mileageHistory, setMileageHistory] = useState([]);
+  
+  // Charger l'historique des relevés kilométriques
+  useEffect(() => {
+    if (vehicle?.id) {
+      api.getHistory('vehicle', vehicle.id).then(history => {
+        const kmEntries = (history || []).filter(h => h.action === 'mileage_update').map(h => {
+          let parsed = {};
+          try { parsed = typeof h.changes === 'string' ? JSON.parse(h.changes) : (h.changes || {}); } catch(e) {}
+          return { ...h, parsed };
+        });
+        setMileageHistory(kmEntries);
+      }).catch(() => {});
+    }
+  }, [vehicle?.id]);
   
   // Vérifier les droits d'administration
   const isAdmin = currentUser?.isAdmin === true;
@@ -154,7 +170,12 @@ const VehicleDetailsModal = ({
             />
             <div className="header-info">
               <h2>{vehicle.name}</h2>
-              {vehicle.type && <span className="vehicle-type-badge">{vehicle.type}</span>}
+              <div className="header-badges">
+                {vehicle.type && <span className="vehicle-type-badge">{vehicle.type}</span>}
+                {(vehicle.immatriculation || vehicle.registration) && (
+                  <span className="vehicle-registration-badge">{vehicle.immatriculation || vehicle.registration}</span>
+                )}
+              </div>
             </div>
           </div>
           <button className="close-button" onClick={onClose}>
@@ -210,31 +231,52 @@ const VehicleDetailsModal = ({
                     <span className="info-value">{vehicle.comment}</span>
                   </div>
                 )}
-                {(() => {
-                  // Chercher le dernier kilométrage : soit depuis le véhicule, soit depuis la dernière maintenance
-                  const lastMaintenanceWithKm = vehicleMaintenances.find(m => m.mileage && parseInt(m.mileage) > 0);
-                  const vehicleKm = vehicle.kilometrage || 0;
-                  const maintenanceKm = lastMaintenanceWithKm ? parseInt(lastMaintenanceWithKm.mileage) : 0;
-                  const lastKm = Math.max(vehicleKm, maintenanceKm);
-                  const kmSource = lastKm > 0 
-                    ? (maintenanceKm >= vehicleKm && lastMaintenanceWithKm 
-                        ? `(maintenance du ${formatDate(lastMaintenanceWithKm.date)})` 
-                        : '(relevé direct)')
-                    : null;
-                  
-                  return lastKm > 0 ? (
-                    <div className="info-item full-width">
-                      <span className="info-label"><Gauge size={14} /> Dernier kilométrage :</span>
-                      <span className="info-value">
-                        <strong>{lastKm.toLocaleString('fr-FR')} km</strong>
-                        {kmSource && <span style={{ fontSize: '0.85em', color: '#666', marginLeft: '6px' }}>{kmSource}</span>}
-                      </span>
-                    </div>
-                  ) : null;
-                })()}
               </div>
             </div>
           </div>
+
+          {/* Carte Kilométrage */}
+          {(() => {
+            const lastMaintenanceWithKm = vehicleMaintenances.find(m => m.mileage && parseInt(m.mileage) > 0);
+            const vehicleKm = vehicle.kilometrage || 0;
+            const maintenanceKm = lastMaintenanceWithKm ? parseInt(lastMaintenanceWithKm.mileage) : 0;
+            const lastKm = Math.max(vehicleKm, maintenanceKm);
+            const lastMileageEntry = mileageHistory.length > 0 ? mileageHistory[0] : null;
+            const kmDate = lastMileageEntry?.timestamp || lastMileageEntry?.parsed?.date;
+            const kmUser = lastMileageEntry?.userName || lastMileageEntry?.user_name;
+            const kmSourceDesc = lastMileageEntry?.parsed?.description || '';
+            
+            return lastKm > 0 ? (
+              <div className="km-card">
+                <div className="km-card-icon">
+                  <Gauge size={28} />
+                </div>
+                <div className="km-card-content">
+                  <div className="km-card-value">{lastKm.toLocaleString('fr-FR')} km</div>
+                  <div className="km-card-meta">
+                    {kmDate && (
+                      <span className="km-meta-item">
+                        <Calendar size={13} /> {formatDate(kmDate)}
+                      </span>
+                    )}
+                    {kmUser && (
+                      <span className="km-meta-item">
+                        <User size={13} /> {kmUser}
+                      </span>
+                    )}
+                    {kmSourceDesc && (
+                      <span className="km-meta-item km-meta-source">{kmSourceDesc}</span>
+                    )}
+                  </div>
+                </div>
+                {mileageHistory.length > 1 && (
+                  <div className="km-card-history-count">
+                    {mileageHistory.length} relevés
+                  </div>
+                )}
+              </div>
+            ) : null;
+          })()}
 
           {/* Boutons d'action */}
           <div className="action-buttons">
@@ -375,16 +417,18 @@ const VehicleDetailsModal = ({
                         📍 {maintenance.garage}
                       </div>
                     )}
-                    {maintenance.mileage && parseInt(maintenance.mileage) > 0 && (
-                      <div className="maintenance-mileage">
-                        🔢 {parseInt(maintenance.mileage).toLocaleString('fr-FR')} km
-                      </div>
-                    )}
-                    {maintenance.cost && (
-                      <div className="maintenance-cost">
-                        💰 {maintenance.cost} €
-                      </div>
-                    )}
+                    <div className="maintenance-tags">
+                      {maintenance.mileage && parseInt(maintenance.mileage) > 0 && (
+                        <span className="maintenance-tag tag-km">
+                          <Gauge size={12} /> {parseInt(maintenance.mileage).toLocaleString('fr-FR')} km
+                        </span>
+                      )}
+                      {maintenance.cost && (
+                        <span className="maintenance-tag tag-cost">
+                          💰 {parseFloat(maintenance.cost).toFixed(2)} €
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -433,6 +433,11 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
   try {
     const vehicle = req.body;
     
+    // Récupérer l'ancien kilométrage avant la mise à jour
+    const oldVehicle = db.prepare('SELECT kilometrage, name FROM vehicles WHERE id = ?').get(req.params.id);
+    const oldKm = oldVehicle ? (oldVehicle.kilometrage || 0) : 0;
+    const newKm = vehicle.kilometrage || 0;
+    
     const stmt = db.prepare(`
       UPDATE vehicles 
       SET name = ?, type = ?, registration = ?, brand = ?, model = ?, color = ?,
@@ -445,10 +450,21 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
       vehicle.name, vehicle.type, vehicle.registration, vehicle.brand, vehicle.model,
       vehicle.color, vehicle.owner, vehicle.comment, vehicle.displayColor, vehicle.photo,
       vehicle.order || 0, vehicle.isLocation ? 1 : 0, 
-      vehicle.kilometrage || 0, vehicle.controles_techniques || '[]', req.user.id, req.params.id
+      newKm, vehicle.controles_techniques || '[]', req.user.id, req.params.id
     );
     
     addToHistory('vehicle', req.params.id, 'updated', vehicle, req.user.id, req.user.name);
+    
+    // Si le kilométrage a changé, ajouter un relevé kilométrique daté dans l'historique
+    if (newKm !== oldKm) {
+      addToHistory('vehicle', req.params.id, 'mileage_update', JSON.stringify({
+        description: 'Relevé kilométrique',
+        oldKilometrage: oldKm,
+        newKilometrage: newKm,
+        vehicleName: oldVehicle?.name || vehicle.name,
+        date: new Date().toISOString()
+      }), req.user.id, req.user.name);
+    }
     
     // Récupérer le véhicule mis à jour et le mapper
     const getStmt = db.prepare('SELECT * FROM vehicles WHERE id = ?');

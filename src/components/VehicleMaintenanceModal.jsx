@@ -42,7 +42,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   // Tous les types de contrôles disponibles
   const allControleTechniqueTypes = [
     { value: 'VL', label: 'VL (Véhicule Léger)', firstDelay: 48, periodicDelay: 24, note: 'CV 24h/2mois', vehicleTypes: ['VL', 'VOITURE', 'CAMIONNETTE'] },
-    { value: 'PL', label: 'PL (Poids Lourd)', firstDelay: 12, periodicDelay: 12, note: 'Contrôle annuel', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'SEMI', 'SEMI-REMORQUE'] },
+    { value: 'PL', label: 'PL (Poids Lourd)', firstDelay: 12, periodicDelay: 12, note: 'Contrôle annuel', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'] },
     { value: 'SEMI', label: 'Semi-remorque', firstDelay: 12, periodicDelay: 12, note: 'Comme PL', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'] },
     { value: 'SCENE', label: 'Scène mobile', firstDelay: 12, periodicDelay: 12, note: 'Véhicule spécial remorqué', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'] },
     { value: 'POLLUTION', label: 'Pollution', firstDelay: 12, periodicDelay: 12, note: 'Contrôle des émissions', vehicleTypes: ['ALL_MOTORIZED'] },
@@ -60,7 +60,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     
     // Déterminer le type principal du véhicule
     const isVL = ['VL', 'VOITURE', 'CAMIONNETTE'].some(t => vehicleType.includes(t));
-    const isPL = ['PL', 'CAMION', 'PORTEUR'].some(t => vehicleType.includes(t));
+    const isPL = ['PL', 'CAMION', 'PORTEUR', 'TRACTEUR'].some(t => vehicleType.includes(t));
     const isSemi = ['SEMI'].some(t => vehicleType.includes(t));
     const isScene = ['SCENE', 'SCÈNE', 'REMORQUE'].some(t => vehicleType.includes(t));
     

@@ -91,7 +91,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   // Types de contrôles techniques disponibles
   const allControleTechniqueTypes = [
     { value: 'VL', label: 'VL (Véhicule Léger)', vehicleTypes: ['VL', 'VOITURE', 'CAMIONNETTE'], periodicity: '4 ans après 1ère mise en circulation, puis tous les 2 ans' },
-    { value: 'PL', label: 'PL (Poids Lourd)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans (1ère visite dans les 6 mois suivant la mise en circulation)' },
+    { value: 'PL', label: 'PL (Poids Lourd)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans (1ère visite dans les 6 mois suivant la mise en circulation)' },
     { value: 'SEMI', label: 'Semi-remorque', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans' },
     { value: 'SCENE', label: 'Scène mobile', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'], periodicity: 'Tous les ans (remorque > 500 kg PTAC)' },
     { value: 'POLLUTION', label: 'Pollution', vehicleTypes: ['ALL_MOTORIZED'], periodicity: 'Tous les ans (inclus dans le CT pour les VL, séparé pour les PL)' },
@@ -109,7 +109,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     
     // Déterminer le type principal du véhicule
     const isVL = ['VL', 'VOITURE', 'CAMIONNETTE'].some(t => vehicleType.includes(t));
-    const isPL = ['PL', 'CAMION', 'PORTEUR'].some(t => vehicleType.includes(t));
+    const isPL = ['PL', 'CAMION', 'PORTEUR', 'TRACTEUR'].some(t => vehicleType.includes(t));
     const isSemi = ['SEMI'].some(t => vehicleType.includes(t));
     
     return allControleTechniqueTypes.filter(ct => {

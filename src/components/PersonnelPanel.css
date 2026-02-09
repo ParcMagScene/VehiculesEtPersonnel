@@ -1,0 +1,995 @@
+/* ═══════════════════════════════════════
+   MODULE PLANNING PERSONNEL — MagLog 1.0
+   ═══════════════════════════════════════ */
+
+.personnel-panel {
+  width: 100%;
+}
+
+.personnel-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  gap: 12px;
+}
+
+.personnel-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.personnel-error button {
+  margin-left: auto;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* ═══ Sous-onglets ═══ */
+
+.personnel-subtabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.personnel-subtab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.personnel-subtab:hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: #334155;
+}
+
+.personnel-subtab.active {
+  background: white;
+  color: var(--tab-color, #3b82f6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.personnel-content {
+  min-height: 300px;
+}
+
+/* ═══ Toolbar ═══ */
+
+.personnel-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.personnel-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.personnel-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  width: 100%;
+  color: #334155;
+}
+
+.personnel-search svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.personnel-filter {
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #475569;
+  background: white;
+  cursor: pointer;
+}
+
+.personnel-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.personnel-add-btn:hover {
+  background: #2563eb;
+}
+
+.personnel-add-btn.small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* ═══ Formulaire ═══ */
+
+.personnel-form-overlay {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.personnel-form.compact {
+  max-width: 600px;
+}
+
+.personnel-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.personnel-form-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.close-btn:hover {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.personnel-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #334155;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
+.personnel-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.cancel-btn {
+  padding: 7px 16px;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background: #e2e8f0;
+}
+
+.cancel-btn.small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.save-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.save-btn:hover {
+  background: #2563eb;
+}
+
+.save-btn.small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ═══ Skills selector ═══ */
+
+.skills-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skill-chip-select {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.skill-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: white;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skill-chip-select.selected .skill-toggle {
+  background: var(--chip-color, #3b82f6);
+  color: white;
+  border-color: var(--chip-color, #3b82f6);
+}
+
+.skill-level-select {
+  padding: 2px 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 11px;
+  background: white;
+}
+
+/* ═══ Liste des personnes ═══ */
+
+.personnel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.personnel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  color: #94a3b8;
+  gap: 12px;
+}
+
+.personnel-empty p {
+  font-size: 14px;
+}
+
+.person-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.person-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.person-card.inactive {
+  opacity: 0.6;
+}
+
+.person-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.person-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.person-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.person-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.person-type-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.person-type-badge.type-salarié { background: #dbeafe; color: #1e40af; }
+.person-type-badge.type-technicien { background: #f3e8ff; color: #6d28d9; }
+.person-type-badge.type-conducteur { background: #ccfbf1; color: #0f766e; }
+.person-type-badge.type-intermittent { background: #fef3c7; color: #92400e; }
+.person-type-badge.type-indépendant { background: #ffe4e6; color: #be123c; }
+
+.person-type-badge.mini {
+  font-size: 9px;
+  padding: 1px 6px;
+}
+
+.person-status-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.person-status-badge.inactive {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.person-contact {
+  display: flex;
+  gap: 12px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.person-contact span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.person-skills-preview {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.skill-chip-mini {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--chip-color, #6b7280) 15%, white);
+  color: var(--chip-color, #6b7280);
+  font-weight: 500;
+}
+
+.skill-more {
+  font-size: 10px;
+  color: #94a3b8;
+  padding: 2px 4px;
+}
+
+.person-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 6px;
+  color: #94a3b8;
+  transition: all 0.15s;
+}
+
+.icon-btn:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+}
+
+.icon-btn.danger:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.icon-btn.small {
+  padding: 3px;
+}
+
+/* Person expanded */
+.person-expanded {
+  padding: 12px 16px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.person-notes {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 8px;
+  font-style: italic;
+}
+
+.person-skills-detail strong {
+  font-size: 12px;
+  color: #475569;
+}
+
+.skills-detail-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.skill-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--chip-color, #6b7280) 10%, white);
+  border: 1px solid color-mix(in srgb, var(--chip-color, #6b7280) 25%, white);
+}
+
+.skill-detail-item .skill-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--chip-color, #6b7280);
+}
+
+.skill-detail-item .skill-level {
+  font-size: 10px;
+  color: #94a3b8;
+  background: white;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* ═══ Skills grid ═══ */
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.skill-group {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.skill-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 10px;
+}
+
+.skill-group-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skill-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skill-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border-left: 3px solid var(--chip-color, #6b7280);
+}
+
+.skill-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.skill-item-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  flex: 1;
+  text-align: right;
+}
+
+.skill-item-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+/* ═══ Missions ═══ */
+
+.missions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mission-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.mission-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.mission-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.mission-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.mission-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mission-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.mission-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.mission-meta span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.mission-assignments-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.confirmed-count {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.mission-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mission-expanded {
+  padding: 12px 16px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.mission-expanded p {
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 8px;
+}
+
+.mission-notes {
+  font-style: italic;
+  color: #94a3b8 !important;
+}
+
+.mission-assignments-section {
+  margin-top: 8px;
+}
+
+.assignment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.assignment-header strong {
+  font-size: 13px;
+  color: #334155;
+}
+
+.assign-dialog {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.assign-dialog select {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.no-assignments {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 8px;
+}
+
+.assignments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.assignment-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.assignment-person {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.assignment-position {
+  font-size: 11px;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.assignment-status-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.assignment-status-select {
+  padding: 3px 6px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: white;
+  cursor: pointer;
+}
+
+/* ═══ Planning grid ═══ */
+
+.planning-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.planning-nav-btn {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #475569;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.planning-nav-btn:hover {
+  background: #f1f5f9;
+}
+
+.planning-range {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.planning-grid-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.planning-grid {
+  display: grid;
+  min-width: max-content;
+}
+
+.planning-cell {
+  padding: 6px 8px;
+  border-right: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.planning-cell.header {
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.planning-cell.header.corner {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #f1f5f9;
+}
+
+.planning-cell.header.weekend {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.planning-cell.header.today {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.planning-cell.person-label {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: white;
+  border-right: 2px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 8px;
+}
+
+.planning-person-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.planning-cell.weekend {
+  background: #fefce8;
+}
+
+.planning-cell.today {
+  background: #eff6ff;
+}
+
+.planning-cell.has-mission {
+  background: #f0fdf4;
+}
+
+.planning-mission-chip {
+  background: var(--mission-color, #3b82f6);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planning-mission-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ═══ Responsive ═══ */
+
+@media (max-width: 768px) {
+  .personnel-subtabs {
+    flex-wrap: wrap;
+  }
+
+  .personnel-subtab {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .personnel-subtab span {
+    display: none;
+  }
+
+  .personnel-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .personnel-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .personnel-search {
+    min-width: unset;
+  }
+
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-meta {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .assignment-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

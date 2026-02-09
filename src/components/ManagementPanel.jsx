@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2, Gauge } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2, Gauge, UserCog } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
@@ -12,6 +12,7 @@ import ClientDialog from './ClientDialog';
 import ReservationRequestsPanel from './ReservationRequestsPanel';
 import VehicleMaintenanceModal from './VehicleMaintenanceModal';
 import api from '../utils/api';
+import PersonnelPanel from './PersonnelPanel';
 import './ManagementPanel.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
@@ -175,6 +176,7 @@ const ManagementPanel = ({
     { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
     { id: 'drivers', label: 'Conducteurs', icon: Users, color: '#06b6d4' },
     { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
+    { id: 'personnel', label: 'Personnel', icon: UserCog, color: '#f97316' },
     { id: 'account', label: 'Mon compte', icon: Lock, color: '#6b7280' },
     ...(currentUser?.isAdmin ? [
       { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
@@ -709,7 +711,7 @@ const ManagementPanel = ({
 
         <div className="management-content">
           {/* Formulaire d'ajout */}
-          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
+          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && activeTab !== 'personnel' && (
             <div className="add-section">
               <div className="add-section-header">
                 <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : 'un lieu'}</h3>
@@ -899,6 +901,11 @@ const ManagementPanel = ({
             <MobileAccess />
           )}
 
+          {/* Planning Personnel */}
+          {activeTab === 'personnel' && (
+            <PersonnelPanel currentUser={currentUser} />
+          )}
+
           {/* Demandes de réservation (Admin uniquement) */}
           {activeTab === 'requests' && currentUser?.isAdmin && (
             <ReservationRequestsPanel 
@@ -913,7 +920,7 @@ const ManagementPanel = ({
           )}
 
           {/* Liste des éléments */}
-          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
+          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && activeTab !== 'personnel' && (
           <div className="items-section">
             {activeTab === 'vehicles' ? (
               <>

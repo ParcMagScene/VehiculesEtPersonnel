@@ -24,7 +24,7 @@ if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHA
 }
 
 // CORS — restriction aux domaines autorisés
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://magsav.duckdns.org,http://localhost:5174,http://localhost:4173')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://magsav.duckdns.org,http://magsav.duckdns.org:4173,http://magsav.duckdns.org,http://192.168.205.75:4173,http://localhost:5174,http://localhost:4173')
   .split(',')
   .map(s => s.trim());
 

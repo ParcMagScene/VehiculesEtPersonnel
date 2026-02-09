@@ -1121,7 +1121,7 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 
 // ============ DEMANDES D'ACCÈS ============
 
-// Créer une demande d'accès
+// Créer une demande d'accès (ou auto-approuver si email déjà autorisé)
 app.post('/api/access-requests', async (req, res) => {
   try {
     const { email, name } = req.body;
@@ -1130,10 +1130,24 @@ app.post('/api/access-requests', async (req, res) => {
       return res.status(400).json({ error: 'Email et nom requis' });
     }
 
-    // Vérifier si l'email existe déjà
+    // Vérifier si l'email existe déjà en tant qu'utilisateur
     const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     if (existingUser) {
-      return res.status(400).json({ error: 'Cet email est déjà enregistré' });
+      return res.status(400).json({ error: 'Cet email est déjà enregistré. Connectez-vous directement.' });
+    }
+
+    // Vérifier si l'email est déjà autorisé par un admin
+    const authorizedEmail = db.prepare(
+      'SELECT * FROM authorized_emails WHERE email = ? AND status = ?'
+    ).get(email, 'pending');
+
+    if (authorizedEmail) {
+      // Email déjà autorisé → l'utilisateur peut créer son mot de passe directement
+      return res.json({ 
+        success: true,
+        autoApproved: true,
+        message: 'Votre email est déjà autorisé ! Vous pouvez créer votre mot de passe.'
+      });
     }
 
     // Vérifier si une demande est déjà en cours
@@ -1145,7 +1159,7 @@ app.post('/api/access-requests', async (req, res) => {
       return res.status(400).json({ error: 'Une demande est déjà en cours pour cet email' });
     }
 
-    // Créer la demande
+    // Créer la demande (email non autorisé → besoin approbation admin)
     const stmt = db.prepare(`
       INSERT INTO access_requests (email, name, status)
       VALUES (?, ?, 'pending')
@@ -1154,12 +1168,38 @@ app.post('/api/access-requests', async (req, res) => {
     const result = stmt.run(email, name);
     
     res.json({ 
-      success: true, 
-      message: 'Demande envoyée avec succès. Vous serez notifié par email une fois approuvée.',
+      success: true,
+      autoApproved: false,
+      message: 'Un email d\'activation vous sera envoyé après validation par un administrateur.',
       id: result.lastInsertRowid 
     });
   } catch (error) {
     console.error('Erreur création demande d\'accès:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Vérifier si un email est autorisé (pour le lien direct de création de compte)
+app.post('/api/access-requests/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+    
+    // Vérifier si déjà utilisateur
+    const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existingUser) {
+      return res.json({ authorized: false, reason: 'already_registered' });
+    }
+    
+    // Vérifier si autorisé
+    const authorized = db.prepare(
+      'SELECT * FROM authorized_emails WHERE email = ? AND status = ?'
+    ).get(email, 'pending');
+    
+    res.json({ authorized: !!authorized });
+  } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1246,7 +1286,14 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
       }
     }
 
-    res.json({ success: true, message: `Demande ${status === 'approved' ? 'approuvée' : 'rejetée'}` });
+    res.json({ 
+      success: true, 
+      message: `Demande ${status === 'approved' ? 'approuvée' : 'rejetée'}`,
+      request: {
+        email: request.email,
+        name: request.name
+      }
+    });
   } catch (error) {
     console.error('Erreur traitement demande:', error);
     res.status(500).json({ error: 'Erreur serveur' });

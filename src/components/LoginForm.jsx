@@ -6,13 +6,12 @@ import UserAvatar from './UserAvatar';
 import './LoginForm.css';
 
 const LoginForm = ({ onLogin }) => {
-  const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showAccessRequest, setShowAccessRequest] = useState(false);
+  const [setupEmail, setSetupEmail] = useState(null); // Email pré-rempli pour lien direct
   const [users, setUsers] = useState([]);
   const [showUserList, setShowUserList] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -21,6 +20,18 @@ const LoginForm = ({ onLogin }) => {
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+
+  // Détecter le paramètre URL ?setup=email pour ouvrir le modal de création directe
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const setupParam = params.get('setup');
+    if (setupParam) {
+      setSetupEmail(setupParam);
+      setShowAccessRequest(true);
+      // Nettoyer l'URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Charger la liste des utilisateurs
   useEffect(() => {
@@ -35,11 +46,8 @@ const LoginForm = ({ onLogin }) => {
         console.error('Erreur chargement utilisateurs:', err);
       }
     };
-    
-    if (!isRegister) {
-      loadUsers();
-    }
-  }, [isRegister]);
+    loadUsers();
+  }, []);
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
@@ -53,14 +61,7 @@ const LoginForm = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      if (isRegister) {
-        await api.register(email, name, password);
-        setIsRegister(false);
-        setError('');
-        alert('Compte créé ! Vous pouvez maintenant vous connecter.');
-      } else {
-        await onLogin(email, password);
-      }
+      await onLogin(email, password);
     } catch (err) {
       // Vérifier si c'est une erreur de session déjà active
       if (err.response?.status === 409 && err.response?.data?.error === 'SESSION_ALREADY_ACTIVE') {
@@ -156,16 +157,11 @@ const LoginForm = ({ onLogin }) => {
       <div className="login-container">
         <div className="login-header">
           <img src="/Logos/LogoMagSav.svg" alt="Mag Scène" style={{ maxWidth: '200px', height: 'auto', margin: '0 auto 1rem' }} />
-          <p>{isRegister ? 'Créer un compte' : 'Connexion'}</p>
-          {isRegister && (
-            <small style={{ color: '#6b7280', fontSize: '13px', display: 'block', marginTop: '8px' }}>
-              ⚠️ Seuls les emails autorisés par un administrateur peuvent créer un compte
-            </small>
-          )}
+          <p>Connexion</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
-          {!isRegister && users.length > 0 && (
+          {users.length > 0 && (
             <div className="form-group">
               <label>Sélectionner un utilisateur</label>
               <div 
@@ -238,18 +234,6 @@ const LoginForm = ({ onLogin }) => {
                           <div style={{ fontWeight: '500', color: '#111827' }}>{user.name}</div>
                           <div style={{ fontSize: '13px', color: '#6b7280' }}>{user.email}</div>
                         </div>
-                        {user.isAdmin && (
-                          <span style={{
-                            background: '#dbeafe',
-                            color: '#1e40af',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            fontSize: '11px',
-                            fontWeight: '600'
-                          }}>
-                            ADMIN
-                          </span>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -258,20 +242,7 @@ const LoginForm = ({ onLogin }) => {
             </div>
           )}
 
-          {isRegister && (
-            <div className="form-group">
-              <label>Nom complet</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="Jean Dupont"
-              />
-            </div>
-          )}
-
-          {(isRegister || !users.length) && (
+          {!users.length && (
             <div className="form-group">
               <label>Email</label>
               <input
@@ -299,18 +270,7 @@ const LoginForm = ({ onLogin }) => {
           {error && <div className="error-message">{error}</div>}
 
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? 'Chargement...' : (isRegister ? 'Créer le compte' : 'Se connecter')}
-          </button>
-
-          <button
-            type="button"
-            className="toggle-button"
-            onClick={() => {
-              setIsRegister(!isRegister);
-              setError('');
-            }}
-          >
-            {isRegister ? 'Déjà un compte ? Se connecter' : 'Créer un compte'}
+            {loading ? 'Chargement...' : 'Se connecter'}
           </button>
 
           <button
@@ -318,16 +278,15 @@ const LoginForm = ({ onLogin }) => {
             className="access-request-button"
             onClick={() => setShowAccessRequest(true)}
           >
-            Pas encore d'accès ? Faire une demande
+            Pas encore de compte ? Demander un accès
           </button>
         </form>
 
         {showAccessRequest && (
           <AccessRequestModal
-            onClose={() => setShowAccessRequest(false)}
-            onSuccess={() => {
-              alert('✅ Demande envoyée avec succès !\n\nVous recevrez un email dès qu\'un administrateur aura validé votre demande.');
-            }}
+            onClose={() => { setShowAccessRequest(false); setSetupEmail(null); }}
+            onSuccess={() => {}}
+            prefillEmail={setupEmail}
           />
         )}
 

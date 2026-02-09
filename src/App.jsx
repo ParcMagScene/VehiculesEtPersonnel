@@ -341,6 +341,12 @@ function App() {
   const updateReservation = async (id, updatedReservation) => {
     logger.log('📝 updateReservation appelé - ID:', id, 'Objet:', updatedReservation);
     
+    // Seuls les admins peuvent modifier des réservations
+    if (!currentUser?.isAdmin) {
+      alert('⛔ Seuls les administrateurs peuvent modifier des réservations.');
+      return false;
+    }
+    
     // Vérifier que l'objet a un ID valide
     if (!id || (!updatedReservation.id && id)) {
       logger.warn('⚠️ Objet sans ID détecté, ajout de l\'ID:', id);
@@ -397,6 +403,13 @@ function App() {
 
   const deleteReservation = async (id) => {
     logger.log('🗑️ deleteReservation appelé - ID:', id);
+    
+    // Seuls les admins peuvent supprimer des réservations
+    if (!currentUser?.isAdmin) {
+      alert('⛔ Seuls les administrateurs peuvent supprimer des réservations.');
+      return false;
+    }
+    
     try {
       const result = await api.deleteReservation(id);
       logger.log('✅ Suppression API réussie:', result);
@@ -572,6 +585,13 @@ function App() {
     setSelectedVehicleForMaintenance(vehicle);
   };
 
+  const handleUserUpdate = (updatedUser) => {
+    setCurrentUser(updatedUser);
+    // Mettre à jour le localStorage pour la persistance
+    api.user = updatedUser;
+    localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+  };
+
   return (
     <div className="app">
       <Header
@@ -590,8 +610,15 @@ function App() {
         }}
         currentUser={currentUser}
         onLogout={handleLogout}
+        onUserUpdate={handleUserUpdate}
         onUpdateMaintenance={handleUpdateIntervention}
         onRefreshMaintenances={loadMaintenances}
+        onReservationUpdate={async () => {
+          try {
+            const data = await api.getReservations();
+            setReservations(data);
+          } catch (e) { console.error('Erreur rechargement réservations:', e); }
+        }}
       />
       
       <GoogleCalendarBanner 

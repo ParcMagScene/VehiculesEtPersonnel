@@ -44,14 +44,38 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.vehicleId) {
+      setError('Veuillez sélectionner un véhicule');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const newReservation = await api.createReservation({
-        ...formData,
-        createdBy: currentUser.id
-      });
-      onReservationCreated(newReservation);
+      if (currentUser?.isAdmin) {
+        // Admin : créer la réservation directement
+        const newReservation = await api.createReservation({
+          ...formData,
+          createdBy: currentUser.id
+        });
+        onReservationCreated(newReservation);
+      } else {
+        // Non-admin : créer une demande de réservation
+        await api.createReservationRequest({
+          id: `${Date.now()}.${Math.random()}`,
+          vehicleId: formData.vehicleId,
+          startDate: formData.startDate,
+          startPeriod: 'AM',
+          endDate: formData.endDate,
+          endPeriod: 'PM',
+          clientName: formData.clientId || '',
+          driverName: formData.driverId || '',
+          locationName: formData.locationId || '',
+          notes: formData.notes || ''
+        });
+        alert('✅ Demande de réservation envoyée !\n\nVotre demande a été transmise aux administrateurs pour validation.');
+      }
       setShowForm(false);
       setFormData({
         vehicleId: '',
@@ -106,7 +130,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
           }}>
             <ArrowLeft size={24} />
           </button>
-          <h2>Nouvelle réservation</h2>
+          <h2>{currentUser?.isAdmin ? 'Nouvelle réservation' : 'Nouvelle demande'}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="reservation-form">
@@ -123,7 +147,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
               <option value="">Sélectionner un véhicule</option>
               {availableVehicles.map(vehicle => (
                 <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.name} - {vehicle.immatriculation}
+                  {vehicle.name} - {vehicle.registration || vehicle.immatriculation}
                 </option>
               ))}
             </select>
@@ -166,9 +190,8 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
             <select
               value={formData.clientId}
               onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-              required
             >
-              <option value="">Sélectionner un client</option>
+              <option value="">Sélectionner un client (optionnel)</option>
               {clients.map(client => (
                 <option key={client.id} value={client.id}>{client.name}</option>
               ))}
@@ -183,9 +206,8 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
             <select
               value={formData.driverId}
               onChange={(e) => setFormData({ ...formData, driverId: e.target.value })}
-              required
             >
-              <option value="">Sélectionner un conducteur</option>
+              <option value="">Sélectionner un conducteur (optionnel)</option>
               {drivers.map(driver => (
                 <option key={driver.id} value={driver.id}>{driver.name}</option>
               ))}
@@ -209,7 +231,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
               Annuler
             </button>
             <button type="submit" disabled={isSubmitting} className="btn-submit">
-              {isSubmitting ? 'Création...' : 'Créer'}
+              {isSubmitting ? 'Envoi...' : (currentUser?.isAdmin ? 'Créer' : 'Demander')}
             </button>
           </div>
         </form>
@@ -235,7 +257,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
             <Car size={48} />
             <p>Aucune réservation</p>
             <button className="btn-primary" onClick={() => setShowForm(true)}>
-              Créer une réservation
+              {currentUser?.isAdmin ? 'Créer une réservation' : 'Faire une demande'}
             </button>
           </div>
         ) : (

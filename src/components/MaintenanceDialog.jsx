@@ -12,11 +12,15 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   
   // Vérifier les droits - les non-admins ne peuvent que signaler des pannes
   const isAdmin = currentUser?.isAdmin === true;
+  // Mode consultation : non-admin qui ouvre une intervention existante
+  const isViewMode = !isAdmin && !!maintenanceToEditData;
   const canSchedule = isAdmin;
-  const canOnlyReport = !isAdmin;
+  const canOnlyReport = !isAdmin && !isViewMode;
   
   // Déterminer le statut et le mode initial en fonction de actionType ET des droits
   const getInitialStatus = () => {
+    // En mode consultation, garder le statut d'origine
+    if (isViewMode) return maintenanceToEditData.status;
     // Si l'utilisateur n'est pas admin, forcer le statut 'reported'
     if (canOnlyReport) return 'reported';
     
@@ -28,6 +32,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
   
   const getInitialQuickReport = () => {
+    // En mode consultation, garder la valeur d'origine
+    if (isViewMode) return maintenanceToEditData.isQuickReport || false;
     // Si l'utilisateur n'est pas admin, toujours en mode signalement rapide
     if (canOnlyReport) return true;
     
@@ -380,6 +386,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
 
   const getDialogTitle = () => {
+    if (isViewMode) return '📋 Détails de l\'intervention';
     if (editingId) return '🔧 Modifier l\'intervention';
     if (actionType === 'schedule') return '📅 Programmer une intervention';
     if (actionType === 'request') return '📝 Demander une intervention';
@@ -413,6 +420,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
             onClick={() => setActiveTab('new')}
           >
             {editingId ? (
+              isViewMode ? '📋 Détails' :
               maintenanceToEditData?.status === 'pending' ? '📝 Demande d\'intervention' :
               maintenanceToEditData?.status === 'reported' ? '⚠️ Panne signalée' :
               maintenanceToEditData?.status === 'scheduled' ? '📅 Intervention programmée' :
@@ -430,6 +438,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
         <div className="maintenance-dialog-content">
           {activeTab === 'new' ? (
             <form id="maintenance-form" onSubmit={handleSubmit} className="maintenance-form">
+            <fieldset disabled={isViewMode} style={{ border: 'none', margin: 0, padding: 0 }}>
               {/* Détails de l'intervention en mode édition */}
               {editingId && maintenanceToEditData && (
                 <div className="intervention-details-card">
@@ -807,6 +816,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 </div>
               )}
 
+            </fieldset>
             </form>
           ) : (
             <div className="maintenance-history">
@@ -925,7 +935,11 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
         {/* Footer boutons - fixé en bas */}
         {activeTab === 'new' && (
           <div className="form-actions">
-            {editingId ? (
+            {isViewMode ? (
+              <div className="form-actions-right" style={{ marginLeft: 'auto' }}>
+                <button type="button" className="submit-button" onClick={onClose}>Fermer</button>
+              </div>
+            ) : editingId ? (
               <>
                 <div className="form-actions-left">
                   {isAdmin && (

@@ -354,6 +354,18 @@ function initializeDatabase() {
     console.log('Info: Colonne trip_group_id déjà présente ou table trip_details non créée');
   }
 
+  // Migration: ajouter avatar dans users
+  try {
+    const userColumns = db.prepare("PRAGMA table_info(users)").all();
+    const hasAvatar = userColumns.some(col => col.name === 'avatar');
+    if (!hasAvatar) {
+      db.prepare("ALTER TABLE users ADD COLUMN avatar TEXT").run();
+      console.log('✅ Colonne avatar ajoutée à users');
+    }
+  } catch (error) {
+    console.log('Info: Colonne avatar déjà présente');
+  }
+
   console.log('✅ Base de données initialisée');
 }
 

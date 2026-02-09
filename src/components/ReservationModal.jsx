@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, Trash2, MapPin, Link2, Unlink, Paperclip } from 'lucide-react';
+import { X, Trash2, MapPin, Link2, Unlink, Paperclip, Car, Check } from 'lucide-react';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
 import TripDetailsModal from './TripDetailsModal';
 import LocationDialog from './LocationDialog';
+import VehiclePickerCards from './VehiclePickerCards';
 import api from '../utils/api';
 import { loadFromIndexedDB } from '../utils/indexedDB';
 import './ReservationModal.css';
@@ -27,6 +28,9 @@ const ReservationModal = ({
 }) => {
   const isEdit = !!reservation;
   const isMultiVehicle = !!googleEvent && !isEdit; // Mode multi-véhicules seulement en création
+  
+  // Mode lecture seule : non-admin qui consulte une réservation existante
+  const isReadOnly = isEdit && !currentUser?.isAdmin;
   
   // Helper pour formater une date en YYYY-MM-DD sans décalage de fuseau horaire
   const formatDateForInput = (date) => {
@@ -84,19 +88,8 @@ const ReservationModal = ({
 
   const [newAffaire, setNewAffaire] = useState('');
 
-  // Autocomplétion Google Places pour le champ lieu
-  const { inputRef: locationInputRef } = useGooglePlacesAutocomplete(
-    (place) => {
-      setFormData(prev => ({
-        ...prev,
-        locationName: place.address || place.name
-      }));
-      if (place.address) {
-        addLocation(place.address);
-      }
-    },
-    { types: ['geocode'] }
-  );
+  // Ref pour le champ lieu (autocomplétion custom sur les lieux enregistrés)
+  const locationInputRef = React.useRef(null);
 
   // Hooks pour l'autocomplétion
   const { suggestions: clientSuggestions, addToHistory: addClient } = useAutocomplete('clients');
@@ -124,6 +117,50 @@ const ReservationModal = ({
   // État pour l'adresse de Mag Scène
   const [companyAddress, setCompanyAddress] = useState('');
   const [allLocations, setAllLocations] = useState(locations);
+
+  // État pour l'autocomplétion lieu custom (sans accents)
+  const [locationSearch, setLocationSearch] = useState('');
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [locationTypeFilter, setLocationTypeFilter] = useState('');
+  const locationDropdownRef = React.useRef(null);
+
+  const normalize = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  // Types uniques extraits des lieux
+  const locationTypes = React.useMemo(() => {
+    const types = new Set();
+    allLocations.forEach(l => { if (l.type) types.add(l.type); });
+    return [...types].sort();
+  }, [allLocations]);
+
+  const filteredLocations = React.useMemo(() => {
+    let result = allLocations;
+    if (locationTypeFilter) {
+      result = result.filter(l => l.type === locationTypeFilter);
+    }
+    if (locationSearch) {
+      const search = normalize(locationSearch);
+      result = result.filter(l =>
+        normalize(l.name).includes(search) ||
+        (l.address && normalize(l.address).includes(search))
+      );
+    }
+    return result;
+  }, [locationSearch, locationTypeFilter, allLocations]);
+
+  // Fermer le dropdown lieu quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        locationDropdownRef.current && !locationDropdownRef.current.contains(e.target) &&
+        locationInputRef.current && !locationInputRef.current.contains(e.target)
+      ) {
+        setShowLocationDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Charger l'adresse de Mag Scène et créer la liste complète des lieux
   useEffect(() => {
@@ -663,6 +700,9 @@ const ReservationModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Bloquer la soumission en mode lecture seule
+    if (isReadOnly) return;
+    
     // Ajouter les valeurs à l'historique d'autocomplétion
     if (formData.clientName) addClient(formData.clientName);
     if (formData.driverName) addDriver(formData.driverName);
@@ -815,7 +855,7 @@ const ReservationModal = ({
         <div className="modal-header">
           <div className="modal-header-content">
             <h2 id="modal-title">
-              {formData.prestationName || 'Nouvelle réservation'} {formData.isTournee && '🚐'}
+              {isReadOnly ? '📋 Détails de la réservation' : (formData.prestationName || (currentUser?.isAdmin ? 'Nouvelle réservation' : 'Nouvelle demande'))} {formData.isTournee && '🚐'}
             </h2>
             {(formData.date || formData.endDate) && (
               <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.25rem' }}>
@@ -855,7 +895,8 @@ const ReservationModal = ({
               type="checkbox"
               checked={formData.isTournee}
               onChange={(e) => setFormData(prev => ({ ...prev, isTournee: e.target.checked }))}
-              style={{ margin: 0, cursor: 'pointer' }}
+              style={{ margin: 0, cursor: isReadOnly ? 'default' : 'pointer' }}
+              disabled={isReadOnly}
             />
             <span style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.95)' }}>🚐 Tournée</span>
           </label>
@@ -865,6 +906,7 @@ const ReservationModal = ({
         </div>
 
         <form id="reservation-form" onSubmit={handleSubmit} className="modal-form">
+          <fieldset disabled={isReadOnly} style={{ border: 'none', margin: 0, padding: 0 }}>
           {googleEvent && (
             <div className="google-event-badge">
               📅 Lié à : <strong>{googleEvent.summary}</strong>
@@ -879,82 +921,55 @@ const ReservationModal = ({
           {isMultiVehicle ? (
             <div className="form-group">
               <label>Véhicules * (Sélectionnez un ou plusieurs véhicules)</label>
-              <div className="vehicle-checkboxes">
-                {vehicles.map((vehicle) => (
-                  <label key={vehicle.id} className="vehicle-checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={selectedVehicleIds.includes(vehicle.id)}
-                      onChange={() => handleVehicleToggle(vehicle.id)}
-                    />
-                    <div
-                      className="vehicle-color-indicator"
-                      style={{ backgroundColor: vehicle.displayColor || vehicle.color }}
-                    />
-                    <span>{vehicle.name} - {vehicle.type}</span>
-                  </label>
-                ))}
-              </div>
+              <VehiclePickerCards
+                vehicles={vehicles}
+                selectedIds={selectedVehicleIds}
+                onSelect={(id) => !isReadOnly && handleVehicleToggle(id)}
+                multiple
+                disabled={isReadOnly}
+                variant="desktop"
+              />
+              {selectedVehicleIds.length > 0 && (
+                <div className="multi-vehicle-preview">
+                  <strong>{selectedVehicleIds.length}</strong> véhicule(s) sélectionné(s)
+                </div>
+              )}
             </div>
           ) : (
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="vehicleId">Véhicule *</label>
-                <select
-                  id="vehicleId"
-                  name="vehicleId"
-                  value={formData.vehicleId}
-                  onChange={handleChange}
-                  required
-                  aria-required="true"
-                >
-                  <option value="">Sélectionner un véhicule</option>
-                  {vehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.name} - {vehicle.type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="driverName">Conducteur</label>
-                <select
-                  id="driverName"
-                  name="driverName"
-                  value={formData.driverName}
-                  onChange={handleChange}
-                >
-                  <option value="">Sélectionner un conducteur</option>
-                  {drivers && drivers.map((driver) => (
-                    <option key={`driver-${driver.id}`} value={driver.name}>
-                      {driver.name}
-                    </option>
-                  ))}
-                  {driverSuggestions.filter(s => !drivers?.some(d => d.name === s)).map((suggestion, idx) => (
-                    <option key={`history-${idx}`} value={suggestion}>
-                      {suggestion} (historique)
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-
-          {selectedVehicle && !isMultiVehicle && (
-            <div className="vehicle-preview">
-              <div
-                className="vehicle-color-preview"
-                style={{ backgroundColor: selectedVehicle.color }}
+            <>
+            <div className="form-group">
+              <label htmlFor="vehicleId">Véhicule *</label>
+              <VehiclePickerCards
+                vehicles={vehicles}
+                selectedId={formData.vehicleId}
+                onSelect={(id) => !isReadOnly && handleChange({ target: { name: 'vehicleId', value: id } })}
+                disabled={isReadOnly}
+                variant="desktop"
               />
-              <span>{selectedVehicle.name}</span>
             </div>
-          )}
 
-          {isMultiVehicle && selectedVehicleIds.length > 0 && (
-            <div className="multi-vehicle-preview">
-              <strong>{selectedVehicleIds.length}</strong> véhicule(s) sélectionné(s)
+            <div className="form-group">
+              <label htmlFor="driverName">Conducteur</label>
+              <select
+                id="driverName"
+                name="driverName"
+                value={formData.driverName}
+                onChange={handleChange}
+              >
+                <option value="">Sélectionner un conducteur</option>
+                {drivers && drivers.map((driver) => (
+                  <option key={`driver-${driver.id}`} value={driver.name}>
+                    {driver.name}
+                  </option>
+                ))}
+                {driverSuggestions.filter(s => !drivers?.some(d => d.name === s)).map((suggestion, idx) => (
+                  <option key={`history-${idx}`} value={suggestion}>
+                    {suggestion} (historique)
+                  </option>
+                ))}
+              </select>
             </div>
+            </>
           )}
 
           <div className="form-divider" />
@@ -1004,22 +1019,89 @@ const ReservationModal = ({
               <div className="form-row">
                 <div className="form-group" style={{ flex: 'initial', width: 'auto' }}>
                   <label htmlFor="locationName">Lieu</label>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <div style={{ minWidth: '300px' }}>
+                  {/* Filtre par type de lieu */}
+                  {locationTypes.length > 1 && (
+                    <div style={{ marginBottom: '6px' }}>
                       <select
-                        id="locationName"
-                        name="locationName"
-                        value={formData.locationName}
-                        onChange={handleChange}
-                        style={{ width: '100%' }}
+                        value={locationTypeFilter}
+                        onChange={(e) => setLocationTypeFilter(e.target.value)}
+                        style={{ fontSize: '0.85rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
                       >
-                        <option value="">Sélectionner un lieu...</option>
-                        {allLocations.map((location) => (
-                          <option key={location.id} value={location.name}>
-                            {location.name} {location.address ? `(${location.address})` : ''}
-                          </option>
+                        <option value="">Tous les types</option>
+                        {locationTypes.map(t => (
+                          <option key={t} value={t}>{t}</option>
                         ))}
                       </select>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                    <div style={{ minWidth: '300px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                      <input
+                        ref={locationInputRef}
+                        id="locationName"
+                        type="text"
+                        name="locationName"
+                        value={showLocationDropdown ? locationSearch : formData.locationName}
+                        onChange={(e) => {
+                          setLocationSearch(e.target.value);
+                          setShowLocationDropdown(true);
+                          setFormData(prev => ({ ...prev, locationName: e.target.value }));
+                          setHasChanges(true);
+                        }}
+                        onFocus={() => {
+                          setLocationSearch(formData.locationName || '');
+                          setShowLocationDropdown(true);
+                        }}
+                        placeholder="Rechercher un lieu..."
+                        autoComplete="off"
+                        style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}
+                      />
+                      {showLocationDropdown && filteredLocations.length > 0 && (
+                        <div
+                          ref={locationDropdownRef}
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '0 0 6px 6px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            zIndex: 100,
+                          }}
+                        >
+                          {filteredLocations.map((location) => (
+                            <div
+                              key={location.id}
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, locationName: location.name }));
+                                setLocationSearch('');
+                                setShowLocationDropdown(false);
+                                setHasChanges(true);
+                              }}
+                              style={{
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                borderBottom: '1px solid #f3f4f6',
+                                fontSize: '0.9rem',
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f4ff'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                            >
+                              <div style={{ fontWeight: 500 }}>{location.name}</div>
+                              {location.address && (
+                                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{location.address}</div>
+                              )}
+                              {location.type && (
+                                <div style={{ fontSize: '0.75rem', color: '#9ca3af', fontStyle: 'italic' }}>{location.type}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -1027,7 +1109,7 @@ const ReservationModal = ({
                       className="add-location-button"
                       title="Créer ou rechercher un lieu avec Google Maps"
                       style={{
-                        padding: '8px 12px',
+                        padding: '0 12px',
                         backgroundColor: '#3b82f6',
                         color: 'white',
                         border: 'none',
@@ -1036,7 +1118,8 @@ const ReservationModal = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        alignSelf: 'stretch',
                       }}
                     >
                       <MapPin size={16} />
@@ -1676,6 +1759,7 @@ const ReservationModal = ({
             />
           </div>
 
+          </fieldset>
         </form>
 
         <div className="modal-actions">
@@ -1690,14 +1774,14 @@ const ReservationModal = ({
             </button>
           )}
           <button type="button" className="cancel-button" onClick={onClose}>
-            Annuler
+            {isReadOnly ? 'Fermer' : 'Annuler'}
           </button>
           {!isEdit && (
             <button type="submit" form="reservation-form" className="submit-button">
               {currentUser?.isAdmin ? 'Créer' : 'Demander'}
             </button>
           )}
-          {isEdit && (hasChanges || formData.isTournee) && (
+          {isEdit && !isReadOnly && (hasChanges || formData.isTournee) && (
             <button type="submit" form="reservation-form" className="submit-button">
               Valider les modifications
             </button>

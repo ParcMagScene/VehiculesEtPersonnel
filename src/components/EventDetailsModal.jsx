@@ -2,19 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X } from 'lucide-react';
+import { getApiUrl } from '../utils/api';
 import './EventDetailsModal.css';
-
-// Détection automatique de l'URL du backend
-const getApiUrl = () => {
-  const hostname = window.location.hostname;
-  if (hostname === 'magsav.duckdns.org') {
-    return 'http://magsav.duckdns.org:3002';
-  }
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3002';
-  }
-  return 'http://192.168.205.75:3002';
-};
 
 const API_BASE_URL = getApiUrl();
 

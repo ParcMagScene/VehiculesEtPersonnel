@@ -9,6 +9,9 @@
     "preview": "vite preview",
     "deploy": "bash scripts/safe-deploy.sh",
     "lint": "eslint . --ext js,jsx",
+    "lint:fix": "eslint . --ext js,jsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,css}\"",
     "update-photos": "node scripts/generate-photo-list.js",
     "watch-photos": "node scripts/watch-photos.js"
   },
@@ -28,8 +31,11 @@
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "md-to-pdf": "^5.2.5",
+    "prettier": "^3.8.1",
     "vite": "^5.2.0"
   }
 }

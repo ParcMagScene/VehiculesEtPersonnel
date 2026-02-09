@@ -1,5 +1,7 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
@@ -13,11 +15,54 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3002;
-const JWT_SECRET = 'your-secret-key-change-in-production';
+const PORT = process.env.PORT || 3002;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
 
-app.use(cors());
+if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHANGEZ_CETTE_CLE') {
+  console.warn('⚠️  ATTENTION: JWT_SECRET par défaut détecté ! Créez un fichier server/.env avec un secret sécurisé.');
+}
+
+// CORS — restriction aux domaines autorisés
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://magsav.duckdns.org,http://magsav.duckdns.org:4173,http://magsav.duckdns.org,http://192.168.205.75:4173,http://localhost:5174,http://localhost:4173')
+  .split(',')
+  .map(s => s.trim());
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Permettre les requêtes sans origin (curl, mobile, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS non autorisé'), false);
+  },
+  credentials: true
+}));
 app.use(express.json());
+
+// Rate limiting — protection contre le brute force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // max 20 tentatives par fenêtre
+  message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const generalLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 200, // max 200 requêtes par minute
+  message: { error: 'Trop de requêtes. Réessayez plus tard.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/', generalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/force-login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/set-new-password', authLimiter);
 
 // Servir les fichiers statiques depuis le dossier public/attachments
 const attachmentsPath = path.join(__dirname, '..', 'public', 'attachments');
@@ -44,12 +89,28 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Middleware pour vérifier les droits admin
+// Middleware pour vérifier les droits admin (vérifie en DB pour être sûr)
 function requireAdmin(req, res, next) {
-  if (!req.user.isAdmin) {
+  const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+  if (!user || !user.is_admin) {
     return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
   }
+  req.user.isAdmin = true;
   next();
+}
+
+// Helper : valider qu'un chemin ne sort pas du répertoire autorisé (anti path-traversal)
+function sanitizePath(basePath, userInput) {
+  const resolved = path.resolve(basePath, userInput);
+  if (!resolved.startsWith(path.resolve(basePath))) {
+    return null; // Tentative de path traversal
+  }
+  return resolved;
+}
+
+// Helper : valider un identifiant d'affaire (pas de caractères dangereux)
+function isValidAffaireId(id) {
+  return /^[a-zA-Z0-9_\-\.]+$/.test(id);
 }
 
 // ============ AUTHENTIFICATION ============
@@ -108,13 +169,11 @@ app.post('/api/auth/login', async (req, res) => {
     const user = stmt.get(email);
     
     if (!user) {
-      console.log(`❌ Tentative de connexion - Utilisateur non trouvé: ${email}`);
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
     
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
-      console.log(`❌ Tentative de connexion - Mot de passe incorrect pour: ${email}`);
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
     
@@ -125,7 +184,6 @@ app.post('/api/auth/login', async (req, res) => {
     const authorizedEmail = authorizedEmailStmt.get(email);
     
     if (!authorizedEmail) {
-      console.log(`❌ Accès refusé - Email non autorisé: ${email}`);
       return res.status(403).json({ 
         error: 'EMAIL_NOT_AUTHORIZED',
         message: 'Votre email n\'est pas autorisé à accéder à cette application. Veuillez contacter un administrateur.' 
@@ -149,12 +207,12 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: `${JWT_EXPIRY_DAYS}d` }
     );
     
     // Enregistrer la session
     const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const insertSessionStmt = db.prepare(`
       INSERT INTO active_sessions (user_id, token_hash, expires_at)
       VALUES (?, ?, ?)
@@ -184,7 +242,6 @@ app.post('/api/auth/force-login', async (req, res) => {
     const authorizedEmail = authorizedEmailStmt.get(email);
     
     if (!authorizedEmail) {
-      console.log(`❌ Force-login refusé - Email non autorisé: ${email}`);
       return res.status(403).json({ 
         error: 'EMAIL_NOT_AUTHORIZED',
         message: 'Votre email n\'est pas autorisé à accéder à cette application. Veuillez contacter un administrateur.' 
@@ -199,12 +256,12 @@ app.post('/api/auth/force-login', async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: `${JWT_EXPIRY_DAYS}d` }
     );
     
     // Enregistrer la nouvelle session
     const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const insertSessionStmt = db.prepare(`
       INSERT INTO active_sessions (user_id, token_hash, expires_at)
       VALUES (?, ?, ?)
@@ -241,16 +298,16 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
   }
 });
 
-// Liste des utilisateurs (pour le sélecteur de connexion)
+// Liste des utilisateurs (pour le sélecteur de connexion) - endpoint public
+// Ne retourne que les infos nécessaires au sélecteur (pas de rôle admin)
 app.get('/api/auth/users', (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, email, name, is_admin, avatar FROM users ORDER BY name');
+    const stmt = db.prepare('SELECT id, email, name, avatar FROM users ORDER BY name');
     const users = stmt.all();
     res.json(users.map(u => ({
       id: u.id,
       email: u.email,
       name: u.name,
-      isAdmin: u.is_admin === 1,
       avatar: u.avatar || null
     })));
   } catch (error) {
@@ -348,10 +405,6 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
   try {
     const vehicle = req.body;
     
-    // Debug : log des contrôles techniques
-    console.log('🔧 Mise à jour véhicule:', vehicle.id || req.params.id);
-    console.log('🔧 Contrôles techniques reçus:', vehicle.controles_techniques);
-    
     const stmt = db.prepare(`
       UPDATE vehicles 
       SET name = ?, type = ?, registration = ?, brand = ?, model = ?, color = ?,
@@ -372,9 +425,6 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
     // Récupérer le véhicule mis à jour et le mapper
     const getStmt = db.prepare('SELECT * FROM vehicles WHERE id = ?');
     const updatedVehicle = getStmt.get(req.params.id);
-    
-    console.log('🔧 Contrôles techniques en DB:', updatedVehicle.controles_techniques);
-    console.log('🔧 Véhicule complet:', JSON.stringify(updatedVehicle, null, 2));
     
     const mappedVehicle = {
       id: updatedVehicle.id,
@@ -397,8 +447,6 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
       createdAt: updatedVehicle.created_at,
       modifiedAt: updatedVehicle.modified_at
     };
-    
-    console.log('🔧 Mapped vehicle controles_techniques:', mappedVehicle.controles_techniques);
     
     res.json(mappedVehicle);
   } catch (error) {
@@ -594,16 +642,13 @@ app.delete('/api/reservations/:id', authenticateToken, (req, res) => {
     if (!req.user.isAdmin) {
       return res.status(403).json({ error: 'Seuls les administrateurs peuvent supprimer des réservations.' });
     }
-    console.log('🗑️ DELETE /api/reservations/:id - ID:', req.params.id);
     const stmt = db.prepare('DELETE FROM reservations WHERE id = ?');
     const result = stmt.run(req.params.id);
-    console.log('✅ Suppression DB - changes:', result.changes);
     
     addToHistory('reservation', req.params.id, 'deleted', null, req.user.id, req.user.name);
     
     res.json({ success: true });
   } catch (error) {
-    console.error('❌ Erreur suppression réservation:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -963,7 +1008,7 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
   }
 });
 
-app.delete('/api/maintenances/:id', authenticateToken, (req, res) => {
+app.delete('/api/maintenances/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare('DELETE FROM maintenances WHERE id = ?');
     stmt.run(req.params.id);
@@ -1076,7 +1121,7 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 
 // ============ DEMANDES D'ACCÈS ============
 
-// Créer une demande d'accès
+// Créer une demande d'accès (ou auto-approuver si email déjà autorisé)
 app.post('/api/access-requests', async (req, res) => {
   try {
     const { email, name } = req.body;
@@ -1085,10 +1130,24 @@ app.post('/api/access-requests', async (req, res) => {
       return res.status(400).json({ error: 'Email et nom requis' });
     }
 
-    // Vérifier si l'email existe déjà
+    // Vérifier si l'email existe déjà en tant qu'utilisateur
     const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     if (existingUser) {
-      return res.status(400).json({ error: 'Cet email est déjà enregistré' });
+      return res.status(400).json({ error: 'Cet email est déjà enregistré. Connectez-vous directement.' });
+    }
+
+    // Vérifier si l'email est déjà autorisé par un admin
+    const authorizedEmail = db.prepare(
+      'SELECT * FROM authorized_emails WHERE email = ? AND status = ?'
+    ).get(email, 'pending');
+
+    if (authorizedEmail) {
+      // Email déjà autorisé → l'utilisateur peut créer son mot de passe directement
+      return res.json({ 
+        success: true,
+        autoApproved: true,
+        message: 'Votre email est déjà autorisé ! Vous pouvez créer votre mot de passe.'
+      });
     }
 
     // Vérifier si une demande est déjà en cours
@@ -1100,7 +1159,7 @@ app.post('/api/access-requests', async (req, res) => {
       return res.status(400).json({ error: 'Une demande est déjà en cours pour cet email' });
     }
 
-    // Créer la demande
+    // Créer la demande (email non autorisé → besoin approbation admin)
     const stmt = db.prepare(`
       INSERT INTO access_requests (email, name, status)
       VALUES (?, ?, 'pending')
@@ -1109,12 +1168,47 @@ app.post('/api/access-requests', async (req, res) => {
     const result = stmt.run(email, name);
     
     res.json({ 
-      success: true, 
-      message: 'Demande envoyée avec succès. Vous serez notifié par email une fois approuvée.',
+      success: true,
+      autoApproved: false,
+      message: 'Un email d\'activation vous sera envoyé après validation par un administrateur.',
       id: result.lastInsertRowid 
     });
   } catch (error) {
     console.error('Erreur création demande d\'accès:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Vérifier si un email est autorisé (pour le lien direct de création de compte)
+app.post('/api/access-requests/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+    
+    // Vérifier si déjà utilisateur
+    const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existingUser) {
+      return res.json({ authorized: false, reason: 'already_registered' });
+    }
+    
+    // Vérifier si autorisé
+    const authorized = db.prepare(
+      'SELECT * FROM authorized_emails WHERE email = ? AND status = ?'
+    ).get(email, 'pending');
+    
+    // Récupérer le nom depuis la demande d'accès si elle existe
+    let name = null;
+    if (authorized) {
+      const request = db.prepare(
+        'SELECT name FROM access_requests WHERE email = ? ORDER BY created_at DESC LIMIT 1'
+      ).get(email);
+      name = request?.name || null;
+    }
+    
+    res.json({ authorized: !!authorized, name });
+  } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1144,7 +1238,7 @@ app.get('/api/access-requests', authenticateToken, (req, res) => {
 });
 
 // Approuver/rejeter une demande (admin seulement)
-app.patch('/api/access-requests/:id', authenticateToken, async (req, res) => {
+app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, is_admin } = req.body;
@@ -1201,7 +1295,14 @@ app.patch('/api/access-requests/:id', authenticateToken, async (req, res) => {
       }
     }
 
-    res.json({ success: true, message: `Demande ${status === 'approved' ? 'approuvée' : 'rejetée'}` });
+    res.json({ 
+      success: true, 
+      message: `Demande ${status === 'approved' ? 'approuvée' : 'rejetée'}`,
+      request: {
+        email: request.email,
+        name: request.name
+      }
+    });
   } catch (error) {
     console.error('Erreur traitement demande:', error);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -1262,7 +1363,7 @@ app.get('/api/reservation-requests/pending', authenticateToken, (req, res) => {
 // ============ GESTION DES EMAILS AUTORISÉS (ADMIN) ============
 
 // Récupérer tous les emails autorisés
-app.get('/api/authorized-emails', authenticateToken, (req, res) => {
+app.get('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare('SELECT * FROM authorized_emails ORDER BY created_at DESC');
     const emails = stmt.all();
@@ -1465,12 +1566,12 @@ app.post('/api/auth/set-new-password', async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: `${JWT_EXPIRY_DAYS}d` }
     );
     
     // Enregistrer la session
     const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const insertSessionStmt = db.prepare(`
       INSERT INTO active_sessions (user_id, token_hash, expires_at)
       VALUES (?, ?, ?)
@@ -1705,8 +1806,8 @@ app.delete('/api/users/:id/avatar', authenticateToken, requireAdmin, (req, res) 
   }
 });
 
-// Endpoint pour créer un dossier
-app.post('/api/create-folder', (req, res) => {
+// Endpoint pour créer un dossier (sécurisé)
+app.post('/api/create-folder', authenticateToken, (req, res) => {
   try {
     const { path: folderPath } = req.body;
     
@@ -1714,12 +1815,17 @@ app.post('/api/create-folder', (req, res) => {
       return res.status(400).json({ error: 'Chemin du dossier manquant' });
     }
     
-    // Créer le dossier récursivement (avec tous les parents)
-    fs.mkdirSync(folderPath, { recursive: true });
+    // Sécurité : vérifier que le chemin reste dans le répertoire attachments
+    const safePath = sanitizePath(attachmentsPath, folderPath.replace(attachmentsPath, ''));
+    if (!safePath) {
+      return res.status(403).json({ error: 'Chemin non autorisé' });
+    }
     
-    res.json({ success: true, path: folderPath });
+    // Créer le dossier récursivement (avec tous les parents)
+    fs.mkdirSync(safePath, { recursive: true });
+    
+    res.json({ success: true, path: safePath });
   } catch (error) {
-    console.error('Erreur création dossier:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1782,28 +1888,30 @@ const uploadAttachment = multer({
   }
 });
 
-// Endpoint pour uploader un BL
-app.post('/api/upload-bl', upload.single('pdf'), (req, res) => {
-  console.log('📤 POST /api/upload-bl reçu');
-  console.log('  - affaireId:', req.body.affaireId);
-  console.log('  - file:', req.file ? req.file.originalname : 'AUCUN');
-  
+// Endpoint pour uploader un BL (sécurisé)
+app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), (req, res) => {
   try {
     if (!req.file) {
-      console.error('❌ Aucun fichier dans la requête');
       return res.status(400).json({ error: 'Aucun fichier fourni' });
     }
     
     if (!req.body.affaireId) {
-      console.error('❌ affaireId manquant');
       return res.status(400).json({ error: 'affaireId requis' });
     }
     
+    // Sécurité : valider l'identifiant
+    if (!isValidAffaireId(req.body.affaireId)) {
+      return res.status(400).json({ error: 'Identifiant d\'affaire invalide' });
+    }
+    
     // Déplacer le fichier du dossier TEMP vers le dossier de l'affaire
-    const affaireDir = path.join(__dirname, '..', 'public', 'attachments', req.body.affaireId);
+    const affaireDir = sanitizePath(attachmentsPath, req.body.affaireId);
+    if (!affaireDir) {
+      return res.status(403).json({ error: 'Chemin non autorisé' });
+    }
+    
     if (!fs.existsSync(affaireDir)) {
       fs.mkdirSync(affaireDir, { recursive: true });
-      console.log('📁 Dossier créé:', affaireDir);
     }
     
     // Extraire le nom de fichier original (enlever le timestamp)
@@ -1812,7 +1920,6 @@ app.post('/api/upload-bl', upload.single('pdf'), (req, res) => {
     
     // Déplacer le fichier
     fs.renameSync(req.file.path, finalPath);
-    console.log('✅ Fichier déplacé vers:', finalPath);
     
     const relativePath = path.join('attachments', req.body.affaireId, originalName);
     
@@ -1827,34 +1934,35 @@ app.post('/api/upload-bl', upload.single('pdf'), (req, res) => {
   }
 });
 
-// Endpoint pour uploader des pièces jointes génériques
-app.post('/api/upload-attachment', (req, res) => {
+// Endpoint pour uploader des pièces jointes génériques (sécurisé)
+app.post('/api/upload-attachment', authenticateToken, (req, res) => {
   uploadAttachment.single('file')(req, res, function (err) {
     if (err) {
-      console.error('❌ Erreur multer upload-attachment:', err.message);
       return res.status(400).json({ error: err.message });
     }
     
-    console.log('📤 POST /api/upload-attachment reçu');
-    console.log('  - affaireId:', req.body.affaireId);
-    console.log('  - file:', req.file ? req.file.originalname : 'AUCUN');
-    
     try {
       if (!req.file) {
-        console.error('❌ Aucun fichier dans la requête');
         return res.status(400).json({ error: 'Aucun fichier fourni' });
       }
       
       if (!req.body.affaireId) {
-        console.error('❌ affaireId manquant');
         return res.status(400).json({ error: 'affaireId requis' });
       }
       
+      // Sécurité : valider l'identifiant
+      if (!isValidAffaireId(req.body.affaireId)) {
+        return res.status(400).json({ error: 'Identifiant d\'affaire invalide' });
+      }
+      
       // Déplacer le fichier du dossier TEMP vers le dossier de l'affaire
-      const affaireDir = path.join(__dirname, '..', 'public', 'attachments', req.body.affaireId);
+      const affaireDir = sanitizePath(attachmentsPath, req.body.affaireId);
+      if (!affaireDir) {
+        return res.status(403).json({ error: 'Chemin non autorisé' });
+      }
+      
       if (!fs.existsSync(affaireDir)) {
         fs.mkdirSync(affaireDir, { recursive: true });
-        console.log('📁 Dossier créé:', affaireDir);
       }
       
       // Extraire le nom de fichier original (enlever le timestamp)
@@ -1863,7 +1971,6 @@ app.post('/api/upload-attachment', (req, res) => {
       
       // Déplacer le fichier
       fs.renameSync(req.file.path, finalPath);
-      console.log('✅ Fichier attaché sauvegardé:', finalPath);
       
       const relativePath = path.join('attachments', req.body.affaireId, originalName);
       
@@ -1874,17 +1981,25 @@ app.post('/api/upload-attachment', (req, res) => {
         url: `/attachments/${req.body.affaireId}/${originalName}`
       });
     } catch (error) {
-      console.error('❌ Erreur upload attachment:', error);
       res.status(500).json({ error: error.message });
     }
   });
 });
 
-// Endpoint pour lister les fichiers d'une affaire
-app.get('/api/attachments/:affaireId', (req, res) => {
+// Endpoint pour lister les fichiers d'une affaire (sécurisé)
+app.get('/api/attachments/:affaireId', authenticateToken, (req, res) => {
   try {
     const affaireId = req.params.affaireId;
-    const dirPath = path.join(__dirname, '..', 'public', 'attachments', affaireId);
+    
+    // Sécurité : valider l'identifiant
+    if (!isValidAffaireId(affaireId)) {
+      return res.status(400).json({ error: 'Identifiant d\'affaire invalide' });
+    }
+    
+    const dirPath = sanitizePath(attachmentsPath, affaireId);
+    if (!dirPath) {
+      return res.status(403).json({ error: 'Chemin non autorisé' });
+    }
     
     // Vérifier si le dossier existe
     if (!fs.existsSync(dirPath)) {
@@ -1921,8 +2036,8 @@ app.get('/api/attachments/:affaireId', (req, res) => {
   }
 });
 
-// Endpoint pour lister les affaires ayant des pièces jointes
-app.get('/api/attachments-index', (req, res) => {
+// Endpoint pour lister les affaires ayant des pièces jointes (sécurisé)
+app.get('/api/attachments-index', authenticateToken, (req, res) => {
   try {
     const attachDir = path.join(__dirname, '..', 'public', 'attachments');
     if (!fs.existsSync(attachDir)) {
@@ -1943,22 +2058,29 @@ app.get('/api/attachments-index', (req, res) => {
   }
 });
 
-// Endpoint pour supprimer une pièce jointe
-app.delete('/api/attachments/:affaireId/:filename', (req, res) => {
+// Endpoint pour supprimer une pièce jointe (sécurisé)
+app.delete('/api/attachments/:affaireId/:filename', authenticateToken, (req, res) => {
   try {
     const { affaireId, filename } = req.params;
-    const filePath = path.join(__dirname, '..', 'public', 'attachments', affaireId, filename);
     
-    if (!fs.existsSync(filePath)) {
+    // Sécurité : valider les identifiants
+    if (!isValidAffaireId(affaireId)) {
+      return res.status(400).json({ error: 'Identifiant d\'affaire invalide' });
+    }
+    
+    const safePath = sanitizePath(attachmentsPath, path.join(affaireId, filename));
+    if (!safePath) {
+      return res.status(403).json({ error: 'Chemin non autorisé' });
+    }
+    
+    if (!fs.existsSync(safePath)) {
       return res.status(404).json({ error: 'Fichier non trouvé' });
     }
     
-    fs.unlinkSync(filePath);
-    console.log('🗑️ Pièce jointe supprimée:', filePath);
+    fs.unlinkSync(safePath);
     
     res.json({ success: true, message: `${filename} supprimé` });
   } catch (error) {
-    console.error('❌ Erreur suppression pièce jointe:', error);
     res.status(500).json({ error: error.message });
   }
 });

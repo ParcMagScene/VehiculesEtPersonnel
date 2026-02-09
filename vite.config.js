@@ -3,6 +3,16 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // Supprimer console.log et debugger en production
+    minify: 'esbuild',
+    target: 'es2020',
+  },
+  esbuild: {
+    // En build de production, supprimer les console.log/debug (garder console.error/warn)
+    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+    pure: process.env.NODE_ENV === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
+  },
   server: {
     host: '0.0.0.0',
     port: 5174,

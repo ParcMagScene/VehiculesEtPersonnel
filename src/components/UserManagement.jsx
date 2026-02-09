@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil } from 'lucide-react';
+import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink } from 'lucide-react';
 import api from '../utils/api';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 import './UserManagement.css';
 
-const UserManagement = () => {
+const UserManagement = ({ onAccessRequestChange }) => {
   const [authorizedEmails, setAuthorizedEmails] = useState([]);
   const [users, setUsers] = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
   const [newEmail, setNewEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [editingUser, setEditingUser] = useState(null);
+  const [approveModal, setApproveModal] = useState(null); // { id, email, name }
 
   useEffect(() => {
     loadData();
@@ -119,24 +120,43 @@ const UserManagement = () => {
     }
   };
 
-  const handleApproveRequest = async (requestId, requestEmail) => {
-    // Demander confirmation d'approbation d'abord
-    if (!confirm(`Approuver la demande de ${requestEmail} ?`)) return;
-    
-    // Demander si on veut donner les droits admin
-    const giveAdminResponse = prompt(
-      `Donner les droits administrateur à cet utilisateur ?\n\nTapez "oui" pour administrateur, "non" pour utilisateur standard :`,
-      'non'
-    );
-    
-    if (giveAdminResponse === null) return; // Annulation
-    
-    const giveAdmin = giveAdminResponse.toLowerCase().trim() === 'oui';
+  const handleApproveRequest = async (requestId, requestEmail, requestName) => {
+    // Ouvrir le modal d'approbation au lieu d'un confirm
+    setApproveModal({ id: requestId, email: requestEmail, name: requestName });
+  };
+
+  const handleConfirmApprove = async (giveAdmin, sendEmail) => {
+    if (!approveModal) return;
+    const { id, email: reqEmail, name: reqName } = approveModal;
 
     try {
-      await api.updateAccessRequest(requestId, 'approved', giveAdmin);
-      alert(`✅ Demande approuvée ! L'utilisateur ${requestEmail} peut maintenant créer son compte${giveAdmin ? ' avec des droits administrateur' : ''}.`);
+      const result = await api.updateAccessRequest(id, 'approved', giveAdmin);
+      
+      if (sendEmail) {
+        // Construire l'URL de création de compte
+        const appUrl = window.location.origin;
+        const setupLink = `${appUrl}?setup=${encodeURIComponent(reqEmail)}`;
+        
+        // Construire le mail type
+        const subject = encodeURIComponent('Votre accès à MagSav - Réservation Véhicules');
+        const body = encodeURIComponent(
+          `Bonjour ${reqName},\n\n` +
+          `Votre demande d'accès à l'application de réservation de véhicules a été approuvée !\n\n` +
+          `Pour finaliser votre inscription, cliquez sur le lien ci-dessous et créez votre mot de passe :\n\n` +
+          `${setupLink}\n\n` +
+          `Ce lien vous amènera directement à la page de création de votre compte.\n\n` +
+          `Cordialement,\n` +
+          `L'équipe Mag Scène`
+        );
+        
+        // Ouvrir Gmail compose dans un nouvel onglet
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(reqEmail)}&su=${subject}&body=${body}`;
+        window.open(gmailUrl, '_blank');
+      }
+      
+      setApproveModal(null);
       loadData();
+      onAccessRequestChange?.();
     } catch (error) {
       alert(`Erreur: ${error.message}`);
     }
@@ -149,6 +169,7 @@ const UserManagement = () => {
       await api.updateAccessRequest(requestId, 'rejected');
       alert('Demande rejetée');
       loadData();
+      onAccessRequestChange?.();
     } catch (error) {
       alert(`Erreur: ${error.message}`);
     }
@@ -368,7 +389,7 @@ const UserManagement = () => {
                 <div className="request-actions">
                   <button 
                     className="btn-approve"
-                    onClick={() => handleApproveRequest(request.id, request.email)}
+                    onClick={() => handleApproveRequest(request.id, request.email, request.name)}
                     title="Approuver"
                   >
                     <UserCheck size={18} /> Approuver
@@ -399,8 +420,96 @@ const UserManagement = () => {
           }}
         />
       )}
+
+      {/* Modal d'approbation de demande */}
+      {approveModal && (
+        <ApproveRequestModal
+          request={approveModal}
+          onConfirm={handleConfirmApprove}
+          onCancel={() => setApproveModal(null)}
+        />
+      )}
     </div>
   );
 };
+
+// Composant modal d'approbation
+function ApproveRequestModal({ request, onConfirm, onCancel }) {
+  const [giveAdmin, setGiveAdmin] = useState(false);
+  const [sendEmail, setSendEmail] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    await onConfirm(giveAdmin, sendEmail);
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="approve-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="approve-modal-header">
+          <UserCheck size={24} />
+          <h3>Approuver la demande</h3>
+        </div>
+        
+        <div className="approve-modal-body">
+          <div className="approve-modal-info">
+            <div className="approve-modal-user">
+              <strong>{request.name}</strong>
+              <span>{request.email}</span>
+            </div>
+          </div>
+
+          <div className="approve-modal-options">
+            <label className="approve-checkbox-label">
+              <input
+                type="checkbox"
+                checked={giveAdmin}
+                onChange={(e) => setGiveAdmin(e.target.checked)}
+              />
+              <Shield size={16} />
+              <span>Donner les droits administrateur</span>
+            </label>
+
+            <label className="approve-checkbox-label">
+              <input
+                type="checkbox"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+              />
+              <Mail size={16} />
+              <span>Envoyer le mail de confirmation au demandeur</span>
+              {sendEmail && (
+                <small className="approve-email-hint">
+                  <ExternalLink size={12} />
+                  Ouvrira Gmail avec un mail pré-rempli contenant le lien de création de compte
+                </small>
+              )}
+            </label>
+          </div>
+        </div>
+
+        <div className="approve-modal-actions">
+          <button 
+            className="btn-secondary" 
+            onClick={onCancel} 
+            disabled={loading}
+          >
+            Annuler
+          </button>
+          <button 
+            className="btn-approve" 
+            onClick={handleConfirm}
+            disabled={loading}
+          >
+            <UserCheck size={18} />
+            {loading ? 'Approbation...' : 'Approuver'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default UserManagement;

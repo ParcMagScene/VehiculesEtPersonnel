@@ -12,42 +12,6 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-// Générer les initiales à partir du nom
-const getInitials = (name) => {
-  if (!name) return '?';
-  const parts = name.trim().split(' ');
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
-
-// Générer une couleur unique basée sur le nom
-const getColorFromName = (name) => {
-  if (!name) return '#6b7280';
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colors = [
-    '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', 
-    '#10b981', '#06b6d4', '#6366f1', '#f97316',
-    '#14b8a6', '#a855f7', '#ef4444', '#84cc16'
-  ];
-  return colors[Math.abs(hash) % colors.length];
-};
-
-// Ajuster la luminosité d'une couleur
-const adjustColor = (color, percent) => {
-  const num = parseInt(color.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = (num >> 16) + amt;
-  const G = (num >> 8 & 0x00FF) + amt;
-  const B = (num & 0x0000FF) + amt;
-  return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-    (B < 255 ? B < 1 ? 0 : B : 255))
-    .toString(16).slice(1);
-};
-
 const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'

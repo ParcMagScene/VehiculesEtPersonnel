@@ -1458,4 +1458,4 @@ const ManagementPanel = ({
   );
 };
 
-export default ManagementPanel;
+export default React.memo(ManagementPanel);

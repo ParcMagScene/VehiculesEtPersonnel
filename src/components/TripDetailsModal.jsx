@@ -175,8 +175,7 @@ const TripDetailsModal = ({
         // Utiliser companyAddress si fourni, sinon charger depuis l'API
         let address = companyAddress;
         if (!address) {
-          const token = localStorage.getItem('token');
-          console.log('🚗 TripDetails: Token présent:', !!token);
+          const token = localStorage.getItem('auth_token');
           if (token) {
             const response = await fetch('/api/config/calendarConfig', {
               headers: {
@@ -1506,4 +1505,4 @@ const TripDetailsModal = ({
   );
 };
 
-export default TripDetailsModal;
+export default React.memo(TripDetailsModal);

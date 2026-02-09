@@ -919,6 +919,28 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
     
     addToHistory('maintenance', maintenance.id, 'created', maintenance, req.user.id, req.user.name);
     
+    // Si un kilométrage est renseigné, mettre à jour le véhicule et ajouter un relevé dans l'historique
+    if (maintenance.mileage && parseInt(maintenance.mileage) > 0) {
+      const vehicleId = maintenance.vehicle_id;
+      const newKm = parseInt(maintenance.mileage);
+      const oldVehicle = db.prepare('SELECT kilometrage, name FROM vehicles WHERE id = ?').get(vehicleId);
+      const oldKm = oldVehicle ? (oldVehicle.kilometrage || 0) : 0;
+      
+      if (newKm !== oldKm) {
+        db.prepare('UPDATE vehicles SET kilometrage = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(newKm, req.user.id, vehicleId);
+        
+        addToHistory('vehicle', vehicleId, 'mileage_update', JSON.stringify({
+          description: 'Relevé kilométrique (maintenance)',
+          oldKilometrage: oldKm,
+          newKilometrage: newKm,
+          maintenanceId: maintenance.id,
+          vehicleName: oldVehicle?.name || '',
+          date: new Date().toISOString()
+        }), req.user.id, req.user.name);
+      }
+    }
+    
     res.json({ success: true, id: maintenance.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1045,6 +1067,28 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
     }
     
     addToHistory('maintenance', req.params.id, 'updated', maintenance, req.user.id, req.user.name);
+    
+    // Si un kilométrage est renseigné, mettre à jour le véhicule et ajouter un relevé dans l'historique
+    if (maintenance.mileage && parseInt(maintenance.mileage) > 0) {
+      const vehicleId = maintenance.vehicleId || maintenance.vehicle_id;
+      const newKm = parseInt(maintenance.mileage);
+      const oldVehicle = db.prepare('SELECT kilometrage, name FROM vehicles WHERE id = ?').get(vehicleId);
+      const oldKm = oldVehicle ? (oldVehicle.kilometrage || 0) : 0;
+      
+      if (newKm !== oldKm) {
+        db.prepare('UPDATE vehicles SET kilometrage = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(newKm, req.user.id, vehicleId);
+        
+        addToHistory('vehicle', vehicleId, 'mileage_update', JSON.stringify({
+          description: 'Relevé kilométrique (maintenance)',
+          oldKilometrage: oldKm,
+          newKilometrage: newKm,
+          maintenanceId: req.params.id,
+          vehicleName: oldVehicle?.name || '',
+          date: new Date().toISOString()
+        }), req.user.id, req.user.name);
+      }
+    }
     
     res.json({ success: true });
   } catch (error) {

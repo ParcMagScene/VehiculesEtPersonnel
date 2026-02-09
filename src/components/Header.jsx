@@ -279,7 +279,26 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
           <div className="header-logo-area">
             <img src="/Logos/LogoMagSav.svg" alt="Mag Scène" className="header-logo" />
           </div>
-          <h1 className="header-title"><Truck className="title-icon" strokeWidth={2.5} size={32} /> Véhicules</h1>
+          <div className="module-tabs" role="tablist" aria-label="Module principal">
+            <button
+              className={`module-tab ${activeModule === 'vehicles' ? 'active' : ''}`}
+              onClick={() => setActiveModule('vehicles')}
+              role="tab"
+              aria-selected={activeModule === 'vehicles'}
+            >
+              <Truck size={18} />
+              <span>Véhicules</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'personnel' ? 'active' : ''}`}
+              onClick={() => setActiveModule('personnel')}
+              role="tab"
+              aria-selected={activeModule === 'personnel'}
+            >
+              <Users size={18} />
+              <span>Personnel</span>
+            </button>
+          </div>
         </div>
         
         {/* Popup des notifications */}
@@ -875,29 +894,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         )}
         
         <div className="header-controls">
-          {/* Onglets modules */}
-          <div className="module-tabs" role="tablist" aria-label="Module principal">
-            <button
-              className={`module-tab ${activeModule === 'vehicles' ? 'active' : ''}`}
-              onClick={() => setActiveModule('vehicles')}
-              role="tab"
-              aria-selected={activeModule === 'vehicles'}
-            >
-              <Truck size={16} />
-              <span>Véhicules</span>
-            </button>
-            <button
-              className={`module-tab ${activeModule === 'personnel' ? 'active' : ''}`}
-              onClick={() => setActiveModule('personnel')}
-              role="tab"
-              aria-selected={activeModule === 'personnel'}
-            >
-              <Users size={16} />
-              <span>Personnel</span>
-            </button>
-          </div>
-
-          <div className="module-separator" />
 
           {/* Sélecteur de vue (véhicules uniquement) */}
           {activeModule === 'vehicles' && (

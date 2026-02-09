@@ -733,9 +733,32 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
             throw new Error('Session expirée. Veuillez vous reconnecter.');
           }
         }
-        // Si 404 et qu'on n'utilisait pas déjà 'primary', retenter avec le calendrier principal
-        if (response.status === 404 && calendarId !== 'primary') {
-          console.warn('⚠️ Calendrier', calendarId, 'introuvable (404), fallback sur le calendrier principal');
+        // Si 404, le calendrier partagé n'est pas encore dans la liste de l'utilisateur
+        // On tente de l'ajouter automatiquement via calendarList.insert, puis on retente
+        if (response.status === 404 && calendarId !== 'primary' && retryCount === 0) {
+          console.warn('⚠️ Calendrier', calendarId, 'introuvable (404). Tentative d\'ajout automatique à la liste...');
+          try {
+            const addResponse = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ id: calendarId }),
+            });
+            if (addResponse.ok || addResponse.status === 409) {
+              // 409 = déjà dans la liste, on retente quand même
+              console.log('✅ Calendrier ajouté à la liste. Nouvelle tentative...');
+              return fetchEvents(token, retryCount + 1);
+            } else {
+              const errText = await addResponse.text();
+              console.warn('⚠️ Impossible d\'ajouter le calendrier à la liste:', addResponse.status, errText);
+            }
+          } catch (addErr) {
+            console.warn('⚠️ Erreur lors de l\'ajout du calendrier:', addErr.message);
+          }
+          // Fallback sur le calendrier principal si l'ajout a échoué
+          console.warn('↪ Fallback sur le calendrier principal');
           const fallbackUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
             `timeMin=${timeMin.toISOString()}&` +
             `timeMax=${timeMax.toISOString()}&` +

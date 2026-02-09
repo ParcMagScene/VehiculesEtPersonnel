@@ -41,7 +41,7 @@
 .calendar-headers-scroll-area {
   flex: 1;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-gutter: stable;
 }
@@ -217,6 +217,7 @@
   position: relative;
   min-height: 0;
   scrollbar-width: thin;
+  scrollbar-gutter: stable;
 }
 
 .calendar-scroll-area::-webkit-scrollbar {
@@ -250,7 +251,7 @@
 }
 
 .month-view {
-  grid-template-columns: repeat(62, minmax(60px, 1fr));
+  grid-template-columns: repeat(62, minmax(55px, 1fr));
 }
 
 .year-view {
@@ -979,17 +980,7 @@
 }
 
 /* Responsive */
-@media (max-width: 1400px) {
-  .week-view {
-    grid-template-columns: 180px repeat(14, minmax(80px, 1fr));
-  }
-}
-
 @media (max-width: 1200px) {
-  .week-view {
-    grid-template-columns: 150px repeat(14, minmax(60px, 1fr));
-  }
-  
   .vehicle-cell {
     padding: 0.75rem;
   }

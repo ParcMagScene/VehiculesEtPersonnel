@@ -1080,9 +1080,9 @@ const Calendar = ({
   };
 
   const gridColumns = useMemo(() => {
-    return view === 'year' 
-      ? `repeat(12, minmax(150px, 1fr))`
-      : `repeat(${days.length * 2}, minmax(50px, 1fr))`;
+    if (view === 'year') return `repeat(12, minmax(150px, 1fr))`;
+    const minWidth = view === 'week' ? 100 : 55;
+    return `repeat(${days.length * 2}, minmax(${minWidth}px, 1fr))`;
   }, [view, days.length]);
 
   // Gestionnaire de mouvement global pour le redimensionnement avec throttle

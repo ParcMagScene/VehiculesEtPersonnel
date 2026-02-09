@@ -50,6 +50,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         // Extraire juste la valeur, pas l'objet entier
         setGoogleClientId(clientIdData?.value || null);
         setGoogleCalendarId(calendarIdData?.value || null);
+        console.log('📅 Config Google Calendar chargée — calendarId:', calendarIdData?.value || '(non défini)', '— clientId:', clientIdData?.value ? '✅ présent' : '❌ absent');
       } catch (error) {
         console.error('Erreur lors du chargement de la configuration Google:', error);
       }
@@ -701,6 +702,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       }
 
       const calendarId = googleCalendarId || 'primary';
+      console.log(`📅 fetchEvents — calendarId: "${calendarId}", vue: ${view}, retry: ${retryCount}`);
       const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?` +
         `timeMin=${timeMin.toISOString()}&` +
         `timeMax=${timeMax.toISOString()}&` +
@@ -713,6 +715,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
           'Authorization': `Bearer ${token}`,
         },
       });
+      console.log(`📅 Réponse Google Calendar API: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         if (response.status === 401 && retryCount === 0) {
@@ -787,6 +790,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       
       // Utiliser tous les événements du calendrier (c'est un calendrier partagé)
       let filteredItems = data.items || [];
+      console.log(`📅 Événements reçus: ${filteredItems.length} — Calendrier: ${calendarId}`);
       
       const enrichedEvents = filteredItems.map(event => analyzeEventTitle(event));
       setEvents(enrichedEvents);

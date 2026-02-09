@@ -32,6 +32,9 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
       });
       const data = await response.json();
       if (data.authorized) {
+        if (data.name) {
+          setFormData(prev => ({ ...prev, name: prev.name || data.name }));
+        }
         setStep('create-password');
       }
     } catch (_err) {
@@ -203,15 +206,19 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
 
             <form onSubmit={handleCreateAccount}>
               <div className="form-group">
-                <label>
+                <label htmlFor="ar-create-name">
                   <User size={18} />
-                  Nom
+                  Nom complet *
                 </label>
                 <input
                   type="text"
+                  id="ar-create-name"
+                  name="name"
                   value={formData.name}
-                  disabled
-                  className="input-disabled"
+                  onChange={handleChange}
+                  required
+                  placeholder="Votre nom et prénom"
+                  autoComplete="name"
                 />
               </div>
 

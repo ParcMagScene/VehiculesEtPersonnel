@@ -1198,7 +1198,16 @@ app.post('/api/access-requests/check-email', async (req, res) => {
       'SELECT * FROM authorized_emails WHERE email = ? AND status = ?'
     ).get(email, 'pending');
     
-    res.json({ authorized: !!authorized });
+    // Récupérer le nom depuis la demande d'accès si elle existe
+    let name = null;
+    if (authorized) {
+      const request = db.prepare(
+        'SELECT name FROM access_requests WHERE email = ? ORDER BY created_at DESC LIMIT 1'
+      ).get(email);
+      name = request?.name || null;
+    }
+    
+    res.json({ authorized: !!authorized, name });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }

@@ -57,8 +57,26 @@
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 13px;
-  margin-top: 4px;
   font-weight: 500;
+}
+
+.vehicle-registration-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-family: 'SF Mono', 'Fira Code', 'Monaco', monospace;
+}
+
+.header-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
 }
 
 .modal-header .close-button {
@@ -120,6 +138,8 @@
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
 }
 
 .info-container {
@@ -127,7 +147,7 @@
   gap: 20px;
   background: #f9fafb;
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   align-items: flex-start;
 }
@@ -176,6 +196,120 @@
   font-size: 16px;
   color: #111827;
   font-weight: 500;
+}
+
+/* Carte Kilométrage */
+.km-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #e0e7ff 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.km-card::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 50%;
+}
+
+.km-card-icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.km-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.km-card-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e3a5f;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.km-card-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.km-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.km-meta-source {
+  font-style: italic;
+  color: #64748b;
+}
+
+.km-card-history-count {
+  flex-shrink: 0;
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Tags maintenance */
+.maintenance-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.maintenance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tag-km {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.tag-cost {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 /* Boutons d'action */
@@ -243,6 +377,10 @@
 }
 
 /* Section Historique */
+.history-section {
+  margin-bottom: 24px;
+}
+
 .history-section h3 {
   display: flex;
   align-items: center;
@@ -251,6 +389,8 @@
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
 }
 
 .maintenance-list {
@@ -262,10 +402,11 @@
 .maintenance-item {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 16px;
   transition: all 0.2s;
   border-left: 4px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* Couleurs de fond selon le statut */
@@ -406,11 +547,23 @@
   line-height: 1.5;
 }
 
-.maintenance-garage,
+.maintenance-garage {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
 .maintenance-cost {
   margin-top: 6px;
   font-size: 13px;
   color: #6b7280;
+}
+
+.maintenance-mileage {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #3b82f6;
+  font-weight: 500;
 }
 
 .empty-history {
@@ -440,6 +593,8 @@
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
 }
 
 .deadlines-list {
@@ -451,9 +606,10 @@
 .deadline-item {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 16px;
   transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .deadline-item:hover {

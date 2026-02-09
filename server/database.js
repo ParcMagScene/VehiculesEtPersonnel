@@ -282,6 +282,10 @@ function initializeDatabase() {
   `);
 
   // Ajouter les colonnes kilométrage et contrôle technique si elles n'existent pas
+  // NOTE: Les colonnes controle_technique_type, controle_technique_date, controle_technique_deadline
+  // sont LEGACY — remplacées par la colonne JSON controles_techniques (format tableau).
+  // Elles sont conservées pour compatibilité arrière mais NE DOIVENT PLUS être utilisées.
+  // La migration vers controles_techniques est effectuée automatiquement ci-dessous.
   try {
     const columns = db.prepare("PRAGMA table_info(vehicles)").all();
     const hasKilometrage = columns.some(col => col.name === 'kilometrage');

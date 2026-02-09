@@ -41,22 +41,6 @@ const LoginForm = ({ onLogin }) => {
     }
   }, [isRegister]);
 
-  // Fonction pour générer les initiales
-  const getInitials = (name) => {
-    if (!name) return '?';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  // Fonction pour générer une couleur basée sur le nom
-  const getAvatarColor = (name) => {
-    const colors = [
-      '#ef4444', '#f59e0b', '#10b981', '#3b82f6', 
-      '#6366f1', '#8b5cf6', '#ec4899', '#14b8a6'
-    ];
-    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
-  };
-
   const handleUserSelect = (user) => {
     setSelectedUser(user);
     setEmail(user.email);
@@ -120,8 +104,8 @@ const LoginForm = ({ onLogin }) => {
       const data = await response.json();
       
       // Sauvegarder le token
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('auth_user', JSON.stringify(data.user));
       
       // Fermer le modal et informer le parent
       setShowSessionConflict(false);
@@ -155,8 +139,8 @@ const LoginForm = ({ onLogin }) => {
       const data = await response.json();
       
       // Sauvegarder le token (auto-login)
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('auth_user', JSON.stringify(data.user));
       
       // Fermer le modal et recharger
       setShowPasswordReset(false);

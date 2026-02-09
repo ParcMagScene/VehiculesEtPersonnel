@@ -14,17 +14,19 @@ export default defineConfig({
     pure: process.env.NODE_ENV === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
   },
   server: {
+    // MODE DEV — proxy vers le backend DEV sur port 3003
     host: '0.0.0.0',
     port: 5174,
     open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3002',
+        target: 'http://localhost:3003',
         changeOrigin: true
       }
     }
   },
   preview: {
+    // MODE PROD — proxy vers le backend PROD sur port 3002
     host: '0.0.0.0',
     port: 4173,
     allowedHosts: ['magsav.duckdns.org', '.duckdns.org'],

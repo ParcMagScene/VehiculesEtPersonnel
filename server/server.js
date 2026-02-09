@@ -1,4 +1,28 @@
-import 'dotenv/config';
+// Charger le fichier .env approprié selon le mode
+import dotenv from 'dotenv';
+import { fileURLToPath as _fileURLToPath } from 'url';
+import { dirname as _dirname, join as _join } from 'path';
+
+const __serverFile = _fileURLToPath(import.meta.url);
+const __serverDir = _dirname(__serverFile);
+
+// Si NODE_ENV=development OU --dev flag, charger .env.development
+const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
+const envFile = isDev ? '.env.development' : '.env';
+dotenv.config({ path: _join(__serverDir, envFile) });
+
+if (isDev) {
+  console.log('');
+  console.log('═══════════════════════════════════════════');
+  console.log('  🔧 MODE DÉVELOPPEMENT — Serveur isolé');
+  console.log(`  📄 Env: ${envFile}`);
+  console.log(`  🔌 Port: ${process.env.PORT || 3003}`);
+  console.log(`  💾 DB: ${process.env.DB_PATH || 'vehicules-dev.db'}`);
+  console.log('  ⚠️  La production n\'est PAS affectée');
+  console.log('═══════════════════════════════════════════');
+  console.log('');
+}
+
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';

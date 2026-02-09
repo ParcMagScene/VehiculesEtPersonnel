@@ -4,6 +4,8 @@ dist/
 *.log
 .env
 .env.local
+# .env.development est versionné (pas de vrais secrets dedans)
+!server/.env.development
 .vscode/
 .idea/
 

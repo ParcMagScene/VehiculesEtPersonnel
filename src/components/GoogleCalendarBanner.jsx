@@ -733,6 +733,28 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
             throw new Error('Session expirée. Veuillez vous reconnecter.');
           }
         }
+        // Si 404 et qu'on n'utilisait pas déjà 'primary', retenter avec le calendrier principal
+        if (response.status === 404 && calendarId !== 'primary') {
+          console.warn('⚠️ Calendrier', calendarId, 'introuvable (404), fallback sur le calendrier principal');
+          const fallbackUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
+            `timeMin=${timeMin.toISOString()}&` +
+            `timeMax=${timeMax.toISOString()}&` +
+            `singleEvents=true&` +
+            `maxResults=2500&` +
+            `orderBy=startTime`;
+          const fallbackResponse = await fetch(fallbackUrl, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            let filteredItems = fallbackData.items || [];
+            const enrichedEvents = filteredItems.map(event => analyzeEventTitle(event));
+            setEvents(enrichedEvents);
+            const cacheKey = `${view}-${format(currentDate, 'yyyy-MM-dd')}`;
+            eventsCache.current[cacheKey] = enrichedEvents;
+            return;
+          }
+        }
         const errorText = await response.text();
         console.error('❌ Erreur API:', response.status, errorText);
         throw new Error(`Erreur ${response.status}`);
@@ -740,20 +762,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
 
       const data = await response.json();
       
-      // Essayer de filtrer les événements pour l'utilisateur actuel
+      // Utiliser tous les événements du calendrier (c'est un calendrier partagé)
       let filteredItems = data.items || [];
-      if (currentUser && currentUser.email) {
-        const userFilteredItems = filteredItems.filter(event => {
-          const creatorEmail = event.creator?.email || event.organizer?.email;
-          const isCreator = creatorEmail === currentUser.email;
-          return isCreator;
-        });
-        
-        // Si le filtrage donne des résultats, les utiliser, sinon afficher tous les événements
-        if (userFilteredItems.length > 0) {
-          filteredItems = userFilteredItems;
-        }
-      }
       
       const enrichedEvents = filteredItems.map(event => analyzeEventTitle(event));
       setEvents(enrichedEvents);

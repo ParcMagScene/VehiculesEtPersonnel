@@ -493,6 +493,12 @@ class ApiClient {
     return this.request('/reservation-requests/pending');
   }
 
+  // ============ PIÈCES JOINTES ============
+
+  async getAttachmentsIndex() {
+    return this.request('/attachments-index');
+  }
+
   // ============ UTILISATEURS ============
 
   async getUsersNames() {

@@ -759,6 +759,19 @@
 }
 
 /* Période demandée sur les demandes de réservation */
+.notification-requester-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.notification-requester-line strong {
+  color: #374151;
+}
+
 .request-period-info {
   display: flex;
   align-items: center;

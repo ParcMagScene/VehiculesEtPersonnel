@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog } from 'lucide-react';
 import api from '../utils/api';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -9,6 +9,8 @@ import WeekSelector from './WeekSelector';
 import YearSelector from './YearSelector';
 import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './OverdueInterventionModal';
+import UserAvatar from './UserAvatar';
+import ProfileEditModal from './ProfileEditModal';
 
 // Générer les initiales à partir du nom
 const getInitials = (name) => {
@@ -46,7 +48,7 @@ const adjustColor = (color, percent) => {
     .toString(16).slice(1);
 };
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -62,6 +64,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [expandedReportedId, setExpandedReportedId] = useState(null);
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Charger les demandes en attente (interventions + réservations) pour le badge admin
   useEffect(() => {
@@ -141,13 +144,13 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   
   // Détecter les conflits pour une demande de réservation
   const getRequestConflicts = (request) => {
-    if (!request.start_date || !request.end_date) return [];
-    const reqStart = getPeriodTimestamp(request.start_date, request.start_period || 'AM');
-    const reqEnd = getPeriodTimestamp(request.end_date, request.end_period || 'PM');
+    if (!request.startDate || !request.endDate) return [];
+    const reqStart = getPeriodTimestamp(request.startDate, request.startPeriod || 'AM');
+    const reqEnd = getPeriodTimestamp(request.endDate, request.endPeriod || 'PM');
     
     const conflicts = [];
     for (const r of reservations) {
-      if (String(r.vehicleId) !== String(request.vehicle_id)) continue;
+      if (String(r.vehicleId) !== String(request.vehicleId)) continue;
       const existingStart = getPeriodTimestamp(r.date, r.period);
       const existingEnd = getPeriodTimestamp(r.endDate || r.date, r.endPeriod || r.period);
       if (Math.max(reqStart, existingStart) <= Math.min(reqEnd, existingEnd)) {
@@ -332,8 +335,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <div className="notifications-popup-content">
                 {((notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
                   (notificationFilter === 'pending' && pendingMaintenances.length === 0) ||
-                  (notificationFilter === 'active' && activeInterventions.length === 0) ||
-                  (notificationFilter === 'reservations' && pendingReservationRequests.length === 0)) ? (
+                  (notificationFilter === 'active' && activeInterventions.length === 0)) ? (
                   <p className="no-notifications">Aucune notification</p>
                 ) : (
                   <>
@@ -544,29 +546,21 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                 {vehicle?.registration && (
                                   <span className="notification-registration">{vehicle.registration}</span>
                                 )}
-                                {isExpanded && (
-                                  <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                      className="notif-action-btn create-intervention"
-                                      onClick={() => {
-                                        setShowNotificationsPopup(false);
-                                        setExpandedReportedId(null);
-                                        if (onOpenMaintenance && vehicle) {
-                                          onOpenMaintenance(vehicle, maintenance.id);
-                                        }
-                                      }}
-                                    >
-                                      <Wrench size={14} />
-                                      Créer une intervention
-                                    </button>
-                                    <button
-                                      className="notif-action-btn dismiss"
-                                      onClick={() => setExpandedReportedId(null)}
-                                    >
-                                      Fermer
-                                    </button>
-                                  </div>
-                                )}
+                                <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    className="notif-action-btn create-intervention"
+                                    onClick={() => {
+                                      setShowNotificationsPopup(false);
+                                      setExpandedReportedId(null);
+                                      if (onOpenMaintenance && vehicle) {
+                                        onOpenMaintenance(vehicle, maintenance.id);
+                                      }
+                                    }}
+                                  >
+                                    <Wrench size={14} />
+                                    Créer une intervention
+                                  </button>
+                                </div>
                               </div>
                             );
                           })}
@@ -574,8 +568,11 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                       </div>
                     )}
 
-                    {/* Section Demandes de réservation - toujours visible pour admin */}
-                    {currentUser?.isAdmin && pendingReservationRequests.length > 0 && (
+                    {/* Section Demandes de réservation - uniquement via badge réservation */}
+                    {notificationFilter === 'reservations' && currentUser?.isAdmin && pendingReservationRequests.length === 0 && (
+                      <p className="no-notifications">Aucune demande de réservation en attente</p>
+                    )}
+                    {notificationFilter === 'reservations' && currentUser?.isAdmin && pendingReservationRequests.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title">
                           <CalendarCheck size={18} strokeWidth={2.5} /> 
@@ -595,30 +592,36 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
-                                  {request.vehicle_name || 'Véhicule inconnu'}
+                                  {request.vehicleName || 'Véhicule inconnu'}
                                 </span>
                                 <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
                                   {conflicts.length > 0 ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}` : 'En attente'}
                                 </span>
                               </div>
+                              {/* Demandeur */}
+                              {request.requesterName && (
+                                <div className="notification-requester-line">
+                                  <Users size={13} /> Demandé par <strong>{request.requesterName}</strong>
+                                </div>
+                              )}
                               {/* Période demandée */}
-                              {request.start_date && (
+                              {request.startDate && (
                                 <div className="request-period-info">
                                   <Calendar size={13} className="request-period-icon" />
                                   <span className="request-period-dates">
-                                    {request.start_date === request.end_date 
+                                    {request.startDate === request.endDate 
                                       ? (
                                         <>
-                                          <strong>{format(new Date(request.start_date), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.start_period)}{request.start_period !== request.end_period ? ` → ${periodLabel(request.end_period)}` : ''}</span>
+                                          <strong>{format(new Date(request.startDate), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.startPeriod)}{request.startPeriod !== request.endPeriod ? ` → ${periodLabel(request.endPeriod)}` : ''}</span>
                                         </>
                                       ) : (
                                         <>
-                                          <strong>{format(new Date(request.start_date), 'EEE d MMM', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.start_period)}</span>
+                                          <strong>{format(new Date(request.startDate), 'EEE d MMM', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.startPeriod)}</span>
                                           <span className="request-period-arrow">→</span>
-                                          <strong>{format(new Date(request.end_date), 'EEE d MMM yyyy', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.end_period)}</span>
+                                          <strong>{format(new Date(request.endDate), 'EEE d MMM yyyy', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.endPeriod)}</span>
                                         </>
                                       )
                                     }
@@ -635,8 +638,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                     <div key={ci} className="request-conflict-item">
                                       <span className="conflict-client">{c.clientName || c.prestationName || 'Réservation'}</span>
                                       <span className="conflict-dates">
-                                        {format(new Date(c.date), 'dd/MM')} {c.period}
-                                        {(c.endDate && c.endDate !== c.date) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
+                                        {format(new Date(c.startDate), 'dd/MM')} {c.startPeriod}
+                                        {(c.endDate && c.endDate !== c.startDate) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
                                       </span>
                                     </div>
                                   ))}
@@ -646,16 +649,9 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                 </div>
                               )}
                               <p className="notification-description">
-                                {request.client_name && `Client: ${request.client_name}`}
-                                {request.prestation_name && ` • ${request.prestation_name}`}
+                                {request.clientName && `Client: ${request.clientName}`}
+                                {request.prestationName && ` • ${request.prestationName}`}
                               </p>
-                              <div className="notification-request-details">
-                                {request.requester_name && (
-                                  <span className="notification-requester">
-                                    <Users size={12} /> {request.requester_name}
-                                  </span>
-                                )}
-                              </div>
                               {request.registration && (
                                 <span className="notification-registration">{request.registration}</span>
                               )}
@@ -774,30 +770,36 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
-                                  {request.vehicle_name || 'Véhicule inconnu'}
+                                  {request.vehicleName || 'Véhicule inconnu'}
                                 </span>
                                 <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
                                   {conflicts.length > 0 ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}` : 'En attente'}
                                 </span>
                               </div>
+                              {/* Demandeur */}
+                              {request.requesterName && (
+                                <div className="notification-requester-line">
+                                  <Users size={13} /> Demandé par <strong>{request.requesterName}</strong>
+                                </div>
+                              )}
                               {/* Période demandée */}
-                              {request.start_date && (
+                              {request.startDate && (
                                 <div className="request-period-info">
                                   <Calendar size={13} className="request-period-icon" />
                                   <span className="request-period-dates">
-                                    {request.start_date === request.end_date 
+                                    {request.startDate === request.endDate 
                                       ? (
                                         <>
-                                          <strong>{format(new Date(request.start_date), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.start_period)}{request.start_period !== request.end_period ? ` → ${periodLabel(request.end_period)}` : ''}</span>
+                                          <strong>{format(new Date(request.startDate), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.startPeriod)}{request.startPeriod !== request.endPeriod ? ` → ${periodLabel(request.endPeriod)}` : ''}</span>
                                         </>
                                       ) : (
                                         <>
-                                          <strong>{format(new Date(request.start_date), 'EEE d MMM', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.start_period)}</span>
+                                          <strong>{format(new Date(request.startDate), 'EEE d MMM', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.startPeriod)}</span>
                                           <span className="request-period-arrow">→</span>
-                                          <strong>{format(new Date(request.end_date), 'EEE d MMM yyyy', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.end_period)}</span>
+                                          <strong>{format(new Date(request.endDate), 'EEE d MMM yyyy', { locale: fr })}</strong>
+                                          <span className="request-period-tag">{periodLabel(request.endPeriod)}</span>
                                         </>
                                       )
                                     }
@@ -814,8 +816,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                     <div key={ci} className="request-conflict-item">
                                       <span className="conflict-client">{c.clientName || c.prestationName || 'Réservation'}</span>
                                       <span className="conflict-dates">
-                                        {format(new Date(c.date), 'dd/MM')} {c.period}
-                                        {(c.endDate && c.endDate !== c.date) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
+                                        {format(new Date(c.startDate), 'dd/MM')} {c.startPeriod}
+                                        {(c.endDate && c.endDate !== c.startDate) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
                                       </span>
                                     </div>
                                   ))}
@@ -825,16 +827,9 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                 </div>
                               )}
                               <p className="notification-description">
-                                {request.client_name && `Client: ${request.client_name}`}
-                                {request.prestation_name && ` • ${request.prestation_name}`}
+                                {request.clientName && `Client: ${request.clientName}`}
+                                {request.prestationName && ` • ${request.prestationName}`}
                               </p>
-                              <div className="notification-request-details">
-                                {request.requester_name && (
-                                  <span className="notification-requester">
-                                    <Users size={12} /> {request.requester_name}
-                                  </span>
-                                )}
-                              </div>
                               {request.registration && (
                                 <span className="notification-registration">{request.registration}</span>
                               )}
@@ -1105,29 +1100,27 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     width: '40px',
                     height: '40px',
                     borderRadius: '50%',
-                    background: `linear-gradient(135deg, ${getColorFromName(currentUser.name)} 0%, ${adjustColor(getColorFromName(currentUser.name), -20)} 100%)`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    color: 'white',
                     border: '2px solid rgba(255, 255, 255, 0.3)',
                     boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    padding: 0
+                    padding: 0,
+                    background: 'transparent',
+                    overflow: 'hidden'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.1)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                    e.target.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
                   }}
                 >
-                  {getInitials(currentUser.name)}
+                  <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size={36} />
                 </button>
 
                 {showUserMenu && (
@@ -1159,14 +1152,46 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                       <div style={{
                         padding: '12px 16px',
                         borderBottom: '1px solid #e5e7eb',
-                        background: '#f9fafb'
+                        background: '#f9fafb',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
                       }}>
-                        <div style={{ fontWeight: 600, color: '#1f2937' }}>{currentUser.name}</div>
-                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
-                          {currentUser.isAdmin ? 'Administrateur' : 'Utilisateur'}
+                        <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size={40} />
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#1f2937' }}>{currentUser.name}</div>
+                          <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                            {currentUser.isAdmin ? 'Administrateur' : 'Utilisateur'}
+                          </div>
                         </div>
                       </div>
                       
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          setShowProfileModal(true);
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: 'none',
+                          background: 'white',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          color: '#374151',
+                          transition: 'background 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                      >
+                        <UserCog size={16} />
+                        Mon profil
+                      </button>
+
                       <button
                         onClick={() => {
                           setShowUserMenu(false);
@@ -1291,6 +1316,17 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         onMarkNotCompleted={handleMarkNotCompleted}
         onMarkPending={handleMarkPending}
         onReschedule={handleReschedule}
+      />
+    )}
+
+    {showProfileModal && (
+      <ProfileEditModal
+        currentUser={currentUser}
+        onClose={() => setShowProfileModal(false)}
+        onUserUpdate={(updatedUser) => {
+          if (onUserUpdate) onUserUpdate(updatedUser);
+          setShowProfileModal(false);
+        }}
       />
     )}
   </>

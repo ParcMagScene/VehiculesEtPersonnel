@@ -162,7 +162,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
               <option value="">Sélectionner un véhicule</option>
               {vehicles.map(vehicle => (
                 <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.name} - {vehicle.immatriculation}
+                  {vehicle.name} - {vehicle.registration || vehicle.immatriculation}
                 </option>
               ))}
             </select>

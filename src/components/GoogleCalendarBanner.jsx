@@ -1250,6 +1250,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       onRequestCreateReservation={handleCreateReservationFromEvent}
       onEventCreated={handleOpenAffaireImport}
       onEventUpdated={handleEventUpdated}
+      currentUser={currentUser}
     />
     
     {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}

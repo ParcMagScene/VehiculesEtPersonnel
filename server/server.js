@@ -23,6 +23,11 @@ app.use(express.json());
 const attachmentsPath = path.join(__dirname, '..', 'public', 'attachments');
 app.use('/attachments', express.static(attachmentsPath));
 
+// Servir les avatars
+const avatarsPath = path.join(__dirname, '..', 'public', 'avatars');
+if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
+app.use('/avatars', express.static(avatarsPath));
+
 // Middleware d'authentification
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -156,7 +161,7 @@ app.post('/api/auth/login', async (req, res) => {
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
     
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -208,7 +213,7 @@ app.post('/api/auth/force-login', async (req, res) => {
     
     res.json({ 
       token, 
-      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null },
       message: 'Toutes les autres sessions ont été fermées'
     });
   } catch (error) {
@@ -239,13 +244,14 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 // Liste des utilisateurs (pour le sélecteur de connexion)
 app.get('/api/auth/users', (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, email, name, is_admin FROM users ORDER BY name');
+    const stmt = db.prepare('SELECT id, email, name, is_admin, avatar FROM users ORDER BY name');
     const users = stmt.all();
     res.json(users.map(u => ({
       id: u.id,
       email: u.email,
       name: u.name,
-      isAdmin: u.is_admin === 1
+      isAdmin: u.is_admin === 1,
+      avatar: u.avatar || null
     })));
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -455,6 +461,10 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
 
 app.post('/api/reservations', authenticateToken, (req, res) => {
   try {
+    // Seuls les admins peuvent créer directement des réservations
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Seuls les administrateurs peuvent créer des réservations directement. Utilisez les demandes de réservation.' });
+    }
     const reservation = req.body;
     
     // Générer un ID côté serveur si non fourni ou invalide
@@ -537,6 +547,10 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
 
 app.put('/api/reservations/:id', authenticateToken, (req, res) => {
   try {
+    // Seuls les admins peuvent modifier des réservations
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Seuls les administrateurs peuvent modifier des réservations.' });
+    }
     const reservation = req.body;
     const stmt = db.prepare(`
       UPDATE reservations 
@@ -576,6 +590,10 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
 
 app.delete('/api/reservations/:id', authenticateToken, (req, res) => {
   try {
+    // Seuls les admins peuvent supprimer des réservations
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Seuls les administrateurs peuvent supprimer des réservations.' });
+    }
     console.log('🗑️ DELETE /api/reservations/:id - ID:', req.params.id);
     const stmt = db.prepare('DELETE FROM reservations WHERE id = ?');
     const result = stmt.run(req.params.id);
@@ -1300,7 +1318,7 @@ app.delete('/api/authorized-emails/:id', authenticateToken, requireAdmin, (req, 
 // Récupérer les noms des utilisateurs (tous les utilisateurs authentifiés)
 app.get('/api/users/names', authenticateToken, (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, name, email FROM users ORDER BY name');
+    const stmt = db.prepare('SELECT id, name, email, avatar FROM users ORDER BY name');
     const users = stmt.all();
     res.json(users);
   } catch (error) {
@@ -1312,7 +1330,7 @@ app.get('/api/users/names', authenticateToken, (req, res) => {
 // Récupérer tous les utilisateurs (admin uniquement)
 app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, email, name, is_admin, created_at FROM users ORDER BY created_at DESC');
+    const stmt = db.prepare('SELECT id, email, name, is_admin, avatar, created_at FROM users ORDER BY created_at DESC');
     const users = stmt.all();
     res.json(users.map(u => ({
       ...u,
@@ -1464,7 +1482,7 @@ app.post('/api/auth/set-new-password', async (req, res) => {
     res.json({ 
       success: true,
       token,
-      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null },
       message: 'Mot de passe défini avec succès'
     });
   } catch (error) {
@@ -1542,6 +1560,150 @@ setupDriversRoutes(app, authenticateToken);
 setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
 setupConfigRoutes(app, authenticateToken, requireAdmin);
+
+// ============ PROFIL UTILISATEUR ============
+
+// Multer pour upload d'avatars
+const avatarStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = path.join(__dirname, '..', 'public', 'avatars');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || '.jpg';
+    // Utiliser targetUserId si défini (admin edit), sinon user.id
+    const userId = req.params.id || req.user.id;
+    cb(null, `avatar-${userId}${ext}`);
+  }
+});
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont acceptées'));
+    }
+  }
+});
+
+// Mettre à jour son propre profil (nom)
+app.patch('/api/users/me', authenticateToken, (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Le nom est requis' });
+    }
+    db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), req.user.id);
+    const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(req.user.id);
+    const user = { id: updated.id, email: updated.email, name: updated.name, isAdmin: updated.is_admin === 1, avatar: updated.avatar || null };
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Erreur mise à jour profil:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Upload d'avatar
+app.post('/api/users/me/avatar', authenticateToken, uploadAvatar.single('avatar'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier envoyé' });
+    }
+    const avatarUrl = `/avatars/${req.file.filename}`;
+    db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatarUrl, req.user.id);
+    const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(req.user.id);
+    const user = { id: updated.id, email: updated.email, name: updated.name, isAdmin: updated.is_admin === 1, avatar: updated.avatar || null };
+    console.log(`\uD83D\uDCF7 Avatar mis à jour pour ${updated.name}: ${avatarUrl}`);
+    res.json({ success: true, user, avatarUrl });
+  } catch (error) {
+    console.error('Erreur upload avatar:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer son avatar
+app.delete('/api/users/me/avatar', authenticateToken, (req, res) => {
+  try {
+    const user = db.prepare('SELECT avatar FROM users WHERE id = ?').get(req.user.id);
+    if (user?.avatar) {
+      const filePath = path.join(__dirname, '..', 'public', user.avatar);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+    db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(req.user.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur suppression avatar:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ============ ADMIN: MODIFIER LE PROFIL D'UN UTILISATEUR ============
+
+// Mettre à jour le nom d'un utilisateur (admin)
+app.patch('/api/users/:id/profile', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Le nom est requis' });
+    }
+    const existing = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+    if (!existing) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+    db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), id);
+    const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(id);
+    const user = { id: updated.id, email: updated.email, name: updated.name, isAdmin: updated.is_admin === 1, avatar: updated.avatar || null };
+    console.log(`✏️ Admin ${req.user.id} a modifié le nom de user ${id} → ${name.trim()}`);
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Erreur mise à jour profil utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Upload d'avatar pour un utilisateur (admin)
+app.post('/api/users/:id/avatar', authenticateToken, requireAdmin, uploadAvatar.single('avatar'), (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ error: 'Aucun fichier envoyé' });
+
+    const existing = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+    if (!existing) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+    const avatarUrl = `/avatars/${req.file.filename}`;
+    db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatarUrl, id);
+    const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(id);
+    const user = { id: updated.id, email: updated.email, name: updated.name, isAdmin: updated.is_admin === 1, avatar: updated.avatar || null };
+    console.log(`📷 Admin ${req.user.id} a modifié l'avatar de user ${id}: ${avatarUrl}`);
+    res.json({ success: true, user, avatarUrl });
+  } catch (error) {
+    console.error('Erreur upload avatar utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer l'avatar d'un utilisateur (admin)
+app.delete('/api/users/:id/avatar', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const target = db.prepare('SELECT avatar FROM users WHERE id = ?').get(id);
+    if (!target) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+    if (target.avatar) {
+      const filePath = path.join(__dirname, '..', 'public', target.avatar);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+    db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(id);
+    console.log(`🗑️ Admin ${req.user.id} a supprimé l'avatar de user ${id}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur suppression avatar utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
 
 // Endpoint pour créer un dossier
 app.post('/api/create-folder', (req, res) => {

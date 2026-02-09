@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, User } from 'lucide-react';
 import api, { getApiUrl } from '../utils/api';
 import AccessRequestModal from './AccessRequestModal';
+import UserAvatar from './UserAvatar';
 import './LoginForm.css';
 
 const LoginForm = ({ onLogin }) => {
@@ -200,22 +201,7 @@ const LoginForm = ({ onLogin }) => {
               >
                 {selectedUser ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div 
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        background: getAvatarColor(selectedUser.name),
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      {getInitials(selectedUser.name)}
-                    </div>
+                    <UserAvatar name={selectedUser.name} avatar={selectedUser.avatar} size={40} gradient={false} />
                     <div>
                       <div style={{ fontWeight: '500', color: '#111827' }}>{selectedUser.name}</div>
                       <div style={{ fontSize: '13px', color: '#6b7280' }}>{selectedUser.email}</div>
@@ -263,23 +249,7 @@ const LoginForm = ({ onLogin }) => {
                         onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                         onMouseLeave={(e) => e.target.style.background = 'white'}
                       >
-                        <div 
-                          style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: getAvatarColor(user.name),
-                            color: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            flexShrink: 0
-                          }}
-                        >
-                          {getInitials(user.name)}
-                        </div>
+                        <UserAvatar name={user.name} avatar={user.avatar} size={40} gradient={false} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: '500', color: '#111827' }}>{user.name}</div>
                           <div style={{ fontSize: '13px', color: '#6b7280' }}>{user.email}</div>

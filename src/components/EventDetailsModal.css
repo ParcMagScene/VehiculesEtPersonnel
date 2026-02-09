@@ -646,12 +646,42 @@ section h3 {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  position: relative;
 }
 
 .folder-file-card:hover {
   border-color: #667eea;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
   transform: translateY(-2px);
+}
+
+.folder-file-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: all 0.2s;
+  opacity: 0;
+  padding: 0;
+}
+
+.folder-file-card:hover .folder-file-delete {
+  opacity: 1;
+}
+
+.folder-file-delete:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #ef4444;
 }
 
 .file-icon {

@@ -511,6 +511,174 @@ class ApiClient {
   async getUsersNames() {
     return this.request('/users/names');
   }
+
+  // ============ MODULE PLANNING PERSONNEL — MagLog 1.0 ============
+
+  // — Personnes —
+
+  async getPersons() {
+    return this.request('/persons');
+  }
+
+  async getPerson(id) {
+    return this.request(`/persons/${id}`);
+  }
+
+  async createPerson(person) {
+    return this.request('/persons', {
+      method: 'POST',
+      body: JSON.stringify(person),
+    });
+  }
+
+  async updatePerson(id, person) {
+    return this.request(`/persons/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(person),
+    });
+  }
+
+  async deletePerson(id) {
+    return this.request(`/persons/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // — Compétences —
+
+  async getSkills() {
+    return this.request('/skills');
+  }
+
+  async createSkill(skill) {
+    return this.request('/skills', {
+      method: 'POST',
+      body: JSON.stringify(skill),
+    });
+  }
+
+  async updateSkill(id, skill) {
+    return this.request(`/skills/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(skill),
+    });
+  }
+
+  async deleteSkill(id) {
+    return this.request(`/skills/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // — Disponibilités —
+
+  async getAvailabilities(params = {}) {
+    const query = new URLSearchParams();
+    if (params.personId) query.set('person_id', params.personId);
+    if (params.startDate) query.set('start_date', params.startDate);
+    if (params.endDate) query.set('end_date', params.endDate);
+    const qs = query.toString();
+    return this.request(`/availabilities${qs ? '?' + qs : ''}`);
+  }
+
+  async createAvailability(availability) {
+    return this.request('/availabilities', {
+      method: 'POST',
+      body: JSON.stringify(availability),
+    });
+  }
+
+  async updateAvailability(id, availability) {
+    return this.request(`/availabilities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(availability),
+    });
+  }
+
+  async deleteAvailability(id) {
+    return this.request(`/availabilities/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // — Missions —
+
+  async getMissions(params = {}) {
+    const query = new URLSearchParams();
+    if (params.startDate) query.set('start_date', params.startDate);
+    if (params.endDate) query.set('end_date', params.endDate);
+    if (params.status) query.set('status', params.status);
+    if (params.reservationId) query.set('reservation_id', params.reservationId);
+    const qs = query.toString();
+    return this.request(`/missions${qs ? '?' + qs : ''}`);
+  }
+
+  async getMission(id) {
+    return this.request(`/missions/${id}`);
+  }
+
+  async createMission(mission) {
+    return this.request('/missions', {
+      method: 'POST',
+      body: JSON.stringify(mission),
+    });
+  }
+
+  async updateMission(id, mission) {
+    return this.request(`/missions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(mission),
+    });
+  }
+
+  async deleteMission(id) {
+    return this.request(`/missions/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // — Affectations —
+
+  async getAssignments(params = {}) {
+    const query = new URLSearchParams();
+    if (params.personId) query.set('person_id', params.personId);
+    if (params.missionId) query.set('mission_id', params.missionId);
+    if (params.status) query.set('status', params.status);
+    const qs = query.toString();
+    return this.request(`/assignments${qs ? '?' + qs : ''}`);
+  }
+
+  async createAssignment(assignment) {
+    return this.request('/assignments', {
+      method: 'POST',
+      body: JSON.stringify(assignment),
+    });
+  }
+
+  async updateAssignment(id, assignment) {
+    return this.request(`/assignments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(assignment),
+    });
+  }
+
+  async deleteAssignment(id) {
+    return this.request(`/assignments/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // — Planning global —
+
+  async getPersonnelPlanning(params = {}) {
+    const query = new URLSearchParams();
+    if (params.startDate) query.set('start_date', params.startDate);
+    if (params.endDate) query.set('end_date', params.endDate);
+    if (params.personId) query.set('person_id', params.personId);
+    if (params.skillId) query.set('skill_id', params.skillId);
+    const qs = query.toString();
+    return this.request(`/personnel/planning${qs ? '?' + qs : ''}`);
+  }
 }
 
 export const api = new ApiClient();

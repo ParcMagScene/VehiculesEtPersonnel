@@ -40,27 +40,29 @@
 
 .calendar-headers-scroll-area {
   flex: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
+  overflow-x: hidden;
+  overflow-y: auto;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  overscroll-behavior: contain;
+  pointer-events: none;
+}
+
+.calendar-headers-scroll-area > * {
+  pointer-events: auto;
 }
 
 .calendar-headers-scroll-area::-webkit-scrollbar {
-  height: 8px;
+  width: 8px;
 }
 
 .calendar-headers-scroll-area::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 .calendar-headers-scroll-area::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.calendar-headers-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: transparent;
 }
 
 .calendar-grid-headers {
@@ -90,6 +92,7 @@
   display: flex;
   flex-direction: column;
   scrollbar-width: none;
+  overscroll-behavior: contain;
 }
 
 .vehicle-column::-webkit-scrollbar {
@@ -217,6 +220,8 @@
   position: relative;
   min-height: 0;
   scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
 }
 
 .calendar-scroll-area::-webkit-scrollbar {
@@ -250,7 +255,7 @@
 }
 
 .month-view {
-  grid-template-columns: repeat(62, minmax(60px, 1fr));
+  grid-template-columns: repeat(62, minmax(55px, 1fr));
 }
 
 .year-view {
@@ -979,17 +984,7 @@
 }
 
 /* Responsive */
-@media (max-width: 1400px) {
-  .week-view {
-    grid-template-columns: 180px repeat(14, minmax(80px, 1fr));
-  }
-}
-
 @media (max-width: 1200px) {
-  .week-view {
-    grid-template-columns: 150px repeat(14, minmax(60px, 1fr));
-  }
-  
   .vehicle-cell {
     padding: 0.75rem;
   }

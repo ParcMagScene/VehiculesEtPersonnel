@@ -227,11 +227,8 @@ const ReservationModal = ({
   useEffect(() => {
     const loadAttachmentsIndex = async () => {
       try {
-        const response = await fetch('/api/attachments-index');
-        if (response.ok) {
-          const data = await response.json();
-          setAffairesWithAttachments(data.affaires || []);
-        }
+        const data = await api.getAttachmentsIndex();
+        setAffairesWithAttachments(data.affaires || []);
       } catch (e) {
         // silencieux
       }

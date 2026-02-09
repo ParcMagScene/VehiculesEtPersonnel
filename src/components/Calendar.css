@@ -41,6 +41,7 @@
 .calendar-headers-scroll-area {
   flex: 1;
   overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 .calendar-grid-headers {
@@ -70,6 +71,7 @@
   display: flex;
   flex-direction: column;
   scrollbar-width: none;
+  overscroll-behavior: contain;
 }
 
 .vehicle-column::-webkit-scrollbar {
@@ -198,6 +200,7 @@
   min-height: 0;
   scrollbar-width: thin;
   scrollbar-gutter: stable;
+  overscroll-behavior: contain;
 }
 
 .calendar-scroll-area::-webkit-scrollbar {

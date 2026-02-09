@@ -5,8 +5,16 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Chemin de la base de données — configurable via DB_PATH
+const DB_FILENAME = process.env.DB_PATH || 'vehicules.db';
+const dbPath = join(__dirname, DB_FILENAME);
+
 // Créer/ouvrir la base de données
-const db = new Database(join(__dirname, 'vehicules.db'));
+const db = new Database(dbPath);
+
+// Log du fichier DB utilisé (utile pour vérifier l'isolation dev/prod)
+const mode = process.env.NODE_ENV || 'production';
+console.log(`📂 Base de données: ${DB_FILENAME} (mode: ${mode})`);
 
 // Activer les clés étrangères
 db.pragma('foreign_keys = ON');

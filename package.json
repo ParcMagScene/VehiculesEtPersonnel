@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd server && NODE_ENV=development node server.js --dev",
+    "dev:start": "bash scripts/dev-start.sh",
+    "dev:reset-db": "bash scripts/dev-reset-db.sh",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "bash scripts/safe-deploy.sh",

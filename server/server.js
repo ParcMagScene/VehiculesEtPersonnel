@@ -28,6 +28,8 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://magsav.duckdns.o
   .split(',')
   .map(s => s.trim());
 
+console.log('🌐 Origines CORS autorisées:', allowedOrigins);
+
 app.use(cors({
   origin: function(origin, callback) {
     // Permettre les requêtes sans origin (curl, mobile, etc.)
@@ -35,6 +37,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+    console.error(`❌ CORS bloqué pour origin: "${origin}" — Autorisées: ${allowedOrigins.join(', ')}`);
     return callback(new Error('CORS non autorisé'), false);
   },
   credentials: true

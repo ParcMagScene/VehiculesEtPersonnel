@@ -71,21 +71,26 @@ const getAssignmentStatusInfo = (status) => {
 // Composant principal
 // ═══════════════════════════════════════
 
-const PersonnelPanel = ({ currentUser }) => {
-  const [subTab, setSubTab] = useState('persons');
+const PersonnelPanel = ({ currentUser, mode = 'standalone' }) => {
+  const [subTab, setSubTab] = useState(mode === 'planning' ? 'planning' : 'persons');
   const [persons, setPersons] = useState([]);
   const [skills, setSkills] = useState([]);
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Sous-onglets
-  const subTabs = [
+  // Sous-onglets (filtrés selon le mode)
+  const allSubTabs = [
     { id: 'persons', label: 'Personnel', icon: Users, color: '#3b82f6' },
     { id: 'skills', label: 'Compétences', icon: Award, color: '#8b5cf6' },
     { id: 'missions', label: 'Missions', icon: Briefcase, color: '#f97316' },
     { id: 'planning', label: 'Planning', icon: CalendarDays, color: '#10b981' },
   ];
+  const subTabs = mode === 'management'
+    ? allSubTabs.filter(t => t.id !== 'planning')
+    : mode === 'planning'
+      ? []
+      : allSubTabs;
 
   // Chargement initial
   const loadData = useCallback(async () => {
@@ -123,6 +128,21 @@ const PersonnelPanel = ({ currentUser }) => {
     );
   }
 
+  // Mode planning = vue principale pleine page
+  if (mode === 'planning') {
+    return (
+      <div className="personnel-panel personnel-panel--main">
+        {error && (
+          <div className="personnel-error">
+            <AlertTriangle size={16} /> {error}
+            <button onClick={loadData}>Réessayer</button>
+          </div>
+        )}
+        <PlanningTab persons={persons} missions={missions} skills={skills} />
+      </div>
+    );
+  }
+
   return (
     <div className="personnel-panel">
       {error && (
@@ -133,6 +153,7 @@ const PersonnelPanel = ({ currentUser }) => {
       )}
 
       {/* Sous-onglets */}
+      {subTabs.length > 0 && (
       <div className="personnel-subtabs">
         {subTabs.map(tab => (
           <button
@@ -146,6 +167,7 @@ const PersonnelPanel = ({ currentUser }) => {
           </button>
         ))}
       </div>
+      )}
 
       {/* Contenu */}
       <div className="personnel-content">
@@ -1036,7 +1058,7 @@ const PlanningTab = ({ persons, missions, skills }) => {
     });
   };
 
-  const activePersons = persons.filter(p => p.status === 'active');
+  const activePersons = persons.filter(p => p.isActive !== false);
 
   return (
     <div className="personnel-tab-content">

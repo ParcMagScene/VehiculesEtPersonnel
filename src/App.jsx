@@ -19,6 +19,7 @@ import './App.css';
 const ManagementPanel = lazy(() => import('./components/ManagementPanel'));
 const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
 const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenanceModal'));
+const PersonnelPanel = lazy(() => import('./components/PersonnelPanel'));
 
 // Fonction utilitaire pour formater une date en YYYY-MM-DD
 const formatDateToString = (date) => {
@@ -53,6 +54,9 @@ function App() {
   const [users, setUsers] = useState([]);
   const [calendarConfig, setCalendarConfig] = useState({ apiKey: '', calendarId: '' });
   const [showManagement, setShowManagement] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeModule, setActiveModule] = useState('vehicles');
+  const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [googleEvents, setGoogleEvents] = useState([]);
@@ -604,6 +608,9 @@ function App() {
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
         onOpenManagement={() => setShowManagement(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        activeModule={activeModule}
+        setActiveModule={setActiveModule}
         maintenances={maintenances}
         vehicles={vehicles}
         reservations={reservations}
@@ -641,55 +648,71 @@ function App() {
         onRequestViewEvent={(fn) => { openEventDetailsModalRef.current = fn; }}
       />
 
-      {view === 'planning' ? (
-        <PlanningView
-          vehicles={vehicles}
-          reservations={reservations}
-          maintenances={maintenances}
-          currentDate={currentDate}
-          onOpenReservation={(reservation) => {
-            const vehicle = vehicles.find(v => v.id === reservation.vehicleId);
-            if (vehicle) {
-              // TODO: Ouvrir modal de réservation si besoin
-              logger.log('Open reservation', reservation);
-            }
-          }}
-          onOpenMaintenance={setSelectedVehicleForMaintenance}
-          clients={clients}
-          drivers={drivers}
-        />
+      {activeModule === 'vehicles' ? (
+        <>
+          {view === 'planning' ? (
+            <PlanningView
+              vehicles={vehicles}
+              reservations={reservations}
+              maintenances={maintenances}
+              currentDate={currentDate}
+              onOpenReservation={(reservation) => {
+                const vehicle = vehicles.find(v => v.id === reservation.vehicleId);
+                if (vehicle) {
+                  logger.log('Open reservation', reservation);
+                }
+              }}
+              onOpenMaintenance={setSelectedVehicleForMaintenance}
+              clients={clients}
+              drivers={drivers}
+            />
+          ) : (
+            <Calendar
+              view={view}
+              setView={setView}
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              vehicles={vehicles}
+              reservations={reservations}
+              maintenances={maintenances}
+              onAddReservation={addReservation}
+              onUpdateReservation={updateReservation}
+              onUpdateMaintenance={updateMaintenanceFromResize}
+              onScroll={handleCalendarScroll}
+              onDeleteReservation={deleteReservation}
+              clients={clients}
+              drivers={drivers}
+              locations={locations}
+              users={users}
+              googleEvent={googleEventForReservation}
+              onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
+              googleEvents={googleEvents}
+              highlightedReservationIds={highlightedReservationIds}
+              reservationToEdit={reservationToEdit}
+              onReservationEditComplete={() => setReservationToEdit(null)}
+              onVehicleClick={setSelectedVehicleForDetails}
+              onMaintenanceClick={(vehicle, maintenanceId) => {
+                setSelectedVehicleForMaintenance(vehicle);
+                setMaintenanceToEdit(maintenanceId);
+              }}
+              onRequestViewEvent={(event) => openEventDetailsModalRef.current?.(event)}
+              currentUser={currentUser}
+            />
+          )}
+        </>
       ) : (
-        <Calendar
-          view={view}
-          setView={setView}
-          currentDate={currentDate}
-          setCurrentDate={setCurrentDate}
-          vehicles={vehicles}
-          reservations={reservations}
-          maintenances={maintenances}
-          onAddReservation={addReservation}
-          onUpdateReservation={updateReservation}
-          onUpdateMaintenance={updateMaintenanceFromResize}
-          onScroll={handleCalendarScroll}
-          onDeleteReservation={deleteReservation}
-          clients={clients}
-          drivers={drivers}
-          locations={locations}
-          users={users}
-          googleEvent={googleEventForReservation}
-          onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
-          googleEvents={googleEvents}
-          highlightedReservationIds={highlightedReservationIds}
-          reservationToEdit={reservationToEdit}
-          onReservationEditComplete={() => setReservationToEdit(null)}
-          onVehicleClick={setSelectedVehicleForDetails}
-          onMaintenanceClick={(vehicle, maintenanceId) => {
-            setSelectedVehicleForMaintenance(vehicle);
-            setMaintenanceToEdit(maintenanceId);
-          }}
-          onRequestViewEvent={(event) => openEventDetailsModalRef.current?.(event)}
-          currentUser={currentUser}
-        />
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement du module personnel...</p>
+          </div>
+        }>
+          <PersonnelPanel
+            key={personnelRefreshKey}
+            currentUser={currentUser}
+            mode="planning"
+          />
+        </Suspense>
       )}
 
       {showManagement && (
@@ -717,7 +740,45 @@ function App() {
             maintenances={maintenances}
             setMaintenances={setMaintenances}
             currentUser={currentUser}
-            onClose={() => setShowManagement(false)}
+            activeModule={activeModule}
+            panelType="management"
+            onClose={() => {
+              setShowManagement(false);
+              if (activeModule === 'personnel') {
+                setPersonnelRefreshKey(k => k + 1);
+              }
+            }}
+          />
+        </Suspense>
+      )}
+
+      {showSettings && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement des paramètres...</p>
+          </div>
+        }>
+          <ManagementPanel
+            vehicles={vehicles}
+            setVehicles={setVehicles}
+            reservations={reservations}
+            setReservations={setReservations}
+            clients={clients}
+            setClients={setClients}
+            drivers={drivers}
+            setDrivers={setDrivers}
+            locations={locations}
+            setLocations={setLocations}
+            calendarConfig={calendarConfig}
+            setCalendarConfig={setCalendarConfig}
+            garages={garages}
+            setGarages={setGarages}
+            maintenances={maintenances}
+            setMaintenances={setMaintenances}
+            currentUser={currentUser}
+            panelType="settings"
+            onClose={() => setShowSettings(false)}
           />
         </Suspense>
       )}

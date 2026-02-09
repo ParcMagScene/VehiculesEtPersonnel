@@ -35,8 +35,13 @@ const ManagementPanel = ({
   setMaintenances,
   currentUser,
   onClose,
+  activeModule = 'vehicles',
+  panelType = 'management',
 }) => {
-  const [activeTab, setActiveTab] = useState('vehicles');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (panelType === 'settings') return 'account';
+    return 'vehicles';
+  });
   const [pendingAccessCount, setPendingAccessCount] = useState(0);
   const [editingItem, setEditingItem] = useState(null);
   const [newItem, setNewItem] = useState({ 
@@ -171,19 +176,21 @@ const ManagementPanel = ({
 
   // Les lieux utilisent maintenant LocationDialog avec PlaceAutocompleteElement
 
-  const tabs = [
-    { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
-    { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
-    { id: 'drivers', label: 'Conducteurs', icon: Users, color: '#06b6d4' },
-    { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
-    { id: 'personnel', label: 'Personnel', icon: UserCog, color: '#f97316' },
+  const tabs = panelType === 'settings' ? [
     { id: 'account', label: 'Mon compte', icon: Lock, color: '#6b7280' },
     ...(currentUser?.isAdmin ? [
-      { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
       { id: 'users', label: 'Utilisateurs', icon: Shield, color: '#ef4444' },
       { id: 'sync', label: 'Import/Export', icon: Cloud, color: '#ec4899' },
       { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
       { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
+    ] : []),
+  ] : [
+    { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
+    { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
+    { id: 'drivers', label: 'Conducteurs', icon: Users, color: '#06b6d4' },
+    { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
+    ...(currentUser?.isAdmin ? [
+      { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
     ] : []),
   ];
 
@@ -675,11 +682,31 @@ const ManagementPanel = ({
     '#1f2937', '#111827', '#000000', '#e5e7eb', '#f3f4f6',
   ];
 
+  const panelTitle = panelType === 'settings' ? 'Paramètres' :
+    activeModule === 'personnel' ? 'Gestion Personnel' : 'Gestion Véhicules';
+
+  // Si gestion personnel, déléguer entièrement à PersonnelPanel
+  if (panelType === 'management' && activeModule === 'personnel') {
+    return (
+      <div className="management-overlay" onClick={onClose}>
+        <div className="management-panel" onClick={(e) => e.stopPropagation()}>
+          <div className="management-header">
+            <h2>{panelTitle}</h2>
+            <button className="close-button" onClick={onClose}>
+              <X size={24} />
+            </button>
+          </div>
+          <PersonnelPanel currentUser={currentUser} mode="management" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="management-overlay" onClick={onClose}>
       <div className="management-panel" onClick={(e) => e.stopPropagation()}>
         <div className="management-header">
-          <h2>Gestion des données</h2>
+          <h2>{panelTitle}</h2>
           <button className="close-button" onClick={onClose}>
             <X size={24} />
           </button>
@@ -711,7 +738,7 @@ const ManagementPanel = ({
 
         <div className="management-content">
           {/* Formulaire d'ajout */}
-          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && activeTab !== 'personnel' && (
+          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
             <div className="add-section">
               <div className="add-section-header">
                 <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : 'un lieu'}</h3>
@@ -901,11 +928,6 @@ const ManagementPanel = ({
             <MobileAccess />
           )}
 
-          {/* Planning Personnel */}
-          {activeTab === 'personnel' && (
-            <PersonnelPanel currentUser={currentUser} />
-          )}
-
           {/* Demandes de réservation (Admin uniquement) */}
           {activeTab === 'requests' && currentUser?.isAdmin && (
             <ReservationRequestsPanel 
@@ -920,7 +942,7 @@ const ManagementPanel = ({
           )}
 
           {/* Liste des éléments */}
-          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && activeTab !== 'personnel' && (
+          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
           <div className="items-section">
             {activeTab === 'vehicles' ? (
               <>

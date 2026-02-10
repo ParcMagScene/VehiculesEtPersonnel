@@ -258,66 +258,31 @@ section h3 {
   color: #4f46e5;
 }
 
-/* Drive link inline edit */
-.drive-link-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  flex-wrap: wrap;
-}
-
-.drive-link-edit-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: #667eea;
-  background: none;
-  border: 1px dashed #c7d2fe;
-  border-radius: 4px;
-  padding: 2px 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.drive-link-edit-btn:hover {
-  background: #eef2ff;
-  border-color: #667eea;
-}
-
-.drive-link-edit {
-  margin-top: 4px;
-  width: 100%;
-}
-
-.drive-link-input-row {
+/* Drive link inline edit in section-actions */
+.drive-link-edit-inline {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f8fafc;
+}
+
+.drive-link-edit-inline .drive-link-input {
   border: 1px solid #c7d2fe;
+  background: white;
   border-radius: 6px;
-  padding: 4px 6px;
-}
-
-.drive-link-input-icon {
-  color: #94a3b8;
-  flex-shrink: 0;
-}
-
-.drive-link-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 12px;
+  padding: 6px 10px;
+  font-size: 13px;
   color: #334155;
   outline: none;
-  min-width: 0;
-  padding: 2px 4px;
+  min-width: 200px;
+  width: 260px;
 }
 
-.drive-link-input::placeholder {
+.drive-link-edit-inline .drive-link-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.drive-link-edit-inline .drive-link-input::placeholder {
   color: #94a3b8;
 }
 
@@ -325,10 +290,10 @@ section h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
@@ -467,11 +432,13 @@ section h3 {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .btn-import-bl,
 .btn-add-reservation,
-.btn-open-folder {
+.btn-open-folder,
+.btn-drive-link {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -521,6 +488,17 @@ section h3 {
   background: #e5e7eb;
   color: #9ca3af;
   cursor: not-allowed;
+}
+
+.btn-drive-link {
+  background: #8b5cf6;
+  color: white;
+}
+
+.btn-drive-link:hover {
+  background: #7c3aed;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 /* Footer */

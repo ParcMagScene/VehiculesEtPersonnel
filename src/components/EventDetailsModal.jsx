@@ -177,8 +177,14 @@ function EventDetailsModal({
           r.id === reservationId ? { ...r, googleDriveLink: editingDriveLink.value } : r
         ));
         setEditingDriveLink(null);
+        // Propager la mise à jour au parent si callback disponible
+        if (onEventUpdated) {
+          onEventUpdated();
+        }
       } else {
-        alert('Erreur lors de la sauvegarde du lien');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Erreur PATCH lien Drive:', response.status, errorData);
+        alert(`Erreur lors de la sauvegarde du lien: ${errorData.error || response.statusText || 'Erreur inconnue'}`);
       }
     } catch (error) {
       console.error('Erreur sauvegarde lien Drive:', error);
@@ -290,7 +296,7 @@ function EventDetailsModal({
                 {linkedReservations.map((reservation) => (
                   <div key={reservation.id} className="reservation-card">
                     <div className="reservation-info">
-                      <div className="reservation-vehicle">{reservation.vehicleName || reservation.vehicleId}</div>
+                      <div className="reservation-vehicle">{reservation.vehicleName || reservation.prestationName || reservation.clientName || reservation.vehicleId}</div>
                       <div className="reservation-details">
                         <span>{reservation.clientName}</span>
                         {reservation.driverName && <span> • {reservation.driverName}</span>}

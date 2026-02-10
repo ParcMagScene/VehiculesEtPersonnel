@@ -109,6 +109,7 @@ const ReservationModal = ({
   
   // Index des affaires ayant des pièces jointes
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
+  const [attachmentCounts, setAttachmentCounts] = useState({});
   
   // État pour LocationDialog
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
@@ -229,6 +230,7 @@ const ReservationModal = ({
       try {
         const data = await api.getAttachmentsIndex();
         setAffairesWithAttachments(data.affaires || []);
+        setAttachmentCounts(data.counts || {});
       } catch (e) {
         // silencieux
       }
@@ -1507,7 +1509,10 @@ const ReservationModal = ({
                             display: 'flex', alignItems: 'center', gap: '0.25rem'
                           }}>
                             {affairesWithAttachments.includes(event.affaire) && (
-                              <Paperclip size={11} style={{ opacity: 0.7 }} />
+                              <Paperclip size={11} style={{ opacity: 0.7 }} title={`${attachmentCounts[event.affaire] || ''} pièce(s) jointe(s)`} />
+                            )}
+                            {affairesWithAttachments.includes(event.affaire) && attachmentCounts[event.affaire] && (
+                              <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>{attachmentCounts[event.affaire]}</span>
                             )}
                             {event.affaire}
                           </span>

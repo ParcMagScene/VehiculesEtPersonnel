@@ -202,8 +202,8 @@ const UserManagement = ({ onAccessRequestChange }) => {
                 {users.map((user) => (
                   <tr key={user.id}>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <UserAvatar name={user.name} avatar={user.avatar} size={32} />
+                      <div className="user-name-cell">
+                        <UserAvatar name={user.name} avatar={user.avatar} size={22} />
                         <span>{user.name}</span>
                       </div>
                     </td>

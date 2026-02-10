@@ -118,6 +118,7 @@ function initializeDatabase() {
       prestation_name TEXT,
       notes TEXT,
       google_event_id TEXT,
+      google_drive_link TEXT,
       affaire TEXT,
       is_tournee BOOLEAN DEFAULT 0,
       linked_event_ids TEXT,
@@ -556,6 +557,18 @@ function initializeDatabase() {
     }
   } catch (error) {
     console.log('Info: Colonne avatar déjà présente');
+  }
+
+  // Migration: ajouter google_drive_link dans reservations
+  try {
+    const resColumns = db.prepare("PRAGMA table_info(reservations)").all();
+    const hasDriveLink = resColumns.some(col => col.name === 'google_drive_link');
+    if (!hasDriveLink) {
+      db.prepare("ALTER TABLE reservations ADD COLUMN google_drive_link TEXT").run();
+      console.log('✅ Colonne google_drive_link ajoutée à reservations');
+    }
+  } catch (error) {
+    console.log('Info: Colonne google_drive_link déjà présente');
   }
 
   console.log('✅ Base de données initialisée');

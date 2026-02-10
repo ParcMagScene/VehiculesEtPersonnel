@@ -29,6 +29,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const [googleCalendarId, setGoogleCalendarId] = useState(null);
   
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
+  const [attachmentCounts, setAttachmentCounts] = useState({});
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const searchInputRef = useRef(null);
@@ -64,6 +65,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       try {
         const data = await api.getAttachmentsIndex();
         setAffairesWithAttachments(data.affaires || []);
+        setAttachmentCounts(data.counts || {});
       } catch (e) {
         // silencieux
       }
@@ -1216,8 +1218,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                       borderLeft: `3px solid ${eventBlock.color}`
                     }}
                     title={hasLinkedReservations 
-                      ? `${eventBlock.summary}${eventBlock.affaire ? ' - ' + eventBlock.affaire : ''}${eventBlock.location ? ' - ' + eventBlock.location : ''}${eventBlock.time ? ' - ' + eventBlock.time : ''}\n\n${linkedReservations.length} réservation(s) liée(s)\nCliquer pour modifier`
-                      : `${eventBlock.summary}${eventBlock.affaire ? ' - ' + eventBlock.affaire : ''}${eventBlock.location ? ' - ' + eventBlock.location : ''}${eventBlock.time ? ' - ' + eventBlock.time : ''}\n\nCliquer pour importer une affaire`
+                      ? `${eventBlock.summary}${eventBlock.affaire ? ' - ' + eventBlock.affaire : ''}${eventBlock.location ? ' - ' + eventBlock.location : ''}${eventBlock.time ? ' - ' + eventBlock.time : ''}${eventBlock.affaire && attachmentCounts[eventBlock.affaire] ? '\n📎 ' + attachmentCounts[eventBlock.affaire] + ' pièce(s) jointe(s)' : ''}\n\n${linkedReservations.length} réservation(s) liée(s)\nCliquer pour modifier`
+                      : `${eventBlock.summary}${eventBlock.affaire ? ' - ' + eventBlock.affaire : ''}${eventBlock.location ? ' - ' + eventBlock.location : ''}${eventBlock.time ? ' - ' + eventBlock.time : ''}${eventBlock.affaire && attachmentCounts[eventBlock.affaire] ? '\n📎 ' + attachmentCounts[eventBlock.affaire] + ' pièce(s) jointe(s)' : ''}\n\nCliquer pour importer une affaire`
                     }
                     onMouseEnter={() => {
                       if (onEventHover && hasLinkedReservations) {
@@ -1244,10 +1246,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                         </span>
                       )}
                       {eventBlock.affaire && affairesWithAttachments.includes(eventBlock.affaire) && (
-                        <span className="event-attachment-indicator" title="Pièces jointes">
+                        <span className="event-attachment-indicator" title={`${attachmentCounts[eventBlock.affaire] || ''} pièce(s) jointe(s)`}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                           </svg>
+                          <span className="attachment-count">{attachmentCounts[eventBlock.affaire]}</span>
                         </span>
                       )}
                       {eventBlock.affaire && <span className="event-affaire">{eventBlock.affaire}</span>}

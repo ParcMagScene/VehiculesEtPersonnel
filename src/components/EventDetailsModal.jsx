@@ -40,9 +40,16 @@ function EventDetailsModal({
     }
   }, [event]);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
   const scanAttachmentFolder = async (affaire) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/attachments/${affaire}`);
+      const response = await fetch(`${API_BASE_URL}/api/attachments/${affaire}`, {
+        headers: getAuthHeaders()
+      });
       if (response.ok) {
         const data = await response.json();
         setAttachmentFiles(data.files || []);
@@ -78,6 +85,7 @@ function EventDetailsModal({
 
         const response = await fetch(`${API_BASE_URL}/api/upload-attachment`, {
           method: 'POST',
+          headers: getAuthHeaders(),
           body: formData
         });
 
@@ -104,7 +112,8 @@ function EventDetailsModal({
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/attachments/${encodeURIComponent(event.affaire)}/${encodeURIComponent(file.name)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (response.ok) {

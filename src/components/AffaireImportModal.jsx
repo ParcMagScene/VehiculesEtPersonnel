@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import logger from "../utils/logger";
+import { getApiUrl } from '../utils/api';
 import './AffaireImportModal.css';
 import { extractTextFromPDF, parseBonLivraison, parseDate } from '../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../utils/indexedDB';
@@ -393,8 +394,10 @@ const AffaireImportModal = ({
               formData.append('pdf', file);
               formData.append('affaireId', affaireId);
               
-              const response = await fetch('http://localhost:3002/api/upload-bl', {
+              const token = localStorage.getItem('token');
+              const response = await fetch(`${getApiUrl()}/api/upload-bl`, {
                 method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
                 body: formData
               });
               

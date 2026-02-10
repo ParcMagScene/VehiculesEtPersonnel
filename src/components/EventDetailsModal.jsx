@@ -16,6 +16,7 @@ function EventDetailsModal({
   onRequestCreateReservation,
   onEventCreated,
   onEventUpdated,
+  onReservationsRefresh,
   currentUser
 }) {
   const [linkedReservations, setLinkedReservations] = useState([]);
@@ -236,7 +237,8 @@ function EventDetailsModal({
           r.id === reservationId ? { ...r, googleDriveLinks: data.googleDriveLinks, googleDriveLink: data.googleDriveLink } : r
         ));
         setEditingDriveLink(null);
-        if (onEventUpdated) onEventUpdated();
+        // Rafraîchir les réservations du parent pour que les liens soient à jour partout
+        if (onReservationsRefresh) onReservationsRefresh();
       } else {
         const errorData = await response.json().catch(() => ({}));
         alert(`Erreur lors de la sauvegarde: ${errorData.error || response.statusText || 'Erreur inconnue'}`);
@@ -270,7 +272,8 @@ function EventDetailsModal({
         setLinkedReservations(prev => prev.map(r => 
           r.id === reservationId ? { ...r, googleDriveLinks: data.googleDriveLinks, googleDriveLink: data.googleDriveLink } : r
         ));
-        if (onEventUpdated) onEventUpdated();
+        // Rafraîchir les réservations du parent
+        if (onReservationsRefresh) onReservationsRefresh();
       } else {
         const errorData = await response.json().catch(() => ({}));
         alert(`Erreur: ${errorData.error || response.statusText || 'Erreur inconnue'}`);

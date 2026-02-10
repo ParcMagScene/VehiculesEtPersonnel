@@ -539,6 +539,7 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
       isTournee: r.is_tournee === 1,
       linkedEventIds: r.linked_event_ids ? JSON.parse(r.linked_event_ids) : null,
       notes: r.notes,
+      googleDriveLink: r.google_drive_link || '',
       createdBy: r.created_by,
       modifiedBy: r.modified_by,
       createdAt: r.created_at,
@@ -568,8 +569,8 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
     const stmt = db.prepare(`
       INSERT INTO reservations (id, vehicle_id, start_date, start_period, end_date, end_period, 
                                client_name, driver_name, location_name, prestation_name, 
-                               notes, google_event_id, affaire, is_tournee, linked_event_ids, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               notes, google_event_id, google_drive_link, affaire, is_tournee, linked_event_ids, created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     stmt.run(
@@ -585,6 +586,7 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
       reservation.prestation_name || '',
       reservation.notes || '',
       reservation.google_event_id || '',
+      reservation.google_drive_link || '',
       reservation.affaire || '',
       reservation.is_tournee ? 1 : 0,
       reservation.linked_event_ids ? JSON.stringify(reservation.linked_event_ids) : null,
@@ -628,7 +630,8 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
       googleEventId: createdReservation.google_event_id,
       affaire: createdReservation.affaire,
       isTournee: Boolean(createdReservation.is_tournee),
-      linkedEventIds: createdReservation.linked_event_ids ? JSON.parse(createdReservation.linked_event_ids) : []
+      linkedEventIds: createdReservation.linked_event_ids ? JSON.parse(createdReservation.linked_event_ids) : [],
+      googleDriveLink: createdReservation.google_drive_link || ''
     };
     
     res.json(mappedReservation);
@@ -648,7 +651,7 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
       UPDATE reservations 
       SET vehicle_id = ?, start_date = ?, start_period = ?, end_date = ?, end_period = ?,
           client_name = ?, driver_name = ?, location_name = ?, prestation_name = ?,
-          notes = ?, google_event_id = ?, affaire = ?, is_tournee = ?, linked_event_ids = ?,
+          notes = ?, google_event_id = ?, google_drive_link = ?, affaire = ?, is_tournee = ?, linked_event_ids = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
@@ -665,6 +668,7 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
       reservation.prestationName || reservation.prestation_name || '',
       reservation.notes || '',
       reservation.googleEventId || reservation.google_event_id || '',
+      reservation.googleDriveLink || reservation.google_drive_link || '',
       reservation.affaire || '',
       reservation.isTournee || reservation.is_tournee ? 1 : 0,
       (reservation.linkedEventIds || reservation.linked_event_ids) ? JSON.stringify(reservation.linkedEventIds || reservation.linked_event_ids) : null,

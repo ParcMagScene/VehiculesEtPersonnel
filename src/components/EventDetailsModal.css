@@ -238,6 +238,26 @@ section h3 {
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
+.reservation-drive-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #667eea;
+  text-decoration: none;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #eef2ff;
+  transition: all 0.2s;
+  width: fit-content;
+}
+
+.reservation-drive-link:hover {
+  background: #dbeafe;
+  color: #4f46e5;
+}
+
 .btn-edit-reservation {
   background: #667eea;
   color: white;

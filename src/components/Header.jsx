@@ -1064,6 +1064,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               style={{ position: 'relative' }}
             >
               <Settings size={18} />
+              Paramètres
               {currentUser?.isAdmin && pendingAccessRequests > 0 && (
                 <span 
                   style={{

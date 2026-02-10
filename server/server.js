@@ -2136,17 +2136,21 @@ app.get('/api/attachments-index', authenticateToken, (req, res) => {
   try {
     const attachDir = path.join(__dirname, '..', 'public', 'attachments');
     if (!fs.existsSync(attachDir)) {
-      return res.json({ affaires: [] });
+      return res.json({ affaires: [], counts: {} });
     }
-    const affaires = fs.readdirSync(attachDir)
-      .filter(name => {
-        if (name.startsWith('.') || name === 'TEMP') return false;
-        const subDir = path.join(attachDir, name);
-        if (!fs.statSync(subDir).isDirectory()) return false;
-        const files = fs.readdirSync(subDir).filter(f => !f.startsWith('.'));
-        return files.length > 0;
-      });
-    res.json({ affaires });
+    const affaires = [];
+    const counts = {};
+    fs.readdirSync(attachDir).forEach(name => {
+      if (name.startsWith('.') || name === 'TEMP') return;
+      const subDir = path.join(attachDir, name);
+      if (!fs.statSync(subDir).isDirectory()) return;
+      const files = fs.readdirSync(subDir).filter(f => !f.startsWith('.'));
+      if (files.length > 0) {
+        affaires.push(name);
+        counts[name] = files.length;
+      }
+    });
+    res.json({ affaires, counts });
   } catch (error) {
     console.error('Erreur attachments-index:', error);
     res.status(500).json({ error: error.message });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X } from 'lucide-react';
+import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check } from 'lucide-react';
 import { getApiUrl } from '../utils/api';
 import './EventDetailsModal.css';
 
@@ -24,6 +24,8 @@ function EventDetailsModal({
   const [previewFile, setPreviewFile] = useState(null);
   const [showFolderView, setShowFolderView] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [editingDriveLink, setEditingDriveLink] = useState(null); // { id, value }
+  const [savingDriveLink, setSavingDriveLink] = useState(false);
 
   useEffect(() => {
     if (event && reservations) {
@@ -149,6 +151,43 @@ function EventDetailsModal({
     }
   };
 
+  const handleStartEditDriveLink = (reservation) => {
+    setEditingDriveLink({ id: reservation.id, value: reservation.googleDriveLink || '' });
+  };
+
+  const handleCancelEditDriveLink = () => {
+    setEditingDriveLink(null);
+  };
+
+  const handleSaveDriveLink = async (reservationId) => {
+    if (!editingDriveLink) return;
+    setSavingDriveLink(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/reservations/${reservationId}`, {
+        method: 'PATCH',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ google_drive_link: editingDriveLink.value || '' })
+      });
+      if (response.ok) {
+        // Mettre à jour localement
+        setLinkedReservations(prev => prev.map(r => 
+          r.id === reservationId ? { ...r, googleDriveLink: editingDriveLink.value } : r
+        ));
+        setEditingDriveLink(null);
+      } else {
+        alert('Erreur lors de la sauvegarde du lien');
+      }
+    } catch (error) {
+      console.error('Erreur sauvegarde lien Drive:', error);
+      alert('Erreur lors de la sauvegarde');
+    } finally {
+      setSavingDriveLink(false);
+    }
+  };
+
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return '';
     try {
@@ -260,17 +299,64 @@ function EventDetailsModal({
                       <div className="reservation-dates">
                         {reservation.startDate} ({reservation.startPeriod}) → {reservation.endDate} ({reservation.endPeriod})
                       </div>
-                      {reservation.googleDriveLink && (
-                        <a 
-                          href={reservation.googleDriveLink} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="reservation-drive-link"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink size={14} />
-                          Google Drive
-                        </a>
+                      {editingDriveLink && editingDriveLink.id === reservation.id ? (
+                        <div className="drive-link-edit" onClick={(e) => e.stopPropagation()}>
+                          <div className="drive-link-input-row">
+                            <LinkIcon size={14} className="drive-link-input-icon" />
+                            <input
+                              type="url"
+                              className="drive-link-input"
+                              value={editingDriveLink.value}
+                              onChange={(e) => setEditingDriveLink({ ...editingDriveLink, value: e.target.value })}
+                              placeholder="https://drive.google.com/..."
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveDriveLink(reservation.id);
+                                if (e.key === 'Escape') handleCancelEditDriveLink();
+                              }}
+                            />
+                            <button
+                              className="drive-link-btn drive-link-save"
+                              onClick={() => handleSaveDriveLink(reservation.id)}
+                              disabled={savingDriveLink}
+                              title="Enregistrer"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              className="drive-link-btn drive-link-cancel"
+                              onClick={handleCancelEditDriveLink}
+                              title="Annuler"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="drive-link-display">
+                          {reservation.googleDriveLink ? (
+                            <a 
+                              href={reservation.googleDriveLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="reservation-drive-link"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink size={14} />
+                              Google Drive
+                            </a>
+                          ) : null}
+                          {currentUser?.isAdmin && (
+                            <button
+                              className="drive-link-edit-btn"
+                              onClick={(e) => { e.stopPropagation(); handleStartEditDriveLink(reservation); }}
+                              title={reservation.googleDriveLink ? "Modifier le lien Drive" : "Ajouter un lien Drive"}
+                            >
+                              <LinkIcon size={12} />
+                              {reservation.googleDriveLink ? 'Modifier' : '+ Lien Drive'}
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                     <button 

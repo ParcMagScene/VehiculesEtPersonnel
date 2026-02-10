@@ -141,6 +141,20 @@ function isValidAffaireId(id) {
   return /^[a-zA-Z0-9_\-\.]+$/.test(id);
 }
 
+// Helper : parser les liens Google Drive (rétrocompatible ancien format string simple)
+function parseDriveLinks(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed;
+    // Si JSON mais pas un tableau, traiter comme string
+    return [{ url: value, label: '' }];
+  } catch {
+    // Ancien format : string simple (URL directe)
+    return value.trim() ? [{ url: value.trim(), label: '' }] : [];
+  }
+}
+
 // ============ AUTHENTIFICATION ============
 
 // Inscription
@@ -547,6 +561,7 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
       linkedEventIds: r.linked_event_ids ? JSON.parse(r.linked_event_ids) : null,
       notes: r.notes,
       googleDriveLink: r.google_drive_link || '',
+      googleDriveLinks: parseDriveLinks(r.google_drive_link),
       createdBy: r.created_by,
       modifiedBy: r.modified_by,
       createdAt: r.created_at,
@@ -691,22 +706,37 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
   }
 });
 
-// Mise à jour partielle d'une réservation (ex: lien Google Drive)
+// Mise à jour partielle d'une réservation (liens Google Drive)
 app.patch('/api/reservations/:id', authenticateToken, (req, res) => {
   try {
     if (!req.user.isAdmin) {
       return res.status(403).json({ error: 'Seuls les administrateurs peuvent modifier des réservations.' });
     }
-    const { google_drive_link } = req.body;
-    if (google_drive_link === undefined) {
-      return res.status(400).json({ error: 'Champ manquant' });
+    const { google_drive_links, google_drive_link } = req.body;
+    
+    // Support nouveau format (tableau) ou ancien format (string)
+    let linksToStore;
+    if (google_drive_links !== undefined) {
+      // Nouveau format : tableau de {url, label}
+      if (!Array.isArray(google_drive_links)) {
+        return res.status(400).json({ error: 'google_drive_links doit être un tableau' });
+      }
+      linksToStore = JSON.stringify(google_drive_links);
+    } else if (google_drive_link !== undefined) {
+      // Ancien format rétrocompatible : string simple
+      linksToStore = google_drive_link || '';
+    } else {
+      return res.status(400).json({ error: 'Champ manquant (google_drive_links ou google_drive_link)' });
     }
+    
     const stmt = db.prepare(`
       UPDATE reservations SET google_drive_link = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?
     `);
-    stmt.run(google_drive_link || '', req.user.id, req.params.id);
-    addToHistory('reservation', req.params.id, 'updated', { google_drive_link }, req.user.id, req.user.name);
-    res.json({ success: true, googleDriveLink: google_drive_link || '' });
+    stmt.run(linksToStore, req.user.id, req.params.id);
+    addToHistory('reservation', req.params.id, 'updated', { google_drive_links: google_drive_links || google_drive_link }, req.user.id, req.user.name);
+    
+    const updatedLinks = parseDriveLinks(linksToStore);
+    res.json({ success: true, googleDriveLinks: updatedLinks, googleDriveLink: linksToStore });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

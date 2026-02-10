@@ -210,7 +210,7 @@
   margin-top: 24px;
 }
 
-.btn-secondary {
+.login-form .btn-secondary {
   padding: 10px 20px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -221,12 +221,12 @@
   transition: all 0.2s;
 }
 
-.btn-secondary:hover:not(:disabled) {
+.login-form .btn-secondary:hover:not(:disabled) {
   background: #f9fafb;
   border-color: #9ca3af;
 }
 
-.btn-primary {
+.login-form .btn-primary {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -238,12 +238,12 @@
   transition: all 0.2s;
 }
 
-.btn-primary:hover:not(:disabled) {
+.login-form .btn-primary:hover:not(:disabled) {
   background: #5568d3;
   transform: translateY(-1px);
 }
 
-.btn-primary:disabled, .btn-secondary:disabled {
+.login-form .btn-primary:disabled, .login-form .btn-secondary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;

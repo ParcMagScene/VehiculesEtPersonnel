@@ -5,23 +5,19 @@ const getApiUrl = () => {
   const hostname = window.location.hostname;
   const port = window.location.port;
   
-  // Si on accède via DuckDNS (production), utiliser DuckDNS pour le backend (port 3002)
+  // Si on est servi par Vite (dev port 5174 ou preview/production port 4173),
+  // utiliser le chemin relatif → le proxy Vite redirige vers le backend
+  // Cela évite les requêtes cross-origin qui peuvent échouer (PATCH notamment)
+  if (port === '5174' || port === '4173') {
+    return '/api';
+  }
+  
+  // Accès direct DuckDNS (cas rare, sans Vite proxy)
   if (hostname === 'magsav.duckdns.org') {
     return 'http://magsav.duckdns.org:3002/api';
   }
   
-  // Si on est en développement local (Vite dev server port 5174),
-  // utiliser le chemin relatif → le proxy Vite redirige vers le backend dev (port 3003)
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    if (port === '5174') {
-      // Mode DEV : proxy Vite → backend dev port 3003
-      return '/api';
-    }
-    // Mode preview locale (port 4173) : proxy Vite → backend prod port 3002
-    return '/api';
-  }
-  
-  // Accès réseau local (production) → backend port 3002
+  // Accès réseau local direct (sans Vite proxy) → backend port 3002
   return `http://${hostname}:3002/api`;
 };
 

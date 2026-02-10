@@ -529,10 +529,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
+  gap: 2px;
   height: 16px;
+  padding: 0 4px;
   background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
+  border-radius: 8px;
   color: #6366f1;
   flex-shrink: 0;
   pointer-events: none;
@@ -541,6 +542,13 @@
 .event-attachment-indicator svg {
   width: 11px;
   height: 11px;
+}
+
+.event-attachment-indicator .attachment-count {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: #6366f1;
 }
 
 .event-block-span.linked {

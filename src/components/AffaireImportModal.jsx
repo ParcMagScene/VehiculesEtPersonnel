@@ -394,7 +394,7 @@ const AffaireImportModal = ({
               formData.append('pdf', file);
               formData.append('affaireId', affaireId);
               
-              const token = localStorage.getItem('token');
+              const token = localStorage.getItem('auth_token');
               const response = await fetch(`${getApiUrl()}/upload-bl`, {
                 method: 'POST',
                 headers: token ? { 'Authorization': `Bearer ${token}` } : {},

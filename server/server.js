@@ -669,6 +669,11 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
       return res.status(403).json({ error: 'Seuls les administrateurs peuvent modifier des réservations.' });
     }
     const reservation = req.body;
+
+    // Préserver les liens Google Drive existants (gérés uniquement via PATCH depuis EventDetailsModal)
+    const existing = db.prepare('SELECT google_drive_link FROM reservations WHERE id = ?').get(req.params.id);
+    const existingDriveLink = existing ? existing.google_drive_link : '';
+
     const stmt = db.prepare(`
       UPDATE reservations 
       SET vehicle_id = ?, start_date = ?, start_period = ?, end_date = ?, end_period = ?,
@@ -690,7 +695,7 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
       reservation.prestationName || reservation.prestation_name || '',
       reservation.notes || '',
       reservation.googleEventId || reservation.google_event_id || '',
-      reservation.googleDriveLink || reservation.google_drive_link || '',
+      existingDriveLink || '',
       reservation.affaire || '',
       reservation.isTournee || reservation.is_tournee ? 1 : 0,
       (reservation.linkedEventIds || reservation.linked_event_ids) ? JSON.stringify(reservation.linkedEventIds || reservation.linked_event_ids) : null,

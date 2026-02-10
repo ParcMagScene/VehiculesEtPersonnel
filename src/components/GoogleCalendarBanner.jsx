@@ -11,7 +11,7 @@ import { Search, X, RefreshCw } from 'lucide-react';
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
 
-function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent }) {
+function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -1304,6 +1304,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       onRequestCreateReservation={handleCreateReservationFromEvent}
       onEventCreated={handleOpenAffaireImport}
       onEventUpdated={handleEventUpdated}
+      onReservationsRefresh={onReservationsRefresh}
       currentUser={currentUser}
     />
     

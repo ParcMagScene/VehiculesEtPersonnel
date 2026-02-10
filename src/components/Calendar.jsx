@@ -83,16 +83,12 @@ const ReservationTooltip = ({ block, currentUser, users = [] }) => {
             <span className="tooltip-value">{block.clientName || 'Non spécifié'}</span>
           </div>
           <div className="tooltip-row">
-            <span className="tooltip-label">Date:</span>
-            <span className="tooltip-value">{new Date(block.date).toLocaleDateString('fr-FR')}</span>
+            <span className="tooltip-label">Début:</span>
+            <span className="tooltip-value">{block.startDate || block.date ? `${new Date(block.startDate || block.date).toLocaleDateString('fr-FR')} ${(block.startPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
           </div>
           <div className="tooltip-row">
-            <span className="tooltip-label">Période:</span>
-            <span className="tooltip-value">{block.period === 'AM' ? 'Matin' : 'Après-midi'}</span>
-          </div>
-          <div className="tooltip-row">
-            <span className="tooltip-label">Départ:</span>
-            <span className="tooltip-value">{block.locationName || 'Non spécifié'}</span>
+            <span className="tooltip-label">Fin:</span>
+            <span className="tooltip-value">{block.endDate || block.date ? `${new Date(block.endDate || block.date).toLocaleDateString('fr-FR')} ${(block.endPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
           </div>
         </>
       )}
@@ -1906,16 +1902,12 @@ const Calendar = ({
                 <span className="tooltip-value">{tooltipState.block.clientName || 'Non spécifié'}</span>
               </div>
               <div className="tooltip-row">
-                <span className="tooltip-label">Date:</span>
-                <span className="tooltip-value">{new Date(tooltipState.block.date).toLocaleDateString('fr-FR')}</span>
+                <span className="tooltip-label">Début:</span>
+                <span className="tooltip-value">{tooltipState.block.startDate || tooltipState.block.date ? `${new Date(tooltipState.block.startDate || tooltipState.block.date).toLocaleDateString('fr-FR')} ${(tooltipState.block.startPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
               </div>
               <div className="tooltip-row">
-                <span className="tooltip-label">Période:</span>
-                <span className="tooltip-value">{tooltipState.block.period === 'AM' ? 'Matin' : 'Après-midi'}</span>
-              </div>
-              <div className="tooltip-row">
-                <span className="tooltip-label">Départ:</span>
-                <span className="tooltip-value">{tooltipState.block.locationName || 'Non spécifié'}</span>
+                <span className="tooltip-label">Fin:</span>
+                <span className="tooltip-value">{tooltipState.block.endDate || tooltipState.block.date ? `${new Date(tooltipState.block.endDate || tooltipState.block.date).toLocaleDateString('fr-FR')} ${(tooltipState.block.endPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
               </div>
             </>
           )}

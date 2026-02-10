@@ -220,11 +220,11 @@
 }
 
 .emails-list td, .users-list td {
-  padding: 2px 12px;
+  padding: 2px 8px;
   border-top: 1px solid #e5e7eb;
   font-size: 13px;
   line-height: 1.2;
-  height: 28px;
+  vertical-align: middle;
 }
 
 .status-badge {
@@ -270,12 +270,14 @@
 }
 
 .btn-icon {
-  padding: 4px 6px;
+  padding: 2px 4px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
   background: transparent;
+  line-height: 0;
+  vertical-align: middle;
 }
 
 .btn-icon:hover {
@@ -390,9 +392,12 @@
 }
 
 .action-buttons {
-  display: flex;
-  gap: 4px;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 2px;
   align-items: center;
+  line-height: 0;
+  white-space: nowrap;
 }
 
 /* ========== MODAL D'APPROBATION ========== */

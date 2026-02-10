@@ -231,21 +231,21 @@ const UserManagement = ({ onAccessRequestChange }) => {
                           className="btn-icon btn-primary"
                           title="Modifier le profil"
                         >
-                          <Pencil size={16} />
+                          <Pencil size={14} />
                         </button>
                         <button
                           onClick={() => handleResetPassword(user.id)}
                           className="btn-icon btn-warning"
                           title="Réinitialiser - l'utilisateur devra définir un nouveau mot de passe"
                         >
-                          <RefreshCw size={16} />
+                          <RefreshCw size={14} />
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user.id)}
                           className="btn-icon btn-danger"
                           title="Supprimer l'utilisateur"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>

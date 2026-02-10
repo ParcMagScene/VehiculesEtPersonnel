@@ -395,7 +395,7 @@ const AffaireImportModal = ({
               formData.append('affaireId', affaireId);
               
               const token = localStorage.getItem('token');
-              const response = await fetch(`${getApiUrl()}/api/upload-bl`, {
+              const response = await fetch(`${getApiUrl()}/upload-bl`, {
                 method: 'POST',
                 headers: token ? { 'Authorization': `Bearer ${token}` } : {},
                 body: formData

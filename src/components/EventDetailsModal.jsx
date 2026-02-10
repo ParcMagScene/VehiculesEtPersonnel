@@ -47,7 +47,7 @@ function EventDetailsModal({
 
   const scanAttachmentFolder = async (affaire) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/attachments/${affaire}`, {
+      const response = await fetch(`${API_BASE_URL}/attachments/${affaire}`, {
         headers: getAuthHeaders()
       });
       if (response.ok) {
@@ -83,7 +83,7 @@ function EventDetailsModal({
         formData.append('file', file);
         formData.append('affaireId', event.affaire);
 
-        const response = await fetch(`${API_BASE_URL}/api/upload-attachment`, {
+        const response = await fetch(`${API_BASE_URL}/upload-attachment`, {
           method: 'POST',
           headers: getAuthHeaders(),
           body: formData
@@ -111,7 +111,7 @@ function EventDetailsModal({
     if (!confirm(`Supprimer "${file.name}" ?`)) return;
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/attachments/${encodeURIComponent(event.affaire)}/${encodeURIComponent(file.name)}`, {
+      const response = await fetch(`${API_BASE_URL}/attachments/${encodeURIComponent(event.affaire)}/${encodeURIComponent(file.name)}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });

@@ -238,27 +238,167 @@ section h3 {
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
-.reservation-drive-link {
-  display: inline-flex;
+/* ============ Section Liens Google Drive ============ */
+.drive-links-section {
+  margin-bottom: 8px;
+}
+
+.drive-links-section .section-header {
+  margin-bottom: 12px;
+}
+
+.drive-links-section .section-header h3 {
+  color: #7c3aed;
+}
+
+.btn-add-drive-link {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #667eea;
-  text-decoration: none;
-  margin-top: 4px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: #eef2ff;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s;
-  width: fit-content;
+  background: #8b5cf6;
+  color: white;
 }
 
-.reservation-drive-link:hover {
-  background: #dbeafe;
-  color: #4f46e5;
+.btn-add-drive-link:hover {
+  background: #7c3aed;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
-/* Drive link inline edit in section-actions */
+/* Drive link edit form */
+.drive-link-edit-form {
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drive-link-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drive-link-edit-form .drive-link-input {
+  flex: 1;
+  border: 1px solid #c4b5fd;
+  background: white;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #334155;
+  outline: none;
+}
+
+.drive-link-edit-form .drive-link-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.drive-link-edit-form .drive-link-input::placeholder {
+  color: #a78bfa;
+}
+
+.drive-link-edit-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Drive links list */
+.drive-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drive-link-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f5f3ff;
+  border: 1px solid #ede9fe;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.drive-link-item:hover {
+  background: #ede9fe;
+  border-color: #ddd6fe;
+}
+
+.drive-link-url {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #7c3aed;
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+  transition: color 0.2s;
+}
+
+.drive-link-url:hover {
+  color: #6d28d9;
+}
+
+.drive-link-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drive-link-item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.drive-link-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  color: #9ca3af;
+  padding: 0;
+}
+
+.drive-link-item-edit:hover {
+  background: #ddd6fe;
+  color: #7c3aed;
+}
+
+.drive-link-item-delete:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.drive-link-item-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============ (Legacy) Drive link inline edit ============ */
 .drive-link-edit-inline {
   display: flex;
   align-items: center;

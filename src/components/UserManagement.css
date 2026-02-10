@@ -391,6 +391,12 @@
   white-space: nowrap;
 }
 
+.users-list td:last-child,
+.emails-list td:last-child {
+  white-space: nowrap;
+  width: 1%;
+}
+
 /* ========== MODAL D'APPROBATION ========== */
 
 .approve-modal {

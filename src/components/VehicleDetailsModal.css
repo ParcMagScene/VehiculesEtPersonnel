@@ -280,7 +280,7 @@
 }
 
 /* Boutons d'action */
-.action-buttons {
+.vehicle-details-modal .action-buttons {
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
@@ -756,7 +756,7 @@
     grid-template-columns: 1fr;
   }
 
-  .action-buttons {
+  .vehicle-details-modal .action-buttons {
     flex-direction: column;
   }
 

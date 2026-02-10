@@ -17,10 +17,12 @@ import {
   setMonth,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Truck } from 'lucide-react';
+import { Truck, Link, Link2, MapPin } from 'lucide-react';
 import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../utils/dateUtils';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
+import { loadFromIndexedDB } from '../utils/indexedDB';
 import ReservationModal from './ReservationModal';
+import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
 
 // Fonction pour obtenir les initiales d'un utilisateur
@@ -36,6 +38,19 @@ const getUserInitials = (userId, currentUser, users = []) => {
   }
   
   return `U${userId.toString().slice(-1)}`;
+};
+
+// Helper pour compter les liens Google Drive d'un bloc
+const getDriveLinksCount = (block) => {
+  const raw = block.googleDriveLinks;
+  if (Array.isArray(raw) && raw.length > 0) return raw.length;
+  const link = block.googleDriveLink;
+  if (!link) return 0;
+  try {
+    const parsed = JSON.parse(link);
+    if (Array.isArray(parsed)) return parsed.length;
+  } catch { /* ignore */ }
+  return link.trim() ? 1 : 0;
 };
 
 // Composant Tooltip pour les réservations
@@ -106,8 +121,82 @@ const ReservationTooltip = ({ block, currentUser, users = [] }) => {
   );
 };
 
+// Helper pour lier deux trajets directement depuis le calendrier
+// Helper pour délier un trajet depuis le calendrier
+const unlinkTripDirectly = async (reservationId, eventId, btn, onLinked) => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token || !reservationId) return;
+    if (btn) btn.classList.add('linking');
+    const response = await fetch('/api/trip-details/unlink', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ reservationId, eventId })
+    });
+    if (response.ok) {
+      if (btn) btn.classList.remove('linking');
+      if (onLinked) onLinked();
+    } else {
+      if (btn) btn.classList.remove('linking');
+      console.error('Erreur déliaison trajet');
+    }
+  } catch (err) {
+    if (btn) btn.classList.remove('linking');
+    console.error('Erreur déliaison trajet:', err);
+  }
+};
+
+const linkTripsDirectly = async (reservationId, eventId1, eventId2, btn, onLinked) => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token || !reservationId) return;
+    if (btn) btn.classList.add('linking');
+    const response = await fetch('/api/trip-details/link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ reservationId, eventId1, eventId2 })
+    });
+    if (response.ok) {
+      if (btn) { btn.classList.remove('linking'); btn.classList.add('linked'); }
+      if (onLinked) onLinked();
+    } else {
+      if (btn) btn.classList.remove('linking');
+      console.error('Erreur liaison trajets');
+    }
+  } catch (err) {
+    if (btn) btn.classList.remove('linking');
+    console.error('Erreur liaison trajets:', err);
+  }
+};
+
+// Transformer les trip details de snake_case vers camelCase
+const transformTripSnake = (detail) => {
+  if (!detail) return undefined;
+  return {
+    ...detail,
+    departureLocation: detail.departure_location || detail.departureLocation,
+    departureDate: detail.departure_date || detail.departureDate,
+    departureTime: detail.departure_time || detail.departureTime,
+    arrivalLocation: detail.arrival_location || detail.arrivalLocation,
+    arrivalDate: detail.arrival_date || detail.arrivalDate,
+    arrivalTime: detail.arrival_time || detail.arrivalTime,
+    returnDepartureLocation: detail.return_departure_location || detail.returnDepartureLocation,
+    returnDepartureDate: detail.return_departure_date || detail.returnDepartureDate,
+    returnDepartureTime: detail.return_departure_time || detail.returnDepartureTime,
+    returnArrivalLocation: detail.return_arrival_location || detail.returnArrivalLocation,
+    returnArrivalDate: detail.return_arrival_date || detail.returnArrivalDate,
+    returnArrivalTime: detail.return_arrival_time || detail.returnArrivalTime,
+    driverName: detail.driver_name || detail.driverName,
+    hasJunctionWithNext: detail.has_junction_with_next || detail.hasJunctionWithNext,
+    junctionLocation: detail.junction_location || detail.junctionLocation,
+    outboundDuration: detail.outbound_duration || detail.outboundDuration,
+    returnDuration: detail.return_duration || detail.returnDuration,
+    tripGroupId: detail.trip_group_id || detail.tripGroupId
+  };
+};
+
 // Helper pour afficher les affaires d'une réservation alignées avec leur position
-const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartIndex) => {
+const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartIndex, tripData, onOpenTrip, onTripLinked) => {
   // Mode tournée : créer une grille interne alignée sur les slots
   if (block.isTournee && block.linkedEventIds && Array.isArray(block.linkedEventIds) && googleEvents && timeSlots) {
     // Pour chaque événement, calculer sa position et son span dans la grille
@@ -212,16 +301,168 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
         cleanTitle = capitalizeText(cleanTitle);
         
         const eventBlock = {
+          eventId,
           startSlot: firstSlotIdx,
           span: lastSlotIdx - firstSlotIdx + 1,
           affaire: event.affaire,
-          title: cleanTitle
+          title: cleanTitle,
+          eventStart
         };
         eventBlocks.push(eventBlock);
       }
     });
     
     if (eventBlocks.length > 0) {
+      // Trier les événements par date de début
+      eventBlocks.sort((a, b) => {
+        if (!a.eventStart) return 1;
+        if (!b.eventStart) return -1;
+        return a.eventStart - b.eventStart;
+      });
+
+      // Construire les éléments avec des boutons "lier" entre les événements adjacents
+      // Déterminer les groupes de trajets liés
+      const tripMap = {}; // eventId -> trip_group_id
+      if (tripData && Array.isArray(tripData)) {
+        tripData.forEach(td => {
+          if (td.event_id && td.trip_group_id) {
+            tripMap[td.event_id] = td.trip_group_id;
+          }
+        });
+      }
+
+      // Grouper les eventBlocks par trip_group_id (contigus)
+      const segments = [];
+      let currentGroup = null;
+      let currentGroupItems = [];
+      eventBlocks.forEach((eb) => {
+        const gid = tripMap[eb.eventId];
+        if (gid) {
+          if (gid === currentGroup) {
+            currentGroupItems.push(eb);
+          } else {
+            if (currentGroup && currentGroupItems.length > 0) {
+              segments.push({ type: 'group', groupId: currentGroup, items: currentGroupItems });
+            }
+            currentGroup = gid;
+            currentGroupItems = [eb];
+          }
+        } else {
+          if (currentGroup && currentGroupItems.length > 0) {
+            segments.push({ type: 'group', groupId: currentGroup, items: currentGroupItems });
+            currentGroup = null;
+            currentGroupItems = [];
+          }
+          segments.push({ type: 'solo', items: [eb] });
+        }
+      });
+      if (currentGroup && currentGroupItems.length > 0) {
+        segments.push({ type: 'group', groupId: currentGroup, items: currentGroupItems });
+      }
+
+      const gridElements = [];
+      let prevLastBlock = null;
+      segments.forEach((seg, segIdx) => {
+        seg.items.forEach((eventBlock, itemIdx) => {
+          const isFirstInSeg = itemIdx === 0;
+          const isLastInSeg = itemIdx === seg.items.length - 1;
+
+          // Bouton de liaison entre segments/événements adjacents
+          if (prevLastBlock) {
+            const gapStart = prevLastBlock.startSlot + prevLastBlock.span + 1;
+            const gapEnd = eventBlock.startSlot + 1;
+            const linkCol = gapStart <= gapEnd ? Math.floor((gapStart + gapEnd) / 2) : eventBlock.startSlot + 1;
+            const prevEventId = prevLastBlock.eventId;
+            const curEventId = eventBlock.eventId;
+            // Si dans le même groupe, bouton "délier"
+            if (seg.type === 'group' && !isFirstInSeg) {
+              gridElements.push(
+                <button
+                  key={`linked-sep-${segIdx}-${itemIdx}`}
+                  className="tournee-link-btn linked"
+                  style={{ gridColumn: `${linkCol} / span 1` }}
+                  title="Délier les trajets"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    unlinkTripDirectly(block.id, curEventId, e.currentTarget, onTripLinked);
+                  }}
+                >
+                  <Link size={12} />
+                </button>
+              );
+            } else {
+              // Bouton "dé-lié" (pas encore liés) - icône Link2
+              gridElements.push(
+                <button
+                  key={`link-${segIdx}-${itemIdx}`}
+                  className="tournee-link-btn"
+                  style={{ gridColumn: `${linkCol} / span 1` }}
+                  title="Lier les trajets"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    linkTripsDirectly(block.id, prevEventId, curEventId, e.currentTarget, onTripLinked);
+                  }}
+                >
+                  <Link2 size={12} />
+                </button>
+              );
+            }
+          }
+
+          // Bloc événement (chip) avec bouton trajet intégré
+          if (seg.type === 'solo') {
+            const soloEventId = eventBlock.eventId;
+            gridElements.push(
+              <span key={`ev-${segIdx}-${itemIdx}`} className="tournee-event-chip" style={{
+                gridColumn: `${eventBlock.startSlot + 1} / span ${eventBlock.span}`,
+              }}>
+                <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
+                {onOpenTrip && (
+                  <button
+                    className="tournee-trip-btn"
+                    title="Détails du trajet"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onOpenTrip([soloEventId], 'simple');
+                    }}
+                  >
+                    <MapPin size={10} />
+                  </button>
+                )}
+              </span>
+            );
+          } else {
+            // Événement dans un groupe lié
+            const groupEventIds = seg.items.map(it => it.eventId);
+            gridElements.push(
+              <span key={`ev-${segIdx}-${itemIdx}`} className="tournee-event-chip in-trip-group" style={{
+                gridColumn: `${eventBlock.startSlot + 1} / span ${eventBlock.span}`,
+              }}>
+                <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
+                {isLastInSeg && onOpenTrip && (
+                  <button
+                    className="tournee-trip-btn combined"
+                    title={`Trajet combiné (${seg.items.length} événements)`}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onOpenTrip(groupEventIds, 'combined');
+                    }}
+                  >
+                    <MapPin size={10} />
+                  </button>
+                )}
+              </span>
+            );
+          }
+
+          prevLastBlock = eventBlock;
+        });
+      });
+
       return (
         <div style={{ 
           position: 'absolute',
@@ -233,28 +474,11 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
           gridTemplateColumns: `repeat(${block.span}, 1fr)`,
           gap: '0.125rem',
           padding: '0.25rem',
-          pointerEvents: 'none',
-          zIndex: 10
+          pointerEvents: 'auto',
+          zIndex: 10,
+          alignItems: 'center'
         }}>
-          {eventBlocks.map((eventBlock, idx) => (
-            <span key={idx} style={{ 
-              fontSize: '0.55rem',
-              background: '#eef2ff',
-              padding: '0.1rem 0.2rem',
-              borderRadius: '0.2rem',
-              color: '#6366f1',
-              fontWeight: '600',
-              display: 'block',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              gridColumn: `${eventBlock.startSlot + 1} / span ${eventBlock.span}`,
-              height: '1rem',
-              lineHeight: '0.8rem'
-            }}>
-              {eventBlock.affaire || eventBlock.title}
-            </span>
-          ))}
+          {gridElements}
         </div>
       );
     }
@@ -282,14 +506,41 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
     }
   }
   
+  // Pour une réservation simple, un seul événement lié possible
+  const singleEventId = block.googleEventId || (block.linkedEventIds && block.linkedEventIds.length > 0 ? block.linkedEventIds[0] : null);
+  
   if (affaires.length > 0) {
     return (
       <div className="reservation-affaire">
-        {affaires[0]}
-        {affaires.length > 1 && <span className="affaire-plus"> +{affaires.length - 1}</span>}
+        <span className="reservation-affaire-text">{affaires[0]}{affaires.length > 1 && <span className="affaire-plus"> +{affaires.length - 1}</span>}</span>
+        {singleEventId && onOpenTrip && (
+          <button
+            className="reservation-trip-btn"
+            title="Voir le trajet"
+            onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
+          >
+            <MapPin size={10} />
+          </button>
+        )}
       </div>
     );
   }
+  
+  // Même sans affaire, afficher un bouton trajet si événement lié
+  if (singleEventId && onOpenTrip && !block.isTournee) {
+    return (
+      <div className="reservation-affaire">
+        <button
+          className="reservation-trip-btn solo"
+          title="Voir le trajet"
+          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
+        >
+          <MapPin size={10} />
+        </button>
+      </div>
+    );
+  }
+  
   return null;
 };
 
@@ -351,12 +602,179 @@ const Calendar = ({
   // État pour le tooltip global
   const [tooltipState, setTooltipState] = useState({ visible: false, block: null, x: 0, y: 0 });
 
+  // États pour TripDetailsModal ouvert depuis le calendrier
+  const [calendarTripModal, setCalendarTripModal] = useState(null); // { reservation, event, tripDetail, combinedEvents, vehicle }
+  const [calendarTripCache, setCalendarTripCache] = useState({}); // { [reservationId]: tripDetails[] }
+  const [calendarGoogleMapsApiKey, setCalendarGoogleMapsApiKey] = useState('');
+  const [calendarCompanyAddress, setCalendarCompanyAddress] = useState('');
+
+  // Charger les configs Google Maps au montage (depuis IndexedDB comme ReservationModal)
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const config = await loadFromIndexedDB('calendarConfig', {});
+        if (config.googleMapsApiKey) setCalendarGoogleMapsApiKey(config.googleMapsApiKey);
+        if (config.companyAddress) setCalendarCompanyAddress(config.companyAddress);
+      } catch (err) {
+        console.error('Erreur chargement config calendrier:', err);
+      }
+    };
+    loadConfig();
+  }, []);
+
+  // Fetch trip data pour une réservation (avec cache)
+  const fetchTripData = useCallback(async (reservationId) => {
+    if (calendarTripCache[reservationId]) return calendarTripCache[reservationId];
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return [];
+      const response = await fetch(`/api/trip-details/${reservationId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const trips = Array.isArray(data) ? data : (data.tripDetails || []);
+        setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
+        return trips;
+      }
+    } catch (err) {
+      console.error('Erreur fetch trip data:', err);
+    }
+    return [];
+  }, [calendarTripCache]);
+
+  // Ouvrir le TripDetailsModal depuis le calendrier
+  const handleOpenTripFromCalendar = useCallback(async (block, eventIds, mode) => {
+    // eventIds = [eventId] pour solo, [eventId1, eventId2, ...] pour groupe
+    const trips = await fetchTripData(block.id);
+    const vehicle = vehicles.find(v => v.id === block.vehicleId);
+    
+    // Helper : trouver un événement Google ou créer un objet minimal
+    const findOrCreateEvent = (eid) => {
+      const found = googleEvents.find(e => e.id === eid);
+      if (found) return found;
+      // Fallback : créer un événement minimal depuis les données du bloc
+      return {
+        id: eid,
+        summary: block.affaire || block.clientName || 'Événement',
+        affaire: block.affaire,
+        start: { dateTime: block.startDate || block.date },
+        end: { dateTime: block.endDate || block.date }
+      };
+    };
+    
+    if (mode === 'combined' && eventIds.length > 1) {
+      // Mode combiné : ouvrir avec combinedEvents
+      const combinedEvents = eventIds.map(eid => {
+        const event = findOrCreateEvent(eid);
+        const td = trips.find(t => t.event_id === eid);
+        return { event, tripDetail: td ? transformTripSnake(td) : undefined };
+      }).filter(ce => ce.event);
+      if (combinedEvents.length > 0) {
+        setCalendarTripModal({
+          reservation: block,
+          event: combinedEvents[0].event,
+          tripDetail: combinedEvents[0].tripDetail,
+          combinedEvents: combinedEvents.length > 1 ? combinedEvents : null,
+          vehicle
+        });
+      }
+    } else {
+      // Mode simple
+      const eid = eventIds[0];
+      const event = findOrCreateEvent(eid);
+      const td = trips.find(t => t.event_id === eid);
+      if (event) {
+        setCalendarTripModal({
+          reservation: block,
+          event,
+          tripDetail: td ? transformTripSnake(td) : undefined,
+          combinedEvents: null,
+          vehicle
+        });
+      }
+    }
+  }, [fetchTripData, vehicles, googleEvents]);
+
+  // Handler de sauvegarde trip depuis le calendrier
+  const handleSaveTripFromCalendar = useCallback(async (tripFormData) => {
+    if (!calendarTripModal) return null;
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return null;
+      const response = await fetch('/api/trip-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          reservationId: calendarTripModal.reservation.id,
+          eventId: calendarTripModal.event.id,
+          eventOrder: 0,
+          ...tripFormData
+        })
+      });
+      if (response.ok) {
+        const savedData = await response.json();
+        // Invalider le cache pour cette réservation
+        setCalendarTripCache(prev => {
+          const updated = { ...prev };
+          delete updated[calendarTripModal.reservation.id];
+          return updated;
+        });
+        return savedData;
+      }
+    } catch (err) {
+      console.error('Erreur sauvegarde trip:', err);
+    }
+    return null;
+  }, [calendarTripModal]);
+
+  // Callback après liaison de trajets : invalider le cache et re-fetcher
+  const handleTripLinked = useCallback((reservationId) => {
+    // Invalider le cache
+    setCalendarTripCache(prev => {
+      const u = { ...prev };
+      delete u[reservationId];
+      return u;
+    });
+    // Re-fetcher immédiatement
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    fetch(`/api/trip-details/${reservationId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).then(r => r.ok ? r.json() : []).then(data => {
+      const trips = Array.isArray(data) ? data : (data.tripDetails || []);
+      setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
+    }).catch(() => {});
+  }, []);
+
   // Ouvrir le modal automatiquement quand un événement Google est sélectionné
   useEffect(() => {
     if (googleEvent) {
       setSelectedSlot({ googleEvent });
     }
   }, [googleEvent]);
+
+  // Pré-charger les trip data pour les réservations tournée visibles
+  useEffect(() => {
+    if (!reservations || !Array.isArray(reservations)) return;
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const tourneeIds = reservations
+      .filter(r => (r.isTournee || r.is_tournee) && r.id && !calendarTripCache[r.id])
+      .map(r => r.id);
+    // Aussi charger pour les réservations avec googleEventId
+    const singleEventIds = reservations
+      .filter(r => !(r.isTournee || r.is_tournee) && (r.googleEventId || r.google_event_id) && r.id && !calendarTripCache[r.id])
+      .map(r => r.id);
+    const allIds = [...new Set([...tourneeIds, ...singleEventIds])];
+    allIds.forEach(id => {
+      fetch(`/api/trip-details/${id}`, { headers }).then(r => r.ok ? r.json() : []).then(data => {
+        const trips = Array.isArray(data) ? data : (data.tripDetails || []);
+        setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
+      }).catch(() => {});
+    });
+  }, [reservations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ouvrir le modal automatiquement quand une réservation doit être éditée depuis l'extérieur
   useEffect(() => {
@@ -1005,6 +1423,7 @@ const Calendar = ({
       
       if (reservation) {
         if (!currentBlock || 
+            currentBlock.id !== reservation.id ||
             currentBlock.clientName !== reservation.clientName ||
             currentBlock.endDate !== reservation.endDate ||
             currentBlock.endPeriod !== reservation.endPeriod) {
@@ -1439,7 +1858,7 @@ const Calendar = ({
                   const currentName = currentBlock ? (currentBlock.isMaintenance ? currentBlock.prestationName : currentBlock.clientName) : null;
                   const newName = reservation.isMaintenance ? reservation.prestationName : reservation.clientName;
                   
-                  if (!currentBlock || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
+                  if (!currentBlock || currentBlock.id !== reservation.id || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
                     if (currentBlock) blocks.push(currentBlock);
                     currentBlock = {
                       ...reservation,
@@ -1513,6 +1932,8 @@ const Calendar = ({
                           cursor: block.isMaintenance ? 'pointer' : 'default'
                         }}
                         onMouseDown={(e) => {
+                          // Ignorer les clics sur boutons internes (lier, trajet)
+                          if (e.target.closest('.tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn')) return;
                           // Ignorer le clic droit
                           if (e.button === 2) return;
                           
@@ -1554,7 +1975,7 @@ const Calendar = ({
                                 {block.clientName || block.prestationName}
                               </div>
                               {block.locationName && <div className="reservation-location">{block.locationName}</div>}
-                              {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex)}
+                              {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex, calendarTripCache[block.id], (eventIds, mode) => handleOpenTripFromCalendar(block, eventIds, mode), () => handleTripLinked(block.id))}
                             </div>
                           </div>
                           
@@ -1677,7 +2098,7 @@ const Calendar = ({
                   const currentName = currentBlock ? (currentBlock.isMaintenance ? currentBlock.prestationName : currentBlock.clientName) : null;
                   const newName = reservation.isMaintenance ? reservation.prestationName : reservation.clientName;
                   
-                  if (!currentBlock || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
+                  if (!currentBlock || currentBlock.id !== reservation.id || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
                     if (currentBlock) blocks.push(currentBlock);
                     currentBlock = {
                       ...reservation,
@@ -1751,6 +2172,8 @@ const Calendar = ({
                           cursor: block.isMaintenance ? 'pointer' : 'default'
                         }}
                         onMouseDown={(e) => {
+                          // Ignorer les clics sur boutons internes (lier, trajet)
+                          if (e.target.closest('.tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn')) return;
                           // Ignorer le clic droit
                           if (e.button === 2) return;
                           
@@ -1792,7 +2215,7 @@ const Calendar = ({
                                 {block.clientName || block.prestationName}
                               </div>
                               {block.locationName && <div className="reservation-location">{block.locationName}</div>}
-                              {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex)}
+                              {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex, calendarTripCache[block.id], (eventIds, mode) => handleOpenTripFromCalendar(block, eventIds, mode), () => handleTripLinked(block.id))}
                             </div>
                           </div>
                           
@@ -1861,6 +2284,38 @@ const Calendar = ({
         />
       )}
 
+      {/* TripDetailsModal ouvert depuis le calendrier */}
+      {calendarTripModal && !calendarTripModal.combinedEvents && (
+        <TripDetailsModal
+          event={calendarTripModal.event}
+          tripDetail={calendarTripModal.tripDetail}
+          onSave={handleSaveTripFromCalendar}
+          onClose={() => setCalendarTripModal(null)}
+          drivers={drivers}
+          vehicle={calendarTripModal.vehicle}
+          nextEvent={null}
+          googleMapsApiKey={calendarGoogleMapsApiKey}
+          companyAddress={calendarCompanyAddress}
+          initialLocations={locations}
+        />
+      )}
+
+      {calendarTripModal && calendarTripModal.combinedEvents && (
+        <TripDetailsModal
+          event={calendarTripModal.combinedEvents[0].event}
+          tripDetail={calendarTripModal.combinedEvents[0].tripDetail}
+          onSave={handleSaveTripFromCalendar}
+          onClose={() => setCalendarTripModal(null)}
+          drivers={drivers}
+          vehicle={calendarTripModal.vehicle}
+          nextEvent={calendarTripModal.combinedEvents.length > 1 ? calendarTripModal.combinedEvents[1].event : null}
+          googleMapsApiKey={calendarGoogleMapsApiKey}
+          companyAddress={calendarCompanyAddress}
+          initialLocations={locations}
+          combinedEvents={calendarTripModal.combinedEvents}
+        />
+      )}
+
       {/* Tooltip global */}
       {tooltipState.visible && tooltipState.block && (
         <div
@@ -1917,6 +2372,15 @@ const Calendar = ({
               <span className="tooltip-value">{tooltipState.block.description}</span>
             </div>
           )}
+          {(() => {
+            const driveCount = getDriveLinksCount(tooltipState.block);
+            return driveCount > 0 ? (
+              <div className="tooltip-row">
+                <span className="tooltip-label"><Link size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Drive:</span>
+                <span className="tooltip-value">{driveCount} lien{driveCount > 1 ? 's' : ''}</span>
+              </div>
+            ) : null;
+          })()}
           <div className="tooltip-row">
             <span className="tooltip-label">Créé par:</span>
             <span className="tooltip-value">

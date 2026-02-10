@@ -646,6 +646,12 @@ function App() {
         onEventHover={setHoveredEventId}
         onRequestEditReservation={setReservationToEdit}
         onRequestViewEvent={(fn) => { openEventDetailsModalRef.current = fn; }}
+        onReservationsRefresh={async () => {
+          try {
+            const data = await api.getReservations();
+            setReservations(data);
+          } catch (e) { console.error('Erreur rechargement réservations:', e); }
+        }}
       />
 
       {activeModule === 'vehicles' ? (

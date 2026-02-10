@@ -195,7 +195,7 @@ const UserManagement = ({ onAccessRequestChange }) => {
                   <th>Nom</th>
                   <th>Email</th>
                   <th>Droits</th>
-                  <th>Actions</th>
+                  <th style={{ width: '80px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>

@@ -119,24 +119,7 @@
   transform: translateY(-2px);
 }
 
-.requests-history table {
-  width: 100%;
-  margin-top: 1rem;
-}
 
-.requests-history th {
-  text-align: left;
-  padding: 0.75rem;
-  background: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.requests-history td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #f3f4f6;
-}
 
 .status-badge.approved {
   background: #d1fae5;
@@ -198,16 +181,16 @@
   background: #2563eb;
 }
 
-.emails-list, .users-list {
+.emails-list, .users-list, .requests-history {
   overflow-x: auto;
 }
 
-.emails-list table, .users-list table {
+.emails-list table, .users-list table, .requests-history table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.emails-list th, .users-list th {
+.emails-list th, .users-list th, .requests-history th {
   text-align: left;
   padding: 4px 12px;
   background: #f9fafb;
@@ -219,7 +202,7 @@
   line-height: 1.2;
 }
 
-.emails-list td, .users-list td {
+.emails-list td, .users-list td, .requests-history td {
   padding: 2px 8px;
   border-top: 1px solid #e5e7eb;
   font-size: 13px;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, Trash2, MapPin, Link2, Unlink, Paperclip, Car, Check } from 'lucide-react';
+import { X, Trash2, MapPin, Link2, Unlink, Paperclip, Car, Check, ExternalLink } from 'lucide-react';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
 import TripDetailsModal from './TripDetailsModal';
@@ -77,6 +77,7 @@ const ReservationModal = ({
     locationName: reservation?.locationName || googleEvent?.detectedLocation || googleEvent?.location || '',
     prestationName: reservation?.prestationName || googleEvent?.summary || '',
     notes: reservation?.notes || '',
+    googleDriveLink: reservation?.googleDriveLink || '',
     googleEventId: reservation?.googleEventId || googleEvent?.id || '', // Pour compatibilité
     linkedEventIds: initLinkedEvents(), // Nouveau tableau pour les événements multiples
     affaires: initAffaires(),
@@ -1747,8 +1748,23 @@ const ReservationModal = ({
           </div>
           {/* Fin de la section ÉVÉNEMENTS LIÉS */}
 
-          {/* SECTION NOTES */}
+          {/* SECTION NOTES & LIENS */}
           <div className="form-divider" />
+          <div className="form-group">
+            <label htmlFor="googleDriveLink">
+              <ExternalLink size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+              Lien Google Drive
+            </label>
+            <input
+              type="url"
+              id="googleDriveLink"
+              name="googleDriveLink"
+              value={formData.googleDriveLink}
+              onChange={handleChange}
+              placeholder="https://drive.google.com/..."
+              readOnly={isReadOnly}
+            />
+          </div>
           <div className="form-group">
             <label htmlFor="notes">Notes</label>
             <textarea

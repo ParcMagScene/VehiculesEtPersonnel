@@ -260,6 +260,18 @@ function EventDetailsModal({
                       <div className="reservation-dates">
                         {reservation.startDate} ({reservation.startPeriod}) → {reservation.endDate} ({reservation.endPeriod})
                       </div>
+                      {reservation.googleDriveLink && (
+                        <a 
+                          href={reservation.googleDriveLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="reservation-drive-link"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink size={14} />
+                          Google Drive
+                        </a>
+                      )}
                     </div>
                     <button 
                       className="btn-edit-reservation" 

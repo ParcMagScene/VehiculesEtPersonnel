@@ -382,8 +382,9 @@
   color: #374151;
 }
 
-.action-buttons {
+.user-management .action-buttons {
   display: inline-flex;
+  flex-direction: row;
   flex-wrap: nowrap;
   gap: 2px;
   align-items: center;

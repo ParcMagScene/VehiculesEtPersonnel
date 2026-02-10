@@ -684,6 +684,27 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
   }
 });
 
+// Mise à jour partielle d'une réservation (ex: lien Google Drive)
+app.patch('/api/reservations/:id', authenticateToken, (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Seuls les administrateurs peuvent modifier des réservations.' });
+    }
+    const { google_drive_link } = req.body;
+    if (google_drive_link === undefined) {
+      return res.status(400).json({ error: 'Champ manquant' });
+    }
+    const stmt = db.prepare(`
+      UPDATE reservations SET google_drive_link = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?
+    `);
+    stmt.run(google_drive_link || '', req.user.id, req.params.id);
+    addToHistory('reservation', req.params.id, 'updated', { google_drive_link }, req.user.id, req.user.name);
+    res.json({ success: true, googleDriveLink: google_drive_link || '' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.delete('/api/reservations/:id', authenticateToken, (req, res) => {
   try {
     // Seuls les admins peuvent supprimer des réservations

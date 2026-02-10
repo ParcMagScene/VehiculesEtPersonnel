@@ -515,13 +515,20 @@ app.delete('/api/vehicles/:id', authenticateToken, (req, res) => {
 
 app.get('/api/reservations', authenticateToken, (req, res) => {
   try {
-    const stmt = db.prepare('SELECT * FROM reservations');
+    const stmt = db.prepare(`
+      SELECT r.*, v.name as vehicle_name, v.type as vehicle_type, v.registration as immatriculation
+      FROM reservations r
+      LEFT JOIN vehicles v ON r.vehicle_id = v.id
+    `);
     const reservations = stmt.all();
     
     // Mapper snake_case vers camelCase
     const mappedReservations = reservations.map(r => ({
       id: r.id,
       vehicleId: r.vehicle_id,
+      vehicleName: r.vehicle_name || '',
+      vehicleType: r.vehicle_type || '',
+      immatriculation: r.immatriculation || '',
       clientName: r.client_name,
       driverName: r.driver_name,
       locationName: r.location_name,

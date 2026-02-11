@@ -969,7 +969,8 @@
   gap: 1rem;
   align-items: center;
   flex-wrap: nowrap;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .view-selector {
@@ -1093,6 +1094,248 @@
 .current-date.clickable:hover {
   background: rgba(102, 126, 234, 0.1);
   color: #667eea;
+}
+
+/* ═══ Contrôles Affaires dans Header ═══ */
+
+.affaires-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.affaires-header-divider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* Recherche */
+.affaires-header-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 34px;
+  min-width: 150px;
+  max-width: 260px;
+  flex: 1;
+  transition: all 0.2s;
+}
+
+.affaires-header-search:focus-within {
+  background: white;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.affaires-header-search svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.affaires-header-search input {
+  background: none;
+  border: none;
+  outline: none;
+  color: #1e293b;
+  font-size: 13px;
+  width: 100%;
+  padding: 0;
+}
+
+.affaires-header-search input::placeholder {
+  color: #94a3b8;
+}
+
+.affaires-header-search .search-clear {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.affaires-header-search .search-clear:hover {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+/* Boutons période rapide */
+.affaires-period-buttons {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.affaires-period-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.affaires-period-btn:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.affaires-period-btn.active {
+  background: #1e293b;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.affaires-period-btn.active svg {
+  color: white;
+}
+
+/* Select type */
+.affaires-header-select {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0 10px;
+  height: 34px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.affaires-header-select:hover,
+.affaires-header-select:focus {
+  background: white;
+  border-color: #94a3b8;
+}
+
+.affaires-header-select option {
+  background: white;
+  color: #1e293b;
+}
+
+/* Groupe dates avec labels */
+.affaires-header-date-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.affaires-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.affaires-header-date {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 12px;
+  padding: 0 8px;
+  height: 34px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.affaires-header-date:hover,
+.affaires-header-date:focus {
+  background: white;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* Bouton réinitialiser */
+.affaires-header-clear {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.affaires-header-clear:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #f87171;
+}
+
+/* Groupe période + toggle glissant */
+.affaires-period-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Toggle checkbox (Glissant / Archivées) */
+.affaires-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.affaires-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+  cursor: pointer;
+  margin: 0;
+  border-radius: 3px;
+}
+
+.affaires-toggle-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.affaires-toggle:hover .affaires-toggle-label {
+  color: #334155;
 }
 
 .qr-button {

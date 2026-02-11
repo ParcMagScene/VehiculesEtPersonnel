@@ -510,3 +510,200 @@
   border-top: 1px solid #e5e7eb;
   background: #f9fafb;
 }
+
+/* ===== Bouton créer personnel ===== */
+.btn-create-personnel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-create-personnel:hover {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+/* Badge personnel existant */
+.personnel-linked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.personnel-linked-badge svg {
+  color: #059669;
+}
+.personnel-linked-badge.clickable {
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.personnel-linked-badge.clickable:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
+}
+.personnel-linked-badge.clickable:hover svg {
+  color: #047857;
+}
+
+/* ===== Modal création personnel ===== */
+.create-personnel-modal {
+  background: white;
+  border-radius: 16px;
+  width: 480px;
+  max-width: 95vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideUp 0.2s ease;
+}
+
+.create-personnel-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+}
+.create-personnel-modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.create-personnel-modal-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.create-personnel-subtitle {
+  margin: 0 0 1rem 0;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.create-personnel-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+.create-personnel-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+.create-personnel-field input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.create-personnel-field input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.create-personnel-type-section {
+  margin-bottom: 1rem;
+}
+.create-personnel-section-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.create-personnel-type-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.personnel-type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.personnel-type-card:hover {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+.personnel-type-card.active {
+  border-color: #10b981;
+  background: #ecfdf5;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+.personnel-type-icon {
+  font-size: 22px;
+}
+.personnel-type-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.create-personnel-contract-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.contract-type-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.contract-type-option:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+.contract-type-option input[type="radio"] {
+  accent-color: #10b981;
+}
+
+.create-personnel-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}

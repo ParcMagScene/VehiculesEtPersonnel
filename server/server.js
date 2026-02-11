@@ -1817,6 +1817,206 @@ setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
 setupConfigRoutes(app, authenticateToken, requireAdmin);
 
+// ============ MODULE AFFAIRES ============
+
+// GET /api/affaires — Liste des affaires enrichies (DB + auto-détection depuis réservations)
+app.get('/api/affaires', authenticateToken, (req, res) => {
+  try {
+    // 1. Affaires explicitement enregistrées en DB
+    const dbAffaires = db.prepare('SELECT * FROM affaires ORDER BY date_debut DESC').all();
+
+    // Statements pour compteurs
+    const countReservationsStmt = db.prepare(
+      'SELECT COUNT(*) as count FROM reservations WHERE affaire = ?'
+    );
+    const countVehiclesStmt = db.prepare(
+      'SELECT COUNT(DISTINCT vehicle_id) as count FROM reservations WHERE affaire = ?'
+    );
+
+    const enriched = dbAffaires.map(a => {
+      const resCount = countReservationsStmt.get(a.numero_affaire)?.count || 0;
+      const vehCount = countVehiclesStmt.get(a.numero_affaire)?.count || 0;
+      return {
+        id: a.id,
+        numeroAffaire: a.numero_affaire,
+        type: a.type,
+        client: a.client,
+        interlocuteur: a.interlocuteur,
+        tel: a.tel,
+        fax: a.fax,
+        dateDebut: a.date_debut,
+        dateFin: a.date_fin,
+        devis: a.devis,
+        adresseLivraison: a.adresse_livraison,
+        titre: a.titre,
+        description: a.description,
+        googleEventId: a.google_event_id,
+        eventName: a.event_name,
+        reservationCount: resCount,
+        vehicleCount: vehCount,
+        personnelCount: 0,
+        createdBy: a.created_by,
+        createdAt: a.created_at,
+        modifiedBy: a.modified_by,
+        modifiedAt: a.modified_at,
+        source: 'db',
+      };
+    });
+
+    // 2. Affaires auto-détectées depuis les réservations (celles qui n'ont pas d'entrée en DB)
+    const knownNums = new Set(dbAffaires.map(a => a.numero_affaire));
+    const reservationAffaires = db.prepare(`
+      SELECT affaire,
+             MIN(start_date) as date_debut,
+             MAX(end_date) as date_fin,
+             GROUP_CONCAT(DISTINCT client_name) as clients,
+             GROUP_CONCAT(DISTINCT prestation_name) as prestations,
+             GROUP_CONCAT(DISTINCT google_event_id) as google_event_ids,
+             COUNT(*) as reservation_count,
+             COUNT(DISTINCT vehicle_id) as vehicle_count
+      FROM reservations
+      WHERE affaire IS NOT NULL AND affaire != ''
+      GROUP BY affaire
+    `).all();
+
+    for (const ra of reservationAffaires) {
+      if (knownNums.has(ra.affaire)) continue; // déjà en DB
+      // Extraire le meilleur client (non vide)
+      const clientList = (ra.clients || '').split(',').filter(c => c.trim());
+      const client = clientList[0] || '';
+      // Titre depuis le nom de prestation
+      const prestationList = (ra.prestations || '').split(',').filter(p => p.trim());
+      const titre = prestationList[0] || '';
+
+      enriched.push({
+        id: null, // pas d'ID en DB
+        numeroAffaire: ra.affaire,
+        type: 'Prestation',
+        client: client,
+        interlocuteur: '',
+        tel: '',
+        fax: '',
+        dateDebut: ra.date_debut,
+        dateFin: ra.date_fin,
+        devis: '',
+        adresseLivraison: '',
+        titre: titre,
+        description: '',
+        googleEventId: (ra.google_event_ids || '').split(',')[0] || '',
+        eventName: titre,
+        reservationCount: ra.reservation_count,
+        vehicleCount: ra.vehicle_count,
+        personnelCount: 0,
+        createdBy: null,
+        createdAt: null,
+        modifiedBy: null,
+        modifiedAt: null,
+        source: 'auto', // généré automatiquement depuis les réservations
+      });
+    }
+
+    // Trier par date_debut DESC
+    enriched.sort((a, b) => (b.dateDebut || '').localeCompare(a.dateDebut || ''));
+
+    res.json(enriched);
+  } catch (error) {
+    console.error('Erreur GET /api/affaires:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/affaires — Créer ou mettre à jour une affaire (upsert par numero_affaire)
+app.post('/api/affaires', authenticateToken, (req, res) => {
+  try {
+    const a = req.body;
+    if (!a.numero_affaire) {
+      return res.status(400).json({ error: 'Le numéro d\'affaire est requis' });
+    }
+
+    // Vérifier si l'affaire existe déjà
+    const existing = db.prepare('SELECT id FROM affaires WHERE numero_affaire = ?').get(a.numero_affaire);
+
+    if (existing) {
+      // Mise à jour
+      db.prepare(`
+        UPDATE affaires SET
+          type = ?, client = ?, interlocuteur = ?, tel = ?, fax = ?,
+          date_debut = ?, date_fin = ?, devis = ?, adresse_livraison = ?,
+          titre = ?, description = ?, google_event_id = ?, event_name = ?,
+          modified_by = ?, modified_at = CURRENT_TIMESTAMP
+        WHERE numero_affaire = ?
+      `).run(
+        a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
+        a.date_debut || '', a.date_fin || '', a.devis || '', a.adresse_livraison || '',
+        a.titre || '', a.description || '', a.google_event_id || '', a.event_name || '',
+        req.user.id, a.numero_affaire
+      );
+      const updated = db.prepare('SELECT * FROM affaires WHERE numero_affaire = ?').get(a.numero_affaire);
+      res.json({ ...updated, id: updated.id });
+    } else {
+      // Création
+      const result = db.prepare(`
+        INSERT INTO affaires (numero_affaire, type, client, interlocuteur, tel, fax,
+          date_debut, date_fin, devis, adresse_livraison, titre, description,
+          google_event_id, event_name, created_by, modified_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        a.numero_affaire, a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
+        a.date_debut || '', a.date_fin || '', a.devis || '', a.adresse_livraison || '',
+        a.titre || '', a.description || '', a.google_event_id || '', a.event_name || '',
+        req.user.id, req.user.id
+      );
+      const created = db.prepare('SELECT * FROM affaires WHERE id = ?').get(result.lastInsertRowid);
+      res.status(201).json(created);
+    }
+  } catch (error) {
+    console.error('Erreur POST /api/affaires:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/affaires/:id — Mettre à jour une affaire par ID
+app.put('/api/affaires/:id', authenticateToken, (req, res) => {
+  try {
+    const { id } = req.params;
+    const a = req.body;
+
+    db.prepare(`
+      UPDATE affaires SET
+        numero_affaire = ?, type = ?, client = ?, interlocuteur = ?, tel = ?, fax = ?,
+        date_debut = ?, date_fin = ?, devis = ?, adresse_livraison = ?,
+        titre = ?, description = ?, google_event_id = ?, event_name = ?,
+        modified_by = ?, modified_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      a.numero_affaire || '', a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
+      a.date_debut || '', a.date_fin || '', a.devis || '', a.adresse_livraison || '',
+      a.titre || '', a.description || '', a.google_event_id || '', a.event_name || '',
+      req.user.id, id
+    );
+    const updated = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
+    if (!updated) return res.status(404).json({ error: 'Affaire non trouvée' });
+    res.json(updated);
+  } catch (error) {
+    console.error('Erreur PUT /api/affaires:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/affaires/:id
+app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = db.prepare('SELECT id FROM affaires WHERE id = ?').get(id);
+    if (!existing) return res.status(404).json({ error: 'Affaire non trouvée' });
+    db.prepare('DELETE FROM affaires WHERE id = ?').run(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur DELETE /api/affaires:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Routes Planning Personnel — MagLog 1.0
 setupPersonsRoutes(app, authenticateToken, requireAdmin);
 setupSkillsRoutes(app, authenticateToken, requireAdmin);

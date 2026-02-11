@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { format, addDays, startOfDay, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Car, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import './MobileAvailability.css';
 
 function MobileAvailability({ vehicles, reservations, maintenances, onClose, onCreateReservation }) {
@@ -119,10 +120,9 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
                     alt={vehicle.name}
                     onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                   />
-                ) : null}
-                <div className="vehicle-photo-placeholder" style={vehicle.photo ? { display: 'none' } : {}}>
-                  <Car size={24} />
-                </div>
+                ) : (
+                  <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
+                )}
               </div>
               <div className="vehicle-info">
                 <div className="vehicle-name">{vehicle.name}</div>
@@ -192,10 +192,9 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
                           alt={vehicle.name}
                           onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                         />
-                      ) : null}
-                      <div className="vehicle-photo-placeholder" style={vehicle.photo ? { display: 'none' } : {}}>
-                        <Car size={18} />
-                      </div>
+                      ) : (
+                        <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
+                      )}
                     </div>
                     <div className="vehicle-info">
                       <div className="vehicle-name">{vehicle.name}</div>

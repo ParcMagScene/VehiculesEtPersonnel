@@ -21,6 +21,7 @@ import { Truck, Link, Link2, MapPin } from 'lucide-react';
 import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../utils/dateUtils';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
 import { loadFromIndexedDB } from '../utils/indexedDB';
+import { getVehicleAvatar } from '../utils/vehicleAvatars';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
@@ -1695,9 +1696,7 @@ const Calendar = ({
                       {vehicle.photo ? (
                         <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
                       ) : (
-                        <div className="photo-placeholder">
-                          <Truck size={20} color="#9ca3af" />
-                        </div>
+                        <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
                       )}
                       {hasBreakdown && (
                         <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
@@ -1764,9 +1763,7 @@ const Calendar = ({
                       {vehicle.photo ? (
                         <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
                       ) : (
-                        <div className="photo-placeholder">
-                          <Truck size={20} color="#9ca3af" />
-                        </div>
+                        <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
                       )}
                       {hasBreakdown && (
                         <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>

@@ -20,6 +20,7 @@ const ManagementPanel = lazy(() => import('./components/ManagementPanel'));
 const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
 const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenanceModal'));
 const PersonnelPanel = lazy(() => import('./components/PersonnelPanel'));
+const AffairesPanel = lazy(() => import('./components/AffairesPanel'));
 
 // Fonction utilitaire pour formater une date en YYYY-MM-DD
 const formatDateToString = (date) => {
@@ -31,15 +32,50 @@ const formatDateToString = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+// Détection fiable d'un appareil mobile
+const detectMobile = () => {
+  // 1. Vérifier le hash ou le pathname
+  if (window.location.pathname === '/mobile' || window.location.hash.startsWith('#/mobile')) {
+    return true;
+  }
+  // 2. Vérifier si l'utilisateur a explicitement choisi desktop (stocké en sessionStorage)
+  if (sessionStorage.getItem('forceDesktop') === 'true') {
+    return false;
+  }
+  // 3. Auto-détection : user-agent + écran tactile + largeur d'écran
+  const ua = navigator.userAgent || '';
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const isSmallScreen = window.innerWidth <= 768;
+  return isMobileUA && (isTouchDevice || isSmallScreen);
+};
+
 function App() {
-  // Vérifier si on est sur l'interface mobile
-  const isMobilePath = window.location.pathname === '/mobile' || window.location.hash === '#/mobile';
+  // Détection mobile réactive (hash, user-agent, taille écran)
+  const [isMobile, setIsMobile] = useState(() => detectMobile());
+
+  useEffect(() => {
+    const handleHashChange = () => setIsMobile(detectMobile());
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Si mobile détecté et hash pas encore mis, rediriger
+  useEffect(() => {
+    if (isMobile && !window.location.hash.startsWith('#/mobile')) {
+      window.location.hash = '#/mobile';
+    }
+  }, [isMobile]);
   
   // Si mobile, afficher uniquement MobileApp
-  if (isMobilePath) {
+  if (isMobile) {
     return (
       <ErrorBoundary>
-        <MobileApp />
+        <MobileApp onSwitchToDesktop={() => {
+          sessionStorage.setItem('forceDesktop', 'true');
+          window.location.hash = '';
+          setIsMobile(false);
+        }} />
       </ErrorBoundary>
     );
   }
@@ -57,6 +93,20 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [activeModule, setActiveModule] = useState('vehicles');
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
+  // Filtres affaires (remonté ici pour le Header)
+  const [affaireSearchTerm, setAffaireSearchTerm] = useState('');
+  const [affaireFilterType, setAffaireFilterType] = useState('');
+  // Par défaut : mode Semaine glissante (J-1 → J+6)
+  const [affaireFilterDateStart, setAffaireFilterDateStart] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [affaireFilterDateEnd, setAffaireFilterDateEnd] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 6);
+    return d.toISOString().slice(0, 10);
+  });
+  const [affaireSlidingMode, setAffaireSlidingMode] = useState(true);
+  const [affaireShowArchived, setAffaireShowArchived] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [googleEvents, setGoogleEvents] = useState([]);
@@ -611,6 +661,18 @@ function App() {
         onOpenSettings={() => setShowSettings(true)}
         activeModule={activeModule}
         setActiveModule={setActiveModule}
+        affaireSearchTerm={affaireSearchTerm}
+        setAffaireSearchTerm={setAffaireSearchTerm}
+        affaireFilterType={affaireFilterType}
+        setAffaireFilterType={setAffaireFilterType}
+        affaireFilterDateStart={affaireFilterDateStart}
+        setAffaireFilterDateStart={setAffaireFilterDateStart}
+        affaireFilterDateEnd={affaireFilterDateEnd}
+        setAffaireFilterDateEnd={setAffaireFilterDateEnd}
+        affaireSlidingMode={affaireSlidingMode}
+        setAffaireSlidingMode={setAffaireSlidingMode}
+        affaireShowArchived={affaireShowArchived}
+        setAffaireShowArchived={setAffaireShowArchived}
         maintenances={maintenances}
         vehicles={vehicles}
         reservations={reservations}
@@ -632,6 +694,7 @@ function App() {
         }}
       />
       
+      {activeModule !== 'affaires' && (
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}
@@ -653,8 +716,9 @@ function App() {
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
         }}
       />
+      )}
 
-      {activeModule === 'vehicles' ? (
+      {activeModule === 'vehicles' && (
         <>
           {view === 'planning' ? (
             <PlanningView
@@ -706,7 +770,9 @@ function App() {
             />
           )}
         </>
-      ) : (
+      )}
+
+      {activeModule === 'personnel' && (
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -717,6 +783,26 @@ function App() {
             key={personnelRefreshKey}
             currentUser={currentUser}
             mode="planning"
+            view={view}
+            currentDate={currentDate}
+          />
+        </Suspense>
+      )}
+
+      {activeModule === 'affaires' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement du module affaires...</p>
+          </div>
+        }>
+          <AffairesPanel
+            reservations={reservations}
+            searchTerm={affaireSearchTerm}
+            filterType={affaireFilterType}
+            filterDateStart={affaireFilterDateStart}
+            filterDateEnd={affaireFilterDateEnd}
+            showArchived={affaireShowArchived}
           />
         </Suspense>
       )}
@@ -785,6 +871,11 @@ function App() {
             currentUser={currentUser}
             panelType="settings"
             onClose={() => setShowSettings(false)}
+            onNavigateToPersonnel={(person) => {
+              setShowSettings(false);
+              setActiveModule('personnel');
+              setShowManagement(true);
+            }}
           />
         </Suspense>
       )}

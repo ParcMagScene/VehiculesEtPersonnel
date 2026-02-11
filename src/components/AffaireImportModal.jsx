@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import logger from "../utils/logger";
-import { getApiUrl } from '../utils/api';
+import api, { getApiUrl } from '../utils/api';
 import './AffaireImportModal.css';
 import { extractTextFromPDF, parseBonLivraison, parseDate } from '../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../utils/indexedDB';
@@ -446,7 +446,39 @@ const AffaireImportModal = ({
         pdfData = await savePDFToStorage(pdfFile, eventId, formData.numeroAffaire);
       }
 
-      // Créer ou mettre à jour l'affaire dans IndexedDB uniquement
+      // Sauvegarder l'affaire en base de données via l'API
+      const affairePayload = {
+        numero_affaire: formData.numeroAffaire,
+        type: formData.type,
+        client: formData.client,
+        interlocuteur: formData.interlocuteur,
+        tel: formData.tel,
+        fax: formData.fax,
+        date_debut: formData.dateDebut,
+        date_fin: '', // Sera enrichi via l'événement Google
+        devis: formData.devis,
+        adresse_livraison: formData.adresseLivraison,
+        titre: formData.titre,
+        description: formData.description,
+        google_event_id: eventId || '',
+        event_name: event?.summary || '',
+      };
+
+      // Calculer date_fin depuis l'événement si disponible
+      if (event?.end) {
+        affairePayload.date_fin = typeof event.end === 'string'
+          ? event.end.split('T')[0]
+          : event.end?.date || event.end?.dateTime?.split('T')[0] || '';
+      }
+
+      try {
+        await api.createOrUpdateAffaire(affairePayload);
+        logger.log('✅ Affaire sauvegardée en DB:', formData.numeroAffaire);
+      } catch (dbError) {
+        console.error('Erreur sauvegarde affaire en DB:', dbError);
+      }
+
+      // Garder aussi dans IndexedDB pour le cache local (PDF data etc.)
       const affaire = {
         eventId,
         numeroAffaire: formData.numeroAffaire,
@@ -465,7 +497,7 @@ const AffaireImportModal = ({
         updatedAt: new Date().toISOString()
       };
 
-      // Vérifier si l'affaire existe déjà
+      // Vérifier si l'affaire existe déjà dans IndexedDB
       const existing = existingAffaires.find(a => a.numeroAffaire === formData.numeroAffaire);
       
       if (existing) {
@@ -801,6 +833,7 @@ const AffaireImportModal = ({
                 >
                   <option value="Prestation">Prestation</option>
                   <option value="Location">Location</option>
+                  <option value="Installation">Installation</option>
                 </select>
               </div>
 

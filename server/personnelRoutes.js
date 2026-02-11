@@ -76,17 +76,18 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
       const stmt = db.prepare(`
         INSERT INTO persons (first_name, last_name, email, phone, type, status,
-          user_id, driver_id, license_types, certifications, notes, photo,
+          user_id, driver_id, license_types, certifications, contract_type, notes, photo,
           created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const result = stmt.run(
         p.first_name, p.last_name, p.email || null, p.phone || null,
-        p.type || 'technicien', p.status || 'active',
+        p.type || 'permanent', p.status || 'active',
         p.user_id || null, p.driver_id || null,
         JSON.stringify(p.license_types || []),
         JSON.stringify(p.certifications || []),
+        p.contract_type || null,
         p.notes || null, p.photo || null,
         req.user.id, req.user.id,
       );
@@ -128,7 +129,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         UPDATE persons SET
           first_name = ?, last_name = ?, email = ?, phone = ?,
           type = ?, status = ?, user_id = ?, driver_id = ?,
-          license_types = ?, certifications = ?,
+          license_types = ?, certifications = ?, contract_type = ?,
           notes = ?, photo = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
@@ -145,6 +146,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         p.driver_id ?? existing.driver_id,
         p.license_types ? JSON.stringify(p.license_types) : existing.license_types,
         p.certifications ? JSON.stringify(p.certifications) : existing.certifications,
+        p.contract_type ?? existing.contract_type,
         p.notes ?? existing.notes,
         p.photo ?? existing.photo,
         req.user.id,

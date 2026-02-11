@@ -1,5 +1,6 @@
 import React from 'react';
-import { Car, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { getVehicleAvatar } from '../utils/vehicleAvatars';
 import './VehiclePickerCards.css';
 
 /**
@@ -63,13 +64,9 @@ function VehiclePickerCards({
                 alt={vehicle.name}
                 onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
               />
-            ) : null}
-            <div
-              className={`vehicle-picker-photo-placeholder${isDesktop ? '-desktop' : ''}`}
-              style={vehicle.photo ? { display: 'none' } : {}}
-            >
-              <Car size={isDesktop ? 20 : 24} />
-            </div>
+            ) : (
+              <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
+            )}
           </div>
 
           <div className={`vehicle-picker-info${isDesktop ? '-desktop' : ''}`}>

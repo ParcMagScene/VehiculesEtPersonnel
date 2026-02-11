@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid } from 'lucide-react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileReservations from './MobileReservations';
 import MobileMaintenances from './MobileMaintenances';
@@ -9,7 +9,7 @@ import MobileLogin from './MobileLogin';
 import api from '../../utils/api';
 import './MobileApp.css';
 
-function MobileApp() {
+function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentScreen, setCurrentScreen] = useState('home');
@@ -303,6 +303,12 @@ function MobileApp() {
             <LogOut size={20} />
             <span>Se déconnecter</span>
           </button>
+          {onSwitchToDesktop && (
+            <button className="menu-desktop" onClick={onSwitchToDesktop}>
+              <Monitor size={20} />
+              <span>Version bureau</span>
+            </button>
+          )}
         </div>
       </div>
 

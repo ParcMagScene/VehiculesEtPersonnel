@@ -675,6 +675,32 @@ class ApiClient {
     const qs = query.toString();
     return this.request(`/personnel/planning${qs ? '?' + qs : ''}`);
   }
+
+  // ============ MODULE AFFAIRES ============
+
+  async getAffaires() {
+    return this.request('/affaires');
+  }
+
+  async createOrUpdateAffaire(affaire) {
+    return this.request('/affaires', {
+      method: 'POST',
+      body: JSON.stringify(affaire),
+    });
+  }
+
+  async updateAffaire(id, affaire) {
+    return this.request(`/affaires/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(affaire),
+    });
+  }
+
+  async deleteAffaire(id) {
+    return this.request(`/affaires/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiClient();

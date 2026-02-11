@@ -217,6 +217,9 @@
   font-size: 12px;
   font-weight: 500;
   color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .form-field input,
@@ -237,6 +240,11 @@
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.form-field select.linked {
+  border-color: #16a34a;
+  background: #f0fdf4;
 }
 
 .form-field textarea {
@@ -421,11 +429,34 @@
   letter-spacing: 0.5px;
 }
 
-.person-type-badge.type-salarié { background: #dbeafe; color: #1e40af; }
-.person-type-badge.type-technicien { background: #f3e8ff; color: #6d28d9; }
-.person-type-badge.type-conducteur { background: #ccfbf1; color: #0f766e; }
-.person-type-badge.type-intermittent { background: #fef3c7; color: #92400e; }
-.person-type-badge.type-indépendant { background: #ffe4e6; color: #be123c; }
+.person-type-badge.type-permanent { background: #dbeafe; color: #1e40af; }
+.person-type-badge.type-contractuel { background: #fef3c7; color: #92400e; }
+.person-type-badge.contract-type.type-intermittent { background: #fef3c7; color: #92400e; }
+.person-type-badge.contract-type.type-freelance { background: #ffe4e6; color: #be123c; }
+.person-type-badge.contract-type.type-entreprise { background: #f3e8ff; color: #6d28d9; }
+
+.person-linked-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.person-linked-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+.person-linked-info svg { color: #16a34a; }
 
 .person-type-badge.mini {
   font-size: 9px;
@@ -817,136 +848,422 @@
   cursor: pointer;
 }
 
-/* ═══ Planning grid ═══ */
+/* ═══ Planning Personnel — style Calendar ═══ */
 
-.planning-toolbar {
+.planning-full {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-bottom: 16px;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
-.planning-nav-btn {
-  padding: 6px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  color: #475569;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.planning-nav-btn:hover {
-  background: #f1f5f9;
-}
-
-.planning-range {
-  font-size: 14px;
-  font-weight: 600;
-  color: #334155;
-}
-
-.planning-grid-wrapper {
-  overflow-x: auto;
-  border: 1px solid #e2e8f0;
+/* ── Container structure ── */
+.pp-calendar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
 }
 
-.planning-grid {
+/* ── Headers row — même pattern que Calendar ── */
+.pp-headers-row {
+  display: flex;
+  flex-shrink: 0;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.pp-column-header {
+  width: 250px;
+  flex-shrink: 0;
+  padding: 0 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-right: 2px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pp-column-header > span {
+  flex: 1;
+  text-align: left;
+}
+
+/* Section header dans la colonne personnel */
+.pp-section-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.pp-section-header > span {
+  text-align: left;
+  flex: 1;
+}
+
+.pp-section-header:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+
+/* Séparateur de section dans la grille */
+.pp-section-separator {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.pp-section-separator > span {
+  text-align: left;
+  flex: 1;
+}
+
+.pp-section-separator:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+
+/* Bouton toggle section */
+.pp-section-toggle {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.pp-section-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.pp-headers-scroll {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+.pp-headers-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.pp-headers-scroll > * {
+  pointer-events: auto;
+}
+
+/* Grille d'en-têtes — utilise subgrid comme Calendar */
+.pp-headers-grid {
+  display: grid;
+  gap: 0;
+  background: white;
+  min-width: max-content;
+}
+
+/* Ligne des jours — subgrid */
+.pp-header {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+/* Ligne AM/PM — subgrid */
+.pp-subheader {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+/* Cellule d'en-tête générique */
+.pp-header-cell {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 0.5rem;
+  font-weight: 600;
+  text-align: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Cellule jour */
+.pp-header-cell.day-header {
+  font-size: 0.85rem;
+  padding: 0.5rem 0.5rem;
+  height: 3.5rem;
+  background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+  color: #374151;
+}
+
+.pp-header-cell.day-header.weekend {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.pp-header-cell.day-header.today {
+  border-top: 3px solid #10b981;
+  border-left: 3px solid #10b981;
+  border-right: 3px solid #10b981;
+}
+
+/* Cellule AM/PM */
+.pp-header-cell.period-cell {
+  font-size: 0.65rem;
+  padding: 0.4rem 0.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  color: white;
+  height: 1.8rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.pp-header-cell.period-cell.weekend {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+
+.pp-header-cell.period-cell.today {
+  border-left: 3px solid #10b981;
+  border-right: 3px solid #10b981;
+}
+
+/* Cellule mois (vue année) */
+.pp-header-cell.month-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  min-height: 3.5rem;
+}
+
+.pp-month-name {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.pp-day-name {
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.pp-day-number {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.pp-header-cell.day-header.today .pp-day-name,
+.pp-header-cell.day-header.today .pp-day-number {
+  color: #374151;
+}
+
+.pp-header-cell.day-header.weekend .pp-day-name,
+.pp-header-cell.day-header.weekend .pp-day-number {
+  color: white;
+}
+
+/* ── Content row ── */
+.pp-content-row {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.pp-person-column {
+  width: 250px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 2px solid #e5e7eb;
+  scrollbar-width: none;
+  background: white;
+}
+
+.pp-person-column::-webkit-scrollbar {
+  display: none;
+}
+
+.pp-person-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  min-height: 36px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  box-sizing: border-box;
+}
+
+.pp-person-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Scroll area + grid ── */
+.pp-scroll-area {
+  flex: 1;
+  overflow: auto;
+  min-width: 0;
+  scrollbar-width: thin;
+}
+
+.pp-grid {
   display: grid;
   min-width: max-content;
 }
 
-.planning-cell {
-  padding: 6px 8px;
-  border-right: 1px solid #f1f5f9;
-  border-bottom: 1px solid #f1f5f9;
-  min-height: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.pp-person-row {
+  display: contents;
 }
 
-.planning-cell.header {
-  background: #f8fafc;
+/* Cellules de la grille */
+.pp-slot {
+  min-height: 36px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  position: relative;
+}
+
+.pp-slot.period-am {
+  border-right: 1px dashed #d1d5db;
+}
+
+.pp-slot.weekend {
+  background: #fef3c7;
+}
+
+.pp-slot.today-slot {
+  position: relative;
+}
+
+.pp-slot.today-slot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.pp-slot.today-slot.today-left::after {
+  border-left: 3px solid rgba(16, 185, 129, 0.7);
+}
+
+.pp-slot.today-slot.today-right::after {
+  border-right: 3px solid rgba(16, 185, 129, 0.7);
+}
+
+.pp-slot.reserved {
+  padding: 3px;
+}
+
+/* ── Mission blocks ── */
+.pp-mission-block {
+  flex: 1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+  min-width: 0;
+  cursor: default;
+  transition: filter 0.15s;
+}
+
+.pp-mission-block:hover {
+  filter: brightness(0.92);
+}
+
+.pp-mission-title {
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.planning-cell.header.corner {
-  position: sticky;
-  left: 0;
-  z-index: 3;
-  background: #f1f5f9;
-}
-
-.planning-cell.header.weekend {
-  background: #fef2f2;
-  color: #dc2626;
-}
-
-.planning-cell.header.today {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.planning-cell.person-label {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: white;
-  border-right: 2px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  padding: 4px 8px;
-}
-
-.planning-person-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: #334155;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.planning-cell.weekend {
-  background: #fefce8;
-}
-
-.planning-cell.today {
-  background: #eff6ff;
-}
-
-.planning-cell.has-mission {
-  background: #f0fdf4;
-}
-
-.planning-mission-chip {
-  background: var(--mission-color, #3b82f6);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
+.pp-mission-meta {
+  font-size: 9px;
   font-weight: 500;
+  color: #64748b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.planning-mission-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.pp-mission-extra {
+  font-size: 9px;
+  font-weight: 700;
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+/* ── Year view ── */
+.pp-grid.year-view .pp-slot {
+  min-height: 32px;
+}
+
+/* ── Month view ── */
+.pp-grid.month-view .pp-slot {
+  min-height: 34px;
 }
 
 /* ═══ Responsive ═══ */

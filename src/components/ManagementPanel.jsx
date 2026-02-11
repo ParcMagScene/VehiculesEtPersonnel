@@ -3,6 +3,7 @@ import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, Chev
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
+import { getVehicleAvatar } from '../utils/vehicleAvatars';
 import UserManagement from './UserManagement';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
 import ChangePassword from './ChangePassword';
@@ -37,6 +38,7 @@ const ManagementPanel = ({
   onClose,
   activeModule = 'vehicles',
   panelType = 'management',
+  onNavigateToPersonnel,
 }) => {
   const [activeTab, setActiveTab] = useState(() => {
     if (panelType === 'settings') return 'account';
@@ -913,9 +915,14 @@ const ManagementPanel = ({
 
           {/* Gestion des utilisateurs (Admin uniquement) */}
           {activeTab === 'users' && currentUser?.isAdmin && (
-            <UserManagement onAccessRequestChange={() => {
-              api.getPendingAccessRequestsCount().then(data => setPendingAccessCount(data.count || 0)).catch(() => {});
-            }} />
+            <UserManagement
+              onAccessRequestChange={() => {
+                api.getPendingAccessRequestsCount().then(data => setPendingAccessCount(data.count || 0)).catch(() => {});
+              }}
+              onNavigateToPersonnel={(person) => {
+                if (onNavigateToPersonnel) onNavigateToPersonnel(person);
+              }}
+            />
           )}
 
           {/* Configuration Google Calendar (Admin uniquement) */}
@@ -1048,9 +1055,7 @@ const ManagementPanel = ({
                             {item.photo ? (
                               <img src={`/Photos/${item.photo}`} alt={item.name} />
                             ) : (
-                              <div className="photo-placeholder">
-                                <Truck size={24} color="#9ca3af" />
-                              </div>
+                              <img src={getVehicleAvatar(item.type)} alt={item.name} className="vehicle-avatar" />
                             )}
                             {hasExpiredTechnicalControl(item, maintenances) && (
                               <div 
@@ -1248,9 +1253,7 @@ const ManagementPanel = ({
                                 {item.photo ? (
                                   <img src={`/Photos/${item.photo}`} alt={item.name} />
                                 ) : (
-                                  <div className="photo-placeholder">
-                                    <Truck size={24} color="#9ca3af" />
-                                  </div>
+                                  <img src={getVehicleAvatar(item.type)} alt={item.name} className="vehicle-avatar" />
                                 )}
                               </div>
                               <div>

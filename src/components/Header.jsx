@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter } from 'lucide-react';
 import api from '../utils/api';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -12,7 +12,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -297,6 +297,15 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             >
               <Users size={18} />
               <span>Personnel</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'affaires' ? 'active' : ''}`}
+              onClick={() => setActiveModule('affaires')}
+              role="tab"
+              aria-selected={activeModule === 'affaires'}
+            >
+              <Briefcase size={18} />
+              <span>Affaires</span>
             </button>
           </div>
         </div>
@@ -895,8 +904,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         
         <div className="header-controls">
 
-          {/* Sélecteur de vue (véhicules uniquement) */}
-          {activeModule === 'vehicles' && (
+          {/* Sélecteur de vue */}
+          {(activeModule === 'vehicles' || activeModule === 'personnel') && (
           <div className="view-selector" role="group" aria-label="Sélection de la vue">
             <button
               className={`view-button ${view === 'week' ? 'active' : ''}`}
@@ -925,8 +934,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
           </div>
           )}
 
-          {/* Navigation de dates (véhicules uniquement) */}
-          {activeModule === 'vehicles' && (
+          {/* Navigation de dates */}
+          {(activeModule === 'vehicles' || activeModule === 'personnel') && (
           <div className="date-navigation" role="navigation" aria-label="Navigation de dates">
             <button className="nav-button" onClick={goToPrevious} aria-label="Période précédente">
               <ChevronLeft size={20} />
@@ -959,6 +968,152 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             >
               {getDateLabel()}
             </div>
+          </div>
+          )}
+
+          {/* Contrôles affaires : recherche + filtres */}
+          {activeModule === 'affaires' && (
+          <div className="affaires-header-controls">
+            <div className="affaires-header-search">
+              <Search size={15} />
+              <input
+                type="text"
+                placeholder="Rechercher une affaire..."
+                value={affaireSearchTerm || ''}
+                onChange={e => setAffaireSearchTerm(e.target.value)}
+              />
+              {affaireSearchTerm && (
+                <button className="search-clear" onClick={() => setAffaireSearchTerm('')}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="affaires-header-divider" />
+
+            {/* Boutons de période rapide + toggle glissant */}
+            <div className="affaires-period-group">
+              <div className="affaires-period-buttons">
+                {(() => {
+                  const today = new Date();
+                  const fmtDate = (d) => d.toISOString().slice(0, 10);
+
+                  // Mode glissant
+                  const slidingWeekStart = new Date(today); slidingWeekStart.setDate(today.getDate() - 1);
+                  const slidingWeekEnd = new Date(today); slidingWeekEnd.setDate(today.getDate() + 6);
+                  const slidingMonthStart = new Date(today); slidingMonthStart.setDate(today.getDate() - 7);
+                  const slidingMonthEnd = new Date(today); slidingMonthEnd.setDate(today.getDate() + 21);
+
+                  // Mode calendaire
+                  const calWeekStart = new Date(today); calWeekStart.setDate(today.getDate() - today.getDay() + 1);
+                  const calWeekEnd = new Date(calWeekStart); calWeekEnd.setDate(calWeekStart.getDate() + 6);
+                  const calMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                  const calMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+                  const weekStart = affaireSlidingMode ? slidingWeekStart : calWeekStart;
+                  const weekEnd = affaireSlidingMode ? slidingWeekEnd : calWeekEnd;
+                  const monthStart = affaireSlidingMode ? slidingMonthStart : calMonthStart;
+                  const monthEnd = affaireSlidingMode ? slidingMonthEnd : calMonthEnd;
+
+                  const isWeek = affaireFilterDateStart === fmtDate(weekStart) && affaireFilterDateEnd === fmtDate(weekEnd);
+                  const isMonth = affaireFilterDateStart === fmtDate(monthStart) && affaireFilterDateEnd === fmtDate(monthEnd);
+                  const isAll = !affaireFilterDateStart && !affaireFilterDateEnd;
+
+                  const applyWeek = () => { setAffaireFilterDateStart(fmtDate(weekStart)); setAffaireFilterDateEnd(fmtDate(weekEnd)); };
+                  const applyMonth = () => { setAffaireFilterDateStart(fmtDate(monthStart)); setAffaireFilterDateEnd(fmtDate(monthEnd)); };
+
+                  return (
+                    <>
+                      <button
+                        className={`affaires-period-btn ${isWeek ? 'active' : ''}`}
+                        onClick={() => { if (isWeek) { setAffaireFilterDateStart(''); setAffaireFilterDateEnd(''); } else applyWeek(); }}
+                      >
+                        <Calendar size={13} />
+                        Semaine
+                      </button>
+                      <button
+                        className={`affaires-period-btn ${isMonth ? 'active' : ''}`}
+                        onClick={() => { if (isMonth) { setAffaireFilterDateStart(''); setAffaireFilterDateEnd(''); } else applyMonth(); }}
+                      >
+                        <Calendar size={13} />
+                        Mois
+                      </button>
+                      <button
+                        className={`affaires-period-btn ${isAll && !affaireFilterType ? 'active' : ''}`}
+                        onClick={() => { setAffaireFilterDateStart(''); setAffaireFilterDateEnd(''); setAffaireFilterType(''); }}
+                      >
+                        Tout
+                      </button>
+                    </>
+                  );
+                })()}
+              </div>
+              <label className="affaires-toggle" title={affaireSlidingMode ? 'Mode glissant : période centrée sur aujourd\'hui' : 'Mode calendaire : semaine/mois civil'}>
+                <input
+                  type="checkbox"
+                  checked={affaireSlidingMode}
+                  onChange={e => {
+                    const newSliding = e.target.checked;
+                    setAffaireSlidingMode(newSliding);
+                    // Recalculer les dates si une période est active
+                    if (affaireFilterDateStart && affaireFilterDateEnd) {
+                      const today = new Date();
+                      const fmtDate = (d) => d.toISOString().slice(0, 10);
+                      // Détecter quelle période était active (approximation par durée)
+                      const daysDiff = Math.round((new Date(affaireFilterDateEnd) - new Date(affaireFilterDateStart)) / 86400000);
+                      if (daysDiff <= 7) {
+                        // Semaine
+                        if (newSliding) {
+                          const s = new Date(today); s.setDate(today.getDate() - 1);
+                          const e2 = new Date(today); e2.setDate(today.getDate() + 6);
+                          setAffaireFilterDateStart(fmtDate(s)); setAffaireFilterDateEnd(fmtDate(e2));
+                        } else {
+                          const s = new Date(today); s.setDate(today.getDate() - today.getDay() + 1);
+                          const e2 = new Date(s); e2.setDate(s.getDate() + 6);
+                          setAffaireFilterDateStart(fmtDate(s)); setAffaireFilterDateEnd(fmtDate(e2));
+                        }
+                      } else {
+                        // Mois
+                        if (newSliding) {
+                          const s = new Date(today); s.setDate(today.getDate() - 7);
+                          const e2 = new Date(today); e2.setDate(today.getDate() + 21);
+                          setAffaireFilterDateStart(fmtDate(s)); setAffaireFilterDateEnd(fmtDate(e2));
+                        } else {
+                          const s = new Date(today.getFullYear(), today.getMonth(), 1);
+                          const e2 = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                          setAffaireFilterDateStart(fmtDate(s)); setAffaireFilterDateEnd(fmtDate(e2));
+                        }
+                      }
+                    }
+                  }}
+                />
+                <span className="affaires-toggle-label">Glissant</span>
+              </label>
+            </div>
+
+            <div className="affaires-header-divider" />
+
+            <select
+              className="affaires-header-select"
+              value={affaireFilterType || ''}
+              onChange={e => setAffaireFilterType(e.target.value)}
+            >
+              <option value="">Tous types</option>
+              <option value="Prestation">Prestation</option>
+              <option value="Location">Location</option>
+              <option value="Installation">Installation</option>
+            </select>
+
+            <div className="affaires-header-divider" />
+
+            <label className="affaires-toggle" title="Afficher les affaires terminées depuis plus d'une semaine">
+              <input
+                type="checkbox"
+                checked={affaireShowArchived}
+                onChange={e => setAffaireShowArchived(e.target.checked)}
+              />
+              <span className="affaires-toggle-label">Archivées</span>
+            </label>
           </div>
           )}
 

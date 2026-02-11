@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="16" fill="#fed7aa"/>
+  <!-- Plateau remorque -->
+  <rect x="10" y="48" width="72" height="22" rx="3" fill="#ea580c"/>
+  <!-- Ridelles -->
+  <rect x="10" y="42" width="72" height="6" rx="2" fill="#c2410c"/>
+  <!-- Châssis -->
+  <rect x="8" y="70" width="76" height="4" rx="2" fill="#7c2d12"/>
+  <!-- Timon -->
+  <line x1="82" y1="62" x2="108" y2="62" stroke="#c2410c" stroke-width="3"/>
+  <circle cx="108" cy="62" r="3" fill="#7c2d12"/>
+  <!-- Roues -->
+  <circle cx="26" cy="78" r="7" fill="#431407"/>
+  <circle cx="26" cy="78" r="3" fill="#fed7aa"/>
+  <circle cx="62" cy="78" r="7" fill="#431407"/>
+  <circle cx="62" cy="78" r="3" fill="#fed7aa"/>
+  <!-- Ligne sol -->
+  <line x1="10" y1="86" x2="110" y2="86" stroke="#fb923c" stroke-width="1.5"/>
+</svg>

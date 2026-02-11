@@ -1,0 +1,675 @@
+/* ═══════════════════════════════════════
+   MODULE AFFAIRES — MagLog 1.0
+   ═══════════════════════════════════════ */
+
+.affaires-panel {
+  width: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 70px);
+  overflow: hidden;
+}
+
+.affaires-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  gap: 12px;
+}
+
+/* ═══ Erreur ═══ */
+
+.affaires-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.affaires-error button {
+  margin-left: auto;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.affaires-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fffbeb;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  color: #d97706;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.affaires-google-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  color: #0284c7;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.affaires-google-loading .loading-spinner.small {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+
+
+/* ═══ Barre d'info (compteur + frise) ═══ */
+
+.affaires-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 4px 0;
+}
+
+.affaires-count-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.affaires-count-number {
+  font-size: 18px;
+  font-weight: 800;
+  color: #334155;
+  letter-spacing: -0.5px;
+}
+
+.affaires-count-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ═══ Frise chronologique ═══ */
+
+.affaires-timeline {
+  flex: 1;
+  min-width: 150px;
+  height: 48px;
+  position: relative;
+  cursor: crosshair;
+  user-select: none;
+  margin-left: 8px;
+  overflow: visible;
+}
+
+.timeline-track {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 4px;
+  height: 18px;
+  background: linear-gradient(to bottom, #e8ecf1, #e2e8f0);
+  border-radius: 4px;
+  overflow: visible;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* Marqueurs de dates */
+.timeline-marker {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.marker-tick {
+  display: block;
+  width: 1.5px;
+  height: 18px;
+  background: #94a3b8;
+}
+
+.marker-label {
+  font-size: 9px;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-top: 2px;
+  letter-spacing: 0.2px;
+  text-transform: capitalize;
+}
+
+/* Blocs affaires sur la frise */
+.timeline-block {
+  position: absolute;
+  top: 4px;
+  height: 10px;
+  border-radius: 3px;
+  opacity: 0.55;
+  transition: opacity 0.15s, box-shadow 0.15s;
+  min-width: 3px;
+  z-index: 2;
+}
+
+.timeline-block.tl-highlighted {
+  opacity: 1;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.5);
+  z-index: 3;
+}
+
+/* Marqueur Aujourd'hui */
+.timeline-today {
+  position: absolute;
+  top: -2px;
+  height: 22px;
+  width: 2px;
+  background: #ef4444;
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.timeline-today::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+}
+
+/* Curseur déplaçable */
+.timeline-cursor {
+  position: absolute;
+  top: -4px;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cursor-line {
+  width: 2px;
+  height: 26px;
+  background: #6366f1;
+  border-radius: 1px;
+}
+
+.cursor-handle {
+  width: 14px;
+  height: 14px;
+  background: #6366f1;
+  border: 2px solid white;
+  border-radius: 50%;
+  margin-top: -2px;
+  box-shadow: 0 1px 4px rgba(99, 102, 241, 0.4);
+  pointer-events: auto;
+  cursor: grab;
+  transition: transform 0.1s;
+}
+
+.cursor-handle:hover {
+  transform: scale(1.2);
+}
+
+.cursor-handle:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+.cursor-date {
+  font-size: 10px;
+  color: #6366f1;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+  margin-top: 1px;
+  background: white;
+  padding: 0 4px;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  line-height: 1.4;
+}
+
+/* Ligne affaire surlignée par la frise */
+.affaire-row.highlighted {
+  background: #c7d2fe !important;
+  box-shadow: inset 4px 0 0 #6366f1;
+  opacity: 1 !important;
+}
+
+.affaire-row.highlighted .ar-numero {
+  color: #4338ca;
+  font-weight: 800;
+}
+
+.affaire-row.highlighted .ar-client,
+.affaire-row.highlighted .ar-titre {
+  color: #1e1b4b;
+}
+
+/* Ligne sélectionnée (clic simple) */
+.affaire-row.selected {
+  background: #e0e7ff !important;
+  box-shadow: inset 3px 0 0 #4f46e5;
+}
+
+.affaire-row.selected .ar-numero {
+  color: #4338ca;
+}
+
+/* ═══ Corps (liste + volet détail) ═══ */
+
+.affaires-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* ═══ Liste / Tableau des affaires ═══ */
+
+.affaires-list {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  transition: flex 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.affaires-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  gap: 12px;
+  text-align: center;
+}
+
+.affaires-empty svg {
+  opacity: 0.4;
+}
+
+.affaires-empty p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ═══ En-tête du tableau ═══ */
+
+.affaire-table-header {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ath-status { width: 20px; flex-shrink: 0; }
+.ath-numero { width: 80px; flex-shrink: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-type { width: 80px; flex-shrink: 1; min-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-dates { width: 200px; flex-shrink: 1; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-client { flex: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-titre { flex: 1.5; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-lieu { flex: 1; min-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-icons { width: 50px; flex-shrink: 0; }
+.ath-resa,
+.ath-pers { width: 35px; flex-shrink: 0; text-align: center; }
+
+/* En-têtes cliquables */
+.affaire-table-header .sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.affaire-table-header .sortable:hover {
+  color: #1e293b;
+}
+
+.sort-arrow {
+  font-size: 9px;
+  color: #6366f1;
+  line-height: 1;
+}
+
+/* ═══ Ligne affaire ═══ */
+
+.affaire-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+  color: #334155;
+  gap: 8px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.affaire-row:last-child {
+  border-bottom: none;
+}
+
+.affaire-row:hover {
+  background: #f8fafc;
+}
+
+.affaire-row.status-past {
+  opacity: 0.55;
+}
+
+.affaire-row.archived {
+  opacity: 0.4;
+  background: #f8fafc;
+}
+
+.affaire-row.archived:hover {
+  opacity: 0.65;
+  background: #f1f5f9;
+}
+
+.affaire-row.archived .ar-numero {
+  text-decoration: line-through;
+  text-decoration-color: #94a3b8;
+}
+
+.affaire-row.status-active {
+  background: #f0fdf4;
+}
+
+.affaire-row.status-upcoming {
+  background: #eff6ff;
+}
+
+.affaire-row.status-active:hover {
+  background: #dcfce7;
+}
+
+.affaire-row.status-upcoming:hover {
+  background: #dbeafe;
+}
+
+/* Indicateur de statut (pastille) */
+.ar-status { width: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.active {
+  background: #10b981;
+  box-shadow: 0 0 4px #10b981;
+}
+
+.status-dot.past {
+  background: #cbd5e1;
+}
+
+.status-dot.upcoming {
+  background: #3b82f6;
+  box-shadow: 0 0 4px #3b82f6;
+}
+
+.status-dot.archived {
+  background: #94a3b8;
+  border: 2px solid #cbd5e1;
+  width: 6px;
+  height: 6px;
+}
+
+/* Colonnes de la ligne */
+.ar-numero {
+  width: 80px;
+  flex-shrink: 1;
+  min-width: 60px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  color: #1e293b;
+  letter-spacing: 0.3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ar-type {
+  width: 80px;
+  flex-shrink: 1;
+  min-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.affaire-type-tag {
+  padding: 2px 8px;
+  border-radius: 20px;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.ar-dates {
+  width: 200px;
+  flex-shrink: 1;
+  min-width: 100px;
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ar-client {
+  flex: 1;
+  min-width: 60px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ar-titre {
+  flex: 1.5;
+  min-width: 60px;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ar-lieu {
+  flex: 1;
+  min-width: 50px;
+  color: #64748b;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Colonne icônes (pièces jointes / liens) */
+.ar-icons {
+  width: 50px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.ar-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 4px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ar-icon-badge svg {
+  flex-shrink: 0;
+}
+
+.file-badge {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.link-badge {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.badge-count {
+  font-size: 9px;
+  line-height: 1;
+}
+
+/* Icône calendrier dans le titre */
+.ar-event-icon {
+  flex-shrink: 0;
+  color: #6366f1;
+  margin-right: 3px;
+  vertical-align: middle;
+  display: inline;
+}
+
+.ar-resa,
+.ar-pers {
+  width: 35px;
+  flex-shrink: 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #475569;
+}
+
+.ar-resa { color: #0284c7; }
+.ar-pers { color: #d97706; }
+
+/* ═══ Responsive ═══ */
+
+@media (max-width: 768px) {
+  .affaires-stats {
+    gap: 8px;
+  }
+
+  .affaires-stat-card {
+    min-width: 80px;
+    padding: 8px 12px;
+  }
+
+  .stat-value {
+    font-size: 15px;
+  }
+
+  .affaires-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .affaires-sort-controls {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .affaires-filters-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .affaire-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .affaire-card-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .affaire-counters {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink } from 'lucide-react';
+import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users, Briefcase } from 'lucide-react';
 import api from '../utils/api';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 import './UserManagement.css';
 
-const UserManagement = ({ onAccessRequestChange }) => {
+const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const [authorizedEmails, setAuthorizedEmails] = useState([]);
   const [users, setUsers] = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
@@ -13,6 +13,8 @@ const UserManagement = ({ onAccessRequestChange }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [editingUser, setEditingUser] = useState(null);
   const [approveModal, setApproveModal] = useState(null); // { id, email, name }
+  const [personModal, setPersonModal] = useState(null); // { user } pour création de fiche personnel
+  const [personsMap, setPersonsMap] = useState({}); // user_id -> person
 
   useEffect(() => {
     loadData();
@@ -28,14 +30,23 @@ const UserManagement = ({ onAccessRequestChange }) => {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [emailsData, usersData, requestsData] = await Promise.all([
+      const [emailsData, usersData, requestsData, personsData] = await Promise.all([
         api.getAuthorizedEmails(),
         api.getUsers(),
-        api.getAccessRequests()
+        api.getAccessRequests(),
+        api.getPersons().catch(() => []),
       ]);
       setAuthorizedEmails(emailsData);
       setUsers(usersData);
       setAccessRequests(requestsData);
+      // Construire la map user_id -> person
+      const pMap = {};
+      if (Array.isArray(personsData)) {
+        for (const p of personsData) {
+          if (p.user_id) pMap[p.user_id] = p;
+        }
+      }
+      setPersonsMap(pMap);
     } catch (error) {
       console.error('Erreur chargement données:', error);
       alert('Erreur lors du chargement des données');
@@ -196,6 +207,7 @@ const UserManagement = ({ onAccessRequestChange }) => {
                   <th>Email</th>
                   <th>Droits</th>
                   <th style={{ width: '80px' }}>Actions</th>
+                  <th style={{ width: '100px' }}>Personnel</th>
                 </tr>
               </thead>
               <tbody>
@@ -248,6 +260,27 @@ const UserManagement = ({ onAccessRequestChange }) => {
                           <Trash2 size={14} />
                         </button>
                       </div>
+                    </td>
+                    <td>
+                      {personsMap[user.id] ? (
+                        <button
+                          className="personnel-linked-badge clickable"
+                          title={`Voir la fiche de ${personsMap[user.id].first_name} ${personsMap[user.id].last_name}`}
+                          onClick={() => onNavigateToPersonnel && onNavigateToPersonnel(personsMap[user.id])}
+                        >
+                          <UserCheck size={13} />
+                          <span>{personsMap[user.id].type === 'contractuel' ? 'Contractuel' : 'Permanent'}</span>
+                          <ExternalLink size={11} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setPersonModal({ user })}
+                          className="btn-create-personnel"
+                          title="Créer une fiche personnel pour cet utilisateur"
+                        >
+                          <Users size={13} /> Créer
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -429,6 +462,23 @@ const UserManagement = ({ onAccessRequestChange }) => {
           onCancel={() => setApproveModal(null)}
         />
       )}
+
+      {/* Modal de création de fiche personnel */}
+      {personModal && (
+        <CreatePersonnelModal
+          user={personModal.user}
+          onConfirm={async (personData) => {
+            try {
+              await api.createPerson(personData);
+              setPersonModal(null);
+              loadData();
+            } catch (err) {
+              alert('Erreur lors de la création : ' + (err.message || err));
+            }
+          }}
+          onCancel={() => setPersonModal(null)}
+        />
+      )}
     </div>
   );
 };
@@ -513,3 +563,139 @@ function ApproveRequestModal({ request, onConfirm, onCancel }) {
 }
 
 export default UserManagement;
+
+// Types de personnel
+const PERSON_TYPES = [
+  { value: 'permanent', label: 'Permanent', icon: '🏢' },
+  { value: 'contractuel', label: 'Contractuel', icon: '📋' },
+];
+
+const CONTRACT_TYPES = [
+  { value: 'intermittent', label: 'Intermittent du spectacle' },
+  { value: 'freelance', label: 'Freelance' },
+  { value: 'entreprise', label: 'Entreprise / Prestataire' },
+];
+
+function CreatePersonnelModal({ user, onConfirm, onCancel }) {
+  const [personType, setPersonType] = useState('permanent');
+  const [contractType, setContractType] = useState('intermittent');
+  const [loading, setLoading] = useState(false);
+
+  // Séparer le nom en prénom / nom
+  const nameParts = (user.name || '').trim().split(/\s+/);
+  const defaultFirstName = nameParts[0] || '';
+  const defaultLastName = nameParts.slice(1).join(' ') || '';
+
+  const [firstName, setFirstName] = useState(defaultFirstName);
+  const [lastName, setLastName] = useState(defaultLastName);
+
+  const handleSubmit = async () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      alert('Le prénom et le nom sont obligatoires.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const personData = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: user.email || '',
+        type: personType,
+        status: 'active',
+        user_id: user.id,
+      };
+      if (personType === 'contractuel') {
+        personData.contract_type = contractType;
+      }
+      await onConfirm(personData);
+    } catch (err) {
+      // handled by parent
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="create-personnel-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="create-personnel-modal-header">
+          <Users size={22} />
+          <h3>Créer une fiche personnel</h3>
+        </div>
+
+        <div className="create-personnel-modal-body">
+          <p className="create-personnel-subtitle">
+            Créer une fiche personnel liée au compte de <strong>{user.name || user.email}</strong>
+          </p>
+
+          <div className="create-personnel-fields">
+            <div className="create-personnel-field">
+              <label>Prénom</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Prénom"
+              />
+            </div>
+            <div className="create-personnel-field">
+              <label>Nom</label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Nom"
+              />
+            </div>
+          </div>
+
+          <div className="create-personnel-type-section">
+            <label className="create-personnel-section-label">Type de personnel</label>
+            <div className="create-personnel-type-cards">
+              {PERSON_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  className={`personnel-type-card ${personType === t.value ? 'active' : ''}`}
+                  onClick={() => setPersonType(t.value)}
+                >
+                  <span className="personnel-type-icon">{t.icon}</span>
+                  <span className="personnel-type-label">{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {personType === 'contractuel' && (
+            <div className="create-personnel-type-section">
+              <label className="create-personnel-section-label">Type de contrat</label>
+              <div className="create-personnel-contract-options">
+                {CONTRACT_TYPES.map((ct) => (
+                  <label key={ct.value} className="contract-type-option">
+                    <input
+                      type="radio"
+                      name="contractType"
+                      value={ct.value}
+                      checked={contractType === ct.value}
+                      onChange={(e) => setContractType(e.target.value)}
+                    />
+                    <span>{ct.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="create-personnel-modal-actions">
+          <button className="btn-secondary" onClick={onCancel} disabled={loading}>
+            Annuler
+          </button>
+          <button className="btn-approve" onClick={handleSubmit} disabled={loading || !firstName.trim() || !lastName.trim()}>
+            <UserPlus size={16} />
+            {loading ? 'Création...' : 'Créer la fiche'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

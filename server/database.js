@@ -467,6 +467,45 @@ function initializeDatabase() {
   console.log('✅ Module Planning Personnel initialisé');
 
   // ═══════════════════════════════════════════════════════
+  // MODULE AFFAIRES
+  // ═══════════════════════════════════════════════════════
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS affaires (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      numero_affaire TEXT NOT NULL UNIQUE,
+      type TEXT NOT NULL DEFAULT 'Prestation',
+      client TEXT,
+      interlocuteur TEXT,
+      tel TEXT,
+      fax TEXT,
+      date_debut TEXT,
+      date_fin TEXT,
+      devis TEXT,
+      adresse_livraison TEXT,
+      titre TEXT,
+      description TEXT,
+      google_event_id TEXT,
+      event_name TEXT,
+      created_by INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      modified_by INTEGER,
+      modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (created_by) REFERENCES users(id),
+      FOREIGN KEY (modified_by) REFERENCES users(id)
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_affaires_numero ON affaires(numero_affaire);
+    CREATE INDEX IF NOT EXISTS idx_affaires_dates ON affaires(date_debut, date_fin);
+    CREATE INDEX IF NOT EXISTS idx_affaires_type ON affaires(type);
+    CREATE INDEX IF NOT EXISTS idx_affaires_google_event ON affaires(google_event_id);
+  `);
+
+  console.log('✅ Module Affaires initialisé');
+
+  // ═══════════════════════════════════════════════════════
   // FIN MODULE PLANNING PERSONNEL
   // ═══════════════════════════════════════════════════════
 
@@ -569,6 +608,41 @@ function initializeDatabase() {
     }
   } catch (error) {
     console.log('Info: Colonne google_drive_link déjà présente');
+  }
+
+  // Migration: ajouter contract_type dans persons + migrer les types existants
+  try {
+    const personsColumns = db.prepare("PRAGMA table_info(persons)").all();
+    const hasContractType = personsColumns.some(col => col.name === 'contract_type');
+    if (!hasContractType) {
+      db.prepare("ALTER TABLE persons ADD COLUMN contract_type TEXT").run();
+      console.log('✅ Colonne contract_type ajoutée à persons');
+
+      // Migrer les types existants vers le nouveau système
+      // salarié, technicien, conducteur → type='permanent'
+      // intermittent → type='contractuel', contract_type='intermittent'
+      // indépendant → type='contractuel', contract_type='freelance'
+      const personsToMigrate = db.prepare("SELECT id, type FROM persons").all();
+      const updateStmt = db.prepare("UPDATE persons SET type = ?, contract_type = ? WHERE id = ?");
+      let migrated = 0;
+      for (const p of personsToMigrate) {
+        if (['salarié', 'technicien', 'conducteur'].includes(p.type)) {
+          updateStmt.run('permanent', null, p.id);
+          migrated++;
+        } else if (p.type === 'intermittent') {
+          updateStmt.run('contractuel', 'intermittent', p.id);
+          migrated++;
+        } else if (p.type === 'indépendant') {
+          updateStmt.run('contractuel', 'freelance', p.id);
+          migrated++;
+        }
+      }
+      if (migrated > 0) {
+        console.log(`✅ Migration types personnel : ${migrated} personnes migrées (permanent/contractuel)`);
+      }
+    }
+  } catch (error) {
+    console.log('Info: Colonne contract_type déjà présente ou erreur migration:', error.message);
   }
 
   console.log('✅ Base de données initialisée');

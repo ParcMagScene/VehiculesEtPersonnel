@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader, User } from 'lucide-react';
 import api from '../utils/api';
+import { getVehicleAvatar } from '../utils/vehicleAvatars';
 import InterventionModal from './InterventionModal';
 import './VehicleDetailsModal.css';
 
@@ -189,9 +190,13 @@ const VehicleDetailsModal = ({
           <div className="info-section">
             <h3><FileText size={18} /> Informations du véhicule</h3>
             <div className="info-container">
-              {vehicle.photo && (
+              {vehicle.photo ? (
                 <div className="vehicle-photo-container">
                   <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
+                </div>
+              ) : (
+                <div className="vehicle-photo-container">
+                  <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
                 </div>
               )}
               <div className="info-grid">

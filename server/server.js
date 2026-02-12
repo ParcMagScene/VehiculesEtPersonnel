@@ -80,7 +80,7 @@ const authLimiter = rateLimit({
 
 const generalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 200, // max 200 requêtes par minute
+  max: 600, // max 600 requêtes par minute (l'app charge beaucoup de données)
   message: { error: 'Trop de requêtes. Réessayez plus tard.' },
   standardHeaders: true,
   legacyHeaders: false,

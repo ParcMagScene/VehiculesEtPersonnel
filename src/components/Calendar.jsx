@@ -777,12 +777,24 @@ const Calendar = ({
       .filter(r => !(r.isTournee || r.is_tournee) && (r.googleEventId || r.google_event_id) && r.id && !calendarTripCache[r.id])
       .map(r => r.id);
     const allIds = [...new Set([...tourneeIds, ...singleEventIds])];
-    allIds.forEach(id => {
-      fetch(`/api/trip-details/${id}`, { headers }).then(r => r.ok ? r.json() : []).then(data => {
-        const trips = Array.isArray(data) ? data : (data.tripDetails || []);
-        setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
-      }).catch(() => {});
-    });
+    // Charger par petits lots de 5 avec un délai pour éviter le rate limiting
+    const loadBatch = async (ids) => {
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batch = ids.slice(i, i + BATCH_SIZE);
+        await Promise.allSettled(batch.map(id =>
+          fetch(`/api/trip-details/${id}`, { headers })
+            .then(r => r.ok ? r.json() : [])
+            .then(data => {
+              const trips = Array.isArray(data) ? data : (data.tripDetails || []);
+              setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
+            })
+            .catch(() => {})
+        ));
+        if (i + BATCH_SIZE < ids.length) await new Promise(r => setTimeout(r, 100));
+      }
+    };
+    if (allIds.length > 0) loadBatch(allIds);
   }, [reservations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ouvrir le modal automatiquement quand une réservation doit être éditée depuis l'extérieur

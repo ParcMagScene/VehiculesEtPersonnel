@@ -390,7 +390,7 @@ function initializeDatabase() {
       end_time TEXT,
       position TEXT,
       required_skill_id INTEGER, -- DEPRECATED: Ancienne FK vers une seule compétence (conservé pour compatibilité)
-      required_skills TEXT, -- JSON array d'IDs de compétences requises : [1, 3, 5] (remplace required_skill_id)
+      required_skills TEXT, -- JSON string array d'IDs de compétences requises : "[1, 3, 5]" (remplace required_skill_id)
       vehicle_id TEXT,
       status TEXT NOT NULL DEFAULT 'draft',
       notes TEXT,

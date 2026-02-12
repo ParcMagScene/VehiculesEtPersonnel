@@ -1341,6 +1341,69 @@
   color: #334155;
 }
 
+/* ═══ Bouton création rapide "+" ═══ */
+.quick-create-container {
+  position: relative;
+}
+
+.quick-create-button {
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  width: 40px;
+  height: 40px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.quick-create-button:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.quick-create-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 180px;
+  animation: tooltipFadeIn 0.15s ease;
+}
+
+.quick-create-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #334155;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.quick-create-dropdown button:hover {
+  background: #f1f5f9;
+}
+
+.quick-create-dropdown button + button {
+  border-top: 1px solid #f1f5f9;
+}
+
 .qr-button {
   padding: 0.5rem;
   background: #10b981;

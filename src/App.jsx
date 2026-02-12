@@ -89,11 +89,14 @@ function App() {
   const [drivers, setDrivers] = useState([]);
   const [locations, setLocations] = useState([]);
   const [users, setUsers] = useState([]);
+  const [persons, setPersons] = useState([]);
   const [calendarConfig, setCalendarConfig] = useState({ apiKey: '', calendarId: '' });
   const [showManagement, setShowManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeModule, setActiveModule] = useState('vehicles');
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
+  const [navigateToPersonId, setNavigateToPersonId] = useState(null);
+  const [quickReservationSlot, setQuickReservationSlot] = useState(null);
   // Filtres affaires (remonté ici pour le Header)
   const [affaireSearchTerm, setAffaireSearchTerm] = useState('');
   const [affaireFilterType, setAffaireFilterType] = useState('');
@@ -182,7 +185,8 @@ function App() {
           garagesData,
           maintenancesData,
           configData,
-          usersData
+          usersData,
+          personsData
         ] = await Promise.all([
           api.getVehicles(),
           api.getReservations(),
@@ -192,7 +196,8 @@ function App() {
           api.getGarages(),
           api.getMaintenances(),
           api.getConfig('googleCalendar'),
-          api.getUsersNames()
+          api.getUsersNames(),
+          api.getPersons()
         ]);
 
         // Trier les véhicules par ordre
@@ -206,6 +211,7 @@ function App() {
         setGarages(garagesData);
         setMaintenances(maintenancesData);
         setUsers(usersData);
+        setPersons(personsData || []);
         
         // Parser la configuration du calendrier
         if (configData && configData.value) {
@@ -670,6 +676,33 @@ function App() {
     localStorage.setItem('auth_user', JSON.stringify(updatedUser));
   };
 
+  // ═══ Navigation croisée entre modules ═══
+  const handleNavigateToEntity = useCallback((type, data) => {
+    if (type === 'vehicle') {
+      // data = { id } — ouvrir le détail véhicule dans le module Parc
+      const v = vehicles.find(v => v.id === data.id);
+      if (v) {
+        setActiveModule('vehicles');
+        setShowManagement(false);
+        setShowSettings(false);
+        setSelectedVehicleForDetails(v);
+      }
+    } else if (type === 'person') {
+      // data = { id } — basculer vers le module Personnel
+      setActiveModule('personnel');
+      setShowManagement(false);
+      setShowSettings(false);
+      // PersonnelPanel gère la sélection en interne via navigateToPersonId
+      setNavigateToPersonId(data.id);
+    } else if (type === 'reservation') {
+      // data = { id } — ouvrir la réservation dans le module Parc
+      setActiveModule('vehicles');
+      setShowManagement(false);
+      setShowSettings(false);
+      setReservationToEdit(data.id);
+    }
+  }, [vehicles]);
+
   return (
     <div className="app">
       <Header
@@ -713,6 +746,25 @@ function App() {
             const data = await api.getReservations();
             setReservations(data);
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
+        }}
+        onQuickCreateEvent={() => {
+          // Ouvrir EventDetailsModal en mode création via GoogleCalendarBanner
+          if (activeModule === 'affaires') setActiveModule('vehicles');
+          openEventDetailsModalRef.current?.(null);
+        }}
+        onQuickCreateReservation={() => {
+          // Basculer vers le module Parc et ouvrir une nouvelle réservation
+          setActiveModule('vehicles');
+          setShowManagement(false);
+          setShowSettings(false);
+          // Créer un slot "vide" pour aujourd'hui
+          setQuickReservationSlot({
+            vehicleId: null,
+            date: new Date().toISOString().slice(0, 10),
+            period: 'morning',
+            endDate: new Date().toISOString().slice(0, 10),
+            endPeriod: 'afternoon',
+          });
         }}
       />
       
@@ -776,6 +828,7 @@ function App() {
                 onDeleteReservation={deleteReservation}
                 clients={clients}
                 drivers={drivers}
+                persons={persons}
                 locations={locations}
                 users={users}
                 googleEvent={googleEventForReservation}
@@ -792,6 +845,8 @@ function App() {
                 }}
                 onRequestViewEvent={(event) => openEventDetailsModalRef.current?.(event)}
                 currentUser={currentUser}
+                quickReservationSlot={quickReservationSlot}
+                onQuickReservationHandled={() => setQuickReservationSlot(null)}
               />
               <VehicleSlidePanel
                 vehicle={selectedVehicleForDetails}
@@ -827,6 +882,8 @@ function App() {
             view={view}
             currentDate={currentDate}
             googleEvents={allGoogleEvents}
+            navigateToPersonId={navigateToPersonId}
+            onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
           />
         </Suspense>
       )}
@@ -845,6 +902,7 @@ function App() {
             filterDateStart={affaireFilterDateStart}
             filterDateEnd={affaireFilterDateEnd}
             showArchived={affaireShowArchived}
+            onNavigateToEntity={handleNavigateToEntity}
           />
         </Suspense>
       )}

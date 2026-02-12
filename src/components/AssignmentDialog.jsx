@@ -466,8 +466,6 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         ? `${selectedAffaire.numeroAffaire || ''} — ${selectedAffaire.titre || selectedAffaire.eventName || selectedAffaire.client || 'Mission'}`.trim()
         : selectedPositions.length > 0 ? selectedPositions.join(', ') : `Mission ${format(parseISO(startDate), 'd MMM yyyy', { locale: fr })}`;
 
-      console.log('[AssignmentDialog] handleSave — mode:', isEdit ? 'EDIT' : 'CREATE');
-
       // Sérialiser les jours OFF (on ne stocke que les jours explicitement OFF)
       const offDays = Object.entries(dayStates)
         .filter(([, v]) => v === 'off')
@@ -494,18 +492,13 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
       let mission, assignment;
 
-      console.log('[AssignmentDialog] missionData:', JSON.stringify(missionData, null, 2));
-
       if (isEdit) {
         // ── Mode édition : mettre à jour ──
         const missionId = existingMission.id;
-        console.log('[AssignmentDialog] UPDATE mission id:', missionId);
         mission = await api.updateMission(missionId, missionData);
-        console.log('[AssignmentDialog] updateMission response:', mission);
 
         // Mettre à jour l'affectation existante
         const assignmentId = existingAssignment?.id;
-        console.log('[AssignmentDialog] UPDATE assignment id:', assignmentId);
         if (assignmentId) {
           const assignmentData = {
             person_id: selectedPersonId,
@@ -513,17 +506,11 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
             position: positionValue,
             comment: notes || null,
           };
-          console.log('[AssignmentDialog] assignmentData:', JSON.stringify(assignmentData, null, 2));
           assignment = await api.updateAssignment(assignmentId, assignmentData);
-          console.log('[AssignmentDialog] updateAssignment response:', assignment);
-        } else {
-          console.warn('[AssignmentDialog] Pas d\'assignmentId — affectation non mise à jour');
         }
       } else {
         // ── Mode création ──
-        console.log('[AssignmentDialog] CREATE mission...');
         mission = await api.createMission(missionData);
-        console.log('[AssignmentDialog] createMission response:', mission);
 
         const assignmentData = {
           mission_id: mission.id,
@@ -533,9 +520,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           comment: notes || null,
         };
 
-        console.log('[AssignmentDialog] CREATE assignment:', JSON.stringify(assignmentData, null, 2));
         assignment = await api.createAssignment(assignmentData);
-        console.log('[AssignmentDialog] createAssignment response:', assignment);
 
         // Vérifier les warnings
         if (assignment.warnings) {

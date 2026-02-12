@@ -187,7 +187,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   // Charger les utilisateurs pour le modal de nouvelle conversation
   const openNewConvModal = async () => {
     try {
-      const users = await api.request('/users');
+      const users = await api.request('/users/names');
       setAllUsers(users.filter(u => u.id !== currentUser?.id));
       setShowNewConv(true);
     } catch (err) {

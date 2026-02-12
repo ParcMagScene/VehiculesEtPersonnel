@@ -1087,7 +1087,7 @@ const TripDetailsModal = ({
                   const qualified = (persons || []).filter(p => p.status === 'active' && p.skills?.some(s => {
                     const sL = hierarchy.indexOf(s.name);
                     return sL >= 0 && sL >= reqLevel;
-                  })).map(p => ({ id: p.id, name: `${p.first_name} ${p.last_name}`.trim(), skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));
+                  })).map(p => ({ id: p.id, name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`, skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));
                   return (<>
                     {qualified.length > 0 && <optgroup label="Personnel qualifié">
                       {qualified.map(p => <option key={`p-${p.id}`} value={p.name}>{p.name} ({p.skills.join(', ')})</option>)}

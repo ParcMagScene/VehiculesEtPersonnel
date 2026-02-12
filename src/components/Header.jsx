@@ -409,7 +409,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               aria-selected={activeModule === 'vehicles'}
             >
               <Truck size={18} />
-              <span>Véhicules</span>
+              <span>Parc</span>
             </button>
             <button
               className={`module-tab ${activeModule === 'personnel' ? 'active' : ''}`}

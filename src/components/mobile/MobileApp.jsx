@@ -131,7 +131,7 @@ function MobileApp({ onSwitchToDesktop }) {
         <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <h1>Véhicules</h1>
+        <h1>eM@g</h1>
         <div className="user-info" style={{ position: 'relative' }}>
           <button 
             className="user-initial"

@@ -420,3 +420,132 @@
   border-color: var(--focus-border);
   box-shadow: var(--focus-ring);
 }
+
+/* ═══════════════════════════════════════════════════════
+   TOOLTIP UNIFIÉ
+   ═══════════════════════════════════════════════════════ */
+
+/* Tooltip global positionné en fixed (rendu via JS) */
+.emag-tooltip {
+  position: fixed;
+  background: rgba(17, 24, 39, 0.95);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  min-width: 180px;
+  max-width: 320px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 999999;
+  pointer-events: none;
+  white-space: normal;
+  text-align: left;
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+.emag-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(17, 24, 39, 0.95);
+}
+
+.emag-tooltip .tooltip-row {
+  display: flex;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.emag-tooltip .tooltip-row:last-child {
+  margin-bottom: 0;
+}
+
+.emag-tooltip .tooltip-label {
+  font-weight: 600;
+  margin-right: 8px;
+  min-width: 65px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.emag-tooltip .tooltip-value {
+  color: white;
+  flex: 1;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); }
+  to { opacity: 1; transform: translate(-50%, -100%); }
+}
+
+/* ─── Tooltip data-attribute (PersonnelPanel slots) ─── */
+[data-emag-tooltip] {
+  position: relative;
+}
+
+[data-emag-tooltip]::before {
+  content: attr(data-emag-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(17, 24, 39, 0.95);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 6px;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+[data-emag-tooltip]::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(17, 24, 39, 0.95);
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+[data-emag-tooltip]:hover::before,
+[data-emag-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ─── Scrollbar unifiée ─── */
+.emag-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.emag-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.emag-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.emag-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

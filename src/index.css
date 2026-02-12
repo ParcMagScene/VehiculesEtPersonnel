@@ -153,31 +153,4 @@ code {
   animation: fadeIn 0.2s ease-out;
 }
 
-/* Style pour les tooltips */
-.tooltip {
-  position: relative;
-  display: inline-block;
-}
-
-.tooltip .tooltiptext {
-  visibility: hidden;
-  background-color: #333;
-  color: #fff;
-  text-align: center;
-  border-radius: 0;
-  padding: 5px 10px;
-  position: absolute;
-  z-index: 1000;
-  bottom: 125%;
-  left: 50%;
-  margin-left: -60px;
-  opacity: 0;
-  transition: opacity 0.3s;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.tooltip:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
-}
+/* Style pour les tooltips — voir theme.css .emag-tooltip */

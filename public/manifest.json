@@ -1,7 +1,7 @@
 {
-  "name": "Mag Scène - Véhicules",
-  "short_name": "Véhicules",
-  "description": "Gestion du parc véhicules Mag Scène",
+  "name": "eM@g - Mag Scène",
+  "short_name": "eM@g",
+  "description": "Gestion du parc Mag Scène",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -188,7 +188,7 @@
 
 .timeline-block.tl-highlighted {
   opacity: 1;
-  box-shadow: 0 0 6px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 6px rgba(102, 126, 234, 0.5);
   z-index: 3;
 }
 
@@ -230,18 +230,18 @@
 .cursor-line {
   width: 2px;
   height: 26px;
-  background: #6366f1;
+  background: #667eea;
   border-radius: 1px;
 }
 
 .cursor-handle {
   width: 14px;
   height: 14px;
-  background: #6366f1;
+  background: #667eea;
   border: 2px solid white;
   border-radius: 50%;
   margin-top: -2px;
-  box-shadow: 0 1px 4px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 1px 4px rgba(102, 126, 234, 0.4);
   pointer-events: auto;
   cursor: grab;
   transition: transform 0.1s;
@@ -258,7 +258,7 @@
 
 .cursor-date {
   font-size: 10px;
-  color: #6366f1;
+  color: #667eea;
   font-weight: 700;
   white-space: nowrap;
   text-align: center;
@@ -273,12 +273,12 @@
 /* Ligne affaire surlignée par la frise */
 .affaire-row.highlighted {
   background: #c7d2fe !important;
-  box-shadow: inset 4px 0 0 #6366f1;
+  box-shadow: inset 4px 0 0 #667eea;
   opacity: 1 !important;
 }
 
 .affaire-row.highlighted .ar-numero {
-  color: #4338ca;
+  color: #5b21b6;
   font-weight: 800;
 }
 
@@ -290,11 +290,11 @@
 /* Ligne sélectionnée (clic simple) */
 .affaire-row.selected {
   background: #e0e7ff !important;
-  box-shadow: inset 3px 0 0 #4f46e5;
+  box-shadow: inset 3px 0 0 #764ba2;
 }
 
 .affaire-row.selected .ar-numero {
-  color: #4338ca;
+  color: #5b21b6;
 }
 
 /* ═══ Corps (liste + volet détail) ═══ */
@@ -354,11 +354,11 @@
   width: 100%;
   box-sizing: border-box;
   padding: 8px 12px;
-  background: #f1f5f9;
+  background: var(--theme-gradient);
   border-bottom: 2px solid #e2e8f0;
   font-size: 11px;
   font-weight: 700;
-  color: #64748b;
+  color: white;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   position: sticky;
@@ -390,12 +390,12 @@
 }
 
 .affaire-table-header .sortable:hover {
-  color: #1e293b;
+  color: #e0e7ff;
 }
 
 .sort-arrow {
   font-size: 9px;
-  color: #6366f1;
+  color: #c7d2fe;
   line-height: 1;
 }
 
@@ -448,7 +448,7 @@
 }
 
 .affaire-row.status-upcoming {
-  background: #eff6ff;
+  background: #eef2ff;
 }
 
 .affaire-row.status-active:hover {
@@ -456,7 +456,7 @@
 }
 
 .affaire-row.status-upcoming:hover {
-  background: #dbeafe;
+  background: #e0e7ff;
 }
 
 /* Indicateur de statut (pastille) */
@@ -479,8 +479,8 @@
 }
 
 .status-dot.upcoming {
-  background: #3b82f6;
-  box-shadow: 0 0 4px #3b82f6;
+  background: #667eea;
+  box-shadow: 0 0 4px #667eea;
 }
 
 .status-dot.archived {
@@ -596,8 +596,8 @@
 }
 
 .link-badge {
-  background: #dbeafe;
-  color: #2563eb;
+  background: #e0e7ff;
+  color: #667eea;
 }
 
 .badge-count {
@@ -608,7 +608,7 @@
 /* Icône calendrier dans le titre */
 .ar-event-icon {
   flex-shrink: 0;
-  color: #6366f1;
+  color: #667eea;
   margin-right: 3px;
   vertical-align: middle;
   display: inline;

@@ -77,7 +77,7 @@ const getCategoryColor = (category) => {
 // Composant principal
 // ═══════════════════════════════════════
 
-const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, googleEvents = [] }) => {
+const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, googleEvents = [], navigateToPersonId, onNavigateToPersonHandled }) => {
   const [subTab, setSubTab] = useState(mode === 'planning' ? 'planning' : 'persons');
   const [persons, setPersons] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -1203,6 +1203,17 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
   const [collapsedSections, setCollapsedSections] = useState({ permanents: false, contractuels: false });
   const [selectedPersonForDetails, setSelectedPersonForDetails] = useState(null);
   const clickTimerRef = useRef(null);
+
+  // Navigation croisée depuis un autre module
+  useEffect(() => {
+    if (navigateToPersonId && persons.length > 0) {
+      const target = persons.find(p => p.id === navigateToPersonId);
+      if (target) {
+        setSelectedPersonForDetails(target);
+      }
+      if (onNavigateToPersonHandled) onNavigateToPersonHandled();
+    }
+  }, [navigateToPersonId, persons, onNavigateToPersonHandled]);
 
   // Planning data state
   const [planningData, setPlanningData] = useState({ missions: [], availabilities: [] });

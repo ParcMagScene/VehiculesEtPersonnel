@@ -164,6 +164,36 @@
   color: #334155;
 }
 
+/* Liens vers entités (véhicule, personnel) — navigation croisée */
+.entity-link {
+  cursor: pointer;
+  color: #6366f1;
+  transition: color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.entity-link:hover {
+  color: #4338ca;
+  text-decoration: underline;
+}
+.entity-link-icon {
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.entity-link:hover .entity-link-icon {
+  opacity: 1;
+}
+
+/* Personnel cliquable */
+.person-item.clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.person-item.clickable:hover {
+  background: #eef2ff;
+}
+
 .resa-immat {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 11px;

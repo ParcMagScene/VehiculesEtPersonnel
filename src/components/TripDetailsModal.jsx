@@ -11,6 +11,7 @@ const TripDetailsModal = ({
   onSave,
   onClose,
   drivers,
+  persons = [],
   vehicle,
   nextEvent, // Pour les jonctions
   googleMapsApiKey,
@@ -1064,11 +1065,27 @@ const TripDetailsModal = ({
                 style={{padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem'}}
               >
                 <option value="">Sélectionner un conducteur</option>
-                {drivers?.map((driver) => (
-                  <option key={driver.id} value={driver.name}>
-                    {driver.name}
-                  </option>
-                ))}
+                {(() => {
+                  // Filtrer le personnel qualifié par compétence de conduite
+                  const vehicleType = vehicle?.type?.toUpperCase() || '';
+                  let requiredSkill = 'Conduite VL';
+                  if (['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite PL';
+                  else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite SPL';
+                  const hierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
+                  const reqLevel = hierarchy.indexOf(requiredSkill);
+                  const qualified = (persons || []).filter(p => p.status === 'active' && p.skills?.some(s => {
+                    const sL = hierarchy.indexOf(s.name);
+                    return sL >= 0 && sL >= reqLevel;
+                  })).map(p => ({ id: p.id, name: `${p.first_name} ${p.last_name}`.trim(), skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));
+                  return (<>
+                    {qualified.length > 0 && <optgroup label="Personnel qualifié">
+                      {qualified.map(p => <option key={`p-${p.id}`} value={p.name}>{p.name} ({p.skills.join(', ')})</option>)}
+                    </optgroup>}
+                    {drivers?.filter(d => !qualified.some(q => q.name === d.name)).length > 0 && <optgroup label="Autres conducteurs">
+                      {drivers.filter(d => !qualified.some(q => q.name === d.name)).map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                    </optgroup>}
+                  </>);
+                })()}
               </select>
             </div>
           </div>

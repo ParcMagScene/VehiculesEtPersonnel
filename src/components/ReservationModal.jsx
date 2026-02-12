@@ -17,6 +17,7 @@ const ReservationModal = ({
   vehicles,
   clients,
   drivers,
+  persons = [],
   locations,
   onSave,
   onDelete,
@@ -133,6 +134,36 @@ const ReservationModal = ({
     allLocations.forEach(l => { if (l.type) types.add(l.type); });
     return [...types].sort();
   }, [allLocations]);
+
+  // Conducteurs qualifiés (personnel avec compétence de conduite adaptée au véhicule)
+  const qualifiedDrivers = React.useMemo(() => {
+    if (!persons || persons.length === 0) return [];
+    const selectedVehicle = vehicles?.find(v => v.id === formData.vehicleId);
+    const vehicleType = selectedVehicle?.type?.toUpperCase() || '';
+    
+    // Déterminer la compétence requise
+    let requiredSkill = 'Conduite VL'; // par défaut
+    if (['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR'].some(t => vehicleType.includes(t))) {
+      requiredSkill = 'Conduite PL';
+    } else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) {
+      requiredSkill = 'Conduite SPL';
+    }
+    
+    // Filtrer les personnes avec la compétence requise + celles avec compétence supérieure
+    const skillHierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
+    const requiredLevel = skillHierarchy.indexOf(requiredSkill);
+    
+    return persons
+      .filter(p => p.status === 'active' && p.skills?.some(s => {
+        const sLevel = skillHierarchy.indexOf(s.name);
+        return sLevel >= 0 && sLevel >= requiredLevel;
+      }))
+      .map(p => ({
+        id: p.id,
+        name: `${p.first_name} ${p.last_name}`.trim(),
+        skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || []
+      }));
+  }, [persons, vehicles, formData.vehicleId]);
 
   const filteredLocations = React.useMemo(() => {
     let result = allLocations;
@@ -956,12 +987,27 @@ const ReservationModal = ({
                 onChange={handleChange}
               >
                 <option value="">Sélectionner un conducteur</option>
-                {drivers && drivers.map((driver) => (
-                  <option key={`driver-${driver.id}`} value={driver.name}>
-                    {driver.name}
-                  </option>
-                ))}
-                {driverSuggestions.filter(s => !drivers?.some(d => d.name === s)).map((suggestion, idx) => (
+                {qualifiedDrivers.length > 0 && (
+                  <optgroup label="Personnel qualifié">
+                    {qualifiedDrivers.map((p) => (
+                      <option key={`person-${p.id}`} value={p.name}>
+                        {p.name} ({p.skills.join(', ')})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {drivers && drivers.length > 0 && (
+                  <optgroup label="Autres conducteurs">
+                    {drivers.filter(d => !qualifiedDrivers.some(q => q.name === d.name)).map((driver) => (
+                      <option key={`driver-${driver.id}`} value={driver.name}>
+                        {driver.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {driverSuggestions.filter(s => 
+                  !drivers?.some(d => d.name === s) && !qualifiedDrivers.some(q => q.name === s)
+                ).map((suggestion, idx) => (
                   <option key={`history-${idx}`} value={suggestion}>
                     {suggestion} (historique)
                   </option>

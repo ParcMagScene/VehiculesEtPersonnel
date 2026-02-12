@@ -1268,6 +1268,11 @@
   z-index: 10;
 }
 
+.time-slot.block-drag-preview.drag-conflict {
+  background: rgba(239, 68, 68, 0.2) !important;
+  outline: 2px dashed #ef4444;
+}
+
 /* Ghost : bloc original pendant le déplacement */
 .reservation.block-drag-ghost {
   opacity: 0.25 !important;

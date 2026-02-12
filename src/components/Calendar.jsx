@@ -579,6 +579,7 @@ const Calendar = ({
   onDeleteReservation,
   clients,
   drivers,
+  persons = [],
   locations,
   users = [],
   onScroll,
@@ -593,6 +594,8 @@ const Calendar = ({
   onMaintenanceClick,
   onRequestViewEvent,
   currentUser,
+  quickReservationSlot,
+  onQuickReservationHandled,
 }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
@@ -616,6 +619,15 @@ const Calendar = ({
   const [calendarTripCache, setCalendarTripCache] = useState({}); // { [reservationId]: tripDetails[] }
   const [calendarGoogleMapsApiKey, setCalendarGoogleMapsApiKey] = useState('');
   const [calendarCompanyAddress, setCalendarCompanyAddress] = useState('');
+
+  // Réagir au quick-create de réservation depuis le Header
+  useEffect(() => {
+    if (quickReservationSlot) {
+      setSelectedSlot(quickReservationSlot);
+      setSelectedReservation(null);
+      if (onQuickReservationHandled) onQuickReservationHandled();
+    }
+  }, [quickReservationSlot, onQuickReservationHandled]);
 
   // Charger les configs Google Maps au montage (depuis IndexedDB comme ReservationModal)
   useEffect(() => {
@@ -1157,15 +1169,15 @@ const Calendar = ({
 
   const handleSlotMouseEnter = (vehicle, date, period) => {
     // Activer le drag-to-move si pending et la souris a bougé sur un slot différent
-    if (pendingBlockDragRef.current && pendingBlockDragRef.current.vehicle.id === vehicle.id) {
+    if (pendingBlockDragRef.current) {
       const p = pendingBlockDragRef.current;
-      const isSameSlot = isSameDay(p.startDay, date) && p.startPeriod === period;
+      const isSameSlot = isSameDay(p.startDay, date) && p.startPeriod === period && p.vehicle.id === vehicle.id;
       if (!isSameSlot) {
         const block = p.block;
         const startDate = new Date(block.date); startDate.setHours(0, 0, 0, 0);
         const endDate = new Date(block.endDate || block.date); endDate.setHours(0, 0, 0, 0);
         setBlockDragState({
-          block, vehicle,
+          block, vehicle: p.vehicle, targetVehicle: vehicle,
           anchorDay: p.startDay, anchorPeriod: p.startPeriod,
           originalStart: { date: startDate, period: block.period },
           originalEnd: { date: endDate, period: block.endPeriod || block.period },
@@ -1186,7 +1198,7 @@ const Calendar = ({
         };
         const newStart = tsToDP(origStartTs + delta);
         const newEnd = tsToDP(origEndTs + delta);
-        setBlockDragState(prev => ({ ...prev, currentStart: newStart, currentEnd: newEnd }));
+        setBlockDragState(prev => ({ ...prev, targetVehicle: vehicle, currentStart: newStart, currentEnd: newEnd }));
         setBlockDragPreview({
           vehicleId: vehicle.id,
           startDate: newStart.date, startPeriod: newStart.period,
@@ -1195,8 +1207,8 @@ const Calendar = ({
         return;
       }
     }
-    // Drag-to-move en cours
-    if (blockDragState && blockDragState.vehicle.id === vehicle.id) {
+    // Drag-to-move en cours (accepte le déplacement vers un autre véhicule)
+    if (blockDragState) {
       handleBlockDragMove(vehicle, date, period);
       return;
     }
@@ -1441,7 +1453,7 @@ const Calendar = ({
   };
 
   const handleBlockDragMove = (vehicle, day, period) => {
-    if (!blockDragState || blockDragState.vehicle.id !== vehicle.id) return;
+    if (!blockDragState) return;
     
     const normalizedDay = new Date(day);
     normalizedDay.setHours(0, 0, 0, 0);
@@ -1466,10 +1478,22 @@ const Calendar = ({
     const newStart = tsToDatePeriod(newStartTs);
     const newEnd = tsToDatePeriod(newEndTs);
     
+    // Vérifier les conflits avec les réservations du véhicule cible
+    const targetVehicleId = vehicle.id;
+    const hasConflict = targetVehicleId !== blockDragState.vehicle.id && reservations.some(r => {
+      if (r.id === blockDragState.block.id) return false;
+      if (r.vehicleId !== targetVehicleId) return false;
+      const rStartTs = getPeriodTimestamp(new Date(r.date || r.startDate), r.period || r.startPeriod || 'AM');
+      const rEndTs = getPeriodTimestamp(new Date(r.endDate || r.date || r.startDate), r.endPeriod || r.period || 'PM');
+      return newStartTs <= rEndTs && newEndTs >= rStartTs;
+    });
+    
     setBlockDragState(prev => ({
       ...prev,
+      targetVehicle: vehicle,
       currentStart: newStart,
       currentEnd: newEnd,
+      hasConflict,
     }));
     
     setBlockDragPreview({
@@ -1478,18 +1502,20 @@ const Calendar = ({
       startPeriod: newStart.period,
       endDate: newEnd.date,
       endPeriod: newEnd.period,
+      hasConflict,
     });
   };
 
   const handleBlockDragEnd = () => {
     if (!blockDragState) return;
     
-    const { block, currentStart, currentEnd, originalStart, originalEnd } = blockDragState;
+    const { block, vehicle, targetVehicle, currentStart, currentEnd, originalStart, originalEnd, hasConflict } = blockDragState;
     
     // Vérifier si la position a changé
     const hasMoved = !isSameDay(originalStart.date, currentStart.date) || originalStart.period !== currentStart.period;
+    const hasChangedVehicle = targetVehicle && targetVehicle.id !== vehicle.id;
     
-    if (hasMoved) {
+    if ((hasMoved || hasChangedVehicle) && !hasConflict) {
       const existing = reservations.find(r => r.id === block.id);
       if (existing) {
         const updatedReservation = {
@@ -1498,6 +1524,7 @@ const Calendar = ({
           period: currentStart.period,
           endDate: formatLocalDate(currentEnd.date),
           endPeriod: currentEnd.period,
+          ...(hasChangedVehicle ? { vehicleId: targetVehicle.id } : {}),
         };
         onUpdateReservation(existing.id, updatedReservation);
       }
@@ -2225,7 +2252,7 @@ const Calendar = ({
                   return (
                     <div
                       key={`${vehicle.id}-${slotIndex}`}
-                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? 'block-drag-preview' : ''}`}
+                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? `block-drag-preview${blockDragPreview?.hasConflict ? ' drag-conflict' : ''}` : ''}`}
                       onMouseDown={(e) => !resizeState && handleSlotMouseDown(vehicle, slot.day, slot.period, e)}
                       onMouseEnter={() => !resizeState && handleSlotMouseEnter(vehicle, slot.day, slot.period)}
                       onMouseUp={handleSlotMouseUp}
@@ -2491,7 +2518,7 @@ const Calendar = ({
                   return (
                     <div
                       key={`${vehicle.id}-${slotIndex}`}
-                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? 'block-drag-preview' : ''}`}
+                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? `block-drag-preview${blockDragPreview?.hasConflict ? ' drag-conflict' : ''}` : ''}`}
                       onMouseDown={(e) => !resizeState && handleSlotMouseDown(vehicle, slot.day, slot.period, e)}
                       onMouseEnter={() => !resizeState && handleSlotMouseEnter(vehicle, slot.day, slot.period)}
                       onMouseUp={handleSlotMouseUp}
@@ -2517,6 +2544,7 @@ const Calendar = ({
           vehicles={vehicles}
           clients={clients}
           drivers={drivers}
+          persons={persons}
           locations={locations}
           onSave={handleSaveReservation}
           onDelete={handleDeleteReservation}
@@ -2536,6 +2564,7 @@ const Calendar = ({
           onSave={handleSaveTripFromCalendar}
           onClose={() => setCalendarTripModal(null)}
           drivers={drivers}
+          persons={persons}
           vehicle={calendarTripModal.vehicle}
           nextEvent={null}
           googleMapsApiKey={calendarGoogleMapsApiKey}
@@ -2551,6 +2580,7 @@ const Calendar = ({
           onSave={handleSaveTripFromCalendar}
           onClose={() => setCalendarTripModal(null)}
           drivers={drivers}
+          persons={persons}
           vehicle={calendarTripModal.vehicle}
           nextEvent={calendarTripModal.combinedEvents.length > 1 ? calendarTripModal.combinedEvents[1].event : null}
           googleMapsApiKey={calendarGoogleMapsApiKey}

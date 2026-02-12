@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Users, Truck, FileText, MapPin, Briefcase, ChevronDown, ChevronUp, Hash, Clock, AlertCircle, RefreshCw, Paperclip, LinkIcon } from 'lucide-react';
+import { Calendar, Users, Truck, FileText, MapPin, Briefcase, ChevronDown, ChevronUp, Hash, Clock, AlertCircle, RefreshCw, Paperclip, LinkIcon, Plus } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -51,7 +51,7 @@ const getAffaireStatus = (affaire, today) => {
   return 'upcoming';
 };
 
-const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', filterDateStart = '', filterDateEnd = '', showArchived = false }) => {
+const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', filterDateStart = '', filterDateEnd = '', showArchived = false, onNavigateToEntity }) => {
   const [dbAffaires, setDbAffaires] = useState([]);
   const [googleAffaires, setGoogleAffaires] = useState([]);
   const [googleEventIdsMap, setGoogleEventIdsMap] = useState({}); // { AF32844: ['eventId1', 'eventId2', ...] }
@@ -741,6 +741,7 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
           googleEventIds={selectedAffaire ? (googleEventIdsMap[selectedAffaire.numeroAffaire] || []) : []}
           onClose={() => setSelectedAffaire(null)}
           onOpenDialog={(aff) => { setSelectedAffaire(null); setDialogAffaire(aff); }}
+          onNavigateToEntity={onNavigateToEntity}
         />
       </div>
 
@@ -751,7 +752,38 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
         googleEventIds={dialogAffaire ? (googleEventIdsMap[dialogAffaire.numeroAffaire] || []) : []}
         onClose={() => setDialogAffaire(null)}
         onDataChanged={() => { loadDbAffaires(); }}
+        onNavigateToEntity={onNavigateToEntity}
       />
+
+      {/* FAB création rapide d'affaire */}
+      <button
+        className="affaire-fab-create"
+        onClick={async () => {
+          try {
+            const newAffaire = {
+              numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+              client: '',
+              interlocuteur: '',
+              tel: '',
+              type: 'Prestation',
+              dateDebut: format(new Date(), 'yyyy-MM-dd'),
+              dateFin: '',
+              adresseLivraison: '',
+              description: '',
+              devis: '',
+              source: 'db',
+            };
+            const created = await api.createOrUpdateAffaire(newAffaire);
+            await loadDbAffaires();
+            setDialogAffaire({ ...newAffaire, id: created.id, ...created });
+          } catch (err) {
+            console.error('Erreur création affaire:', err);
+          }
+        }}
+        title="Nouvelle affaire"
+      >
+        <Plus size={22} />
+      </button>
     </div>
   );
 };

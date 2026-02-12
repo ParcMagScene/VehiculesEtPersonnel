@@ -4,6 +4,7 @@ import './TripDetailsModal.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded as checkGoogleMapsLoaded } from '../utils/googleMapsLoader';
 import LocationDialog from './LocationDialog';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
+import DriverSelect from './DriverSelect';
 import api from '../utils/api';
 
 const TripDetailsModal = ({
@@ -1069,35 +1070,27 @@ const TripDetailsModal = ({
                 <User size={18} style={{marginRight: '0.25rem'}} />
                 Conducteur pour ce trajet
               </label>
-              <select
-                name="driverName"
-                value={formData.driverName}
-                onChange={handleChange}
-                style={{padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem'}}
-              >
-                <option value="">Sélectionner un conducteur</option>
-                {(() => {
-                  // Filtrer le personnel qualifié par compétence de conduite
-                  const vehicleType = vehicle?.type?.toUpperCase() || '';
-                  let requiredSkill = 'Conduite VL';
-                  if (['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite PL';
-                  else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite SPL';
-                  const hierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
-                  const reqLevel = hierarchy.indexOf(requiredSkill);
-                  const qualified = (persons || []).filter(p => p.status === 'active' && p.skills?.some(s => {
-                    const sL = hierarchy.indexOf(s.name);
-                    return sL >= 0 && sL >= reqLevel;
-                  })).map(p => ({ id: p.id, name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`, skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));
-                  return (<>
-                    {qualified.length > 0 && <optgroup label="Personnel qualifié">
-                      {qualified.map(p => <option key={`p-${p.id}`} value={p.name}>{p.name} ({p.skills.join(', ')})</option>)}
-                    </optgroup>}
-                    {drivers?.filter(d => !qualified.some(q => q.name === d.name)).length > 0 && <optgroup label="Autres conducteurs">
-                      {drivers.filter(d => !qualified.some(q => q.name === d.name)).map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
-                    </optgroup>}
-                  </>);
-                })()}
-              </select>
+              {(() => {
+                const vehicleType = vehicle?.type?.toUpperCase() || '';
+                let requiredSkill = 'Conduite VL';
+                if (['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite PL';
+                else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite SPL';
+                const hierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
+                const reqLevel = hierarchy.indexOf(requiredSkill);
+                const qualified = (persons || []).filter(p => p.status === 'active' && p.skills?.some(s => {
+                  const sL = hierarchy.indexOf(s.name);
+                  return sL >= 0 && sL >= reqLevel;
+                })).map(p => ({ id: p.id, name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`, photo: p.photo || null, skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));
+                const otherDriverNames = drivers?.filter(d => !qualified.some(q => q.name === d.name)).map(d => d.name) || [];
+                return (
+                  <DriverSelect
+                    value={formData.driverName}
+                    onChange={(name) => handleChange({ target: { name: 'driverName', value: name } })}
+                    qualifiedDrivers={qualified}
+                    historySuggestions={otherDriverNames}
+                  />
+                );
+              })()}
             </div>
           </div>
 

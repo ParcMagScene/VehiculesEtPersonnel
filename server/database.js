@@ -692,6 +692,48 @@ function initializeDatabase() {
     console.log('Info: Colonnes véhicules déjà présentes');
   }
 
+  // Migration: Ajouter automatiquement les contrôles TACHYGRAPHE et LIMITEUR pour les PL
+  try {
+    const plTypes = ['PL', 'CAMION', 'PORTEUR', 'TRACTEUR', 'SEMI'];
+    const allVehicles = db.prepare("SELECT id, type, controles_techniques FROM vehicles").all();
+    let addedCount = 0;
+
+    for (const v of allVehicles) {
+      if (!v.type) continue;
+      const vType = v.type.toUpperCase();
+      const isPL = plTypes.some(t => vType.includes(t));
+      if (!isPL) continue;
+
+      let controles = [];
+      try {
+        controles = v.controles_techniques ? JSON.parse(v.controles_techniques) : [];
+      } catch (e) { controles = []; }
+      if (!Array.isArray(controles)) controles = [];
+
+      let modified = false;
+      if (!controles.some(c => c.type === 'TACHYGRAPHE')) {
+        controles.push({ type: 'TACHYGRAPHE', date: null, deadline: null });
+        modified = true;
+      }
+      if (!controles.some(c => c.type === 'LIMITEUR')) {
+        controles.push({ type: 'LIMITEUR', date: null, deadline: null });
+        modified = true;
+      }
+
+      if (modified) {
+        db.prepare("UPDATE vehicles SET controles_techniques = ? WHERE id = ?")
+          .run(JSON.stringify(controles), v.id);
+        addedCount++;
+      }
+    }
+
+    if (addedCount > 0) {
+      console.log(`✅ Contrôles Tachygraphe/Limiteur ajoutés à ${addedCount} véhicule(s) PL`);
+    }
+  } catch (error) {
+    console.error('Erreur migration Tachygraphe/Limiteur:', error.message);
+  }
+
   // Migration: ajouter trip_group_id dans trip_details pour lier les trajets
   try {
     const tripDetailColumns = db.prepare("PRAGMA table_info(trip_details)").all();

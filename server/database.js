@@ -315,11 +315,8 @@ function initializeDatabase() {
       driver_id INTEGER,
       license_types TEXT DEFAULT '[]',
       certifications TEXT DEFAULT '[]',
-      contract_type TEXT,
-        -- Type de contrat pour contractuels : 'intermittent', 'freelance', 'CDD', etc.
-        -- NULL si type = 'permanent'
-      default_positions TEXT DEFAULT '[]',
-        -- JSON array des postes habituels : ["Technicien son", "Régisseur", etc.]
+      contract_type TEXT, -- Type de contrat pour contractuels : 'intermittent', 'freelance', 'CDD', etc. (NULL si type = 'permanent')
+      default_positions TEXT DEFAULT '[]', -- JSON array des postes habituels : ["Technicien son", "Régisseur", etc.]
       notes TEXT,
       photo TEXT,
       created_by INTEGER,
@@ -392,13 +389,8 @@ function initializeDatabase() {
       start_time TEXT,
       end_time TEXT,
       position TEXT,
-      required_skill_id INTEGER,
-        -- DEPRECATED: Ancienne FK vers une seule compétence requise
-        -- Remplacé par required_skills (JSON array) qui permet plusieurs compétences
-        -- Conservé pour compatibilité avec anciennes données
-      required_skills TEXT,
-        -- JSON array d'IDs de compétences requises : [1, 3, 5]
-        -- Remplace required_skill_id pour supporter plusieurs compétences
+      required_skill_id INTEGER, -- DEPRECATED: Ancienne FK vers une seule compétence (conservé pour compatibilité)
+      required_skills TEXT, -- JSON array d'IDs de compétences requises : [1, 3, 5] (remplace required_skill_id)
       vehicle_id TEXT,
       status TEXT NOT NULL DEFAULT 'draft',
       notes TEXT,

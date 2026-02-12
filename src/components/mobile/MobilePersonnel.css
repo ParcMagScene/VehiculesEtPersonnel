@@ -1,0 +1,393 @@
+.mobile-personnel {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 60px);
+  margin: -1rem;
+  background: #f5f5f5;
+}
+
+/* Header */
+.mpers-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mpers-header h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.mpers-back {
+  background: none;
+  border: none;
+  color: #374151;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  border-radius: 8px;
+}
+
+.mpers-back:active {
+  background: #f3f4f6;
+}
+
+/* Stats */
+.mpers-stats {
+  display: flex;
+  gap: 1px;
+  background: #e5e7eb;
+  margin: 0;
+}
+
+.mpers-stat {
+  flex: 1;
+  background: white;
+  padding: 14px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mpers-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.mpers-stat-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* Search */
+.mpers-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 16px 0;
+  padding: 10px 14px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.mpers-search-bar svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.mpers-search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  background: none;
+}
+
+/* Filters */
+.mpers-filters {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+}
+
+.mpers-filters button {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid #d1d5db;
+  background: white;
+  font-size: 0.8rem;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.mpers-filters button.active {
+  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  color: white;
+  border-color: transparent;
+}
+
+/* List */
+.mpers-list {
+  padding: 0 16px 16px;
+}
+
+.mpers-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.mpers-card:active {
+  transform: scale(0.98);
+}
+
+.mpers-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.mpers-avatar-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mpers-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mpers-card-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.95rem;
+  margin-bottom: 3px;
+}
+
+.mpers-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mpers-card-skill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  color: #6366f1;
+  background: #ede9fe;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.mpers-card-contract {
+  font-size: 0.72rem;
+  color: #64748b;
+  background: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.mpers-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  flex-shrink: 0;
+}
+
+.mpers-status-dot.active {
+  background: #10b981;
+}
+
+.mpers-chevron {
+  color: #d1d5db;
+  flex-shrink: 0;
+}
+
+/* Empty / Loading */
+.mpers-empty-list,
+.mpers-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #94a3b8;
+  padding: 3rem 2rem;
+}
+
+.mpers-empty-list svg {
+  opacity: 0.3;
+}
+
+/* Detail view */
+.mpers-detail {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.mpers-detail-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px 20px;
+  background: white;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mpers-detail-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.mpers-detail-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+.mpers-detail-top h3 {
+  margin: 4px 0 0;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.mpers-status-tag {
+  font-size: 0.75rem;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.mpers-status-tag.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.mpers-status-tag.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.mpers-contract {
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #f3f4f6;
+  padding: 3px 12px;
+  border-radius: 12px;
+}
+
+/* Sections */
+.mpers-section {
+  padding: 16px;
+  background: white;
+  margin-top: 8px;
+}
+
+.mpers-section h4 {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.mpers-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  color: #1f2937;
+  text-decoration: none;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mpers-info-row:last-child {
+  border-bottom: none;
+}
+
+.mpers-info-row svg {
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.mpers-empty-info {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Skills */
+.mpers-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mpers-skill-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #ede9fe;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  color: #4c1d95;
+  font-weight: 500;
+}
+
+.mpers-skill-level {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* Positions */
+.mpers-positions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mpers-position-tag {
+  padding: 5px 12px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Notes */
+.mpers-notes {
+  margin: 0;
+  color: #374151;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}

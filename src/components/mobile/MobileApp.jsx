@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor } from 'lucide-react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft } from 'lucide-react';
 import MobileHome from './MobileHome';
+import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
 import MobileMaintenances from './MobileMaintenances';
 import MobileAvailability from './MobileAvailability';
 import MobilePlanning from './MobilePlanning';
+import MobilePersonnel from './MobilePersonnel';
+import MobileMessaging from './MobileMessaging';
 import MobileLogin from './MobileLogin';
 import api from '../../utils/api';
 import './MobileApp.css';
@@ -276,6 +279,15 @@ function MobileApp({ onSwitchToDesktop }) {
               <Home size={20} />
               <span>Accueil</span>
             </button>
+
+            <div className="menu-section-label">Parc</div>
+            <button
+              className={currentScreen === 'parc-dashboard' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('parc-dashboard'); setMenuOpen(false); }}
+            >
+              <Truck size={20} />
+              <span>Tableau de bord</span>
+            </button>
             <button
               className={currentScreen === 'planning' ? 'active' : ''}
               onClick={() => { setCurrentScreen('planning'); setMenuOpen(false); }}
@@ -296,6 +308,22 @@ function MobileApp({ onSwitchToDesktop }) {
             >
               <Settings size={20} />
               <span>Interventions</span>
+            </button>
+
+            <div className="menu-section-label">Équipe</div>
+            <button
+              className={currentScreen === 'personnel' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('personnel'); setMenuOpen(false); }}
+            >
+              <Users size={20} />
+              <span>Personnel</span>
+            </button>
+            <button
+              className={currentScreen === 'messaging' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('messaging'); setMenuOpen(false); }}
+            >
+              <MessageSquare size={20} />
+              <span>Messagerie</span>
             </button>
           </nav>
 
@@ -320,6 +348,17 @@ function MobileApp({ onSwitchToDesktop }) {
             reservations={reservations}
             maintenances={maintenances}
             onNavigate={setCurrentScreen}
+            currentUser={currentUser}
+          />
+        )}
+
+        {currentScreen === 'parc-dashboard' && (
+          <MobileParcDashboard
+            vehicles={vehicles}
+            reservations={reservations}
+            maintenances={maintenances}
+            onNavigate={setCurrentScreen}
+            onBack={() => setCurrentScreen('home')}
             onCreateReservation={handleCreateReservation}
             onCreateMaintenance={handleCreateMaintenance}
           />
@@ -331,7 +370,7 @@ function MobileApp({ onSwitchToDesktop }) {
             reservations={reservations}
             maintenances={maintenances}
             currentDate={new Date()}
-            onClose={() => setCurrentScreen('home')}
+            onClose={() => setCurrentScreen('parc-dashboard')}
             clients={clients}
             drivers={drivers}
           />
@@ -342,9 +381,8 @@ function MobileApp({ onSwitchToDesktop }) {
             vehicles={vehicles}
             reservations={reservations}
             maintenances={maintenances}
-            onClose={() => setCurrentScreen('home')}
+            onClose={() => setCurrentScreen('parc-dashboard')}
             onCreateReservation={(vehicleId, date) => {
-              // TODO: Pré-remplir la réservation avec le véhicule et la date
               setCurrentScreen('reservations');
             }}
           />
@@ -359,7 +397,7 @@ function MobileApp({ onSwitchToDesktop }) {
             drivers={drivers}
             currentUser={currentUser}
             onReservationCreated={handleReservationCreated}
-            onBack={() => setCurrentScreen('home')}
+            onBack={() => setCurrentScreen('parc-dashboard')}
           />
         )}
         
@@ -371,6 +409,19 @@ function MobileApp({ onSwitchToDesktop }) {
             garages={garages}
             currentUser={currentUser}
             onMaintenanceCreated={handleMaintenanceCreated}
+            onBack={() => setCurrentScreen('parc-dashboard')}
+          />
+        )}
+
+        {currentScreen === 'personnel' && (
+          <MobilePersonnel
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'messaging' && (
+          <MobileMessaging
+            currentUser={currentUser}
             onBack={() => setCurrentScreen('home')}
           />
         )}

@@ -251,7 +251,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
       // Match direct par champ affaire de la mission
       if (m.affaire && m.affaire.toUpperCase() === affaireUpper) return true;
       // Match par reservation_id (lien indirect via réservation)
-      if (m.reservation_id && resaIds.has(String(m.reservation_id))) return true;
+      if ((m.reservationId || m.reservation_id) && resaIds.has(String(m.reservationId || m.reservation_id))) return true;
       return false;
     });
   }, [missions, linkedReservations, affaire.numeroAffaire]);
@@ -262,23 +262,23 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     for (const m of linkedMissions) {
       if (m.assignments) {
         for (const a of m.assignments) {
-          const pid = String(a.person_id);
+          const pid = String(a.personId || a.person_id);
           if (!personMap.has(pid)) {
             // Parser les postes habituels
             let positions = [];
             try {
-              const raw = a.default_positions;
+              const raw = a.defaultPositions || a.default_positions;
               positions = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
             } catch { /* ignore */ }
             personMap.set(pid, {
               id: pid,
-              firstName: a.first_name,
-              lastName: a.last_name,
+              firstName: a.firstName || a.first_name,
+              lastName: a.lastName || a.last_name,
               phone: a.phone,
               email: a.email,
               photo: a.photo,
-              type: a.person_type,
-              contractType: a.contract_type,
+              type: a.personType || a.person_type,
+              contractType: a.contractType || a.contract_type,
               positions,
               skills: a.skills || [],
               missionTitle: m.title,
@@ -517,7 +517,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               <select value={selectedPersonId} onChange={e => setSelectedPersonId(e.target.value)} className="inline-select">
                 <option value="">— Choisir une personne —</option>
                 {actionData.persons.map(p => (
-                  <option key={p.id} value={p.id}>{p.first_name} {p.last_name}{p.type ? ` (${p.type})` : ''}</option>
+                  <option key={p.id} value={p.id}>{p.firstName || p.first_name} {p.lastName || p.last_name}{p.type ? ` (${p.type})` : ''}</option>
                 ))}
               </select>
             </div>

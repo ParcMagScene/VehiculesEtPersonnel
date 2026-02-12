@@ -178,7 +178,7 @@ const ReservationModal = ({
       }))
       .map(p => ({
         id: p.id,
-        name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `Personnel #${p.id}`,
+        name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`,
         skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || []
       }));
   }, [persons, vehicles, formData.vehicleId]);

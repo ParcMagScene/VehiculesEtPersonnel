@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2 } from 'lucide-react';
 import api from '../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../utils/notificationSound';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './UserPreferencesModal.css';
 
 const DEFAULT_PREFS = {
@@ -19,6 +20,15 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
   const [saved, setSaved] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [originalPrefs, setOriginalPrefs] = useState(null);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+
+  const handleSafeClose = () => {
+    if (hasChanges) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -63,11 +73,11 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="prefs-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="prefs-overlay" onClick={(e) => { if (e.target === e.currentTarget) handleSafeClose(); }}>
       <div className="prefs-modal">
         <div className="prefs-header">
           <h3><Settings size={18} /> Préférences</h3>
-          <button onClick={onClose}><X size={18} /></button>
+          <button onClick={handleSafeClose}><X size={18} /></button>
         </div>
 
         <div className="prefs-body">
@@ -202,12 +212,20 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
               <Check size={14} /> Enregistré
             </span>
           )}
-          <button className="prefs-btn-cancel" onClick={onClose}>Fermer</button>
+          <button className="prefs-btn-cancel" onClick={handleSafeClose}>Fermer</button>
           <button className="prefs-btn-save" onClick={handleSave} disabled={!hasChanges || saving}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
         </div>
       </div>
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 };

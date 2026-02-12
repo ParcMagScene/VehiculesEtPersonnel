@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Clock, CheckCircle, AlertTriangle, FileText, Loader, X, User, Calendar, Gauge } from 'lucide-react';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
@@ -63,6 +64,22 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   const [conflictWarning, setConflictWarning] = useState(null); // Avertissement de conflit
   const [initialFormData, setInitialFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+
+  // Fermeture sécurisée avec avertissement si modifications
+  const handleSafeClose = () => {
+    if (isViewMode) { onClose(); return; }
+    if (hasChanges) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    // En création, vérifier si des champs ont été remplis
+    if (!editingId && (formData.description || formData.garage || formData.cost)) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
   const [statusReason, setStatusReason] = useState(''); // Motif pour pending/cancelled/rescheduled
   const [confirmDialog, setConfirmDialog] = useState(null); // { message, onConfirm }
   const [showCancelForm, setShowCancelForm] = useState(false);
@@ -416,7 +433,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
 
   return (
-    <div className="maintenance-dialog-overlay" onClick={onClose}>
+    <div className="maintenance-dialog-overlay" onClick={handleSafeClose}>
       <div className="maintenance-dialog" onClick={(e) => e.stopPropagation()}>
         <div 
           className="maintenance-dialog-header"
@@ -432,7 +449,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
             </div>
           </div>
-          <button className="close-button" onClick={onClose}>✕</button>
+          <button className="close-button" onClick={handleSafeClose}>✕</button>
         </div>
 
         <div className="maintenance-tabs">
@@ -1202,6 +1219,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}
           onCancel={() => setConfirmDialog(null)}
+        />
+      )}
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
         />
       )}
     </div>

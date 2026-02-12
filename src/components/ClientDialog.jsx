@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import logger from "../utils/logger";
 import { X, MapPin, Navigation, Clock, Route, Mail, Phone, User } from 'lucide-react';
 import api from '../utils/api';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
@@ -20,6 +21,24 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
   const [duration, setDuration] = useState(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [error, setError] = useState(null);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const initialFormDataRef = useRef(JSON.stringify({
+    name: client?.name || '',
+    email: client?.email || '',
+    phone: client?.phone || '',
+    address: client?.address || '',
+    lat: client?.lat || null,
+    lng: client?.lng || null,
+    placeId: client?.placeId || ''
+  }));
+
+  const handleSafeClose = () => {
+    if (JSON.stringify(formData) !== initialFormDataRef.current) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -315,13 +334,13 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
     <div className="location-dialog-overlay" onClick={(e) => {
       // Fermer seulement si on clique sur l'overlay, pas sur le contenu
       if (e.target === e.currentTarget) {
-        onClose();
+        handleSafeClose();
       }
     }}>
       <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="location-dialog-header">
           <h2>{client ? 'Modifier le client' : 'Nouveau client'}</h2>
-          <button className="close-button" onClick={onClose}>
+          <button className="close-button" onClick={handleSafeClose}>
             <X size={20} />
           </button>
         </div>
@@ -467,7 +486,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           </div>
 
           <div className="form-actions">
-            <button type="button" onClick={onClose} className="cancel-button">
+            <button type="button" onClick={handleSafeClose} className="cancel-button">
               Annuler
             </button>
             <button type="submit" className="save-button">
@@ -476,6 +495,13 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           </div>
         </form>
       </div>
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
+        />
+      )}
     </div>
   );
 };

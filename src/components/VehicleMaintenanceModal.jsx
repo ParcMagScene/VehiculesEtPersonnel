@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './VehicleMaintenanceModal.css';
 
 const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
@@ -14,6 +15,22 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     : [];
   
   const [controles, setControles] = useState(initialControles);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const initialKmRef = useRef(vehicle?.kilometrage || 0);
+  const initialControlesRef = useRef(JSON.stringify(initialControles));
+
+  const hasChanges = () => {
+    return String(kilometrage) !== String(initialKmRef.current) ||
+           JSON.stringify(controles) !== initialControlesRef.current;
+  };
+
+  const handleSafeClose = () => {
+    if (hasChanges()) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
   const [newControle, setNewControle] = useState({
     type: '',
     date: '',
@@ -184,7 +201,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleSafeClose}>
       <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-title">
@@ -196,7 +213,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
               </div>
             )}
           </div>
-          <button className="close-button" onClick={onClose}>
+          <button className="close-button" onClick={handleSafeClose}>
             <X size={24} />
           </button>
         </div>
@@ -338,7 +355,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                 ✅ Sauvegardé avec succès !
               </div>
             )}
-            <button type="button" className="btn-secondary" onClick={onClose}>
+            <button type="button" className="btn-secondary" onClick={handleSafeClose}>
               Annuler
             </button>
             <button type="submit" className="btn-primary">
@@ -348,6 +365,13 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
           </div>
         </form>
       </div>
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
+        />
+      )}
     </div>
   );
 };

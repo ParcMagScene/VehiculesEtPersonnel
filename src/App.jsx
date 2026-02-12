@@ -22,6 +22,9 @@ const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
 const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenanceModal'));
 const PersonnelPanel = lazy(() => import('./components/PersonnelPanel'));
 const AffairesPanel = lazy(() => import('./components/AffairesPanel'));
+const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
+const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
+const HelpModal = lazy(() => import('./components/HelpModal'));
 
 // Fonction utilitaire pour formater une date en YYYY-MM-DD
 const formatDateToString = (date) => {
@@ -97,6 +100,10 @@ function App() {
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
   const [navigateToPersonId, setNavigateToPersonId] = useState(null);
   const [quickReservationSlot, setQuickReservationSlot] = useState(null);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [showPreferences, setShowPreferences] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   // Filtres affaires (remonté ici pour le Header)
   const [affaireSearchTerm, setAffaireSearchTerm] = useState('');
   const [affaireFilterType, setAffaireFilterType] = useState('');
@@ -145,6 +152,8 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const openEventDetailsModalRef = useRef(null); // Référence à la fonction pour ouvrir EventDetailsModal
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showPwaInstall, setShowPwaInstall] = useState(false);
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {
@@ -166,6 +175,32 @@ function App() {
     };
     checkAuth();
   }, []);
+
+  // Enregistrement Service Worker + PWA install prompt
+  useEffect(() => {
+    // Enregistrer le Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+    // Capturer l'événement beforeinstallprompt
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowPwaInstall(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handlePwaInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowPwaInstall(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   // Charger les données depuis l'API après authentification
   useEffect(() => {
@@ -600,6 +635,12 @@ function App() {
       const result = await api.login(email, password);
       setIsAuthenticated(true);
       setCurrentUser(result.user);
+      // Appliquer les préférences utilisateur au login
+      try {
+        const prefs = await api.getPreferences();
+        if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
+        if (prefs.defaultView) setView(prefs.defaultView);
+      } catch (e) { /* silencieux */ }
       return result;
     } catch (error) {
       throw error;
@@ -703,6 +744,20 @@ function App() {
     }
   }, [vehicles]);
 
+  // Polling compteur de messages non lus
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchUnread = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        setUnreadMsgCount(data.count || 0);
+      } catch (e) { /* silencieux */ }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   return (
     <div className="app">
       <Header
@@ -766,7 +821,20 @@ function App() {
             endPeriod: 'afternoon',
           });
         }}
+        onToggleMessaging={() => setShowMessaging(v => !v)}
+        unreadMsgCount={unreadMsgCount}
+        onOpenPreferences={() => setShowPreferences(true)}
+        onOpenHelp={() => setShowHelp(true)}
       />
+
+      {/* Bannière installation PWA */}
+      {showPwaInstall && (
+        <div className="pwa-install-banner">
+          <span>📱 Installer eM@g sur votre appareil pour un accès rapide</span>
+          <button className="pwa-install-btn" onClick={handlePwaInstall}>Installer</button>
+          <button className="pwa-dismiss-btn" onClick={() => setShowPwaInstall(false)}>✕</button>
+        </div>
+      )}
       
       {activeModule !== 'affaires' && (
       <GoogleCalendarBanner 
@@ -1052,6 +1120,37 @@ function App() {
           />
         </Suspense>
       )}
+
+      {/* Messagerie interne */}
+      <Suspense fallback={null}>
+        <MessagingPanel
+          isOpen={showMessaging}
+          onClose={() => setShowMessaging(false)}
+          currentUser={currentUser}
+        />
+      </Suspense>
+
+      {/* Préférences utilisateur */}
+      <Suspense fallback={null}>
+        <UserPreferencesModal
+          isOpen={showPreferences}
+          onClose={() => setShowPreferences(false)}
+          onPreferencesChange={(prefs) => {
+            // Appliquer les préférences en temps réel
+            if (prefs.defaultView && prefs.defaultView !== view) {
+              // Ne pas changer la vue en cours, mais stocker pour la prochaine session
+            }
+          }}
+        />
+      </Suspense>
+
+      {/* Module d'aide */}
+      <Suspense fallback={null}>
+        <HelpModal
+          isOpen={showHelp}
+          onClose={() => setShowHelp(false)}
+        />
+      </Suspense>
     </div>
   );
 }

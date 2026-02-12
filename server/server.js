@@ -35,6 +35,7 @@ import multer from 'multer';
 import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
+import { setupMessagingRoutes } from './messagingRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1816,6 +1817,7 @@ setupDriversRoutes(app, authenticateToken);
 setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
 setupConfigRoutes(app, authenticateToken, requireAdmin);
+setupMessagingRoutes(app, authenticateToken);
 
 // ============ MODULE AFFAIRES ============
 
@@ -2129,6 +2131,30 @@ app.delete('/api/users/me/avatar', authenticateToken, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Erreur suppression avatar:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Obtenir ses préférences utilisateur
+app.get('/api/users/me/preferences', authenticateToken, (req, res) => {
+  try {
+    const user = db.prepare('SELECT preferences FROM users WHERE id = ?').get(req.user.id);
+    const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
+    res.json(prefs);
+  } catch (error) {
+    console.error('Erreur récupération préférences:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Mettre à jour ses préférences utilisateur
+app.put('/api/users/me/preferences', authenticateToken, (req, res) => {
+  try {
+    const prefs = JSON.stringify(req.body || {});
+    db.prepare('UPDATE users SET preferences = ? WHERE id = ?').run(prefs, req.user.id);
+    res.json(req.body);
+  } catch (error) {
+    console.error('Erreur sauvegarde préférences:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

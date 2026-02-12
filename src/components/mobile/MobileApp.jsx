@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
@@ -10,6 +10,7 @@ import MobilePersonnel from './MobilePersonnel';
 import MobileMessaging from './MobileMessaging';
 import MobileLogin from './MobileLogin';
 import api from '../../utils/api';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../../utils/notificationSound';
 import './MobileApp.css';
 
 function MobileApp({ onSwitchToDesktop }) {
@@ -25,10 +26,15 @@ function MobileApp({ onSwitchToDesktop }) {
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [msgToast, setMsgToast] = useState(null);
   
   // Refs pour contrôler les formulaires
   const reservationFormRef = useRef(null);
   const maintenanceFormRef = useRef(null);
+  const prevUnreadRef = useRef(-1);
+  const msgToastTimerRef = useRef(null);
+  const currentScreenRef = useRef('home');
 
   // Vérifier l'authentification
   useEffect(() => {
@@ -81,6 +87,58 @@ function MobileApp({ onSwitchToDesktop }) {
 
     loadData();
   }, [isAuthenticated, isLoading]);
+
+  // Sync currentScreen ref
+  useEffect(() => { currentScreenRef.current = currentScreen; }, [currentScreen]);
+
+  // Polling notifications messages non lus
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return;
+
+    // Demander permission navigateur
+    requestNotificationPermission();
+
+    const fetchUnread = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        const newCount = data.unread || 0;
+        const prevCount = prevUnreadRef.current;
+
+        if (newCount > prevCount && prevCount !== -1) {
+          const diff = newCount - prevCount;
+
+          // Son
+          playNotificationSound();
+
+          // Toast in-app (sauf si on est déjà dans la messagerie)
+          if (currentScreenRef.current !== 'messaging') {
+            if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
+            setMsgToast(`${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`);
+            msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
+          }
+
+          // Notification navigateur
+          if (currentScreenRef.current !== 'messaging') {
+            showBrowserNotification(
+              `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
+              { body: 'Cliquez pour ouvrir la messagerie eM@g' }
+            );
+          }
+        }
+
+        prevUnreadRef.current = newCount;
+        setUnreadMsgCount(newCount);
+      } catch (e) { /* silencieux */ }
+    };
+
+    prevUnreadRef.current = -1;
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => {
+      clearInterval(interval);
+      if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
+    };
+  }, [isAuthenticated, currentUser]);
 
   const handleLogin = (user) => {
     setIsAuthenticated(true);
@@ -324,6 +382,7 @@ function MobileApp({ onSwitchToDesktop }) {
             >
               <MessageSquare size={20} />
               <span>Messagerie</span>
+              {unreadMsgCount > 0 && <span className="menu-badge">{unreadMsgCount}</span>}
             </button>
           </nav>
 
@@ -426,6 +485,14 @@ function MobileApp({ onSwitchToDesktop }) {
           />
         )}
       </main>
+
+      {/* Toast notification messages */}
+      {msgToast && (
+        <div className="mobile-msg-toast" onClick={() => { setMsgToast(null); setCurrentScreen('messaging'); }}>
+          <MessageSquare size={16} />
+          <span>{msgToast}</span>
+        </div>
+      )}
     </div>
   );
 }

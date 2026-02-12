@@ -172,7 +172,7 @@ function MobileMessaging({ currentUser, onBack }) {
 
   const openNewConvModal = async () => {
     try {
-      const users = await api.request('/users');
+      const users = await api.request('/users/names');
       setAllUsers(users.filter(u => u.id !== currentUser?.id));
       setShowNewConv(true);
     } catch (err) {

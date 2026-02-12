@@ -14,6 +14,7 @@ import api from './utils/api';
 import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
 import logger, { dataLogger } from './utils/logger';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from './utils/notificationSound';
 import './App.css';
 
 // Code splitting - Lazy loading des composants lourds
@@ -154,6 +155,8 @@ function App() {
   const openEventDetailsModalRef = useRef(null); // Référence à la fonction pour ouvrir EventDetailsModal
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPwaInstall, setShowPwaInstall] = useState(false);
+  const prevUnreadRef = useRef(0); // Compteur précédent pour détecter les nouveaux messages
+  const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: false }); // Préférences notification
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {
@@ -640,6 +643,15 @@ function App() {
         const prefs = await api.getPreferences();
         if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
         if (prefs.defaultView) setView(prefs.defaultView);
+        // Stocker les préférences de notification pour le polling
+        userPrefsRef.current = {
+          notificationsEnabled: prefs.notificationsEnabled !== false,
+          soundEnabled: prefs.soundEnabled === true,
+        };
+        // Demander la permission navigateur si notifications activées
+        if (prefs.notificationsEnabled !== false) {
+          requestNotificationPermission();
+        }
       } catch (e) { /* silencieux */ }
       return result;
     } catch (error) {
@@ -684,19 +696,44 @@ function App() {
     }
   }, [vehicles]);
 
-  // Polling compteur de messages non lus
+  // Polling compteur de messages non lus + notifications
   useEffect(() => {
     if (!currentUser) return;
     const fetchUnread = async () => {
       try {
         const data = await api.getUnreadCount();
-        setUnreadMsgCount(data.count || 0);
+        const newCount = data.count || 0;
+        const prevCount = prevUnreadRef.current;
+
+        // Nouveau message détecté (compteur augmente, et pas le polling initial)
+        if (newCount > prevCount && prevCount !== -1) {
+          const prefs = userPrefsRef.current;
+          const diff = newCount - prevCount;
+
+          // Son de notification
+          if (prefs.soundEnabled) {
+            playNotificationSound();
+          }
+
+          // Notification navigateur (si pas focalisé sur la messagerie)
+          if (prefs.notificationsEnabled && !showMessaging) {
+            showBrowserNotification(
+              `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
+              { body: 'Cliquez pour ouvrir la messagerie eM@g' }
+            );
+          }
+        }
+
+        prevUnreadRef.current = newCount;
+        setUnreadMsgCount(newCount);
       } catch (e) { /* silencieux */ }
     };
+    // Marquer -1 au premier appel pour ne pas notifier au chargement initial
+    prevUnreadRef.current = -1;
     fetchUnread();
     const interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
-  }, [currentUser]);
+  }, [currentUser, showMessaging]);
 
   if (isLoading) {
     return (
@@ -1132,9 +1169,14 @@ function App() {
           isOpen={showPreferences}
           onClose={() => setShowPreferences(false)}
           onPreferencesChange={(prefs) => {
-            // Appliquer les préférences en temps réel
-            if (prefs.defaultView && prefs.defaultView !== view) {
-              // Ne pas changer la vue en cours, mais stocker pour la prochaine session
+            // Mettre à jour les préférences de notification en temps réel
+            userPrefsRef.current = {
+              notificationsEnabled: prefs.notificationsEnabled !== false,
+              soundEnabled: prefs.soundEnabled === true,
+            };
+            // Demander la permission si notifications activées
+            if (prefs.notificationsEnabled !== false) {
+              requestNotificationPermission();
             }
           }}
         />

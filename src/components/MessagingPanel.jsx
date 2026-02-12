@@ -8,7 +8,9 @@ import './MessagingPanel.css';
 const API_BASE_URL = getApiUrl();
 
 const formatMsgTime = (dateStr) => {
+  if (!dateStr) return '';
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
   if (isToday(d)) return format(d, 'HH:mm');
   if (isYesterday(d)) return 'Hier ' + format(d, 'HH:mm');
   return format(d, 'dd/MM HH:mm');
@@ -23,7 +25,9 @@ const formatConvTime = (dateStr) => {
 };
 
 const formatDateSeparator = (dateStr) => {
+  if (!dateStr) return '';
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
   if (isToday(d)) return "Aujourd'hui";
   if (isYesterday(d)) return 'Hier';
   return format(d, 'EEEE d MMMM', { locale: fr });

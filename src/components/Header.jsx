@@ -12,7 +12,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireViewMode, setAffaireViewMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -20,6 +20,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
+  const [showAffaireMonthSelector, setShowAffaireMonthSelector] = useState(false);
+  const [showAffaireWeekSelector, setShowAffaireWeekSelector] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
   const [showRequestsPopup, setShowRequestsPopup] = useState(false);
@@ -204,6 +206,126 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   };
   
   const showTodayHighlight = !isCurrentPeriod();
+
+  // ═══ Navigation Affaires ═══
+  const fmtDateISO = (d) => d.toISOString().slice(0, 10);
+
+  const getAffaireRange = (anchorDate, mode, sliding) => {
+    const d = new Date(anchorDate);
+    d.setHours(0, 0, 0, 0);
+    if (mode === 'week') {
+      if (sliding) {
+        const s = new Date(d); s.setDate(d.getDate() - 1);
+        const e = new Date(d); e.setDate(d.getDate() + 6);
+        return { start: s, end: e };
+      } else {
+        const s = new Date(d); s.setDate(d.getDate() - d.getDay() + 1);
+        if (d.getDay() === 0) s.setDate(s.getDate() - 7); // dimanche → lundi précédent
+        const e = new Date(s); e.setDate(s.getDate() + 6);
+        return { start: s, end: e };
+      }
+    } else {
+      // month
+      if (sliding) {
+        const s = new Date(d); s.setDate(d.getDate() - 7);
+        const e = new Date(d); e.setDate(d.getDate() + 21);
+        return { start: s, end: e };
+      } else {
+        const s = new Date(d.getFullYear(), d.getMonth(), 1);
+        const e = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        return { start: s, end: e };
+      }
+    }
+  };
+
+  const applyAffaireRange = (anchorDate, mode, sliding) => {
+    const { start, end } = getAffaireRange(anchorDate, mode, sliding);
+    setAffaireFilterDateStart(fmtDateISO(start));
+    setAffaireFilterDateEnd(fmtDateISO(end));
+  };
+
+  const affaireGoToPrevious = () => {
+    if (!affaireFilterDateStart) return;
+    const current = new Date(affaireFilterDateStart);
+    if (affaireViewMode === 'week') {
+      current.setDate(current.getDate() - 7);
+    } else {
+      current.setMonth(current.getMonth() - 1);
+    }
+    // Pour le mode non-glissant, on navigue à partir du nouveau point d'ancrage
+    if (!affaireSlidingMode) {
+      applyAffaireRange(current, affaireViewMode, false);
+    } else {
+      // Mode glissant : on décale simplement la fenêtre
+      const end = new Date(affaireFilterDateEnd);
+      if (affaireViewMode === 'week') {
+        end.setDate(end.getDate() - 7);
+      } else {
+        end.setMonth(end.getMonth() - 1);
+      }
+      setAffaireFilterDateStart(fmtDateISO(current));
+      setAffaireFilterDateEnd(fmtDateISO(end));
+    }
+  };
+
+  const affaireGoToNext = () => {
+    if (!affaireFilterDateStart) return;
+    const current = new Date(affaireFilterDateStart);
+    if (affaireViewMode === 'week') {
+      current.setDate(current.getDate() + 7);
+    } else {
+      current.setMonth(current.getMonth() + 1);
+    }
+    if (!affaireSlidingMode) {
+      applyAffaireRange(current, affaireViewMode, false);
+    } else {
+      const end = new Date(affaireFilterDateEnd);
+      if (affaireViewMode === 'week') {
+        end.setDate(end.getDate() + 7);
+      } else {
+        end.setMonth(end.getMonth() + 1);
+      }
+      setAffaireFilterDateStart(fmtDateISO(current));
+      setAffaireFilterDateEnd(fmtDateISO(end));
+    }
+  };
+
+  const affaireGoToToday = () => {
+    applyAffaireRange(new Date(), affaireViewMode, affaireSlidingMode);
+  };
+
+  const affaireIsCurrentPeriod = () => {
+    if (!affaireFilterDateStart || !affaireFilterDateEnd) return true;
+    const { start, end } = getAffaireRange(new Date(), affaireViewMode, affaireSlidingMode);
+    return affaireFilterDateStart === fmtDateISO(start) && affaireFilterDateEnd === fmtDateISO(end);
+  };
+
+  const getAffaireDateLabel = () => {
+    if (!affaireFilterDateStart || !affaireFilterDateEnd) return 'Toutes les dates';
+    const start = new Date(affaireFilterDateStart + 'T00:00:00');
+    const end = new Date(affaireFilterDateEnd + 'T00:00:00');
+    if (affaireViewMode === 'week') {
+      const label = `${format(start, 'd', { locale: fr })} - ${format(end, 'd MMMM yyyy', { locale: fr })}`;
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    } else {
+      if (!affaireSlidingMode) {
+        const label = format(start, 'MMMM yyyy', { locale: fr });
+        return label.charAt(0).toUpperCase() + label.slice(1);
+      } else {
+        const label = `${format(start, 'd MMM', { locale: fr })} - ${format(end, 'd MMM yyyy', { locale: fr })}`;
+        return label.charAt(0).toUpperCase() + label.slice(1);
+      }
+    }
+  };
+
+  const showAffaireTodayHighlight = !affaireIsCurrentPeriod();
+
+  const handleAffaireViewModeChange = (newMode) => {
+    setAffaireViewMode(newMode);
+    // Recalculer la plage à partir de la date de début actuelle ou aujourd'hui
+    const anchor = affaireFilterDateStart ? new Date(affaireFilterDateStart) : new Date();
+    applyAffaireRange(anchor, newMode, affaireSlidingMode);
+  };
 
   // Handlers pour les interventions en retard
   const handleMarkCompleted = async (intervention) => {
@@ -971,125 +1093,74 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
           </div>
           )}
 
-          {/* Contrôles affaires : recherche + filtres */}
+          {/* Contrôles affaires : navigation + filtres */}
           {activeModule === 'affaires' && (
+          <>
+          {/* Sélecteur de vue Affaires */}
+          <div className="view-selector" role="group" aria-label="Sélection de la vue affaires">
+            <button
+              className={`view-button ${affaireViewMode === 'week' ? 'active' : ''}`}
+              onClick={() => handleAffaireViewModeChange('week')}
+              aria-pressed={affaireViewMode === 'week'}
+            >
+              Semaine
+            </button>
+            <button
+              className={`view-button ${affaireViewMode === 'month' ? 'active' : ''}`}
+              onClick={() => handleAffaireViewModeChange('month')}
+              aria-pressed={affaireViewMode === 'month'}
+            >
+              Mois
+            </button>
+          </div>
+
+          {/* Navigation de dates Affaires */}
+          <div className="date-navigation" role="navigation" aria-label="Navigation de dates affaires">
+            <button className="nav-button" onClick={affaireGoToPrevious} aria-label="Période précédente">
+              <ChevronLeft size={20} />
+            </button>
+            <button 
+              className={`nav-button ${showAffaireTodayHighlight ? 'today-highlight' : ''}`}
+              onClick={affaireGoToToday} 
+              aria-label="Revenir à aujourd'hui"
+            >
+              Aujourd'hui
+            </button>
+            <button className="nav-button" onClick={affaireGoToNext} aria-label="Période suivante">
+              <ChevronRight size={20} />
+            </button>
+            <div 
+              className="current-date clickable"
+              aria-live="polite" 
+              aria-atomic="true"
+              onClick={() => {
+                if (affaireViewMode === 'month') setShowAffaireMonthSelector(true);
+                if (affaireViewMode === 'week') setShowAffaireWeekSelector(true);
+              }}
+              title={affaireViewMode === 'month' ? 'Cliquer pour sélectionner un mois' : 'Cliquer pour sélectionner une semaine'}
+            >
+              {getAffaireDateLabel()}
+            </div>
+          </div>
+
+          {/* Filtres affaires */}
           <div className="affaires-header-controls">
-            <div className="affaires-header-search">
-              <Search size={15} />
+            <label className="affaires-toggle" title={affaireSlidingMode ? 'Mode glissant : période centrée sur la date' : 'Mode calendaire : semaine/mois civil'}>
               <input
-                type="text"
-                placeholder="Rechercher une affaire..."
-                value={affaireSearchTerm || ''}
-                onChange={e => setAffaireSearchTerm(e.target.value)}
+                type="checkbox"
+                checked={affaireSlidingMode}
+                onChange={e => {
+                  const newSliding = e.target.checked;
+                  setAffaireSlidingMode(newSliding);
+                  // Recalculer les dates avec le nouveau mode
+                  if (affaireFilterDateStart) {
+                    const anchor = new Date(affaireFilterDateStart);
+                    applyAffaireRange(anchor, affaireViewMode, newSliding);
+                  }
+                }}
               />
-              {affaireSearchTerm && (
-                <button className="search-clear" onClick={() => setAffaireSearchTerm('')}>
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            <div className="affaires-header-divider" />
-
-            {/* Boutons de période rapide + toggle glissant */}
-            <div className="affaires-period-group">
-              <div className="affaires-period-buttons">
-                {(() => {
-                  const today = new Date();
-                  const fmtDate = (d) => d.toISOString().slice(0, 10);
-
-                  // Mode glissant
-                  const slidingWeekStart = new Date(today); slidingWeekStart.setDate(today.getDate() - 1);
-                  const slidingWeekEnd = new Date(today); slidingWeekEnd.setDate(today.getDate() + 6);
-                  const slidingMonthStart = new Date(today); slidingMonthStart.setDate(today.getDate() - 7);
-                  const slidingMonthEnd = new Date(today); slidingMonthEnd.setDate(today.getDate() + 21);
-
-                  // Mode calendaire
-                  const calWeekStart = new Date(today); calWeekStart.setDate(today.getDate() - today.getDay() + 1);
-                  const calWeekEnd = new Date(calWeekStart); calWeekEnd.setDate(calWeekStart.getDate() + 6);
-                  const calMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                  const calMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
-                  const weekStart = affaireSlidingMode ? slidingWeekStart : calWeekStart;
-                  const weekEnd = affaireSlidingMode ? slidingWeekEnd : calWeekEnd;
-                  const monthStart = affaireSlidingMode ? slidingMonthStart : calMonthStart;
-                  const monthEnd = affaireSlidingMode ? slidingMonthEnd : calMonthEnd;
-
-                  const isWeek = affaireFilterDateStart === fmtDate(weekStart) && affaireFilterDateEnd === fmtDate(weekEnd);
-                  const isMonth = affaireFilterDateStart === fmtDate(monthStart) && affaireFilterDateEnd === fmtDate(monthEnd);
-                  const isAll = !affaireFilterDateStart && !affaireFilterDateEnd;
-
-                  const applyWeek = () => { setAffaireFilterDateStart(fmtDate(weekStart)); setAffaireFilterDateEnd(fmtDate(weekEnd)); };
-                  const applyMonth = () => { setAffaireFilterDateStart(fmtDate(monthStart)); setAffaireFilterDateEnd(fmtDate(monthEnd)); };
-
-                  return (
-                    <>
-                      <button
-                        className={`affaires-period-btn ${isWeek ? 'active' : ''}`}
-                        onClick={() => { if (isWeek) { setAffaireFilterDateStart(''); setAffaireFilterDateEnd(''); } else applyWeek(); }}
-                      >
-                        <Calendar size={13} />
-                        Semaine
-                      </button>
-                      <button
-                        className={`affaires-period-btn ${isMonth ? 'active' : ''}`}
-                        onClick={() => { if (isMonth) { setAffaireFilterDateStart(''); setAffaireFilterDateEnd(''); } else applyMonth(); }}
-                      >
-                        <Calendar size={13} />
-                        Mois
-                      </button>
-                      <button
-                        className={`affaires-period-btn ${isAll && !affaireFilterType ? 'active' : ''}`}
-                        onClick={() => { setAffaireFilterDateStart(''); setAffaireFilterDateEnd(''); setAffaireFilterType(''); }}
-                      >
-                        Tout
-                      </button>
-                    </>
-                  );
-                })()}
-              </div>
-              <label className="affaires-toggle" title={affaireSlidingMode ? 'Mode glissant : période centrée sur aujourd\'hui' : 'Mode calendaire : semaine/mois civil'}>
-                <input
-                  type="checkbox"
-                  checked={affaireSlidingMode}
-                  onChange={e => {
-                    const newSliding = e.target.checked;
-                    setAffaireSlidingMode(newSliding);
-                    // Recalculer les dates si une période est active
-                    if (affaireFilterDateStart && affaireFilterDateEnd) {
-                      const today = new Date();
-                      const fmtDate = (d) => d.toISOString().slice(0, 10);
-                      // Détecter quelle période était active (approximation par durée)
-                      const daysDiff = Math.round((new Date(affaireFilterDateEnd) - new Date(affaireFilterDateStart)) / 86400000);
-                      if (daysDiff <= 7) {
-                        // Semaine
-                        if (newSliding) {
-                          const s = new Date(today); s.setDate(today.getDate() - 1);
-                          const e2 = new Date(today); e2.setDate(today.getDate() + 6);
-                          setAffaireFilterDateStart(fmtDate(s)); setAffaireFilterDateEnd(fmtDate(e2));
-                        } else {
-                          const s = new Date(today); s.setDate(today.getDate() - today.getDay() + 1);
-                          const e2 = new Date(s); e2.setDate(s.getDate() + 6);
-                          setAffaireFilterDateStart(fmtDate(s)); setAffaireFilterDateEnd(fmtDate(e2));
-                        }
-                      } else {
-                        // Mois
-                        if (newSliding) {
-                          const s = new Date(today); s.setDate(today.getDate() - 7);
-                          const e2 = new Date(today); e2.setDate(today.getDate() + 21);
-                          setAffaireFilterDateStart(fmtDate(s)); setAffaireFilterDateEnd(fmtDate(e2));
-                        } else {
-                          const s = new Date(today.getFullYear(), today.getMonth(), 1);
-                          const e2 = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                          setAffaireFilterDateStart(fmtDate(s)); setAffaireFilterDateEnd(fmtDate(e2));
-                        }
-                      }
-                    }
-                  }}
-                />
-                <span className="affaires-toggle-label">Glissant</span>
-              </label>
-            </div>
+              <span className="affaires-toggle-label">Glissant</span>
+            </label>
 
             <div className="affaires-header-divider" />
 
@@ -1101,6 +1172,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <option value="">Tous types</option>
               <option value="Prestation">Prestation</option>
               <option value="Location">Location</option>
+              <option value="Vente">Vente</option>
               <option value="Installation">Installation</option>
             </select>
 
@@ -1115,10 +1187,11 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <span className="affaires-toggle-label">Archivées</span>
             </label>
           </div>
+          </>
           )}
 
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginRight: '8px' }}>
+          <div className="header-right-actions">
+            <div className="header-notification-badges">
             {/* Badge 1: Pannes signalées (reported) */}
             {currentUser?.isAdmin && reportedMaintenances.length > 0 && (
               <div 
@@ -1459,6 +1532,32 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         onSelectYear={setCurrentDate}
         onClose={() => setShowYearSelector(false)}
         reservations={reservations}
+      />
+    )}
+
+    {showAffaireMonthSelector && (
+      <MonthSelector
+        currentDate={affaireFilterDateStart ? new Date(affaireFilterDateStart + 'T00:00:00') : new Date()}
+        onSelectMonth={(date) => {
+          applyAffaireRange(date, 'month', affaireSlidingMode);
+          setShowAffaireMonthSelector(false);
+        }}
+        onClose={() => setShowAffaireMonthSelector(false)}
+        reservations={reservations}
+        vehicles={vehicles}
+      />
+    )}
+
+    {showAffaireWeekSelector && (
+      <WeekSelector
+        currentDate={affaireFilterDateStart ? new Date(affaireFilterDateStart + 'T00:00:00') : new Date()}
+        onSelectWeek={(date) => {
+          applyAffaireRange(date, 'week', affaireSlidingMode);
+          setShowAffaireWeekSelector(false);
+        }}
+        onClose={() => setShowAffaireWeekSelector(false)}
+        reservations={reservations}
+        vehicles={vehicles}
       />
     )}
 

@@ -43,7 +43,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       const pMap = {};
       if (Array.isArray(personsData)) {
         for (const p of personsData) {
-          if (p.user_id) pMap[p.user_id] = p;
+          if (p.userId) pMap[p.userId] = p;
         }
       }
       setPersonsMap(pMap);
@@ -265,7 +265,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                       {personsMap[user.id] ? (
                         <button
                           className="personnel-linked-badge clickable"
-                          title={`Voir la fiche de ${personsMap[user.id].first_name} ${personsMap[user.id].last_name}`}
+                          title={`Voir la fiche de ${personsMap[user.id].firstName} ${personsMap[user.id].lastName}`}
                           onClick={() => onNavigateToPersonnel && onNavigateToPersonnel(personsMap[user.id])}
                         >
                           <UserCheck size={13} />

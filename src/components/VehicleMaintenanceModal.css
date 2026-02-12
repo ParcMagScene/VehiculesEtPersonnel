@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,40 +14,34 @@
 }
 
 .vehicle-maintenance-modal {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: #f8fafc;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   max-width: 600px;
   width: 90%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideUp 0.3s ease-out;
+  animation: vmSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   z-index: 1;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes vmSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .vehicle-maintenance-modal .modal-header {
   padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 11px 11px 0 0;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
 }
 
 .vehicle-maintenance-modal .modal-header h2 {
@@ -57,21 +51,21 @@
 }
 
 .vehicle-maintenance-modal .close-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 6px;
+  background: var(--close-btn-bg);
+  border: 1px solid var(--close-btn-border);
+  border-radius: var(--close-btn-radius);
   padding: 0.5rem;
   cursor: pointer;
-  color: white;
+  color: var(--close-btn-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .vehicle-maintenance-modal .close-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
 }
 
 .maintenance-form {
@@ -113,32 +107,36 @@
   gap: 0.5rem;
 }
 
-.form-group {
-  margin-bottom: 1rem;
+.vehicle-maintenance-modal .form-group {
+  margin-bottom: 12px;
 }
 
-.form-group label {
+.vehicle-maintenance-modal .form-group label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.5rem;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-.form-group input,
-.form-group select {
+.vehicle-maintenance-modal .form-group input,
+.vehicle-maintenance-modal .form-group select {
   width: 100%;
-  padding: 0.625rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  transition: all 0.2s;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #334155;
+  background: white;
+  transition: border-color 0.15s;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.vehicle-maintenance-modal .form-group input:focus,
+.vehicle-maintenance-modal .form-group select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #8b5cf6;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -196,12 +194,12 @@
 
 .btn-primary,
 .btn-secondary {
-  padding: 0.625rem 1.25rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  padding: var(--btn-padding);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
   border: none;
   display: flex;
   align-items: center;
@@ -209,22 +207,24 @@
 }
 
 .vehicle-maintenance-modal .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .vehicle-maintenance-modal .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .btn-secondary {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  border: var(--btn-secondary-border);
 }
 
 .btn-secondary:hover {
-  background: #d1d5db;
+  background: var(--btn-secondary-hover-bg);
 }
 
 /* Styles pour la liste des contrôles */
@@ -254,8 +254,8 @@
 }
 
 .btn-remove {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--btn-danger-bg);
+  color: var(--btn-danger-color);
   border: none;
   border-radius: 4px;
   padding: 0.4rem;
@@ -263,11 +263,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
 }
 
 .btn-remove:hover {
-  background: #fecaca;
+  background: var(--btn-danger-hover-bg);
   transform: scale(1.1);
 }
 
@@ -306,24 +306,25 @@
 .btn-add-controle {
   width: 100%;
   padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%);
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   margin-top: 1rem;
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .btn-add-controle:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .btn-add-controle:disabled {
@@ -340,7 +341,7 @@
   text-align: center;
 }
 
-.form-group select option:disabled {
+.vehicle-maintenance-modal .form-group select option:disabled {
   color: #9ca3af;
   font-style: italic;
 }

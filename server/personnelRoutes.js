@@ -76,9 +76,9 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
       const stmt = db.prepare(`
         INSERT INTO persons (first_name, last_name, email, phone, type, status,
-          user_id, driver_id, license_types, certifications, contract_type, notes, photo,
+          user_id, driver_id, license_types, certifications, contract_type, default_positions, notes, photo,
           created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const result = stmt.run(
@@ -88,6 +88,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         JSON.stringify(p.license_types || []),
         JSON.stringify(p.certifications || []),
         p.contract_type || null,
+        p.default_positions || '[]',
         p.notes || null, p.photo || null,
         req.user.id, req.user.id,
       );
@@ -130,6 +131,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
           first_name = ?, last_name = ?, email = ?, phone = ?,
           type = ?, status = ?, user_id = ?, driver_id = ?,
           license_types = ?, certifications = ?, contract_type = ?,
+          default_positions = ?,
           notes = ?, photo = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
@@ -147,6 +149,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         p.license_types ? JSON.stringify(p.license_types) : existing.license_types,
         p.certifications ? JSON.stringify(p.certifications) : existing.certifications,
         p.contract_type ?? existing.contract_type,
+        p.default_positions !== undefined ? p.default_positions : (existing.default_positions || '[]'),
         p.notes ?? existing.notes,
         p.photo ?? existing.photo,
         req.user.id,
@@ -260,6 +263,72 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       if (!existing) return res.status(404).json({ error: 'Compétence non trouvée' });
 
       db.prepare('DELETE FROM skills WHERE id = ?').run(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============ POSITIONS (POSTES) ============
+
+  // GET /api/positions — Liste des postes
+  app.get('/api/positions', authenticateToken, (req, res) => {
+    try {
+      const positions = db.prepare('SELECT * FROM positions ORDER BY category, name').all();
+      res.json(positions);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/positions — Créer un poste (admin)
+  app.post('/api/positions', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { name, category, is_common } = req.body;
+      if (!name) return res.status(400).json({ error: 'name est requis' });
+
+      const result = db.prepare(
+        'INSERT INTO positions (name, category, is_common) VALUES (?, ?, ?)'
+      ).run(name, category || 'autre', is_common ? 1 : 0);
+
+      const created = db.prepare('SELECT * FROM positions WHERE id = ?').get(result.lastInsertRowid);
+      res.json(created);
+    } catch (error) {
+      if (error.message.includes('UNIQUE constraint')) {
+        return res.status(409).json({ error: 'Ce poste existe déjà' });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // PUT /api/positions/:id — Modifier un poste (admin)
+  app.put('/api/positions/:id', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { name, category, is_common } = req.body;
+
+      db.prepare(`
+        UPDATE positions SET name = ?, category = ?, is_common = ? WHERE id = ?
+      `).run(name, category, is_common ? 1 : 0, req.params.id);
+
+      const updated = db.prepare('SELECT * FROM positions WHERE id = ?').get(req.params.id);
+      if (!updated) return res.status(404).json({ error: 'Poste non trouvé' });
+
+      res.json(updated);
+    } catch (error) {
+      if (error.message.includes('UNIQUE constraint')) {
+        return res.status(409).json({ error: 'Ce nom de poste existe déjà' });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // DELETE /api/positions/:id — Supprimer un poste (admin)
+  app.delete('/api/positions/:id', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const existing = db.prepare('SELECT * FROM positions WHERE id = ?').get(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'Poste non trouvé' });
+
+      db.prepare('DELETE FROM positions WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -414,16 +483,27 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
 
       // Enrichir avec les affectations
       const assignStmt = db.prepare(`
-        SELECT ma.*, p.first_name, p.last_name, p.phone, p.type as person_type
+        SELECT ma.*, p.first_name, p.last_name, p.phone, p.email, p.photo,
+               p.type as person_type, p.contract_type, p.default_positions, p.status as person_status
         FROM mission_assignments ma
         JOIN persons p ON p.id = ma.person_id
         WHERE ma.mission_id = ?
       `);
 
-      const enriched = missions.map(m => ({
-        ...m,
-        assignments: assignStmt.all(m.id),
-      }));
+      const skillsStmt = db.prepare(`
+        SELECT s.name FROM person_skills ps
+        JOIN skills s ON s.id = ps.skill_id
+        WHERE ps.person_id = ?
+        ORDER BY s.name
+      `);
+
+      const enriched = missions.map(m => {
+        const assignments = assignStmt.all(m.id).map(a => ({
+          ...a,
+          skills: skillsStmt.all(a.person_id).map(s => s.name),
+        }));
+        return { ...m, assignments };
+      });
 
       res.json(enriched);
     } catch (error) {
@@ -480,19 +560,21 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
       }
 
       const result = db.prepare(`
-        INSERT INTO missions (title, reservation_id, client_name, location_name,
+        INSERT INTO missions (title, reservation_id, affaire, client_name, location_name,
           start_date, end_date, start_time, end_time, position,
-          required_skill_id, vehicle_id, status, notes,
+          required_skills, vehicle_id, status, notes, day_states,
           created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         m.title, m.reservation_id || null,
+        m.affaire || null,
         m.client_name || null, m.location_name || null,
         m.start_date, m.end_date,
         m.start_time || null, m.end_time || null,
-        m.position || null, m.required_skill_id || null,
+        m.position || null, m.required_skills || m.required_skill_id || null,
         m.vehicle_id || null, m.status || 'draft',
-        m.notes || null, req.user.id, req.user.id,
+        m.notes || null, m.day_states || null,
+        req.user.id, req.user.id,
       );
 
       addToHistory('mission', result.lastInsertRowid, 'created', m, req.user.id, req.user.name);
@@ -514,15 +596,16 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
 
       db.prepare(`
         UPDATE missions SET
-          title = ?, reservation_id = ?, client_name = ?, location_name = ?,
+          title = ?, reservation_id = ?, affaire = ?, client_name = ?, location_name = ?,
           start_date = ?, end_date = ?, start_time = ?, end_time = ?,
-          position = ?, required_skill_id = ?, vehicle_id = ?,
-          status = ?, notes = ?,
+          position = ?, required_skills = ?, vehicle_id = ?,
+          status = ?, notes = ?, day_states = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(
         m.title || existing.title,
         m.reservation_id !== undefined ? m.reservation_id : existing.reservation_id,
+        m.affaire !== undefined ? m.affaire : existing.affaire,
         m.client_name ?? existing.client_name,
         m.location_name ?? existing.location_name,
         m.start_date || existing.start_date,
@@ -530,10 +613,11 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
         m.start_time ?? existing.start_time,
         m.end_time ?? existing.end_time,
         m.position ?? existing.position,
-        m.required_skill_id !== undefined ? m.required_skill_id : existing.required_skill_id,
+        m.required_skills !== undefined ? m.required_skills : (m.required_skill_id !== undefined ? m.required_skill_id : existing.required_skills),
         m.vehicle_id !== undefined ? m.vehicle_id : existing.vehicle_id,
         m.status || existing.status,
         m.notes ?? existing.notes,
+        m.day_states !== undefined ? m.day_states : existing.day_states,
         req.user.id,
         req.params.id,
       );
@@ -704,11 +788,12 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
 
       db.prepare(`
         UPDATE mission_assignments SET
-          status = ?, position = ?, comment = ?,
+          person_id = ?, status = ?, position = ?, comment = ?,
           responded_at = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(
+        a.person_id || existing.person_id,
         a.status || existing.status,
         a.position ?? existing.position,
         a.comment ?? existing.comment,
@@ -797,8 +882,8 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
         mParams.push(person_id);
       }
       if (skill_id) {
-        missionsSql += ` AND m.required_skill_id = ?`;
-        mParams.push(skill_id);
+        missionsSql += ` AND (m.required_skills LIKE ? OR m.required_skill_id = ?)`;
+        mParams.push(`%${skill_id}%`, skill_id);
       }
       missionsSql += ' ORDER BY m.start_date, m.start_time';
 

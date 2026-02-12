@@ -1832,10 +1832,18 @@ app.get('/api/affaires', authenticateToken, (req, res) => {
     const countVehiclesStmt = db.prepare(
       'SELECT COUNT(DISTINCT vehicle_id) as count FROM reservations WHERE affaire = ?'
     );
+    const countPersonnelStmt = db.prepare(
+      `SELECT COUNT(DISTINCT ma.person_id) as count
+       FROM missions m
+       JOIN mission_assignments ma ON ma.mission_id = m.id
+       WHERE UPPER(m.affaire) = UPPER(?)
+          OR m.reservation_id IN (SELECT id FROM reservations WHERE UPPER(affaire) = UPPER(?))`
+    );
 
     const enriched = dbAffaires.map(a => {
       const resCount = countReservationsStmt.get(a.numero_affaire)?.count || 0;
       const vehCount = countVehiclesStmt.get(a.numero_affaire)?.count || 0;
+      const persCount = countPersonnelStmt.get(a.numero_affaire, a.numero_affaire)?.count || 0;
       return {
         id: a.id,
         numeroAffaire: a.numero_affaire,
@@ -1854,7 +1862,7 @@ app.get('/api/affaires', authenticateToken, (req, res) => {
         eventName: a.event_name,
         reservationCount: resCount,
         vehicleCount: vehCount,
-        personnelCount: 0,
+        personnelCount: persCount,
         createdBy: a.created_by,
         createdAt: a.created_at,
         modifiedBy: a.modified_by,
@@ -1887,6 +1895,7 @@ app.get('/api/affaires', authenticateToken, (req, res) => {
       // Titre depuis le nom de prestation
       const prestationList = (ra.prestations || '').split(',').filter(p => p.trim());
       const titre = prestationList[0] || '';
+      const persCount = countPersonnelStmt.get(ra.affaire, ra.affaire)?.count || 0;
 
       enriched.push({
         id: null, // pas d'ID en DB
@@ -1906,7 +1915,7 @@ app.get('/api/affaires', authenticateToken, (req, res) => {
         eventName: titre,
         reservationCount: ra.reservation_count,
         vehicleCount: ra.vehicle_count,
-        personnelCount: 0,
+        personnelCount: persCount,
         createdBy: null,
         createdAt: null,
         modifiedBy: null,
@@ -1921,6 +1930,27 @@ app.get('/api/affaires', authenticateToken, (req, res) => {
     res.json(enriched);
   } catch (error) {
     console.error('Erreur GET /api/affaires:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/affaires/personnel-counts — Compter le personnel affecté par affaire (toutes les affaires)
+app.get('/api/affaires/personnel-counts', authenticateToken, (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT UPPER(m.affaire) as affaire, COUNT(DISTINCT ma.person_id) as count
+      FROM missions m
+      JOIN mission_assignments ma ON ma.mission_id = m.id
+      WHERE m.affaire IS NOT NULL AND m.affaire != ''
+      GROUP BY UPPER(m.affaire)
+    `).all();
+    const counts = {};
+    for (const r of rows) {
+      counts[r.affaire] = r.count;
+    }
+    res.json(counts);
+  } catch (error) {
+    console.error('Erreur GET /api/affaires/personnel-counts:', error);
     res.status(500).json({ error: error.message });
   }
 });

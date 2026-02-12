@@ -337,4 +337,107 @@
   .planning-cell {
     min-width: 150px;
   }
+
+  .planning-header {
+    padding: 12px 16px;
+  }
+
+  .planning-week-title {
+    font-size: 17px;
+  }
+
+  .planning-vehicle-row {
+    height: 80px;
+    padding: 8px 12px;
+  }
+
+  .planning-grid-row {
+    height: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .planning-vehicles-column {
+    width: 160px;
+  }
+
+  .planning-day-header,
+  .planning-cell {
+    min-width: 120px;
+  }
+
+  .planning-column-header {
+    height: 60px;
+    font-size: 13px;
+  }
+
+  .planning-days-header {
+    height: 60px;
+  }
+
+  .planning-vehicle-name {
+    font-size: 13px;
+  }
+
+  .planning-vehicle-registration {
+    font-size: 11px;
+  }
+
+  .planning-vehicle-row {
+    height: 70px;
+    padding: 6px 10px;
+  }
+
+  .planning-grid-row {
+    height: 70px;
+  }
+
+  .planning-reservation,
+  .planning-maintenance {
+    padding: 4px 6px;
+    min-height: 40px;
+    gap: 4px;
+  }
+
+  .planning-reservation-client,
+  .planning-maintenance-description {
+    font-size: 11px;
+  }
+
+  .planning-reservation-period,
+  .planning-maintenance-status {
+    font-size: 10px;
+  }
+
+  .planning-header {
+    padding: 8px 12px;
+  }
+
+  .planning-week-title {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .planning-vehicles-column {
+    width: 120px;
+  }
+
+  .planning-day-header,
+  .planning-cell {
+    min-width: 100px;
+  }
+
+  .planning-vehicle-registration {
+    display: none;
+  }
+
+  .planning-vehicle-name {
+    font-size: 12px;
+  }
+
+  .planning-reservation-icon,
+  .planning-maintenance-icon {
+    display: none;
+  }
 }

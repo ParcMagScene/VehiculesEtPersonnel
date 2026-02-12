@@ -1,0 +1,422 @@
+/* ═══════════════════════════════════════════════════════
+   MAGLOG — Gestionnaire de Thème Global
+   ═══════════════════════════════════════════════════════
+   
+   Ce fichier centralise TOUTES les variables du thème
+   pour assurer la cohérence visuelle dans l'application.
+   
+   Utilisation dans les CSS :
+     background: var(--theme-gradient);
+     color: var(--theme-primary);
+   
+   Pour tout nouveau modal/dialog, utiliser les classes
+   utilitaires .theme-modal-header, .theme-close-btn, etc.
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── Couleurs principales ─── */
+  --theme-primary: #667eea;
+  --theme-secondary: #764ba2;
+  --theme-primary-dark: #5b21b6;
+  --theme-primary-hover: #7c3aed;
+  --theme-primary-light: #8b5cf6;
+  --theme-accent: #a855f7;
+  
+  /* ─── Dégradés ─── */
+  --theme-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --theme-gradient-reverse: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  --theme-gradient-subtle: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+  
+  /* ─── Danger (pour modals d'alerte) ─── */
+  --theme-danger: #ef4444;
+  --theme-danger-dark: #dc2626;
+  --theme-danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  
+  /* ─── Succès ─── */
+  --theme-success: #22c55e;
+  --theme-success-dark: #16a34a;
+  
+  /* ─── Texte ─── */
+  --theme-text-primary: #1e293b;
+  --theme-text-secondary: #64748b;
+  --theme-text-muted: #94a3b8;
+  
+  /* ─── Bordures ─── */
+  --theme-border: #e2e8f0;
+  --theme-border-light: #f1f5f9;
+  --theme-border-focus: #8b5cf6;
+  
+  /* ─── Fonds ─── */
+  --theme-bg-page: #f8fafc;
+  --theme-bg-card: white;
+  --theme-bg-hover: #eef2ff;
+  --theme-bg-indigo-light: #e0e7ff;
+  --theme-bg-indigo-lighter: #c7d2fe;
+  
+  /* ─── Overlay ─── */
+  --theme-overlay: rgba(15, 23, 42, 0.5);
+  --theme-overlay-dark: rgba(0, 0, 0, 0.6);
+  
+  /* ─── Modal header (texte blanc sur gradient) ─── */
+  --modal-header-bg: var(--theme-gradient);
+  --modal-header-color: white;
+  --modal-header-border-radius: 16px 16px 0 0;
+  
+  /* ─── Close button (semi-transparent sur header gradient) ─── */
+  --close-btn-bg: rgba(255, 255, 255, 0.15);
+  --close-btn-border: rgba(255, 255, 255, 0.25);
+  --close-btn-color: white;
+  --close-btn-hover-bg: rgba(255, 255, 255, 0.3);
+  --close-btn-hover-border: rgba(255, 255, 255, 0.4);
+  --close-btn-radius: 8px;
+  --close-btn-size: 36px;
+  
+  /* ─── Boutons — Standard global ─── */
+  --btn-radius: 8px;
+  --btn-font-size: 14px;
+  --btn-font-weight: 600;
+  --btn-padding: 10px 20px;
+  --btn-height: 40px;
+  --btn-transition: all 0.2s ease;
+  
+  /* ─── Bouton primaire (gradient) ─── */
+  --btn-primary-bg: var(--theme-gradient);
+  --btn-primary-color: white;
+  --btn-primary-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  --btn-primary-hover-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  
+  /* ─── Bouton secondaire (annuler) ─── */
+  --btn-secondary-bg: #f3f4f6;
+  --btn-secondary-color: #374151;
+  --btn-secondary-border: 1px solid #e5e7eb;
+  --btn-secondary-hover-bg: #e5e7eb;
+  --btn-secondary-hover-border-color: #d1d5db;
+  
+  /* ─── Bouton danger (supprimer/annuler intervention) ─── */
+  --btn-danger-bg: #fee2e2;
+  --btn-danger-color: #dc2626;
+  --btn-danger-border: 2px solid #fca5a5;
+  --btn-danger-hover-bg: #fecaca;
+  --btn-danger-filled-bg: #ef4444;
+  --btn-danger-filled-color: white;
+  
+  /* ─── Bouton succès (terminé) ─── */
+  --btn-success-bg: #d1fae5;
+  --btn-success-color: #059669;
+  --btn-success-border: 2px solid #86efac;
+  --btn-success-hover-bg: #a7f3d0;
+  --btn-success-gradient: linear-gradient(135deg, #10b981, #059669);
+  
+  /* ─── Bouton warning (reporter) ─── */
+  --btn-warning-bg: #fef3c7;
+  --btn-warning-color: #d97706;
+  --btn-warning-border: 2px solid #fde68a;
+  --btn-warning-hover-bg: #fde68a;
+  
+  /* ─── Ombres ─── */
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 4px 16px rgba(102, 126, 234, 0.2);
+  
+  /* ─── Focus ─── */
+  --focus-ring: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  --focus-border: var(--theme-border-focus);
+  
+  /* ─── Transitions ─── */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CLASSES UTILITAIRES — Modal / Dialog
+   Utiliser ces classes pour les NOUVEAUX composants
+   ═══════════════════════════════════════════════════════ */
+
+/* Header gradient pour modals et dialogs */
+.theme-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
+  gap: 12px;
+}
+
+.theme-modal-header h2,
+.theme-modal-header h3 {
+  margin: 0;
+  font-weight: 700;
+  color: var(--modal-header-color);
+}
+
+.theme-modal-header h2 {
+  font-size: 20px;
+}
+
+.theme-modal-header h3 {
+  font-size: 16px;
+}
+
+/* Badge semi-transparent dans header */
+.theme-header-badge {
+  padding: 3px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Bouton close standard */
+.theme-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  border-radius: var(--close-btn-radius);
+  border: 1px solid var(--close-btn-border);
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.theme-close-btn:hover {
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
+}
+
+/* Overlay standard */
+.theme-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--theme-overlay-dark);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+/* Container de modal standard */
+.theme-modal {
+  background: var(--theme-bg-card);
+  border-radius: 16px;
+  box-shadow: var(--shadow-modal);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: themeModalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+@keyframes themeModalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Bouton d'action primaire */
+.theme-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: none;
+  border-radius: var(--btn-radius);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
+  height: var(--btn-height);
+}
+
+.theme-btn-primary:hover {
+  box-shadow: var(--btn-primary-hover-shadow);
+  transform: translateY(-1px);
+}
+
+.theme-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Bouton secondaire (annuler / fermer) */
+.theme-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-secondary-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+
+.theme-btn-secondary:hover {
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border-color);
+}
+
+/* Bouton danger (supprimer) */
+.theme-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-danger-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-danger-bg);
+  color: var(--btn-danger-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+
+.theme-btn-danger:hover {
+  background: var(--btn-danger-hover-bg);
+}
+
+/* Bouton danger rempli (variante forte) */
+.theme-btn-danger-filled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: none;
+  border-radius: var(--btn-radius);
+  background: var(--btn-danger-filled-bg);
+  color: var(--btn-danger-filled-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+
+.theme-btn-danger-filled:hover {
+  background: var(--theme-danger-dark);
+}
+
+/* Bouton succès (terminé / valider) */
+.theme-btn-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-success-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-success-bg);
+  color: var(--btn-success-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+
+.theme-btn-success:hover {
+  background: var(--btn-success-hover-bg);
+}
+
+/* Bouton warning (reporter / en attente) */
+.theme-btn-warning {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-warning-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-warning-bg);
+  color: var(--btn-warning-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+
+.theme-btn-warning:hover {
+  background: var(--btn-warning-hover-bg);
+}
+
+/* Bouton outline (variante contour) */
+.theme-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: 2px solid var(--theme-primary);
+  border-radius: var(--btn-radius);
+  background: white;
+  color: var(--theme-primary);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+
+.theme-btn-outline:hover {
+  background: var(--theme-bg-hover);
+}
+
+/* Petit bouton icône (éditer/supprimer dans listes) */
+.theme-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--theme-text-muted);
+  cursor: pointer;
+  transition: var(--btn-transition);
+}
+
+.theme-btn-icon:hover {
+  background: var(--theme-bg-hover);
+  color: var(--theme-primary);
+}
+
+.theme-btn-icon.danger:hover {
+  background: #fef2f2;
+  color: var(--theme-danger);
+}
+
+/* Input focus style */
+.theme-input:focus {
+  outline: none;
+  border-color: var(--focus-border);
+  box-shadow: var(--focus-ring);
+}

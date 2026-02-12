@@ -15,6 +15,9 @@ server/*.db-shm
 server/*.db-wal
 server/*.db.backup-*
 *.db
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 
 # Backups
 server/backups/
@@ -27,3 +30,4 @@ _archive/
 check_localstorage.html
 test_*.js
 analyze.js
+server/_tmp_*.mjs

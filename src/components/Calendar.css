@@ -69,7 +69,6 @@
   display: grid;
   gap: 0;
   background: white;
-  min-width: max-content;
   position: relative;
   z-index: 100;
 }
@@ -100,7 +99,7 @@
 }
 
 .vehicle-column-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   padding: 0.5rem 1rem;
   font-weight: 600;
@@ -128,7 +127,7 @@
 
 /* En-têtes de section véhicules */
 .vehicle-section-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   padding: 0.5rem 1rem;
   font-weight: 600;
@@ -182,7 +181,7 @@
 
 /* Séparateur de section dans la grille */
 .vehicle-section-separator {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   padding: 0.5rem 1rem;
   font-weight: 600;
@@ -246,7 +245,6 @@
   display: grid;
   gap: 0;
   background: white;
-  min-width: max-content;
   position: relative;
 }
 
@@ -259,8 +257,7 @@
 }
 
 .year-view {
-  grid-template-columns: repeat(12, minmax(150px, 1fr)) !important;
-  min-width: 1800px;
+  grid-template-columns: repeat(12, minmax(150px, 1fr));
 }
 
 /* En-tête */
@@ -334,7 +331,7 @@
 }
 
 .calendar-header-cell {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   padding: 0.5rem 0.5rem;
   font-weight: 600;
@@ -1178,9 +1175,104 @@
   .vehicle-cell {
     padding: 0.75rem;
   }
-  
+
   .time-slot {
     padding: 0.375rem;
     font-size: 0.875rem;
   }
+}
+
+@media (max-width: 1024px) {
+  .vehicle-column,
+  .calendar-headers-row .vehicle-column-header {
+    width: 200px;
+  }
+
+  .week-view {
+    grid-template-columns: repeat(14, minmax(80px, 1fr));
+  }
+
+  .month-view {
+    grid-template-columns: repeat(62, minmax(42px, 1fr));
+  }
+
+  .year-view {
+    grid-template-columns: repeat(12, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .vehicle-column,
+  .calendar-headers-row .vehicle-column-header {
+    width: 160px;
+  }
+
+  .vehicle-cell {
+    padding: 0.5rem;
+  }
+
+  .vehicle-name {
+    font-size: 0.8rem;
+  }
+
+  .vehicle-registration {
+    font-size: 0.7rem;
+  }
+
+  .week-view {
+    grid-template-columns: repeat(14, minmax(65px, 1fr));
+  }
+
+  .month-view {
+    grid-template-columns: repeat(62, minmax(32px, 1fr));
+  }
+
+  .time-slot {
+    font-size: 0.75rem;
+    padding: 0.25rem;
+  }
+
+  .calendar-grid-headers .calendar-header {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .vehicle-column,
+  .calendar-headers-row .vehicle-column-header {
+    width: 120px;
+  }
+
+  .vehicle-cell {
+    padding: 0.35rem 0.5rem;
+  }
+
+  .vehicle-registration {
+    display: none;
+  }
+
+  .week-view {
+    grid-template-columns: repeat(14, minmax(55px, 1fr));
+  }
+
+  .month-view {
+    grid-template-columns: repeat(62, minmax(26px, 1fr));
+  }
+}
+
+/* ===== Block drag-to-move preview ===== */
+.time-slot.block-drag-preview {
+  background: rgba(59, 130, 246, 0.2) !important;
+  outline: 2px dashed #3b82f6;
+  outline-offset: -2px;
+  z-index: 10;
+}
+
+/* Ghost : bloc original pendant le déplacement */
+.reservation.block-drag-ghost {
+  opacity: 0.25 !important;
+  outline: 2px dashed #3b82f6;
+  outline-offset: -2px;
+  pointer-events: none;
+  filter: grayscale(0.5);
 }

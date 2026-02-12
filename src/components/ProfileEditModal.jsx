@@ -124,7 +124,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.5)', display: 'flex',
+      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', zIndex: 10000
     }}>
       <div style={{
@@ -132,18 +132,12 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden'
       }}>
         {/* Header */}
-        <div style={{
-          padding: '20px 24px', borderBottom: '1px solid #e5e7eb',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: '#f8fafc'
-        }}>
-          <h3 style={{ margin: 0, fontSize: '18px', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="theme-modal-header" style={{ borderRadius: '16px 16px 0 0' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <User size={20} /> {isAdminMode ? `Modifier ${editedUser.name}` : 'Mon profil'}
           </h3>
-          <button onClick={onClose} style={{
-            background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '4px'
-          }}>
-            <X size={24} />
+          <button onClick={onClose} className="theme-close-btn">
+            <X size={20} />
           </button>
         </div>
 
@@ -253,26 +247,22 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
 
         {/* Footer */}
         <div style={{
-          padding: '16px 24px', borderTop: '1px solid #e5e7eb',
-          display: 'flex', justifyContent: 'flex-end', gap: '12px', background: '#f8fafc'
+          padding: '16px 24px', borderTop: '1px solid var(--theme-border)',
+          display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--theme-bg-page)'
         }}>
           <button
             onClick={onClose}
-            style={{
-              padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db',
-              background: 'white', color: '#374151', cursor: 'pointer', fontSize: '14px', fontWeight: 500
-            }}
+            className="theme-btn-secondary"
           >
             Fermer
           </button>
           <button
             onClick={handleSaveName}
             disabled={saving || name.trim() === editedUser.name || !name.trim()}
+            className="theme-btn-primary"
             style={{
-              padding: '10px 20px', borderRadius: '8px', border: 'none',
-              background: (saving || name.trim() === editedUser.name || !name.trim()) ? '#d1d5db' : '#3b82f6',
-              color: 'white', cursor: (saving || name.trim() === editedUser.name) ? 'default' : 'pointer',
-              fontSize: '14px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px'
+              opacity: (saving || name.trim() === editedUser.name || !name.trim()) ? 0.5 : 1,
+              cursor: (saving || name.trim() === editedUser.name) ? 'default' : 'pointer'
             }}
           >
             <Save size={16} />

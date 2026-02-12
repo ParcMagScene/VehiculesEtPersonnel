@@ -566,6 +566,32 @@ class ApiClient {
     });
   }
 
+  // — Postes —
+
+  async getPositions() {
+    return this.request('/positions');
+  }
+
+  async createPosition(position) {
+    return this.request('/positions', {
+      method: 'POST',
+      body: JSON.stringify(position),
+    });
+  }
+
+  async updatePosition(id, position) {
+    return this.request(`/positions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(position),
+    });
+  }
+
+  async deletePosition(id) {
+    return this.request(`/positions/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // — Disponibilités —
 
   async getAvailabilities(params = {}) {
@@ -680,6 +706,10 @@ class ApiClient {
 
   async getAffaires() {
     return this.request('/affaires');
+  }
+
+  async getAffairesPersonnelCounts() {
+    return this.request('/affaires/personnel-counts');
   }
 
   async createOrUpdateAffaire(affaire) {

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo, Suspense, lazy, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Calendar from './components/Calendar';
 import Header from './components/Header';
 import GoogleCalendarBanner from './components/GoogleCalendarBanner';
 import VehicleDetailsModal from './components/VehicleDetailsModal';
+import { VehicleSlidePanel } from './components/VehicleDetailPanel';
 import LoginForm from './components/LoginForm';
 import MobileApp from './components/mobile/MobileApp';
 import PlanningView from './components/PlanningView';
@@ -106,10 +107,28 @@ function App() {
     return d.toISOString().slice(0, 10);
   });
   const [affaireSlidingMode, setAffaireSlidingMode] = useState(true);
+  const [affaireViewMode, setAffaireViewMode] = useState('week'); // 'week' | 'month'
   const [affaireShowArchived, setAffaireShowArchived] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [googleEvents, setGoogleEvents] = useState([]);
+  const allGoogleEventsRef = useRef(new Map());
+
+  // Accumuler les events Google Calendar (dédupliqués par ID) pour avoir un pool complet
+  const handleGoogleEventsChange = useCallback((newEvents) => {
+    setGoogleEvents(newEvents);
+    if (newEvents && newEvents.length > 0) {
+      newEvents.forEach(ev => {
+        if (ev.id) allGoogleEventsRef.current.set(ev.id, ev);
+      });
+    }
+  }, []);
+
+  const allGoogleEvents = useMemo(() => {
+    // Recalculer quand googleEvents change (trigger)
+    return Array.from(allGoogleEventsRef.current.values());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleEvents]);
   const [hoveredEventId, setHoveredEventId] = useState(null);
   const [reservationToEdit, setReservationToEdit] = useState(null);
   const [garages, setGarages] = useState([]);
@@ -117,6 +136,7 @@ function App() {
   const [selectedVehicleForMaintenance, setSelectedVehicleForMaintenance] = useState(null);
   const [maintenanceToEdit, setMaintenanceToEdit] = useState(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
+  const [vehicleForDialog, setVehicleForDialog] = useState(null);
   const [selectedVehicleForKilometrageControl, setSelectedVehicleForKilometrageControl] = useState(null);
   const [maintenanceActionType, setMaintenanceActionType] = useState(null); // 'schedule', 'request', 'breakdown'
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -671,6 +691,8 @@ function App() {
         setAffaireFilterDateEnd={setAffaireFilterDateEnd}
         affaireSlidingMode={affaireSlidingMode}
         setAffaireSlidingMode={setAffaireSlidingMode}
+        affaireViewMode={affaireViewMode}
+        setAffaireViewMode={setAffaireViewMode}
         affaireShowArchived={affaireShowArchived}
         setAffaireShowArchived={setAffaireShowArchived}
         maintenances={maintenances}
@@ -698,11 +720,12 @@ function App() {
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}
+        activeModule={activeModule}
         currentDate={currentDate}
         currentUser={currentUser}
         onScroll={handleBannerScroll}
         onEventClick={(event) => setGoogleEventForReservation(event)}
-        onEventsChange={setGoogleEvents}
+        onEventsChange={handleGoogleEventsChange}
         clients={clients}
         locations={locations}
         reservations={reservations}
@@ -737,37 +760,55 @@ function App() {
               drivers={drivers}
             />
           ) : (
-            <Calendar
-              view={view}
-              setView={setView}
-              currentDate={currentDate}
-              setCurrentDate={setCurrentDate}
-              vehicles={vehicles}
-              reservations={reservations}
-              maintenances={maintenances}
-              onAddReservation={addReservation}
-              onUpdateReservation={updateReservation}
-              onUpdateMaintenance={updateMaintenanceFromResize}
-              onScroll={handleCalendarScroll}
-              onDeleteReservation={deleteReservation}
-              clients={clients}
-              drivers={drivers}
-              locations={locations}
-              users={users}
-              googleEvent={googleEventForReservation}
-              onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
-              googleEvents={googleEvents}
-              highlightedReservationIds={highlightedReservationIds}
-              reservationToEdit={reservationToEdit}
-              onReservationEditComplete={() => setReservationToEdit(null)}
-              onVehicleClick={setSelectedVehicleForDetails}
-              onMaintenanceClick={(vehicle, maintenanceId) => {
-                setSelectedVehicleForMaintenance(vehicle);
-                setMaintenanceToEdit(maintenanceId);
-              }}
-              onRequestViewEvent={(event) => openEventDetailsModalRef.current?.(event)}
-              currentUser={currentUser}
-            />
+            <div className="calendar-with-vehicle-panel">
+              <Calendar
+                view={view}
+                setView={setView}
+                currentDate={currentDate}
+                setCurrentDate={setCurrentDate}
+                vehicles={vehicles}
+                reservations={reservations}
+                maintenances={maintenances}
+                onAddReservation={addReservation}
+                onUpdateReservation={updateReservation}
+                onUpdateMaintenance={updateMaintenanceFromResize}
+                onScroll={handleCalendarScroll}
+                onDeleteReservation={deleteReservation}
+                clients={clients}
+                drivers={drivers}
+                locations={locations}
+                users={users}
+                googleEvent={googleEventForReservation}
+                onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
+                googleEvents={googleEvents}
+                highlightedReservationIds={highlightedReservationIds}
+                reservationToEdit={reservationToEdit}
+                onReservationEditComplete={() => setReservationToEdit(null)}
+                onVehicleClick={setSelectedVehicleForDetails}
+                onVehicleDoubleClick={(v) => { setSelectedVehicleForDetails(null); setVehicleForDialog(v); }}
+                onMaintenanceClick={(vehicle, maintenanceId) => {
+                  setSelectedVehicleForMaintenance(vehicle);
+                  setMaintenanceToEdit(maintenanceId);
+                }}
+                onRequestViewEvent={(event) => openEventDetailsModalRef.current?.(event)}
+                currentUser={currentUser}
+              />
+              <VehicleSlidePanel
+                vehicle={selectedVehicleForDetails}
+                maintenances={maintenances}
+                currentUser={currentUser}
+                onClose={() => setSelectedVehicleForDetails(null)}
+                onOpenDialog={(v) => { setSelectedVehicleForDetails(null); setVehicleForDialog(v); }}
+                onAction={(action) => {
+                  const v = selectedVehicleForDetails;
+                  if (!v) return;
+                  if (action === 'schedule') { handleScheduleMaintenance(v); setSelectedVehicleForDetails(null); }
+                  else if (action === 'request') { handleRequestMaintenance(v); setSelectedVehicleForDetails(null); }
+                  else if (action === 'km') { setSelectedVehicleForKilometrageControl(v); setSelectedVehicleForDetails(null); }
+                  else if (action === 'breakdown') { handleReportBreakdown(v); setSelectedVehicleForDetails(null); }
+                }}
+              />
+            </div>
           )}
         </>
       )}
@@ -785,6 +826,7 @@ function App() {
             mode="planning"
             view={view}
             currentDate={currentDate}
+            googleEvents={allGoogleEvents}
           />
         </Suspense>
       )}
@@ -905,12 +947,12 @@ function App() {
         </Suspense>
       )}
 
-      {selectedVehicleForDetails && (
+      {vehicleForDialog && (
         <VehicleDetailsModal
-          vehicle={selectedVehicleForDetails}
+          vehicle={vehicleForDialog}
           maintenances={maintenances}
           currentUser={currentUser}
-          onClose={() => setSelectedVehicleForDetails(null)}
+          onClose={() => setVehicleForDialog(null)}
           onRequestMaintenance={handleRequestMaintenance}
           onReportBreakdown={handleReportBreakdown}
           onScheduleMaintenance={handleScheduleMaintenance}
@@ -918,7 +960,7 @@ function App() {
           onDeleteIntervention={handleDeleteIntervention}
           onOpenMaintenance={(vehicle) => {
             setSelectedVehicleForKilometrageControl(vehicle);
-            setSelectedVehicleForDetails(null);
+            setVehicleForDialog(null);
           }}
         />
       )}

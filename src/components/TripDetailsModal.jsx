@@ -3,6 +3,7 @@ import { X, Plus, Trash2, MapPin, Clock, User, ArrowRight, ArrowDown } from 'luc
 import './TripDetailsModal.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded as checkGoogleMapsLoaded } from '../utils/googleMapsLoader';
 import LocationDialog from './LocationDialog';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import api from '../utils/api';
 
 const TripDetailsModal = ({
@@ -58,6 +59,16 @@ const TripDetailsModal = ({
   const [pausesWithValidatedLocation, setPausesWithValidatedLocation] = useState(new Set());
   const [isCalculating, setIsCalculating] = useState(false);
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const initialFormDataRef = useRef(JSON.stringify(formData));
+
+  const handleSafeClose = () => {
+    if (JSON.stringify(formData) !== initialFormDataRef.current) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
   const [isSaved, setIsSaved] = useState(!!currentTripDetail);
   const [locations, setLocations] = useState([]);
   const [allLocations, setAllLocations] = useState([]);
@@ -913,7 +924,7 @@ const TripDetailsModal = ({
     <div className="modal-overlay" onClick={(e) => {
       // Fermer uniquement si on clique sur l'overlay (arrière-plan)
       if (e.target.className === 'modal-overlay') {
-        onClose();
+        handleSafeClose();
       }
     }}>
       <div className="trip-details-modal" onClick={(e) => e.stopPropagation()}>
@@ -993,7 +1004,7 @@ const TripDetailsModal = ({
               ✅ Détails du trajet enregistrés
             </div>
           )}
-          <button onClick={onClose} className="close-button">
+          <button onClick={handleSafeClose} className="close-button">
             <X size={24} />
           </button>
         </div>
@@ -1491,7 +1502,7 @@ const TripDetailsModal = ({
           </div>
 
           <div className="modal-actions">
-            <button type="button" onClick={onClose} className="cancel-button">
+            <button type="button" onClick={handleSafeClose} className="cancel-button">
               Annuler
             </button>
             <button type="submit" className="save-button">
@@ -1516,6 +1527,13 @@ const TripDetailsModal = ({
           onSave={handleLocationSave}
           onClose={handleLocationDialogClose}
           companyAddress={companyAddress}
+        />
+      )}
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
         />
       )}
     </div>

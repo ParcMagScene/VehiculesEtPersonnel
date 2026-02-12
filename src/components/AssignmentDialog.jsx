@@ -7,6 +7,7 @@ import {
 import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDay, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../utils/api';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './AssignmentDialog.css';
 
 const POSITION_CATEGORIES = [
@@ -304,6 +305,39 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   const [selectedPersonId, setSelectedPersonId] = useState(person.id);
   const [personSearch, setPersonSearch] = useState('');
   const [showPersonDropdown, setShowPersonDropdown] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+
+  // Capturer l'état initial pour détecter les modifications
+  const initialStateRef = useRef(null);
+  useEffect(() => {
+    if (!initialStateRef.current && !loading) {
+      initialStateRef.current = JSON.stringify({
+        selectedAffaire: selectedAffaire?.numeroAffaire,
+        startDate, endDate, startTime, endTime,
+        dayStates, selectedSkillIds, selectedPositions,
+        status, notes, selectedPersonId
+      });
+    }
+  }, [loading]);
+
+  const hasFormChanges = () => {
+    if (!initialStateRef.current) return false;
+    const current = JSON.stringify({
+      selectedAffaire: selectedAffaire?.numeroAffaire,
+      startDate, endDate, startTime, endTime,
+      dayStates, selectedSkillIds, selectedPositions,
+      status, notes, selectedPersonId
+    });
+    return current !== initialStateRef.current;
+  };
+
+  const handleSafeClose = () => {
+    if (hasFormChanges()) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
 
   // Convertir les événements Google Calendar en format affaire
   const googleAffaires = useMemo(() => {
@@ -619,7 +653,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   console.log('[AssignmentDialog] ABOUT TO RENDER — startDate:', startDate, 'endDate:', endDate, 'rangeDays:', rangeDays?.length, 'affaires:', affaires?.length, 'loading:', loading);
 
   const dialogContent = (
-    <div className="assignment-dialog-overlay" onClick={onClose}>
+    <div className="assignment-dialog-overlay" onClick={handleSafeClose}>
       <div className="assignment-dialog" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="assignment-dialog-header">
@@ -637,7 +671,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 <Trash2 size={16} />
               </button>
             )}
-            <button className="assignment-dialog-close" onClick={onClose}>
+            <button className="assignment-dialog-close" onClick={handleSafeClose}>
               <X size={18} />
             </button>
           </div>
@@ -976,7 +1010,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
         {/* Footer */}
         <div className="assignment-dialog-footer">
-          <button className="ad-btn ad-btn-cancel" onClick={onClose} disabled={saving}>
+          <button className="ad-btn ad-btn-cancel" onClick={handleSafeClose} disabled={saving}>
             Annuler
           </button>
           <button
@@ -998,6 +1032,13 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           </button>
         </div>
       </div>
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
+        />
+      )}
     </div>
   );
 

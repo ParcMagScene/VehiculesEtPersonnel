@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X, Trash2, MapPin, Link2, Unlink, Paperclip, Car, Check } from 'lucide-react';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
 import TripDetailsModal from './TripDetailsModal';
@@ -86,6 +87,23 @@ const ReservationModal = ({
 
   const [initialFormData, setInitialFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+
+  // Fermeture sécurisée avec avertissement si modifications
+  const handleSafeClose = () => {
+    // En mode création, vérifier si des champs ont été remplis
+    if (!isEdit) {
+      const hasContent = formData.clientName || formData.driverName || formData.locationName || formData.prestationName || formData.notes || formData.affaires.length > 0;
+      if (hasContent) {
+        setShowUnsavedWarning(true);
+        return;
+      }
+    } else if (hasChanges) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
 
   const [newAffaire, setNewAffaire] = useState('');
 
@@ -880,7 +898,7 @@ const ReservationModal = ({
     : '';
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div className="modal-overlay" onClick={handleSafeClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div className="modal-content reservation-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-content">
@@ -930,7 +948,7 @@ const ReservationModal = ({
             />
             <span style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.95)' }}>🚐 Tournée</span>
           </label>
-          <button className="close-button" onClick={onClose} aria-label="Fermer la fenêtre">
+          <button className="close-button" onClick={handleSafeClose} aria-label="Fermer la fenêtre">
             <X size={24} />
           </button>
         </div>
@@ -1812,7 +1830,7 @@ const ReservationModal = ({
               Supprimer
             </button>
           )}
-          <button type="button" className="cancel-button" onClick={onClose}>
+          <button type="button" className="cancel-button" onClick={isReadOnly ? onClose : handleSafeClose}>
             {isReadOnly ? 'Fermer' : 'Annuler'}
           </button>
           {!isEdit && (
@@ -1884,6 +1902,13 @@ const ReservationModal = ({
           onSave={handleLocationSave}
           onClose={handleLocationDialogClose}
           companyAddress={companyAddress}
+        />
+      )}
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
         />
       )}
     </div>

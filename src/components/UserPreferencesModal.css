@@ -230,3 +230,31 @@
     border-radius: 12px;
   }
 }
+
+/* Bouton tester les notifications */
+.prefs-test-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px dashed #c4b5fd;
+  border-radius: 8px;
+  background: #f5f3ff;
+  color: #7c3aed;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+
+.prefs-test-btn:hover {
+  background: #ede9fe;
+  border-color: #8b5cf6;
+  transform: translateY(-1px);
+}
+
+.prefs-test-btn:active {
+  transform: scale(0.98);
+}

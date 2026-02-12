@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Settings, Monitor, Layout, Bell, Palette, Check } from 'lucide-react';
+import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2 } from 'lucide-react';
 import api from '../utils/api';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../utils/notificationSound';
 import './UserPreferencesModal.css';
 
 const DEFAULT_PREFS = {
@@ -8,7 +9,7 @@ const DEFAULT_PREFS = {
   defaultView: 'week',
   compactMode: false,
   notificationsEnabled: true,
-  soundEnabled: false,
+  soundEnabled: true,
   colorTheme: 'default',
 };
 
@@ -170,6 +171,27 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
                 />
                 <span className="prefs-toggle-slider" />
               </label>
+            </div>
+
+            <div className="prefs-field">
+              <button
+                className="prefs-test-btn"
+                onClick={async () => {
+                  // Tester le son
+                  playNotificationSound();
+                  // Tester la notification navigateur
+                  const granted = await requestNotificationPermission();
+                  if (granted) {
+                    showBrowserNotification('Test de notification', {
+                      body: 'Les notifications eM@g fonctionnent \u2705',
+                    });
+                  } else {
+                    alert('Les notifications navigateur sont bloqu\u00e9es.\nAutorisez-les dans les param\u00e8tres de votre navigateur.');
+                  }
+                }}
+              >
+                <Volume2 size={14} /> Tester les notifications
+              </button>
             </div>
           </div>
         </div>

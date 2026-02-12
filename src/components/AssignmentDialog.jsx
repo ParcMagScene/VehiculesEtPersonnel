@@ -507,6 +507,9 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
             comment: notes || null,
           };
           assignment = await api.updateAssignment(assignmentId, assignmentData);
+        } else {
+          // Cas rare : mission sans affectation - peut arriver si l'affectation a été supprimée
+          console.error('[AssignmentDialog] Edit mode: No assignment ID found for mission', missionId);
         }
       } else {
         // ── Mode création ──

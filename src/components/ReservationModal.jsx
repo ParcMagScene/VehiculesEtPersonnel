@@ -160,7 +160,7 @@ const ReservationModal = ({
       }))
       .map(p => ({
         id: p.id,
-        name: `${p.first_name} ${p.last_name}`.trim(),
+        name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `Personnel #${p.id}`,
         skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || []
       }));
   }, [persons, vehicles, formData.vehicleId]);
@@ -996,17 +996,8 @@ const ReservationModal = ({
                     ))}
                   </optgroup>
                 )}
-                {drivers && drivers.length > 0 && (
-                  <optgroup label="Autres conducteurs">
-                    {drivers.filter(d => !qualifiedDrivers.some(q => q.name === d.name)).map((driver) => (
-                      <option key={`driver-${driver.id}`} value={driver.name}>
-                        {driver.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
                 {driverSuggestions.filter(s => 
-                  !drivers?.some(d => d.name === s) && !qualifiedDrivers.some(q => q.name === s)
+                  !qualifiedDrivers.some(q => q.name === s)
                 ).map((suggestion, idx) => (
                   <option key={`history-${idx}`} value={suggestion}>
                     {suggestion} (historique)

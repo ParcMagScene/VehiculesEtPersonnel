@@ -692,43 +692,53 @@ function initializeDatabase() {
     console.log('Info: Colonnes véhicules déjà présentes');
   }
 
-  // Migration: Ajouter automatiquement les contrôles TACHYGRAPHE et LIMITEUR pour les PL
+  // Migration ONE-TIME: Ajouter les contrôles TACHYGRAPHE et LIMITEUR pour les PL
   try {
-    const plTypes = ['PL', 'CAMION', 'PORTEUR', 'TRACTEUR', 'SEMI'];
-    const allVehicles = db.prepare("SELECT id, type, controles_techniques FROM vehicles").all();
-    let addedCount = 0;
+    // Créer la table migrations_log si elle n'existe pas
+    db.exec(`CREATE TABLE IF NOT EXISTS migrations_log (
+      name TEXT PRIMARY KEY,
+      applied_at TEXT DEFAULT (datetime('now'))
+    )`);
 
-    for (const v of allVehicles) {
-      if (!v.type) continue;
-      const vType = v.type.toUpperCase();
-      const isPL = plTypes.some(t => vType.includes(t));
-      if (!isPL) continue;
+    const alreadyApplied = db.prepare("SELECT 1 FROM migrations_log WHERE name = ?").get('add_tachygraphe_limiteur');
 
-      let controles = [];
-      try {
-        controles = v.controles_techniques ? JSON.parse(v.controles_techniques) : [];
-      } catch (e) { controles = []; }
-      if (!Array.isArray(controles)) controles = [];
+    if (!alreadyApplied) {
+      const plTypes = ['PL', 'CAMION', 'PORTEUR', 'TRACTEUR', 'SEMI'];
+      const allVehicles = db.prepare("SELECT id, type, controles_techniques FROM vehicles").all();
+      let addedCount = 0;
 
-      let modified = false;
-      if (!controles.some(c => c.type === 'TACHYGRAPHE')) {
-        controles.push({ type: 'TACHYGRAPHE', date: null, deadline: null });
-        modified = true;
+      for (const v of allVehicles) {
+        if (!v.type) continue;
+        const vType = v.type.toUpperCase();
+        const isPL = plTypes.some(t => vType.includes(t));
+        if (!isPL) continue;
+
+        let controles = [];
+        try {
+          controles = v.controles_techniques ? JSON.parse(v.controles_techniques) : [];
+        } catch (e) { controles = []; }
+        if (!Array.isArray(controles)) controles = [];
+
+        let modified = false;
+        if (!controles.some(c => c.type === 'TACHYGRAPHE')) {
+          controles.push({ type: 'TACHYGRAPHE', date: null, deadline: null });
+          modified = true;
+        }
+        if (!controles.some(c => c.type === 'LIMITEUR')) {
+          controles.push({ type: 'LIMITEUR', date: null, deadline: null });
+          modified = true;
+        }
+
+        if (modified) {
+          db.prepare("UPDATE vehicles SET controles_techniques = ? WHERE id = ?")
+            .run(JSON.stringify(controles), v.id);
+          addedCount++;
+        }
       }
-      if (!controles.some(c => c.type === 'LIMITEUR')) {
-        controles.push({ type: 'LIMITEUR', date: null, deadline: null });
-        modified = true;
-      }
 
-      if (modified) {
-        db.prepare("UPDATE vehicles SET controles_techniques = ? WHERE id = ?")
-          .run(JSON.stringify(controles), v.id);
-        addedCount++;
-      }
-    }
-
-    if (addedCount > 0) {
-      console.log(`✅ Contrôles Tachygraphe/Limiteur ajoutés à ${addedCount} véhicule(s) PL`);
+      // Marquer la migration comme appliquée
+      db.prepare("INSERT INTO migrations_log (name) VALUES (?)").run('add_tachygraphe_limiteur');
+      console.log(`✅ Migration Tachygraphe/Limiteur appliquée (${addedCount} véhicule(s) PL)`);
     }
   } catch (error) {
     console.error('Erreur migration Tachygraphe/Limiteur:', error.message);

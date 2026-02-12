@@ -246,7 +246,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, g
             <button onClick={loadData}>Réessayer</button>
           </div>
         )}
-        <PlanningTab persons={persons} skills={skills} positions={positions} view={view} currentDate={currentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} />
+        <PlanningTab persons={persons} skills={skills} positions={positions} view={view} currentDate={currentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} />
         {editFormVisible && (
           <div className="modal-overlay" onClick={resetEditForm}>
             <div className="personnel-edit-modal" onClick={(e) => e.stopPropagation()}>
@@ -429,6 +429,8 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, g
             currentDate={currentDate}
             googleEvents={googleEvents}
             onPersonEdit={(person) => { setPersonToEdit(person); setSubTab('persons'); }}
+            navigateToPersonId={navigateToPersonId}
+            onNavigateToPersonHandled={onNavigateToPersonHandled}
           />
         )}
       </div>
@@ -1196,7 +1198,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
 const PERMANENT_TYPES = ['permanent'];
 const CONTRACTUEL_TYPES = ['contractuel'];
 
-const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDate = new Date(), googleEvents = [], onPersonEdit }) => {
+const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDate = new Date(), googleEvents = [], onPersonEdit, navigateToPersonId, onNavigateToPersonHandled }) => {
   const scrollAreaRef = useRef(null);
   const headerScrollRef = useRef(null);
   const personColumnRef = useRef(null);

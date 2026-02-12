@@ -187,7 +187,15 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>🔧 Maintenance - {vehicle?.name}</h2>
+          <div className="modal-header-title">
+            <h2>🔧 Maintenance - {vehicle?.name}</h2>
+            {(vehicle?.type || vehicle?.registration) && (
+              <div className="vehicle-info">
+                {vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}
+                {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
+              </div>
+            )}
+          </div>
           <button className="close-button" onClick={onClose}>
             <X size={24} />
           </button>

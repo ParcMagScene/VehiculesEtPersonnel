@@ -142,11 +142,11 @@
   background: #f59e0b;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--btn-radius);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-weight: var(--btn-font-weight);
+  transition: var(--btn-transition);
 }
 
 .btn-copy-small:hover {
@@ -169,37 +169,41 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.form-group {
+.google-calendar-config .form-group {
   margin-bottom: 20px;
 }
 
-.form-group label {
+.google-calendar-config .form-group label {
   display: block;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 8px;
-  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-.form-group .required {
+.google-calendar-config .form-group .required {
   color: #dc2626;
   margin-left: 4px;
 }
 
-.form-group input {
+.google-calendar-config .form-group input {
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 13px;
   font-family: 'Courier New', monospace;
-  transition: border-color 0.2s;
+  color: #334155;
+  background: white;
+  transition: border-color 0.15s;
 }
 
-.form-group input:focus {
+.google-calendar-config .form-group input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .field-hint {
@@ -272,7 +276,7 @@
   font-size: 12px !important;
 }
 
-.form-actions {
+.google-calendar-config .form-actions {
   margin-top: 24px;
   display: flex;
   justify-content: flex-end;
@@ -282,21 +286,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: #3b82f6;
-  color: white;
+  padding: var(--btn-padding);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .btn-save:hover:not(:disabled) {
-  background: #2563eb;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .btn-save:disabled {
@@ -328,19 +332,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: #dc2626;
-  color: white;
+  padding: var(--btn-padding);
+  background: var(--btn-danger-filled-bg);
+  color: var(--btn-danger-filled-color);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  transition: var(--btn-transition);
 }
 
 .btn-revoke:hover {
-  background: #b91c1c;
+  background: var(--theme-danger-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);
 }
@@ -349,20 +353,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: var(--btn-padding);
   background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  color: var(--btn-secondary-color);
+  border: var(--btn-secondary-border);
+  border-radius: var(--btn-radius);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  transition: var(--btn-transition);
 }
 
 .btn-secondary:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: var(--theme-bg-page);
+  border-color: var(--theme-text-muted);
   transform: translateY(-1px);
 }
 

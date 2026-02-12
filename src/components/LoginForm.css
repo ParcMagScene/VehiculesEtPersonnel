@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,19 +45,19 @@
   gap: 20px;
 }
 
-.form-group {
+.login-form .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.form-group label {
+.login-form .form-group label {
   font-size: 14px;
   font-weight: 600;
   color: #374151;
 }
 
-.form-group input {
+.login-form .form-group input {
   padding: 12px 16px;
   border: 2px solid #e5e7eb;
   border-radius: 8px;
@@ -65,7 +65,7 @@
   transition: all 0.2s;
 }
 
-.form-group input:focus {
+.login-form .form-group input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -81,20 +81,21 @@
 }
 
 .login-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   border: none;
   padding: 14px;
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   font-size: 16px;
-  font-weight: 600;
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .login-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .login-button:active:not(:disabled) {
@@ -108,36 +109,36 @@
 
 .toggle-button {
   background: transparent;
-  color: #667eea;
+  color: var(--theme-primary);
   border: none;
   padding: 10px;
-  font-size: 14px;
+  font-size: var(--btn-font-size);
   cursor: pointer;
   text-decoration: underline;
 }
 
 .toggle-button:hover {
-  color: #5568d3;
+  color: var(--theme-primary-dark);
 }
 
 .access-request-button {
   background: transparent;
-  border: 2px dashed #d1d5db;
-  color: #6b7280;
+  border: 2px dashed var(--theme-border);
+  color: var(--theme-text-secondary);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   margin-top: 0.5rem;
-  transition: all 0.2s;
-  font-weight: 500;
+  transition: var(--btn-transition);
+  font-weight: var(--btn-font-weight);
   width: 100%;
 }
 
 .access-request-button:hover {
-  border-color: #667eea;
-  color: #667eea;
-  background: #f0f4ff;
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+  background: var(--theme-bg-hover);
 }
 
 /* Media query pour smartphones */
@@ -190,13 +191,15 @@
 
 .session-conflict-modal .modal-header {
   padding: 24px 24px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: none;
+  background: var(--theme-danger-gradient);
+  border-radius: 16px 16px 0 0;
 }
 
 .session-conflict-modal .modal-header h3 {
   margin: 0;
   font-size: 18px;
-  color: #ef4444;
+  color: white;
 }
 
 .session-conflict-modal .modal-body {
@@ -211,36 +214,38 @@
 }
 
 .login-form .btn-secondary {
-  padding: 10px 20px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-secondary-border);
+  border-radius: var(--btn-radius);
   background: white;
-  color: #374151;
+  color: var(--btn-secondary-color);
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  transition: var(--btn-transition);
 }
 
 .login-form .btn-secondary:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--theme-text-muted);
 }
 
 .login-form .btn-primary {
-  padding: 10px 20px;
+  padding: var(--btn-padding);
   border: none;
-  border-radius: 8px;
-  background: #667eea;
-  color: white;
+  border-radius: var(--btn-radius);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .login-form .btn-primary:hover:not(:disabled) {
-  background: #5568d3;
   transform: translateY(-1px);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .login-form .btn-primary:disabled, .login-form .btn-secondary:disabled {

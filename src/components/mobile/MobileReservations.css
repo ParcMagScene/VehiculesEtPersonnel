@@ -32,7 +32,7 @@
 }
 
 .mobile-reservations .add-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
 }
 
@@ -116,7 +116,7 @@
 }
 
 .mobile-reservations .btn-submit {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
 }
 
@@ -217,7 +217,7 @@
 }
 
 .mobile-reservations .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   border: none;
   padding: 0.875rem 1.5rem;

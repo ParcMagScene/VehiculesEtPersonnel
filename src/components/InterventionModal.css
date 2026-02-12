@@ -1,15 +1,21 @@
 .intervention-modal {
-  background: white;
-  border-radius: 12px;
+  background: #f8fafc;
+  border-radius: 16px;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 1;
+  animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .intervention-modal .modal-header {
@@ -17,10 +23,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 11px 11px 0 0;
+  border-bottom: none;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
 }
 
 .intervention-modal .modal-header h2 {
@@ -30,21 +36,22 @@
 }
 
 .intervention-modal .close-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  background: var(--close-btn-bg);
+  border: 1px solid var(--close-btn-border);
+  color: var(--close-btn-color);
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  border-radius: var(--close-btn-radius);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .intervention-modal .close-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
 }
 
 .intervention-form {
@@ -75,10 +82,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
   font-weight: 500;
   animation: slideIn 0.3s ease-out;
 }
@@ -97,61 +104,65 @@
 .deadline-alert.error {
   background: #fee2e2;
   color: #dc2626;
-  border: 2px solid #fca5a5;
+  border: 1px solid #fca5a5;
 }
 
 .deadline-alert.warning {
   background: #fef3c7;
   color: #d97706;
-  border: 2px solid #fcd34d;
+  border: 1px solid #fcd34d;
 }
 
 .deadline-alert svg {
   flex-shrink: 0;
 }
 
-.form-group {
-  margin-bottom: 20px;
+.intervention-modal .form-group {
+  margin-bottom: 12px;
 }
 
-.form-group label {
+.intervention-modal .form-group label {
   display: block;
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 600;
-  color: #374151;
-  margin-bottom: 8px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.intervention-modal .form-group input,
+.intervention-modal .form-group select,
+.intervention-modal .form-group textarea {
   width: 100%;
-  padding: 10px 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 13px;
   font-family: inherit;
-  transition: all 0.2s;
+  color: #334155;
+  background: white;
+  transition: border-color 0.15s;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.intervention-modal .form-group input:focus,
+.intervention-modal .form-group select:focus,
+.intervention-modal .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #8b5cf6;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-group textarea {
+.intervention-modal .form-group textarea {
   resize: vertical;
   min-height: 80px;
 }
 
-.form-hint {
+.intervention-modal .form-hint {
   display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: #6b7280;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
   font-weight: 400;
 }
 
@@ -183,18 +194,18 @@
   color: #1e40af;
 }
 
-.form-actions {
+.intervention-modal .form-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
-  border-radius: 0 0 12px 12px;
+  padding: 14px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 0 0 16px 16px;
   flex-shrink: 0;
 }
 
-.right-actions {
+.intervention-modal .right-actions {
   display: flex;
   gap: 12px;
 }
@@ -204,13 +215,13 @@
 .intervention-modal .save-button,
 .intervention-modal .completed-button,
 .intervention-modal .reschedule-button {
-  height: 40px;
-  padding: 0 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  height: var(--btn-height);
+  padding: var(--btn-padding);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
   border: 2px solid transparent;
   display: flex;
   align-items: center;
@@ -219,56 +230,57 @@
 }
 
 .intervention-modal .delete-button {
-  background: #fee2e2;
-  color: #dc2626;
-  border: 2px solid #fca5a5;
+  background: var(--btn-danger-bg);
+  color: var(--btn-danger-color);
+  border: var(--btn-danger-border);
 }
 
 .intervention-modal .delete-button:hover {
-  background: #fecaca;
+  background: var(--btn-danger-hover-bg);
   transform: translateY(-1px);
 }
 
 .intervention-modal .cancel-button {
-  background: #f3f4f6;
-  color: #4b5563;
-  border: 2px solid #e5e7eb;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  border: var(--btn-secondary-border);
 }
 
 .intervention-modal .cancel-button:hover {
-  background: #e5e7eb;
+  background: var(--btn-secondary-hover-bg);
 }
 
 .intervention-modal .completed-button {
-  background: #d1fae5;
-  color: #059669;
-  border: 2px solid #86efac;
+  background: var(--btn-success-bg);
+  color: var(--btn-success-color);
+  border: var(--btn-success-border);
 }
 
 .intervention-modal .completed-button:hover {
-  background: #a7f3d0;
+  background: var(--btn-success-hover-bg);
   transform: translateY(-1px);
 }
 
 .intervention-modal .reschedule-button {
-  background: #fef3c7;
-  color: #d97706;
-  border: 2px solid #fde68a;
+  background: var(--btn-warning-bg);
+  color: var(--btn-warning-color);
+  border: var(--btn-warning-border);
 }
 
 .intervention-modal .reschedule-button:hover {
-  background: #fde68a;
+  background: var(--btn-warning-hover-bg);
   transform: translateY(-1px);
 }
 
 .intervention-modal .save-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .intervention-modal .save-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 /* Responsive */

@@ -4,46 +4,37 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(15, 23, 42, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: fadeIn 0.2s ease-in-out;
+  backdrop-filter: blur(4px);
+  animation: aiFadeIn 0.2s ease-out;
   isolation: isolate;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+@keyframes aiFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .affaire-modal-content {
-  background: white;
-  border-radius: 12px;
+  background: #f8fafc;
+  border-radius: 16px;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
   z-index: 1;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: aiSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(30px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+@keyframes aiSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .affaire-modal-header {
@@ -51,25 +42,27 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: none;
   position: sticky;
   top: 0;
-  background: white;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
   z-index: 1;
+  border-radius: var(--modal-header-border-radius);
 }
 
 .affaire-modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--modal-header-color);
 }
 
 .close-button {
-  background: none;
-  border: none;
+  background: var(--close-btn-bg);
+  border: 1px solid var(--close-btn-border);
   font-size: 2rem;
-  color: #6b7280;
+  color: var(--close-btn-color);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -77,13 +70,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: var(--close-btn-radius);
+  transition: all var(--transition-normal);
 }
 
 .close-button:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
+  color: white;
 }
 
 .affaire-modal-body {
@@ -99,21 +93,21 @@
 
 .choice-button {
   padding: 20px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.3s;
+  transition: var(--btn-transition);
   text-align: left;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .choice-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .choice-button:active {
@@ -164,17 +158,17 @@
 .browse-button {
   padding: 12px 32px;
   background: white;
-  border: 2px solid #667eea;
-  color: #667eea;
-  border-radius: 8px;
+  border: 2px solid var(--theme-primary);
+  color: var(--theme-primary);
+  border-radius: var(--btn-radius);
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
 }
 
 .browse-button:hover {
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
 }
 
@@ -190,34 +184,34 @@
 
 .btn-view-pdf {
   padding: 8px 16px;
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--btn-radius);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
 }
 
 .btn-view-pdf:hover {
-  background: #5568d3;
+  background: var(--theme-primary-dark);
   transform: translateY(-1px);
 }
 
 .btn-delete-pdf {
   padding: 8px 12px;
-  background: #ef4444;
-  color: white;
+  background: var(--btn-danger-filled-bg);
+  color: var(--btn-danger-filled-color);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--btn-radius);
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
 }
 
 .btn-delete-pdf:hover {
-  background: #dc2626;
+  background: var(--theme-danger-dark);
   transform: translateY(-1px);
 }
 
@@ -298,92 +292,98 @@
   text-align: center;
 }
 
-.form-group {
+.affaire-import-modal .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
-.form-group label {
-  font-weight: 500;
-  color: #374151;
-  font-size: 0.95rem;
+.affaire-import-modal .form-group label {
+  font-weight: 600;
+  color: #94a3b8;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-.form-group input,
-.form-group textarea,
-.form-group select {
-  padding: 10px 14px;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 1rem;
+.affaire-import-modal .form-group input,
+.affaire-import-modal .form-group textarea,
+.affaire-import-modal .form-group select {
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 13px;
   font-family: inherit;
-  transition: border-color 0.2s;
+  color: #334155;
+  background: white;
+  transition: border-color 0.15s;
 }
 
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
+.affaire-import-modal .form-group input:focus,
+.affaire-import-modal .form-group textarea:focus,
+.affaire-import-modal .form-group select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-group textarea {
+.affaire-import-modal .form-group textarea {
   resize: vertical;
   min-height: 80px;
 }
 
-.form-row {
+.affaire-import-modal .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
-.form-actions {
+.affaire-import-modal .form-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
   margin-top: 8px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .btn-cancel,
 .btn-submit,
 .btn-confirm {
-  height: 40px;
-  padding: 0 24px;
+  height: var(--btn-height);
+  padding: var(--btn-padding);
   border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
   display: flex;
   align-items: center;
   box-sizing: border-box;
 }
 
 .btn-cancel {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  border: var(--btn-secondary-border);
 }
 
 .btn-cancel:hover {
-  background: #e5e7eb;
+  background: var(--btn-secondary-hover-bg);
 }
 
 .btn-submit,
 .btn-confirm {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .btn-submit:hover,
 .btn-confirm:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .btn-submit:active,

@@ -144,6 +144,16 @@
 .menu-nav {
   flex: 1;
   padding: 1rem 0;
+  overflow-y: auto;
+}
+
+.menu-section-label {
+  padding: 12px 1.5rem 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
 }
 
 .menu-nav button {

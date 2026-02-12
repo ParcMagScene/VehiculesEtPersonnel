@@ -11,6 +11,7 @@ const AFFAIRE_TYPES = [
   { value: 'Prestation', label: 'Prestation', color: '#3b82f6' },
   { value: 'Location', label: 'Location', color: '#f59e0b' },
   { value: 'Installation', label: 'Installation', color: '#10b981' },
+  { value: 'Vente', label: 'Vente', color: '#8b5cf6' },
 ];
 
 const getTypeInfo = (type) => AFFAIRE_TYPES.find(t => t.value === type) || AFFAIRE_TYPES[0];
@@ -55,6 +56,7 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
   const [googleAffaires, setGoogleAffaires] = useState([]);
   const [googleEventIdsMap, setGoogleEventIdsMap] = useState({}); // { AF32844: ['eventId1', 'eventId2', ...] }
   const [attachmentsIndex, setAttachmentsIndex] = useState({ affaires: [], counts: {} }); // index des pièces jointes locales
+  const [personnelCountsMap, setPersonnelCountsMap] = useState({}); // { AF32512: 2, AF32854: 1, ... }
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const [error, setError] = useState(null);
@@ -221,16 +223,26 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
     }
   }, []);
 
+  // Charger les comptages de personnel par affaire
+  const loadPersonnelCounts = useCallback(async () => {
+    try {
+      const data = await api.getAffairesPersonnelCounts();
+      setPersonnelCountsMap(data || {});
+    } catch {
+      setPersonnelCountsMap({});
+    }
+  }, []);
+
   // Chargement initial
   useEffect(() => {
     const loadAll = async () => {
       setIsLoading(true);
       setError(null);
-      await Promise.all([loadDbAffaires(), loadGoogleAffaires(), loadAttachmentsIndex()]);
+      await Promise.all([loadDbAffaires(), loadGoogleAffaires(), loadAttachmentsIndex(), loadPersonnelCounts()]);
       setIsLoading(false);
     };
     loadAll();
-  }, [loadDbAffaires, loadGoogleAffaires, loadAttachmentsIndex]);
+  }, [loadDbAffaires, loadGoogleAffaires, loadAttachmentsIndex, loadPersonnelCounts]);
 
   // Fusionner les affaires : DB prend priorité, puis réservations (source: 'auto'), puis Google
   const affaires = useMemo(() => {
@@ -286,6 +298,8 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
           if (!resaLieu && r.locationName) resaLieu = r.locationName;
         }
       }
+      // Mettre à jour personnelCount depuis le map backend (plus fiable que le count statique)
+      const persCount = personnelCountsMap[num?.toUpperCase()] || a.personnelCount || 0;
       return {
         ...a,
         hasGoogleEvent,
@@ -293,12 +307,13 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
         driveLinksCount,
         totalPieces: localAttachmentCount + driveLinksCount,
         reservationCount: resaCount,
+        personnelCount: persCount,
         client: a.client || resaClient,
         titre: a.titre || resaPrestation,
         adresseLivraison: a.adresseLivraison || resaLieu,
       };
     });
-  }, [affaires, googleEventIdsMap, attachmentsIndex, reservations]);
+  }, [affaires, googleEventIdsMap, attachmentsIndex, reservations, personnelCountsMap]);
 
   // Aujourd'hui au format YYYY-MM-DD
   const today = useMemo(() => {

@@ -4,33 +4,34 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(15, 23, 42, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  backdrop-filter: blur(4px);  isolation: isolate;}
+  backdrop-filter: blur(4px);  isolation: isolate;
+  animation: qrOverlayFadeIn 0.2s ease-out;
+}
+
+@keyframes qrOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
 .qr-modal {
-  background: white;
+  background: #f8fafc;
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow: auto;
-  animation: modalSlideIn 0.3s ease-out;
+  animation: qrModalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes qrModalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .qr-modal-header {
@@ -38,7 +39,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: none;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: 16px 16px 0 0;
 }
 
 .qr-modal-header h2 {
@@ -48,25 +52,25 @@
   margin: 0;
   font-size: 22px;
   font-weight: 600;
-  color: #111827;
+  color: var(--modal-header-color);
 }
 
 .qr-close-button {
-  background: none;
-  border: none;
+  background: var(--close-btn-bg);
+  border: 1px solid var(--close-btn-border);
   padding: 8px;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--close-btn-radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
-  color: #6b7280;
+  transition: all var(--transition-fast);
+  color: var(--close-btn-color);
 }
 
 .qr-close-button:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
 }
 
 .qr-modal-content {
@@ -186,21 +190,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
-  background: #3b82f6;
-  color: white;
+  padding: var(--btn-padding);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .print-button:hover {
-  background: #2563eb;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 /* Styles d'impression */

@@ -1,6 +1,6 @@
 .mobile-login {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -24,7 +24,7 @@
 .mobile-login .login-icon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -89,7 +89,7 @@
 
 .mobile-login .login-button {
   padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   border: none;
   border-radius: 0.5rem;

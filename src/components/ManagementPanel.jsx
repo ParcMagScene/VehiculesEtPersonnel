@@ -910,7 +910,7 @@ const ManagementPanel = ({
 
           {/* Mon compte */}
           {activeTab === 'account' && (
-            <ChangePassword />
+            <ChangePassword currentUser={currentUser} />
           )}
 
           {/* Gestion des utilisateurs (Admin uniquement) */}

@@ -379,6 +379,7 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       reservation_id TEXT,
+      affaire TEXT,
       client_name TEXT,
       location_name TEXT,
       start_date TEXT NOT NULL,
@@ -390,6 +391,7 @@ function initializeDatabase() {
       vehicle_id TEXT,
       status TEXT NOT NULL DEFAULT 'draft',
       notes TEXT,
+      day_states TEXT,
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
@@ -504,6 +506,124 @@ function initializeDatabase() {
   `);
 
   console.log('✅ Module Affaires initialisé');
+
+  // ═══════════════════════════════════════════════════════
+  // MODULE POSTES
+  // ═══════════════════════════════════════════════════════
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS positions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      category TEXT NOT NULL DEFAULT 'autre',
+      is_common BOOLEAN DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Seed : postes de référence (INSERT OR IGNORE = idempotent)
+  db.exec(`
+    INSERT OR IGNORE INTO positions (name, category, is_common) VALUES
+      ('Directeur technique', 'direction', 0),
+      ('Régisseur général', 'direction', 1),
+      ('Régisseur de production', 'direction', 0),
+      ('Régisseur plateau', 'direction', 1),
+      ('Régisseur de tournée', 'direction', 0),
+      ('Assistant régie / régisseur adjoint', 'direction', 0),
+      ('Stage manager', 'direction', 0),
+      ('Ingénieur du son façade (FOH)', 'son', 1),
+      ('Ingénieur retours (monitoring)', 'son', 1),
+      ('Technicien son', 'son', 1),
+      ('Opérateur systèmes / technicien systèmes', 'son', 0),
+      ('Opérateur HF / micros / in-ear', 'son', 0),
+      ('Perchman', 'son', 0),
+      ('Sound designer', 'son', 0),
+      ('Concepteur lumière / light designer', 'lumiere', 0),
+      ('Régisseur lumière', 'lumiere', 1),
+      ('Opérateur pupitre / console lumière', 'lumiere', 1),
+      ('Technicien lumière', 'lumiere', 1),
+      ('Chef électricien', 'lumiere', 0),
+      ('Électricien plateau', 'lumiere', 0),
+      ('Régisseur vidéo', 'video', 0),
+      ('Technicien vidéo', 'video', 1),
+      ('Opérateur vidéo / VJ', 'video', 0),
+      ('Opérateur caméra', 'video', 0),
+      ('Opérateur serveurs médias', 'video', 1),
+      ('Technicien LED / murs d''\u00e9crans', 'video', 1),
+      ('Technicien projection', 'video', 0),
+      ('Machiniste', 'plateau', 1),
+      ('Chef machiniste', 'plateau', 0),
+      ('Technicien plateau', 'plateau', 0),
+      ('Constructeur décor', 'plateau', 0),
+      ('Accessoiriste', 'plateau', 0),
+      ('Technicien accroche / levage', 'plateau', 0),
+      ('Rigger / cordiste spectacle', 'plateau', 1),
+      ('Conducteur de machinerie motorisée', 'plateau', 0),
+      ('Backliner général', 'backline', 1),
+      ('Backliner guitare', 'backline', 0),
+      ('Backliner batterie', 'backline', 0),
+      ('Backliner claviers', 'backline', 0),
+      ('Technicien instruments', 'backline', 0),
+      ('Accordeur', 'backline', 0),
+      ('Habilleur', 'costumes', 0),
+      ('Costumier', 'costumes', 0),
+      ('Maquilleur / coiffeur', 'costumes', 0),
+      ('Styliste', 'costumes', 0),
+      ('Électricien spectacle', 'electricite', 0),
+      ('Technicien réseau (IT, fibre, Dante, intercom)', 'electricite', 0),
+      ('Responsable sécurité / SSIAP', 'electricite', 0),
+      ('Chargé de prévention', 'electricite', 0),
+      ('Chef d''équipe / chef de chantier', 'logistique', 1),
+      ('Road manager', 'logistique', 0),
+      ('Chauffeur PL / SPL', 'logistique', 0),
+      ('Manutentionnaire / crew', 'logistique', 1),
+      ('Runner', 'logistique', 0),
+      ('Réalisateur multicam', 'captation', 0),
+      ('Assistant réalisateur', 'captation', 0),
+      ('Ingénieur vision', 'captation', 0),
+      ('Opérateur steadycam / grue / travelling', 'captation', 0),
+      ('Technicien streaming / broadcast', 'captation', 0),
+      ('Chargé de production', 'production', 0),
+      ('Administrateur de tournée', 'production', 0),
+      ('Booker / programmateur', 'production', 0),
+      ('Assistant production', 'production', 0)
+  `);
+
+  console.log('✅ Module Postes initialisé');
+
+  // Migration: required_skill_id (INTEGER FK) → required_skills (TEXT JSON, sans FK)
+  try {
+    const missionCols = db.prepare("PRAGMA table_info(missions)").all();
+    const hasRequiredSkills = missionCols.some(col => col.name === 'required_skills');
+    if (!hasRequiredSkills) {
+      db.prepare("ALTER TABLE missions ADD COLUMN required_skills TEXT DEFAULT NULL").run();
+      // Migrer les données existantes
+      const missions = db.prepare('SELECT id, required_skill_id FROM missions WHERE required_skill_id IS NOT NULL').all();
+      const update = db.prepare('UPDATE missions SET required_skills = ? WHERE id = ?');
+      for (const m of missions) {
+        // Si c'est déjà un JSON array, le garder tel quel ; sinon, l'emballer
+        let val = String(m.required_skill_id);
+        try { const parsed = JSON.parse(val); if (!Array.isArray(parsed)) val = JSON.stringify([m.required_skill_id]); }
+        catch { val = JSON.stringify([m.required_skill_id]); }
+        update.run(val, m.id);
+      }
+      console.log('✅ Migration required_skill_id → required_skills effectuée');
+    }
+  } catch (error) {
+    console.warn('⚠️ Migration required_skills:', error.message);
+  }
+
+  // Migration: ajouter default_positions (JSON) dans persons
+  try {
+    const personsCols = db.prepare("PRAGMA table_info(persons)").all();
+    const hasDefaultPositions = personsCols.some(col => col.name === 'default_positions');
+    if (!hasDefaultPositions) {
+      db.prepare("ALTER TABLE persons ADD COLUMN default_positions TEXT DEFAULT '[]'").run();
+      console.log('✅ Colonne default_positions ajoutée à persons');
+    }
+  } catch (error) {
+    // Colonne déjà présente
+  }
 
   // ═══════════════════════════════════════════════════════
   // FIN MODULE PLANNING PERSONNEL
@@ -643,6 +763,33 @@ function initializeDatabase() {
     }
   } catch (error) {
     console.log('Info: Colonne contract_type déjà présente ou erreur migration:', error.message);
+  }
+
+  // Migration: ajouter day_states (JSON) dans missions pour stocker les jours ON/OFF
+  try {
+    db.prepare("ALTER TABLE missions ADD COLUMN day_states TEXT").run();
+    console.log('✅ Migration: colonne day_states ajoutée à missions');
+  } catch (error) {
+    // Colonne déjà présente — OK
+  }
+
+  // Migration: ajouter colonne 'affaire' dans missions pour lien direct affaire↔mission
+  try {
+    db.prepare("ALTER TABLE missions ADD COLUMN affaire TEXT").run();
+    console.log('✅ Migration: colonne affaire ajoutée à missions');
+    // Backfill: extraire le numéro d'affaire depuis le titre (ex: "AF32512 — ...")
+    const missionsToFix = db.prepare("SELECT id, title, notes FROM missions WHERE affaire IS NULL").all();
+    for (const m of missionsToFix) {
+      // Chercher un pattern AF\d+ dans le titre ou les notes
+      const match = (m.title || '').match(/AF\d+/i) || (m.notes || '').match(/AF\d+/i);
+      if (match) {
+        db.prepare('UPDATE missions SET affaire = ? WHERE id = ?').run(match[0].toUpperCase(), m.id);
+      }
+    }
+    db.exec('CREATE INDEX IF NOT EXISTS idx_missions_affaire ON missions(affaire)');
+    console.log('✅ Migration: backfill affaire dans missions effectué');
+  } catch (error) {
+    // Colonne déjà présente — OK
   }
 
   console.log('✅ Base de données initialisée');

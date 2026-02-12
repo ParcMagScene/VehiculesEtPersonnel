@@ -16,7 +16,7 @@
 
 .google-calendar-banner-grid.closed {
   border-bottom: 2px solid #3b82f6;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
 }
 
 /* Mode fermé : une seule ligne avec le bouton */
@@ -28,7 +28,7 @@
 .google-calendar-banner-grid.closed .calendar-banner {
   height: 35px;
   min-height: 35px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
 }
 
 .google-calendar-banner-grid.closed .banner-vehicle-header {
@@ -36,7 +36,7 @@
   font-size: 0.8rem;
   padding: 0 1rem;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
 }
 
@@ -67,7 +67,7 @@
 .resize-handle {
   width: 100%;
   height: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   cursor: ns-resize;
   display: flex;
   align-items: center;
@@ -125,7 +125,7 @@
   width: 250px;
   min-width: 250px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   z-index: 3;
   display: flex;
@@ -359,7 +359,6 @@
   position: relative;
   min-height: 100%;
   background: white;
-  min-width: max-content;
 }
 
 .banner-grid.week-view {
@@ -367,12 +366,11 @@
 }
 
 .banner-grid.month-view {
-  grid-template-columns: repeat(62, minmax(60px, 1fr));
+  grid-template-columns: repeat(62, minmax(55px, 1fr));
 }
 
 .banner-grid.year-view {
   grid-template-columns: repeat(12, minmax(150px, 1fr));
-  min-width: 1800px;
 }
 
 /* Lignes de grille avec subgrid */
@@ -392,19 +390,23 @@
 }
 
 .grid-line.today {
-  background-color: transparent;
+  background-color: rgba(16, 185, 129, 0.04);
+  border-left: 2px solid rgba(16, 185, 129, 0.45);
+  border-right: 2px solid rgba(16, 185, 129, 0.45);
 }
 
 .grid-line.today.today-left {
-  border-left: 3px solid rgba(16, 185, 129, 0.7);
+  border-left: 2px solid rgba(16, 185, 129, 0.45);
+  border-right: none;
 }
 
 .grid-line.today.today-right {
-  border-right: 3px solid rgba(16, 185, 129, 0.7);
+  border-right: 2px solid rgba(16, 185, 129, 0.45);
+  border-left: none;
 }
 
 .banner-grid-lines .grid-line.today {
-  border-bottom: 3px solid rgba(16, 185, 129, 0.7);
+  border-bottom: none;
 }
 
 /* En-tête (cachée mais garde l'espace) */
@@ -604,7 +606,7 @@
 }
 
 .signin-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -645,4 +647,43 @@
 
 .error-message p {
   margin: 0;
+}
+
+/* Responsive banner */
+@media (max-width: 1024px) {
+  .banner-vehicle-column {
+    width: 200px;
+    min-width: 200px;
+  }
+  .banner-scroll-area {
+    max-width: calc(100vw - 200px);
+  }
+}
+
+@media (max-width: 768px) {
+  .banner-vehicle-column {
+    width: 160px;
+    min-width: 160px;
+  }
+  .banner-scroll-area {
+    max-width: calc(100vw - 160px);
+  }
+  .banner-vehicle-header {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner-vehicle-column {
+    width: 120px;
+    min-width: 120px;
+  }
+  .banner-scroll-area {
+    max-width: calc(100vw - 120px);
+  }
+  .banner-vehicle-header {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
 }

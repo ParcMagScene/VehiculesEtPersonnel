@@ -15,6 +15,7 @@ const AFFAIRE_TYPES = [
   { value: 'Prestation', label: 'Prestation', color: '#3b82f6' },
   { value: 'Location', label: 'Location', color: '#f59e0b' },
   { value: 'Installation', label: 'Installation', color: '#10b981' },
+  { value: 'Vente', label: 'Vente', color: '#8b5cf6' },
 ];
 const getTypeInfo = (type) => AFFAIRE_TYPES.find(t => t.value === type) || AFFAIRE_TYPES[0];
 
@@ -202,6 +203,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
       // Créer une mission liée à l'affaire
       const mission = await api.createMission({
         title: missionTitle || `Mission ${affaire.numeroAffaire}`,
+        affaire: affaire.numeroAffaire,
         start_date: affaire.dateDebut,
         end_date: affaire.dateFin || affaire.dateDebut,
         location_name: affaire.adresseLivraison || '',
@@ -241,11 +243,18 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     });
   }, [reservations, affaire.numeroAffaire, googleEventIds]);
 
-  // Missions liées (via reservation_id des réservations liées)
+  // Missions liées (via affaire direct OU via reservation_id des réservations liées)
   const linkedMissions = useMemo(() => {
     const resaIds = new Set(linkedReservations.map(r => String(r.id)));
-    return missions.filter(m => m.reservation_id && resaIds.has(String(m.reservation_id)));
-  }, [missions, linkedReservations]);
+    const affaireUpper = affaire.numeroAffaire?.toUpperCase();
+    return missions.filter(m => {
+      // Match direct par champ affaire de la mission
+      if (m.affaire && m.affaire.toUpperCase() === affaireUpper) return true;
+      // Match par reservation_id (lien indirect via réservation)
+      if (m.reservation_id && resaIds.has(String(m.reservation_id))) return true;
+      return false;
+    });
+  }, [missions, linkedReservations, affaire.numeroAffaire]);
 
   // Personnel unique affecté
   const assignedPersonnel = useMemo(() => {
@@ -253,13 +262,25 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     for (const m of linkedMissions) {
       if (m.assignments) {
         for (const a of m.assignments) {
-          if (!personMap.has(a.person_id)) {
-            personMap.set(a.person_id, {
-              id: a.person_id,
+          const pid = String(a.person_id);
+          if (!personMap.has(pid)) {
+            // Parser les postes habituels
+            let positions = [];
+            try {
+              const raw = a.default_positions;
+              positions = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+            } catch { /* ignore */ }
+            personMap.set(pid, {
+              id: pid,
               firstName: a.first_name,
               lastName: a.last_name,
               phone: a.phone,
+              email: a.email,
+              photo: a.photo,
               type: a.person_type,
+              contractType: a.contract_type,
+              positions,
+              skills: a.skills || [],
               missionTitle: m.title,
               status: a.status,
             });
@@ -267,7 +288,6 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         }
       }
     }
-    // Aussi chercher dans la liste globale persons si on a des missions sans assignments
     return Array.from(personMap.values());
   }, [linkedMissions]);
 
@@ -506,20 +526,57 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           <div className="detail-list">
             {assignedPersonnel.map(p => (
               <div key={p.id} className="detail-list-item person-item">
-                <div className="person-name">
-                  <User size={13} />
-                  <strong>{p.firstName} {p.lastName}</strong>
-                  {p.type && <span className="person-type-tag">{p.type}</span>}
+                <div className="person-header-row">
+                  <div className="person-avatar-small">
+                    {p.photo ? (
+                      <img src={`${API_BASE_URL.replace('/api', '')}/avatars/${p.photo}`} alt="" className="person-avatar-img" />
+                    ) : (
+                      <User size={16} />
+                    )}
+                  </div>
+                  <div className="person-identity">
+                    <div className="person-name">
+                      <strong>{p.firstName} {p.lastName}</strong>
+                      {p.type && (
+                        <span className={`person-type-tag type-${p.type}`}>
+                          {p.type === 'permanent' ? 'Permanent' : 'Contractuel'}
+                        </span>
+                      )}
+                      {p.type === 'contractuel' && p.contractType && (
+                        <span className="person-type-tag contract-tag">{p.contractType}</span>
+                      )}
+                    </div>
+                    {p.phone && (
+                      <div className="person-contact-line"><Phone size={11} /> {p.phone}</div>
+                    )}
+                    {p.email && (
+                      <div className="person-contact-line"><Mail size={11} /> {p.email}</div>
+                    )}
+                  </div>
+                  <span className={`person-status status-${p.status}`}>
+                    {p.status === 'confirmed' ? 'Confirmé' : p.status === 'option' ? 'Option' : p.status === 'accepted' ? 'Accepté' : p.status === 'proposed' ? 'Proposé' : p.status === 'declined' ? 'Refusé' : p.status || '—'}
+                  </span>
                 </div>
-                {p.missionTitle && (
-                  <div className="person-mission">Mission : {p.missionTitle}</div>
+                {/* Postes habituels */}
+                {p.positions.length > 0 && (
+                  <div className="person-tags-row">
+                    <Briefcase size={11} />
+                    {p.positions.slice(0, 4).map((pos, i) => (
+                      <span key={i} className="person-position-chip">{pos}</span>
+                    ))}
+                    {p.positions.length > 4 && <span className="person-more">+{p.positions.length - 4}</span>}
+                  </div>
                 )}
-                {p.phone && (
-                  <div className="person-phone"><Phone size={12} /> {p.phone}</div>
+                {/* Compétences */}
+                {p.skills.length > 0 && (
+                  <div className="person-tags-row skills-row">
+                    <AlertCircle size={11} />
+                    {p.skills.slice(0, 4).map((sk, i) => (
+                      <span key={i} className="person-skill-chip">{sk}</span>
+                    ))}
+                    {p.skills.length > 4 && <span className="person-more">+{p.skills.length - 4}</span>}
+                  </div>
                 )}
-                <span className={`person-status status-${p.status}`}>
-                  {p.status === 'accepted' ? 'Accepté' : p.status === 'proposed' ? 'Proposé' : p.status === 'declined' ? 'Refusé' : p.status || '—'}
-                </span>
               </div>
             ))}
           </div>
@@ -575,11 +632,10 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             return !driveLinks.some(dl => dl.url === link.url);
           });
 
-          // 4. Lien vers l'événement Google Calendar
-          const calendarLinks = [];
-          if (affaire.googleEventId) {
-            calendarLinks.push({ url: `https://calendar.google.com/calendar/event?eid=${affaire.googleEventId}`, label: 'Événement Google Calendar', isCalendar: true });
-          }
+          // 4. Liens vers les événements Google Calendar (utiliser htmlLink de l'API)
+          const calendarLinks = googleEvents
+            .filter(ev => ev.htmlLink)
+            .map(ev => ({ url: ev.htmlLink, label: ev.summary || 'Événement Google Calendar', isCalendar: true }));
 
           const totalItems = attachmentFiles.length + driveLinks.length + descLinks.length + calendarLinks.length;
 
@@ -730,26 +786,37 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
 const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose, onOpenDialog }) => {
   const [missions, setMissions] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const panelRef = useRef(null);
 
   useEffect(() => {
     if (affaire) {
+      // Phase 1 : rend le panneau dans le DOM (width: 0)
       setIsVisible(true);
       setIsClosing(false);
+      // Phase 2 : après une frame, ajoute la classe 'open' pour déclencher la transition
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsOpen(true);
+        });
+      });
       api.request('/missions').then(data => {
         setMissions(Array.isArray(data) ? data : []);
       }).catch(() => setMissions([]));
+      return () => cancelAnimationFrame(raf);
     } else {
+      setIsOpen(false);
       setIsClosing(true);
-      const timer = setTimeout(() => { setIsVisible(false); setIsClosing(false); }, 250);
+      const timer = setTimeout(() => { setIsVisible(false); setIsClosing(false); }, 350);
       return () => clearTimeout(timer);
     }
   }, [affaire]);
 
   const handleClose = useCallback(() => {
+    setIsOpen(false);
     setIsClosing(true);
-    setTimeout(() => onClose(), 250);
+    setTimeout(() => onClose(), 350);
   }, [onClose]);
 
   // Fermer au clic extérieur
@@ -772,7 +839,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
   const typeInfo = getTypeInfo(currentAffaire.type);
 
   return (
-    <div className={`affaire-slide-panel ${isClosing ? 'closing' : 'open'}`} ref={panelRef}>
+    <div className={`affaire-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
       <div className="slide-panel-header">
         <div className="slide-panel-title-row">
           <span className="slide-panel-numero">{currentAffaire.numeroAffaire}</span>

@@ -11,7 +11,7 @@ import { Search, X, RefreshCw } from 'lucide-react';
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
 
-function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh }) {
+function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -39,6 +39,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const fetchTimeoutRef = useRef(null);
   // Ref pour stocker le resolver des Promises de renouvellement de token
   const renewalResolverRef = useRef(null);
+  // Compteur d'échecs silencieux consécutifs (pour éviter les popups en boucle)
+  const silentFailCountRef = useRef(0);
 
   // Charger la configuration Google depuis le backend
   useEffect(() => {
@@ -90,10 +92,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     }
   }, [onRequestViewEvent]);
 
-  // Synchroniser les largeurs avec le calendrier principal
+  // Synchroniser les largeurs avec le calendrier principal (ou le planning personnel)
   useEffect(() => {
     const syncWidths = () => {
-      const calendarGrid = document.querySelector('.calendar-grid');
+      // Chercher la grille principale : Calendar (.calendar-grid) ou PersonnelPanel (.pp-grid)
+      const calendarGrid = document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
       const bannerGrid = document.querySelector('.banner-grid');
       const bannerScrollArea = document.querySelector('.banner-scroll-area');
       
@@ -112,8 +115,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     const timer3 = setTimeout(syncWidths, 300);
     const timer4 = setTimeout(syncWidths, 500);
 
-    // Observer les changements de taille du calendrier
-    const calendarGrid = document.querySelector('.calendar-grid');
+    // Observer les changements de taille du calendrier ou du planning personnel
+    const calendarGrid = document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
     let resizeObserver;
     
     if (calendarGrid) {
@@ -139,7 +142,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     let cleanupFn = null;
     
     const attachScrollListeners = () => {
-      const calendarScrollArea = document.querySelector('.calendar-scroll-area');
+      // Chercher la zone de scroll principale : Calendar ou PersonnelPanel
+      const calendarScrollArea = document.querySelector('.calendar-scroll-area') || document.querySelector('.pp-scroll-area');
       const bannerScrollArea = document.querySelector('.banner-scroll-area');
       
       if (!calendarScrollArea || !bannerScrollArea) {
@@ -186,13 +190,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     };
   }, [events.length, view]);
 
-  // Centrer sur la date actuelle quand elle change (synchroniser avec le calendrier principal)
+  // Centrer sur la date actuelle quand elle change (synchroniser avec le calendrier principal ou personnel)
   useEffect(() => {
     if (view === 'month' || view === 'year') {
       const timeouts = [];
       
       const syncScroll = () => {
-        const calendarScrollArea = document.querySelector('.calendar-scroll-area');
+        const calendarScrollArea = document.querySelector('.calendar-scroll-area') || document.querySelector('.pp-scroll-area');
         const bannerScrollArea = document.querySelector('.banner-scroll-area');
         
         if (calendarScrollArea && bannerScrollArea) {
@@ -443,10 +447,9 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         oauthLogger.log('✅ Renouvellement programmé réussi');
       } catch (err) {
         oauthLogger.log('❌ Échec du renouvellement programmé:', err.message);
-        // En cas d'échec, on peut laisser l'utilisateur se reconnecter manuellement
-        setError('Session expirée. Veuillez vous reconnecter.');
-        setIsSignedIn(false);
-        setAccessToken(null);
+        // Ne PAS déconnecter immédiatement — le token peut encore fonctionner
+        // On affiche juste un avertissement, le retry 401 gèrera la re-auth si nécessaire
+        oauthLogger.log('⚠️ Le token sera renouvelé à la prochaine requête API si nécessaire');
       }
     }, renewalTime);
 
@@ -567,14 +570,18 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
               oauthLogger.log('⚠️ Popup fermée par l\'utilisateur');
               setError('Connexion annulée');
             } else if (response.error === 'immediate_failed') {
-              // Le renouvellement silencieux a échoué, on demande une nouvelle autorisation
-              oauthLogger.log('🔄 Renouvellement silencieux échoué, nouvelle autorisation nécessaire');
-              localStorage.removeItem('google_auto_signin');
+              // Le renouvellement silencieux a échoué — NE PAS supprimer google_auto_signin
+              // L'utilisateur a déjà autorisé l'app, on garde cette info pour la prochaine tentative
+              silentFailCountRef.current += 1;
+              oauthLogger.log('🔄 Renouvellement silencieux échoué (tentative', silentFailCountRef.current, ') — on réessaiera');
             }
             return;
           }
           
           oauthLogger.log('✅ Token reçu, expiration dans:', response.expires_in, 'secondes (≈', Math.round(response.expires_in / 60), 'minutes)');
+          
+          // Réinitialiser le compteur d'échecs silencieux
+          silentFailCountRef.current = 0;
           
           // Sauvegarder le token et sa date d'expiration dans localStorage
           const expiryTime = Date.now() + (response.expires_in || 3600) * 1000;
@@ -660,9 +667,19 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     if (tokenClient) {
       setError(null);
       const hasAuthorized = localStorage.getItem('google_auto_signin');
-      // Si l'utilisateur a déjà autorisé, tentative silencieuse, sinon demande explicite
-      const promptType = hasAuthorized === 'true' ? '' : 'consent';
-      oauthLogger.log('🔐 Connexion Google - prompt:', promptType || 'silencieux');
+      let promptType;
+      if (hasAuthorized === 'true') {
+        // Déjà autorisé : tentative silencieuse d'abord
+        // Après 2 échecs silencieux consécutifs, fallback vers consent (popup unique)
+        promptType = silentFailCountRef.current >= 2 ? 'consent' : '';
+        if (silentFailCountRef.current >= 2) {
+          // Reset le compteur pour ne pas être bloqué en boucle consent
+          silentFailCountRef.current = 0;
+        }
+      } else {
+        promptType = 'consent';
+      }
+      oauthLogger.log('🔐 Connexion Google - prompt:', promptType || 'silencieux', '(échecs silencieux:', silentFailCountRef.current, ')');
       tokenClient.requestAccessToken({ prompt: promptType });
     }
   };
@@ -895,6 +912,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   }, [view, currentDate]);
 
   const eventBlocks = useMemo(() => {
+    const isPersonnelMode = activeModule === 'personnel';
     const eventBlocks = [];
     const processedEvents = new Set();
 
@@ -1020,8 +1038,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
             location: event.location,
             time: event.start.dateTime ? format(eventStart, 'HH:mm', { locale: fr }) : null,
             affaire: event.affaire,
-            startIndex: startIndex * 2, // Chaque jour = 2 colonnes dans la grille (AM+PM)
-            span: span * 2, // Chaque jour occupe 2 colonnes
+            startIndex: isPersonnelMode ? startIndex : startIndex * 2,
+            span: isPersonnelMode ? span : span * 2,
             event: event // Données complètes pour la création de réservation
           });
         }
@@ -1038,7 +1056,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     });
     
     return eventBlocks;
-  }, [view, currentDate, events, days, searchFilter]);
+  }, [view, currentDate, events, days, searchFilter, activeModule]);
 
   // Toujours afficher le banner, même sans clientId configuré (pour permettre la configuration)
   if (!googleClientId) {
@@ -1183,6 +1201,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
             <div className="banner-grid-lines">
               {view === 'week' && days.flatMap((day, dayIndex) => {
                 const dayIsToday = isToday(day);
+                if (activeModule === 'personnel') {
+                  return [
+                    <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />
+                  ];
+                }
                 return [
                   <div key={`${dayIndex}-am`} className={`grid-line ${dayIsToday ? 'today today-left' : ''}`} />,
                   <div key={`${dayIndex}-pm`} className={`grid-line ${dayIsToday ? 'today today-right' : ''}`} />
@@ -1190,6 +1213,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
               })}
               {view === 'month' && days.flatMap((day, dayIndex) => {
                 const dayIsToday = isToday(day);
+                if (activeModule === 'personnel') {
+                  return [
+                    <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />
+                  ];
+                }
                 return [
                   <div key={`${dayIndex}-am`} className={`grid-line ${dayIsToday ? 'today today-left' : ''}`} />,
                   <div key={`${dayIndex}-pm`} className={`grid-line ${dayIsToday ? 'today today-right' : ''}`} />

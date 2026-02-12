@@ -661,6 +661,43 @@ function App() {
     // Ne pas effacer calendarConfig pour conserver la configuration Google Calendar
   };
 
+  // ═══ Navigation croisée entre modules ═══
+  const handleNavigateToEntity = useCallback((type, data) => {
+    if (type === 'vehicle') {
+      const v = vehicles.find(v => v.id === data.id);
+      if (v) {
+        setActiveModule('vehicles');
+        setShowManagement(false);
+        setShowSettings(false);
+        setSelectedVehicleForDetails(v);
+      }
+    } else if (type === 'person') {
+      setActiveModule('personnel');
+      setShowManagement(false);
+      setShowSettings(false);
+      setNavigateToPersonId(data.id);
+    } else if (type === 'reservation') {
+      setActiveModule('vehicles');
+      setShowManagement(false);
+      setShowSettings(false);
+      setReservationToEdit(data.id);
+    }
+  }, [vehicles]);
+
+  // Polling compteur de messages non lus
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchUnread = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        setUnreadMsgCount(data.count || 0);
+      } catch (e) { /* silencieux */ }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   if (isLoading) {
     return (
       <div className="app loading">
@@ -716,47 +753,6 @@ function App() {
     api.user = updatedUser;
     localStorage.setItem('auth_user', JSON.stringify(updatedUser));
   };
-
-  // ═══ Navigation croisée entre modules ═══
-  const handleNavigateToEntity = useCallback((type, data) => {
-    if (type === 'vehicle') {
-      // data = { id } — ouvrir le détail véhicule dans le module Parc
-      const v = vehicles.find(v => v.id === data.id);
-      if (v) {
-        setActiveModule('vehicles');
-        setShowManagement(false);
-        setShowSettings(false);
-        setSelectedVehicleForDetails(v);
-      }
-    } else if (type === 'person') {
-      // data = { id } — basculer vers le module Personnel
-      setActiveModule('personnel');
-      setShowManagement(false);
-      setShowSettings(false);
-      // PersonnelPanel gère la sélection en interne via navigateToPersonId
-      setNavigateToPersonId(data.id);
-    } else if (type === 'reservation') {
-      // data = { id } — ouvrir la réservation dans le module Parc
-      setActiveModule('vehicles');
-      setShowManagement(false);
-      setShowSettings(false);
-      setReservationToEdit(data.id);
-    }
-  }, [vehicles]);
-
-  // Polling compteur de messages non lus
-  useEffect(() => {
-    if (!currentUser) return;
-    const fetchUnread = async () => {
-      try {
-        const data = await api.getUnreadCount();
-        setUnreadMsgCount(data.count || 0);
-      } catch (e) { /* silencieux */ }
-    };
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 10000);
-    return () => clearInterval(interval);
-  }, [currentUser]);
 
   return (
     <div className="app">

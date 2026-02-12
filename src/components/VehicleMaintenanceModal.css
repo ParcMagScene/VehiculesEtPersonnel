@@ -38,16 +38,42 @@
   border-bottom: none;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   background: var(--modal-header-bg);
   color: var(--modal-header-color);
   border-radius: var(--modal-header-border-radius);
+}
+
+.vehicle-maintenance-modal .modal-header-title {
+  flex: 1;
 }
 
 .vehicle-maintenance-modal .modal-header h2 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+.vehicle-maintenance-modal .modal-header .vehicle-info {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.vehicle-maintenance-modal .modal-header .vehicle-type,
+.vehicle-maintenance-modal .modal-header .vehicle-registration {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 500;
+}
+
+.vehicle-maintenance-modal .modal-header .vehicle-registration {
+  background: rgba(255, 255, 255, 0.25);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
 }
 
 .vehicle-maintenance-modal .close-button {

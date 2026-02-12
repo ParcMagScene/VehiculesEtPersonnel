@@ -156,7 +156,8 @@ function App() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const prevUnreadRef = useRef(0); // Compteur précédent pour détecter les nouveaux messages
-  const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: false }); // Préférences notification
+  const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: true }); // Préférences notification
+  const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {
@@ -646,7 +647,7 @@ function App() {
         // Stocker les préférences de notification pour le polling
         userPrefsRef.current = {
           notificationsEnabled: prefs.notificationsEnabled !== false,
-          soundEnabled: prefs.soundEnabled === true,
+          soundEnabled: prefs.soundEnabled !== false,
         };
         // Demander la permission navigateur si notifications activées
         if (prefs.notificationsEnabled !== false) {
@@ -696,9 +697,16 @@ function App() {
     }
   }, [vehicles]);
 
+  // Synchro ref showMessaging
+  useEffect(() => { showMessagingRef.current = showMessaging; }, [showMessaging]);
+
   // Polling compteur de messages non lus + notifications
   useEffect(() => {
     if (!currentUser) return;
+
+    // Demander la permission notification dès que possible
+    requestNotificationPermission();
+
     const fetchUnread = async () => {
       try {
         const data = await api.getUnreadCount();
@@ -715,8 +723,8 @@ function App() {
             playNotificationSound();
           }
 
-          // Notification navigateur (si pas focalisé sur la messagerie)
-          if (prefs.notificationsEnabled && !showMessaging) {
+          // Notification navigateur (si le panneau messagerie n'est pas ouvert)
+          if (prefs.notificationsEnabled && !showMessagingRef.current) {
             showBrowserNotification(
               `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
               { body: 'Cliquez pour ouvrir la messagerie eM@g' }
@@ -733,7 +741,7 @@ function App() {
     fetchUnread();
     const interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
-  }, [currentUser, showMessaging]);
+  }, [currentUser]);
 
   if (isLoading) {
     return (
@@ -1172,7 +1180,7 @@ function App() {
             // Mettre à jour les préférences de notification en temps réel
             userPrefsRef.current = {
               notificationsEnabled: prefs.notificationsEnabled !== false,
-              soundEnabled: prefs.soundEnabled === true,
+              soundEnabled: prefs.soundEnabled !== false,
             };
             // Demander la permission si notifications activées
             if (prefs.notificationsEnabled !== false) {

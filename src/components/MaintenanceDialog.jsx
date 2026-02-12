@@ -111,7 +111,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     { value: 'SEMI', label: 'Semi-remorque', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans' },
     { value: 'SCENE', label: 'Scène mobile', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'], periodicity: 'Tous les ans (remorque > 500 kg PTAC)' },
     { value: 'POLLUTION', label: 'Pollution', vehicleTypes: ['ALL_MOTORIZED'], periodicity: 'Tous les ans (inclus dans le CT pour les VL, séparé pour les PL)' },
-    { value: 'HAYON', label: 'Hayon (contrôle VGP)', vehicleTypes: ['ALL'], periodicity: 'Tous les 6 mois (Vérification Générale Périodique)' }
+    { value: 'HAYON', label: 'Hayon (contrôle VGP)', vehicleTypes: ['ALL'], periodicity: 'Tous les 6 mois (Vérification Générale Périodique)' },
+    { value: 'TACHYGRAPHE', label: '📡 Tachygraphe', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les 2 ans — vérification complète, étalonnage, scellés (~1h30, ~200 €)' },
+    { value: 'LIMITEUR', label: '🚧 Limiteur de vitesse', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans — contrôle en centre agréé (~15 min, ~70 €)' }
   ];
 
   // Filtrer les types de contrôles selon le type de véhicule
@@ -134,6 +136,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       
       // Pollution disponible pour tous les véhicules motorisés
       if (ct.value === 'POLLUTION') return isMotorized;
+      
+      // Tachygraphe et Limiteur de vitesse pour PL et semi-remorques
+      if (ct.value === 'TACHYGRAPHE' || ct.value === 'LIMITEUR') return isPL || isSemi;
       
       // VL pour les véhicules légers
       if (ct.value === 'VL') return isVL;

@@ -1110,7 +1110,9 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
             'SEMI': 12,    // 12 mois
             'SCENE': 12,   // 12 mois
             'POLLUTION': 12, // 12 mois
-            'HAYON': 6     // 6 mois
+            'HAYON': 6,    // 6 mois
+            'TACHYGRAPHE': 24, // 24 mois
+            'LIMITEUR': 12  // 12 mois
           };
           
           const delayMonths = periodicDelays[controlType] || 12;

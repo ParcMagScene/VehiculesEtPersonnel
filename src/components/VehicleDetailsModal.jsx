@@ -84,7 +84,9 @@ const VehicleDetailsModal = ({
       'SEMI': 'Contrôle technique Semi-remorque',
       'SCENE': 'Contrôle technique Scène mobile',
       'POLLUTION': 'Contrôle pollution',
-      'HAYON': 'Contrôle hayon (VGP)'
+      'HAYON': 'Contrôle hayon (VGP)',
+      'TACHYGRAPHE': '📡 Tachygraphe',
+      'LIMITEUR': '🚧 Limiteur de vitesse'
     };
     return types[type] || type;
   };
@@ -96,7 +98,9 @@ const VehicleDetailsModal = ({
       'SEMI': 'Tous les ans',
       'SCENE': 'Tous les ans (remorque > 500 kg PTAC)',
       'POLLUTION': 'Tous les ans (inclus dans le CT pour les VL, séparé pour les PL)',
-      'HAYON': 'Tous les 6 mois (Vérification Générale Périodique)'
+      'HAYON': 'Tous les 6 mois (Vérification Générale Périodique)',
+      'TACHYGRAPHE': 'Tous les 2 ans — vérification, étalonnage, scellés (~1h30, ~200 €)',
+      'LIMITEUR': 'Tous les ans — contrôle en centre agréé (~15 min, ~70 €)'
     };
     return periodicities[type] || null;
   };

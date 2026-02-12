@@ -46,7 +46,9 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     { value: 'SEMI', label: 'Semi-remorque', firstDelay: 12, periodicDelay: 12, note: 'Comme PL', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'] },
     { value: 'SCENE', label: 'Scène mobile', firstDelay: 12, periodicDelay: 12, note: 'Véhicule spécial remorqué', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'] },
     { value: 'POLLUTION', label: 'Pollution', firstDelay: 12, periodicDelay: 12, note: 'Contrôle des émissions', vehicleTypes: ['ALL_MOTORIZED'] },
-    { value: 'HAYON', label: 'Hayon', firstDelay: 0, periodicDelay: 6, note: 'VGP obligatoire', vehicleTypes: ['ALL'] }
+    { value: 'HAYON', label: 'Hayon', firstDelay: 0, periodicDelay: 6, note: 'VGP obligatoire', vehicleTypes: ['ALL'] },
+    { value: 'TACHYGRAPHE', label: '📡 Tachygraphe', firstDelay: 24, periodicDelay: 24, note: 'Vérification, étalonnage, scellés (~1h30, ~200 €)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'] },
+    { value: 'LIMITEUR', label: '🚧 Limiteur de vitesse', firstDelay: 12, periodicDelay: 12, note: 'Contrôle en centre agréé (~15 min, ~70 €)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'] }
   ];
 
   // Filtrer les types de contrôles selon le type de véhicule
@@ -73,6 +75,11 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
       // Pollution disponible pour tous les véhicules motorisés
       if (ct.value === 'POLLUTION') {
         return isMotorized;
+      }
+      
+      // Tachygraphe et Limiteur de vitesse pour PL et semi-remorques
+      if (ct.value === 'TACHYGRAPHE' || ct.value === 'LIMITEUR') {
+        return isPL || isSemi;
       }
       
       // VL pour les véhicules légers
@@ -260,7 +267,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
             ) : (
               <>
                 <div className="form-group">
-                  <label htmlFor="ct-type">Type d'équipement</label>
+                  <label htmlFor="ct-type">Type de contrôle</label>
                   <select
                     id="ct-type"
                     value={newControle.type}

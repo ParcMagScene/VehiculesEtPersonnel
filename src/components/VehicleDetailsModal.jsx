@@ -52,7 +52,9 @@ const VehicleDetailsModal = ({
     : [];
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Non renseigné';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Non renseigné';
     return date.toLocaleDateString('fr-FR', { 
       day: '2-digit', 
       month: '2-digit', 
@@ -336,9 +338,15 @@ const VehicleDetailsModal = ({
                     <div key={index} className="deadline-item">
                       <div className="deadline-header">
                         <span className="deadline-type">{getControleTypeLabel(controle.type)}</span>
-                        {deadlineInfo && (
-                          <span className={`deadline-badge ${deadlineInfo.className}`}>
-                            {deadlineInfo.label}
+                        {controle.deadline ? (
+                          deadlineInfo && (
+                            <span className={`deadline-badge ${deadlineInfo.className}`}>
+                              {deadlineInfo.label}
+                            </span>
+                          )
+                        ) : (
+                          <span className="deadline-badge deadline-pending">
+                            À programmer
                           </span>
                         )}
                       </div>

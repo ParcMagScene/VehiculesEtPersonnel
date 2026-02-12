@@ -643,6 +643,12 @@
   color: #065f46;
 }
 
+.vehicle-details-modal .deadline-pending {
+  background: #e0e7ff;
+  color: #3730a3;
+  font-style: italic;
+}
+
 @keyframes pulse-red {
   0%, 100% {
     opacity: 1;

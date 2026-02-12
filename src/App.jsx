@@ -158,6 +158,8 @@ function App() {
   const prevUnreadRef = useRef(0); // Compteur précédent pour détecter les nouveaux messages
   const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: true }); // Préférences notification
   const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
+  const [msgToast, setMsgToast] = useState(null); // Toast notification in-app
+  const msgToastTimerRef = useRef(null);
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {
@@ -710,7 +712,7 @@ function App() {
     const fetchUnread = async () => {
       try {
         const data = await api.getUnreadCount();
-        const newCount = data.count || 0;
+        const newCount = data.unread || 0;
         const prevCount = prevUnreadRef.current;
 
         // Nouveau message détecté (compteur augmente, et pas le polling initial)
@@ -721,6 +723,13 @@ function App() {
           // Son de notification
           if (prefs.soundEnabled) {
             playNotificationSound();
+          }
+
+          // Toast notification in-app (toujours visible)
+          if (!showMessagingRef.current) {
+            if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
+            setMsgToast(`${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`);
+            msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
           }
 
           // Notification navigateur (si le panneau messagerie n'est pas ouvert)
@@ -1197,6 +1206,15 @@ function App() {
           onClose={() => setShowHelp(false)}
         />
       </Suspense>
+
+      {/* Toast notification messages */}
+      {msgToast && (
+        <div className="msg-toast" onClick={() => { setMsgToast(null); setShowMessaging(true); }}>
+          <span className="msg-toast-icon">💬</span>
+          <span className="msg-toast-text">{msgToast}</span>
+          <button className="msg-toast-close" onClick={(e) => { e.stopPropagation(); setMsgToast(null); }}>×</button>
+        </div>
+      )}
     </div>
   );
 }

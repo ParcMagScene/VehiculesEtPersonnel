@@ -18,6 +18,12 @@ const getAudioContext = () => {
 export const playNotificationSound = () => {
   try {
     const ctx = getAudioContext();
+    
+    // Reprendre le contexte si suspendu (requis par les navigateurs modernes)
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    
     const now = ctx.currentTime;
 
     // Note 1 — Do5 (523 Hz)

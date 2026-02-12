@@ -1651,6 +1651,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
               }}
               onMouseLeave={() => { if (!anyDragActive) setHoveredSlot(null); }}
               onMouseUp={handleGlobalMouseUp}
+              onClick={(e) => {
+                if (isCovered || wasDraggedRef.current) { wasDraggedRef.current = false; return; }
+                e.stopPropagation();
+                handleSlotClick(person, slot.day, slotIndex);
+              }}
               data-tooltip={isHovered && !anyDragActive ? `${personName} — ${dayLabel}` : undefined}
               style={{ cursor: view !== 'year' && !isCovered ? 'crosshair' : 'default' }}
             >

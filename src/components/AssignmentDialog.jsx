@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import {
   X, Save, Calendar, Clock, User, Briefcase, AlertTriangle,
   ChevronDown, ChevronUp, Plus, Minus, Check, Info, Trash2, Edit2, Users, Search,
@@ -193,6 +194,12 @@ const SKILL_CATEGORIES = [
  *   onDelete    — callback to delete the mission
  */
 const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [], editMission, googleEvents = [], onClose, onCreated, onDelete }) => {
+  // Debug (visible uniquement en dev, supprimé en prod)
+  console.log('[AssignmentDialog] RENDER — person:', person?.id, 'day:', String(day), 'skills:', skills?.length, 'positions:', positions?.length);
+  
+  // Sécuriser le jour pour éviter les erreurs
+  const safeDay = day instanceof Date && !isNaN(day) ? day : new Date();
+  
   const isEdit = !!editMission;
   const existingMission = editMission?.mission;
   const existingAssignment = editMission?.assignment;
@@ -227,14 +234,19 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   const [showAffaireDropdown, setShowAffaireDropdown] = useState(false);
 
   // Dates & horaires — pré-remplir depuis mission existante
-  const [startDate, setStartDate] = useState(
-    existingMission ? (existingMission.startDate || existingMission.start_date || '').split('T')[0] || format(day, 'yyyy-MM-dd')
-    : format(day, 'yyyy-MM-dd')
-  );
-  const [endDate, setEndDate] = useState(
-    existingMission ? (existingMission.endDate || existingMission.end_date || '').split('T')[0] || format(endDay || day, 'yyyy-MM-dd')
-    : format(endDay || day, 'yyyy-MM-dd')
-  );
+  const [startDate, setStartDate] = useState(() => {
+    try {
+      if (existingMission) return (existingMission.startDate || existingMission.start_date || '').split('T')[0] || format(safeDay, 'yyyy-MM-dd');
+      return format(safeDay, 'yyyy-MM-dd');
+    } catch(e) { console.error('[AssignmentDialog] startDate init error:', e); return format(new Date(), 'yyyy-MM-dd'); }
+  });
+  const [endDate, setEndDate] = useState(() => {
+    try {
+      const theEnd = endDay instanceof Date && !isNaN(endDay) ? endDay : safeDay;
+      if (existingMission) return (existingMission.endDate || existingMission.end_date || '').split('T')[0] || format(theEnd, 'yyyy-MM-dd');
+      return format(theEnd, 'yyyy-MM-dd');
+    } catch(e) { console.error('[AssignmentDialog] endDate init error:', e); return format(new Date(), 'yyyy-MM-dd'); }
+  });
   const [startTime, setStartTime] = useState(
     existingMission ? (existingMission.startTime || existingMission.start_time || '') : (period === 'PM' ? '14:00' : '08:00')
   );
@@ -372,10 +384,11 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
       const end = parseISO(endDate);
       if (end < start) return [start];
       return eachDayOfInterval({ start, end });
-    } catch {
-      return [day];
+    } catch(e) {
+      console.error('[AssignmentDialog] rangeDays error:', e);
+      return [safeDay];
     }
-  }, [startDate, endDate, day]);
+  }, [startDate, endDate, safeDay]);
 
   // Initialiser les dayStates quand la plage de dates change
   useEffect(() => {
@@ -428,10 +441,10 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
   // Vérifier si la personne a les compétences sélectionnées
   const skillWarnings = useMemo(() => {
-    if (selectedSkillIds.length === 0) return null;
+    if (!skills || selectedSkillIds.length === 0) return null;
     const missing = selectedSkillIds.filter(id => !person.skills?.some(s => s.skillId === id));
     if (missing.length === 0) return null;
-    const names = missing.map(id => skills.find(s => s.id === id)?.name || 'inconnue');
+    const names = missing.map(id => (skills || []).find(s => s.id === id)?.name || 'inconnue');
     return `${person.firstName} ${person.lastName} ne possède pas : ${names.join(', ')}`;
   }, [selectedSkillIds, person, skills]);
 
@@ -586,7 +599,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
   // Raccourci pour la catégorie d'une compétence
   const getSkillCategory = (skillId) => {
-    const skill = skills.find(s => s.id === parseInt(skillId));
+    const skill = (skills || []).find(s => s.id === parseInt(skillId));
     if (!skill) return null;
     return SKILL_CATEGORIES.find(c => c.value === skill.category);
   };
@@ -594,7 +607,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   // Grouper les compétences par catégorie
   const skillsByCategory = useMemo(() => {
     const groups = {};
-    skills.forEach(skill => {
+    (skills || []).forEach(skill => {
       const cat = skill.category || 'autre';
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(skill);
@@ -602,7 +615,10 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
     return groups;
   }, [skills]);
 
-  return (
+  // DEBUG: Vérifier que le rendu arrive jusque là
+  console.log('[AssignmentDialog] ABOUT TO RENDER — startDate:', startDate, 'endDate:', endDate, 'rangeDays:', rangeDays?.length, 'affaires:', affaires?.length, 'loading:', loading);
+
+  const dialogContent = (
     <div className="assignment-dialog-overlay" onClick={onClose}>
       <div className="assignment-dialog" onClick={e => e.stopPropagation()}>
         {/* Header */}
@@ -984,6 +1000,8 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(dialogContent, document.body);
 };
 
 export default AssignmentDialog;

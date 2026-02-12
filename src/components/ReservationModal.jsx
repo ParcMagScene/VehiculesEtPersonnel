@@ -8,6 +8,7 @@ import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplet
 import TripDetailsModal from './TripDetailsModal';
 import LocationDialog from './LocationDialog';
 import VehiclePickerCards from './VehiclePickerCards';
+import DriverSelect from './DriverSelect';
 import api from '../utils/api';
 import { loadFromIndexedDB } from '../utils/indexedDB';
 import './ReservationModal.css';
@@ -179,6 +180,7 @@ const ReservationModal = ({
       .map(p => ({
         id: p.id,
         name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`,
+        photo: p.photo || null,
         skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || []
       }));
   }, [persons, vehicles, formData.vehicleId]);
@@ -998,30 +1000,13 @@ const ReservationModal = ({
 
             <div className="form-group">
               <label htmlFor="driverName">Conducteur</label>
-              <select
-                id="driverName"
-                name="driverName"
+              <DriverSelect
                 value={formData.driverName}
-                onChange={handleChange}
-              >
-                <option value="">Sélectionner un conducteur</option>
-                {qualifiedDrivers.length > 0 && (
-                  <optgroup label="Personnel qualifié">
-                    {qualifiedDrivers.map((p) => (
-                      <option key={`person-${p.id}`} value={p.name}>
-                        {p.name} ({p.skills.join(', ')})
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {driverSuggestions.filter(s => 
-                  !qualifiedDrivers.some(q => q.name === s)
-                ).map((suggestion, idx) => (
-                  <option key={`history-${idx}`} value={suggestion}>
-                    {suggestion} (historique)
-                  </option>
-                ))}
-              </select>
+                onChange={(name) => handleChange({ target: { name: 'driverName', value: name } })}
+                qualifiedDrivers={qualifiedDrivers}
+                historySuggestions={driverSuggestions}
+                disabled={isReadOnly}
+              />
             </div>
             </>
           )}

@@ -1687,7 +1687,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
           borderRight: spanHere.clippedRight ? `3px dashed ${getStatusColor(assignStatus)}40` : 'none',
           width: `calc(${spanHere.slotCount * 100}% + ${spanHere.slotCount - 1}px)`,
         }}
-        title={!isGhost ? `${missionTitle}\n${spanHere.assignment?.position || ''}\nStatut: ${assignStatus}` : ''}
+        title=""
         onMouseDown={(e) => !isGhost && handleBlockMouseDown(e, spanHere, person, slotIndex)}
         onClick={(e) => {
           if (isGhost) return;

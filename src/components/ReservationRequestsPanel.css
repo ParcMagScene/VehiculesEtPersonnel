@@ -36,9 +36,9 @@
 }
 
 .requests-filters button.active {
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
 }
 
 .requests-list {

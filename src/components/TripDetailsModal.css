@@ -38,7 +38,7 @@
 }
 
 .event-info span {
-  color: #6366f1;
+  color: var(--theme-indigo);
   font-weight: 600;
 }
 
@@ -143,7 +143,7 @@
 
 .trip-row input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -392,7 +392,7 @@
 
 .combined-tab.active .tab-affaire {
   background: #eef2ff;
-  color: #6366f1;
+  color: var(--theme-indigo);
 }
 
 .combined-tab .tab-saved {
@@ -469,7 +469,7 @@
 }
 
 .timeline-step--arrival .timeline-step-icon {
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   background: #f5f3ff;
 }
 
@@ -548,7 +548,7 @@
   padding: 0.1rem 0.4rem;
   border-radius: 0.2rem;
   background: #eef2ff;
-  color: #6366f1;
+  color: var(--theme-indigo);
   font-weight: 600;
 }
 
@@ -649,14 +649,14 @@
 }
 
 .combined-edit-tab:hover {
-  border-color: #6366f1;
+  border-color: var(--theme-indigo);
   color: #374151;
 }
 
 .combined-edit-tab.active {
   background: #eef2ff;
   color: #4338ca;
-  border-color: #6366f1;
+  border-color: var(--theme-indigo);
   font-weight: 600;
 }
 
@@ -694,7 +694,7 @@
 
 .combined-edit-tab.active .tab-affaire {
   background: #eef2ff;
-  color: #6366f1;
+  color: var(--theme-indigo);
 }
 
 .combined-edit-tab .tab-role {
@@ -727,7 +727,7 @@
 
 .editing-badge {
   padding: 0.15rem 0.5rem;
-  background: #6366f1;
+  background: var(--theme-indigo);
   color: white;
   border-radius: 0.25rem;
   font-size: 0.7rem;
@@ -739,7 +739,7 @@
   font-size: 0.7rem;
   padding: 0.1rem 0.35rem;
   background: #eef2ff;
-  color: #6366f1;
+  color: var(--theme-indigo);
   border-radius: 0.2rem;
   font-weight: 600;
 }

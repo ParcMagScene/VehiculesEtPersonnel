@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package, ShoppingCart } from 'lucide-react';
 import api from '../utils/api';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -12,7 +12,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireViewMode, setAffaireViewMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireViewMode, setAffaireViewMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, unreadMsgCount = 0, onOpenPreferences, onOpenHelp }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -31,6 +31,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showProfileModal, setShowProfileModal] = useState(false);
+  // (quick-create supprimé — les actions sont dans le header et la bannière)
 
   // Charger les demandes en attente (interventions + réservations) pour le badge admin
   useEffect(() => {
@@ -399,7 +400,11 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       <div className="header-content">
         <div className="header-title-container">
           <div className="header-logo-area">
-            <img src="/Logos/LogoMagSav.svg" alt="Mag Scène" className="header-logo" />
+            <img src="/Logos/LogoEmag.png" alt="eM@g Scene" className="header-logo" />
+            <button className="help-trigger-btn" onClick={onOpenHelp} title="Aide — Guide d'utilisation" aria-label="Aide">
+              <HelpCircle size={18} />
+              <span>Aide</span>
+            </button>
           </div>
           <div className="module-tabs" role="tablist" aria-label="Module principal">
             <button
@@ -409,7 +414,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               aria-selected={activeModule === 'vehicles'}
             >
               <Truck size={18} />
-              <span>Véhicules</span>
+              <span>Parc</span>
             </button>
             <button
               className={`module-tab ${activeModule === 'personnel' ? 'active' : ''}`}
@@ -428,6 +433,24 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             >
               <Briefcase size={18} />
               <span>Affaires</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'equipment' ? 'active' : ''}`}
+              onClick={() => setActiveModule('equipment')}
+              role="tab"
+              aria-selected={activeModule === 'equipment'}
+            >
+              <Package size={18} />
+              <span>Matériel</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'orders' ? 'active' : ''}`}
+              onClick={() => setActiveModule('orders')}
+              role="tab"
+              aria-selected={activeModule === 'orders'}
+            >
+              <ShoppingCart size={18} />
+              <span>Commandes</span>
             </button>
           </div>
         </div>
@@ -1271,19 +1294,26 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             )}
             </div>
             
+            <button className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages" title="Messages">
+              <MessageSquare size={20} />
+              {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
+            </button>
+
             <button className="qr-button" onClick={() => setShowQRCodeModal(true)} aria-label="Afficher le QR code mobile">
               <QrCode size={20} />
             </button>
 
+            {(activeModule === 'vehicles' || activeModule === 'personnel' || activeModule === 'equipment') && (
             <button 
               className="management-button" 
               onClick={onOpenManagement} 
               aria-label="Ouvrir le panneau de gestion"
               style={{ position: 'relative' }}
             >
-              {activeModule === 'vehicles' ? <Truck size={18} /> : <Users size={18} />}
+              {activeModule === 'vehicles' ? <Truck size={18} /> : activeModule === 'personnel' ? <Users size={18} /> : <Package size={18} />}
               Gestion
             </button>
+            )}
 
             <button 
               className="settings-button" 
@@ -1418,6 +1448,32 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                       >
                         <UserCog size={16} />
                         Mon profil
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          if (onOpenPreferences) onOpenPreferences();
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: 'none',
+                          background: 'white',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          color: '#374151',
+                          transition: 'background 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                      >
+                        <Settings size={16} />
+                        Préférences
                       </button>
 
                       <button

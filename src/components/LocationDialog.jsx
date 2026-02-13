@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import logger from "../utils/logger";
 import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
 import api from '../utils/api';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
@@ -21,6 +22,23 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const initialFormDataRef = useRef(JSON.stringify({
+    name: location?.name || '',
+    address: location?.address || '',
+    lat: location?.lat || null,
+    lng: location?.lng || null,
+    placeId: location?.placeId || '',
+    type: location?.type || 'Salle de spectacle'
+  }));
+
+  const handleSafeClose = () => {
+    if (JSON.stringify(formData) !== initialFormDataRef.current) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -389,7 +407,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     <div className="location-dialog-overlay" onClick={(e) => {
       // Fermer seulement si on clique sur l'overlay, pas sur le contenu
       if (e.target === e.currentTarget) {
-        onClose();
+        handleSafeClose();
       }
     }}>
       <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
@@ -404,7 +422,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
               </span>
             )}
           </h2>
-          <button className="close-button" onClick={onClose}>
+          <button className="close-button" onClick={handleSafeClose}>
             <X size={24} />
           </button>
         </div>
@@ -533,7 +551,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           </div>
 
           <div className="location-dialog-footer">
-            <button type="button" className="btn-cancel" onClick={onClose}>
+            <button type="button" className="btn-cancel" onClick={handleSafeClose}>
               Fermer
             </button>
             <button type="submit" className="btn-save" disabled={isSaving}>
@@ -542,6 +560,13 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           </div>
         </form>
       </div>
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
+        />
+      )}
     </div>
   );
 };

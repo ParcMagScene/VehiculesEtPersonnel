@@ -166,6 +166,98 @@
   margin-bottom: 16px;
 }
 
+.personnel-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.personnel-form-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.personnel-form-header .close-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.personnel-form-header .close-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.personnel-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.personnel-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1e293b;
+  background: white;
+  transition: all 0.2s;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--focus-border, var(--theme-border-focus));
+  box-shadow: var(--focus-ring, 0 0 0 3px rgba(102, 126, 234, 0.15));
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
 /* Modal d'édition personnel (mode planning) */
 .personnel-edit-modal {
   background: #f8fafc;
@@ -290,7 +382,7 @@
 .personnel-edit-form-body .form-group select:focus,
 .personnel-edit-form-body .form-group textarea:focus {
   outline: none;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -710,7 +802,7 @@
 
 .person-positions-more summary {
   font-size: 11px;
-  color: #667eea;
+  color: var(--theme-primary);
   cursor: pointer;
   user-select: none;
   padding: 2px 0;
@@ -1051,6 +1143,81 @@
   text-align: left;
 }
 
+.pp-column-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pp-leave-badge-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { background: rgba(255, 255, 255, 0.25); }
+  50% { background: rgba(251, 191, 36, 0.5); }
+}
+
+.pp-leave-badge-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  animation: none;
+}
+
+.pp-leave-badge-count {
+  font-size: 11px;
+}
+
+.pp-leave-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pp-leave-add-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Bouton d'ajout de personne dans le planning */
+.pp-person-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+}
+
+.pp-person-add-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
 /* Section header dans la colonne personnel */
 .pp-section-header {
   background: var(--theme-gradient);
@@ -1381,46 +1548,7 @@
   background: rgba(102, 126, 234, 0.06);
 }
 
-/* ── Tooltip au survol ── */
-.pp-slot[data-tooltip] {
-  position: relative;
-}
-
-.pp-slot[data-tooltip]::before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--theme-gradient);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  padding: 5px 10px;
-  border-radius: 6px;
-  z-index: 100;
-  pointer-events: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-  animation: ppTooltipIn 0.12s ease-out;
-}
-
-.pp-slot[data-tooltip]::after {
-  content: '';
-  position: absolute;
-  bottom: calc(100% + 2px);
-  left: 50%;
-  transform: translateX(-50%);
-  border: 4px solid transparent;
-  border-top-color: #764ba2;
-  z-index: 100;
-  pointer-events: none;
-}
-
-@keyframes ppTooltipIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
+/* ── Tooltip au survol — système unifié [data-emag-tooltip] de theme.css ── */
 
 /* ── Crosshair highlight colonne + ligne ── */
 .pp-col-hovered {
@@ -1429,17 +1557,39 @@
 
 .pp-header-cell.pp-col-hovered {
   background: rgba(102, 126, 234, 0.15) !important;
-  box-shadow: inset 0 -2px 0 #667eea;
+  box-shadow: inset 0 -2px 0 var(--theme-primary);
 }
 
 .pp-person-cell.pp-row-hovered {
   background: rgba(102, 126, 234, 0.08);
-  box-shadow: inset 3px 0 0 #667eea;
+  box-shadow: inset 3px 0 0 var(--theme-primary);
 }
 
 .pp-person-cell.pp-row-hovered .pp-person-name {
-  color: #667eea;
+  color: var(--theme-primary);
   font-weight: 700;
+}
+
+/* ═══ Absences sur le planning ═══ */
+.pp-slot-absence {
+  position: relative;
+  cursor: default !important;
+}
+
+.pp-absence-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 1;
+  text-shadow: 0 0 3px rgba(255,255,255,0.6);
 }
 
 .pp-assignment-block {
@@ -1465,7 +1615,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: var(--indicator-color, #667eea);
+  background: var(--indicator-color, var(--theme-primary));
   border-radius: 4px 0 0 4px;
   z-index: 3;
   pointer-events: none;
@@ -1556,8 +1706,9 @@
 
 .pp-assignment-delete {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
   width: 18px;
   height: 18px;
   border-radius: 4px;

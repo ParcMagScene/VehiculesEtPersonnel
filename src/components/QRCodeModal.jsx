@@ -163,9 +163,9 @@ function QRCodeModal({ onClose }) {
               <div class="qr-card">
                 <div class="qr-header">
                   <div class="qr-logo">
-                    <img src="/Logos/LogoMagSceneBLACK.gif" alt="MagScene Logo" />
+                    <img src="/Logos/LogoEmag.png" alt="eM@g Scene" />
                   </div>
-                  <h1>MagScene</h1>
+                  <h1>eM@g Scene</h1>
                   <h2>Interface Mobile</h2>
                 </div>
                 <div class="qr-image-container">

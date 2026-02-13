@@ -132,7 +132,7 @@
   margin-top: 0.5rem;
   padding: 0.5rem;
   background: #f0f4ff;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid var(--theme-primary);
   border-radius: 0.25rem;
   font-size: 0.875rem;
   color: #4c51bf;
@@ -198,12 +198,12 @@
 }
 
 .vehicle-picker-card-desktop:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: #f5f3ff;
 }
 
 .vehicle-picker-card-desktop.selected {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: #ede9fe;
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
@@ -270,7 +270,7 @@
 
 .vehicle-picker-reg-desktop {
   font-size: 0.7rem;
-  color: #667eea;
+  color: var(--theme-primary);
   font-weight: 600;
   margin-top: 0.1rem;
 }
@@ -281,7 +281,7 @@
   right: 4px;
   width: 22px;
   height: 22px;
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -321,7 +321,7 @@
 }
 
 .vehicle-checkbox-item:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: #f0f4ff;
 }
 
@@ -350,7 +350,7 @@
 .multi-vehicle-preview {
   padding: 0.75rem;
   background: #f0f4ff;
-  border: 2px solid #667eea;
+  border: 2px solid var(--theme-primary);
   border-radius: 0.5rem;
   text-align: center;
   margin-top: 1rem;
@@ -403,7 +403,7 @@
 .reservation-modal .form-group select:focus,
 .reservation-modal .form-group textarea:focus {
   outline: none;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -563,7 +563,7 @@
 .selected-event-display .event-affaire {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--theme-indigo);
   background: #eef2ff;
   padding: 0.125rem 0.5rem;
   border-radius: 0.25rem;
@@ -1138,7 +1138,7 @@
 .combobox-affaire {
   font-size: 0.65rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--theme-indigo);
   background: #eef2ff;
   padding: 0.1rem 0.35rem;
   border-radius: 0.2rem;

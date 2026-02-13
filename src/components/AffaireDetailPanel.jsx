@@ -51,7 +51,7 @@ const extractLinksFromText = (text) => {
 // Contenu partagé (sections de détail)
 // ═══════════════════════════════════════
 
-const AffaireDetailContent = ({ affaire, reservations = [], missions = [], persons = [], googleEventIds = [], editable = false, onDataChanged }) => {
+const AffaireDetailContent = ({ affaire, reservations = [], missions = [], persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity }) => {
   const typeInfo = getTypeInfo(affaire.type);
 
   // ═══ États pour les actions (mode éditable) ═══
@@ -251,7 +251,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
       // Match direct par champ affaire de la mission
       if (m.affaire && m.affaire.toUpperCase() === affaireUpper) return true;
       // Match par reservation_id (lien indirect via réservation)
-      if (m.reservation_id && resaIds.has(String(m.reservation_id))) return true;
+      if ((m.reservationId || m.reservation_id) && resaIds.has(String(m.reservationId || m.reservation_id))) return true;
       return false;
     });
   }, [missions, linkedReservations, affaire.numeroAffaire]);
@@ -262,23 +262,23 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     for (const m of linkedMissions) {
       if (m.assignments) {
         for (const a of m.assignments) {
-          const pid = String(a.person_id);
+          const pid = String(a.personId || a.person_id);
           if (!personMap.has(pid)) {
             // Parser les postes habituels
             let positions = [];
             try {
-              const raw = a.default_positions;
+              const raw = a.defaultPositions || a.default_positions;
               positions = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
             } catch { /* ignore */ }
             personMap.set(pid, {
               id: pid,
-              firstName: a.first_name,
-              lastName: a.last_name,
+              firstName: a.firstName || a.first_name,
+              lastName: a.lastName || a.last_name,
               phone: a.phone,
               email: a.email,
               photo: a.photo,
-              type: a.person_type,
-              contractType: a.contract_type,
+              type: a.personType || a.person_type,
+              contractType: a.contractType || a.contract_type,
               positions,
               skills: a.skills || [],
               missionTitle: m.title,
@@ -424,7 +424,19 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               <div key={r.id} className="detail-list-item resa-item clickable" onClick={() => handleViewReservation(r)} title="Cliquer pour ouvrir la réservation">
                 <div className="resa-vehicle">
                   <Truck size={13} />
-                  <strong>{r.vehicleName || 'Véhicule'}</strong>
+                  <strong
+                    className={onNavigateToEntity ? 'entity-link' : ''}
+                    onClick={(e) => {
+                      if (onNavigateToEntity && r.vehicleId) {
+                        e.stopPropagation();
+                        onNavigateToEntity('vehicle', { id: r.vehicleId });
+                      }
+                    }}
+                    title={onNavigateToEntity ? 'Voir le véhicule dans le module Parc' : undefined}
+                  >
+                    {r.vehicleName || 'Véhicule'}
+                    {onNavigateToEntity && r.vehicleId && <ExternalLink size={10} className="entity-link-icon" />}
+                  </strong>
                   {r.immatriculation && <span className="resa-immat">{r.immatriculation}</span>}
                 </div>
                 <div className="resa-dates">
@@ -505,7 +517,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               <select value={selectedPersonId} onChange={e => setSelectedPersonId(e.target.value)} className="inline-select">
                 <option value="">— Choisir une personne —</option>
                 {actionData.persons.map(p => (
-                  <option key={p.id} value={p.id}>{p.first_name} {p.last_name}{p.type ? ` (${p.type})` : ''}</option>
+                  <option key={p.id} value={p.id}>{p.firstName || p.first_name} {p.lastName || p.last_name}{p.type ? ` (${p.type})` : ''}</option>
                 ))}
               </select>
             </div>
@@ -525,7 +537,12 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         ) : (
           <div className="detail-list">
             {assignedPersonnel.map(p => (
-              <div key={p.id} className="detail-list-item person-item">
+              <div
+                key={p.id}
+                className={`detail-list-item person-item${onNavigateToEntity ? ' clickable' : ''}`}
+                onClick={() => { if (onNavigateToEntity) onNavigateToEntity('person', { id: p.id }); }}
+                title={onNavigateToEntity ? 'Voir dans le module Personnel' : undefined}
+              >
                 <div className="person-header-row">
                   <div className="person-avatar-small">
                     {p.photo ? (
@@ -783,7 +800,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
 // Volet glissant (panneau droit)
 // ═══════════════════════════════════════
 
-const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose, onOpenDialog }) => {
+const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose, onOpenDialog, onNavigateToEntity }) => {
   const [missions, setMissions] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -850,7 +867,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
         </button>
       </div>
       <div className="slide-panel-body">
-        <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} />
+        <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} onNavigateToEntity={onNavigateToEntity} />
       </div>
       <div className="slide-panel-footer">
         <button className="slide-panel-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentAffaire); }}>
@@ -865,7 +882,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
 // Dialog (modal plein écran)
 // ═══════════════════════════════════════
 
-const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClose, onDataChanged }) => {
+const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClose, onDataChanged, onNavigateToEntity }) => {
   const [missions, setMissions] = useState([]);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -919,7 +936,7 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
           </button>
         </div>
         <div className="dialog-body">
-          <AffaireDetailContent affaire={affaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={handleDataChanged} />
+          <AffaireDetailContent affaire={affaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={handleDataChanged} onNavigateToEntity={onNavigateToEntity} />
         </div>
       </div>
     </div>

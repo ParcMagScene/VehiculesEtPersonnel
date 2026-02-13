@@ -336,15 +336,33 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
   });
 }
 
-// ============ AVAILABILITIES (DISPONIBILITÉS) ============
+// ============ AVAILABILITIES (DISPONIBILITÉS / CONGÉS) ============
 
-export function setupAvailabilitiesRoutes(app, authenticateToken) {
+// Types de congés avec labels
+const LEAVE_TYPES = {
+  unavailable: 'Indisponible',
+  conge_paye: 'Congé payé',
+  rtt: 'RTT',
+  maladie: 'Maladie',
+  sans_solde: 'Sans solde',
+  formation: 'Formation',
+  repos: 'Jour de repos',
+  autre: 'Autre',
+};
 
-  // GET /api/availabilities — Toutes les dispos (filtre optionnel par person_id et plage)
+export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) {
+
+  // GET /api/availabilities — Toutes les dispos (filtre optionnel par person_id, plage, status)
   app.get('/api/availabilities', authenticateToken, (req, res) => {
     try {
-      const { person_id, start_date, end_date } = req.query;
-      let sql = 'SELECT a.*, p.first_name, p.last_name FROM availabilities a JOIN persons p ON p.id = a.person_id';
+      const { person_id, start_date, end_date, status } = req.query;
+      let sql = `SELECT a.*, p.first_name, p.last_name,
+                   u1.username AS created_by_name,
+                   u2.username AS approved_by_name
+                 FROM availabilities a
+                 JOIN persons p ON p.id = a.person_id
+                 LEFT JOIN users u1 ON u1.id = a.created_by
+                 LEFT JOIN users u2 ON u2.id = a.approved_by`;
       const params = [];
       const conditions = [];
 
@@ -353,9 +371,12 @@ export function setupAvailabilitiesRoutes(app, authenticateToken) {
         params.push(person_id);
       }
       if (start_date && end_date) {
-        // Chevauchement : dispo qui croise la plage demandée
         conditions.push('a.start_date <= ? AND a.end_date >= ?');
         params.push(end_date, start_date);
+      }
+      if (status) {
+        conditions.push('a.status = ?');
+        params.push(status);
       }
 
       if (conditions.length > 0) {
@@ -370,7 +391,22 @@ export function setupAvailabilitiesRoutes(app, authenticateToken) {
     }
   });
 
-  // POST /api/availabilities — Créer une dispo/indispo
+  // GET /api/leave-requests/pending/count — Nombre de demandes en attente (pour badge admin)
+  app.get('/api/leave-requests/pending/count', authenticateToken, (req, res) => {
+    try {
+      const result = db.prepare("SELECT COUNT(*) as count FROM availabilities WHERE status = 'pending'").get();
+      res.json({ count: result.count });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/leave-types — Liste des types de congés
+  app.get('/api/leave-types', authenticateToken, (req, res) => {
+    res.json(LEAVE_TYPES);
+  });
+
+  // POST /api/availabilities — Créer une dispo/indispo/demande de congé
   app.post('/api/availabilities', authenticateToken, (req, res) => {
     try {
       const a = req.body;
@@ -378,20 +414,26 @@ export function setupAvailabilitiesRoutes(app, authenticateToken) {
         return res.status(400).json({ error: 'person_id, start_date et end_date sont requis' });
       }
 
-      // Vérifier que la personne existe
       const person = db.prepare('SELECT id FROM persons WHERE id = ?').get(a.person_id);
       if (!person) return res.status(404).json({ error: 'Personne non trouvée' });
 
+      // Si source = 'request' → statut 'pending', sinon 'approved' (admin direct)
+      const isRequest = a.source === 'request';
+      const status = isRequest ? 'pending' : 'approved';
+      const approvedBy = isRequest ? null : req.user.id;
+      const approvedAt = isRequest ? null : new Date().toISOString();
+
       const result = db.prepare(`
         INSERT INTO availabilities (person_id, start_date, end_date, start_period, end_period,
-          type, reason, source, is_recurring, recurrence_rule, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          type, reason, source, is_recurring, recurrence_rule, status, approved_by, approved_at, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         a.person_id, a.start_date, a.end_date,
         a.start_period || 'AM', a.end_period || 'PM',
         a.type || 'unavailable', a.reason || null,
         a.source || 'admin', a.is_recurring ? 1 : 0,
         a.recurrence_rule ? JSON.stringify(a.recurrence_rule) : null,
+        status, approvedBy, approvedAt,
         req.user.id,
       );
 
@@ -435,6 +477,81 @@ export function setupAvailabilitiesRoutes(app, authenticateToken) {
     }
   });
 
+  // POST /api/availabilities/:id/approve — Approuver une demande de congé (admin)
+  app.post('/api/availabilities/:id/approve', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (existing.status !== 'pending') {
+        return res.status(400).json({ error: 'Seules les demandes en attente peuvent être approuvées' });
+      }
+
+      db.prepare(`
+        UPDATE availabilities SET status = 'approved', approved_by = ?, approved_at = datetime('now')
+        WHERE id = ?
+      `).run(req.user.id, req.params.id);
+
+      // Mettre à jour le solde de congés si c'est un type suivi
+      const trackedTypes = ['conge_paye', 'rtt'];
+      if (trackedTypes.includes(existing.type)) {
+        const start = new Date(existing.start_date);
+        const end = new Date(existing.end_date);
+        const daysTaken = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+        const year = start.getFullYear();
+
+        // Upsert le solde
+        const balance = db.prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+          .get(existing.person_id, year, existing.type);
+        if (balance) {
+          db.prepare('UPDATE leave_balances SET days_taken = days_taken + ? WHERE id = ?')
+            .run(daysTaken, balance.id);
+        } else {
+          db.prepare('INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, ?)')
+            .run(existing.person_id, year, existing.type, existing.type === 'conge_paye' ? 25 : 10, daysTaken);
+        }
+      }
+
+      const updated = db.prepare(`
+        SELECT a.*, p.first_name, p.last_name, u.username AS approved_by_name
+        FROM availabilities a
+        JOIN persons p ON p.id = a.person_id
+        LEFT JOIN users u ON u.id = a.approved_by
+        WHERE a.id = ?
+      `).get(req.params.id);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/availabilities/:id/reject — Refuser une demande (admin)
+  app.post('/api/availabilities/:id/reject', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { reason } = req.body;
+      const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (existing.status !== 'pending') {
+        return res.status(400).json({ error: 'Seules les demandes en attente peuvent être refusées' });
+      }
+
+      db.prepare(`
+        UPDATE availabilities SET status = 'rejected', approved_by = ?, approved_at = datetime('now'), rejection_reason = ?
+        WHERE id = ?
+      `).run(req.user.id, reason || null, req.params.id);
+
+      const updated = db.prepare(`
+        SELECT a.*, p.first_name, p.last_name, u.username AS approved_by_name
+        FROM availabilities a
+        JOIN persons p ON p.id = a.person_id
+        LEFT JOIN users u ON u.id = a.approved_by
+        WHERE a.id = ?
+      `).get(req.params.id);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // DELETE /api/availabilities/:id — Supprimer une dispo
   app.delete('/api/availabilities/:id', authenticateToken, (req, res) => {
     try {
@@ -443,6 +560,57 @@ export function setupAvailabilitiesRoutes(app, authenticateToken) {
 
       db.prepare('DELETE FROM availabilities WHERE id = ?').run(req.params.id);
       res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ═══ SOLDES DE CONGÉS ═══
+
+  // GET /api/leave-balances — Soldes par personne (filtre: person_id, year)
+  app.get('/api/leave-balances', authenticateToken, (req, res) => {
+    try {
+      const { person_id, year } = req.query;
+      let sql = `SELECT lb.*, p.first_name, p.last_name
+                 FROM leave_balances lb
+                 JOIN persons p ON p.id = lb.person_id`;
+      const params = [];
+      const conditions = [];
+
+      if (person_id) { conditions.push('lb.person_id = ?'); params.push(person_id); }
+      if (year) { conditions.push('lb.year = ?'); params.push(year); }
+
+      if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
+      sql += ' ORDER BY lb.year DESC, lb.type';
+
+      res.json(db.prepare(sql).all(...params));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // PUT /api/leave-balances — Mettre à jour le solde (admin)
+  app.put('/api/leave-balances', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { person_id, year, type, days_entitled } = req.body;
+      if (!person_id || !year || !type) {
+        return res.status(400).json({ error: 'person_id, year et type sont requis' });
+      }
+
+      const existing = db.prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+        .get(person_id, year, type);
+
+      if (existing) {
+        db.prepare('UPDATE leave_balances SET days_entitled = ? WHERE id = ?')
+          .run(days_entitled, existing.id);
+      } else {
+        db.prepare('INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, 0)')
+          .run(person_id, year, type, days_entitled);
+      }
+
+      const updated = db.prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+        .get(person_id, year, type);
+      res.json(updated);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

@@ -14,6 +14,8 @@ import api from './utils/api';
 import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
 import logger, { dataLogger } from './utils/logger';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from './utils/notificationSound';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import './App.css';
 
 // Code splitting - Lazy loading des composants lourds
@@ -22,6 +24,11 @@ const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
 const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenanceModal'));
 const PersonnelPanel = lazy(() => import('./components/PersonnelPanel'));
 const AffairesPanel = lazy(() => import('./components/AffairesPanel'));
+const EquipmentPanel = lazy(() => import('./components/EquipmentPanel'));
+const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
+const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
+const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
+const HelpModal = lazy(() => import('./components/HelpModal'));
 
 // Fonction utilitaire pour formater une date en YYYY-MM-DD
 const formatDateToString = (date) => {
@@ -68,19 +75,6 @@ function App() {
     }
   }, [isMobile]);
   
-  // Si mobile, afficher uniquement MobileApp
-  if (isMobile) {
-    return (
-      <ErrorBoundary>
-        <MobileApp onSwitchToDesktop={() => {
-          sessionStorage.setItem('forceDesktop', 'true');
-          window.location.hash = '';
-          setIsMobile(false);
-        }} />
-      </ErrorBoundary>
-    );
-  }
-  
   const [view, setView] = useState('week'); // 'week', 'month', 'year'
   const [currentDate, setCurrentDate] = useState(new Date());
   const [vehicles, setVehicles] = useState([]);
@@ -89,11 +83,20 @@ function App() {
   const [drivers, setDrivers] = useState([]);
   const [locations, setLocations] = useState([]);
   const [users, setUsers] = useState([]);
+  const [persons, setPersons] = useState([]);
   const [calendarConfig, setCalendarConfig] = useState({ apiKey: '', calendarId: '' });
   const [showManagement, setShowManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeModule, setActiveModule] = useState('vehicles');
+  const [showEquipmentManagement, setShowEquipmentManagement] = useState(false);
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
+  const [navigateToPersonId, setNavigateToPersonId] = useState(null);
+  const [quickReservationSlot, setQuickReservationSlot] = useState(null);
+  const [quickAssignmentSlot, setQuickAssignmentSlot] = useState(null);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [showPreferences, setShowPreferences] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   // Filtres affaires (remonté ici pour le Header)
   const [affaireSearchTerm, setAffaireSearchTerm] = useState('');
   const [affaireFilterType, setAffaireFilterType] = useState('');
@@ -142,6 +145,67 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const openEventDetailsModalRef = useRef(null); // Référence à la fonction pour ouvrir EventDetailsModal
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showPwaInstall, setShowPwaInstall] = useState(false);
+  const prevUnreadRef = useRef(0); // Compteur précédent pour détecter les nouveaux messages
+  const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: true }); // Préférences notification
+  const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
+  const [msgToast, setMsgToast] = useState(null); // Toast notification in-app
+  const msgToastTimerRef = useRef(null);
+
+  // Raccourcis clavier globaux avec détection OS
+  useKeyboardShortcuts({
+    mod_vehicles: () => { setActiveModule('vehicles'); setShowManagement(false); setShowSettings(false); },
+    mod_personnel: () => { setActiveModule('personnel'); setShowManagement(false); setShowSettings(false); },
+    mod_affaires: () => { setActiveModule('affaires'); setShowManagement(false); setShowSettings(false); },
+    mod_equipment: () => { setActiveModule('equipment'); setShowManagement(false); setShowSettings(false); },
+    mod_orders: () => { setActiveModule('orders'); setShowManagement(false); setShowSettings(false); },
+    open_messaging: () => setShowMessaging(v => !v),
+    open_help: () => setShowHelp(v => !v),
+    open_preferences: () => setShowPreferences(true),
+    new_reservation: () => {
+      setActiveModule('vehicles');
+      setShowManagement(false);
+      setShowSettings(false);
+      setQuickReservationSlot({
+        vehicleId: null,
+        date: new Date().toISOString().slice(0, 10),
+        period: 'morning',
+        endDate: new Date().toISOString().slice(0, 10),
+        endPeriod: 'afternoon',
+      });
+    },
+    close_modal: () => {
+      // Fermer dans l'ordre de priorité (le plus récent d'abord)
+      if (showHelp) { setShowHelp(false); return; }
+      if (showPreferences) { setShowPreferences(false); return; }
+      if (showMessaging) { setShowMessaging(false); return; }
+      if (selectedVehicleForMaintenance) { setSelectedVehicleForMaintenance(null); setMaintenanceToEdit(null); setMaintenanceActionType(null); return; }
+      if (vehicleForDialog) { setVehicleForDialog(null); return; }
+      if (selectedVehicleForDetails) { setSelectedVehicleForDetails(null); return; }
+      if (showManagement) { setShowManagement(false); return; }
+      if (showSettings) { setShowSettings(false); return; }
+    },
+    nav_prev: () => {
+      if (activeModule !== 'vehicles') return;
+      const d = new Date(currentDate);
+      if (view === 'week') d.setDate(d.getDate() - 7);
+      else if (view === 'month') d.setMonth(d.getMonth() - 1);
+      else d.setFullYear(d.getFullYear() - 1);
+      setCurrentDate(d);
+    },
+    nav_next: () => {
+      if (activeModule !== 'vehicles') return;
+      const d = new Date(currentDate);
+      if (view === 'week') d.setDate(d.getDate() + 7);
+      else if (view === 'month') d.setMonth(d.getMonth() + 1);
+      else d.setFullYear(d.getFullYear() + 1);
+      setCurrentDate(d);
+    },
+    nav_today: () => {
+      if (activeModule === 'vehicles') setCurrentDate(new Date());
+    },
+  }, isAuthenticated && !isMobile);
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {
@@ -164,6 +228,32 @@ function App() {
     checkAuth();
   }, []);
 
+  // Enregistrement Service Worker + PWA install prompt
+  useEffect(() => {
+    // Enregistrer le Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+    // Capturer l'événement beforeinstallprompt
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowPwaInstall(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handlePwaInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowPwaInstall(false);
+    }
+    setDeferredPrompt(null);
+  };
+
   // Charger les données depuis l'API après authentification
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
@@ -182,7 +272,8 @@ function App() {
           garagesData,
           maintenancesData,
           configData,
-          usersData
+          usersData,
+          personsData
         ] = await Promise.all([
           api.getVehicles(),
           api.getReservations(),
@@ -192,7 +283,8 @@ function App() {
           api.getGarages(),
           api.getMaintenances(),
           api.getConfig('googleCalendar'),
-          api.getUsersNames()
+          api.getUsersNames(),
+          api.getPersons()
         ]);
 
         // Trier les véhicules par ordre
@@ -206,6 +298,7 @@ function App() {
         setGarages(garagesData);
         setMaintenances(maintenancesData);
         setUsers(usersData);
+        setPersons(personsData || []);
         
         // Parser la configuration du calendrier
         if (configData && configData.value) {
@@ -594,6 +687,21 @@ function App() {
       const result = await api.login(email, password);
       setIsAuthenticated(true);
       setCurrentUser(result.user);
+      // Appliquer les préférences utilisateur au login
+      try {
+        const prefs = await api.getPreferences();
+        if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
+        if (prefs.defaultView) setView(prefs.defaultView);
+        // Stocker les préférences de notification pour le polling
+        userPrefsRef.current = {
+          notificationsEnabled: prefs.notificationsEnabled !== false,
+          soundEnabled: prefs.soundEnabled !== false,
+        };
+        // Demander la permission navigateur si notifications activées
+        if (prefs.notificationsEnabled !== false) {
+          requestNotificationPermission();
+        }
+      } catch (e) { /* silencieux */ }
       return result;
     } catch (error) {
       throw error;
@@ -613,6 +721,94 @@ function App() {
     setMaintenances([]);
     // Ne pas effacer calendarConfig pour conserver la configuration Google Calendar
   };
+
+  // ═══ Navigation croisée entre modules ═══
+  const handleNavigateToEntity = useCallback((type, data) => {
+    if (type === 'vehicle') {
+      const v = vehicles.find(v => v.id === data.id);
+      if (v) {
+        setActiveModule('vehicles');
+        setShowManagement(false);
+        setShowSettings(false);
+        setSelectedVehicleForDetails(v);
+      }
+    } else if (type === 'person') {
+      setActiveModule('personnel');
+      setShowManagement(false);
+      setShowSettings(false);
+      setNavigateToPersonId(data.id);
+    } else if (type === 'reservation') {
+      setActiveModule('vehicles');
+      setShowManagement(false);
+      setShowSettings(false);
+      setReservationToEdit(data.id);
+    }
+  }, [vehicles]);
+
+  // Synchro ref showMessaging
+  useEffect(() => { showMessagingRef.current = showMessaging; }, [showMessaging]);
+
+  // Polling compteur de messages non lus + notifications
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Demander la permission notification dès que possible
+    requestNotificationPermission();
+
+    const fetchUnread = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        const newCount = data.unread || 0;
+        const prevCount = prevUnreadRef.current;
+
+        // Nouveau message détecté (compteur augmente, et pas le polling initial)
+        if (newCount > prevCount && prevCount !== -1) {
+          const prefs = userPrefsRef.current;
+          const diff = newCount - prevCount;
+
+          // Son de notification
+          if (prefs.soundEnabled) {
+            playNotificationSound();
+          }
+
+          // Toast notification in-app (sauf si notifications désactivées)
+          if (prefs.notificationsEnabled !== false && !showMessagingRef.current) {
+            if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
+            setMsgToast(`${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`);
+            msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
+          }
+
+          // Notification navigateur (si le panneau messagerie n'est pas ouvert)
+          if (prefs.notificationsEnabled && !showMessagingRef.current) {
+            showBrowserNotification(
+              `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
+              { body: 'Cliquez pour ouvrir la messagerie eM@g' }
+            );
+          }
+        }
+
+        prevUnreadRef.current = newCount;
+        setUnreadMsgCount(newCount);
+      } catch (e) { /* silencieux */ }
+    };
+    // Marquer -1 au premier appel pour ne pas notifier au chargement initial
+    prevUnreadRef.current = -1;
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  if (isMobile) {
+    return (
+      <ErrorBoundary>
+        <MobileApp onSwitchToDesktop={() => {
+          sessionStorage.setItem('forceDesktop', 'true');
+          window.location.hash = '';
+          setIsMobile(false);
+        }} />
+      </ErrorBoundary>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -677,7 +873,13 @@ function App() {
         setView={setView}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
-        onOpenManagement={() => setShowManagement(true)}
+        onOpenManagement={() => {
+          if (activeModule === 'equipment') {
+            setShowEquipmentManagement(true);
+          } else {
+            setShowManagement(true);
+          }
+        }}
         onOpenSettings={() => setShowSettings(true)}
         activeModule={activeModule}
         setActiveModule={setActiveModule}
@@ -714,9 +916,22 @@ function App() {
             setReservations(data);
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
         }}
+        onToggleMessaging={() => setShowMessaging(v => !v)}
+        unreadMsgCount={unreadMsgCount}
+        onOpenPreferences={() => setShowPreferences(true)}
+        onOpenHelp={() => setShowHelp(true)}
       />
+
+      {/* Bannière installation PWA */}
+      {showPwaInstall && (
+        <div className="pwa-install-banner">
+          <span>📱 Installer eM@g sur votre appareil pour un accès rapide</span>
+          <button className="pwa-install-btn" onClick={handlePwaInstall}>Installer</button>
+          <button className="pwa-dismiss-btn" onClick={() => setShowPwaInstall(false)}>✕</button>
+        </div>
+      )}
       
-      {activeModule !== 'affaires' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && (
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}
@@ -737,6 +952,48 @@ function App() {
             const data = await api.getReservations();
             setReservations(data);
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
+        }}
+        onNewReservation={() => {
+          setActiveModule('vehicles');
+          setShowManagement(false);
+          setShowSettings(false);
+          setQuickReservationSlot({
+            vehicleId: null,
+            date: new Date().toISOString().slice(0, 10),
+            period: 'morning',
+            endDate: new Date().toISOString().slice(0, 10),
+            endPeriod: 'afternoon',
+          });
+        }}
+        onNewAssignment={() => {
+          setActiveModule('personnel');
+          setShowManagement(false);
+          setShowSettings(false);
+          setQuickAssignmentSlot({
+            day: new Date().toISOString().slice(0, 10),
+            period: 'AM',
+          });
+        }}
+        onNewAffaire={async () => {
+          try {
+            const newAffaire = {
+              numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+              client: '',
+              interlocuteur: '',
+              tel: '',
+              type: 'Prestation',
+              dateDebut: format(new Date(), 'yyyy-MM-dd'),
+              dateFin: '',
+              adresseLivraison: '',
+              description: '',
+              devis: '',
+              source: 'db',
+            };
+            await api.createOrUpdateAffaire(newAffaire);
+            setActiveModule('affaires');
+          } catch (err) {
+            console.error('Erreur création affaire:', err);
+          }
         }}
       />
       )}
@@ -776,6 +1033,7 @@ function App() {
                 onDeleteReservation={deleteReservation}
                 clients={clients}
                 drivers={drivers}
+                persons={persons}
                 locations={locations}
                 users={users}
                 googleEvent={googleEventForReservation}
@@ -792,6 +1050,8 @@ function App() {
                 }}
                 onRequestViewEvent={(event) => openEventDetailsModalRef.current?.(event)}
                 currentUser={currentUser}
+                quickReservationSlot={quickReservationSlot}
+                onQuickReservationHandled={() => setQuickReservationSlot(null)}
               />
               <VehicleSlidePanel
                 vehicle={selectedVehicleForDetails}
@@ -827,6 +1087,10 @@ function App() {
             view={view}
             currentDate={currentDate}
             googleEvents={allGoogleEvents}
+            navigateToPersonId={navigateToPersonId}
+            onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
+            quickAssignmentSlot={quickAssignmentSlot}
+            onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
           />
         </Suspense>
       )}
@@ -845,6 +1109,35 @@ function App() {
             filterDateStart={affaireFilterDateStart}
             filterDateEnd={affaireFilterDateEnd}
             showArchived={affaireShowArchived}
+            onNavigateToEntity={handleNavigateToEntity}
+          />
+        </Suspense>
+      )}
+
+      {activeModule === 'equipment' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement du parc matériel...</p>
+          </div>
+        }>
+          <EquipmentPanel
+            currentUser={currentUser}
+            showManagement={showEquipmentManagement}
+            onCloseManagement={() => setShowEquipmentManagement(false)}
+          />
+        </Suspense>
+      )}
+
+      {activeModule === 'orders' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement des commandes...</p>
+          </div>
+        }>
+          <OrdersPanel
+            currentUser={currentUser}
           />
         </Suspense>
       )}
@@ -993,6 +1286,51 @@ function App() {
             onClose={() => setSelectedVehicleForKilometrageControl(null)}
           />
         </Suspense>
+      )}
+
+      {/* Messagerie interne */}
+      <Suspense fallback={null}>
+        <MessagingPanel
+          isOpen={showMessaging}
+          onClose={() => setShowMessaging(false)}
+          currentUser={currentUser}
+        />
+      </Suspense>
+
+      {/* Préférences utilisateur */}
+      <Suspense fallback={null}>
+        <UserPreferencesModal
+          isOpen={showPreferences}
+          onClose={() => setShowPreferences(false)}
+          onPreferencesChange={(prefs) => {
+            // Mettre à jour les préférences de notification en temps réel
+            userPrefsRef.current = {
+              notificationsEnabled: prefs.notificationsEnabled !== false,
+              soundEnabled: prefs.soundEnabled !== false,
+            };
+            // Demander la permission si notifications activées
+            if (prefs.notificationsEnabled !== false) {
+              requestNotificationPermission();
+            }
+          }}
+        />
+      </Suspense>
+
+      {/* Module d'aide */}
+      <Suspense fallback={null}>
+        <HelpModal
+          isOpen={showHelp}
+          onClose={() => setShowHelp(false)}
+        />
+      </Suspense>
+
+      {/* Toast notification messages */}
+      {msgToast && (
+        <div className="msg-toast" onClick={() => { setMsgToast(null); setShowMessaging(true); }}>
+          <span className="msg-toast-icon">💬</span>
+          <span className="msg-toast-text">{msgToast}</span>
+          <button className="msg-toast-close" onClick={(e) => { e.stopPropagation(); setMsgToast(null); }}>×</button>
+        </div>
       )}
     </div>
   );

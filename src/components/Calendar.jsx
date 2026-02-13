@@ -69,7 +69,7 @@ const ReservationTooltip = ({ block, currentUser, users = [] }) => {
   }
 
   return (
-    <div className="reservation-tooltip">
+    <div className="emag-tooltip">
       <div className="tooltip-row">
         <span className="tooltip-label">Type:</span>
         <span className="tooltip-value">{block.isMaintenance ? 'Intervention' : 'Réservation'}</span>
@@ -579,6 +579,7 @@ const Calendar = ({
   onDeleteReservation,
   clients,
   drivers,
+  persons = [],
   locations,
   users = [],
   onScroll,
@@ -593,6 +594,8 @@ const Calendar = ({
   onMaintenanceClick,
   onRequestViewEvent,
   currentUser,
+  quickReservationSlot,
+  onQuickReservationHandled,
 }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
@@ -616,6 +619,15 @@ const Calendar = ({
   const [calendarTripCache, setCalendarTripCache] = useState({}); // { [reservationId]: tripDetails[] }
   const [calendarGoogleMapsApiKey, setCalendarGoogleMapsApiKey] = useState('');
   const [calendarCompanyAddress, setCalendarCompanyAddress] = useState('');
+
+  // Réagir au quick-create de réservation depuis le Header
+  useEffect(() => {
+    if (quickReservationSlot) {
+      setSelectedSlot(quickReservationSlot);
+      setSelectedReservation(null);
+      if (onQuickReservationHandled) onQuickReservationHandled();
+    }
+  }, [quickReservationSlot, onQuickReservationHandled]);
 
   // Charger les configs Google Maps au montage (depuis IndexedDB comme ReservationModal)
   useEffect(() => {
@@ -777,12 +789,24 @@ const Calendar = ({
       .filter(r => !(r.isTournee || r.is_tournee) && (r.googleEventId || r.google_event_id) && r.id && !calendarTripCache[r.id])
       .map(r => r.id);
     const allIds = [...new Set([...tourneeIds, ...singleEventIds])];
-    allIds.forEach(id => {
-      fetch(`/api/trip-details/${id}`, { headers }).then(r => r.ok ? r.json() : []).then(data => {
-        const trips = Array.isArray(data) ? data : (data.tripDetails || []);
-        setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
-      }).catch(() => {});
-    });
+    // Charger par petits lots de 5 avec un délai pour éviter le rate limiting
+    const loadBatch = async (ids) => {
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batch = ids.slice(i, i + BATCH_SIZE);
+        await Promise.allSettled(batch.map(id =>
+          fetch(`/api/trip-details/${id}`, { headers })
+            .then(r => r.ok ? r.json() : [])
+            .then(data => {
+              const trips = Array.isArray(data) ? data : (data.tripDetails || []);
+              setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
+            })
+            .catch(() => {})
+        ));
+        if (i + BATCH_SIZE < ids.length) await new Promise(r => setTimeout(r, 100));
+      }
+    };
+    if (allIds.length > 0) loadBatch(allIds);
   }, [reservations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ouvrir le modal automatiquement quand une réservation doit être éditée depuis l'extérieur
@@ -1052,6 +1076,37 @@ const Calendar = ({
     return { magSceneVehicles, locationVehicles };
   }, [vehicles]);
 
+  // Compteur de disponibilité (véhicules non occupés aujourd'hui)
+  const availabilityCount = useMemo(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const isOccupied = (vehicleId) => {
+      // Vérifier s'il y a une réservation active aujourd'hui
+      const hasReservation = reservations.some(r => {
+        if (r.vehicleId !== vehicleId) return false;
+        const start = r.startDate?.slice(0, 10) || '';
+        const end = r.endDate?.slice(0, 10) || start;
+        return start <= today && today <= end;
+      });
+      // Vérifier s'il y a une maintenance active aujourd'hui
+      const hasMaintenance = maintenances.some(m => {
+        if (m.vehicleId !== vehicleId) return false;
+        if (m.status === 'completed') return false;
+        const start = m.startDate?.slice(0, 10) || m.date?.slice(0, 10) || '';
+        const end = m.endDate?.slice(0, 10) || start;
+        return start <= today && today <= end;
+      });
+      return hasReservation || hasMaintenance;
+    };
+    const magSceneAvail = vehicleGroups.magSceneVehicles.filter(v => !isOccupied(v.id)).length;
+    const locationAvail = vehicleGroups.locationVehicles.filter(v => !isOccupied(v.id)).length;
+    return {
+      magScene: { available: magSceneAvail, total: vehicleGroups.magSceneVehicles.length },
+      location: { available: locationAvail, total: vehicleGroups.locationVehicles.length },
+      allAvailable: magSceneAvail,
+      allTotal: vehicleGroups.magSceneVehicles.length,
+    };
+  }, [vehicleGroups, reservations, maintenances]);
+
   const days = useMemo(() => {
     if (view === 'week') {
       return eachDayOfInterval({
@@ -1145,15 +1200,15 @@ const Calendar = ({
 
   const handleSlotMouseEnter = (vehicle, date, period) => {
     // Activer le drag-to-move si pending et la souris a bougé sur un slot différent
-    if (pendingBlockDragRef.current && pendingBlockDragRef.current.vehicle.id === vehicle.id) {
+    if (pendingBlockDragRef.current) {
       const p = pendingBlockDragRef.current;
-      const isSameSlot = isSameDay(p.startDay, date) && p.startPeriod === period;
+      const isSameSlot = isSameDay(p.startDay, date) && p.startPeriod === period && p.vehicle.id === vehicle.id;
       if (!isSameSlot) {
         const block = p.block;
         const startDate = new Date(block.date); startDate.setHours(0, 0, 0, 0);
         const endDate = new Date(block.endDate || block.date); endDate.setHours(0, 0, 0, 0);
         setBlockDragState({
-          block, vehicle,
+          block, vehicle: p.vehicle, targetVehicle: vehicle,
           anchorDay: p.startDay, anchorPeriod: p.startPeriod,
           originalStart: { date: startDate, period: block.period },
           originalEnd: { date: endDate, period: block.endPeriod || block.period },
@@ -1174,7 +1229,7 @@ const Calendar = ({
         };
         const newStart = tsToDP(origStartTs + delta);
         const newEnd = tsToDP(origEndTs + delta);
-        setBlockDragState(prev => ({ ...prev, currentStart: newStart, currentEnd: newEnd }));
+        setBlockDragState(prev => ({ ...prev, targetVehicle: vehicle, currentStart: newStart, currentEnd: newEnd }));
         setBlockDragPreview({
           vehicleId: vehicle.id,
           startDate: newStart.date, startPeriod: newStart.period,
@@ -1183,8 +1238,8 @@ const Calendar = ({
         return;
       }
     }
-    // Drag-to-move en cours
-    if (blockDragState && blockDragState.vehicle.id === vehicle.id) {
+    // Drag-to-move en cours (accepte le déplacement vers un autre véhicule)
+    if (blockDragState) {
       handleBlockDragMove(vehicle, date, period);
       return;
     }
@@ -1429,7 +1484,7 @@ const Calendar = ({
   };
 
   const handleBlockDragMove = (vehicle, day, period) => {
-    if (!blockDragState || blockDragState.vehicle.id !== vehicle.id) return;
+    if (!blockDragState) return;
     
     const normalizedDay = new Date(day);
     normalizedDay.setHours(0, 0, 0, 0);
@@ -1454,10 +1509,22 @@ const Calendar = ({
     const newStart = tsToDatePeriod(newStartTs);
     const newEnd = tsToDatePeriod(newEndTs);
     
+    // Vérifier les conflits avec les réservations du véhicule cible
+    const targetVehicleId = vehicle.id;
+    const hasConflict = targetVehicleId !== blockDragState.vehicle.id && reservations.some(r => {
+      if (r.id === blockDragState.block.id) return false;
+      if (r.vehicleId !== targetVehicleId) return false;
+      const rStartTs = getPeriodTimestamp(new Date(r.date || r.startDate), r.period || r.startPeriod || 'AM');
+      const rEndTs = getPeriodTimestamp(new Date(r.endDate || r.date || r.startDate), r.endPeriod || r.period || 'PM');
+      return newStartTs <= rEndTs && newEndTs >= rStartTs;
+    });
+    
     setBlockDragState(prev => ({
       ...prev,
+      targetVehicle: vehicle,
       currentStart: newStart,
       currentEnd: newEnd,
+      hasConflict,
     }));
     
     setBlockDragPreview({
@@ -1466,18 +1533,20 @@ const Calendar = ({
       startPeriod: newStart.period,
       endDate: newEnd.date,
       endPeriod: newEnd.period,
+      hasConflict,
     });
   };
 
   const handleBlockDragEnd = () => {
     if (!blockDragState) return;
     
-    const { block, currentStart, currentEnd, originalStart, originalEnd } = blockDragState;
+    const { block, vehicle, targetVehicle, currentStart, currentEnd, originalStart, originalEnd, hasConflict } = blockDragState;
     
     // Vérifier si la position a changé
     const hasMoved = !isSameDay(originalStart.date, currentStart.date) || originalStart.period !== currentStart.period;
+    const hasChangedVehicle = targetVehicle && targetVehicle.id !== vehicle.id;
     
-    if (hasMoved) {
+    if ((hasMoved || hasChangedVehicle) && !hasConflict) {
       const existing = reservations.find(r => r.id === block.id);
       if (existing) {
         const updatedReservation = {
@@ -1486,6 +1555,7 @@ const Calendar = ({
           period: currentStart.period,
           endDate: formatLocalDate(currentEnd.date),
           endPeriod: currentEnd.period,
+          ...(hasChangedVehicle ? { vehicleId: targetVehicle.id } : {}),
         };
         onUpdateReservation(existing.id, updatedReservation);
       }
@@ -1746,6 +1816,9 @@ const Calendar = ({
         <div className="calendar-headers-row">
           <div className="vehicle-column-header">
             <span>Véhicules Mag Scène</span>
+            <span className="vehicle-availability-badge" title="Véhicules disponibles aujourd'hui (hors locations)">
+              {availabilityCount.magScene.available}/{availabilityCount.magScene.total}
+            </span>
             <button 
               className="section-toggle-button" 
               onClick={() => setCollapsedSections(prev => ({ ...prev, magScene: !prev.magScene }))}
@@ -1911,6 +1984,9 @@ const Calendar = ({
                   className="vehicle-section-header"
                 >
                   <span>Véhicules de location</span>
+                  <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
+                    {availabilityCount.location.available}/{availabilityCount.location.total}
+                  </span>
                   <button 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
@@ -2213,7 +2289,7 @@ const Calendar = ({
                   return (
                     <div
                       key={`${vehicle.id}-${slotIndex}`}
-                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? 'block-drag-preview' : ''}`}
+                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? `block-drag-preview${blockDragPreview?.hasConflict ? ' drag-conflict' : ''}` : ''}`}
                       onMouseDown={(e) => !resizeState && handleSlotMouseDown(vehicle, slot.day, slot.period, e)}
                       onMouseEnter={() => !resizeState && handleSlotMouseEnter(vehicle, slot.day, slot.period)}
                       onMouseUp={handleSlotMouseUp}
@@ -2233,6 +2309,9 @@ const Calendar = ({
                   style={{ gridColumn: '1 / -1' }}
                 >
                   <span>Véhicules de location</span>
+                  <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
+                    {availabilityCount.location.available}/{availabilityCount.location.total}
+                  </span>
                   <button 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
@@ -2479,7 +2558,7 @@ const Calendar = ({
                   return (
                     <div
                       key={`${vehicle.id}-${slotIndex}`}
-                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? 'block-drag-preview' : ''}`}
+                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? `block-drag-preview${blockDragPreview?.hasConflict ? ' drag-conflict' : ''}` : ''}`}
                       onMouseDown={(e) => !resizeState && handleSlotMouseDown(vehicle, slot.day, slot.period, e)}
                       onMouseEnter={() => !resizeState && handleSlotMouseEnter(vehicle, slot.day, slot.period)}
                       onMouseUp={handleSlotMouseUp}
@@ -2505,6 +2584,7 @@ const Calendar = ({
           vehicles={vehicles}
           clients={clients}
           drivers={drivers}
+          persons={persons}
           locations={locations}
           onSave={handleSaveReservation}
           onDelete={handleDeleteReservation}
@@ -2524,6 +2604,7 @@ const Calendar = ({
           onSave={handleSaveTripFromCalendar}
           onClose={() => setCalendarTripModal(null)}
           drivers={drivers}
+          persons={persons}
           vehicle={calendarTripModal.vehicle}
           nextEvent={null}
           googleMapsApiKey={calendarGoogleMapsApiKey}
@@ -2539,6 +2620,7 @@ const Calendar = ({
           onSave={handleSaveTripFromCalendar}
           onClose={() => setCalendarTripModal(null)}
           drivers={drivers}
+          persons={persons}
           vehicle={calendarTripModal.vehicle}
           nextEvent={calendarTripModal.combinedEvents.length > 1 ? calendarTripModal.combinedEvents[1].event : null}
           googleMapsApiKey={calendarGoogleMapsApiKey}
@@ -2551,7 +2633,7 @@ const Calendar = ({
       {/* Tooltip global */}
       {tooltipState.visible && tooltipState.block && (
         <div
-          className="reservation-tooltip"
+          className="emag-tooltip"
           style={{
             left: `${tooltipState.x}px`,
             top: `${tooltipState.y}px`,

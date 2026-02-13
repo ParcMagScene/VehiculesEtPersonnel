@@ -92,6 +92,19 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     }
   };
 
+  const handleTogglePermission = async (userId, permissionKey, currentPermissions) => {
+    const perms = currentPermissions || {};
+    const newValue = !perms[permissionKey];
+    const updatedPerms = { ...perms, [permissionKey]: newValue };
+    
+    try {
+      await api.updateUser(userId, { permissions: updatedPerms });
+      loadData();
+    } catch (error) {
+      alert(`Erreur: ${error.message}`);
+    }
+  };
+
   const handleDeleteUser = async (userId) => {
     if (!confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.')) return;
 
@@ -206,6 +219,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                   <th>Nom</th>
                   <th>Email</th>
                   <th>Droits</th>
+                  <th>Permissions</th>
                   <th style={{ width: '80px' }}>Actions</th>
                   <th style={{ width: '100px' }}>Personnel</th>
                 </tr>
@@ -235,6 +249,23 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           )}
                         </span>
                       </label>
+                    </td>
+                    <td>
+                      {!user.isAdmin && (
+                        <label className="permission-checkbox" title="Autoriser la gestion des maintenances">
+                          <input
+                            type="checkbox"
+                            checked={user.permissions?.can_manage_maintenance || false}
+                            onChange={() => handleTogglePermission(user.id, 'can_manage_maintenance', user.permissions)}
+                          />
+                          <span className="checkbox-label">
+                            🔧 Maintenance
+                          </span>
+                        </label>
+                      )}
+                      {user.isAdmin && (
+                        <span className="all-permissions-label">Tous les droits</span>
+                      )}
                     </td>
                     <td>
                       <div className="action-buttons">
@@ -568,11 +599,15 @@ export default UserManagement;
 const PERSON_TYPES = [
   { value: 'permanent', label: 'Permanent', icon: '🏢' },
   { value: 'contractuel', label: 'Contractuel', icon: '📋' },
+  { value: 'stagiaire', label: 'Stagiaire', icon: '🎓' },
 ];
 
 const CONTRACT_TYPES = [
   { value: 'intermittent', label: 'Intermittent du spectacle' },
+  { value: 'CDD', label: 'CDD' },
   { value: 'freelance', label: 'Freelance' },
+  { value: 'prestataire', label: 'Prestataire' },
+  { value: 'auto-entrepreneur', label: 'Auto-entrepreneur' },
   { value: 'entreprise', label: 'Entreprise / Prestataire' },
 ];
 

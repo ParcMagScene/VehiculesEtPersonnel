@@ -44,7 +44,7 @@
   background: #f9fafb;
   padding: 1rem;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--theme-primary);
 }
 
 .access-request-modal .form-group {
@@ -77,7 +77,7 @@
 
 .access-request-modal .form-group input:focus {
   outline: none;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 

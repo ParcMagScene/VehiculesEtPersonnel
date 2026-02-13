@@ -101,6 +101,7 @@ function App() {
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
   const [navigateToPersonId, setNavigateToPersonId] = useState(null);
   const [quickReservationSlot, setQuickReservationSlot] = useState(null);
+  const [quickAssignmentSlot, setQuickAssignmentSlot] = useState(null);
   const [showMessaging, setShowMessaging] = useState(false);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [showPreferences, setShowPreferences] = useState(false);
@@ -852,24 +853,26 @@ function App() {
             setReservations(data);
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
         }}
-        onQuickCreateEvent={() => {
-          // Ouvrir EventDetailsModal en mode création via GoogleCalendarBanner
-          if (activeModule === 'affaires') setActiveModule('vehicles');
-          openEventDetailsModalRef.current?.(null);
-        }}
-        onQuickCreateReservation={() => {
-          // Basculer vers le module Parc et ouvrir une nouvelle réservation
-          setActiveModule('vehicles');
-          setShowManagement(false);
-          setShowSettings(false);
-          // Créer un slot "vide" pour aujourd'hui
-          setQuickReservationSlot({
-            vehicleId: null,
-            date: new Date().toISOString().slice(0, 10),
-            period: 'morning',
-            endDate: new Date().toISOString().slice(0, 10),
-            endPeriod: 'afternoon',
-          });
+        onNewAffaire={async () => {
+          try {
+            const newAffaire = {
+              numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+              client: '',
+              interlocuteur: '',
+              tel: '',
+              type: 'Prestation',
+              dateDebut: format(new Date(), 'yyyy-MM-dd'),
+              dateFin: '',
+              adresseLivraison: '',
+              description: '',
+              devis: '',
+              source: 'db',
+            };
+            await api.createOrUpdateAffaire(newAffaire);
+            setActiveModule('affaires');
+          } catch (err) {
+            console.error('Erreur création affaire:', err);
+          }
         }}
         onToggleMessaging={() => setShowMessaging(v => !v)}
         unreadMsgCount={unreadMsgCount}
@@ -907,6 +910,27 @@ function App() {
             const data = await api.getReservations();
             setReservations(data);
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
+        }}
+        onNewReservation={() => {
+          setActiveModule('vehicles');
+          setShowManagement(false);
+          setShowSettings(false);
+          setQuickReservationSlot({
+            vehicleId: null,
+            date: new Date().toISOString().slice(0, 10),
+            period: 'morning',
+            endDate: new Date().toISOString().slice(0, 10),
+            endPeriod: 'afternoon',
+          });
+        }}
+        onNewAssignment={() => {
+          setActiveModule('personnel');
+          setShowManagement(false);
+          setShowSettings(false);
+          setQuickAssignmentSlot({
+            day: new Date().toISOString().slice(0, 10),
+            period: 'AM',
+          });
         }}
       />
       )}
@@ -1002,6 +1026,8 @@ function App() {
             googleEvents={allGoogleEvents}
             navigateToPersonId={navigateToPersonId}
             onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
+            quickAssignmentSlot={quickAssignmentSlot}
+            onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
           />
         </Suspense>
       )}

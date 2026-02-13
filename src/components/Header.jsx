@@ -413,7 +413,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       <div className="header-content">
         <div className="header-title-container">
           <div className="header-logo-area">
-            <img src="/Logos/LogoMagSav.svg" alt="Mag Scène" className="header-logo" />
+            <img src="/Logos/LogoEmag.png" alt="eM@g Scene" className="header-logo" />
             <button className="help-trigger-btn" onClick={onOpenHelp} title="Aide" aria-label="Aide">
               <HelpCircle size={16} />
             </button>

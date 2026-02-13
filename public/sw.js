@@ -1,9 +1,9 @@
 // Service Worker eM@g — Cache stratégique
-const CACHE_NAME = 'emag-cache-v1';
+const CACHE_NAME = 'emag-cache-v2';
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',
-  '/Logos/LogoMagSav.svg',
+  '/Logos/LogoEmag.png',
 ];
 
 // Installation : pré-cache des ressources essentielles

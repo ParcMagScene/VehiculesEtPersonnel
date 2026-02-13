@@ -125,6 +125,27 @@
   flex-shrink: 0;
 }
 
+/* Badge compteur disponibilité véhicules */
+.vehicle-availability-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+  flex-shrink: 0;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.vehicle-availability-badge.location {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* En-têtes de section véhicules */
 .vehicle-section-header {
   background: var(--theme-gradient);

@@ -1076,6 +1076,37 @@ const Calendar = ({
     return { magSceneVehicles, locationVehicles };
   }, [vehicles]);
 
+  // Compteur de disponibilité (véhicules non occupés aujourd'hui)
+  const availabilityCount = useMemo(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const isOccupied = (vehicleId) => {
+      // Vérifier s'il y a une réservation active aujourd'hui
+      const hasReservation = reservations.some(r => {
+        if (r.vehicleId !== vehicleId) return false;
+        const start = r.startDate?.slice(0, 10) || '';
+        const end = r.endDate?.slice(0, 10) || start;
+        return start <= today && today <= end;
+      });
+      // Vérifier s'il y a une maintenance active aujourd'hui
+      const hasMaintenance = maintenances.some(m => {
+        if (m.vehicleId !== vehicleId) return false;
+        if (m.status === 'completed') return false;
+        const start = m.startDate?.slice(0, 10) || m.date?.slice(0, 10) || '';
+        const end = m.endDate?.slice(0, 10) || start;
+        return start <= today && today <= end;
+      });
+      return hasReservation || hasMaintenance;
+    };
+    const magSceneAvail = vehicleGroups.magSceneVehicles.filter(v => !isOccupied(v.id)).length;
+    const locationAvail = vehicleGroups.locationVehicles.filter(v => !isOccupied(v.id)).length;
+    return {
+      magScene: { available: magSceneAvail, total: vehicleGroups.magSceneVehicles.length },
+      location: { available: locationAvail, total: vehicleGroups.locationVehicles.length },
+      allAvailable: magSceneAvail,
+      allTotal: vehicleGroups.magSceneVehicles.length,
+    };
+  }, [vehicleGroups, reservations, maintenances]);
+
   const days = useMemo(() => {
     if (view === 'week') {
       return eachDayOfInterval({
@@ -1785,6 +1816,9 @@ const Calendar = ({
         <div className="calendar-headers-row">
           <div className="vehicle-column-header">
             <span>Véhicules Mag Scène</span>
+            <span className="vehicle-availability-badge" title="Véhicules disponibles aujourd'hui (hors locations)">
+              {availabilityCount.magScene.available}/{availabilityCount.magScene.total}
+            </span>
             <button 
               className="section-toggle-button" 
               onClick={() => setCollapsedSections(prev => ({ ...prev, magScene: !prev.magScene }))}
@@ -1950,6 +1984,9 @@ const Calendar = ({
                   className="vehicle-section-header"
                 >
                   <span>Véhicules de location</span>
+                  <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
+                    {availabilityCount.location.available}/{availabilityCount.location.total}
+                  </span>
                   <button 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
@@ -2272,6 +2309,9 @@ const Calendar = ({
                   style={{ gridColumn: '1 / -1' }}
                 >
                   <span>Véhicules de location</span>
+                  <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
+                    {availabilityCount.location.available}/{availabilityCount.location.total}
+                  </span>
                   <button 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}

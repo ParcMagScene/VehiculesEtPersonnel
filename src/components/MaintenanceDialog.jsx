@@ -12,12 +12,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   // Trouver la maintenance à éditer dès le départ
   const maintenanceToEditData = maintenanceToEdit ? maintenances.find(m => m.id === maintenanceToEdit) : null;
   
-  // Vérifier les droits - les non-admins ne peuvent que signaler des pannes
+  // Vérifier les droits - admin ou utilisateur avec permission maintenance
   const isAdmin = currentUser?.isAdmin === true;
-  // Mode consultation : non-admin qui ouvre une intervention existante
-  const isViewMode = !isAdmin && !!maintenanceToEditData;
-  const canSchedule = isAdmin;
-  const canOnlyReport = !isAdmin && !isViewMode;
+  const canManageMaintenance = isAdmin || currentUser?.permissions?.can_manage_maintenance === true;
+  // Mode consultation : utilisateur sans droit maintenance qui ouvre une intervention existante
+  const isViewMode = !canManageMaintenance && !!maintenanceToEditData;
+  const canSchedule = canManageMaintenance;
+  const canOnlyReport = !canManageMaintenance && !isViewMode;
   
   // Déterminer le statut et le mode initial en fonction de actionType ET des droits
   const getInitialStatus = () => {
@@ -825,7 +826,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               </div>
 
               {/* Formulaire motif d'annulation (affiché au-dessus des boutons) */}
-              {editingId && isAdmin && showCancelForm && formData.status !== 'cancelled' && (
+              {editingId && canManageMaintenance && showCancelForm && formData.status !== 'cancelled' && (
                 <div className="status-reason-field" style={{ marginBottom: '12px' }}>
                   <label>❌ Motif d'annulation :</label>
                   <textarea
@@ -1003,7 +1004,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                             >
                               ✏️
                             </button>
-                            {isAdmin && (
+                            {canManageMaintenance && (
                               <button
                                 className="delete-maintenance-button"
                                 onClick={() => deleteMaintenance(maintenance.id)}
@@ -1066,7 +1067,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
             ) : editingId ? (
               <>
                 <div className="form-actions-left">
-                  {isAdmin && (
+                  {canManageMaintenance && (
                     <button 
                       type="button" 
                       className="delete-button"
@@ -1075,7 +1076,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       🗑️ Supprimer
                     </button>
                   )}
-                  {isAdmin && formData.status !== 'cancelled' && !showCancelForm && (
+                  {canManageMaintenance && formData.status !== 'cancelled' && !showCancelForm && (
                     <button
                       type="button"
                       className="cancel-intervention-button"
@@ -1084,7 +1085,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       ❌ Annuler l'intervention
                     </button>
                   )}
-                  {isAdmin && formData.status === 'cancelled' && (
+                  {canManageMaintenance && formData.status === 'cancelled' && (
                     <button
                       type="button"
                       className="reschedule-button"
@@ -1098,7 +1099,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                   )}
                 </div>
                 <div className="form-actions-right">
-                  {isAdmin && formData.status !== 'cancelled' && (
+                  {canManageMaintenance && formData.status !== 'cancelled' && (
                     <button 
                       type="button" 
                       className="reschedule-button"

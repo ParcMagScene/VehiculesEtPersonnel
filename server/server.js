@@ -121,12 +121,29 @@ function authenticateToken(req, res, next) {
 
 // Middleware pour vérifier les droits admin (vérifie en DB pour être sûr)
 function requireAdmin(req, res, next) {
-  const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT is_admin, permissions FROM users WHERE id = ?').get(req.user.id);
   if (!user || !user.is_admin) {
     return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
   }
   req.user.isAdmin = true;
+  try { req.user.permissions = user.permissions ? JSON.parse(user.permissions) : {}; } catch { req.user.permissions = {}; }
   next();
+}
+
+// Middleware pour vérifier les droits maintenance (admin OU permission spécifique)
+function requireMaintenanceAccess(req, res, next) {
+  const user = db.prepare('SELECT is_admin, permissions FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
+  let perms = {};
+  try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
+  if (user.is_admin || perms.can_manage_maintenance) {
+    req.user.isAdmin = !!user.is_admin;
+    req.user.canManageMaintenance = true;
+    req.user.permissions = perms;
+    next();
+  } else {
+    return res.status(403).json({ error: 'Accès réservé — permission maintenance requise' });
+  }
 }
 
 // Helper : valider qu'un chemin ne sort pas du répertoire autorisé (anti path-traversal)
@@ -263,7 +280,7 @@ app.post('/api/auth/login', async (req, res) => {
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
     
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -296,9 +313,13 @@ app.post('/api/auth/force-login', async (req, res) => {
     const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
     deleteSessionsStmt.run(user.id);
     
+    // Parser les permissions
+    let forcePerms = {};
+    try { forcePerms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { forcePerms = {}; }
+
     // Créer un nouveau token
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, permissions: forcePerms },
       JWT_SECRET,
       { expiresIn: `${JWT_EXPIRY_DAYS}d` }
     );
@@ -314,7 +335,7 @@ app.post('/api/auth/force-login', async (req, res) => {
     
     res.json({ 
       token, 
-      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null },
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: forcePerms },
       message: 'Toutes les autres sessions ont été fermées'
     });
   } catch (error) {
@@ -944,8 +965,18 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
   try {
     const maintenance = req.body;
     
-    // VALIDATION : Les non-admins ne peuvent créer que des signalements (status='reported')
-    if (!req.user.is_admin && maintenance.status !== 'reported') {
+    // Vérifier permissions (admin, ou can_manage_maintenance, sinon signalement only)
+    let canFullAccess = req.user.isAdmin;
+    if (!canFullAccess) {
+      const userDb = db.prepare('SELECT permissions FROM users WHERE id = ?').get(req.user.id);
+      try {
+        const perms = userDb?.permissions ? JSON.parse(userDb.permissions) : {};
+        canFullAccess = !!perms.can_manage_maintenance;
+      } catch { /* ignore */ }
+    }
+    
+    // Les utilisateurs sans permission ne peuvent créer que des signalements
+    if (!canFullAccess && maintenance.status !== 'reported') {
       return res.status(403).json({ 
         error: 'Accès refusé',
         message: 'Vous ne pouvez que signaler des pannes. Pour programmer une intervention, contactez un administrateur.'
@@ -1020,15 +1051,25 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
   try {
     const maintenance = req.body;
     
-    // VALIDATION : Les non-admins ne peuvent que modifier leurs propres signalements
-    if (!req.user.is_admin) {
+    // Vérifier permissions
+    let canFullAccess = req.user.isAdmin;
+    if (!canFullAccess) {
+      const userDb = db.prepare('SELECT permissions FROM users WHERE id = ?').get(req.user.id);
+      try {
+        const perms = userDb?.permissions ? JSON.parse(userDb.permissions) : {};
+        canFullAccess = !!perms.can_manage_maintenance;
+      } catch { /* ignore */ }
+    }
+    
+    // Utilisateurs avec permission maintenance = accès complet, sinon restrictions
+    if (!canFullAccess) {
       const existing = db.prepare('SELECT created_by, status FROM maintenances WHERE id = ?').get(req.params.id);
       
       if (!existing) {
         return res.status(404).json({ error: 'Maintenance introuvable' });
       }
       
-      // Les non-admins peuvent uniquement modifier leurs propres signalements
+      // Les non-autorisés peuvent uniquement modifier leurs propres signalements
       if (existing.created_by !== req.user.id) {
         return res.status(403).json({ 
           error: 'Accès refusé',
@@ -1036,7 +1077,7 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
         });
       }
       
-      // Empêcher le changement de statut pour les non-admins
+      // Empêcher le changement de statut pour les non-autorisés
       if (maintenance.status !== existing.status) {
         return res.status(403).json({ 
           error: 'Accès refusé',
@@ -1167,7 +1208,7 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
   }
 });
 
-app.delete('/api/maintenances/:id', authenticateToken, requireAdmin, (req, res) => {
+app.delete('/api/maintenances/:id', authenticateToken, requireMaintenanceAccess, (req, res) => {
   try {
     const stmt = db.prepare('DELETE FROM maintenances WHERE id = ?');
     stmt.run(req.params.id);
@@ -1593,12 +1634,17 @@ app.get('/api/users/names', authenticateToken, (req, res) => {
 // Récupérer tous les utilisateurs (admin uniquement)
 app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, email, name, is_admin, avatar, created_at FROM users ORDER BY created_at DESC');
+    const stmt = db.prepare('SELECT id, email, name, is_admin, avatar, permissions, created_at FROM users ORDER BY created_at DESC');
     const users = stmt.all();
-    res.json(users.map(u => ({
-      ...u,
-      isAdmin: u.is_admin === 1
-    })));
+    res.json(users.map(u => {
+      let perms = {};
+      try { perms = u.permissions ? JSON.parse(u.permissions) : {}; } catch { perms = {}; }
+      return {
+        ...u,
+        isAdmin: u.is_admin === 1,
+        permissions: perms,
+      };
+    }));
   } catch (error) {
     console.error('Erreur récupération utilisateurs:', error);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -1609,7 +1655,7 @@ app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
 app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { isAdmin, newPassword } = req.body;
+    const { isAdmin, newPassword, permissions } = req.body;
     
     if (isAdmin !== undefined) {
       const stmt = db.prepare('UPDATE users SET is_admin = ? WHERE id = ?');
@@ -1619,6 +1665,14 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
       const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
       const result = deleteSessionsStmt.run(id);
       console.log(`🔄 Statut admin modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
+    }
+
+    if (permissions !== undefined) {
+      const permStr = typeof permissions === 'string' ? permissions : JSON.stringify(permissions);
+      db.prepare('UPDATE users SET permissions = ? WHERE id = ?').run(permStr, id);
+      // Invalider les sessions pour forcer un re-login avec les nouvelles permissions
+      db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(id);
+      console.log(`🔐 Permissions modifiées pour user ${id}`);
     }
     
     if (newPassword) {

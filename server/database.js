@@ -792,6 +792,11 @@ function initializeDatabase() {
       db.prepare("ALTER TABLE users ADD COLUMN preferences TEXT DEFAULT '{}'").run();
       console.log('✅ Colonne preferences ajoutée à users');
     }
+    const hasPermissions = userColumns.some(col => col.name === 'permissions');
+    if (!hasPermissions) {
+      db.prepare("ALTER TABLE users ADD COLUMN permissions TEXT DEFAULT '{}'").run();
+      console.log('✅ Colonne permissions ajoutée à users');
+    }
   } catch (error) {
     console.log('Info: Colonnes avatar/preferences déjà présentes');
   }

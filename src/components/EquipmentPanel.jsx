@@ -52,8 +52,14 @@ const SAV_TYPES = {
   calibrage: 'Calibrage',
 };
 
-// URL de base pour les QR codes (détecte auto prod vs dev)
-const APP_BASE_URL = window.location.origin;
+// URL de base pour les QR codes — toujours utiliser l'URL production accessible depuis un mobile
+const APP_BASE_URL = (() => {
+  const origin = window.location.origin;
+  // Si on est sur le domaine de production, utiliser directement
+  if (origin.includes('magsav.duckdns.org')) return origin;
+  // Sinon (dev/localhost), pointer vers l'URL de production pour que les QR soient scannables
+  return 'http://magsav.duckdns.org:4173';
+})();
 
 // ═══ UTILITAIRES PHOTOS / LOGOS ═══
 const normalizeStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');

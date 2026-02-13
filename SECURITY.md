@@ -261,5 +261,5 @@ Pour toute question concernant la sécurité:
 
 ---
 
-**Dernière mise à jour:** 8 février 2026  
+**Dernière mise à jour:** 13 février 2026  
 **Prochaine révision:** Mensuelle

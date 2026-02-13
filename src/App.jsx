@@ -713,8 +713,8 @@ function App() {
             playNotificationSound();
           }
 
-          // Toast notification in-app (toujours visible)
-          if (!showMessagingRef.current) {
+          // Toast notification in-app (sauf si notifications désactivées)
+          if (prefs.notificationsEnabled !== false && !showMessagingRef.current) {
             if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
             setMsgToast(`${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`);
             msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);

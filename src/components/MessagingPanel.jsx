@@ -1,11 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, MessageSquare, Send, Paperclip, ArrowLeft, Plus, File, Image, Download, Users } from 'lucide-react';
+import { X, MessageSquare, Send, Paperclip, ArrowLeft, Plus, File, Image, Download, Users, Smile } from 'lucide-react';
 import api, { getApiUrl } from '../utils/api';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './MessagingPanel.css';
 
 const API_BASE_URL = getApiUrl();
+
+// Emojis par catégorie pour le picker rapide
+const EMOJI_CATEGORIES = [
+  { name: '🎵 Musique & Rock', emojis: ['🎸', '🎵', '🎶', '🎤', '🥁', '🎹', '🎷', '🎺', '🤘', '🔊', '🎼', '🎧', '🎻', '🪗', '🎙️', '🔉', '📻', '🪘', '🎚️', '🪇'] },
+  { name: '😊 Smileys', emojis: ['😀', '😂', '🤣', '😊', '😎', '🤩', '😍', '🥳', '😅', '🤔', '😉', '👍', '👏', '🙌', '💪', '🤝', '❤️', '🔥', '✨', '⭐'] },
+  { name: '🏗️ Travail', emojis: ['🚛', '🚜', '🏗️', '🔧', '🔨', '⚙️', '🛠️', '📋', '📦', '📐', '🪛', '🔩', '💡', '✅', '❌', '⚠️', '📌', '🗓️', '📞', '💼'] },
+];
 
 const formatMsgTime = (dateStr) => {
   if (!dateStr) return '';
@@ -57,6 +64,8 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const pollRef = useRef(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiCategory, setEmojiCategory] = useState(0);
 
   // Charger les conversations
   const loadConversations = useCallback(async () => {
@@ -340,6 +349,38 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 <Paperclip size={18} />
               </button>
               <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
+              <button className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`} onClick={() => setShowEmojiPicker(v => !v)} title="Emojis">
+                <Smile size={18} />
+              </button>
+              {showEmojiPicker && (
+                <div className="msg-emoji-picker">
+                  <div className="msg-emoji-tabs">
+                    {EMOJI_CATEGORIES.map((cat, i) => (
+                      <button
+                        key={i}
+                        className={`msg-emoji-tab${emojiCategory === i ? ' active' : ''}`}
+                        onClick={() => setEmojiCategory(i)}
+                      >
+                        {cat.name.split(' ')[0]}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="msg-emoji-grid">
+                    {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, i) => (
+                      <button
+                        key={i}
+                        className="msg-emoji-item"
+                        onClick={() => {
+                          setInputText(prev => prev + emoji);
+                          textareaRef.current?.focus();
+                        }}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <textarea
                 ref={textareaRef}
                 value={inputText}

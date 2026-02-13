@@ -1684,7 +1684,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
                 e.stopPropagation();
                 handleSlotClick(person, slot.day, slotIndex);
               }}
-              data-tooltip={isHovered && !anyDragActive ? `${personName} — ${dayLabel}` : undefined}
+              data-emag-tooltip={isHovered && !anyDragActive ? `${personName} — ${dayLabel}` : undefined}
               style={{ cursor: view !== 'year' && !isCovered ? 'crosshair' : 'default' }}
             >
               {/* Bloc original (masqué si en cours de move/resize) */}

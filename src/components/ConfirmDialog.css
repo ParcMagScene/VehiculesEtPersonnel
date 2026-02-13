@@ -76,3 +76,29 @@
   box-shadow: var(--btn-primary-hover-shadow);
   transform: translateY(-1px);
 }
+
+/* UnsavedChangesDialog */
+.unsaved-changes-dialog {
+  text-align: center;
+}
+
+.unsaved-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.unsaved-actions {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.confirm-dialog-btn.confirm-discard {
+  background: var(--btn-danger-filled-bg, #ef4444);
+  color: var(--btn-danger-filled-color, white);
+}
+
+.confirm-dialog-btn.confirm-discard:hover {
+  background: var(--theme-danger-dark, #dc2626);
+  transform: translateY(-1px);
+}

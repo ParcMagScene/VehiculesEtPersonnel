@@ -1,4 +1,4 @@
-# 🚀 Guide de Démarrage Rapide - Système de Réservation de Véhicules
+# 🚀 Guide de Démarrage Rapide - eM@g
 
 ## 📋 Table des Matières
 1. [Premiers Pas](#premiers-pas)
@@ -271,17 +271,34 @@ Ayez sous la main :
 
 ## 🆕 Nouveautés Récentes
 
-### Version Actuelle
+### Version Actuelle (Février 2026)
 
-✨ **Gestion complète des demandes d'accès** :
-- Badge de notification pour les administrateurs
-- Choix des droits administrateur lors de l'approbation
-- Statut automatiquement activé après approbation
+✨ **Module Affaires** :
+- Gestion complète des dossiers projets
+- Pièces jointes multi-format (50 MB max)
+- Import BL (PDF) et Excel
+- Historique et liens vers réservations/missions
+
+✨ **Module Personnel** :
+- Gestion des personnes, compétences, missions, planning
+- Détection automatique des conflits d'affectation
+- Planning visuel (grille semaine)
+
+💬 **Messagerie interne** :
+- Conversations temps réel entre utilisateurs
+- Notifications de nouveaux messages
+- Disponible sur desktop et mobile
 
 🎨 **Améliorations visuelles** :
-- Logo MagScene dans les QR codes
-- Colonne "Droits" plus claire
-- Meilleure ergonomie mobile
+- Logo eM@g Scene dans le header et les QR codes
+- Header redesigné : boutons contextuels (Nouvelle réservation / affectation)
+- Bouton "Nouvelle affaire" toujours visible
+- Thème indigo/violet
+
+📱 **Mobile enrichi** :
+- Page d'accueil avec navigation rapide
+- Personnel, messagerie, tableau de bord parc
+- 10 composants mobiles dédiés
 
 🔧 **Corrections** :
 - Résolution des erreurs de connexion
@@ -297,5 +314,5 @@ Ayez sous la main :
 Ce guide est destiné à un usage interne uniquement.
 Toute reproduction ou distribution externe est interdite sans autorisation.
 
-**Version** : 1.0  
-**Dernière mise à jour** : Février 2024
+**Version** : 2.0  
+**Dernière mise à jour** : Février 2026

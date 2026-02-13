@@ -592,13 +592,14 @@ class ApiClient {
     });
   }
 
-  // — Disponibilités —
+  // — Disponibilités / Congés —
 
   async getAvailabilities(params = {}) {
     const query = new URLSearchParams();
     if (params.personId) query.set('person_id', params.personId);
     if (params.startDate) query.set('start_date', params.startDate);
     if (params.endDate) query.set('end_date', params.endDate);
+    if (params.status) query.set('status', params.status);
     const qs = query.toString();
     return this.request(`/availabilities${qs ? '?' + qs : ''}`);
   }
@@ -620,6 +621,40 @@ class ApiClient {
   async deleteAvailability(id) {
     return this.request(`/availabilities/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async approveLeaveRequest(id) {
+    return this.request(`/availabilities/${id}/approve`, { method: 'POST' });
+  }
+
+  async rejectLeaveRequest(id, reason) {
+    return this.request(`/availabilities/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async getPendingLeaveCount() {
+    return this.request('/leave-requests/pending/count');
+  }
+
+  async getLeaveTypes() {
+    return this.request('/leave-types');
+  }
+
+  async getLeaveBalances(params = {}) {
+    const query = new URLSearchParams();
+    if (params.personId) query.set('person_id', params.personId);
+    if (params.year) query.set('year', params.year);
+    const qs = query.toString();
+    return this.request(`/leave-balances${qs ? '?' + qs : ''}`);
+  }
+
+  async updateLeaveBalance(data) {
+    return this.request('/leave-balances', {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
   }
 
@@ -730,6 +765,236 @@ class ApiClient {
     return this.request(`/affaires/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // ============ MESSAGERIE ============
+
+  async getConversations() {
+    return this.request('/messaging/conversations');
+  }
+
+  async createConversation(type, title, participantIds) {
+    return this.request('/messaging/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ type, title, participantIds }),
+    });
+  }
+
+  async getMessages(conversationId, limit = 50, before = null) {
+    let url = `/messaging/conversations/${conversationId}/messages?limit=${limit}`;
+    if (before) url += `&before=${before}`;
+    return this.request(url);
+  }
+
+  async sendMessage(conversationId, content, type = 'text') {
+    return this.request(`/messaging/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content, type }),
+    });
+  }
+
+  async sendFileMessage(conversationId, filename, base64Data, mimeType) {
+    return this.request(`/messaging/conversations/${conversationId}/messages/file`, {
+      method: 'POST',
+      body: JSON.stringify({ filename, data: base64Data, mimeType }),
+    });
+  }
+
+  async markConversationRead(conversationId) {
+    return this.request(`/messaging/conversations/${conversationId}/read`, {
+      method: 'POST',
+    });
+  }
+
+  async getUnreadCount() {
+    return this.request('/messaging/unread-count');
+  }
+
+  // ===== PRÉFÉRENCES UTILISATEUR =====
+  async getPreferences() {
+    return this.request('/users/me/preferences');
+  }
+
+  async savePreferences(prefs) {
+    return this.request('/users/me/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(prefs),
+    });
+  }
+
+  // ═══ Configuration Email ═══
+  async getEmailConfig() {
+    return this.request('/email-config');
+  }
+
+  async updateEmailConfig(config) {
+    return this.request('/email-config', {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    });
+  }
+
+  async testEmail() {
+    return this.request('/email-config/test', { method: 'POST' });
+  }
+
+  // ═══ Parc Matériel ═══
+  async getEquipmentCategories() {
+    return this.request('/equipment-categories');
+  }
+  async createEquipmentCategory(data) {
+    return this.request('/equipment-categories', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateEquipmentCategory(id, data) {
+    return this.request(`/equipment-categories/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteEquipmentCategory(id) {
+    return this.request(`/equipment-categories/${id}`, { method: 'DELETE' });
+  }
+
+  async getEquipment(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/equipment${qs ? '?' + qs : ''}`);
+  }
+  async getEquipmentById(id) {
+    return this.request(`/equipment/${id}`);
+  }
+  async createEquipment(data) {
+    return this.request('/equipment', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateEquipment(id, data) {
+    return this.request(`/equipment/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteEquipment(id) {
+    return this.request(`/equipment/${id}`, { method: 'DELETE' });
+  }
+
+  async importEquipmentCsv(data, mode = 'import') {
+    return this.request('/equipment/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
+  }
+
+  async importSavTicketsCsv(data, mode = 'import', manualLinks = null) {
+    return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks }) });
+  }
+
+  async getUnlinkedSavTickets() {
+    return this.request('/sav-tickets/unlinked');
+  }
+
+  async linkSavTicket(ticketId, equipmentId) {
+    return this.request(`/sav-tickets/${ticketId}/link`, { method: 'PUT', body: JSON.stringify({ equipment_id: equipmentId }) });
+  }
+
+  async getEquipmentCategoriesTree() {
+    return this.request('/equipment-categories/tree');
+  }
+
+  // ═══ Assignments matériel ═══
+  async getEquipmentAssignments(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/equipment-assignments${qs ? '?' + qs : ''}`);
+  }
+  async createEquipmentAssignment(data) {
+    return this.request('/equipment-assignments', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async returnEquipmentAssignment(id) {
+    return this.request(`/equipment-assignments/${id}/return`, { method: 'PUT' });
+  }
+
+  // ═══ Tickets SAV ═══
+  async getSavTickets(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/sav-tickets${qs ? '?' + qs : ''}`);
+  }
+  async getSavTicketStats() {
+    return this.request('/sav-tickets/stats');
+  }
+  async createSavTicket(data) {
+    return this.request('/sav-tickets', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateSavTicket(id, data) {
+    return this.request(`/sav-tickets/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteSavTicket(id) {
+    return this.request(`/sav-tickets/${id}`, { method: 'DELETE' });
+  }
+
+  // ═══ Listes Favoris / Surveillance ═══
+  async getEquipmentLists() {
+    return this.request('/equipment-lists');
+  }
+  async addToEquipmentList(equipment_id, list_type) {
+    return this.request('/equipment-lists', { method: 'POST', body: JSON.stringify({ equipment_id, list_type }) });
+  }
+  async removeFromEquipmentList(equipment_id, list_type) {
+    return this.request('/equipment-lists', { method: 'DELETE', body: JSON.stringify({ equipment_id, list_type }) });
+  }
+  async getEquipmentByUid(uid) {
+    return this.request(`/equipment/by-uid/${uid}`);
+  }
+  async getEquipmentPhotos() {
+    return this.request('/equipment-photos');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Commandes & Ventes
+  // ═══════════════════════════════════════════════════════════
+
+  // Fournisseurs
+  async getSuppliers(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/suppliers${qs ? '?' + qs : ''}`);
+  }
+  async createSupplier(data) {
+    return this.request('/suppliers', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateSupplier(id, data) {
+    return this.request(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteSupplier(id) {
+    return this.request(`/suppliers/${id}`, { method: 'DELETE' });
+  }
+
+  // Commandes
+  async getOrders(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/orders${qs ? '?' + qs : ''}`);
+  }
+  async getOrdersStats() {
+    return this.request('/orders/stats');
+  }
+  async getOrderById(id) {
+    return this.request(`/orders/${id}`);
+  }
+  async createOrder(data) {
+    return this.request('/orders', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateOrder(id, data) {
+    return this.request(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteOrder(id) {
+    return this.request(`/orders/${id}`, { method: 'DELETE' });
+  }
+
+  // Devis
+  async getQuotes(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/quotes${qs ? '?' + qs : ''}`);
+  }
+  async getQuoteById(id) {
+    return this.request(`/quotes/${id}`);
+  }
+  async createQuote(data) {
+    return this.request('/quotes', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateQuote(id, data) {
+    return this.request(`/quotes/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async convertQuoteToOrder(id) {
+    return this.request(`/quotes/${id}/convert`, { method: 'POST' });
+  }
+  async deleteQuote(id) {
+    return this.request(`/quotes/${id}`, { method: 'DELETE' });
   }
 }
 

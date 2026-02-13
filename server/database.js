@@ -309,7 +309,7 @@ function initializeDatabase() {
       last_name TEXT NOT NULL,
       email TEXT,
       phone TEXT,
-      type TEXT NOT NULL DEFAULT 'technicien',
+      type TEXT NOT NULL DEFAULT 'permanent',
       status TEXT NOT NULL DEFAULT 'active',
       user_id INTEGER,
       driver_id INTEGER,
@@ -352,7 +352,7 @@ function initializeDatabase() {
     )
   `);
 
-  // Table des disponibilités / indisponibilités
+  // Table des disponibilités / indisponibilités / congés
   db.exec(`
     CREATE TABLE IF NOT EXISTS availabilities (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -366,12 +366,33 @@ function initializeDatabase() {
       source TEXT NOT NULL DEFAULT 'admin',
       is_recurring BOOLEAN DEFAULT 0,
       recurrence_rule TEXT,
+      status TEXT NOT NULL DEFAULT 'approved',
+      approved_by INTEGER,
+      approved_at DATETIME,
+      rejection_reason TEXT,
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
-      FOREIGN KEY (created_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id),
+      FOREIGN KEY (approved_by) REFERENCES users(id)
     )
   `);
+
+  // Table des soldes de congés par personne/année/type
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS leave_balances (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      person_id INTEGER NOT NULL,
+      year INTEGER NOT NULL,
+      type TEXT NOT NULL DEFAULT 'conge_paye',
+      days_entitled REAL NOT NULL DEFAULT 25,
+      days_taken REAL NOT NULL DEFAULT 0,
+      UNIQUE(person_id, year, type),
+      FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_balances_person ON leave_balances(person_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_balances_year ON leave_balances(year)`);
 
   // Table des missions
   db.exec(`
@@ -692,6 +713,58 @@ function initializeDatabase() {
     console.log('Info: Colonnes véhicules déjà présentes');
   }
 
+  // Migration ONE-TIME: Ajouter les contrôles TACHYGRAPHE et LIMITEUR pour les PL
+  try {
+    // Créer la table migrations_log si elle n'existe pas
+    db.exec(`CREATE TABLE IF NOT EXISTS migrations_log (
+      name TEXT PRIMARY KEY,
+      applied_at TEXT DEFAULT (datetime('now'))
+    )`);
+
+    const alreadyApplied = db.prepare("SELECT 1 FROM migrations_log WHERE name = ?").get('add_tachygraphe_limiteur');
+
+    if (!alreadyApplied) {
+      const plTypes = ['PL', 'CAMION', 'PORTEUR', 'TRACTEUR', 'SEMI'];
+      const allVehicles = db.prepare("SELECT id, type, controles_techniques FROM vehicles").all();
+      let addedCount = 0;
+
+      for (const v of allVehicles) {
+        if (!v.type) continue;
+        const vType = v.type.toUpperCase();
+        const isPL = plTypes.some(t => vType.includes(t));
+        if (!isPL) continue;
+
+        let controles = [];
+        try {
+          controles = v.controles_techniques ? JSON.parse(v.controles_techniques) : [];
+        } catch (e) { controles = []; }
+        if (!Array.isArray(controles)) controles = [];
+
+        let modified = false;
+        if (!controles.some(c => c.type === 'TACHYGRAPHE')) {
+          controles.push({ type: 'TACHYGRAPHE', date: null, deadline: null });
+          modified = true;
+        }
+        if (!controles.some(c => c.type === 'LIMITEUR')) {
+          controles.push({ type: 'LIMITEUR', date: null, deadline: null });
+          modified = true;
+        }
+
+        if (modified) {
+          db.prepare("UPDATE vehicles SET controles_techniques = ? WHERE id = ?")
+            .run(JSON.stringify(controles), v.id);
+          addedCount++;
+        }
+      }
+
+      // Marquer la migration comme appliquée
+      db.prepare("INSERT INTO migrations_log (name) VALUES (?)").run('add_tachygraphe_limiteur');
+      console.log(`✅ Migration Tachygraphe/Limiteur appliquée (${addedCount} véhicule(s) PL)`);
+    }
+  } catch (error) {
+    console.error('Erreur migration Tachygraphe/Limiteur:', error.message);
+  }
+
   // Migration: ajouter trip_group_id dans trip_details pour lier les trajets
   try {
     const tripDetailColumns = db.prepare("PRAGMA table_info(trip_details)").all();
@@ -714,8 +787,18 @@ function initializeDatabase() {
       db.prepare("ALTER TABLE users ADD COLUMN avatar TEXT").run();
       console.log('✅ Colonne avatar ajoutée à users');
     }
+    const hasPreferences = userColumns.some(col => col.name === 'preferences');
+    if (!hasPreferences) {
+      db.prepare("ALTER TABLE users ADD COLUMN preferences TEXT DEFAULT '{}'").run();
+      console.log('✅ Colonne preferences ajoutée à users');
+    }
+    const hasPermissions = userColumns.some(col => col.name === 'permissions');
+    if (!hasPermissions) {
+      db.prepare("ALTER TABLE users ADD COLUMN permissions TEXT DEFAULT '{}'").run();
+      console.log('✅ Colonne permissions ajoutée à users');
+    }
   } catch (error) {
-    console.log('Info: Colonne avatar déjà présente');
+    console.log('Info: Colonnes avatar/preferences déjà présentes');
   }
 
   // Migration: ajouter google_drive_link dans reservations
@@ -790,6 +873,357 @@ function initializeDatabase() {
     console.log('✅ Migration: backfill affaire dans missions effectué');
   } catch (error) {
     // Colonne déjà présente — OK
+  }
+
+  // ═══ Migration: Tables de messagerie interne ═══
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL DEFAULT 'direct',
+        title TEXT,
+        created_by INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS conversation_participants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_read_at DATETIME,
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        UNIQUE(conversation_id, user_id)
+      )
+    `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL,
+        sender_id INTEGER NOT NULL,
+        content TEXT,
+        type TEXT NOT NULL DEFAULT 'text',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        edited_at DATETIME,
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+        FOREIGN KEY (sender_id) REFERENCES users(id)
+      )
+    `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS message_attachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id INTEGER NOT NULL,
+        filename TEXT NOT NULL,
+        original_name TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_participants_user ON conversation_participants(user_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_participants_conversation ON conversation_participants(conversation_id)');
+  } catch (error) {
+    console.warn('⚠️ Migration messagerie:', error.message);
+  }
+
+  // ═══ Table configuration email ═══
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS email_config (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        enabled BOOLEAN DEFAULT 0,
+        smtp_host TEXT,
+        smtp_port INTEGER DEFAULT 587,
+        smtp_secure BOOLEAN DEFAULT 0,
+        smtp_user TEXT,
+        smtp_pass TEXT,
+        from_name TEXT DEFAULT 'eM@g',
+        alert_access_request BOOLEAN DEFAULT 1,
+        alert_reservation BOOLEAN DEFAULT 1,
+        alert_assignment BOOLEAN DEFAULT 1,
+        alert_overdue BOOLEAN DEFAULT 1,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    // Insérer une config par défaut si elle n'existe pas
+    db.exec(`INSERT OR IGNORE INTO email_config (id) VALUES (1)`);
+  } catch (error) {
+    console.warn('⚠️ Migration email_config:', error.message);
+  }
+
+  // ═══ Migration: Système de gestion des congés ═══
+  try {
+    const availCols = db.prepare("PRAGMA table_info(availabilities)").all();
+    const hasStatus = availCols.some(col => col.name === 'status');
+    if (!hasStatus) {
+      db.prepare("ALTER TABLE availabilities ADD COLUMN status TEXT NOT NULL DEFAULT 'approved'").run();
+      db.prepare("ALTER TABLE availabilities ADD COLUMN approved_by INTEGER").run();
+      db.prepare("ALTER TABLE availabilities ADD COLUMN approved_at DATETIME").run();
+      db.prepare("ALTER TABLE availabilities ADD COLUMN rejection_reason TEXT").run();
+      console.log('✅ Migration: colonnes leave management ajoutées à availabilities');
+    }
+  } catch (error) {
+    console.warn('⚠️ Migration leave management:', error.message);
+  }
+
+  // ═══ Module Parc Matériel + SAV ═══
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS equipment_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        parent_id INTEGER,
+        level TEXT NOT NULL DEFAULT 'category',
+        icon TEXT DEFAULT '📦',
+        color TEXT DEFAULT '#6366f1',
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (parent_id) REFERENCES equipment_categories(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS equipment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        reference TEXT,
+        serial_number TEXT,
+        category_id INTEGER,
+        brand TEXT,
+        uid TEXT,
+        stock_quantity INTEGER DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'available',
+        location TEXT,
+        purchase_date TEXT,
+        purchase_price REAL,
+        warranty_end TEXT,
+        notes TEXT,
+        photo TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES equipment_categories(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS equipment_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipment_id INTEGER NOT NULL,
+        assigned_to INTEGER,
+        assigned_by INTEGER,
+        start_date TEXT NOT NULL,
+        end_date TEXT,
+        affaire_id TEXT,
+        notes TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id),
+        FOREIGN KEY (assigned_to) REFERENCES persons(id),
+        FOREIGN KEY (assigned_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS sav_tickets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipment_id INTEGER NOT NULL,
+        reported_by INTEGER,
+        assigned_to INTEGER,
+        type TEXT NOT NULL DEFAULT 'panne',
+        priority TEXT NOT NULL DEFAULT 'medium',
+        status TEXT NOT NULL DEFAULT 'open',
+        title TEXT NOT NULL,
+        description TEXT,
+        resolution TEXT,
+        cost REAL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        resolved_at DATETIME,
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id),
+        FOREIGN KEY (reported_by) REFERENCES users(id),
+        FOREIGN KEY (assigned_to) REFERENCES persons(id)
+      )
+    `);
+
+    // Migration : ajouter parent_id et level si manquants
+    try {
+      const catCols = db.prepare("PRAGMA table_info(equipment_categories)").all().map(c => c.name);
+      if (!catCols.includes('parent_id')) {
+        db.prepare('ALTER TABLE equipment_categories ADD COLUMN parent_id INTEGER').run();
+        console.log('✅ Migration: parent_id ajouté à equipment_categories');
+      }
+      if (!catCols.includes('level')) {
+        db.prepare("ALTER TABLE equipment_categories ADD COLUMN level TEXT NOT NULL DEFAULT 'category'").run();
+        console.log('✅ Migration: level ajouté à equipment_categories');
+      }
+    } catch (e) { /* colonnes déjà présentes */ }
+
+    // Migration : ajouter brand et stock_quantity à equipment
+    try {
+      const eqCols = db.prepare("PRAGMA table_info(equipment)").all().map(c => c.name);
+      if (!eqCols.includes('brand')) {
+        db.prepare('ALTER TABLE equipment ADD COLUMN brand TEXT').run();
+        console.log('✅ Migration: brand ajouté à equipment');
+      }
+      if (!eqCols.includes('stock_quantity')) {
+        db.prepare('ALTER TABLE equipment ADD COLUMN stock_quantity INTEGER DEFAULT 1').run();
+        console.log('✅ Migration: stock_quantity ajouté à equipment');
+      }
+      if (!eqCols.includes('uid')) {
+        db.prepare('ALTER TABLE equipment ADD COLUMN uid TEXT').run();
+        // SQLite ne supporte pas ADD COLUMN UNIQUE, on crée un index séparé
+        db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_uid ON equipment(uid)').run();
+        console.log('✅ Migration: uid ajouté à equipment');
+        // Générer les UID pour les équipements existants
+        const existingEq = db.prepare('SELECT id FROM equipment WHERE uid IS NULL').all();
+        const updateUid = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
+        for (const eq of existingEq) {
+          const uid = 'EMAG-' + String(eq.id).padStart(5, '0');
+          updateUid.run(uid, eq.id);
+        }
+        if (existingEq.length > 0) console.log(`✅ Migration: ${existingEq.length} UID générés`);
+      }
+    } catch (e) { /* colonnes déjà présentes */ }
+
+    // ═══ Table favoris/surveillance matériel ═══
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS equipment_lists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipment_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        list_type TEXT NOT NULL DEFAULT 'favorite',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(equipment_id, user_id, list_type)
+      )
+    `);
+
+    // Catégories par défaut
+    const catCount = db.prepare('SELECT COUNT(*) as c FROM equipment_categories').get();
+    if (catCount.c === 0) {
+      const insertCat = db.prepare('INSERT INTO equipment_categories (name, icon, color, level) VALUES (?, ?, ?, ?)');
+      insertCat.run('Outillage', '🔧', '#f59e0b', 'family');
+      insertCat.run('Électroportatif', '⚡', '#3b82f6', 'family');
+      insertCat.run('Levage & Manutention', '🏗️', '#ef4444', 'family');
+      insertCat.run('Mesure & Contrôle', '📐', '#10b981', 'family');
+      insertCat.run('EPI', '🦺', '#8b5cf6', 'family');
+      insertCat.run('Véhicule annexe', '🚗', '#6366f1', 'family');
+      insertCat.run('Informatique', '💻', '#06b6d4', 'family');
+      insertCat.run('Autre', '📦', '#64748b', 'family');
+    }
+  } catch (error) {
+    console.warn('⚠️ Migration parc matériel:', error.message);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Module Commandes & Ventes (P3B)
+  // ═══════════════════════════════════════════════════════════════
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS suppliers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contact_name TEXT,
+        email TEXT,
+        phone TEXT,
+        address TEXT,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reference TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'purchase',
+        affaire_id TEXT,
+        supplier_id INTEGER,
+        status TEXT NOT NULL DEFAULT 'draft',
+        order_date TEXT,
+        expected_date TEXT,
+        received_date TEXT,
+        total_ht REAL DEFAULT 0,
+        tva_rate REAL DEFAULT 20,
+        total_ttc REAL DEFAULT 0,
+        notes TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER NOT NULL,
+        designation TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 1,
+        unit TEXT DEFAULT 'u',
+        unit_price_ht REAL NOT NULL DEFAULT 0,
+        tva_rate REAL DEFAULT 20,
+        total_ht REAL DEFAULT 0,
+        received_qty REAL DEFAULT 0,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS quotes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reference TEXT NOT NULL,
+        affaire_id TEXT,
+        client_name TEXT,
+        client_email TEXT,
+        client_address TEXT,
+        status TEXT NOT NULL DEFAULT 'draft',
+        quote_date TEXT,
+        validity_date TEXT,
+        total_ht REAL DEFAULT 0,
+        tva_rate REAL DEFAULT 20,
+        total_ttc REAL DEFAULT 0,
+        notes TEXT,
+        converted_to_order_id INTEGER,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (converted_to_order_id) REFERENCES orders(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS quote_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        quote_id INTEGER NOT NULL,
+        designation TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 1,
+        unit TEXT DEFAULT 'u',
+        unit_price_ht REAL NOT NULL DEFAULT 0,
+        tva_rate REAL DEFAULT 20,
+        total_ht REAL DEFAULT 0,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (quote_id) REFERENCES quotes(id) ON DELETE CASCADE
+      )
+    `);
+
+    console.log('✅ Tables commandes & ventes créées');
+  } catch (error) {
+    console.warn('⚠️ Migration commandes & ventes:', error.message);
   }
 
   console.log('✅ Base de données initialisée');

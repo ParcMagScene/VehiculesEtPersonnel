@@ -3,6 +3,8 @@ import { X, Plus, Trash2, MapPin, Clock, User, ArrowRight, ArrowDown } from 'luc
 import './TripDetailsModal.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded as checkGoogleMapsLoaded } from '../utils/googleMapsLoader';
 import LocationDialog from './LocationDialog';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
+import DriverSelect from './DriverSelect';
 import api from '../utils/api';
 
 const TripDetailsModal = ({
@@ -11,6 +13,7 @@ const TripDetailsModal = ({
   onSave,
   onClose,
   drivers,
+  persons = [],
   vehicle,
   nextEvent, // Pour les jonctions
   googleMapsApiKey,
@@ -57,6 +60,16 @@ const TripDetailsModal = ({
   const [pausesWithValidatedLocation, setPausesWithValidatedLocation] = useState(new Set());
   const [isCalculating, setIsCalculating] = useState(false);
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const initialFormDataRef = useRef(JSON.stringify(formData));
+
+  const handleSafeClose = () => {
+    if (JSON.stringify(formData) !== initialFormDataRef.current) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
   const [isSaved, setIsSaved] = useState(!!currentTripDetail);
   const [locations, setLocations] = useState([]);
   const [allLocations, setAllLocations] = useState([]);
@@ -912,7 +925,7 @@ const TripDetailsModal = ({
     <div className="modal-overlay" onClick={(e) => {
       // Fermer uniquement si on clique sur l'overlay (arrière-plan)
       if (e.target.className === 'modal-overlay') {
-        onClose();
+        handleSafeClose();
       }
     }}>
       <div className="trip-details-modal" onClick={(e) => e.stopPropagation()}>
@@ -992,7 +1005,7 @@ const TripDetailsModal = ({
               ✅ Détails du trajet enregistrés
             </div>
           )}
-          <button onClick={onClose} className="close-button">
+          <button onClick={handleSafeClose} className="close-button">
             <X size={24} />
           </button>
         </div>
@@ -1057,19 +1070,27 @@ const TripDetailsModal = ({
                 <User size={18} style={{marginRight: '0.25rem'}} />
                 Conducteur pour ce trajet
               </label>
-              <select
-                name="driverName"
-                value={formData.driverName}
-                onChange={handleChange}
-                style={{padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem'}}
-              >
-                <option value="">Sélectionner un conducteur</option>
-                {drivers?.map((driver) => (
-                  <option key={driver.id} value={driver.name}>
-                    {driver.name}
-                  </option>
-                ))}
-              </select>
+              {(() => {
+                const vehicleType = vehicle?.type?.toUpperCase() || '';
+                let requiredSkill = 'Conduite VL';
+                if (['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite PL';
+                else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite SPL';
+                const hierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
+                const reqLevel = hierarchy.indexOf(requiredSkill);
+                const qualified = (persons || []).filter(p => p.status === 'active' && p.skills?.some(s => {
+                  const sL = hierarchy.indexOf(s.name);
+                  return sL >= 0 && sL >= reqLevel;
+                })).map(p => ({ id: p.id, name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`, photo: p.photo || null, skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));
+                const otherDriverNames = drivers?.filter(d => !qualified.some(q => q.name === d.name)).map(d => d.name) || [];
+                return (
+                  <DriverSelect
+                    value={formData.driverName}
+                    onChange={(name) => handleChange({ target: { name: 'driverName', value: name } })}
+                    qualifiedDrivers={qualified}
+                    historySuggestions={otherDriverNames}
+                  />
+                );
+              })()}
             </div>
           </div>
 
@@ -1474,7 +1495,7 @@ const TripDetailsModal = ({
           </div>
 
           <div className="modal-actions">
-            <button type="button" onClick={onClose} className="cancel-button">
+            <button type="button" onClick={handleSafeClose} className="cancel-button">
               Annuler
             </button>
             <button type="submit" className="save-button">
@@ -1499,6 +1520,13 @@ const TripDetailsModal = ({
           onSave={handleLocationSave}
           onClose={handleLocationDialogClose}
           companyAddress={companyAddress}
+        />
+      )}
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
         />
       )}
     </div>

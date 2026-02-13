@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import {
   X, Save, Calendar, Clock, User, Briefcase, AlertTriangle,
   ChevronDown, ChevronUp, Plus, Minus, Check, Info, Trash2, Edit2, Users, Search,
@@ -6,6 +7,7 @@ import {
 import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDay, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../utils/api';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './AssignmentDialog.css';
 
 const POSITION_CATEGORIES = [
@@ -193,6 +195,12 @@ const SKILL_CATEGORIES = [
  *   onDelete    — callback to delete the mission
  */
 const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [], editMission, googleEvents = [], onClose, onCreated, onDelete }) => {
+  // Debug (visible uniquement en dev, supprimé en prod)
+  console.log('[AssignmentDialog] RENDER — person:', person?.id, 'day:', String(day), 'skills:', skills?.length, 'positions:', positions?.length);
+  
+  // Sécuriser le jour pour éviter les erreurs
+  const safeDay = day instanceof Date && !isNaN(day) ? day : new Date();
+  
   const isEdit = !!editMission;
   const existingMission = editMission?.mission;
   const existingAssignment = editMission?.assignment;
@@ -227,14 +235,19 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   const [showAffaireDropdown, setShowAffaireDropdown] = useState(false);
 
   // Dates & horaires — pré-remplir depuis mission existante
-  const [startDate, setStartDate] = useState(
-    existingMission ? (existingMission.startDate || existingMission.start_date || '').split('T')[0] || format(day, 'yyyy-MM-dd')
-    : format(day, 'yyyy-MM-dd')
-  );
-  const [endDate, setEndDate] = useState(
-    existingMission ? (existingMission.endDate || existingMission.end_date || '').split('T')[0] || format(endDay || day, 'yyyy-MM-dd')
-    : format(endDay || day, 'yyyy-MM-dd')
-  );
+  const [startDate, setStartDate] = useState(() => {
+    try {
+      if (existingMission) return (existingMission.startDate || existingMission.start_date || '').split('T')[0] || format(safeDay, 'yyyy-MM-dd');
+      return format(safeDay, 'yyyy-MM-dd');
+    } catch(e) { console.error('[AssignmentDialog] startDate init error:', e); return format(new Date(), 'yyyy-MM-dd'); }
+  });
+  const [endDate, setEndDate] = useState(() => {
+    try {
+      const theEnd = endDay instanceof Date && !isNaN(endDay) ? endDay : safeDay;
+      if (existingMission) return (existingMission.endDate || existingMission.end_date || '').split('T')[0] || format(theEnd, 'yyyy-MM-dd');
+      return format(theEnd, 'yyyy-MM-dd');
+    } catch(e) { console.error('[AssignmentDialog] endDate init error:', e); return format(new Date(), 'yyyy-MM-dd'); }
+  });
   const [startTime, setStartTime] = useState(
     existingMission ? (existingMission.startTime || existingMission.start_time || '') : (period === 'PM' ? '14:00' : '08:00')
   );
@@ -292,6 +305,39 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   const [selectedPersonId, setSelectedPersonId] = useState(person.id);
   const [personSearch, setPersonSearch] = useState('');
   const [showPersonDropdown, setShowPersonDropdown] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+
+  // Capturer l'état initial pour détecter les modifications
+  const initialStateRef = useRef(null);
+  useEffect(() => {
+    if (!initialStateRef.current && !loading) {
+      initialStateRef.current = JSON.stringify({
+        selectedAffaire: selectedAffaire?.numeroAffaire,
+        startDate, endDate, startTime, endTime,
+        dayStates, selectedSkillIds, selectedPositions,
+        status, notes, selectedPersonId
+      });
+    }
+  }, [loading]);
+
+  const hasFormChanges = () => {
+    if (!initialStateRef.current) return false;
+    const current = JSON.stringify({
+      selectedAffaire: selectedAffaire?.numeroAffaire,
+      startDate, endDate, startTime, endTime,
+      dayStates, selectedSkillIds, selectedPositions,
+      status, notes, selectedPersonId
+    });
+    return current !== initialStateRef.current;
+  };
+
+  const handleSafeClose = () => {
+    if (hasFormChanges()) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
 
   // Convertir les événements Google Calendar en format affaire
   const googleAffaires = useMemo(() => {
@@ -372,10 +418,11 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
       const end = parseISO(endDate);
       if (end < start) return [start];
       return eachDayOfInterval({ start, end });
-    } catch {
-      return [day];
+    } catch(e) {
+      console.error('[AssignmentDialog] rangeDays error:', e);
+      return [safeDay];
     }
-  }, [startDate, endDate, day]);
+  }, [startDate, endDate, safeDay]);
 
   // Initialiser les dayStates quand la plage de dates change
   useEffect(() => {
@@ -428,10 +475,10 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
   // Vérifier si la personne a les compétences sélectionnées
   const skillWarnings = useMemo(() => {
-    if (selectedSkillIds.length === 0) return null;
+    if (!skills || selectedSkillIds.length === 0) return null;
     const missing = selectedSkillIds.filter(id => !person.skills?.some(s => s.skillId === id));
     if (missing.length === 0) return null;
-    const names = missing.map(id => skills.find(s => s.id === id)?.name || 'inconnue');
+    const names = missing.map(id => (skills || []).find(s => s.id === id)?.name || 'inconnue');
     return `${person.firstName} ${person.lastName} ne possède pas : ${names.join(', ')}`;
   }, [selectedSkillIds, person, skills]);
 
@@ -586,7 +633,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
   // Raccourci pour la catégorie d'une compétence
   const getSkillCategory = (skillId) => {
-    const skill = skills.find(s => s.id === parseInt(skillId));
+    const skill = (skills || []).find(s => s.id === parseInt(skillId));
     if (!skill) return null;
     return SKILL_CATEGORIES.find(c => c.value === skill.category);
   };
@@ -594,7 +641,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   // Grouper les compétences par catégorie
   const skillsByCategory = useMemo(() => {
     const groups = {};
-    skills.forEach(skill => {
+    (skills || []).forEach(skill => {
       const cat = skill.category || 'autre';
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(skill);
@@ -602,8 +649,11 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
     return groups;
   }, [skills]);
 
-  return (
-    <div className="assignment-dialog-overlay" onClick={onClose}>
+  // DEBUG: Vérifier que le rendu arrive jusque là
+  console.log('[AssignmentDialog] ABOUT TO RENDER — startDate:', startDate, 'endDate:', endDate, 'rangeDays:', rangeDays?.length, 'affaires:', affaires?.length, 'loading:', loading);
+
+  const dialogContent = (
+    <div className="assignment-dialog-overlay" onClick={handleSafeClose}>
       <div className="assignment-dialog" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="assignment-dialog-header">
@@ -621,7 +671,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 <Trash2 size={16} />
               </button>
             )}
-            <button className="assignment-dialog-close" onClick={onClose}>
+            <button className="assignment-dialog-close" onClick={handleSafeClose}>
               <X size={18} />
             </button>
           </div>
@@ -960,7 +1010,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
         {/* Footer */}
         <div className="assignment-dialog-footer">
-          <button className="ad-btn ad-btn-cancel" onClick={onClose} disabled={saving}>
+          <button className="ad-btn ad-btn-cancel" onClick={handleSafeClose} disabled={saving}>
             Annuler
           </button>
           <button
@@ -982,8 +1032,17 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           </button>
         </div>
       </div>
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
+        />
+      )}
     </div>
   );
+
+  return ReactDOM.createPortal(dialogContent, document.body);
 };
 
 export default AssignmentDialog;

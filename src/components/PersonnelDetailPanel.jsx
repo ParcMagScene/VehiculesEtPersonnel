@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, User, Phone, Mail, Briefcase, Award, Calendar, MapPin, ExternalLink, Link2 } from 'lucide-react';
+import { X, User, Phone, Mail, Briefcase, Award, Calendar, MapPin, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
+import api from '../utils/api';
 import './PersonnelDetailPanel.css';
 
 const CONTRACT_TYPES = [
@@ -27,7 +28,21 @@ const getCategoryColor = (category) => {
 /* ═══════════════════════════════════════════════
    Contenu partagé : infos personnel
    ═══════════════════════════════════════════════ */
-const PersonnelDetailContent = ({ person, positions = [], skills = [] }) => {
+
+const LEAVE_TYPE_COLORS = {
+  unavailable: '#94a3b8', conge_paye: '#60a5fa', rtt: '#a78bfa',
+  maladie: '#f87171', sans_solde: '#fb923c', formation: '#34d399',
+  repos: '#fbbf24', autre: '#9ca3af',
+};
+const LEAVE_TYPE_LABELS = {
+  unavailable: 'Indisponible', conge_paye: 'CP', rtt: 'RTT',
+  maladie: 'Maladie', sans_solde: 'Sans solde', formation: 'Formation',
+  repos: 'Repos', autre: 'Autre',
+};
+const STATUS_LABELS = { pending: 'En attente', approved: 'Approuvé', rejected: 'Refusé' };
+const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444' };
+
+const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequestLeave }) => {
   if (!person) return null;
 
   // Parser les postes par défaut
@@ -137,14 +152,83 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [] }) => {
           <div className="pdp-notes">{person.notes}</div>
         </section>
       )}
+
+      {/* Absences / Congés */}
+      <PersonnelAbsences personId={person.id} onRequestLeave={onRequestLeave} />
     </>
+  );
+};
+
+/* ═══════════════════════════════════════════════
+   Absences récentes d'une personne
+   ═══════════════════════════════════════════════ */
+const PersonnelAbsences = ({ personId, onRequestLeave }) => {
+  const [absences, setAbsences] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!personId) return;
+    setLoading(true);
+    api.getAvailabilities({ personId })
+      .then(data => setAbsences(data || []))
+      .catch(() => setAbsences([]))
+      .finally(() => setLoading(false));
+  }, [personId]);
+
+  // Trier par date de début desc, garder les 10 derniers
+  const sorted = [...absences]
+    .sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''))
+    .slice(0, 10);
+
+  return (
+    <section className="pdp-section">
+      <h4 className="pdp-section-title">
+        <Clock size={14} /> Absences
+        {onRequestLeave && (
+          <button className="pdp-absence-add-btn" onClick={() => onRequestLeave(personId)} title="Ajouter une absence">
+            <Plus size={12} />
+          </button>
+        )}
+      </h4>
+      {loading ? (
+        <div className="pdp-absence-loading">Chargement...</div>
+      ) : sorted.length === 0 ? (
+        <div className="pdp-absence-empty">Aucune absence enregistrée</div>
+      ) : (
+        <div className="pdp-absence-list">
+          {sorted.map(a => {
+            const leaveColor = LEAVE_TYPE_COLORS[a.type] || '#94a3b8';
+            const leaveLabel = LEAVE_TYPE_LABELS[a.type] || a.type;
+            const statusLabel = STATUS_LABELS[a.status] || a.status;
+            const statusColor = STATUS_COLORS[a.status] || '#94a3b8';
+            const start = new Date(a.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+            const end = new Date(a.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+            return (
+              <div key={a.id} className="pdp-absence-item" style={{ borderLeftColor: leaveColor }}>
+                <div className="pdp-absence-row">
+                  <span className="pdp-absence-type" style={{ color: leaveColor }}>{leaveLabel}</span>
+                  <span className="pdp-absence-status" style={{ color: statusColor }}>
+                    {a.status === 'pending' && <Clock size={10} />}
+                    {a.status === 'approved' && <Check size={10} />}
+                    {a.status === 'rejected' && <XCircle size={10} />}
+                    {statusLabel}
+                  </span>
+                </div>
+                <div className="pdp-absence-dates">{start} → {end}</div>
+                {a.reason && <div className="pdp-absence-reason">{a.reason}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 };
 
 /* ═══════════════════════════════════════════════
    Volet glissant (slide panel) personnel
    ═══════════════════════════════════════════════ */
-const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onEdit }) => {
+const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onEdit, onRequestLeave }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -217,6 +301,7 @@ const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onE
           person={currentPerson}
           positions={positions}
           skills={skills}
+          onRequestLeave={onRequestLeave}
         />
       </div>
 

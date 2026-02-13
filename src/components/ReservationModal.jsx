@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X, Trash2, MapPin, Link2, Unlink, Paperclip, Car, Check } from 'lucide-react';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
 import TripDetailsModal from './TripDetailsModal';
 import LocationDialog from './LocationDialog';
 import VehiclePickerCards from './VehiclePickerCards';
+import DriverSelect from './DriverSelect';
 import api from '../utils/api';
 import { loadFromIndexedDB } from '../utils/indexedDB';
 import './ReservationModal.css';
@@ -17,6 +19,7 @@ const ReservationModal = ({
   vehicles,
   clients,
   drivers,
+  persons = [],
   locations,
   onSave,
   onDelete,
@@ -85,6 +88,23 @@ const ReservationModal = ({
 
   const [initialFormData, setInitialFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+
+  // Fermeture sécurisée avec avertissement si modifications
+  const handleSafeClose = () => {
+    // En mode création, vérifier si des champs ont été remplis
+    if (!isEdit) {
+      const hasContent = formData.clientName || formData.driverName || formData.locationName || formData.prestationName || formData.notes || formData.affaires.length > 0;
+      if (hasContent) {
+        setShowUnsavedWarning(true);
+        return;
+      }
+    } else if (hasChanges) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
 
   const [newAffaire, setNewAffaire] = useState('');
 
@@ -133,6 +153,37 @@ const ReservationModal = ({
     allLocations.forEach(l => { if (l.type) types.add(l.type); });
     return [...types].sort();
   }, [allLocations]);
+
+  // Conducteurs qualifiés (personnel avec compétence de conduite adaptée au véhicule)
+  const qualifiedDrivers = React.useMemo(() => {
+    if (!persons || persons.length === 0) return [];
+    const selectedVehicle = vehicles?.find(v => v.id === formData.vehicleId);
+    const vehicleType = selectedVehicle?.type?.toUpperCase() || '';
+    
+    // Déterminer la compétence requise
+    let requiredSkill = 'Conduite VL'; // par défaut
+    if (['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR'].some(t => vehicleType.includes(t))) {
+      requiredSkill = 'Conduite PL';
+    } else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) {
+      requiredSkill = 'Conduite SPL';
+    }
+    
+    // Filtrer les personnes avec la compétence requise + celles avec compétence supérieure
+    const skillHierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
+    const requiredLevel = skillHierarchy.indexOf(requiredSkill);
+    
+    return persons
+      .filter(p => p.status === 'active' && p.skills?.some(s => {
+        const sLevel = skillHierarchy.indexOf(s.name);
+        return sLevel >= 0 && sLevel >= requiredLevel;
+      }))
+      .map(p => ({
+        id: p.id,
+        name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`,
+        photo: p.photo || null,
+        skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || []
+      }));
+  }, [persons, vehicles, formData.vehicleId]);
 
   const filteredLocations = React.useMemo(() => {
     let result = allLocations;
@@ -849,8 +900,8 @@ const ReservationModal = ({
     : '';
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={handleSafeClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="modal-content reservation-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-content">
             <h2 id="modal-title">
@@ -899,7 +950,7 @@ const ReservationModal = ({
             />
             <span style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.95)' }}>🚐 Tournée</span>
           </label>
-          <button className="close-button" onClick={onClose} aria-label="Fermer la fenêtre">
+          <button className="close-button" onClick={handleSafeClose} aria-label="Fermer la fenêtre">
             <X size={24} />
           </button>
         </div>
@@ -949,24 +1000,13 @@ const ReservationModal = ({
 
             <div className="form-group">
               <label htmlFor="driverName">Conducteur</label>
-              <select
-                id="driverName"
-                name="driverName"
+              <DriverSelect
                 value={formData.driverName}
-                onChange={handleChange}
-              >
-                <option value="">Sélectionner un conducteur</option>
-                {drivers && drivers.map((driver) => (
-                  <option key={`driver-${driver.id}`} value={driver.name}>
-                    {driver.name}
-                  </option>
-                ))}
-                {driverSuggestions.filter(s => !drivers?.some(d => d.name === s)).map((suggestion, idx) => (
-                  <option key={`history-${idx}`} value={suggestion}>
-                    {suggestion} (historique)
-                  </option>
-                ))}
-              </select>
+                onChange={(name) => handleChange({ target: { name: 'driverName', value: name } })}
+                qualifiedDrivers={qualifiedDrivers}
+                historySuggestions={driverSuggestions}
+                disabled={isReadOnly}
+              />
             </div>
             </>
           )}
@@ -1775,7 +1815,7 @@ const ReservationModal = ({
               Supprimer
             </button>
           )}
-          <button type="button" className="cancel-button" onClick={onClose}>
+          <button type="button" className="cancel-button" onClick={isReadOnly ? onClose : handleSafeClose}>
             {isReadOnly ? 'Fermer' : 'Annuler'}
           </button>
           {!isEdit && (
@@ -1847,6 +1887,13 @@ const ReservationModal = ({
           onSave={handleLocationSave}
           onClose={handleLocationDialogClose}
           companyAddress={companyAddress}
+        />
+      )}
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
         />
       )}
     </div>

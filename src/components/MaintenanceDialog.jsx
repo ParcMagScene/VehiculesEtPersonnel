@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Clock, CheckCircle, AlertTriangle, FileText, Loader, X, User, Calendar, Gauge } from 'lucide-react';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
@@ -11,12 +12,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   // Trouver la maintenance à éditer dès le départ
   const maintenanceToEditData = maintenanceToEdit ? maintenances.find(m => m.id === maintenanceToEdit) : null;
   
-  // Vérifier les droits - les non-admins ne peuvent que signaler des pannes
+  // Vérifier les droits - admin ou utilisateur avec permission maintenance
   const isAdmin = currentUser?.isAdmin === true;
-  // Mode consultation : non-admin qui ouvre une intervention existante
-  const isViewMode = !isAdmin && !!maintenanceToEditData;
-  const canSchedule = isAdmin;
-  const canOnlyReport = !isAdmin && !isViewMode;
+  const canManageMaintenance = isAdmin || currentUser?.permissions?.can_manage_maintenance === true;
+  // Mode consultation : utilisateur sans droit maintenance qui ouvre une intervention existante
+  const isViewMode = !canManageMaintenance && !!maintenanceToEditData;
+  const canSchedule = canManageMaintenance;
+  const canOnlyReport = !canManageMaintenance && !isViewMode;
   
   // Déterminer le statut et le mode initial en fonction de actionType ET des droits
   const getInitialStatus = () => {
@@ -63,6 +65,22 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   const [conflictWarning, setConflictWarning] = useState(null); // Avertissement de conflit
   const [initialFormData, setInitialFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+
+  // Fermeture sécurisée avec avertissement si modifications
+  const handleSafeClose = () => {
+    if (isViewMode) { onClose(); return; }
+    if (hasChanges) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    // En création, vérifier si des champs ont été remplis
+    if (!editingId && (formData.description || formData.garage || formData.cost)) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
   const [statusReason, setStatusReason] = useState(''); // Motif pour pending/cancelled/rescheduled
   const [confirmDialog, setConfirmDialog] = useState(null); // { message, onConfirm }
   const [showCancelForm, setShowCancelForm] = useState(false);
@@ -111,7 +129,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     { value: 'SEMI', label: 'Semi-remorque', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans' },
     { value: 'SCENE', label: 'Scène mobile', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'], periodicity: 'Tous les ans (remorque > 500 kg PTAC)' },
     { value: 'POLLUTION', label: 'Pollution', vehicleTypes: ['ALL_MOTORIZED'], periodicity: 'Tous les ans (inclus dans le CT pour les VL, séparé pour les PL)' },
-    { value: 'HAYON', label: 'Hayon (contrôle VGP)', vehicleTypes: ['ALL'], periodicity: 'Tous les 6 mois (Vérification Générale Périodique)' }
+    { value: 'HAYON', label: 'Hayon (contrôle VGP)', vehicleTypes: ['ALL'], periodicity: 'Tous les 6 mois (Vérification Générale Périodique)' },
+    { value: 'TACHYGRAPHE', label: '📡 Tachygraphe', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les 2 ans — vérification complète, étalonnage, scellés (~1h30, ~200 €)' },
+    { value: 'LIMITEUR', label: '🚧 Limiteur de vitesse', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'], periodicity: 'Tous les ans — contrôle en centre agréé (~15 min, ~70 €)' }
   ];
 
   // Filtrer les types de contrôles selon le type de véhicule
@@ -134,6 +154,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       
       // Pollution disponible pour tous les véhicules motorisés
       if (ct.value === 'POLLUTION') return isMotorized;
+      
+      // Tachygraphe et Limiteur de vitesse pour PL et semi-remorques
+      if (ct.value === 'TACHYGRAPHE' || ct.value === 'LIMITEUR') return isPL || isSemi;
       
       // VL pour les véhicules légers
       if (ct.value === 'VL') return isVL;
@@ -411,7 +434,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
 
   return (
-    <div className="maintenance-dialog-overlay" onClick={onClose}>
+    <div className="maintenance-dialog-overlay" onClick={handleSafeClose}>
       <div className="maintenance-dialog" onClick={(e) => e.stopPropagation()}>
         <div 
           className="maintenance-dialog-header"
@@ -427,7 +450,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
             </div>
           </div>
-          <button className="close-button" onClick={onClose}>✕</button>
+          <button className="close-button" onClick={handleSafeClose}>✕</button>
         </div>
 
         <div className="maintenance-tabs">
@@ -803,7 +826,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               </div>
 
               {/* Formulaire motif d'annulation (affiché au-dessus des boutons) */}
-              {editingId && isAdmin && showCancelForm && formData.status !== 'cancelled' && (
+              {editingId && canManageMaintenance && showCancelForm && formData.status !== 'cancelled' && (
                 <div className="status-reason-field" style={{ marginBottom: '12px' }}>
                   <label>❌ Motif d'annulation :</label>
                   <textarea
@@ -981,7 +1004,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                             >
                               ✏️
                             </button>
-                            {isAdmin && (
+                            {canManageMaintenance && (
                               <button
                                 className="delete-maintenance-button"
                                 onClick={() => deleteMaintenance(maintenance.id)}
@@ -1044,7 +1067,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
             ) : editingId ? (
               <>
                 <div className="form-actions-left">
-                  {isAdmin && (
+                  {canManageMaintenance && (
                     <button 
                       type="button" 
                       className="delete-button"
@@ -1053,7 +1076,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       🗑️ Supprimer
                     </button>
                   )}
-                  {isAdmin && formData.status !== 'cancelled' && !showCancelForm && (
+                  {canManageMaintenance && formData.status !== 'cancelled' && !showCancelForm && (
                     <button
                       type="button"
                       className="cancel-intervention-button"
@@ -1062,7 +1085,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       ❌ Annuler l'intervention
                     </button>
                   )}
-                  {isAdmin && formData.status === 'cancelled' && (
+                  {canManageMaintenance && formData.status === 'cancelled' && (
                     <button
                       type="button"
                       className="reschedule-button"
@@ -1076,7 +1099,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                   )}
                 </div>
                 <div className="form-actions-right">
-                  {isAdmin && formData.status !== 'cancelled' && (
+                  {canManageMaintenance && formData.status !== 'cancelled' && (
                     <button 
                       type="button" 
                       className="reschedule-button"
@@ -1197,6 +1220,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}
           onCancel={() => setConfirmDialog(null)}
+        />
+      )}
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
         />
       )}
     </div>

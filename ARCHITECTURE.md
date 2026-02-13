@@ -1,6 +1,6 @@
-# 🏗️ Architecture Complète — MagLog 1.0
+# 🏗️ Architecture Complète — eM@g
 
-> **Dernière mise à jour** : 9 février 2026
+> **Dernière mise à jour** : 13 février 2026
 > **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
 > **Domaine** : `magsav.duckdns.org`
 
@@ -34,7 +34,9 @@ Application web de **gestion de flotte de véhicules et de planning du personnel
 - **Importer des données** : BL (bons de livraison PDF), fichiers Excel, véhicules CSV
 - **Synchroniser Google Calendar** : lecture des événements, création de réservations depuis Google
 - **Gérer le personnel** : personnes, compétences, disponibilités, missions, affectations, planning
-- **Accès mobile** : interface dédiée avec QR code
+- **Gérer les affaires** : dossiers projets, pièces jointes, historique, liens réservations
+- **Messagerie interne** : conversations temps réel entre utilisateurs
+- **Accès mobile** : interface dédiée avec QR code (planning, réservations, maintenances, messagerie)
 
 ---
 
@@ -45,7 +47,7 @@ Application web de **gestion de flotte de véhicules et de planning du personnel
 | Couche | Technologie | Version | Rôle |
 |--------|------------|---------|------|
 | **Frontend** | React | 18.3 | UI composants |
-| **Bundler** | Vite | 5.2 | Build & dev server |
+| **Bundler** | Vite | 5.4 | Build & dev server |
 | **Backend** | Express.js | 4.18 | API REST |
 | **Base de données** | SQLite | via better-sqlite3 9.2 | Stockage persistant |
 | **Authentification** | JWT | jsonwebtoken 9.0 | Tokens d'accès |
@@ -98,31 +100,37 @@ Resevation Véhicules/
 │
 ├── src/                            # ══ CODE SOURCE FRONTEND ══
 │   ├── main.jsx                    # Point d'entrée React
-│   ├── App.jsx                     # Composant racine (802 lignes)
+│   ├── App.jsx                     # Composant racine (~1248 lignes)
 │   ├── App.css                     # Styles globaux
 │   ├── index.css                   # Reset CSS
+│   ├── theme.css                   # Variables de thème
 │   │
-│   ├── components/                 # Composants React (61 fichiers)
+│   ├── components/                 # Composants React (43 fichiers desktop + 10 mobile)
 │   │   ├── Calendar.jsx            # Calendrier principal (semaine/mois/année)
-│   │   ├── Header.jsx              # Barre de navigation + notifications
+│   │   ├── Header.jsx              # Barre de navigation + boutons Nouvelle affaire, Aide
 │   │   ├── LoginForm.jsx           # Formulaire de connexion
 │   │   ├── ManagementPanel.jsx     # Panel admin (onglets CRUD)
 │   │   ├── ReservationModal.jsx    # Modal création/édition réservation
 │   │   ├── MaintenanceDialog.jsx   # Dialog maintenance/intervention
 │   │   ├── VehicleDetailsModal.jsx # Fiche détail véhicule
+│   │   ├── VehicleDetailPanel.jsx  # Panel latéral détail véhicule
 │   │   ├── EventDetailsModal.jsx   # Détail d'un événement calendrier
 │   │   ├── TripDetailsModal.jsx    # Planification de trajet
 │   │   ├── PlanningView.jsx        # Vue planning (liste chronologique)
 │   │   ├── UserManagement.jsx      # Gestion utilisateurs (admin)
 │   │   ├── AccessRequestModal.jsx  # Demande d'accès / création compte
-│   │   ├── GoogleCalendarBanner.jsx # Bandeau événements Google
+│   │   ├── GoogleCalendarBanner.jsx # Bandeau événements Google + boutons contextuels
 │   │   ├── GoogleCalendarConfig.jsx # Config Google (admin)
+│   │   ├── AffairesPanel.jsx       # Module affaires (liste, recherche, filtres)
+│   │   ├── AffaireDetailPanel.jsx  # Détail affaire (PJ, historique, liens)
 │   │   ├── AffaireImportModal.jsx  # Import BL/Excel
+│   │   ├── AssignmentDialog.jsx    # Dialog d'affectation personnel
 │   │   ├── InterventionModal.jsx   # Modal intervention rapide
 │   │   ├── OverdueInterventionModal.jsx # Alertes interventions en retard
 │   │   ├── ReservationRequestsPanel.jsx # Demandes de réservation
 │   │   ├── LocationDialog.jsx      # Dialog création lieu (Google Places)
 │   │   ├── ClientDialog.jsx        # Dialog création client
+│   │   ├── DriverSelect.jsx        # Sélecteur de conducteur
 │   │   ├── VehiclePickerCards.jsx   # Sélecteur de véhicule (cartes)
 │   │   ├── VehicleMaintenanceModal.jsx # Modal km/contrôle technique
 │   │   ├── ProfileEditModal.jsx    # Édition de profil utilisateur
@@ -130,42 +138,54 @@ Resevation Véhicules/
 │   │   ├── MobileAccess.jsx        # QR code accès mobile
 │   │   ├── QRCodeModal.jsx         # Affichage QR code
 │   │   ├── UserAvatar.jsx          # Avatar utilisateur
-│   │   ├── PersonnelPanel.jsx      # Module personnel (4 sous-onglets)
+│   │   ├── UserPreferencesModal.jsx # Préférences utilisateur (thème, module par défaut)
+│   │   ├── PersonnelPanel.jsx      # Module personnel (4 sous-onglets + PlanningTab)
+│   │   ├── PersonnelDetailPanel.jsx # Panel latéral détail personne
+│   │   ├── MessagingPanel.jsx      # Messagerie interne (conversations, messages)
+│   │   ├── HelpModal.jsx           # Modal d'aide contextuelle
+│   │   ├── UnsavedChangesDialog.jsx # Dialog changements non sauvegardés
 │   │   ├── ErrorBoundary.jsx       # Capture d'erreurs React
 │   │   ├── ConfirmDialog.jsx       # Dialog de confirmation
 │   │   ├── MonthSelector.jsx       # Sélecteur de mois
 │   │   ├── WeekSelector.jsx        # Sélecteur de semaine
 │   │   ├── YearSelector.jsx        # Sélecteur d'année
-│   │   └── mobile/                 # Interface mobile dédiée
+│   │   └── mobile/                 # Interface mobile dédiée (10 composants)
 │   │       ├── MobileApp.jsx       # Routeur mobile
 │   │       ├── MobileHome.jsx      # Accueil mobile
 │   │       ├── MobileLogin.jsx     # Login mobile
 │   │       ├── MobilePlanning.jsx  # Planning mobile
 │   │       ├── MobileReservations.jsx # Réservations mobile
 │   │       ├── MobileMaintenances.jsx # Maintenances mobile
-│   │       └── MobileAvailability.jsx # Disponibilité véhicules
+│   │       ├── MobileAvailability.jsx # Disponibilité véhicules
+│   │       ├── MobilePersonnel.jsx # Personnel mobile
+│   │       ├── MobileMessaging.jsx # Messagerie mobile
+│   │       └── MobileParcDashboard.jsx # Tableau de bord parc mobile
 │   │
-│   ├── hooks/                      # Hooks React custom
+│   ├── hooks/                      # Hooks React custom (4 fichiers)
 │   │   ├── useAutocomplete.js      # Autocomplétion générique
-│   │   └── useGooglePlacesAutocomplete.js # Google Places
+│   │   ├── useGooglePlacesAutocomplete.js # Google Places
+│   │   ├── useUnsavedChanges.js    # Détection changements non sauvegardés
+│   │   └── useWindowWidth.js       # Détection largeur fenêtre (responsive)
 │   │
-│   └── utils/                      # Fonctions utilitaires
-│       ├── api.js                  # Client API (~700 lignes, ~85 méthodes)
+│   └── utils/                      # Fonctions utilitaires (12 fichiers)
+│       ├── api.js                  # Client API (~793 lignes, ~102 méthodes)
 │       ├── dateUtils.js            # Utilitaires de dates
 │       ├── excelImport.js          # Import Excel
 │       ├── googleMapsLoader.js     # Chargement Google Maps API
-│       ├── indexedDB.js            # Couche cache IndexedDB
+│       ├── indexedDB.js            # Couche cache IndexedDB (12 stores)
 │       ├── logger.js               # Logger conditionnel (dev/prod)
+│       ├── notificationSound.js    # Son de notification
 │       ├── pdfParser.js            # Parsing PDF (pdfjs-dist)
 │       ├── photoList.js            # Gestion photos véhicules
+│       ├── vehicleAvatars.js       # Avatars véhicules
 │       ├── vehicleUtils.js         # Utilitaires véhicules (CT, statuts)
 │       └── vehiclesCsvImport.js    # Import CSV véhicules
 │
 ├── server/                         # ══ CODE SOURCE BACKEND ══
-│   ├── server.js                   # Serveur Express principal (~2160 lignes)
-│   ├── routes.js                   # Routes additionnelles (~640 lignes)
-│   ├── personnelRoutes.js          # Routes module personnel (~530 lignes)
-│   ├── database.js                 # Initialisation SQLite + schéma (~540 lignes)
+│   ├── server.js                   # Serveur Express principal (~2545 lignes)
+│   ├── routes.js                   # Routes additionnelles (~641 lignes)
+│   ├── personnelRoutes.js          # Routes module personnel (~928 lignes)
+│   ├── database.js                 # Initialisation SQLite + schéma (~966 lignes)
 │   ├── package.json                # Dépendances backend
 │   ├── ecosystem.config.js         # Configuration PM2
 │   ├── .env                        # Variables d'environnement (secrets)
@@ -177,10 +197,13 @@ Resevation Véhicules/
 │   ├── fix-schema.sql              # Corrections de schéma
 │   ├── vehicules.db                # Base de données SQLite
 │   ├── backups/                    # Dossier backups DB
-│   └── migrations/                 # Migrations SQL
+│   └── migrations/                 # Migrations SQL (9 fichiers)
+│       ├── add_affaire_to_missions.sql
+│       ├── add_day_states_to_missions.sql
+│       ├── add_messaging.sql
+│       ├── add_personnel_module.sql
 │       ├── add_technical_control_type_to_maintenances.sql
 │       ├── add_trip_details.sql
-│       ├── add_personnel_module.sql
 │       ├── add_trip_group_id.sql
 │       ├── add_vehicle_maintenance_info.sql
 │       └── fix_trip_details_reservation_id_type.sql
@@ -197,6 +220,9 @@ Resevation Véhicules/
 │
 ├── scripts/                        # ══ SCRIPTS UTILITAIRES ══
 │   ├── safe-deploy.sh              # Déploiement zero-downtime
+│   ├── dev-reset-db.sh             # Reset DB en développement
+│   ├── dev-start.sh                # Démarrage environnement dev
+│   ├── generate-icons.py           # Génération des icônes PWA
 │   ├── generate-photo-list.js      # Génération index photos
 │   └── watch-photos.js             # Watcher photos (dev)
 │
@@ -279,10 +305,10 @@ Client HTTP
 
 | Fichier | Lignes | Rôle |
 |---------|--------|------|
-| `server.js` | ~2160 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads) |
-| `routes.js` | ~640 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
-| `personnelRoutes.js` | ~530 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations, planning) |
-| `database.js` | ~540 | Initialisation schéma SQLite, pragmas, migrations dynamiques |
+| `server.js` | ~2545 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads, messagerie) |
+| `routes.js` | ~641 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
+| `personnelRoutes.js` | ~928 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations, planning) |
+| `database.js` | ~966 | Initialisation schéma SQLite, pragmas, migrations dynamiques, 27 tables |
 | `logger.js` | ~30 | Logger conditionnel |
 
 ### Variables d'environnement (`server/.env`)
@@ -296,7 +322,7 @@ JWT_EXPIRY_DAYS=30
 
 ## 5. Architecture Frontend
 
-### Composant racine : `App.jsx` (802 lignes)
+### Composant racine : `App.jsx` (~1248 lignes)
 
 ```
 main.jsx
@@ -305,31 +331,42 @@ main.jsx
        ├─ État loading → Spinner
        ├─ Non authentifié → LoginForm
        └─ Authentifié →
-            ├─ Header (toujours)
-            ├─ GoogleCalendarBanner (toujours)
-            ├─ Calendar | PlanningView (selon view)
+            ├─ Header (toujours — boutons Nouvelle affaire, Aide)
+            ├─ GoogleCalendarBanner (sauf module Affaires — boutons Nouvelle réservation/affectation)
+            ├─ activeModule === 'vehicles' ? Calendar | PlanningView
+            ├─ activeModule === 'personnel' ? PersonnelPanel (lazy)
+            ├─ activeModule === 'affaires' ? AffairesPanel (lazy)
             ├─ ManagementPanel (lazy, si showManagement)
+            ├─ MessagingPanel (lazy, si showMessaging)
             ├─ MaintenanceDialog (lazy, si selectedVehicle)
             ├─ VehicleDetailsModal (si selectedVehicleForDetails)
-            └─ VehicleMaintenanceModal (lazy, si selectedForKmControl)
+            ├─ VehicleMaintenanceModal (lazy, si selectedForKmControl)
+            ├─ UserPreferencesModal (lazy, si showPreferences)
+            └─ HelpModal (lazy, si showHelp)
 ```
 
-### States principaux de App.jsx (24 states)
+### States principaux de App.jsx
 
 | Catégorie | States |
 |-----------|--------|
-| **Navigation** | `view` (week/month/year/planning), `currentDate` |
+| **Navigation** | `view` (week/month/year/planning), `currentDate`, `activeModule` (vehicles/personnel/affaires) |
 | **Données métier** | `vehicles`, `reservations`, `clients`, `drivers`, `locations`, `garages`, `maintenances`, `users` |
 | **Google Calendar** | `calendarConfig`, `googleEvents`, `googleEventForReservation`, `hoveredEventId` |
-| **UI / Modals** | `showManagement`, `isLoading`, `reservationToEdit`, `selectedVehicleForMaintenance`, `maintenanceToEdit`, `selectedVehicleForDetails`, `selectedVehicleForKilometrageControl`, `maintenanceActionType` |
+| **UI / Modals** | `showManagement`, `showMessaging`, `isLoading`, `reservationToEdit`, `selectedVehicleForMaintenance`, `maintenanceToEdit`, `selectedVehicleForDetails`, `selectedVehicleForKilometrageControl`, `maintenanceActionType` |
 | **Auth** | `isAuthenticated`, `currentUser` |
+| **Modules** | `quickReservationSlot`, `quickAssignmentSlot`, `navigateToPersonId` |
 
 ### Code splitting (lazy loading)
 
-3 composants chargés à la demande via `React.lazy()` :
+8 composants chargés à la demande via `React.lazy()` :
 - `ManagementPanel` — Panel de gestion (le plus gros composant)
 - `MaintenanceDialog` — Dialog maintenance/intervention
 - `VehicleMaintenanceModal` — Modal kilométrage/contrôle technique
+- `PersonnelPanel` — Module personnel complet (~1995 lignes)
+- `AffairesPanel` — Module affaires (~791 lignes)
+- `MessagingPanel` — Messagerie interne
+- `UserPreferencesModal` — Préférences utilisateur
+- `HelpModal` — Modal d'aide contextuelle
 
 ### Cache IndexedDB
 
@@ -345,15 +382,16 @@ Le frontend persiste les données dans IndexedDB (via `src/utils/indexedDB.js`) 
 | `garages` | Garages |
 | `maintenances` | Maintenances |
 | `calendarConfig` | Configuration Google |
+| `affaires` | Affaires / dossiers projets |
 | `persons` | Personnel (personnes) |
 | `skills` | Compétences |
 | `missions` | Missions |
 
 Le debounce de sauvegarde est de **500ms** pour éviter des écritures trop fréquentes.
 
-### Client API (`src/utils/api.js` — ~700 lignes)
+### Client API (`src/utils/api.js` — ~793 lignes)
 
-Classe `ApiClient` avec ~85 méthodes. Fonctionnalités :
+Classe `ApiClient` avec ~102 méthodes. Fonctionnalités :
 - Détection automatique de l'URL backend (DuckDNS / localhost / IP)
 - Injection automatique du Bearer token JWT
 - Conversion `snake_case` ↔ `camelCase` transparente
@@ -371,7 +409,7 @@ Classe `ApiClient` avec ~85 méthodes. Fonctionnalités :
 - `PRAGMA synchronous = FULL` — Durabilité maximale
 - Checkpoint automatique toutes les 5 minutes
 
-### Schéma complet (22 tables)
+### Schéma complet (27 tables)
 
 #### `users` — Utilisateurs
 | Colonne | Type | Contraintes |
@@ -871,7 +909,7 @@ Classe `ApiClient` avec ~85 méthodes. Fonctionnalités :
 | DELETE | `/api/assignments/:id` | ✅ | ❌ | Supprimer une affectation |
 | GET | `/api/personnel/planning` | ✅ | ❌ | Planning global (missions + disponibilités, filtres dates) |
 
-> **Total : ~105 routes API**
+> **Total : ~122 routes API**
 
 ---
 
@@ -915,19 +953,25 @@ Classe `ApiClient` avec ~85 méthodes. Fonctionnalités :
 - **Rôles** : Admin (CRUD tout), Utilisateur (lecture + demandes + signalements)
 - **Fonctionnalités** : Avatar, profil éditable, reset mot de passe, sessions actives en DB
 
-### 📎 Module Import / Pièces jointes
-- **Composants** : `AffaireImportModal`
-- **Fonctionnalités** : Import BL (PDF), import Excel, upload pièces jointes par affaire (50MB max), index des affaires
-- **Formats** : PDF, images (JPEG, PNG, GIF, SVG, WebP), documents (DOC, XLS, PPT, TXT, CSV, ZIP, RAR)
+### 📎 Module Affaires
+- **Composants** : `AffairesPanel` (~791 lignes), `AffaireDetailPanel` (~947 lignes), `AffaireImportModal`
+- **Fonctionnalités** : Gestion des dossiers projets/affaires, recherche et filtres, pièces jointes par affaire (50MB max), import BL (PDF), import Excel, historique des modifications, liens vers réservations et missions
+- **Navigation** : Onglet dédié dans le header, bouton "Nouvelle affaire" toujours visible
+- **Formats supportés** : PDF, images (JPEG, PNG, GIF, SVG, WebP), documents (DOC, XLS, PPT, TXT, CSV, ZIP, RAR)
+
+### 💬 Module Messagerie
+- **Composants** : `MessagingPanel` (lazy), `MobileMessaging`
+- **Fonctionnalités** : Conversations temps réel entre utilisateurs, notifications de nouveaux messages, historique des conversations
+- **Accès** : Icône dans le header, disponible sur desktop et mobile
 
 ### 📱 Module Mobile
-- **Composants** : `MobileApp`, `MobileHome`, `MobileLogin`, `MobilePlanning`, `MobileReservations`, `MobileMaintenances`, `MobileAvailability`
+- **Composants** : `MobileApp`, `MobileHome`, `MobileLogin`, `MobilePlanning`, `MobileReservations`, `MobileMaintenances`, `MobileAvailability`, `MobilePersonnel`, `MobileMessaging`, `MobileParcDashboard`
 - **Accès** : Via `/mobile` ou QR code généré dans `MobileAccess` / `QRCodeModal`
-- **Fonctionnalités** : Planning, réservations, maintenances, disponibilité véhicules
+- **Fonctionnalités** : Planning, réservations, maintenances, disponibilité véhicules, personnel, messagerie, tableau de bord parc
 
-### 👷 Module Personnel (MagLog 1.0)
-- **Composants** : `PersonnelPanel` (4 sous-onglets : Personnes, Compétences, Missions, Planning)
-- **Backend** : `personnelRoutes.js` (5 groupes de routes : persons, skills, availabilities, missions, assignments)
+### 👷 Module Personnel (eM@g)
+- **Composants** : `PersonnelPanel` (~1995 lignes, 4 sous-onglets : Personnes, Compétences, Missions, Planning), `PersonnelDetailPanel`, `AssignmentDialog`
+- **Backend** : `personnelRoutes.js` (~928 lignes, 5 groupes de routes : persons, skills, availabilities, missions, assignments)
 - **Tables DB** : `persons`, `skills`, `person_skills`, `availabilities`, `missions`, `mission_assignments`
 - **Sous-onglets** :
   - **Personnes** : Recherche/filtre par type, CRUD avec sélecteur de compétences (chips + niveaux), cartes extensibles
@@ -1158,12 +1202,12 @@ missions ───────┬──< mission_assignments (mission_id, ON DEL
 
 | Métrique | Valeur |
 |----------|--------|
-| Tables DB | 22 (16 originales + 6 personnel) |
-| Routes API | ~105 |
-| Composants React | ~47 (desktop) + 7 (mobile) |
-| Utilitaires | 10 |
-| Hooks custom | 2 |
-| Méthodes API client | ~85 |
-| Fichiers source (src/) | ~82 |
-| Code splitting (lazy) | 3 composants |
-| Stores IndexedDB | 11 |
+| Tables DB | 27 |
+| Routes API | ~122 (65 server + 30 routes + 27 personnel) |
+| Composants React | 43 (desktop) + 10 (mobile) |
+| Utilitaires | 12 |
+| Hooks custom | 4 |
+| Méthodes API client | ~102 |
+| Fichiers source (src/) | ~121 |
+| Code splitting (lazy) | 8 composants |
+| Stores IndexedDB | 12 |

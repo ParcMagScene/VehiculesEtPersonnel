@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, AlertTriangle, Calendar, CheckCircle, Clock } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './InterventionModal.css';
 
 const InterventionModal = ({ 
@@ -13,6 +14,7 @@ const InterventionModal = ({
 }) => {
   const isAdmin = currentUser?.isAdmin === true;
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [formData, setFormData] = useState({
     date: intervention?.date || '',
     type: intervention?.type || '',
@@ -22,6 +24,24 @@ const InterventionModal = ({
     cost: intervention?.cost || '',
     technicalControlType: intervention?.technicalControlType || null
   });
+
+  const initialFormDataRef = useRef(JSON.stringify({
+    date: intervention?.date || '',
+    type: intervention?.type || '',
+    status: intervention?.status || '',
+    description: intervention?.description || '',
+    garage: intervention?.garage || '',
+    cost: intervention?.cost || '',
+    technicalControlType: intervention?.technicalControlType || null
+  }));
+
+  const handleSafeClose = () => {
+    if (JSON.stringify(formData) !== initialFormDataRef.current) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
 
   const dateInputRef = useRef(null);
 
@@ -215,11 +235,18 @@ const InterventionModal = ({
   const isTechnicalControl = formData.type === 'inspection' || formData.type === 'technical_inspection';
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleSafeClose}>
       <div className="intervention-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Éditer l'intervention</h2>
-          <button className="close-button" onClick={onClose}>
+          <div>
+            <h2>Éditer l'intervention</h2>
+            {vehicle && (
+              <span className="modal-header-subtitle">
+                {vehicle.name}{vehicle.kilometrage ? ` — ${Number(vehicle.kilometrage).toLocaleString('fr-FR')} km` : ''}
+              </span>
+            )}
+          </div>
+          <button className="close-button" onClick={handleSafeClose}>
             <X size={24} />
           </button>
         </div>
@@ -366,6 +393,12 @@ const InterventionModal = ({
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}
           onCancel={() => setConfirmDialog(null)}
+        />
+      )}
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
         />
       )}
     </div>

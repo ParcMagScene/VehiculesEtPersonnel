@@ -188,7 +188,7 @@ section h3 {
   margin: 0;
   padding: 12px;
   background: #f9fafb;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid var(--theme-primary);
   border-radius: 4px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -213,7 +213,7 @@ section h3 {
 }
 
 .event-details-modal .reservation-card:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
 }
 
@@ -305,7 +305,7 @@ section h3 {
 }
 
 .event-details-modal .drive-link-edit-form .drive-link-input:focus {
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
 }
 
@@ -421,7 +421,7 @@ section h3 {
 }
 
 .event-details-modal .drive-link-edit-inline .drive-link-input:focus {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
@@ -891,7 +891,7 @@ section h3 {
 }
 
 .event-details-modal .folder-file-card:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
   transform: translateY(-2px);
 }
@@ -931,7 +931,7 @@ section h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #667eea;
+  color: var(--theme-primary);
   background: #f3f4f6;
   border-radius: 8px;
 }
@@ -988,7 +988,7 @@ section h3 {
 
 .event-details-modal .attachment-item.clickable:hover {
   background: #f3f4f6;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   transform: translateX(4px);
 }
 

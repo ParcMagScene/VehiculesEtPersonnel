@@ -359,7 +359,7 @@
 }
 
 .ad-affaire-search:focus {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
 }
 
@@ -493,7 +493,7 @@
 .ad-field input:focus,
 .ad-field select:focus,
 .ad-field textarea:focus {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.12);
 }
 
@@ -530,8 +530,8 @@
 
 .ad-days-btn:hover {
   background: #f3f4f6;
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
 }
 
 .ad-days-grid {
@@ -570,7 +570,7 @@
 }
 
 .ad-day-cell.today {
-  box-shadow: 0 0 0 2px #667eea;
+  box-shadow: 0 0 0 2px var(--theme-primary);
 }
 
 .ad-day-cell:hover {
@@ -621,7 +621,7 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
   font-size: 0.65rem;
   font-weight: 700;
@@ -741,13 +741,13 @@
 }
 
 .ad-status-btn:hover {
-  border-color: var(--btn-color, #667eea);
-  color: var(--btn-color, #667eea);
+  border-color: var(--btn-color, var(--theme-primary));
+  color: var(--btn-color, var(--theme-primary));
 }
 
 .ad-status-btn.active {
-  background: var(--btn-color, #667eea);
-  border-color: var(--btn-color, #667eea);
+  background: var(--btn-color, var(--theme-primary));
+  border-color: var(--btn-color, var(--theme-primary));
   color: white;
 }
 

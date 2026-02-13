@@ -6,12 +6,12 @@ import EventDetailsModal from './EventDetailsModal';
 import api from '../utils/api';
 import logger, { oauthLogger } from '../utils/logger';
 import { capitalizeText } from '../utils/dateUtils';
-import { Search, X, RefreshCw } from 'lucide-react';
+import { Search, X, RefreshCw, Plus, Truck, Users } from 'lucide-react';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
 
-function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh }) {
+function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -1187,6 +1187,15 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                 <span className="banner-search-count">{eventBlocks.length}</span>
               </div>
             )}
+            {/* Bouton contextuel : Nouvelle réservation / Nouvelle affectation / Nouvelle affaire */}
+            <button
+              className="banner-new-action-btn"
+              onClick={activeModule === 'affaires' ? onNewAffaire : activeModule === 'personnel' ? onNewAssignment : onNewReservation}
+              title={activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}
+            >
+              <Plus size={14} />
+              <span>{activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}</span>
+            </button>
           </div>
         </div>
 

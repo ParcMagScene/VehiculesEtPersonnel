@@ -164,7 +164,7 @@
 }
 
 .pdp-section-title svg {
-  color: #667eea;
+  color: var(--theme-primary);
 }
 
 /* Identité */
@@ -182,7 +182,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -266,13 +266,13 @@
 }
 
 .pdp-contact-item:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: #f8f7ff;
   color: #5b21b6;
 }
 
 .pdp-contact-item svg {
-  color: #667eea;
+  color: var(--theme-primary);
   flex-shrink: 0;
 }
 
@@ -366,6 +366,84 @@
 .pdp-slide-edit-btn:hover {
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   transform: translateY(-1px);
+}
+
+/* ═══ Absences ═══ */
+.pdp-absence-add-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--theme-primary);
+  transition: all 0.2s;
+}
+
+.pdp-absence-add-btn:hover {
+  background: var(--theme-primary);
+  color: white;
+  border-color: var(--theme-primary);
+}
+
+.pdp-absence-loading,
+.pdp-absence-empty {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 8px;
+}
+
+.pdp-absence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pdp-absence-item {
+  padding: 6px 10px;
+  border-left: 3px solid #94a3b8;
+  border-radius: 0 6px 6px 0;
+  background: #f8fafc;
+  font-size: 12px;
+}
+
+.pdp-absence-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.pdp-absence-type {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pdp-absence-status {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.pdp-absence-dates {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.pdp-absence-reason {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+  margin-top: 2px;
 }
 
 /* ═══ Responsive ═══ */

@@ -1,7 +1,7 @@
 {
-  "name": "reservation-vehicules",
-  "version": "1.0.0",
-  "description": "Système de réservation de véhicules avec calendrier interactif",
+  "name": "emag",
+  "version": "2.0.0",
+  "description": "eM@g - Gestion du parc Mag Scène",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -25,6 +25,7 @@
     "lucide-react": "^0.344.0",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.4.530",
+    "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "xlsx": "^0.18.5"

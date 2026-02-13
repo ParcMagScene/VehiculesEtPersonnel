@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
+import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './VehicleMaintenanceModal.css';
 
 const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
@@ -14,6 +15,22 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     : [];
   
   const [controles, setControles] = useState(initialControles);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const initialKmRef = useRef(vehicle?.kilometrage || 0);
+  const initialControlesRef = useRef(JSON.stringify(initialControles));
+
+  const hasChanges = () => {
+    return String(kilometrage) !== String(initialKmRef.current) ||
+           JSON.stringify(controles) !== initialControlesRef.current;
+  };
+
+  const handleSafeClose = () => {
+    if (hasChanges()) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    onClose();
+  };
   const [newControle, setNewControle] = useState({
     type: '',
     date: '',
@@ -46,7 +63,9 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     { value: 'SEMI', label: 'Semi-remorque', firstDelay: 12, periodicDelay: 12, note: 'Comme PL', vehicleTypes: ['SEMI', 'SEMI-REMORQUE'] },
     { value: 'SCENE', label: 'Scène mobile', firstDelay: 12, periodicDelay: 12, note: 'Véhicule spécial remorqué', vehicleTypes: ['SCENE', 'SCÈNE', 'REMORQUE'] },
     { value: 'POLLUTION', label: 'Pollution', firstDelay: 12, periodicDelay: 12, note: 'Contrôle des émissions', vehicleTypes: ['ALL_MOTORIZED'] },
-    { value: 'HAYON', label: 'Hayon', firstDelay: 0, periodicDelay: 6, note: 'VGP obligatoire', vehicleTypes: ['ALL'] }
+    { value: 'HAYON', label: 'Hayon', firstDelay: 0, periodicDelay: 6, note: 'VGP obligatoire', vehicleTypes: ['ALL'] },
+    { value: 'TACHYGRAPHE', label: '📡 Tachygraphe', firstDelay: 24, periodicDelay: 24, note: 'Vérification, étalonnage, scellés (~1h30, ~200 €)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'] },
+    { value: 'LIMITEUR', label: '🚧 Limiteur de vitesse', firstDelay: 12, periodicDelay: 12, note: 'Contrôle en centre agréé (~15 min, ~70 €)', vehicleTypes: ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR', 'SEMI', 'SEMI-REMORQUE'] }
   ];
 
   // Filtrer les types de contrôles selon le type de véhicule
@@ -73,6 +92,11 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
       // Pollution disponible pour tous les véhicules motorisés
       if (ct.value === 'POLLUTION') {
         return isMotorized;
+      }
+      
+      // Tachygraphe et Limiteur de vitesse pour PL et semi-remorques
+      if (ct.value === 'TACHYGRAPHE' || ct.value === 'LIMITEUR') {
+        return isPL || isSemi;
       }
       
       // VL pour les véhicules légers
@@ -177,11 +201,19 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleSafeClose}>
       <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>🔧 Maintenance - {vehicle?.name}</h2>
-          <button className="close-button" onClick={onClose}>
+          <div className="modal-header-title">
+            <h2>🔧 Maintenance - {vehicle?.name}</h2>
+            {(vehicle?.type || vehicle?.registration) && (
+              <div className="vehicle-info">
+                {vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}
+                {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
+              </div>
+            )}
+          </div>
+          <button className="close-button" onClick={handleSafeClose}>
             <X size={24} />
           </button>
         </div>
@@ -260,7 +292,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
             ) : (
               <>
                 <div className="form-group">
-                  <label htmlFor="ct-type">Type d'équipement</label>
+                  <label htmlFor="ct-type">Type de contrôle</label>
                   <select
                     id="ct-type"
                     value={newControle.type}
@@ -323,7 +355,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                 ✅ Sauvegardé avec succès !
               </div>
             )}
-            <button type="button" className="btn-secondary" onClick={onClose}>
+            <button type="button" className="btn-secondary" onClick={handleSafeClose}>
               Annuler
             </button>
             <button type="submit" className="btn-primary">
@@ -333,6 +365,13 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
           </div>
         </form>
       </div>
+
+      {showUnsavedWarning && (
+        <UnsavedChangesDialog
+          onCancel={() => setShowUnsavedWarning(false)}
+          onDiscard={onClose}
+        />
+      )}
     </div>
   );
 };

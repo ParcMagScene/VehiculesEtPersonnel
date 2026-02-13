@@ -70,7 +70,7 @@
 }
 
 .request-email {
-  color: #667eea;
+  color: var(--theme-primary);
   font-size: 0.9rem;
   margin-bottom: 0.25rem;
 }
@@ -89,33 +89,33 @@
 .btn-reject {
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
+  border-radius: var(--btn-radius);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
   font-size: 0.9rem;
 }
 
 .btn-approve {
-  background: #10b981;
+  background: var(--btn-success-gradient);
   color: white;
 }
 
 .btn-approve:hover {
-  background: #059669;
+  opacity: 0.9;
   transform: translateY(-2px);
 }
 
 .btn-reject {
-  background: #ef4444;
-  color: white;
+  background: var(--btn-danger-filled-bg);
+  color: var(--btn-danger-filled-color);
 }
 
 .btn-reject:hover {
-  background: #dc2626;
+  background: var(--theme-danger-dark);
   transform: translateY(-2px);
 }
 
@@ -166,19 +166,21 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
-  background: #3b82f6;
-  color: white;
+  padding: var(--btn-padding);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background 0.2s;
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .add-email-form button:hover {
-  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .emails-list, .users-list, .requests-history {
@@ -318,29 +320,29 @@
 .btn-sm {
   padding: 6px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--btn-radius);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-weight: var(--btn-font-weight);
+  transition: var(--btn-transition);
 }
 
 .btn-sm.btn-primary {
-  background: #3b82f6;
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
 }
 
 .btn-sm.btn-primary:hover {
-  background: #2563eb;
+  transform: translateY(-1px);
 }
 
 .btn-sm.btn-secondary {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
 }
 
 .btn-sm.btn-secondary:hover {
-  background: #d1d5db;
+  background: var(--btn-secondary-hover-bg);
 }
 
 .no-data {
@@ -382,6 +384,37 @@
   color: #374151;
 }
 
+.permission-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.permission-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--theme-primary-light);
+  margin: 0;
+}
+
+.permission-checkbox .checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.all-permissions-label {
+  font-size: 10px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
 .user-management .action-buttons {
   display: inline-flex;
   flex-direction: row;
@@ -413,15 +446,17 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  padding: 20px 24px;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
 }
 
 .approve-modal-header h3 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 700;
+  color: white;
 }
 
 .approve-modal-body {
@@ -578,14 +613,16 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  color: white;
+  padding: 20px 24px;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
 }
 .create-personnel-modal-header h3 {
   margin: 0;
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: white;
 }
 
 .create-personnel-modal-body {

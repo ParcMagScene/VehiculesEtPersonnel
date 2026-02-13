@@ -156,7 +156,7 @@ const LoginForm = ({ onLogin }) => {
     <div className="login-overlay">
       <div className="login-container">
         <div className="login-header">
-          <img src="/Logos/LogoMagSav.svg" alt="Mag Scène" style={{ maxWidth: '200px', height: 'auto', margin: '0 auto 1rem' }} />
+          <img src="/Logos/LogoEmag.png" alt="eM@g Scene" style={{ maxWidth: '200px', height: 'auto', margin: '0 auto 1rem' }} />
           <p>Connexion</p>
         </div>
 

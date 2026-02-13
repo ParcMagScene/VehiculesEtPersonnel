@@ -1,18 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart } from 'lucide-react';
 import MobileHome from './MobileHome';
+import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
 import MobileMaintenances from './MobileMaintenances';
 import MobileAvailability from './MobileAvailability';
 import MobilePlanning from './MobilePlanning';
+import MobilePersonnel from './MobilePersonnel';
+import MobileMessaging from './MobileMessaging';
+import MobileEquipment from './MobileEquipment';
+import MobileEquipmentQR from './MobileEquipmentQR';
+import MobileOrders from './MobileOrders';
 import MobileLogin from './MobileLogin';
 import api from '../../utils/api';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../../utils/notificationSound';
 import './MobileApp.css';
 
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentScreen, setCurrentScreen] = useState('home');
+  const [qrEquipmentUid, setQrEquipmentUid] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [maintenances, setMaintenances] = useState([]);
@@ -22,10 +30,15 @@ function MobileApp({ onSwitchToDesktop }) {
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [msgToast, setMsgToast] = useState(null);
   
   // Refs pour contrôler les formulaires
   const reservationFormRef = useRef(null);
   const maintenanceFormRef = useRef(null);
+  const prevUnreadRef = useRef(-1);
+  const msgToastTimerRef = useRef(null);
+  const currentScreenRef = useRef('home');
 
   // Vérifier l'authentification
   useEffect(() => {
@@ -79,6 +92,73 @@ function MobileApp({ onSwitchToDesktop }) {
     loadData();
   }, [isAuthenticated, isLoading]);
 
+  // Sync currentScreen ref
+  useEffect(() => { currentScreenRef.current = currentScreen; }, [currentScreen]);
+
+  // Détection QR code dans le hash : #/mobile/equipment/EMAG-XXXXX
+  useEffect(() => {
+    const checkQrHash = () => {
+      const hash = window.location.hash;
+      const match = hash.match(/#\/mobile\/equipment\/(EMAG-\d+)/i);
+      if (match) {
+        setQrEquipmentUid(match[1]);
+        setCurrentScreen('equipment-qr');
+      }
+    };
+    checkQrHash();
+    window.addEventListener('hashchange', checkQrHash);
+    return () => window.removeEventListener('hashchange', checkQrHash);
+  }, []);
+
+  // Polling notifications messages non lus
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return;
+
+    // Demander permission navigateur
+    requestNotificationPermission();
+
+    const fetchUnread = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        const newCount = data.unread || 0;
+        const prevCount = prevUnreadRef.current;
+
+        if (newCount > prevCount && prevCount !== -1) {
+          const diff = newCount - prevCount;
+
+          // Son
+          playNotificationSound();
+
+          // Toast in-app (sauf si on est déjà dans la messagerie)
+          if (currentScreenRef.current !== 'messaging') {
+            if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
+            setMsgToast(`${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`);
+            msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
+          }
+
+          // Notification navigateur
+          if (currentScreenRef.current !== 'messaging') {
+            showBrowserNotification(
+              `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
+              { body: 'Cliquez pour ouvrir la messagerie eM@g' }
+            );
+          }
+        }
+
+        prevUnreadRef.current = newCount;
+        setUnreadMsgCount(newCount);
+      } catch (e) { /* silencieux */ }
+    };
+
+    prevUnreadRef.current = -1;
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => {
+      clearInterval(interval);
+      if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
+    };
+  }, [isAuthenticated, currentUser]);
+
   const handleLogin = (user) => {
     setIsAuthenticated(true);
     setCurrentUser(user);
@@ -131,7 +211,7 @@ function MobileApp({ onSwitchToDesktop }) {
         <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <h1>Véhicules</h1>
+        <h1>eM@g</h1>
         <div className="user-info" style={{ position: 'relative' }}>
           <button 
             className="user-initial"
@@ -276,6 +356,15 @@ function MobileApp({ onSwitchToDesktop }) {
               <Home size={20} />
               <span>Accueil</span>
             </button>
+
+            <div className="menu-section-label">Parc</div>
+            <button
+              className={currentScreen === 'parc-dashboard' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('parc-dashboard'); setMenuOpen(false); }}
+            >
+              <Truck size={20} />
+              <span>Tableau de bord</span>
+            </button>
             <button
               className={currentScreen === 'planning' ? 'active' : ''}
               onClick={() => { setCurrentScreen('planning'); setMenuOpen(false); }}
@@ -296,6 +385,39 @@ function MobileApp({ onSwitchToDesktop }) {
             >
               <Settings size={20} />
               <span>Interventions</span>
+            </button>
+
+            <div className="menu-section-label">Équipe</div>
+            <button
+              className={currentScreen === 'personnel' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('personnel'); setMenuOpen(false); }}
+            >
+              <Users size={20} />
+              <span>Personnel</span>
+            </button>
+            <button
+              className={currentScreen === 'messaging' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('messaging'); setMenuOpen(false); }}
+            >
+              <MessageSquare size={20} />
+              <span>Messagerie</span>
+              {unreadMsgCount > 0 && <span className="menu-badge">{unreadMsgCount}</span>}
+            </button>
+
+            <div className="menu-section-label">Gestion</div>
+            <button
+              className={currentScreen === 'equipment' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('equipment'); setMenuOpen(false); }}
+            >
+              <Package size={20} />
+              <span>Matériel & SAV</span>
+            </button>
+            <button
+              className={currentScreen === 'orders' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('orders'); setMenuOpen(false); }}
+            >
+              <ShoppingCart size={20} />
+              <span>Commandes</span>
             </button>
           </nav>
 
@@ -320,6 +442,17 @@ function MobileApp({ onSwitchToDesktop }) {
             reservations={reservations}
             maintenances={maintenances}
             onNavigate={setCurrentScreen}
+            currentUser={currentUser}
+          />
+        )}
+
+        {currentScreen === 'parc-dashboard' && (
+          <MobileParcDashboard
+            vehicles={vehicles}
+            reservations={reservations}
+            maintenances={maintenances}
+            onNavigate={setCurrentScreen}
+            onBack={() => setCurrentScreen('home')}
             onCreateReservation={handleCreateReservation}
             onCreateMaintenance={handleCreateMaintenance}
           />
@@ -331,7 +464,7 @@ function MobileApp({ onSwitchToDesktop }) {
             reservations={reservations}
             maintenances={maintenances}
             currentDate={new Date()}
-            onClose={() => setCurrentScreen('home')}
+            onClose={() => setCurrentScreen('parc-dashboard')}
             clients={clients}
             drivers={drivers}
           />
@@ -342,9 +475,8 @@ function MobileApp({ onSwitchToDesktop }) {
             vehicles={vehicles}
             reservations={reservations}
             maintenances={maintenances}
-            onClose={() => setCurrentScreen('home')}
+            onClose={() => setCurrentScreen('parc-dashboard')}
             onCreateReservation={(vehicleId, date) => {
-              // TODO: Pré-remplir la réservation avec le véhicule et la date
               setCurrentScreen('reservations');
             }}
           />
@@ -359,7 +491,7 @@ function MobileApp({ onSwitchToDesktop }) {
             drivers={drivers}
             currentUser={currentUser}
             onReservationCreated={handleReservationCreated}
-            onBack={() => setCurrentScreen('home')}
+            onBack={() => setCurrentScreen('parc-dashboard')}
           />
         )}
         
@@ -371,10 +503,52 @@ function MobileApp({ onSwitchToDesktop }) {
             garages={garages}
             currentUser={currentUser}
             onMaintenanceCreated={handleMaintenanceCreated}
+            onBack={() => setCurrentScreen('parc-dashboard')}
+          />
+        )}
+
+        {currentScreen === 'personnel' && (
+          <MobilePersonnel
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'messaging' && (
+          <MobileMessaging
+            currentUser={currentUser}
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'equipment' && (
+          <MobileEquipment
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'equipment-qr' && qrEquipmentUid && (
+          <MobileEquipmentQR
+            uid={qrEquipmentUid}
+            currentUser={currentUser}
+            onBack={() => { setQrEquipmentUid(null); setCurrentScreen('equipment'); window.location.hash = '#/mobile'; }}
+            onNavigateHome={() => { setQrEquipmentUid(null); setCurrentScreen('home'); window.location.hash = '#/mobile'; }}
+          />
+        )}
+
+        {currentScreen === 'orders' && (
+          <MobileOrders
             onBack={() => setCurrentScreen('home')}
           />
         )}
       </main>
+
+      {/* Toast notification messages */}
+      {msgToast && (
+        <div className="mobile-msg-toast" onClick={() => { setMsgToast(null); setCurrentScreen('messaging'); }}>
+          <MessageSquare size={16} />
+          <span>{msgToast}</span>
+        </div>
+      )}
     </div>
   );
 }

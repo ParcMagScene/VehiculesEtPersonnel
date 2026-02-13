@@ -3,6 +3,7 @@
   padding: 1rem;
   max-width: 1400px;
   margin: 0 auto;
+  animation: moduleTransition 0.25s ease both;
 }
 
 /* ═══ Stats Bar ═══ */

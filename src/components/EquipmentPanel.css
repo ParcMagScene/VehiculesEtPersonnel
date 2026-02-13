@@ -4,6 +4,7 @@
   flex-direction: column;
   height: 100%;
   background: #f8fafc;
+  animation: moduleTransition 0.25s ease both;
   overflow: hidden;
 }
 

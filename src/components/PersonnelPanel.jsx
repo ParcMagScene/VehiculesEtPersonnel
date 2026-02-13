@@ -1220,10 +1220,10 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
   // Ouvrir le dialog d'affectation rapide depuis l'extérieur
   useEffect(() => {
     if (quickAssignmentSlot && persons.length > 0) {
-      // Ouvrir le dialog sans personne pré-sélectionnée (le premier dans la liste)
+      const dayDate = new Date(quickAssignmentSlot.day + 'T00:00:00');
       setAssignmentDialog({
         person: persons[0] || null,
-        day: quickAssignmentSlot.day,
+        day: dayDate,
         period: quickAssignmentSlot.period || 'AM',
       });
       if (onQuickAssignmentHandled) onQuickAssignmentHandled();

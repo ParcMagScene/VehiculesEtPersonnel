@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package, ShoppingCart } from 'lucide-react';
 import api from '../utils/api';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -442,6 +442,15 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             >
               <Package size={18} />
               <span>Matériel</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'orders' ? 'active' : ''}`}
+              onClick={() => setActiveModule('orders')}
+              role="tab"
+              aria-selected={activeModule === 'orders'}
+            >
+              <ShoppingCart size={18} />
+              <span>Commandes</span>
             </button>
           </div>
         </div>

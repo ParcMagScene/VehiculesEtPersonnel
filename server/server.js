@@ -36,6 +36,7 @@ import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from 
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
 import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAssignmentsRoutes, setupSavTicketsRoutes } from './equipmentRoutes.js';
+import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes } from './ordersRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
 
@@ -2203,6 +2204,11 @@ setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentAssignmentsRoutes(app, authenticateToken);
 setupSavTicketsRoutes(app, authenticateToken);
+
+// Routes Commandes & Ventes
+setupSuppliersRoutes(app, authenticateToken);
+setupOrdersRoutes(app, authenticateToken);
+setupQuotesRoutes(app, authenticateToken);
 
 // ============ PROFIL UTILISATEUR ============
 

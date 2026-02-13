@@ -25,6 +25,7 @@ const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenan
 const PersonnelPanel = lazy(() => import('./components/PersonnelPanel'));
 const AffairesPanel = lazy(() => import('./components/AffairesPanel'));
 const EquipmentPanel = lazy(() => import('./components/EquipmentPanel'));
+const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
@@ -157,6 +158,7 @@ function App() {
     mod_personnel: () => { setActiveModule('personnel'); setShowManagement(false); setShowSettings(false); },
     mod_affaires: () => { setActiveModule('affaires'); setShowManagement(false); setShowSettings(false); },
     mod_equipment: () => { setActiveModule('equipment'); setShowManagement(false); setShowSettings(false); },
+    mod_orders: () => { setActiveModule('orders'); setShowManagement(false); setShowSettings(false); },
     open_messaging: () => setShowMessaging(v => !v),
     open_help: () => setShowHelp(v => !v),
     open_preferences: () => setShowPreferences(true),
@@ -1113,6 +1115,19 @@ function App() {
           </div>
         }>
           <EquipmentPanel
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {activeModule === 'orders' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement des commandes...</p>
+          </div>
+        }>
+          <OrdersPanel
             currentUser={currentUser}
           />
         </Suspense>

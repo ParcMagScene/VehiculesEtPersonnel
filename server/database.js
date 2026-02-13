@@ -1063,6 +1063,109 @@ function initializeDatabase() {
     console.warn('⚠️ Migration parc matériel:', error.message);
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // Module Commandes & Ventes (P3B)
+  // ═══════════════════════════════════════════════════════════════
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS suppliers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contact_name TEXT,
+        email TEXT,
+        phone TEXT,
+        address TEXT,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reference TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'purchase',
+        affaire_id TEXT,
+        supplier_id INTEGER,
+        status TEXT NOT NULL DEFAULT 'draft',
+        order_date TEXT,
+        expected_date TEXT,
+        received_date TEXT,
+        total_ht REAL DEFAULT 0,
+        tva_rate REAL DEFAULT 20,
+        total_ttc REAL DEFAULT 0,
+        notes TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER NOT NULL,
+        designation TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 1,
+        unit TEXT DEFAULT 'u',
+        unit_price_ht REAL NOT NULL DEFAULT 0,
+        tva_rate REAL DEFAULT 20,
+        total_ht REAL DEFAULT 0,
+        received_qty REAL DEFAULT 0,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS quotes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reference TEXT NOT NULL,
+        affaire_id TEXT,
+        client_name TEXT,
+        client_email TEXT,
+        client_address TEXT,
+        status TEXT NOT NULL DEFAULT 'draft',
+        quote_date TEXT,
+        validity_date TEXT,
+        total_ht REAL DEFAULT 0,
+        tva_rate REAL DEFAULT 20,
+        total_ttc REAL DEFAULT 0,
+        notes TEXT,
+        converted_to_order_id INTEGER,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (converted_to_order_id) REFERENCES orders(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS quote_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        quote_id INTEGER NOT NULL,
+        designation TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 1,
+        unit TEXT DEFAULT 'u',
+        unit_price_ht REAL NOT NULL DEFAULT 0,
+        tva_rate REAL DEFAULT 20,
+        total_ht REAL DEFAULT 0,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (quote_id) REFERENCES quotes(id) ON DELETE CASCADE
+      )
+    `);
+
+    console.log('✅ Tables commandes & ventes créées');
+  } catch (error) {
+    console.warn('⚠️ Migration commandes & ventes:', error.message);
+  }
+
   console.log('✅ Base de données initialisée');
 }
 

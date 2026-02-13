@@ -61,7 +61,7 @@ const OverdueInterventionModal = ({
 
         <div className="overdue-intervention-modal-content">
           <div className="intervention-info">
-            <h3>{vehicle?.name || 'Véhicule inconnu'}</h3>
+            <h3>{vehicle?.name || 'Véhicule inconnu'}{vehicle?.kilometrage ? ` — ${Number(vehicle.kilometrage).toLocaleString('fr-FR')} km` : ''}</h3>
             <p className="intervention-description">{intervention.description}</p>
             <p className="intervention-dates">
               Prévu du {new Date(intervention.startDate).toLocaleDateString('fr-FR')} au{' '}

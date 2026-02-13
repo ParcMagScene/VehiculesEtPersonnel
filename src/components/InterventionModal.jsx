@@ -238,7 +238,14 @@ const InterventionModal = ({
     <div className="modal-overlay" onClick={handleSafeClose}>
       <div className="intervention-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Éditer l'intervention</h2>
+          <div>
+            <h2>Éditer l'intervention</h2>
+            {vehicle && (
+              <span className="modal-header-subtitle">
+                {vehicle.name}{vehicle.kilometrage ? ` — ${Number(vehicle.kilometrage).toLocaleString('fr-FR')} km` : ''}
+              </span>
+            )}
+          </div>
           <button className="close-button" onClick={handleSafeClose}>
             <X size={24} />
           </button>

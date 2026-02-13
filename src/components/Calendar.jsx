@@ -69,7 +69,7 @@ const ReservationTooltip = ({ block, currentUser, users = [] }) => {
   }
 
   return (
-    <div className="reservation-tooltip">
+    <div className="emag-tooltip">
       <div className="tooltip-row">
         <span className="tooltip-label">Type:</span>
         <span className="tooltip-value">{block.isMaintenance ? 'Intervention' : 'Réservation'}</span>
@@ -2593,7 +2593,7 @@ const Calendar = ({
       {/* Tooltip global */}
       {tooltipState.visible && tooltipState.block && (
         <div
-          className="reservation-tooltip"
+          className="emag-tooltip"
           style={{
             left: `${tooltipState.x}px`,
             top: `${tooltipState.y}px`,

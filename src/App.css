@@ -1813,64 +1813,12 @@
 }
 
 /* Afficher le tooltip au survol */
-.reservation-content-wrapper:hover .reservation-tooltip {
+.reservation-content-wrapper:hover .emag-tooltip {
   opacity: 1 !important;
   visibility: visible !important;
 }
 
-/* Tooltip au survol — utilise le système unifié .emag-tooltip dans theme.css */
-.reservation-tooltip {
-  position: fixed;
-  background: rgba(17, 24, 39, 0.95);
-  color: white;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 12px;
-  line-height: 1.5;
-  min-width: 180px;
-  max-width: 320px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  z-index: 999999 !important;
-  pointer-events: none;
-  white-space: normal;
-  text-align: left;
-  transform: translate(-50%, -100%);
-  margin-top: -8px;
-  animation: tooltipFadeIn 0.15s ease-out;
-}
-
-.reservation-tooltip::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: rgba(17, 24, 39, 0.95);
-}
-
-.reservation-tooltip .tooltip-row {
-  display: flex;
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-
-.reservation-tooltip .tooltip-row:last-child {
-  margin-bottom: 0;
-}
-
-.reservation-tooltip .tooltip-label {
-  font-weight: 600;
-  margin-right: 8px;
-  min-width: 65px;
-  color: #9ca3af;
-  white-space: nowrap;
-}
-
-.reservation-tooltip .tooltip-value {
-  color: white;
-  flex: 1;
-}
+/* Tooltip au survol — système unifié .emag-tooltip défini dans theme.css */
 
 /* ═══ Header right actions (badges + boutons) ═══ */
 .header-right-actions {

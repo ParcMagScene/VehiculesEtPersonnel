@@ -12,7 +12,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireViewMode, setAffaireViewMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onNewAffaire, onToggleMessaging, unreadMsgCount = 0, onOpenPreferences, onOpenHelp }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireViewMode, setAffaireViewMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, unreadMsgCount = 0, onOpenPreferences, onOpenHelp }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -1276,12 +1276,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             )}
             </div>
             
-            {/* Bouton Nouvelle affaire (visible sur tous les onglets) */}
-            <button className="new-affaire-button" onClick={onNewAffaire} aria-label="Nouvelle affaire" title="Nouvelle affaire">
-              <Briefcase size={16} />
-              <span>Nouvelle affaire</span>
-            </button>
-
             <button className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages" title="Messages">
               <MessageSquare size={20} />
               {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}

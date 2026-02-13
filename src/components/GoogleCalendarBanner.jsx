@@ -11,7 +11,7 @@ import { Search, X, RefreshCw, Plus, Truck, Users } from 'lucide-react';
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
 
-function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment }) {
+function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -1187,14 +1187,14 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                 <span className="banner-search-count">{eventBlocks.length}</span>
               </div>
             )}
-            {/* Bouton contextuel : Nouvelle réservation / Nouvelle affectation */}
+            {/* Bouton contextuel : Nouvelle réservation / Nouvelle affectation / Nouvelle affaire */}
             <button
               className="banner-new-action-btn"
-              onClick={activeModule === 'personnel' ? onNewAssignment : onNewReservation}
-              title={activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}
+              onClick={activeModule === 'affaires' ? onNewAffaire : activeModule === 'personnel' ? onNewAssignment : onNewReservation}
+              title={activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}
             >
               <Plus size={14} />
-              <span>{activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}</span>
+              <span>{activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}</span>
             </button>
           </div>
         </div>

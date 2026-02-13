@@ -120,6 +120,34 @@
   letter-spacing: 0.5px;
 }
 
+/* ═══ Bouton Nouvelle affaire (info-bar) ═══ */
+
+.affaires-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--theme-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.affaires-new-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.affaires-new-btn:active {
+  transform: translateY(0);
+}
+
 /* ═══ Frise chronologique ═══ */
 
 .affaires-timeline {

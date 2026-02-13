@@ -905,6 +905,31 @@ function initializeDatabase() {
     console.warn('⚠️ Migration messagerie:', error.message);
   }
 
+  // ═══ Table configuration email ═══
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS email_config (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        enabled BOOLEAN DEFAULT 0,
+        smtp_host TEXT,
+        smtp_port INTEGER DEFAULT 587,
+        smtp_secure BOOLEAN DEFAULT 0,
+        smtp_user TEXT,
+        smtp_pass TEXT,
+        from_name TEXT DEFAULT 'eM@g',
+        alert_access_request BOOLEAN DEFAULT 1,
+        alert_reservation BOOLEAN DEFAULT 1,
+        alert_assignment BOOLEAN DEFAULT 1,
+        alert_overdue BOOLEAN DEFAULT 1,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    // Insérer une config par défaut si elle n'existe pas
+    db.exec(`INSERT OR IGNORE INTO email_config (id) VALUES (1)`);
+  } catch (error) {
+    console.warn('⚠️ Migration email_config:', error.message);
+  }
+
   console.log('✅ Base de données initialisée');
 }
 

@@ -15,6 +15,7 @@ import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
 import logger, { dataLogger } from './utils/logger';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from './utils/notificationSound';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import './App.css';
 
 // Code splitting - Lazy loading des composants lourds
@@ -148,6 +149,58 @@ function App() {
   const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
   const [msgToast, setMsgToast] = useState(null); // Toast notification in-app
   const msgToastTimerRef = useRef(null);
+
+  // Raccourcis clavier globaux avec détection OS
+  useKeyboardShortcuts({
+    mod_vehicles: () => { setActiveModule('vehicles'); setShowManagement(false); setShowSettings(false); },
+    mod_personnel: () => { setActiveModule('personnel'); setShowManagement(false); setShowSettings(false); },
+    mod_affaires: () => { setActiveModule('affaires'); setShowManagement(false); setShowSettings(false); },
+    open_messaging: () => setShowMessaging(v => !v),
+    open_help: () => setShowHelp(v => !v),
+    open_preferences: () => setShowPreferences(true),
+    new_reservation: () => {
+      setActiveModule('vehicles');
+      setShowManagement(false);
+      setShowSettings(false);
+      setQuickReservationSlot({
+        vehicleId: null,
+        date: new Date().toISOString().slice(0, 10),
+        period: 'morning',
+        endDate: new Date().toISOString().slice(0, 10),
+        endPeriod: 'afternoon',
+      });
+    },
+    close_modal: () => {
+      // Fermer dans l'ordre de priorité (le plus récent d'abord)
+      if (showHelp) { setShowHelp(false); return; }
+      if (showPreferences) { setShowPreferences(false); return; }
+      if (showMessaging) { setShowMessaging(false); return; }
+      if (selectedVehicleForMaintenance) { setSelectedVehicleForMaintenance(null); setMaintenanceToEdit(null); setMaintenanceActionType(null); return; }
+      if (vehicleForDialog) { setVehicleForDialog(null); return; }
+      if (selectedVehicleForDetails) { setSelectedVehicleForDetails(null); return; }
+      if (showManagement) { setShowManagement(false); return; }
+      if (showSettings) { setShowSettings(false); return; }
+    },
+    nav_prev: () => {
+      if (activeModule !== 'vehicles') return;
+      const d = new Date(currentDate);
+      if (view === 'week') d.setDate(d.getDate() - 7);
+      else if (view === 'month') d.setMonth(d.getMonth() - 1);
+      else d.setFullYear(d.getFullYear() - 1);
+      setCurrentDate(d);
+    },
+    nav_next: () => {
+      if (activeModule !== 'vehicles') return;
+      const d = new Date(currentDate);
+      if (view === 'week') d.setDate(d.getDate() + 7);
+      else if (view === 'month') d.setMonth(d.getMonth() + 1);
+      else d.setFullYear(d.getFullYear() + 1);
+      setCurrentDate(d);
+    },
+    nav_today: () => {
+      if (activeModule === 'vehicles') setCurrentDate(new Date());
+    },
+  }, isAuthenticated && !isMobile);
 
   // Calculer les réservations à surligner en fonction de l'événement survolé
   const highlightedReservationIds = useMemo(() => {

@@ -837,6 +837,67 @@ class ApiClient {
   async testEmail() {
     return this.request('/email-config/test', { method: 'POST' });
   }
+
+  // ═══ Parc Matériel ═══
+  async getEquipmentCategories() {
+    return this.request('/equipment-categories');
+  }
+  async createEquipmentCategory(data) {
+    return this.request('/equipment-categories', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateEquipmentCategory(id, data) {
+    return this.request(`/equipment-categories/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteEquipmentCategory(id) {
+    return this.request(`/equipment-categories/${id}`, { method: 'DELETE' });
+  }
+
+  async getEquipment(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/equipment${qs ? '?' + qs : ''}`);
+  }
+  async getEquipmentById(id) {
+    return this.request(`/equipment/${id}`);
+  }
+  async createEquipment(data) {
+    return this.request('/equipment', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateEquipment(id, data) {
+    return this.request(`/equipment/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteEquipment(id) {
+    return this.request(`/equipment/${id}`, { method: 'DELETE' });
+  }
+
+  // ═══ Assignments matériel ═══
+  async getEquipmentAssignments(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/equipment-assignments${qs ? '?' + qs : ''}`);
+  }
+  async createEquipmentAssignment(data) {
+    return this.request('/equipment-assignments', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async returnEquipmentAssignment(id) {
+    return this.request(`/equipment-assignments/${id}/return`, { method: 'PUT' });
+  }
+
+  // ═══ Tickets SAV ═══
+  async getSavTickets(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/sav-tickets${qs ? '?' + qs : ''}`);
+  }
+  async getSavTicketStats() {
+    return this.request('/sav-tickets/stats');
+  }
+  async createSavTicket(data) {
+    return this.request('/sav-tickets', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateSavTicket(id, data) {
+    return this.request(`/sav-tickets/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteSavTicket(id) {
+    return this.request(`/sav-tickets/${id}`, { method: 'DELETE' });
+  }
 }
 
 export const api = new ApiClient();

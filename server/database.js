@@ -971,6 +971,98 @@ function initializeDatabase() {
     console.warn('⚠️ Migration leave management:', error.message);
   }
 
+  // ═══ Module Parc Matériel + SAV ═══
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS equipment_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        icon TEXT DEFAULT '📦',
+        color TEXT DEFAULT '#6366f1',
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS equipment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        reference TEXT,
+        serial_number TEXT,
+        category_id INTEGER,
+        status TEXT NOT NULL DEFAULT 'available',
+        location TEXT,
+        purchase_date TEXT,
+        purchase_price REAL,
+        warranty_end TEXT,
+        notes TEXT,
+        photo TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES equipment_categories(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS equipment_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipment_id INTEGER NOT NULL,
+        assigned_to INTEGER,
+        assigned_by INTEGER,
+        start_date TEXT NOT NULL,
+        end_date TEXT,
+        affaire_id TEXT,
+        notes TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id),
+        FOREIGN KEY (assigned_to) REFERENCES persons(id),
+        FOREIGN KEY (assigned_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS sav_tickets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipment_id INTEGER NOT NULL,
+        reported_by INTEGER,
+        assigned_to INTEGER,
+        type TEXT NOT NULL DEFAULT 'panne',
+        priority TEXT NOT NULL DEFAULT 'medium',
+        status TEXT NOT NULL DEFAULT 'open',
+        title TEXT NOT NULL,
+        description TEXT,
+        resolution TEXT,
+        cost REAL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        resolved_at DATETIME,
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id),
+        FOREIGN KEY (reported_by) REFERENCES users(id),
+        FOREIGN KEY (assigned_to) REFERENCES persons(id)
+      )
+    `);
+
+    // Catégories par défaut
+    const catCount = db.prepare('SELECT COUNT(*) as c FROM equipment_categories').get();
+    if (catCount.c === 0) {
+      const insertCat = db.prepare('INSERT INTO equipment_categories (name, icon, color) VALUES (?, ?, ?)');
+      insertCat.run('Outillage', '🔧', '#f59e0b');
+      insertCat.run('Électroportatif', '⚡', '#3b82f6');
+      insertCat.run('Levage & Manutention', '🏗️', '#ef4444');
+      insertCat.run('Mesure & Contrôle', '📐', '#10b981');
+      insertCat.run('EPI', '🦺', '#8b5cf6');
+      insertCat.run('Véhicule annexe', '🚗', '#6366f1');
+      insertCat.run('Informatique', '💻', '#06b6d4');
+      insertCat.run('Autre', '📦', '#64748b');
+    }
+  } catch (error) {
+    console.warn('⚠️ Migration parc matériel:', error.message);
+  }
+
   console.log('✅ Base de données initialisée');
 }
 

@@ -24,6 +24,7 @@ const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
 const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenanceModal'));
 const PersonnelPanel = lazy(() => import('./components/PersonnelPanel'));
 const AffairesPanel = lazy(() => import('./components/AffairesPanel'));
+const EquipmentPanel = lazy(() => import('./components/EquipmentPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
@@ -155,6 +156,7 @@ function App() {
     mod_vehicles: () => { setActiveModule('vehicles'); setShowManagement(false); setShowSettings(false); },
     mod_personnel: () => { setActiveModule('personnel'); setShowManagement(false); setShowSettings(false); },
     mod_affaires: () => { setActiveModule('affaires'); setShowManagement(false); setShowSettings(false); },
+    mod_equipment: () => { setActiveModule('equipment'); setShowManagement(false); setShowSettings(false); },
     open_messaging: () => setShowMessaging(v => !v),
     open_help: () => setShowHelp(v => !v),
     open_preferences: () => setShowPreferences(true),
@@ -1099,6 +1101,19 @@ function App() {
             filterDateEnd={affaireFilterDateEnd}
             showArchived={affaireShowArchived}
             onNavigateToEntity={handleNavigateToEntity}
+          />
+        </Suspense>
+      )}
+
+      {activeModule === 'equipment' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement du parc matériel...</p>
+          </div>
+        }>
+          <EquipmentPanel
+            currentUser={currentUser}
           />
         </Suspense>
       )}

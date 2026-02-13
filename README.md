@@ -1,223 +1,186 @@
-# 🚛 Système de Réservation de Véhicules
+# 🚛 eM@g — Gestion de Flotte & Personnel
 
-Application web interactive pour gérer les réservations de véhicules avec un calendrier visuel moderne.
+Application web de **gestion de flotte de véhicules et de planning du personnel** pour Mag Scène (entreprise de prestations événementielles à La Réunion).
 
 ## ✨ Fonctionnalités
 
-- **📅 Vues multiples** : Semaine, Mois, Année
-- **🖱️ Réservation par clic** : Cliquez sur une période pour créer une réservation
-- **⏰ Gestion par demi-journée** : Matin (AM) et Après-midi (PM)
-- **🚗 Gestion des véhicules** : Ajout, modification, suppression avec couleurs personnalisées
-- **👥 Gestion des clients** : Base de données des clients
-- **🚦 Gestion des conducteurs** : Liste des conducteurs disponibles
-- **📍 Gestion des lieux** : Référencement des lieux de prestation
-- **💾 Sauvegarde automatique** : Toutes les données sont sauvegardées dans le navigateur (localStorage)
-- **🌍 Localisation française** : Dates et formats français (Réunion)
+### 📅 Calendrier & Réservations
+- **Vues multiples** : Semaine, Mois, Année, Planning
+- **Réservation par clic** : Cliquez sur une période pour créer une réservation
+- **Gestion par demi-journée** : Matin (AM) et Après-midi (PM)
+- **Détection de conflits** : Alertes automatiques de chevauchement
+- **Demandes de réservation** : Workflow non-admin (demande → approbation)
+- **Synchronisation Google Calendar** : Lecture des événements, création de réservations depuis Google
+- **Planification de trajets** : Détails aller/retour, pauses, jonctions
+
+### 🚗 Gestion des véhicules
+- **CRUD complet** : Ajout, modification, suppression avec photos et couleurs personnalisées
+- **Kilométrage** : Suivi et historique
+- **Contrôles techniques** : Programmation et alertes
+
+### 🔧 Maintenance
+- **Types** : Entretien programmé, réparation, contrôle technique, révision, signalement de panne
+- **Workflow** : `reported` → `scheduled` → `in_progress` → `completed`
+- **Signalement rapide** : Même pour les utilisateurs non-admin
+- **Alertes** : Interventions en retard
+
+### 👷 Personnel
+- **Personnes** : Recherche, filtres par type, compétences avec niveaux
+- **Compétences** : 8 catégories (Son, Lumière, Vidéo, Régie, Transport, Structure, Électricité, Autre)
+- **Missions** : 6 statuts, gestion des affectations avec détection de conflits
+- **Planning** : Grille semaine, personnes en lignes, jours en colonnes
+
+### 📎 Affaires
+- **Dossiers projets** : Création, recherche, filtres
+- **Pièces jointes** : Upload multi-format (PDF, images, documents) jusqu'à 50 MB
+- **Import** : BL (PDF), fichiers Excel
+
+### 💬 Messagerie
+- **Conversations** : Temps réel entre utilisateurs
+- **Notifications** : Badge de nouveaux messages
+
+### 📱 Mobile
+- **Interface dédiée** : Planning, réservations, maintenances, personnel, messagerie
+- **QR Code** : Accès rapide par véhicule
+- **Tableau de bord** : Vue synthétique du parc
+
+### 👥 Utilisateurs
+- **Inscription par invitation** : Emails pré-autorisés
+- **Rôles** : Admin (gestion complète) / Utilisateur (lecture + demandes + signalements)
+- **Profil** : Avatar, préférences (thème, module par défaut)
+
+---
+
+## 🛠️ Stack technique
+
+| Couche | Technologie | Version |
+|--------|------------|---------|
+| **Frontend** | React | 18.3 |
+| **Bundler** | Vite | 5.4 |
+| **Backend** | Express.js | 4.18 |
+| **Base de données** | SQLite | via better-sqlite3 |
+| **Authentification** | JWT | jsonwebtoken 9.0 |
+| **Process manager** | PM2 | — |
+
+---
 
 ## 🚀 Installation
 
 ### Prérequis
 
-- Node.js (version 16 ou supérieure)
-- npm ou yarn
+- Node.js (version 18 ou supérieure)
+- npm
 
-### Étapes d'installation
-
-1. **Ouvrir le terminal dans le dossier du projet**
+### Installation
 
 ```bash
-cd "/Users/reunion/Resevation Véhicules"
-```
+# Cloner le dépôt
+git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
+cd "Resevation Véhicules"
 
-2. **Installer les dépendances**
-
-```bash
+# Installer les dépendances frontend
 npm install
+
+# Installer les dépendances backend
+cd server && npm install && cd ..
 ```
 
-3. **Lancer l'application en mode développement**
+### Configuration
 
 ```bash
+# Créer le fichier d'environnement backend
+cp server/.env.example server/.env
+# Éditer server/.env avec votre JWT_SECRET
+```
+
+### Lancement en développement
+
+```bash
+# Terminal 1 — Backend
+cd server && npm start
+
+# Terminal 2 — Frontend
 npm run dev
 ```
 
-4. **Ouvrir dans le navigateur**
+- **Frontend** : http://localhost:5174
+- **Backend API** : http://localhost:3002
 
-L'application s'ouvrira automatiquement à l'adresse : **http://localhost:5173**
+### Déploiement production
 
-Si elle ne s'ouvre pas automatiquement, ouvrez votre navigateur web et accédez à cette adresse.
+```bash
+npm run deploy
+```
 
-## 📖 Utilisation
+Le script `scripts/safe-deploy.sh` effectue :
+1. Backup du build actuel
+2. Build production (`vite build`)
+3. Rollback automatique si échec
+4. Redémarrage PM2 frontend + backend
 
-### Créer une réservation
-
-1. Cliquez sur une case vide dans le calendrier (intersection véhicule + date + période)
-2. Remplissez le formulaire :
-   - Client/Prestation
-   - Conducteur (optionnel)
-   - Lieu (optionnel)
-   - Notes (optionnel)
-3. Cliquez sur "Créer"
-
-### Modifier une réservation
-
-1. Cliquez sur une case déjà réservée
-2. Modifiez les informations
-3. Cliquez sur "Modifier" ou "Supprimer"
-
-### Gérer les données
-
-1. Cliquez sur le bouton "⚙️ Gestion" en haut à droite
-2. Accédez aux onglets :
-   - **Véhicules** : Ajouter/modifier des véhicules avec leur type et couleur
-   - **Clients** : Gérer la liste des clients
-   - **Conducteurs** : Gérer la liste des conducteurs
-   - **Lieux** : Gérer les lieux de prestation
-
-### Navigation dans le calendrier
-
-- **Boutons < >** : Naviguer entre les périodes
-- **Bouton "Aujourd'hui"** : Revenir à la date actuelle
-- **Boutons Semaine/Mois/Année** : Changer la vue
+---
 
 ## 🏗️ Structure du projet
 
 ```
 Resevation Véhicules/
-├── index.html              # Page HTML principale
-├── package.json            # Dépendances du projet
-├── vite.config.js          # Configuration Vite
+├── index.html              # Point d'entrée HTML (SPA)
+├── package.json            # Dépendances frontend
+├── vite.config.js          # Configuration Vite (proxy /api → :3002)
 ├── src/
 │   ├── main.jsx            # Point d'entrée React
-│   ├── App.jsx             # Composant principal
+│   ├── App.jsx             # Composant racine (~1248 lignes)
 │   ├── App.css             # Styles globaux
-│   ├── index.css           # Styles de base
-│   ├── components/         # Composants React
-│   │   ├── Header.jsx      # En-tête et navigation
-│   │   ├── Calendar.jsx    # Grille du calendrier
-│   │   ├── Calendar.css
-│   │   ├── ReservationModal.jsx    # Modal de réservation
-│   │   ├── ReservationModal.css
-│   │   ├── ManagementPanel.jsx     # Panneau de gestion
-│   │   └── ManagementPanel.css
-│   └── utils/
-│       └── storage.js      # Utilitaires localStorage
-└── RESA VÉHICULES - JAN26.csv    # Données d'exemple
+│   ├── theme.css           # Variables de thème
+│   ├── components/         # 43 composants React desktop
+│   │   └── mobile/         # 10 composants mobile
+│   ├── hooks/              # 4 hooks custom
+│   └── utils/              # 12 utilitaires (API client, dates, import, etc.)
+├── server/
+│   ├── server.js           # Express (~2545 lignes, 65 routes)
+│   ├── routes.js           # Routes secondaires (~641 lignes, 30 routes)
+│   ├── personnelRoutes.js  # Routes personnel (~928 lignes, 27 routes)
+│   ├── database.js         # SQLite 27 tables (~966 lignes)
+│   └── migrations/         # 9 fichiers SQL
+├── public/
+│   ├── Photos/             # Photos des véhicules
+│   ├── Logos/              # Logos de l'application
+│   └── attachments/        # Pièces jointes par affaire
+└── scripts/                # Scripts de déploiement et développement
 ```
 
-## 🛠️ Technologies utilisées
+---
 
-- **React 18** : Framework JavaScript
-- **Vite** : Build tool ultra-rapide
-- **date-fns** : Gestion des dates avec localisation française
-- **Lucide React** : Icônes modernes
-- **CSS3** : Styles avec animations et gradients
+## 🌐 Accès
 
-## 💾 Stockage des données
+### Production
+- **Frontend** : http://magsav.duckdns.org:4173
+- **Backend** : http://magsav.duckdns.org:3002
 
-Les données sont sauvegardées automatiquement dans le **localStorage** du navigateur :
-- Véhicules
-- Réservations
-- Clients
-- Conducteurs
-- Lieux
+### Développement
+- **Frontend** : http://localhost:5174
+- **Backend** : http://localhost:3002
 
-**Note** : Les données sont spécifiques au navigateur utilisé. Pour les sauvegarder, vous pouvez exporter/importer via les outils de développement du navigateur.
+---
 
-## 🌐 Accès via navigateur web
+## 📖 Documentation
 
-L'application fonctionne entièrement dans votre navigateur web. Aucune installation de serveur supplémentaire n'est nécessaire.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — Architecture technique complète (schéma DB, routes API, composants)
+- [SECURITY.md](SECURITY.md) — Politique de sécurité et vulnérabilités connues
+- [GUIDE_DEMARRAGE_RAPIDE.md](GUIDE_DEMARRAGE_RAPIDE.md) — Guide utilisateur
 
-### Accès local
-- **URL** : http://localhost:5173
-- **Compatible avec** : Chrome, Firefox, Safari, Edge (dernières versions)
-
-### Pour un accès réseau local (autres appareils)
-
-Si vous souhaitez accéder à l'application depuis d'autres appareils sur votre réseau local :
-
-1. Modifiez `vite.config.js` :
-
-```javascript
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    host: '0.0.0.0',  // Permet l'accès réseau
-    port: 5173,
-    open: true
-  }
-})
-```
-
-2. Trouvez votre adresse IP locale :
-   - Mac : `ifconfig | grep "inet " | grep -v 127.0.0.1`
-   - Ou dans Préférences Système > Réseau
-
-3. Accédez depuis un autre appareil : `http://[VOTRE_IP]:5173`
-
-## 📱 Responsive
-
-L'application est optimisée pour :
-- 💻 Ordinateurs de bureau
-- 💻 Ordinateurs portables
-- 📱 Tablettes (mode paysage recommandé)
-
-## 🎨 Personnalisation
-
-### Couleurs des véhicules
-10 couleurs prédéfinies sont disponibles dans le panneau de gestion.
-
-### Format des dates
-La localisation est en français (Réunion) avec `date-fns/locale/fr`.
-
-## 🐛 Dépannage
-
-### Le port 5173 est déjà utilisé
-Modifiez le port dans `vite.config.js` :
-```javascript
-server: {
-  port: 5174,  // Changez le numéro
-  open: true
-}
-```
-
-### Les dépendances ne s'installent pas
-Essayez :
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-### L'application ne s'ouvre pas dans le navigateur
-Ouvrez manuellement : http://localhost:5173
+---
 
 ## 📝 Commandes disponibles
 
 ```bash
-# Développement (avec rechargement automatique)
-npm run dev
-
-# Build de production
-npm run build
-
-# Prévisualiser le build de production
-npm run preview
-
-# Vérifier le code (linting)
-npm run lint
+npm run dev        # Serveur de développement (Vite)
+npm run build      # Build de production
+npm run preview    # Prévisualiser le build
+npm run deploy     # Build + déploiement PM2
+npm run lint       # Vérification du code (ESLint)
 ```
-
-## 📄 Licence
-
-Projet personnel - Libre d'utilisation
-
-## 👨‍💻 Support
-
-Pour toute question ou problème, consultez :
-- Documentation Vite : https://vitejs.dev/
-- Documentation React : https://react.dev/
-- Documentation date-fns : https://date-fns.org/
 
 ---
 
-**Développé avec ❤️ pour faciliter la gestion des réservations de véhicules**
+**Développé pour Mag Scène — La Réunion**

@@ -77,7 +77,7 @@ const getCategoryColor = (category) => {
 // Composant principal
 // ═══════════════════════════════════════
 
-const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, googleEvents = [], navigateToPersonId, onNavigateToPersonHandled }) => {
+const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, googleEvents = [], navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
   const [subTab, setSubTab] = useState(mode === 'planning' ? 'planning' : 'persons');
   const [persons, setPersons] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -1216,6 +1216,19 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
       if (onNavigateToPersonHandled) onNavigateToPersonHandled();
     }
   }, [navigateToPersonId, persons, onNavigateToPersonHandled]);
+
+  // Ouvrir le dialog d'affectation rapide depuis l'extérieur
+  useEffect(() => {
+    if (quickAssignmentSlot && persons.length > 0) {
+      // Ouvrir le dialog sans personne pré-sélectionnée (le premier dans la liste)
+      setAssignmentDialog({
+        person: persons[0] || null,
+        day: quickAssignmentSlot.day,
+        period: quickAssignmentSlot.period || 'AM',
+      });
+      if (onQuickAssignmentHandled) onQuickAssignmentHandled();
+    }
+  }, [quickAssignmentSlot, persons, onQuickAssignmentHandled]);
 
   // Planning data state
   const [planningData, setPlanningData] = useState({ missions: [], availabilities: [] });

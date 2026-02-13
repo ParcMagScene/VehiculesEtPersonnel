@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, Plus, MessageSquare, HelpCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle } from 'lucide-react';
 import api from '../utils/api';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -12,7 +12,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireViewMode, setAffaireViewMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onQuickCreateEvent, onQuickCreateReservation, onToggleMessaging, unreadMsgCount = 0, onOpenPreferences, onOpenHelp }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, affaireSearchTerm, setAffaireSearchTerm, affaireFilterType, setAffaireFilterType, affaireFilterDateStart, setAffaireFilterDateStart, affaireFilterDateEnd, setAffaireFilterDateEnd, affaireSlidingMode, setAffaireSlidingMode, affaireViewMode, setAffaireViewMode, affaireShowArchived, setAffaireShowArchived, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onNewAffaire, onToggleMessaging, unreadMsgCount = 0, onOpenPreferences, onOpenHelp }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -31,20 +31,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showQuickCreate, setShowQuickCreate] = useState(false);
-  const quickCreateRef = useRef(null);
-
-  // Fermer le dropdown quick-create au clic extérieur
-  useEffect(() => {
-    if (!showQuickCreate) return;
-    const handler = (e) => {
-      if (quickCreateRef.current && !quickCreateRef.current.contains(e.target)) {
-        setShowQuickCreate(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showQuickCreate]);
+  // (quick-create supprimé — les actions sont dans le header et la bannière)
 
   // Charger les demandes en attente (interventions + réservations) pour le badge admin
   useEffect(() => {
@@ -414,8 +401,9 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         <div className="header-title-container">
           <div className="header-logo-area">
             <img src="/Logos/LogoEmag.png" alt="eM@g Scene" className="header-logo" />
-            <button className="help-trigger-btn" onClick={onOpenHelp} title="Aide" aria-label="Aide">
-              <HelpCircle size={16} />
+            <button className="help-trigger-btn" onClick={onOpenHelp} title="Aide — Guide d'utilisation" aria-label="Aide">
+              <HelpCircle size={18} />
+              <span>Aide</span>
             </button>
           </div>
           <div className="module-tabs" role="tablist" aria-label="Module principal">
@@ -1288,22 +1276,11 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             )}
             </div>
             
-            {/* Bouton création rapide "+" */}
-            <div className="quick-create-container" ref={quickCreateRef}>
-              <button className="quick-create-button" onClick={() => setShowQuickCreate(!showQuickCreate)} aria-label="Création rapide" title="Créer…">
-                <Plus size={20} />
-              </button>
-              {showQuickCreate && (
-                <div className="quick-create-dropdown">
-                  <button onClick={() => { setShowQuickCreate(false); if (onQuickCreateEvent) onQuickCreateEvent(); }}>
-                    <Calendar size={14} /> Événement GCal
-                  </button>
-                  <button onClick={() => { setShowQuickCreate(false); if (onQuickCreateReservation) onQuickCreateReservation(); }}>
-                    <Truck size={14} /> Réservation
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Bouton Nouvelle affaire (visible sur tous les onglets) */}
+            <button className="new-affaire-button" onClick={onNewAffaire} aria-label="Nouvelle affaire" title="Nouvelle affaire">
+              <Briefcase size={16} />
+              <span>Nouvelle affaire</span>
+            </button>
 
             <button className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages" title="Messages">
               <MessageSquare size={20} />

@@ -20,6 +20,7 @@ export const SHORTCUTS = [
   { id: 'mod_vehicles', label: 'Module Parc', keys: [MOD_KEY, '1'], category: 'navigation' },
   { id: 'mod_personnel', label: 'Module Personnel', keys: [MOD_KEY, '2'], category: 'navigation' },
   { id: 'mod_affaires', label: 'Module Affaires', keys: [MOD_KEY, '3'], category: 'navigation' },
+  { id: 'mod_equipment', label: 'Module Matériel', keys: [MOD_KEY, '4'], category: 'navigation' },
   { id: 'open_messaging', label: 'Messagerie', keys: [MOD_KEY, 'M'], category: 'navigation' },
   { id: 'open_help', label: 'Aide', keys: ['F1'], category: 'general' },
   { id: 'open_preferences', label: 'Préférences', keys: [MOD_KEY, ','], category: 'general' },
@@ -63,6 +64,7 @@ export function useKeyboardShortcuts(handlers, enabled = true) {
     if (mod && e.key === '1') { e.preventDefault(); handlersRef.current.mod_vehicles?.(); return; }
     if (mod && e.key === '2') { e.preventDefault(); handlersRef.current.mod_personnel?.(); return; }
     if (mod && e.key === '3') { e.preventDefault(); handlersRef.current.mod_affaires?.(); return; }
+    if (mod && e.key === '4') { e.preventDefault(); handlersRef.current.mod_equipment?.(); return; }
 
     // Mod + M : messagerie
     if (mod && (e.key === 'm' || e.key === 'M')) { e.preventDefault(); handlersRef.current.open_messaging?.(); return; }

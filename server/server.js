@@ -35,6 +35,7 @@ import multer from 'multer';
 import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
+import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAssignmentsRoutes, setupSavTicketsRoutes } from './equipmentRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
 
@@ -2196,6 +2197,12 @@ setupSkillsRoutes(app, authenticateToken, requireAdmin);
 setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin);
 setupMissionsRoutes(app, authenticateToken, requireAdmin);
 setupAssignmentsRoutes(app, authenticateToken);
+
+// Routes Parc Matériel + SAV
+setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin);
+setupEquipmentRoutes(app, authenticateToken, requireAdmin);
+setupEquipmentAssignmentsRoutes(app, authenticateToken);
+setupSavTicketsRoutes(app, authenticateToken);
 
 // ============ PROFIL UTILISATEUR ============
 

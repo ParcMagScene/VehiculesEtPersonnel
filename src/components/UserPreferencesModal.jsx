@@ -97,6 +97,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
                 <option value="vehicles">Parc</option>
                 <option value="personnel">Personnel</option>
                 <option value="affaires">Affaires</option>
+                <option value="equipment">Matériel</option>
               </select>
             </div>
 

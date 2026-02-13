@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package } from 'lucide-react';
 import api from '../utils/api';
 import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -433,6 +433,15 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             >
               <Briefcase size={18} />
               <span>Affaires</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'equipment' ? 'active' : ''}`}
+              onClick={() => setActiveModule('equipment')}
+              role="tab"
+              aria-selected={activeModule === 'equipment'}
+            >
+              <Package size={18} />
+              <span>Matériel</span>
             </button>
           </div>
         </div>

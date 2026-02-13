@@ -898,6 +898,67 @@ class ApiClient {
   async deleteSavTicket(id) {
     return this.request(`/sav-tickets/${id}`, { method: 'DELETE' });
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // Commandes & Ventes
+  // ═══════════════════════════════════════════════════════════
+
+  // Fournisseurs
+  async getSuppliers(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/suppliers${qs ? '?' + qs : ''}`);
+  }
+  async createSupplier(data) {
+    return this.request('/suppliers', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateSupplier(id, data) {
+    return this.request(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteSupplier(id) {
+    return this.request(`/suppliers/${id}`, { method: 'DELETE' });
+  }
+
+  // Commandes
+  async getOrders(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/orders${qs ? '?' + qs : ''}`);
+  }
+  async getOrdersStats() {
+    return this.request('/orders/stats');
+  }
+  async getOrderById(id) {
+    return this.request(`/orders/${id}`);
+  }
+  async createOrder(data) {
+    return this.request('/orders', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateOrder(id, data) {
+    return this.request(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteOrder(id) {
+    return this.request(`/orders/${id}`, { method: 'DELETE' });
+  }
+
+  // Devis
+  async getQuotes(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/quotes${qs ? '?' + qs : ''}`);
+  }
+  async getQuoteById(id) {
+    return this.request(`/quotes/${id}`);
+  }
+  async createQuote(data) {
+    return this.request('/quotes', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateQuote(id, data) {
+    return this.request(`/quotes/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async convertQuoteToOrder(id) {
+    return this.request(`/quotes/${id}/convert`, { method: 'POST' });
+  }
+  async deleteQuote(id) {
+    return this.request(`/quotes/${id}`, { method: 'DELETE' });
+  }
 }
 
 export const api = new ApiClient();

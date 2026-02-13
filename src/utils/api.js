@@ -592,13 +592,14 @@ class ApiClient {
     });
   }
 
-  // — Disponibilités —
+  // — Disponibilités / Congés —
 
   async getAvailabilities(params = {}) {
     const query = new URLSearchParams();
     if (params.personId) query.set('person_id', params.personId);
     if (params.startDate) query.set('start_date', params.startDate);
     if (params.endDate) query.set('end_date', params.endDate);
+    if (params.status) query.set('status', params.status);
     const qs = query.toString();
     return this.request(`/availabilities${qs ? '?' + qs : ''}`);
   }
@@ -620,6 +621,40 @@ class ApiClient {
   async deleteAvailability(id) {
     return this.request(`/availabilities/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async approveLeaveRequest(id) {
+    return this.request(`/availabilities/${id}/approve`, { method: 'POST' });
+  }
+
+  async rejectLeaveRequest(id, reason) {
+    return this.request(`/availabilities/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async getPendingLeaveCount() {
+    return this.request('/leave-requests/pending/count');
+  }
+
+  async getLeaveTypes() {
+    return this.request('/leave-types');
+  }
+
+  async getLeaveBalances(params = {}) {
+    const query = new URLSearchParams();
+    if (params.personId) query.set('person_id', params.personId);
+    if (params.year) query.set('year', params.year);
+    const qs = query.toString();
+    return this.request(`/leave-balances${qs ? '?' + qs : ''}`);
+  }
+
+  async updateLeaveBalance(data) {
+    return this.request('/leave-balances', {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
   }
 

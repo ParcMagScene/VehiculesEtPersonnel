@@ -352,7 +352,7 @@ function initializeDatabase() {
     )
   `);
 
-  // Table des disponibilités / indisponibilités
+  // Table des disponibilités / indisponibilités / congés
   db.exec(`
     CREATE TABLE IF NOT EXISTS availabilities (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -366,12 +366,33 @@ function initializeDatabase() {
       source TEXT NOT NULL DEFAULT 'admin',
       is_recurring BOOLEAN DEFAULT 0,
       recurrence_rule TEXT,
+      status TEXT NOT NULL DEFAULT 'approved',
+      approved_by INTEGER,
+      approved_at DATETIME,
+      rejection_reason TEXT,
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
-      FOREIGN KEY (created_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id),
+      FOREIGN KEY (approved_by) REFERENCES users(id)
     )
   `);
+
+  // Table des soldes de congés par personne/année/type
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS leave_balances (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      person_id INTEGER NOT NULL,
+      year INTEGER NOT NULL,
+      type TEXT NOT NULL DEFAULT 'conge_paye',
+      days_entitled REAL NOT NULL DEFAULT 25,
+      days_taken REAL NOT NULL DEFAULT 0,
+      UNIQUE(person_id, year, type),
+      FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_balances_person ON leave_balances(person_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_balances_year ON leave_balances(year)`);
 
   // Table des missions
   db.exec(`
@@ -928,6 +949,21 @@ function initializeDatabase() {
     db.exec(`INSERT OR IGNORE INTO email_config (id) VALUES (1)`);
   } catch (error) {
     console.warn('⚠️ Migration email_config:', error.message);
+  }
+
+  // ═══ Migration: Système de gestion des congés ═══
+  try {
+    const availCols = db.prepare("PRAGMA table_info(availabilities)").all();
+    const hasStatus = availCols.some(col => col.name === 'status');
+    if (!hasStatus) {
+      db.prepare("ALTER TABLE availabilities ADD COLUMN status TEXT NOT NULL DEFAULT 'approved'").run();
+      db.prepare("ALTER TABLE availabilities ADD COLUMN approved_by INTEGER").run();
+      db.prepare("ALTER TABLE availabilities ADD COLUMN approved_at DATETIME").run();
+      db.prepare("ALTER TABLE availabilities ADD COLUMN rejection_reason TEXT").run();
+      console.log('✅ Migration: colonnes leave management ajoutées à availabilities');
+    }
+  } catch (error) {
+    console.warn('⚠️ Migration leave management:', error.message);
   }
 
   console.log('✅ Base de données initialisée');

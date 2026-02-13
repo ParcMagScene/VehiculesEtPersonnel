@@ -2139,7 +2139,7 @@ app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
 // Routes Planning Personnel — MagLog 1.0
 setupPersonsRoutes(app, authenticateToken, requireAdmin);
 setupSkillsRoutes(app, authenticateToken, requireAdmin);
-setupAvailabilitiesRoutes(app, authenticateToken);
+setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin);
 setupMissionsRoutes(app, authenticateToken, requireAdmin);
 setupAssignmentsRoutes(app, authenticateToken);
 

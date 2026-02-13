@@ -5,7 +5,7 @@
 .leave-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--theme-overlay-dark);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -36,8 +36,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 2px solid #e2e8f0;
+  padding: 20px 24px;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
 }
 
 .leave-modal-title {
@@ -45,8 +47,8 @@
   align-items: center;
   gap: 10px;
   font-weight: 700;
-  font-size: 15px;
-  color: #1e293b;
+  font-size: 16px;
+  color: white;
 }
 
 .leave-modal-icon {
@@ -54,18 +56,23 @@
 }
 
 .leave-modal-close {
-  background: none;
-  border: none;
-  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  border-radius: var(--close-btn-radius);
+  border: 1px solid var(--close-btn-border);
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: all 0.2s;
+  padding: 0;
+  transition: all var(--transition-fast);
 }
 
 .leave-modal-close:hover {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
 }
 
 /* Body */
@@ -256,39 +263,44 @@
 }
 
 .leave-btn-cancel {
-  padding: 8px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
+  padding: var(--btn-padding);
+  border: var(--btn-secondary-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
 }
 
 .leave-btn-cancel:hover {
-  background: #f1f5f9;
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border-color);
 }
 
 .leave-btn-submit {
-  padding: 8px 20px;
+  padding: var(--btn-padding);
   border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
+  border-radius: var(--btn-radius);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .leave-btn-submit:hover {
-  filter: brightness(1.1);
+  box-shadow: var(--btn-primary-hover-shadow);
+  transform: translateY(-1px);
 }
 
 .leave-btn-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 

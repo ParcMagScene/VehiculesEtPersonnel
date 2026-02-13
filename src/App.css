@@ -1826,6 +1826,7 @@
   gap: 6px;
   align-items: center;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .header-notification-badges {

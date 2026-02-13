@@ -35,7 +35,7 @@ import multer from 'multer';
 import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
-import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAssignmentsRoutes, setupSavTicketsRoutes } from './equipmentRoutes.js';
+import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAssignmentsRoutes, setupSavTicketsRoutes, setupEquipmentListsRoutes } from './equipmentRoutes.js';
 import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes } from './ordersRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
@@ -71,7 +71,7 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Rate limiting — protection contre le brute force
 const authLimiter = rateLimit({
@@ -2203,7 +2203,8 @@ setupAssignmentsRoutes(app, authenticateToken);
 setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentAssignmentsRoutes(app, authenticateToken);
-setupSavTicketsRoutes(app, authenticateToken);
+setupSavTicketsRoutes(app, authenticateToken, requireAdmin);
+setupEquipmentListsRoutes(app, authenticateToken);
 
 // Routes Commandes & Ventes
 setupSuppliersRoutes(app, authenticateToken);

@@ -9,6 +9,7 @@ import MobilePlanning from './MobilePlanning';
 import MobilePersonnel from './MobilePersonnel';
 import MobileMessaging from './MobileMessaging';
 import MobileEquipment from './MobileEquipment';
+import MobileEquipmentQR from './MobileEquipmentQR';
 import MobileOrders from './MobileOrders';
 import MobileLogin from './MobileLogin';
 import api from '../../utils/api';
@@ -19,6 +20,7 @@ function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentScreen, setCurrentScreen] = useState('home');
+  const [qrEquipmentUid, setQrEquipmentUid] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [maintenances, setMaintenances] = useState([]);
@@ -92,6 +94,21 @@ function MobileApp({ onSwitchToDesktop }) {
 
   // Sync currentScreen ref
   useEffect(() => { currentScreenRef.current = currentScreen; }, [currentScreen]);
+
+  // Détection QR code dans le hash : #/mobile/equipment/EMAG-XXXXX
+  useEffect(() => {
+    const checkQrHash = () => {
+      const hash = window.location.hash;
+      const match = hash.match(/#\/mobile\/equipment\/(EMAG-\d+)/i);
+      if (match) {
+        setQrEquipmentUid(match[1]);
+        setCurrentScreen('equipment-qr');
+      }
+    };
+    checkQrHash();
+    window.addEventListener('hashchange', checkQrHash);
+    return () => window.removeEventListener('hashchange', checkQrHash);
+  }, []);
 
   // Polling notifications messages non lus
   useEffect(() => {
@@ -506,6 +523,15 @@ function MobileApp({ onSwitchToDesktop }) {
         {currentScreen === 'equipment' && (
           <MobileEquipment
             onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'equipment-qr' && qrEquipmentUid && (
+          <MobileEquipmentQR
+            uid={qrEquipmentUid}
+            currentUser={currentUser}
+            onBack={() => { setQrEquipmentUid(null); setCurrentScreen('equipment'); window.location.hash = '#/mobile'; }}
+            onNavigateHome={() => { setQrEquipmentUid(null); setCurrentScreen('home'); window.location.hash = '#/mobile'; }}
           />
         )}
 

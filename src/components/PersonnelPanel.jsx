@@ -138,6 +138,19 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, g
     setEditFormVisible(false);
   };
 
+  // Ouvrir le modal en mode création (formulaire vide)
+  const openCreateDirect = () => {
+    setEditForm({
+      firstName: '', lastName: '', email: '', phone: '',
+      type: 'permanent', contractType: '', userId: null,
+      status: 'active', notes: '',
+      skills: [],
+      defaultPositions: [],
+    });
+    setEditingPersonDirect(null);
+    setEditFormVisible(true);
+  };
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -160,6 +173,9 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, g
       if (editingPersonDirect) {
         const updated = await api.updatePerson(editingPersonDirect.id, payload);
         setPersons(prev => prev.map(p => p.id === editingPersonDirect.id ? updated : p));
+      } else {
+        const created = await api.createPerson(payload);
+        setPersons(prev => [...prev, created]);
       }
       resetEditForm();
     } catch (err) {
@@ -248,12 +264,12 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, g
             <button onClick={loadData}>Réessayer</button>
           </div>
         )}
-        <PlanningTab persons={persons} skills={skills} positions={positions} view={view} currentDate={currentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} />
+        <PlanningTab persons={persons} skills={skills} positions={positions} view={view} currentDate={currentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} />
         {editFormVisible && (
           <div className="modal-overlay" onClick={resetEditForm}>
             <div className="personnel-edit-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2><User size={20} /> Modifier la fiche</h2>
+                <h2><User size={20} /> {editingPersonDirect ? 'Modifier la fiche' : 'Nouvelle personne'}</h2>
                 <button className="close-button" onClick={resetEditForm}><X size={24} /></button>
               </div>
 
@@ -1202,7 +1218,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
 const PERMANENT_TYPES = ['permanent', 'stagiaire'];
 const CONTRACTUEL_TYPES = ['contractuel'];
 
-const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDate = new Date(), googleEvents = [], onPersonEdit, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
+const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDate = new Date(), googleEvents = [], onPersonEdit, onPersonCreate, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
   const scrollAreaRef = useRef(null);
   const headerScrollRef = useRef(null);
   const personColumnRef = useRef(null);
@@ -1914,6 +1930,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
         <div className="personnel-empty">
           <CalendarDays size={48} />
           <p>Ajoutez du personnel pour afficher le planning</p>
+          {onPersonCreate && (
+            <button className="personnel-add-btn" onClick={onPersonCreate} style={{ marginTop: 12 }}>
+              <Plus size={16} /> Ajouter une personne
+            </button>
+          )}
         </div>
       ) : (
         <div className="pp-planning-with-panel">
@@ -1923,6 +1944,15 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
             <div className="pp-column-header">
               <span>Permanents</span>
               <div className="pp-column-header-actions">
+                {onPersonCreate && (
+                  <button
+                    className="pp-person-add-btn"
+                    onClick={onPersonCreate}
+                    title="Ajouter une personne"
+                  >
+                    <Plus size={12} /> <User size={12} />
+                  </button>
+                )}
                 {pendingLeaveCount > 0 && (
                   <button
                     className="pp-leave-badge-btn"

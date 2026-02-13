@@ -2,7 +2,7 @@
 .prefs-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--theme-overlay-dark);
   z-index: 10000;
   display: flex;
   align-items: center;
@@ -31,13 +31,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #f1f5f9;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
 }
 
 .prefs-header h3 {
   font-size: 1.1rem;
-  font-weight: 600;
-  color: #1e293b;
+  font-weight: 700;
+  color: white;
   margin: 0;
   display: flex;
   align-items: center;
@@ -45,18 +47,23 @@
 }
 
 .prefs-header button {
-  background: none;
-  border: none;
-  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  border-radius: var(--close-btn-radius);
+  border: 1px solid var(--close-btn-border);
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: all 0.15s;
+  padding: 0;
+  transition: all var(--transition-fast);
 }
 
 .prefs-header button:hover {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
 }
 
 .prefs-body {
@@ -177,35 +184,38 @@
 }
 
 .prefs-btn-cancel {
-  padding: 8px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  color: #64748b;
-  font-size: 0.85rem;
+  padding: var(--btn-padding);
+  border: var(--btn-secondary-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: var(--btn-transition);
 }
 
 .prefs-btn-cancel:hover {
-  background: #f8fafc;
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border-color);
 }
 
 .prefs-btn-save {
-  padding: 8px 20px;
+  padding: var(--btn-padding);
   border: none;
-  border-radius: 8px;
-  background: var(--theme-gradient-alt);
-  color: white;
-  font-size: 0.85rem;
-  font-weight: 500;
+  border-radius: var(--btn-radius);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .prefs-btn-save:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .prefs-btn-save:disabled {

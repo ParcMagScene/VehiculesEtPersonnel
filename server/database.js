@@ -977,10 +977,13 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS equipment_categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
+        parent_id INTEGER,
+        level TEXT NOT NULL DEFAULT 'category',
         icon TEXT DEFAULT '📦',
         color TEXT DEFAULT '#6366f1',
         description TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (parent_id) REFERENCES equipment_categories(id)
       )
     `);
 
@@ -991,6 +994,9 @@ function initializeDatabase() {
         reference TEXT,
         serial_number TEXT,
         category_id INTEGER,
+        brand TEXT,
+        uid TEXT,
+        stock_quantity INTEGER DEFAULT 1,
         status TEXT NOT NULL DEFAULT 'available',
         location TEXT,
         purchase_date TEXT,
@@ -1046,18 +1052,72 @@ function initializeDatabase() {
       )
     `);
 
+    // Migration : ajouter parent_id et level si manquants
+    try {
+      const catCols = db.prepare("PRAGMA table_info(equipment_categories)").all().map(c => c.name);
+      if (!catCols.includes('parent_id')) {
+        db.prepare('ALTER TABLE equipment_categories ADD COLUMN parent_id INTEGER').run();
+        console.log('✅ Migration: parent_id ajouté à equipment_categories');
+      }
+      if (!catCols.includes('level')) {
+        db.prepare("ALTER TABLE equipment_categories ADD COLUMN level TEXT NOT NULL DEFAULT 'category'").run();
+        console.log('✅ Migration: level ajouté à equipment_categories');
+      }
+    } catch (e) { /* colonnes déjà présentes */ }
+
+    // Migration : ajouter brand et stock_quantity à equipment
+    try {
+      const eqCols = db.prepare("PRAGMA table_info(equipment)").all().map(c => c.name);
+      if (!eqCols.includes('brand')) {
+        db.prepare('ALTER TABLE equipment ADD COLUMN brand TEXT').run();
+        console.log('✅ Migration: brand ajouté à equipment');
+      }
+      if (!eqCols.includes('stock_quantity')) {
+        db.prepare('ALTER TABLE equipment ADD COLUMN stock_quantity INTEGER DEFAULT 1').run();
+        console.log('✅ Migration: stock_quantity ajouté à equipment');
+      }
+      if (!eqCols.includes('uid')) {
+        db.prepare('ALTER TABLE equipment ADD COLUMN uid TEXT').run();
+        // SQLite ne supporte pas ADD COLUMN UNIQUE, on crée un index séparé
+        db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_uid ON equipment(uid)').run();
+        console.log('✅ Migration: uid ajouté à equipment');
+        // Générer les UID pour les équipements existants
+        const existingEq = db.prepare('SELECT id FROM equipment WHERE uid IS NULL').all();
+        const updateUid = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
+        for (const eq of existingEq) {
+          const uid = 'EMAG-' + String(eq.id).padStart(5, '0');
+          updateUid.run(uid, eq.id);
+        }
+        if (existingEq.length > 0) console.log(`✅ Migration: ${existingEq.length} UID générés`);
+      }
+    } catch (e) { /* colonnes déjà présentes */ }
+
+    // ═══ Table favoris/surveillance matériel ═══
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS equipment_lists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipment_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        list_type TEXT NOT NULL DEFAULT 'favorite',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(equipment_id, user_id, list_type)
+      )
+    `);
+
     // Catégories par défaut
     const catCount = db.prepare('SELECT COUNT(*) as c FROM equipment_categories').get();
     if (catCount.c === 0) {
-      const insertCat = db.prepare('INSERT INTO equipment_categories (name, icon, color) VALUES (?, ?, ?)');
-      insertCat.run('Outillage', '🔧', '#f59e0b');
-      insertCat.run('Électroportatif', '⚡', '#3b82f6');
-      insertCat.run('Levage & Manutention', '🏗️', '#ef4444');
-      insertCat.run('Mesure & Contrôle', '📐', '#10b981');
-      insertCat.run('EPI', '🦺', '#8b5cf6');
-      insertCat.run('Véhicule annexe', '🚗', '#6366f1');
-      insertCat.run('Informatique', '💻', '#06b6d4');
-      insertCat.run('Autre', '📦', '#64748b');
+      const insertCat = db.prepare('INSERT INTO equipment_categories (name, icon, color, level) VALUES (?, ?, ?, ?)');
+      insertCat.run('Outillage', '🔧', '#f59e0b', 'family');
+      insertCat.run('Électroportatif', '⚡', '#3b82f6', 'family');
+      insertCat.run('Levage & Manutention', '🏗️', '#ef4444', 'family');
+      insertCat.run('Mesure & Contrôle', '📐', '#10b981', 'family');
+      insertCat.run('EPI', '🦺', '#8b5cf6', 'family');
+      insertCat.run('Véhicule annexe', '🚗', '#6366f1', 'family');
+      insertCat.run('Informatique', '💻', '#06b6d4', 'family');
+      insertCat.run('Autre', '📦', '#64748b', 'family');
     }
   } catch (error) {
     console.warn('⚠️ Migration parc matériel:', error.message);

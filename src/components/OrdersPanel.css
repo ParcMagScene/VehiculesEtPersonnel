@@ -377,20 +377,23 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: var(--theme-overlay-dark);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  backdrop-filter: blur(4px);
 }
 .order-form-modal, .supplier-form-modal {
   background: var(--surface, #fff);
-  border-radius: 12px;
+  border-radius: 16px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-modal, 0 20px 60px rgba(0,0,0,0.25));
+  animation: themeModalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
 }
 .order-form-modal { max-width: 800px; }
 .supplier-form-modal { max-width: 500px; }
@@ -398,25 +401,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border, #e2e8f0);
+  padding: 20px 24px;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
 }
-.modal-header h2 { margin: 0; font-size: 1.1rem; }
+.modal-header h2 { margin: 0; font-size: 1.1rem; color: white; font-weight: 700; }
 .close-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 8px;
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  border: 1px solid var(--close-btn-border);
+  border-radius: var(--close-btn-radius);
   cursor: pointer;
-  background: var(--surface-secondary, #f1f5f9);
-  color: var(--text-secondary, #64748b);
-  transition: all 0.15s;
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
+  padding: 0;
+  transition: all var(--transition-fast);
 }
-.close-btn:hover { background: #ef4444; color: white; }
-.modal-body { padding: 1.5rem; }
+.close-btn:hover { background: var(--close-btn-hover-bg); border-color: var(--close-btn-hover-border); }
+.modal-body { padding: 1.5rem; overflow-y: auto; }
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -450,8 +456,8 @@
 }
 .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
   outline: none;
-  border-color: var(--theme-primary, #667eea);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--focus-border, var(--theme-primary, #667eea));
+  box-shadow: var(--focus-ring, 0 0 0 3px rgba(102, 126, 234, 0.15));
 }
 .form-field textarea { resize: vertical; }
 

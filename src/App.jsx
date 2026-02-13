@@ -72,19 +72,6 @@ function App() {
     }
   }, [isMobile]);
   
-  // Si mobile, afficher uniquement MobileApp
-  if (isMobile) {
-    return (
-      <ErrorBoundary>
-        <MobileApp onSwitchToDesktop={() => {
-          sessionStorage.setItem('forceDesktop', 'true');
-          window.location.hash = '';
-          setIsMobile(false);
-        }} />
-      </ErrorBoundary>
-    );
-  }
-  
   const [view, setView] = useState('week'); // 'week', 'month', 'year'
   const [currentDate, setCurrentDate] = useState(new Date());
   const [vehicles, setVehicles] = useState([]);
@@ -752,6 +739,18 @@ function App() {
     const interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
   }, [currentUser]);
+
+  if (isMobile) {
+    return (
+      <ErrorBoundary>
+        <MobileApp onSwitchToDesktop={() => {
+          sessionStorage.setItem('forceDesktop', 'true');
+          window.location.hash = '';
+          setIsMobile(false);
+        }} />
+      </ErrorBoundary>
+    );
+  }
 
   if (isLoading) {
     return (

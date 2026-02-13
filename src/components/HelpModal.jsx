@@ -1,4 +1,5 @@
-import { X, HelpCircle, Download, ExternalLink, Truck, Users, Briefcase, Calendar, MessageSquare, Settings, Search, Mouse } from 'lucide-react';
+import { X, HelpCircle, Download, ExternalLink, Truck, Users, Briefcase, Calendar, MessageSquare, Settings, Search, Mouse, Keyboard } from 'lucide-react';
+import { SHORTCUTS, SHORTCUT_CATEGORIES, MOD_KEY } from '../hooks/useKeyboardShortcuts';
 import './HelpModal.css';
 
 const HelpModal = ({ isOpen, onClose }) => {
@@ -87,6 +88,35 @@ const HelpModal = ({ isOpen, onClose }) => {
               <h4>Messages internes</h4>
               <p>Cliquez sur l'icône 💬 dans le header pour ouvrir la messagerie. Créez des conversations avec les autres utilisateurs et partagez des fichiers.</p>
             </div>
+          </div>
+
+          {/* Raccourcis clavier */}
+          <div className="help-section">
+            <div className="help-section-title"><Keyboard size={16} /> Raccourcis clavier</div>
+            {Object.entries(SHORTCUT_CATEGORIES).map(([catId, catLabel]) => {
+              const catShortcuts = SHORTCUTS.filter(s => s.category === catId);
+              if (catShortcuts.length === 0) return null;
+              return (
+                <div className="help-card" key={catId}>
+                  <h4>{catLabel}</h4>
+                  <div className="help-shortcuts-list">
+                    {catShortcuts.map(s => (
+                      <div className="help-shortcut-row" key={s.id}>
+                        <span className="help-shortcut-keys">
+                          {s.keys.map((k, i) => (
+                            <span key={i}>
+                              {i > 0 && <span className="help-kbd-sep">+</span>}
+                              <span className="help-kbd">{k}</span>
+                            </span>
+                          ))}
+                        </span>
+                        <span className="help-shortcut-label">{s.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Raccourcis & astuces */}

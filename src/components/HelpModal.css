@@ -138,6 +138,36 @@
   margin: 0 2px;
 }
 
+.help-kbd-sep {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  margin: 0 1px;
+}
+
+.help-shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.help-shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.help-shortcut-keys {
+  min-width: 100px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.help-shortcut-label {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
 .help-version {
   text-align: center;
   font-size: 0.75rem;

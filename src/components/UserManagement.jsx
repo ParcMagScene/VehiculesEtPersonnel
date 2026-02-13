@@ -568,11 +568,15 @@ export default UserManagement;
 const PERSON_TYPES = [
   { value: 'permanent', label: 'Permanent', icon: '🏢' },
   { value: 'contractuel', label: 'Contractuel', icon: '📋' },
+  { value: 'stagiaire', label: 'Stagiaire', icon: '🎓' },
 ];
 
 const CONTRACT_TYPES = [
   { value: 'intermittent', label: 'Intermittent du spectacle' },
+  { value: 'CDD', label: 'CDD' },
   { value: 'freelance', label: 'Freelance' },
+  { value: 'prestataire', label: 'Prestataire' },
+  { value: 'auto-entrepreneur', label: 'Auto-entrepreneur' },
   { value: 'entreprise', label: 'Entreprise / Prestataire' },
 ];
 

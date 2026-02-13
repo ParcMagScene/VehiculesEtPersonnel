@@ -25,6 +25,7 @@ import './PersonnelPanel.css';
 const PERSON_TYPES = [
   { value: 'permanent', label: 'Permanent' },
   { value: 'contractuel', label: 'Contractuel' },
+  { value: 'stagiaire', label: 'Stagiaire' },
 ];
 
 const CONTRACT_TYPES = [
@@ -1197,7 +1198,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
 // Onglet PLANNING
 // ═══════════════════════════════════════
 
-const PERMANENT_TYPES = ['permanent'];
+const PERMANENT_TYPES = ['permanent', 'stagiaire'];
 const CONTRACTUEL_TYPES = ['contractuel'];
 
 const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDate = new Date(), googleEvents = [], onPersonEdit, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {

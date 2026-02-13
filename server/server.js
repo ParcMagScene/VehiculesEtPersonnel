@@ -36,6 +36,7 @@ import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from 
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
+import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1325,6 +1326,9 @@ app.post('/api/access-requests', async (req, res) => {
     
     const result = stmt.run(email, name);
     
+    // Alerte email aux admins
+    alertAccessRequest(db, { name, email }).catch(() => {});
+    
     res.json({ 
       success: true,
       autoApproved: false,
@@ -1820,6 +1824,87 @@ setupLocationsRoutes(app, authenticateToken);
 setupGaragesRoutes(app, authenticateToken);
 setupConfigRoutes(app, authenticateToken, requireAdmin);
 setupMessagingRoutes(app, authenticateToken);
+
+// ═══ CONFIGURATION EMAIL ═══
+
+// GET /api/email-config — Récupérer la config email (admin uniquement, masque le mot de passe)
+app.get('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const config = db.prepare('SELECT * FROM email_config WHERE id = 1').get();
+    if (config) {
+      // Masquer le mot de passe SMTP
+      config.smtp_pass = config.smtp_pass ? '••••••••' : '';
+    }
+    res.json(config || {});
+  } catch (error) {
+    console.error('Erreur lecture config email:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// PUT /api/email-config — Mettre à jour la config email (admin uniquement)
+app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { enabled, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_pass, from_name,
+            alert_access_request, alert_reservation, alert_assignment, alert_overdue } = req.body;
+    
+    // Si le mot de passe est masqué, ne pas le mettre à jour
+    const currentConfig = db.prepare('SELECT smtp_pass FROM email_config WHERE id = 1').get();
+    const finalPass = (smtp_pass && smtp_pass !== '••••••••') ? smtp_pass : (currentConfig?.smtp_pass || '');
+
+    db.prepare(`
+      UPDATE email_config SET
+        enabled = ?, smtp_host = ?, smtp_port = ?, smtp_secure = ?,
+        smtp_user = ?, smtp_pass = ?, from_name = ?,
+        alert_access_request = ?, alert_reservation = ?, alert_assignment = ?, alert_overdue = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = 1
+    `).run(
+      enabled ? 1 : 0, smtp_host || '', smtp_port || 587, smtp_secure ? 1 : 0,
+      smtp_user || '', finalPass, from_name || 'eM@g',
+      alert_access_request !== false ? 1 : 0, alert_reservation !== false ? 1 : 0,
+      alert_assignment !== false ? 1 : 0, alert_overdue !== false ? 1 : 0
+    );
+
+    // Réinitialiser le transporteur avec la nouvelle config
+    initEmailTransporter(db);
+
+    res.json({ success: true, message: 'Configuration email mise à jour' });
+  } catch (error) {
+    console.error('Erreur mise à jour config email:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// POST /api/email-config/test — Envoyer un email de test
+app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const config = db.prepare('SELECT * FROM email_config WHERE id = 1').get();
+    if (!config || !config.smtp_host || !config.smtp_user) {
+      return res.status(400).json({ error: 'Configuration SMTP incomplète' });
+    }
+
+    const nodemailer = (await import('nodemailer')).default;
+    const testTransporter = nodemailer.createTransport({
+      host: config.smtp_host,
+      port: config.smtp_port || 587,
+      secure: config.smtp_secure === 1,
+      auth: { user: config.smtp_user, pass: config.smtp_pass },
+    });
+
+    await testTransporter.sendMail({
+      from: `"${config.from_name || 'eM@g'}" <${config.smtp_user}>`,
+      to: req.user.email,
+      subject: '[eM@g] Email de test',
+      html: '<div style="font-family:Arial;padding:20px;"><h2>✅ Configuration email fonctionnelle !</h2><p>Cet email confirme que la configuration SMTP est correcte.</p></div>',
+    });
+
+    res.json({ success: true, message: `Email de test envoyé à ${req.user.email}` });
+  } catch (error) {
+    console.error('Erreur test email:', error);
+    res.status(500).json({ error: `Erreur SMTP : ${error.message}` });
+  }
+});
 
 // ============ MODULE AFFAIRES ============
 
@@ -2512,6 +2597,8 @@ app.delete('/api/attachments/:affaireId/:filename', authenticateToken, (req, res
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
   console.log(`📡 Accessible depuis le réseau sur http://192.168.205.75:${PORT}`);
+  // Initialiser le service email
+  initEmailTransporter(db);
 });
 
 // Gestion de l'arrêt propre du serveur

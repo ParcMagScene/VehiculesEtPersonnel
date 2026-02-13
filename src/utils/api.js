@@ -786,6 +786,22 @@ class ApiClient {
       body: JSON.stringify(prefs),
     });
   }
+
+  // ═══ Configuration Email ═══
+  async getEmailConfig() {
+    return this.request('/email-config');
+  }
+
+  async updateEmailConfig(config) {
+    return this.request('/email-config', {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    });
+  }
+
+  async testEmail() {
+    return this.request('/email-config/test', { method: 'POST' });
+  }
 }
 
 export const api = new ApiClient();

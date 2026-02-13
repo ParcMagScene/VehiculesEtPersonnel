@@ -45,7 +45,7 @@
 }
 
 .today-btn {
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
   border: none;
   border-radius: 8px;

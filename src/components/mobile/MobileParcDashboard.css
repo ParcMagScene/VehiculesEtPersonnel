@@ -61,7 +61,7 @@
 .mparc-stat.green svg { color: #10b981; }
 .mparc-stat.blue svg { color: #3b82f6; }
 .mparc-stat.amber svg { color: #f59e0b; }
-.mparc-stat.purple svg { color: #8b5cf6; }
+.mparc-stat.purple svg { color: var(--theme-primary-light); }
 
 .mparc-stat-val {
   font-size: 1.8rem;
@@ -181,7 +181,7 @@
   width: 36px;
   height: 36px;
   background: #ede9fe;
-  color: #667eea;
+  color: var(--theme-primary);
   border-radius: 8px;
   display: flex;
   align-items: center;

@@ -74,7 +74,7 @@
 
 .mobile-login .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: none;
 }
 
@@ -112,8 +112,8 @@
 .mobile-login .toggle-mode-button {
   padding: 0.75rem;
   background: transparent;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: var(--theme-primary);
+  border: 2px solid var(--theme-primary);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -123,7 +123,7 @@
 }
 
 .mobile-login .toggle-mode-button:hover {
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
 }
 

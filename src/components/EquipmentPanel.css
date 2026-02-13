@@ -815,6 +815,11 @@
 .eq-btn-save:hover { opacity: 0.9; }
 
 /* ═══ RESPONSIVE ═══ */
+@media (max-width: 1024px) {
+  .eq-grid { grid-template-columns: repeat(2, 1fr); }
+  .eq-detail-fields { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
   .eq-stats-row { gap: 4px; }
   .eq-stat { padding: 4px 8px; font-size: 11px; }
@@ -825,4 +830,15 @@
   .eq-grid { grid-template-columns: 1fr; }
   .eq-form-grid { grid-template-columns: 1fr; }
   .eq-detail-fields { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .equipment-panel { padding: 0.5rem; }
+  .eq-tabs { gap: 0; }
+  .eq-tab { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+  .eq-stat-value { font-size: 1rem; }
+  .eq-card { padding: 0.75rem; }
+  .eq-card-header h4 { font-size: 0.85rem; }
+  .eq-modal-content { margin: 0.5rem; max-height: 95vh; }
+  .eq-ticket-card { padding: 0.75rem; }
 }

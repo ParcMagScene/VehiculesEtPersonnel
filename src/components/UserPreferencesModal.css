@@ -121,7 +121,7 @@
 
 .prefs-select:focus {
   outline: none;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
 }
 
@@ -161,7 +161,7 @@
 }
 
 .prefs-toggle input:checked + .prefs-toggle-slider {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--theme-gradient-alt);
 }
 
 .prefs-toggle input:checked + .prefs-toggle-slider::after {
@@ -195,7 +195,7 @@
   padding: 8px 20px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--theme-gradient-alt);
   color: white;
   font-size: 0.85rem;
   font-weight: 500;
@@ -251,7 +251,7 @@
 
 .prefs-test-btn:hover {
   background: #ede9fe;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   transform: translateY(-1px);
 }
 

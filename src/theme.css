@@ -21,11 +21,13 @@
   --theme-primary-hover: #7c3aed;
   --theme-primary-light: #8b5cf6;
   --theme-accent: #a855f7;
+  --theme-indigo: #6366f1;
   
   /* ─── Dégradés ─── */
   --theme-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --theme-gradient-reverse: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
   --theme-gradient-subtle: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+  --theme-gradient-alt: linear-gradient(135deg, #6366f1, #8b5cf6);
   
   /* ─── Danger (pour modals d'alerte) ─── */
   --theme-danger: #ef4444;

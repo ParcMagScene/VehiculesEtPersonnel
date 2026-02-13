@@ -164,7 +164,7 @@
 }
 
 .pdp-section-title svg {
-  color: #667eea;
+  color: var(--theme-primary);
 }
 
 /* Identité */
@@ -182,7 +182,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -266,13 +266,13 @@
 }
 
 .pdp-contact-item:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: #f8f7ff;
   color: #5b21b6;
 }
 
 .pdp-contact-item svg {
-  color: #667eea;
+  color: var(--theme-primary);
   flex-shrink: 0;
 }
 
@@ -380,14 +380,14 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #667eea;
+  color: var(--theme-primary);
   transition: all 0.2s;
 }
 
 .pdp-absence-add-btn:hover {
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
 }
 
 .pdp-absence-loading,

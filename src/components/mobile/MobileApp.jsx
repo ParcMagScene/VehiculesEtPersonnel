@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell } from 'lucide-react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
@@ -8,6 +8,8 @@ import MobileAvailability from './MobileAvailability';
 import MobilePlanning from './MobilePlanning';
 import MobilePersonnel from './MobilePersonnel';
 import MobileMessaging from './MobileMessaging';
+import MobileEquipment from './MobileEquipment';
+import MobileOrders from './MobileOrders';
 import MobileLogin from './MobileLogin';
 import api from '../../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../../utils/notificationSound';
@@ -384,6 +386,22 @@ function MobileApp({ onSwitchToDesktop }) {
               <span>Messagerie</span>
               {unreadMsgCount > 0 && <span className="menu-badge">{unreadMsgCount}</span>}
             </button>
+
+            <div className="menu-section-label">Gestion</div>
+            <button
+              className={currentScreen === 'equipment' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('equipment'); setMenuOpen(false); }}
+            >
+              <Package size={20} />
+              <span>Matériel & SAV</span>
+            </button>
+            <button
+              className={currentScreen === 'orders' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('orders'); setMenuOpen(false); }}
+            >
+              <ShoppingCart size={20} />
+              <span>Commandes</span>
+            </button>
           </nav>
 
           <button className="menu-logout" onClick={handleLogout}>
@@ -481,6 +499,18 @@ function MobileApp({ onSwitchToDesktop }) {
         {currentScreen === 'messaging' && (
           <MobileMessaging
             currentUser={currentUser}
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'equipment' && (
+          <MobileEquipment
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'orders' && (
+          <MobileOrders
             onBack={() => setCurrentScreen('home')}
           />
         )}

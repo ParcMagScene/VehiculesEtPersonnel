@@ -3,7 +3,7 @@ import {
   Users, Award, CalendarDays, Briefcase,
   Plus, Edit2, Trash2, X, Save, Search,
   ChevronDown, ChevronUp, AlertTriangle,
-  Phone, Mail, User, Check,
+  Phone, Mail, User, Check, Clock,
   Link2,
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
@@ -16,6 +16,7 @@ import { fr } from 'date-fns/locale';
 import api from '../utils/api';
 import AssignmentDialog from './AssignmentDialog';
 import { PersonnelSlidePanel } from './PersonnelDetailPanel';
+import { LeaveRequestModal, LeaveApprovalPanel } from './LeaveRequestModal';
 import './PersonnelPanel.css';
 
 // ═══════════════════════════════════════
@@ -1239,6 +1240,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
   const [deleteMission, setDeleteMission] = useState(null); // { mission, person }
   const [hoveredSlot, setHoveredSlot] = useState(null); // { personId, slotIndex }
 
+  // Leave management state
+  const [showLeaveModal, setShowLeaveModal] = useState(null); // { person } or { personId }
+  const [showLeaveApproval, setShowLeaveApproval] = useState(false);
+  const [pendingLeaveCount, setPendingLeaveCount] = useState(0);
+
   // Drag-to-create state
   const [dragCreate, setDragCreate] = useState(null); // { person, startSlotIdx, endSlotIdx }
   const isDragCreatingRef = useRef(false);
@@ -1295,6 +1301,13 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
   useEffect(() => {
     loadPlanning();
   }, [loadPlanning]);
+
+  // Charger le nombre de demandes en attente
+  useEffect(() => {
+    api.getPendingLeaveCount()
+      .then(r => setPendingLeaveCount(r?.count || 0))
+      .catch(() => {});
+  }, [planningData]);
 
   // Index des missions par personne avec calcul de span continu
   // { personId -> [{ mission, assignment, startSlotIdx, slotCount }] }
@@ -1377,6 +1390,63 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
     });
     return spans;
   }, [planningData.missions, days, view]);
+
+  // Index des absences (availabilities) par personne + jour (pour colorer les slots)
+  // LEAVE_TYPE_COLORS : couleur de fond des cellules pour chaque type d'absence
+  const LEAVE_TYPE_COLORS = {
+    unavailable: '#94a3b8',  // gris-bleu
+    conge_paye: '#60a5fa',   // bleu
+    rtt: '#a78bfa',          // violet
+    maladie: '#f87171',      // rouge
+    sans_solde: '#fb923c',   // orange
+    formation: '#34d399',    // vert
+    repos: '#fbbf24',        // jaune
+    autre: '#9ca3af',        // gris
+  };
+  const LEAVE_TYPE_LABELS = {
+    unavailable: 'Indisponible',
+    conge_paye: 'CP',
+    rtt: 'RTT',
+    maladie: 'Maladie',
+    sans_solde: 'SS',
+    formation: 'Formation',
+    repos: 'Repos',
+    autre: 'Autre',
+  };
+
+  // Map : `${personId}_${slotIndex}` → { type, reason, status }
+  const absenceSlots = useMemo(() => {
+    const map = {};
+    if (view === 'year' || days.length === 0) return map;
+    const viewStart = days[0];
+    const viewEnd = days[days.length - 1];
+
+    (planningData.availabilities || []).forEach(avail => {
+      if (avail.status === 'rejected') return; // ignorer les refusées
+      try {
+        const aStart = parseISO(avail.start_date || avail.startDate);
+        const aEnd = parseISO(avail.end_date || avail.endDate);
+        if (aStart > viewEnd || aEnd < viewStart) return;
+
+        const personId = avail.person_id || avail.personId;
+        const clampedStart = aStart < viewStart ? viewStart : aStart;
+        const clampedEnd = aEnd > viewEnd ? viewEnd : aEnd;
+        const startIdx = days.findIndex(d => isSameDay(d, clampedStart));
+        const endIdx = days.findIndex(d => isSameDay(d, clampedEnd));
+        if (startIdx === -1) return;
+        const eIdx = endIdx === -1 ? startIdx : endIdx;
+
+        for (let i = startIdx; i <= eIdx; i++) {
+          map[`${personId}_${i}`] = {
+            type: avail.type || 'unavailable',
+            reason: avail.reason,
+            status: avail.status || 'approved',
+          };
+        }
+      } catch { /* ignore */ }
+    });
+    return map;
+  }, [planningData.availabilities, days, view]);
 
   // Set des slots couverts par une mission (pour styling et empêcher clic)
   const coveredSlotsForPerson = useCallback((personId) => {
@@ -1669,11 +1739,21 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
 
           const anyDragActive = isDragCreatingRef.current || isDragMovingRef.current || isResizingRef.current;
 
+          // Absence sur ce slot ?
+          const absenceKey = `${person.id}_${slotIndex}`;
+          const absence = absenceSlots[absenceKey];
+          const hasAbsence = !!absence;
+          const absenceColor = hasAbsence ? LEAVE_TYPE_COLORS[absence.type] || '#94a3b8' : null;
+          const absenceLabel = hasAbsence ? LEAVE_TYPE_LABELS[absence.type] || '' : '';
+          const absenceTooltip = hasAbsence
+            ? `${absenceLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === 'pending' ? ' (en attente)' : ''}`
+            : '';
+
           return (
             <div
               key={slotIndex}
-              className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isColHovered ? ' pp-col-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}`}
-              onMouseDown={(e) => !isCovered && handleSlotMouseDown(person, slotIndex, e)}
+              className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isColHovered ? ' pp-col-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}${hasAbsence ? ' pp-slot-absence' : ''}`}
+              onMouseDown={(e) => !isCovered && !hasAbsence && handleSlotMouseDown(person, slotIndex, e)}
               onMouseEnter={() => {
                 handleSlotMouseEnter(person, slotIndex);
                 if (!anyDragActive) setHoveredSlot({ personId: person.id, slotIndex });
@@ -1681,13 +1761,25 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
               onMouseLeave={() => { if (!anyDragActive) setHoveredSlot(null); }}
               onMouseUp={handleGlobalMouseUp}
               onClick={(e) => {
-                if (isCovered || wasDraggedRef.current) { wasDraggedRef.current = false; return; }
+                if (isCovered || hasAbsence || wasDraggedRef.current) { wasDraggedRef.current = false; return; }
                 e.stopPropagation();
                 handleSlotClick(person, slot.day, slotIndex);
               }}
-              data-emag-tooltip={isHovered && !anyDragActive ? `${personName} — ${dayLabel}` : undefined}
-              style={{ cursor: view !== 'year' && !isCovered ? 'crosshair' : 'default' }}
+              data-emag-tooltip={isHovered && !anyDragActive ? (hasAbsence ? `${personName} — ${absenceTooltip}` : `${personName} — ${dayLabel}`) : undefined}
+              style={{
+                cursor: view !== 'year' && !isCovered && !hasAbsence ? 'crosshair' : 'default',
+                ...(hasAbsence ? {
+                  backgroundColor: absenceColor + (absence.status === 'pending' ? '30' : '40'),
+                  backgroundImage: absence.status === 'pending' ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)` : 'none',
+                } : {}),
+              }}
             >
+              {/* Label absence */}
+              {hasAbsence && !isCovered && (
+                <span className="pp-absence-label" style={{ color: absenceColor }}>
+                  {absenceLabel}
+                </span>
+              )}
               {/* Bloc original (masqué si en cours de move/resize) */}
               {spanHere && !isOriginalBeingMoved && !isOriginalBeingResized && renderAssignmentBlock(spanHere, person, slotIndex, false)}
               {/* Bloc fantôme (original pendant move/resize) */}
@@ -1830,13 +1922,32 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
           <div className="pp-headers-row">
             <div className="pp-column-header">
               <span>Permanents</span>
-              <button
-                className="pp-section-toggle"
-                onClick={() => setCollapsedSections(prev => ({ ...prev, permanents: !prev.permanents }))}
-                title={collapsedSections.permanents ? 'Développer' : 'Rétracter'}
-              >
-                {collapsedSections.permanents ? '▼' : '▲'}
-              </button>
+              <div className="pp-column-header-actions">
+                {pendingLeaveCount > 0 && (
+                  <button
+                    className="pp-leave-badge-btn"
+                    onClick={() => setShowLeaveApproval(true)}
+                    title="Demandes de congés en attente"
+                  >
+                    <Clock size={12} />
+                    <span className="pp-leave-badge-count">{pendingLeaveCount}</span>
+                  </button>
+                )}
+                <button
+                  className="pp-leave-add-btn"
+                  onClick={() => setShowLeaveModal({ person: null })}
+                  title="Ajouter une absence"
+                >
+                  <Plus size={12} />
+                </button>
+                <button
+                  className="pp-section-toggle"
+                  onClick={() => setCollapsedSections(prev => ({ ...prev, permanents: !prev.permanents }))}
+                  title={collapsedSections.permanents ? 'Développer' : 'Rétracter'}
+                >
+                  {collapsedSections.permanents ? '▼' : '▲'}
+                </button>
+              </div>
             </div>
             <div className="pp-headers-scroll" ref={headerScrollRef}>
               <div className="pp-headers-grid" style={{ gridTemplateColumns: gridColumns }}>
@@ -1957,6 +2068,10 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
             skills={skills}
             onClose={() => setSelectedPersonForDetails(null)}
             onEdit={(person) => { setSelectedPersonForDetails(null); onPersonEdit && onPersonEdit(person); }}
+            onRequestLeave={(personId) => {
+              const p = persons.find(pp => pp.id === personId);
+              setShowLeaveModal({ person: p || null });
+            }}
           />
         </div>
       )}
@@ -1987,6 +2102,25 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
           message={`Supprimer la mission "${deleteMission.mission.title}" et toutes ses affectations ?`}
           onConfirm={handleDeleteMission}
           onCancel={() => setDeleteMission(null)}
+        />
+      )}
+
+      {/* Modal de demande de congé / absence */}
+      {showLeaveModal && (
+        <LeaveRequestModal
+          person={showLeaveModal.person || null}
+          persons={activePersons}
+          isAdmin={true}
+          onClose={() => setShowLeaveModal(null)}
+          onCreated={() => loadPlanning()}
+        />
+      )}
+
+      {/* Panneau d'approbation des congés */}
+      {showLeaveApproval && (
+        <LeaveApprovalPanel
+          onClose={() => setShowLeaveApproval(false)}
+          onUpdated={() => loadPlanning()}
         />
       )}
     </div>

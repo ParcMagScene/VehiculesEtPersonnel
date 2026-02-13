@@ -1051,6 +1051,60 @@
   text-align: left;
 }
 
+.pp-column-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pp-leave-badge-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { background: rgba(255, 255, 255, 0.25); }
+  50% { background: rgba(251, 191, 36, 0.5); }
+}
+
+.pp-leave-badge-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  animation: none;
+}
+
+.pp-leave-badge-count {
+  font-size: 11px;
+}
+
+.pp-leave-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pp-leave-add-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 /* Section header dans la colonne personnel */
 .pp-section-header {
   background: var(--theme-gradient);
@@ -1401,6 +1455,28 @@
 .pp-person-cell.pp-row-hovered .pp-person-name {
   color: #667eea;
   font-weight: 700;
+}
+
+/* ═══ Absences sur le planning ═══ */
+.pp-slot-absence {
+  position: relative;
+  cursor: default !important;
+}
+
+.pp-absence-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 1;
+  text-shadow: 0 0 3px rgba(255,255,255,0.6);
 }
 
 .pp-assignment-block {

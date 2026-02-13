@@ -70,7 +70,7 @@
 }
 
 .request-email {
-  color: #667eea;
+  color: var(--theme-primary);
   font-size: 0.9rem;
   margin-bottom: 0.25rem;
 }
@@ -394,7 +394,7 @@
   width: 14px;
   height: 14px;
   cursor: pointer;
-  accent-color: #8b5cf6;
+  accent-color: var(--theme-primary-light);
   margin: 0;
 }
 

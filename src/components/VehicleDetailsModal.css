@@ -152,7 +152,7 @@
 }
 
 .vehicle-details-modal .info-section h3 svg {
-  color: #667eea;
+  color: var(--theme-primary);
 }
 
 .vehicle-details-modal .info-container {
@@ -369,7 +369,7 @@
 }
 
 .vehicle-details-modal .history-section h3 svg {
-  color: #667eea;
+  color: var(--theme-primary);
 }
 
 .vehicle-details-modal .maintenance-list {
@@ -409,7 +409,7 @@
 .vehicle-details-modal .maintenance-item.status-pending,
 .vehicle-details-modal .maintenance-item.status-PENDING {
   background: linear-gradient(to right, #faf5ff, white);
-  border-left-color: #8b5cf6;
+  border-left-color: var(--theme-primary-light);
 }
 
 .vehicle-details-modal .maintenance-item.status-in-progress,
@@ -439,7 +439,7 @@
 }
 
 .vehicle-details-modal .maintenance-item.clickable:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
   transform: translateY(-1px);
 }
@@ -579,7 +579,7 @@
 }
 
 .vehicle-details-modal .deadlines-section h3 svg {
-  color: #667eea;
+  color: var(--theme-primary);
 }
 
 .vehicle-details-modal .deadlines-list {

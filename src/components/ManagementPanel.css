@@ -253,7 +253,7 @@
 
 .add-form input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -268,7 +268,7 @@
 
 .add-form select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -406,12 +406,12 @@
 
 .item-card.dragging {
   opacity: 0.5;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   transform: scale(0.98);
 }
 
 .item-card:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
 }
 
@@ -437,7 +437,7 @@
 }
 
 .drag-handle:hover {
-  color: #667eea;
+  color: var(--theme-primary);
 }
 
 .drag-handle:active {
@@ -655,7 +655,7 @@
 
 .edit-form input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
 }
 
 .color-picker-inline {
@@ -773,7 +773,7 @@
 }
 
 .label-hint a {
-  color: #667eea;
+  color: var(--theme-primary);
   text-decoration: none;
 }
 
@@ -791,7 +791,7 @@
 
 .sync-form input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
 }
 
 .help-text {
@@ -843,7 +843,7 @@
 }
 
 .sync-instructions a {
-  color: #667eea;
+  color: var(--theme-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -884,7 +884,7 @@
   padding: 1rem;
   border-radius: 6px;
   margin-top: 1rem;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid var(--theme-primary);
 }
 
 .sync-example code {

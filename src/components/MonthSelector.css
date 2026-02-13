@@ -98,13 +98,13 @@
 }
 
 .month-selector-item:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
   transform: translateY(-2px);
 }
 
 .month-selector-item.current {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
 }
 

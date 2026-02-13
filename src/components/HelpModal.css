@@ -226,7 +226,7 @@
 }
 
 .help-card:hover {
-  border-left-color: var(--card-accent, #8b5cf6);
+  border-left-color: var(--card-accent, var(--theme-primary-light));
   background: var(--surface-hover, #faf5ff);
   transform: translateX(3px);
 }

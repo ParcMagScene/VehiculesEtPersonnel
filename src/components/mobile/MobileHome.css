@@ -54,7 +54,15 @@
 }
 
 .module-card.messaging {
-  border-left-color: #8b5cf6;
+  border-left-color: var(--theme-primary-light);
+}
+
+.module-card.equipment {
+  border-left-color: #f59e0b;
+}
+
+.module-card.orders {
+  border-left-color: #ec4899;
 }
 
 .module-icon {
@@ -81,6 +89,16 @@
 .module-card.messaging .module-icon {
   background: linear-gradient(135deg, #ede9fe, #ddd6fe);
   color: #7c3aed;
+}
+
+.module-card.equipment .module-icon {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #d97706;
+}
+
+.module-card.orders .module-icon {
+  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+  color: #db2777;
 }
 
 .module-badge {

@@ -27,7 +27,7 @@
   justify-content: space-between;
   padding: 14px 16px;
   border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--theme-gradient-alt);
   color: white;
   flex-shrink: 0;
 }
@@ -94,7 +94,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--theme-gradient-alt);
   color: white;
   display: flex;
   align-items: center;
@@ -144,7 +144,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #6366f1;
+  background: var(--theme-indigo);
   color: white;
   font-size: 10px;
   font-weight: 700;
@@ -247,7 +247,7 @@
 }
 
 .msg-bubble-wrapper.sent .msg-bubble {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--theme-gradient-alt);
   color: white;
   border-bottom-right-radius: 4px;
 }
@@ -331,14 +331,14 @@
 }
 
 .msg-input-area textarea:focus {
-  border-color: #6366f1;
+  border-color: var(--theme-indigo);
 }
 
 .msg-send-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--theme-gradient-alt);
   color: white;
   border: none;
   cursor: pointer;
@@ -375,7 +375,7 @@
 }
 
 .msg-attach-btn:hover {
-  color: #6366f1;
+  color: var(--theme-indigo);
   background: #eef2ff;
 }
 
@@ -559,7 +559,7 @@
 }
 
 .msg-new-actions .msg-btn-start {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--theme-gradient-alt);
   color: white;
 }
 

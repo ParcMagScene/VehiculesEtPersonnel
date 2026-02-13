@@ -126,7 +126,7 @@
 .leave-field select:focus,
 .leave-field textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
@@ -207,7 +207,7 @@
 }
 
 .leave-period-toggle button.active {
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
 }
 

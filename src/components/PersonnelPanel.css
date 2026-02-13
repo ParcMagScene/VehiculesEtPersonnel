@@ -290,7 +290,7 @@
 .personnel-edit-form-body .form-group select:focus,
 .personnel-edit-form-body .form-group textarea:focus {
   outline: none;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -710,7 +710,7 @@
 
 .person-positions-more summary {
   font-size: 11px;
-  color: #667eea;
+  color: var(--theme-primary);
   cursor: pointer;
   user-select: none;
   padding: 2px 0;
@@ -1444,16 +1444,16 @@
 
 .pp-header-cell.pp-col-hovered {
   background: rgba(102, 126, 234, 0.15) !important;
-  box-shadow: inset 0 -2px 0 #667eea;
+  box-shadow: inset 0 -2px 0 var(--theme-primary);
 }
 
 .pp-person-cell.pp-row-hovered {
   background: rgba(102, 126, 234, 0.08);
-  box-shadow: inset 3px 0 0 #667eea;
+  box-shadow: inset 3px 0 0 var(--theme-primary);
 }
 
 .pp-person-cell.pp-row-hovered .pp-person-name {
-  color: #667eea;
+  color: var(--theme-primary);
   font-weight: 700;
 }
 
@@ -1502,7 +1502,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: var(--indicator-color, #667eea);
+  background: var(--indicator-color, var(--theme-primary));
   border-radius: 4px 0 0 4px;
   z-index: 3;
   pointer-events: none;

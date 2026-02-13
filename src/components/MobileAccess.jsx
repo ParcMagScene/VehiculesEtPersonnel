@@ -91,6 +91,9 @@ function MobileAccess() {
             <li>✅ Signaler des pannes</li>
             <li>✅ Consulter les réservations actives</li>
             <li>✅ Suivre les interventions en cours</li>
+            <li>✅ Gestion du personnel et messagerie</li>
+            <li>✅ Matériel, équipements et tickets SAV</li>
+            <li>✅ Commandes et devis</li>
           </ul>
         </div>
 

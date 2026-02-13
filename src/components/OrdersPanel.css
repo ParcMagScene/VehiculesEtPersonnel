@@ -27,7 +27,7 @@
 .orders-stat svg { color: var(--theme-primary, #667eea); }
 .orders-stat .stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text-primary, #1e293b); }
 .orders-stat .stat-label { font-size: 0.75rem; color: var(--text-secondary, #64748b); }
-.orders-stat.highlight { background: linear-gradient(135deg, #667eea10, #764ba210); border-color: var(--theme-primary, #667eea); }
+.orders-stat.highlight { background: linear-gradient(135deg, var(--theme-primary)10, var(--theme-secondary)10); border-color: var(--theme-primary, #667eea); }
 
 /* ═══ Tabs ═══ */
 .orders-tabs {
@@ -105,7 +105,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: white;
   border: none;
   border-radius: 8px;
@@ -584,7 +584,7 @@
   padding: 0.55rem 1.25rem;
   border: none;
   border-radius: 8px;
-  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: white;
   cursor: pointer;
   font-size: 0.85rem;
@@ -595,6 +595,12 @@
 .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ═══ Responsive ═══ */
+@media (max-width: 1024px) {
+  .orders-stats-bar { flex-wrap: wrap; }
+  .order-detail-grid { grid-template-columns: repeat(2, 1fr); }
+  .supplier-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
   .orders-stats-bar { flex-direction: column; }
   .orders-toolbar { flex-direction: column; }
@@ -606,4 +612,17 @@
   .form-grid { grid-template-columns: 1fr; }
   .item-row { flex-wrap: wrap; }
   .item-designation { flex: 1 1 100%; }
+  .supplier-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .orders-panel { padding: 0.5rem; }
+  .orders-tabs { gap: 0; }
+  .orders-tab { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+  .orders-stat-value { font-size: 1rem; }
+  .order-form-modal .modal-content,
+  .quote-form-modal .modal-content { margin: 0.5rem; max-height: 95vh; }
+  .items-totals { flex-direction: column; gap: 0.25rem; }
+  .orders-table th,
+  .orders-table td { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
 }

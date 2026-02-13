@@ -32,11 +32,11 @@
 }
 
 .detail-section-title svg {
-  color: #667eea;
+  color: var(--theme-primary);
 }
 
 .section-count {
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
   font-size: 10px;
   font-weight: 700;
@@ -167,7 +167,7 @@
 /* Liens vers entités (véhicule, personnel) — navigation croisée */
 .entity-link {
   cursor: pointer;
-  color: #6366f1;
+  color: var(--theme-indigo);
   transition: color 0.15s;
   display: inline-flex;
   align-items: center;
@@ -255,7 +255,7 @@
 }
 
 .detail-list-item.clickable:hover .resa-chevron {
-  color: #667eea;
+  color: var(--theme-primary);
   transform: translateY(-50%) translateX(2px);
 }
 
@@ -802,7 +802,7 @@
 }
 
 .slide-panel-open-btn:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background: linear-gradient(135deg, var(--theme-secondary) 0%, var(--theme-primary) 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   transform: translateY(-1px);
@@ -831,8 +831,8 @@
 
 .section-action-btn:hover {
   background: #eef2ff;
-  border-color: #667eea;
-  color: #764ba2;
+  border-color: var(--theme-primary);
+  color: var(--theme-secondary);
 }
 
 .section-action-btn:disabled {
@@ -907,9 +907,9 @@
 }
 
 .upload-zone:hover {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: #eef2ff;
-  color: #764ba2;
+  color: var(--theme-secondary);
 }
 
 .upload-zone.dragging {
@@ -927,7 +927,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid #e2e8f0;
-  border-top-color: #667eea;
+  border-top-color: var(--theme-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -969,7 +969,7 @@
 .inline-select:focus,
 .inline-input:focus {
   outline: none;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 

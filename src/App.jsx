@@ -852,27 +852,6 @@ function App() {
             setReservations(data);
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
         }}
-        onNewAffaire={async () => {
-          try {
-            const newAffaire = {
-              numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
-              client: '',
-              interlocuteur: '',
-              tel: '',
-              type: 'Prestation',
-              dateDebut: format(new Date(), 'yyyy-MM-dd'),
-              dateFin: '',
-              adresseLivraison: '',
-              description: '',
-              devis: '',
-              source: 'db',
-            };
-            await api.createOrUpdateAffaire(newAffaire);
-            setActiveModule('affaires');
-          } catch (err) {
-            console.error('Erreur création affaire:', err);
-          }
-        }}
         onToggleMessaging={() => setShowMessaging(v => !v)}
         unreadMsgCount={unreadMsgCount}
         onOpenPreferences={() => setShowPreferences(true)}
@@ -930,6 +909,27 @@ function App() {
             day: new Date().toISOString().slice(0, 10),
             period: 'AM',
           });
+        }}
+        onNewAffaire={async () => {
+          try {
+            const newAffaire = {
+              numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+              client: '',
+              interlocuteur: '',
+              tel: '',
+              type: 'Prestation',
+              dateDebut: format(new Date(), 'yyyy-MM-dd'),
+              dateFin: '',
+              adresseLivraison: '',
+              description: '',
+              devis: '',
+              source: 'db',
+            };
+            await api.createOrUpdateAffaire(newAffaire);
+            setActiveModule('affaires');
+          } catch (err) {
+            console.error('Erreur création affaire:', err);
+          }
         }}
       />
       )}

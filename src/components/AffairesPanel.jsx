@@ -586,12 +586,42 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
         </div>
       )}
 
-      {/* Compteur + Frise chronologique */}
+      {/* Compteur + Bouton nouvelle affaire + Frise chronologique */}
       <div className="affaires-info-bar">
         <div className="affaires-count-box">
           <span className="affaires-count-number">{filteredAffaires.length}</span>
           <span className="affaires-count-label">affaire{filteredAffaires.length !== 1 ? 's' : ''}</span>
         </div>
+
+        <button
+          className="affaires-new-btn"
+          onClick={async () => {
+            try {
+              const newAffaire = {
+                numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+                client: '',
+                interlocuteur: '',
+                tel: '',
+                type: 'Prestation',
+                dateDebut: format(new Date(), 'yyyy-MM-dd'),
+                dateFin: '',
+                adresseLivraison: '',
+                description: '',
+                devis: '',
+                source: 'db',
+              };
+              const created = await api.createOrUpdateAffaire(newAffaire);
+              await loadDbAffaires();
+              setDialogAffaire({ ...newAffaire, id: created.id, ...created });
+            } catch (err) {
+              console.error('Erreur création affaire:', err);
+            }
+          }}
+          title="Nouvelle affaire"
+        >
+          <Plus size={14} />
+          <span>Nouvelle affaire</span>
+        </button>
 
         {/* Frise chronologique */}
         <div className="affaires-timeline" ref={timelineRef} onMouseDown={handleTimelineMouseDown}>

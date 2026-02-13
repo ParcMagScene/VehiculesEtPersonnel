@@ -175,15 +175,15 @@
 }
 
 .action-button.reschedule {
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--btn-warning-color, #d97706);
+  color: var(--btn-warning-color, #d97706);
 }
 
 .action-button.reschedule:hover {
-  background: #f97316;
+  background: var(--btn-warning-color, #d97706);
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }
 
 .action-button.pending {
@@ -212,8 +212,8 @@
 
 .reason-input-container textarea {
   padding: 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border: 2px solid var(--theme-border);
+  border-radius: var(--btn-radius);
   font-size: 14px;
   font-family: inherit;
   resize: vertical;
@@ -222,7 +222,8 @@
 
 .reason-input-container textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--focus-border, var(--theme-border-focus));
+  box-shadow: var(--focus-ring);
 }
 
 .reason-actions {
@@ -252,21 +253,21 @@
 }
 
 .overdue-intervention-modal .cancel-button {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
 }
 
 .overdue-intervention-modal .cancel-button:hover {
-  background: #d1d5db;
+  background: var(--btn-secondary-hover-bg);
 }
 
 .overdue-intervention-modal .confirm-button {
-  background: #ef4444;
-  color: white;
+  background: var(--btn-danger-filled-bg);
+  color: var(--btn-danger-filled-color);
 }
 
 .overdue-intervention-modal .confirm-button:hover {
-  background: #dc2626;
+  background: var(--theme-danger-dark);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 

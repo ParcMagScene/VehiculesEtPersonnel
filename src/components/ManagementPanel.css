@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--theme-overlay-dark);
   display: flex;
   justify-content: flex-end;
   z-index: 1000;

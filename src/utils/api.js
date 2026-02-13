@@ -869,6 +869,26 @@ class ApiClient {
     return this.request(`/equipment/${id}`, { method: 'DELETE' });
   }
 
+  async importEquipmentCsv(data, mode = 'import') {
+    return this.request('/equipment/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
+  }
+
+  async importSavTicketsCsv(data, mode = 'import', manualLinks = null) {
+    return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks }) });
+  }
+
+  async getUnlinkedSavTickets() {
+    return this.request('/sav-tickets/unlinked');
+  }
+
+  async linkSavTicket(ticketId, equipmentId) {
+    return this.request(`/sav-tickets/${ticketId}/link`, { method: 'PUT', body: JSON.stringify({ equipment_id: equipmentId }) });
+  }
+
+  async getEquipmentCategoriesTree() {
+    return this.request('/equipment-categories/tree');
+  }
+
   // ═══ Assignments matériel ═══
   async getEquipmentAssignments(params = {}) {
     const qs = new URLSearchParams(params).toString();
@@ -897,6 +917,23 @@ class ApiClient {
   }
   async deleteSavTicket(id) {
     return this.request(`/sav-tickets/${id}`, { method: 'DELETE' });
+  }
+
+  // ═══ Listes Favoris / Surveillance ═══
+  async getEquipmentLists() {
+    return this.request('/equipment-lists');
+  }
+  async addToEquipmentList(equipment_id, list_type) {
+    return this.request('/equipment-lists', { method: 'POST', body: JSON.stringify({ equipment_id, list_type }) });
+  }
+  async removeFromEquipmentList(equipment_id, list_type) {
+    return this.request('/equipment-lists', { method: 'DELETE', body: JSON.stringify({ equipment_id, list_type }) });
+  }
+  async getEquipmentByUid(uid) {
+    return this.request(`/equipment/by-uid/${uid}`);
+  }
+  async getEquipmentPhotos() {
+    return this.request('/equipment-photos');
   }
 
   // ═══════════════════════════════════════════════════════════

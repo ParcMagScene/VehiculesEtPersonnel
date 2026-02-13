@@ -88,6 +88,7 @@ function App() {
   const [showManagement, setShowManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeModule, setActiveModule] = useState('vehicles');
+  const [showEquipmentManagement, setShowEquipmentManagement] = useState(false);
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
   const [navigateToPersonId, setNavigateToPersonId] = useState(null);
   const [quickReservationSlot, setQuickReservationSlot] = useState(null);
@@ -872,7 +873,13 @@ function App() {
         setView={setView}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
-        onOpenManagement={() => setShowManagement(true)}
+        onOpenManagement={() => {
+          if (activeModule === 'equipment') {
+            setShowEquipmentManagement(true);
+          } else {
+            setShowManagement(true);
+          }
+        }}
         onOpenSettings={() => setShowSettings(true)}
         activeModule={activeModule}
         setActiveModule={setActiveModule}
@@ -924,7 +931,7 @@ function App() {
         </div>
       )}
       
-      {activeModule !== 'affaires' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && (
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}
@@ -1116,6 +1123,8 @@ function App() {
         }>
           <EquipmentPanel
             currentUser={currentUser}
+            showManagement={showEquipmentManagement}
+            onCloseManagement={() => setShowEquipmentManagement(false)}
           />
         </Suspense>
       )}

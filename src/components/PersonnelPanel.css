@@ -166,6 +166,98 @@
   margin-bottom: 16px;
 }
 
+.personnel-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.personnel-form-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.personnel-form-header .close-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.personnel-form-header .close-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.personnel-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.personnel-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1e293b;
+  background: white;
+  transition: all 0.2s;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--focus-border, var(--theme-border-focus));
+  box-shadow: var(--focus-ring, 0 0 0 3px rgba(102, 126, 234, 0.15));
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
 /* Modal d'édition personnel (mode planning) */
 .personnel-edit-modal {
   background: #f8fafc;
@@ -1103,6 +1195,27 @@
 
 .pp-leave-add-btn:hover {
   background: rgba(255, 255, 255, 0.35);
+}
+
+/* Bouton d'ajout de personne dans le planning */
+.pp-person-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+}
+
+.pp-person-add-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
 }
 
 /* Section header dans la colonne personnel */

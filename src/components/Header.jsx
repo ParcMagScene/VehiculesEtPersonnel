@@ -1303,15 +1303,17 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <QrCode size={20} />
             </button>
 
+            {(activeModule === 'vehicles' || activeModule === 'personnel' || activeModule === 'equipment') && (
             <button 
               className="management-button" 
               onClick={onOpenManagement} 
               aria-label="Ouvrir le panneau de gestion"
               style={{ position: 'relative' }}
             >
-              {activeModule === 'vehicles' ? <Truck size={18} /> : <Users size={18} />}
+              {activeModule === 'vehicles' ? <Truck size={18} /> : activeModule === 'personnel' ? <Users size={18} /> : <Package size={18} />}
               Gestion
             </button>
+            )}
 
             <button 
               className="settings-button" 

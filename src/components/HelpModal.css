@@ -2,13 +2,13 @@
 .help-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--theme-overlay-dark);
   z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: helpFadeIn 0.2s ease;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
 }
 
 @keyframes helpFadeIn {
@@ -38,16 +38,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border, #f1f5f9);
+  padding: 20px 24px;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
   flex-shrink: 0;
 }
 
 .help-header h3 {
   margin: 0;
   font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary, #1e293b);
+  font-weight: 700;
+  color: white;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -60,28 +62,33 @@
 }
 
 .help-header-actions button {
-  background: none;
-  border: 1px solid var(--border, #e2e8f0);
-  color: var(--text-secondary, #64748b);
+  background: var(--close-btn-bg);
+  border: 1px solid var(--close-btn-border);
+  color: white;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--close-btn-radius);
   cursor: pointer;
   font-size: 0.8rem;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .help-header-actions button:hover {
-  background: var(--surface-secondary, #f8fafc);
-  border-color: #cbd5e1;
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
 }
 
 .help-header-actions .help-close-btn {
-  border: none;
+  border: 1px solid var(--close-btn-border);
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--close-btn-radius);
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ═══ Tabs ═══ */

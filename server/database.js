@@ -309,7 +309,7 @@ function initializeDatabase() {
       last_name TEXT NOT NULL,
       email TEXT,
       phone TEXT,
-      type TEXT NOT NULL DEFAULT 'technicien',
+      type TEXT NOT NULL DEFAULT 'permanent',
       status TEXT NOT NULL DEFAULT 'active',
       user_id INTEGER,
       driver_id INTEGER,

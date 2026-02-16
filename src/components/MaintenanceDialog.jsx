@@ -12,9 +12,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   // Trouver la maintenance à éditer dès le départ
   const maintenanceToEditData = maintenanceToEdit ? maintenances.find(m => m.id === maintenanceToEdit) : null;
   
-  // Vérifier les droits - admin ou utilisateur avec permission maintenance
+  // Vérifier les droits - admin ou utilisateur avec permission maintenance véhicules
   const isAdmin = currentUser?.isAdmin === true;
-  const canManageMaintenance = isAdmin || currentUser?.permissions?.can_manage_maintenance === true;
+  const canManageMaintenance = isAdmin || currentUser?.permissions?.can_manage_vehicle_maintenance === true || currentUser?.permissions?.can_manage_maintenance === true;
   // Mode consultation : utilisateur sans droit maintenance qui ouvre une intervention existante
   const isViewMode = !canManageMaintenance && !!maintenanceToEditData;
   const canSchedule = canManageMaintenance;

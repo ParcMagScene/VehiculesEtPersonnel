@@ -917,6 +917,10 @@ class ApiClient {
   async getSavTicketStats() {
     return this.request('/sav-tickets/stats');
   }
+  async getSavTicketReport(start, end, type = 'all') {
+    const qs = new URLSearchParams({ start, end, type }).toString();
+    return this.request(`/sav-tickets/report?${qs}`);
+  }
   async createSavTicket(data) {
     return this.request('/sav-tickets', { method: 'POST', body: JSON.stringify(data) });
   }

@@ -1,5 +1,5 @@
 // Service Worker eM@g — Cache stratégique
-const CACHE_NAME = 'emag-cache-v6';
+const CACHE_NAME = 'emag-cache-v7';
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',

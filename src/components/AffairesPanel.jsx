@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Users, Truck, FileText, MapPin, Briefcase, ChevronDown, ChevronUp, Hash, Clock, AlertCircle, RefreshCw, Paperclip, LinkIcon, Plus } from 'lucide-react';
+import { Calendar, Users, Truck, FileText, MapPin, Briefcase, ChevronDown, ChevronUp, Hash, Clock, AlertCircle, RefreshCw, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { capitalizeText } from '../utils/dateUtils';
 import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
+import MonthSelector from './MonthSelector';
+import WeekSelector from './WeekSelector';
 import './AffairesPanel.css';
 
 const AFFAIRE_TYPES = [
@@ -51,13 +53,30 @@ const getAffaireStatus = (affaire, today) => {
   return 'upcoming';
 };
 
-const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', filterDateStart = '', filterDateEnd = '', showArchived = false, onNavigateToEntity }) => {
+const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const [dbAffaires, setDbAffaires] = useState([]);
   const [googleAffaires, setGoogleAffaires] = useState([]);
   const [googleEventIdsMap, setGoogleEventIdsMap] = useState({}); // { AF32844: ['eventId1', 'eventId2', ...] }
   const [attachmentsIndex, setAttachmentsIndex] = useState({ affaires: [], counts: {} }); // index des pièces jointes locales
   const [personnelCountsMap, setPersonnelCountsMap] = useState({}); // { AF32512: 2, AF32854: 1, ... }
   const [isLoading, setIsLoading] = useState(true);
+
+  // Filtres internes (anciennement dans App.jsx / Header)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterDateStart, setFilterDateStart] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [filterDateEnd, setFilterDateEnd] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 6);
+    return d.toISOString().slice(0, 10);
+  });
+  const [showArchived, setShowArchived] = useState(false);
+  const [slidingMode, setSlidingMode] = useState(true);
+  const [viewMode, setViewMode] = useState('week'); // 'week' | 'month'
+  const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const [error, setError] = useState(null);
   const [googleError, setGoogleError] = useState(null);
@@ -320,6 +339,120 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
+
+  // ═══ Navigation dates (anciennement dans Header) ═══
+  const fmtDateISO = (d) => d.toISOString().slice(0, 10);
+
+  const getAffaireRange = useCallback((anchorDate, mode, sliding) => {
+    const d = new Date(anchorDate);
+    d.setHours(0, 0, 0, 0);
+    if (mode === 'week') {
+      if (sliding) {
+        const s = new Date(d); s.setDate(d.getDate() - 1);
+        const e = new Date(d); e.setDate(d.getDate() + 6);
+        return { start: s, end: e };
+      } else {
+        const s = new Date(d); s.setDate(d.getDate() - d.getDay() + 1);
+        if (d.getDay() === 0) s.setDate(s.getDate() - 7);
+        const e = new Date(s); e.setDate(s.getDate() + 6);
+        return { start: s, end: e };
+      }
+    } else {
+      if (sliding) {
+        const s = new Date(d); s.setDate(d.getDate() - 7);
+        const e = new Date(d); e.setDate(d.getDate() + 21);
+        return { start: s, end: e };
+      } else {
+        const s = new Date(d.getFullYear(), d.getMonth(), 1);
+        const e = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        return { start: s, end: e };
+      }
+    }
+  }, []);
+
+  const applyAffaireRange = useCallback((anchorDate, mode, sliding) => {
+    const { start, end } = getAffaireRange(anchorDate, mode, sliding);
+    setFilterDateStart(fmtDateISO(start));
+    setFilterDateEnd(fmtDateISO(end));
+  }, [getAffaireRange]);
+
+  const goToPrevious = useCallback(() => {
+    if (!filterDateStart) return;
+    const current = new Date(filterDateStart);
+    if (viewMode === 'week') {
+      current.setDate(current.getDate() - 7);
+    } else {
+      current.setMonth(current.getMonth() - 1);
+    }
+    if (!slidingMode) {
+      applyAffaireRange(current, viewMode, false);
+    } else {
+      const end = new Date(filterDateEnd);
+      if (viewMode === 'week') {
+        end.setDate(end.getDate() - 7);
+      } else {
+        end.setMonth(end.getMonth() - 1);
+      }
+      setFilterDateStart(fmtDateISO(current));
+      setFilterDateEnd(fmtDateISO(end));
+    }
+  }, [filterDateStart, filterDateEnd, viewMode, slidingMode, applyAffaireRange]);
+
+  const goToNext = useCallback(() => {
+    if (!filterDateStart) return;
+    const current = new Date(filterDateStart);
+    if (viewMode === 'week') {
+      current.setDate(current.getDate() + 7);
+    } else {
+      current.setMonth(current.getMonth() + 1);
+    }
+    if (!slidingMode) {
+      applyAffaireRange(current, viewMode, false);
+    } else {
+      const end = new Date(filterDateEnd);
+      if (viewMode === 'week') {
+        end.setDate(end.getDate() + 7);
+      } else {
+        end.setMonth(end.getMonth() + 1);
+      }
+      setFilterDateStart(fmtDateISO(current));
+      setFilterDateEnd(fmtDateISO(end));
+    }
+  }, [filterDateStart, filterDateEnd, viewMode, slidingMode, applyAffaireRange]);
+
+  const goToToday = useCallback(() => {
+    applyAffaireRange(new Date(), viewMode, slidingMode);
+  }, [viewMode, slidingMode, applyAffaireRange]);
+
+  const isCurrentPeriod = useMemo(() => {
+    if (!filterDateStart || !filterDateEnd) return true;
+    const { start, end } = getAffaireRange(new Date(), viewMode, slidingMode);
+    return filterDateStart === fmtDateISO(start) && filterDateEnd === fmtDateISO(end);
+  }, [filterDateStart, filterDateEnd, viewMode, slidingMode, getAffaireRange]);
+
+  const dateLabel = useMemo(() => {
+    if (!filterDateStart || !filterDateEnd) return 'Toutes les dates';
+    const start = new Date(filterDateStart + 'T00:00:00');
+    const end = new Date(filterDateEnd + 'T00:00:00');
+    if (viewMode === 'week') {
+      const label = `${format(start, 'd', { locale: fr })} - ${format(end, 'd MMMM yyyy', { locale: fr })}`;
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    } else {
+      if (!slidingMode) {
+        const label = format(start, 'MMMM yyyy', { locale: fr });
+        return label.charAt(0).toUpperCase() + label.slice(1);
+      } else {
+        const label = `${format(start, 'd MMM', { locale: fr })} - ${format(end, 'd MMM yyyy', { locale: fr })}`;
+        return label.charAt(0).toUpperCase() + label.slice(1);
+      }
+    }
+  }, [filterDateStart, filterDateEnd, viewMode, slidingMode]);
+
+  const handleViewModeChange = useCallback((newMode) => {
+    setViewMode(newMode);
+    const anchor = filterDateStart ? new Date(filterDateStart) : new Date();
+    applyAffaireRange(anchor, newMode, slidingMode);
+  }, [filterDateStart, slidingMode, applyAffaireRange]);
 
   // Filtrer et trier
   const filteredAffaires = useMemo(() => {
@@ -656,6 +789,72 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
         </div>
       </div>
 
+      {/* Toolbar : recherche + filtres + navigation dates */}
+      <div className="affaires-toolbar-bar">
+        <div className="affaires-toolbar-actions">
+          {/* Recherche */}
+          <div className="affaires-tb-search">
+            <Search size={14} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Rechercher affaire..."
+            />
+            {searchTerm && <button className="affaires-tb-search-clear" onClick={() => setSearchTerm('')}><X size={12} /></button>}
+          </div>
+
+          {/* Type */}
+          <select className="affaires-tb-filter" value={filterType} onChange={e => setFilterType(e.target.value)}>
+            <option value="">Tous types</option>
+            <option value="Prestation">Prestation</option>
+            <option value="Location">Location</option>
+            <option value="Vente">Vente</option>
+            <option value="Installation">Installation</option>
+          </select>
+
+          <div className="affaires-tb-divider" />
+
+          {/* Vue semaine / mois */}
+          <div className="affaires-tb-view-selector">
+            <button className={`affaires-tb-view-btn${viewMode === 'week' ? ' active' : ''}`} onClick={() => handleViewModeChange('week')}>Sem.</button>
+            <button className={`affaires-tb-view-btn${viewMode === 'month' ? ' active' : ''}`} onClick={() => handleViewModeChange('month')}>Mois</button>
+          </div>
+
+          {/* Navigation dates */}
+          <button className="affaires-tb-nav-btn" onClick={goToPrevious} title="Période précédente"><ChevronLeft size={16} /></button>
+          <button className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`} onClick={goToToday}>Aujourd'hui</button>
+          <button className="affaires-tb-nav-btn" onClick={goToNext} title="Période suivante"><ChevronRight size={16} /></button>
+          <div
+            className="affaires-tb-date-label"
+            onClick={() => { viewMode === 'month' ? setShowMonthSelector(true) : setShowWeekSelector(true); }}
+            title={viewMode === 'month' ? 'Sélectionner un mois' : 'Sélectionner une semaine'}
+          >
+            {dateLabel}
+          </div>
+
+          <div className="affaires-tb-divider" />
+
+          {/* Glissant */}
+          <label className="affaires-tb-toggle" title={slidingMode ? 'Mode glissant' : 'Mode calendaire'}>
+            <input type="checkbox" checked={slidingMode} onChange={e => {
+              const newSliding = e.target.checked;
+              setSlidingMode(newSliding);
+              if (filterDateStart) {
+                applyAffaireRange(new Date(filterDateStart), viewMode, newSliding);
+              }
+            }} />
+            <span>Glissant</span>
+          </label>
+
+          {/* Archivées */}
+          <label className="affaires-tb-toggle" title="Afficher les affaires terminées depuis plus d'une semaine">
+            <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
+            <span>Archivées</span>
+          </label>
+        </div>
+      </div>
+
       {/* Corps : liste + volet détail côte à côte */}
       <div className="affaires-body">
         {/* Liste des affaires */}
@@ -814,6 +1013,30 @@ const AffairesPanel = ({ reservations = [], searchTerm = '', filterType = '', fi
       >
         <Plus size={22} />
       </button>
+
+      {/* Sélecteurs de date */}
+      {showMonthSelector && (
+        <MonthSelector
+          currentDate={filterDateStart ? new Date(filterDateStart + 'T00:00:00') : new Date()}
+          onSelectMonth={(date) => {
+            applyAffaireRange(date, 'month', slidingMode);
+            setShowMonthSelector(false);
+          }}
+          onClose={() => setShowMonthSelector(false)}
+          reservations={reservations}
+        />
+      )}
+      {showWeekSelector && (
+        <WeekSelector
+          currentDate={filterDateStart ? new Date(filterDateStart + 'T00:00:00') : new Date()}
+          onSelectWeek={(date) => {
+            applyAffaireRange(date, 'week', slidingMode);
+            setShowWeekSelector(false);
+          }}
+          onClose={() => setShowWeekSelector(false)}
+          reservations={reservations}
+        />
+      )}
     </div>
   );
 };

@@ -101,7 +101,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     const labels = [];
-    const qrSize = Math.round(format.height * 0.5);
+    const qrSize = Math.round(format.height - 4);
 
     for (let i = 0; i < quantity; i++) {
       labels.push(
@@ -131,7 +131,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '.label-content { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
         '.label-logo { flex-shrink: 0; display: flex; align-items: center; }' +
         '.label-logo img { height: ' + qrSize + 'mm; width: auto; }' +
-        '.label-qr { flex-shrink: 0; margin-left: auto; }' +
+        '.label-qr { flex-shrink: 0; }' +
         '.label-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
         '.label-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
         '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '8' : format.height < 35 ? '10' : '12') + 'pt; line-height: 1.1; white-space: nowrap; }' +
@@ -145,7 +145,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
     printWindow.document.close();
   };
 
-  const qrPreviewSize = Math.min(format.height * 1.5, 50);
+  const qrPreviewSize = Math.min(format.height * 2.2, 55);
 
   return (
     <div className="elp-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>

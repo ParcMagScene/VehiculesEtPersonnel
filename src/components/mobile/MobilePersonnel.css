@@ -3,7 +3,7 @@
   flex-direction: column;
   min-height: calc(100vh - 60px);
   margin: -1rem;
-  background: #f5f5f5;
+  background: #f8fafc;
 }
 
 /* Header */
@@ -130,9 +130,10 @@
   gap: 12px;
   padding: 14px;
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   margin-bottom: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: transform 0.15s;
 }

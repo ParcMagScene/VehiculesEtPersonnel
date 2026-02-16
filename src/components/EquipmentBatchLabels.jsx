@@ -108,7 +108,6 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
     if (selected.length === 0) return;
 
     const layout = calcLayout();
-    const printWindow = window.open('', '_blank');
     const pages = [];
     const qrSize = Math.round(layout.labelH - 4);
 
@@ -138,7 +137,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
       );
     }
 
-    printWindow.document.write(
+    const htmlContent =
       '<!DOCTYPE html><html><head><title>Étiquettes lot - ' + selected.length + ' matériels</title>' +
       '<style>' +
         '@page { size: A4; margin: 5mm; }' +
@@ -158,10 +157,30 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         '.batch-uid, .batch-sn { font-size: 7.5pt; font-weight: 700; line-height: 1.1; white-space: nowrap; font-family: monospace; }' +
       '</style></head><body>' +
       pages.join('') +
-      '<script>window.onload=function(){setTimeout(function(){window.print();window.onafterprint=function(){window.close()};},500)};</script>' +
-      '</body></html>'
-    );
-    printWindow.document.close();
+      '</body></html>';
+
+    // Utiliser un iframe caché pour éviter le bloqueur de popups
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(htmlContent);
+    iframeDoc.close();
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 500);
+    };
   };
 
   const handleExportBatchSVG = () => {

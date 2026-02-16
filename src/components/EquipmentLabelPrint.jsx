@@ -8,8 +8,8 @@ const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"'
 const LABEL_FORMATS = [
   { name: 'Auto', width: 0, height: 0, auto: true },
   { name: 'Petit (2×4 cm)', width: 40, height: 20 },
-  { name: 'Moyen (3×5 cm)', width: 50, height: 30 },
-  { name: 'Grand (4×7 cm)', width: 70, height: 40 },
+  { name: 'Standard (3×8 cm)', width: 80, height: 30 },
+  { name: 'Grand (4×10 cm)', width: 100, height: 40 },
   { name: 'Personnalisé', width: 0, height: 0 },
 ];
 
@@ -42,10 +42,10 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
     const hasUid = !!eq.uid;
     const hasSerial = !!(eq.serialNumber || eq.serial_number);
     const refLen = (eq.reference || '').length;
-    const textW = Math.max(30, refLen * 3 + (hasQr ? 22 : 0) + (showLogo ? 10 : 0));
-    const w = Math.min(80, Math.max(35, textW));
+    const textW = Math.max(50, refLen * 3.5 + (hasQr ? 28 : 0) + (showLogo ? 15 : 0));
+    const w = Math.min(100, Math.max(60, textW));
     const lines = 1 + (hasUid ? 1 : 0) + (hasSerial ? 1 : 0);
-    const h = Math.max(18, lines * 7 + 6 + (showLogo ? 5 : 0));
+    const h = Math.max(25, lines * 8 + 8 + (showLogo ? 5 : 0));
     return { width: w, height: h };
   };
 
@@ -133,9 +133,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '.label-logo img { height: ' + qrSize + 'mm; width: auto; }' +
         '.label-qr { flex-shrink: 0; margin-left: auto; }' +
         '.label-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
-        '.label-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 0.3mm; }' +
-        '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '7' : '9') + 'pt; overflow-wrap: break-word; word-break: break-word; }' +
-        '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '5.5' : '6.5') + 'pt; color: #222; font-family: monospace; font-weight: 700; overflow-wrap: break-word; word-break: break-word; }' +
+        '.label-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
+        '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '8' : format.height < 35 ? '10' : '12') + 'pt; line-height: 1.1; overflow-wrap: break-word; word-break: break-word; }' +
+        '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '6' : format.height < 35 ? '7.5' : '9') + 'pt; color: #222; font-family: monospace; font-weight: 700; line-height: 1.1; overflow-wrap: break-word; word-break: break-word; }' +
         '@media print { .label { border-color: transparent; } }' +
       '</style></head><body>' +
       labels.join('') +

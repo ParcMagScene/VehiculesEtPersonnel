@@ -235,6 +235,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [showSavImportModal, setShowSavImportModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [labelPrintEquipment, setLabelPrintEquipment] = useState(null);
+  const [mgmtTab, setMgmtTab] = useState('imports');
   const [filterFamily, setFilterFamily] = useState('');
   const [filterSubfamily, setFilterSubfamily] = useState('');
 
@@ -453,9 +454,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
               <Wrench size={14} /> SAV
               {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
             </button>
-            <button className={`eq-tab ${subTab === 'labels' ? 'active' : ''}`} onClick={() => setSubTab('labels')}>
-              <Tag size={14} /> Étiquettes
-            </button>
           </div>
           <div className="eq-stats-row">
             <button className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }} title="Tous">
@@ -590,13 +588,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 setDialogEquipment(eq);
                 api.getEquipmentById(eq.id).then(detail => setDialogEquipment(detail)).catch(() => {});
               }}
-            />
-          )}
-
-          {subTab === 'labels' && (
-            <EquipmentBatchLabels
-              equipment={equipment}
-              onPrintSingle={(eq) => setLabelPrintEquipment(eq)}
             />
           )}
 
@@ -766,78 +757,127 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
               <h2><Package size={22} /> Gestion du Matériel</h2>
               <button className="eq-management-close" onClick={onCloseManagement}><X size={20} /></button>
             </div>
+
+            {/* Onglets de gestion */}
+            <div className="eq-mgmt-tabs">
+              {[
+                { id: 'imports', label: 'Imports', icon: Upload, color: '#3b82f6' },
+                { id: 'categories', label: 'Catégories', icon: Tag, color: '#8b5cf6' },
+                { id: 'labels', label: 'Étiquettes', icon: Printer, color: '#f97316' },
+                { id: 'stats', label: 'Statistiques', icon: Hash, color: '#10b981' },
+                { id: 'media', label: 'Médias', icon: ImageIcon, color: '#ec4899' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  className={`eq-mgmt-tab ${mgmtTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setMgmtTab(tab.id)}
+                  style={{ '--tab-color': tab.color }}
+                >
+                  <tab.icon size={16} />
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
             <div className="eq-management-content">
-              <div className="eq-management-section">
-                <h3><Upload size={18} /> Import CSV</h3>
-                <p>Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent). Les familles, sous-familles et catégories seront automatiquement créées.</p>
-                <button className="eq-btn-save" onClick={() => { onCloseManagement(); setShowImportModal(true); }} style={{ marginTop: 12 }}>
-                  <Upload size={16} /> Importer un fichier CSV
-                </button>
-              </div>
-              <div className="eq-management-section">
-                <h3><Wrench size={18} /> Import Interventions SAV</h3>
-                <p>Importez les interventions SAV depuis un fichier CSV Locmat. Les interventions seront automatiquement liées aux équipements via leur numéro de série.</p>
-                <button className="eq-btn-save" onClick={() => { onCloseManagement(); setShowSavImportModal(true); }} style={{ marginTop: 12 }}>
-                  <Upload size={16} /> Importer les interventions
-                </button>
-              </div>
-              <div className="eq-management-section">
-                <h3><Tag size={18} /> Catégories ({categories.length})</h3>
-                <EquipmentCategoriesTree families={families} subfamilies={subfamilies} leafCategories={leafCategories} categories={categories} equipment={equipment} />
-              </div>
-              <div className="eq-management-section">
-                <h3>📊 Statistiques</h3>
-                <div className="eq-management-stats">
-                  <div className="eq-mgmt-stat"><strong>{equipment.length}</strong><span>Équipements</span></div>
-                  <div className="eq-mgmt-stat"><strong>{families.length}</strong><span>Familles</span></div>
-                  <div className="eq-mgmt-stat"><strong>{subfamilies.length}</strong><span>Sous-familles</span></div>
-                  <div className="eq-mgmt-stat"><strong>{leafCategories.length}</strong><span>Catégories</span></div>
-                  <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'available').length}</strong><span>Disponibles</span></div>
-                  <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'maintenance').length}</strong><span>En maintenance</span></div>
-                </div>
-              </div>
-              <div className="eq-management-section">
-                <h3><ImageIcon size={18} /> Médias ({photosList.length} photos, {logosList.length} logos)</h3>
-                <p>Les photos de <code>public/Photos/Matériel/</code> et les logos de <code>public/Logos/</code> sont automatiquement associés aux équipements par correspondance de nom.</p>
-                <div className="eq-mgmt-media-grid">
-                  <div className="eq-mgmt-media-col">
-                    <h4>📸 Photos matériel ({photosList.length})</h4>
-                    <div className="eq-mgmt-media-list">
-                      {photosList.slice(0, 20).map(p => (
-                        <div key={p} className="eq-mgmt-media-item">
-                          <img src={`/Photos/Matériel/${p}`} alt={p} />
-                          <span title={p}>{p.length > 25 ? p.slice(0, 22) + '...' : p}</span>
-                        </div>
-                      ))}
-                      {photosList.length > 20 && <p className="eq-detail-empty">+ {photosList.length - 20} autres photos...</p>}
-                      {photosList.length === 0 && <p className="eq-detail-empty">Aucune photo dans Photos/Matériel/</p>}
-                    </div>
+              {/* Onglet Imports */}
+              {mgmtTab === 'imports' && (
+                <>
+                  <div className="eq-management-section">
+                    <h3><Upload size={18} /> Import CSV Inventaire</h3>
+                    <p>Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent). Les familles, sous-familles et catégories seront automatiquement créées.</p>
+                    <button className="eq-btn-save" onClick={() => { onCloseManagement(); setShowImportModal(true); }} style={{ marginTop: 12 }}>
+                      <Upload size={16} /> Importer un fichier CSV
+                    </button>
                   </div>
-                  <div className="eq-mgmt-media-col">
-                    <h4>🏷️ Logos marques ({logosList.length})</h4>
-                    <div className="eq-mgmt-media-list">
-                      {logosList.map(l => (
-                        <div key={l} className="eq-mgmt-media-item">
-                          <img src={`/Logos/${l}`} alt={l} />
-                          <span title={l}>{l.length > 25 ? l.slice(0, 22) + '...' : l}</span>
-                        </div>
-                      ))}
-                      {logosList.length === 0 && <p className="eq-detail-empty">Aucun logo dans Logos/</p>}
-                    </div>
+                  <div className="eq-management-section">
+                    <h3><Wrench size={18} /> Import Interventions SAV</h3>
+                    <p>Importez les interventions SAV depuis un fichier CSV Locmat. Les interventions seront automatiquement liées aux équipements via leur numéro de série.</p>
+                    <button className="eq-btn-save" onClick={() => { onCloseManagement(); setShowSavImportModal(true); }} style={{ marginTop: 12 }}>
+                      <Upload size={16} /> Importer les interventions
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Onglet Catégories */}
+              {mgmtTab === 'categories' && (
+                <div className="eq-management-section">
+                  <h3><Tag size={18} /> Catégories ({categories.length})</h3>
+                  <EquipmentCategoriesTree families={families} subfamilies={subfamilies} leafCategories={leafCategories} categories={categories} equipment={equipment} />
+                </div>
+              )}
+
+              {/* Onglet Étiquettes */}
+              {mgmtTab === 'labels' && (
+                <div className="eq-management-section eq-mgmt-labels-section">
+                  <EquipmentBatchLabels
+                    equipment={equipment}
+                    onPrintSingle={(eq) => setLabelPrintEquipment(eq)}
+                  />
+                </div>
+              )}
+
+              {/* Onglet Statistiques */}
+              {mgmtTab === 'stats' && (
+                <div className="eq-management-section">
+                  <h3>📊 Statistiques</h3>
+                  <div className="eq-management-stats">
+                    <div className="eq-mgmt-stat"><strong>{equipment.length}</strong><span>Équipements</span></div>
+                    <div className="eq-mgmt-stat"><strong>{families.length}</strong><span>Familles</span></div>
+                    <div className="eq-mgmt-stat"><strong>{subfamilies.length}</strong><span>Sous-familles</span></div>
+                    <div className="eq-mgmt-stat"><strong>{leafCategories.length}</strong><span>Catégories</span></div>
+                    <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'available').length}</strong><span>Disponibles</span></div>
+                    <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'maintenance').length}</strong><span>En maintenance</span></div>
                   </div>
                 </div>
-                <div className="eq-mgmt-media-legend">
-                  <h4><QrCode size={16} /> UID & QR Codes</h4>
-                  <p>Chaque équipement possède un UID unique (EMAG-XXXXX) et un QR Code qui renvoie vers l'interface mobile. Le QR Code est accessible depuis la fiche de chaque équipement.</p>
-                  <div className="eq-mgmt-uid-example">
-                    <QRCodeSVG value={`${APP_BASE_URL}/#/mobile/equipment/EMAG-00001`} size={80} level="M" includeMargin />
-                    <div>
-                      <code>EMAG-00001</code>
-                      <span>→ Menu mobile : Fiche, Défaut, SAV, Intervention</span>
+              )}
+
+              {/* Onglet Médias */}
+              {mgmtTab === 'media' && (
+                <div className="eq-management-section">
+                  <h3><ImageIcon size={18} /> Médias ({photosList.length} photos, {logosList.length} logos)</h3>
+                  <p>Les photos de <code>public/Photos/Matériel/</code> et les logos de <code>public/Logos/</code> sont automatiquement associés aux équipements par correspondance de nom.</p>
+                  <div className="eq-mgmt-media-grid">
+                    <div className="eq-mgmt-media-col">
+                      <h4>📸 Photos matériel ({photosList.length})</h4>
+                      <div className="eq-mgmt-media-list">
+                        {photosList.slice(0, 20).map(p => (
+                          <div key={p} className="eq-mgmt-media-item">
+                            <img src={`/Photos/Matériel/${p}`} alt={p} />
+                            <span title={p}>{p.length > 25 ? p.slice(0, 22) + '...' : p}</span>
+                          </div>
+                        ))}
+                        {photosList.length > 20 && <p className="eq-detail-empty">+ {photosList.length - 20} autres photos...</p>}
+                        {photosList.length === 0 && <p className="eq-detail-empty">Aucune photo dans Photos/Matériel/</p>}
+                      </div>
+                    </div>
+                    <div className="eq-mgmt-media-col">
+                      <h4>🏷️ Logos marques ({logosList.length})</h4>
+                      <div className="eq-mgmt-media-list">
+                        {logosList.map(l => (
+                          <div key={l} className="eq-mgmt-media-item">
+                            <img src={`/Logos/${l}`} alt={l} />
+                            <span title={l}>{l.length > 25 ? l.slice(0, 22) + '...' : l}</span>
+                          </div>
+                        ))}
+                        {logosList.length === 0 && <p className="eq-detail-empty">Aucun logo dans Logos/</p>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="eq-mgmt-media-legend">
+                    <h4><QrCode size={16} /> UID & QR Codes</h4>
+                    <p>Chaque équipement possède un UID unique (EMAG-XXXXX) et un QR Code qui renvoie vers l'interface mobile. Le QR Code est accessible depuis la fiche de chaque équipement.</p>
+                    <div className="eq-mgmt-uid-example">
+                      <QRCodeSVG value={`${APP_BASE_URL}/#/mobile/equipment/EMAG-00001`} size={80} level="M" includeMargin />
+                      <div>
+                        <code>EMAG-00001</code>
+                        <span>→ Menu mobile : Fiche, Défaut, SAV, Intervention</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

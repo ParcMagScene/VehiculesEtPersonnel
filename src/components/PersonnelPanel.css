@@ -1705,6 +1705,8 @@
   border-right: 2px solid #e5e7eb;
   scrollbar-width: none;
   background: white;
+  position: relative;
+  z-index: 2;
 }
 
 .pp-person-column::-webkit-scrollbar {
@@ -1722,6 +1724,7 @@
   border-bottom: 1px solid #e5e7eb;
   background: white;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .pp-person-name {
@@ -1762,6 +1765,10 @@
   display: flex;
   align-items: stretch;
   position: relative;
+}
+
+.pp-slot:first-child {
+  border-left: 1px solid #e5e7eb;
 }
 
 .pp-slot.weekend {

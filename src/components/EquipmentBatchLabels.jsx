@@ -147,7 +147,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         '.batch-page { width: 210mm; min-height: 297mm; padding: 5mm; page-break-after: always; }' +
         '.batch-page:last-child { page-break-after: auto; }' +
         '.batch-grid { display: flex; flex-wrap: wrap; gap: ' + LABEL_GAP_MM + 'mm; align-content: flex-start; }' +
-        '.batch-label { border: 0.3px dashed #bbb; border-radius: 1px; overflow: hidden; }' +
+        '.batch-label { border: 0.3px dashed #999; border-radius: 1px; overflow: hidden; }' +
         '.batch-label-inner { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
         '.batch-logo { flex-shrink: 0; display: flex; align-items: center; }' +
         '.batch-logo img { height: ' + qrSize + 'mm; width: auto; }' +
@@ -156,7 +156,6 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         '.batch-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
         '.batch-ref { font-weight: 800; font-size: 10pt; line-height: 1.1; white-space: nowrap; }' +
         '.batch-uid, .batch-sn { font-size: 7.5pt; font-weight: 700; line-height: 1.1; white-space: nowrap; font-family: monospace; }' +
-        '@media print { .batch-label { border-color: transparent; } }' +
       '</style></head><body>' +
       pages.join('') +
       '<script>window.onload=function(){setTimeout(function(){window.print();window.onafterprint=function(){window.close()};},500)};</script>' +

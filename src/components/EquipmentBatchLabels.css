@@ -337,3 +337,10 @@
 .ebl-btn-print:hover {
   background: #4f46e5;
 }
+
+.ebl-btn-print:disabled,
+.ebl-btn-export:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}

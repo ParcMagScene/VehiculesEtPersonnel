@@ -107,7 +107,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
       labels.push(
         '<div class="label" style="width: ' + format.width + 'mm; height: ' + format.height + 'mm;">' +
           '<div class="label-content">' +
-            (showLogo ? '<div class="label-logo"><img src="/Logos/Logo_MAGSCENE_Noir_Transp.png" alt="Mag Scene" /></div>' : '') +
+            (showLogo ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Mag Scene" /></div>' : '') +
             '<div class="label-main">' +
               '<div class="label-qr">' +
                 (qrUrl ? '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl) + '" alt="QR" />' : '') +
@@ -172,7 +172,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <div className="elp-label-content" style={{ flexDirection: 'column' }}>
                 {showLogo && (
                   <div className="elp-label-logo">
-                    <img src="/Logos/Logo_MAGSCENE_Noir_Transp.png" alt="Mag Scene" style={{ height: Math.min(14, format.height * 0.3) + 'px', width: 'auto' }} />
+                    <img src="/Logos/logo_Noir_Transp.png" alt="Mag Scene" style={{ height: Math.min(14, format.height * 0.3) + 'px', width: 'auto' }} />
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>

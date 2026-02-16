@@ -252,6 +252,17 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
     
+    // Vérifier si une réinitialisation est requise AVANT de vérifier le mot de passe
+    // (l'utilisateur a probablement oublié son ancien mot de passe)
+    if (user.password_reset_required === 1) {
+      return res.status(403).json({
+        error: 'PASSWORD_RESET_REQUIRED',
+        message: 'Votre compte a été réinitialisé. Vous devez définir un nouveau mot de passe.',
+        userId: user.id,
+        email: user.email
+      });
+    }
+    
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
@@ -267,16 +278,6 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(403).json({ 
         error: 'EMAIL_NOT_AUTHORIZED',
         message: 'Votre email n\'est pas autorisé à accéder à cette application. Veuillez contacter un administrateur.' 
-      });
-    }
-    
-    // Vérifier si une réinitialisation est requise
-    if (user.password_reset_required === 1) {
-      return res.status(403).json({
-        error: 'PASSWORD_RESET_REQUIRED',
-        message: 'Votre compte a été réinitialisé. Vous devez définir un nouveau mot de passe.',
-        userId: user.id,
-        email: user.email
       });
     }
     

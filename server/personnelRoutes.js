@@ -199,6 +199,221 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // POST /api/persons/import-csv — Import CSV Personnel avec détection des collisions
+  app.post('/api/persons/import-csv', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { data, mode } = req.body;
+      // data = tableau d'objets [{code_libre, nom, prenom, cp, ville, portable, type_csv}, ...]
+      // mode = 'preview' | 'import'
+
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ error: 'Données CSV vides' });
+      }
+
+      // Mapping des types CSV vers le modèle interne
+      const TYPE_MAP = {
+        'salarié': { type: 'salarié', contract_type: null },
+        'salarie': { type: 'salarié', contract_type: null },
+        'intermittent': { type: 'contractuel', contract_type: 'intermittent' },
+        'auto-entrepreneur': { type: 'contractuel', contract_type: 'auto-entrepreneur' },
+        'autoentrepreneur': { type: 'contractuel', contract_type: 'auto-entrepreneur' },
+        'permanent': { type: 'permanent', contract_type: null },
+        'stagiaire': { type: 'stagiaire', contract_type: null },
+        'contractuel': { type: 'contractuel', contract_type: null },
+      };
+
+      // Récupérer les personnes existantes pour détection de collisions
+      const existingPersons = db.prepare('SELECT * FROM persons').all();
+
+      // Créer des index de recherche
+      const byCodeLibre = {};
+      const byName = {};
+      for (const p of existingPersons) {
+        if (p.code_libre) byCodeLibre[p.code_libre.toUpperCase()] = p;
+        const nameKey = `${(p.last_name || '').trim().toUpperCase()}||${(p.first_name || '').trim().toUpperCase()}`;
+        if (!byName[nameKey]) byName[nameKey] = [];
+        byName[nameKey].push(p);
+      }
+
+      // Analyser chaque ligne
+      const analysis = [];
+      const typeStats = {};
+      let toCreate = 0, toUpdate = 0, conflicts = 0, skipped = 0;
+
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const codeLibre = (row.code_libre || '').trim();
+        const nom = (row.nom || '').trim();
+        const prenom = (row.prenom || '').trim();
+        const cp = (row.cp || '').trim();
+        const ville = (row.ville || '').trim();
+        const portable = (row.portable || '').trim();
+        const typeCsv = (row.type_csv || '').trim().toLowerCase();
+
+        if (!nom && !prenom) { skipped++; continue; }
+
+        // Stats par type
+        const typeLabel = (row.type_csv || '').trim();
+        typeStats[typeLabel] = (typeStats[typeLabel] || 0) + 1;
+
+        // Recherche de collision
+        let collision = null;
+        let collisionType = null;
+
+        // 1. Par code_libre exact
+        if (codeLibre && byCodeLibre[codeLibre.toUpperCase()]) {
+          collision = byCodeLibre[codeLibre.toUpperCase()];
+          collisionType = 'code_libre';
+        }
+
+        // 2. Par nom+prénom exact
+        if (!collision) {
+          const nameKey = `${nom.toUpperCase()}||${prenom.toUpperCase()}`;
+          const matches = byName[nameKey];
+          if (matches && matches.length > 0) {
+            collision = matches[0];
+            collisionType = 'nom_prenom';
+          }
+        }
+
+        const mapped = TYPE_MAP[typeCsv] || { type: 'permanent', contract_type: null };
+
+        const entry = {
+          index: i,
+          code_libre: codeLibre,
+          nom, prenom, cp, ville, portable,
+          type_csv: typeLabel,
+          mapped_type: mapped.type,
+          mapped_contract_type: mapped.contract_type,
+          collision: collision ? {
+            id: collision.id,
+            first_name: collision.first_name,
+            last_name: collision.last_name,
+            phone: collision.phone,
+            type: collision.type,
+            code_libre: collision.code_libre,
+            collisionType,
+          } : null,
+          action: collision ? 'update' : 'create',
+        };
+
+        if (collision) {
+          toUpdate++;
+          if (collisionType === 'nom_prenom' && codeLibre && collision.code_libre && 
+              collision.code_libre.toUpperCase() !== codeLibre.toUpperCase()) {
+            conflicts++;
+            entry.action = 'conflict';
+          }
+        } else {
+          toCreate++;
+        }
+
+        analysis.push(entry);
+      }
+
+      if (mode === 'preview') {
+        return res.json({
+          totalRows: data.length,
+          toCreate,
+          toUpdate,
+          conflicts,
+          skipped,
+          typeStats,
+          analysis,
+          existingCount: existingPersons.length,
+        });
+      }
+
+      // Mode import réel
+      const insertStmt = db.prepare(`
+        INSERT INTO persons (first_name, last_name, phone, type, status, contract_type, code_libre, postal_code, city, created_by, modified_by)
+        VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?)
+      `);
+
+      const updateStmt = db.prepare(`
+        UPDATE persons SET
+          phone = COALESCE(?, phone),
+          type = ?,
+          contract_type = ?,
+          code_libre = COALESCE(?, code_libre),
+          postal_code = COALESCE(?, postal_code),
+          city = COALESCE(?, city),
+          modified_by = ?,
+          modified_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `);
+
+      let created = 0, updated = 0, importSkipped = 0;
+
+      const importAll = db.transaction(() => {
+        for (const entry of analysis) {
+          if (entry.action === 'conflict') {
+            importSkipped++;
+            continue;
+          }
+
+          const mapped = TYPE_MAP[(entry.type_csv || '').toLowerCase()] || { type: 'permanent', contract_type: null };
+
+          if (entry.action === 'create') {
+            insertStmt.run(
+              entry.prenom, entry.nom, entry.portable || null,
+              mapped.type, mapped.contract_type || null,
+              entry.code_libre || null, entry.cp || null, entry.ville || null,
+              req.user.id, req.user.id
+            );
+            created++;
+          } else if (entry.action === 'update') {
+            updateStmt.run(
+              entry.portable || null,
+              mapped.type, mapped.contract_type || null,
+              entry.code_libre || null, entry.cp || null, entry.ville || null,
+              req.user.id,
+              entry.collision.id
+            );
+            updated++;
+          }
+        }
+      });
+
+      importAll();
+
+      addToHistory('person', 'bulk', 'import_csv', { created, updated, skipped: importSkipped, total: data.length }, req.user.id, req.user.name);
+
+      res.json({ created, updated, skipped: importSkipped });
+
+    } catch (error) {
+      console.error('Erreur import CSV personnel:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // DELETE /api/persons/bulk-delete — Suppression en masse (admin)
+  app.post('/api/persons/bulk-delete', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { ids } = req.body;
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'Liste d\'ids requise' });
+      }
+
+      const deleteStmt = db.prepare('DELETE FROM persons WHERE id = ?');
+      const deleteAll = db.transaction(() => {
+        let deleted = 0;
+        for (const id of ids) {
+          const result = deleteStmt.run(id);
+          if (result.changes > 0) deleted++;
+        }
+        return deleted;
+      });
+
+      const deleted = deleteAll();
+      addToHistory('person', 'bulk', 'bulk_delete', { deleted, ids }, req.user.id, req.user.name);
+
+      res.json({ success: true, deleted });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 }
 
 // ============ SKILLS (COMPÉTENCES) ============

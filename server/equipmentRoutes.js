@@ -515,6 +515,23 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // Helper : recalcule le statut d'un équipement en fonction de ses tickets SAV et assignments
+  const refreshEquipmentStatus = (equipmentId) => {
+    if (!equipmentId) return;
+    const activeTickets = db.prepare(
+      "SELECT COUNT(*) as c FROM sav_tickets WHERE equipment_id = ? AND status IN ('open', 'in_progress', 'waiting_parts')"
+    ).get(equipmentId);
+    if (activeTickets.c > 0) {
+      db.prepare("UPDATE equipment SET status = 'maintenance', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(equipmentId);
+    } else {
+      const hasAssignment = db.prepare(
+        "SELECT COUNT(*) as c FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'"
+      ).get(equipmentId);
+      const newStatus = hasAssignment.c > 0 ? 'in_use' : 'available';
+      db.prepare('UPDATE equipment SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, equipmentId);
+    }
+  };
+
   // POST /api/sav-tickets
   app.post('/api/sav-tickets', authenticateToken, (req, res) => {
     try {
@@ -526,10 +543,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
         VALUES (?, ?, ?, ?, ?, 'open', ?, ?)
       `).run(equipment_id, req.user.id, assigned_to, type || 'panne', priority || 'medium', title, description);
       
-      // Si c'est une panne, mettre l'équipement en maintenance
-      if (type === 'panne') {
-        db.prepare("UPDATE equipment SET status = 'maintenance', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(equipment_id);
-      }
+      // Mettre l'équipement en maintenance
+      refreshEquipmentStatus(equipment_id);
       
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
@@ -554,16 +569,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
         WHERE id = ?
       `).run(assigned_to, type, priority, status, title, description, resolution, cost, resolvedAt, req.params.id);
       
-      // Si résolu/fermé et que c'était une panne, remettre l'équipement disponible
-      if ((status === 'resolved' || status === 'closed') && oldTicket.type === 'panne') {
-        const otherOpen = db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE equipment_id = ? AND status IN ('open', 'in_progress', 'waiting_parts') AND id != ?").get(oldTicket.equipment_id, req.params.id);
-        if (otherOpen.c === 0) {
-          // Vérifier s'il y a un assignment actif
-          const hasAssignment = db.prepare("SELECT COUNT(*) as c FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'").get(oldTicket.equipment_id);
-          const newStatus = hasAssignment.c > 0 ? 'in_use' : 'available';
-          db.prepare('UPDATE equipment SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, oldTicket.equipment_id);
-        }
-      }
+      // Recalculer le statut de l'équipement (maintenance ↔ available/in_use)
+      refreshEquipmentStatus(oldTicket.equipment_id);
       
       res.json({ success: true });
     } catch (error) {
@@ -574,7 +581,10 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
   // DELETE /api/sav-tickets/:id
   app.delete('/api/sav-tickets/:id', authenticateToken, (req, res) => {
     try {
+      const ticket = db.prepare('SELECT equipment_id FROM sav_tickets WHERE id = ?').get(req.params.id);
       db.prepare('DELETE FROM sav_tickets WHERE id = ?').run(req.params.id);
+      // Recalculer le statut de l'équipement après suppression
+      if (ticket) refreshEquipmentStatus(ticket.equipment_id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -781,6 +791,15 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
       });
 
       importAll();
+
+      // Mettre en maintenance les équipements qui ont des tickets actifs
+      const activeEquipIds = [...new Set(
+        processed.filter(r => r._equipmentId && r._status !== 'closed' && r._status !== 'resolved')
+                 .map(r => r._equipmentId)
+      )];
+      for (const eqId of activeEquipIds) {
+        refreshEquipmentStatus(eqId);
+      }
 
       addToHistory('sav_tickets', null, 'import_csv', { created, createdLinked, createdUnlinked, total: data.length }, req.user.id, req.user.name);
 

@@ -1226,6 +1226,29 @@ function initializeDatabase() {
     console.warn('⚠️ Migration commandes & ventes:', error.message);
   }
 
+  // Migration: ajouter code_libre et postal_code, city dans persons
+  try {
+    const personsCols2 = db.prepare("PRAGMA table_info(persons)").all();
+    const hasCodeLibre = personsCols2.some(col => col.name === 'code_libre');
+    if (!hasCodeLibre) {
+      db.prepare("ALTER TABLE persons ADD COLUMN code_libre TEXT").run();
+      db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_code_libre ON persons(code_libre)');
+      console.log('✅ Colonne code_libre ajoutée à persons');
+    }
+    const hasPostalCode = personsCols2.some(col => col.name === 'postal_code');
+    if (!hasPostalCode) {
+      db.prepare("ALTER TABLE persons ADD COLUMN postal_code TEXT").run();
+      console.log('✅ Colonne postal_code ajoutée à persons');
+    }
+    const hasCity = personsCols2.some(col => col.name === 'city');
+    if (!hasCity) {
+      db.prepare("ALTER TABLE persons ADD COLUMN city TEXT").run();
+      console.log('✅ Colonne city ajoutée à persons');
+    }
+  } catch (error) {
+    console.log('Info: Migration code_libre/postal_code/city:', error.message);
+  }
+
   console.log('✅ Base de données initialisée');
 }
 

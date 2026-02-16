@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle } from 'lucide-react';
 import api, { getApiUrl } from '../utils/api';
+import { formatPhoneDisplay } from './PhoneInput';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { capitalizeText } from '../utils/dateUtils';
@@ -355,7 +356,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           {affaire.tel && (
             <div className="detail-field">
               <label><Phone size={12} /> Téléphone</label>
-              <span>{affaire.tel}</span>
+              <span>{formatPhoneDisplay(affaire.tel)}</span>
             </div>
           )}
           <div className="detail-field full-width">
@@ -564,7 +565,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                       )}
                     </div>
                     {p.phone && (
-                      <div className="person-contact-line"><Phone size={11} /> {p.phone}</div>
+                      <div className="person-contact-line"><Phone size={11} /> {formatPhoneDisplay(p.phone)}</div>
                     )}
                     {p.email && (
                       <div className="person-contact-line"><Mail size={11} /> {p.email}</div>

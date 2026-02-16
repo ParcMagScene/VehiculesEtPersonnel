@@ -1056,7 +1056,9 @@ function App() {
             currentUser={currentUser}
             mode="planning"
             view={view}
+            setView={setView}
             currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
             googleEvents={allGoogleEvents}
             navigateToPersonId={navigateToPersonId}
             onNavigateToPersonHandled={() => setNavigateToPersonId(null)}

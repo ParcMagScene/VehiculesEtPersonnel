@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, User, Phone, Mail, Briefcase, Award, Calendar, MapPin, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
 import api from '../utils/api';
+import { formatPhoneDisplay } from './PhoneInput';
 import './PersonnelDetailPanel.css';
 
 const CONTRACT_TYPES = [
@@ -87,9 +88,9 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
           <h4 className="pdp-section-title"><Phone size={14} /> Coordonnées</h4>
           <div className="pdp-contact-grid">
             {person.phone && (
-              <a href={`tel:${person.phone}`} className="pdp-contact-item">
+              <a href={`tel:${person.phone.replace(/[^\d+]/g, '')}`} className="pdp-contact-item">
                 <Phone size={14} />
-                <span>{person.phone}</span>
+                <span>{formatPhoneDisplay(person.phone)}</span>
               </a>
             )}
             {person.email && (

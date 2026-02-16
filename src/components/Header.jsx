@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package, ShoppingCart } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package, ShoppingCart } from 'lucide-react';
 import api from '../utils/api';
-import { format, isSameWeek, isSameMonth, isSameYear, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
+import { format, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
-import MonthSelector from './MonthSelector';
-import WeekSelector from './WeekSelector';
-import YearSelector from './YearSelector';
 import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
@@ -16,10 +13,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
-  const [showMonthSelector, setShowMonthSelector] = useState(false);
-  const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
-  const [showYearSelector, setShowYearSelector] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
   const [showRequestsPopup, setShowRequestsPopup] = useState(false);
@@ -150,61 +144,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   
   // Notifications d'interventions actives (cloche) - sans les demandes/pannes qui ont leur propre badge
   const activeInterventions = [...scheduledMaintenances, ...inProgressMaintenances, ...overdueInterventions];
-  
-  const goToPrevious = () => {
-    const newDate = new Date(currentDate);
-    if (view === 'week') {
-      newDate.setDate(newDate.getDate() - 7);
-    } else if (view === 'month') {
-      newDate.setMonth(newDate.getMonth() - 1);
-    } else {
-      newDate.setFullYear(newDate.getFullYear() - 1);
-    }
-    setCurrentDate(newDate);
-  };
-
-  const goToNext = () => {
-    const newDate = new Date(currentDate);
-    if (view === 'week') {
-      newDate.setDate(newDate.getDate() + 7);
-    } else if (view === 'month') {
-      newDate.setMonth(newDate.getMonth() + 1);
-    } else {
-      newDate.setFullYear(newDate.getFullYear() + 1);
-    }
-    setCurrentDate(newDate);
-  };
-
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  const getDateLabel = () => {
-    let label = '';
-    if (view === 'week') {
-      label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
-    } else if (view === 'month') {
-      label = format(currentDate, 'MMMM yyyy', { locale: fr });
-    } else {
-      label = format(currentDate, 'yyyy', { locale: fr });
-    }
-    // Mettre une majuscule à la première lettre
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  };
-
-  // Vérifier si on est dans la période actuelle
-  const isCurrentPeriod = () => {
-    const today = new Date();
-    if (view === 'week') {
-      return isSameWeek(currentDate, today, { weekStartsOn: 1 });
-    } else if (view === 'month') {
-      return isSameMonth(currentDate, today);
-    } else {
-      return isSameYear(currentDate, today);
-    }
-  };
-  
-  const showTodayHighlight = !isCurrentPeriod();
 
   // Handlers pour les interventions en retard
   const handleMarkCompleted = async (intervention) => {
@@ -927,73 +866,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         
         <div className="header-controls">
 
-          {/* Sélecteur de vue */}
-          {(activeModule === 'vehicles' || activeModule === 'personnel') && (
-          <div className="view-selector" role="group" aria-label="Sélection de la vue">
-            <button
-              className={`view-button ${view === 'week' ? 'active' : ''}`}
-              onClick={() => setView('week')}
-              aria-label="Afficher la vue semaine"
-              aria-pressed={view === 'week'}
-            >
-              Semaine
-            </button>
-            <button
-              className={`view-button ${view === 'month' ? 'active' : ''}`}
-              onClick={() => setView('month')}
-              aria-label="Afficher la vue mois"
-              aria-pressed={view === 'month'}
-            >
-              Mois
-            </button>
-            <button
-              className={`view-button ${view === 'year' ? 'active' : ''}`}
-              onClick={() => setView('year')}
-              aria-label="Afficher la vue année"
-              aria-pressed={view === 'year'}
-            >
-              Année
-            </button>
-          </div>
-          )}
-
-          {/* Navigation de dates */}
-          {(activeModule === 'vehicles' || activeModule === 'personnel') && (
-          <div className="date-navigation" role="navigation" aria-label="Navigation de dates">
-            <button className="nav-button" onClick={goToPrevious} aria-label="Période précédente">
-              <ChevronLeft size={20} />
-            </button>
-            <button 
-              className={`nav-button ${showTodayHighlight ? 'today-highlight' : ''}`}
-              onClick={goToToday} 
-              aria-label="Revenir à aujourd'hui"
-            >
-              Aujourd'hui
-            </button>
-            <button className="nav-button" onClick={goToNext} aria-label="Période suivante">
-              <ChevronRight size={20} />
-            </button>
-            <div 
-              className={`current-date ${(view === 'month' || view === 'week' || view === 'year') ? 'clickable' : ''}`}
-              aria-live="polite" 
-              aria-atomic="true"
-              onClick={() => {
-                if (view === 'month') setShowMonthSelector(true);
-                if (view === 'week') setShowWeekSelector(true);
-                if (view === 'year') setShowYearSelector(true);
-              }}
-              title={
-                view === 'month' ? 'Cliquer pour sélectionner un mois' : 
-                view === 'week' ? 'Cliquer pour sélectionner une semaine' : 
-                view === 'year' ? 'Cliquer pour sélectionner une année' : 
-                undefined
-              }
-            >
-              {getDateLabel()}
-            </div>
-          </div>
-          )}
-
           <div className="header-right-actions">
             <div className="header-notification-badges">
             {/* Badge 1: Pannes signalées (reported) */}
@@ -1340,35 +1212,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
 
     {showQRCodeModal && (
       <QRCodeModal onClose={() => setShowQRCodeModal(false)} />
-    )}
-
-    {showMonthSelector && (
-      <MonthSelector
-        currentDate={currentDate}
-        onSelectMonth={setCurrentDate}
-        onClose={() => setShowMonthSelector(false)}
-        reservations={reservations}
-        vehicles={vehicles}
-      />
-    )}
-
-    {showWeekSelector && (
-      <WeekSelector
-        currentDate={currentDate}
-        onSelectWeek={setCurrentDate}
-        onClose={() => setShowWeekSelector(false)}
-        reservations={reservations}
-        vehicles={vehicles}
-      />
-    )}
-
-    {showYearSelector && (
-      <YearSelector
-        currentDate={currentDate}
-        onSelectYear={setCurrentDate}
-        onClose={() => setShowYearSelector(false)}
-        reservations={reservations}
-      />
     )}
 
     {selectedOverdueIntervention && (

@@ -441,63 +441,54 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 
   return (
     <div className="equipment-panel">
-      {/* En-tête avec stats */}
-      <div className="eq-header">
-        <div className="eq-stats-row">
-          <div className="eq-stat" onClick={() => { setFilterStatus(''); setSubTab('inventory'); }}>
-            <Package size={16} />
-            <span className="eq-stat-value">{stats.total}</span>
-            <span className="eq-stat-label">Total</span>
-          </div>
-          <div className="eq-stat eq-stat-available" onClick={() => { setFilterStatus('available'); setSubTab('inventory'); }}>
-            <CheckCircle size={16} />
-            <span className="eq-stat-value">{stats.available}</span>
-            <span className="eq-stat-label">Disponibles</span>
-          </div>
-          <div className="eq-stat eq-stat-inuse" onClick={() => { setFilterStatus('in_use'); setSubTab('inventory'); }}>
-            <Clock size={16} />
-            <span className="eq-stat-value">{stats.in_use}</span>
-            <span className="eq-stat-label">En service</span>
-          </div>
-          <div className="eq-stat eq-stat-maint" onClick={() => { setFilterStatus('maintenance'); setSubTab('inventory'); }}>
-            <Wrench size={16} />
-            <span className="eq-stat-value">{stats.maintenance}</span>
-            <span className="eq-stat-label">Maintenance</span>
-          </div>
-          {stats.openTickets > 0 && (
-            <div className="eq-stat eq-stat-tickets" onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }}>
-              <AlertTriangle size={16} />
-              <span className="eq-stat-value">{stats.openTickets}</span>
-              <span className="eq-stat-label">Tickets SAV</span>
-            </div>
-          )}
-          {favoriteIds.size > 0 && (
-            <div className={`eq-stat eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }}>
-              <Star size={16} />
-              <span className="eq-stat-value">{favoriteIds.size}</span>
-              <span className="eq-stat-label">Favoris</span>
-            </div>
-          )}
-          {watchIds.size > 0 && (
-            <div className={`eq-stat eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }}>
-              <Eye size={16} />
-              <span className="eq-stat-value">{watchIds.size}</span>
-              <span className="eq-stat-label">Surveillance</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Onglets + Actions */}
+      {/* Toolbar unifiée : onglets + filtres + actions */}
       <div className="eq-toolbar">
-        <div className="eq-tabs">
-          <button className={`eq-tab ${subTab === 'inventory' ? 'active' : ''}`} onClick={() => setSubTab('inventory')}>
-            <Package size={14} /> Inventaire
-          </button>
-          <button className={`eq-tab ${subTab === 'sav' ? 'active' : ''}`} onClick={() => setSubTab('sav')}>
-            <Wrench size={14} /> SAV
-            {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
-          </button>
+        <div className="eq-toolbar-top">
+          <div className="eq-tabs">
+            <button className={`eq-tab ${subTab === 'inventory' ? 'active' : ''}`} onClick={() => setSubTab('inventory')}>
+              <Package size={14} /> Inventaire
+            </button>
+            <button className={`eq-tab ${subTab === 'sav' ? 'active' : ''}`} onClick={() => setSubTab('sav')}>
+              <Wrench size={14} /> SAV
+              {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
+            </button>
+          </div>
+          <div className="eq-stats-row">
+            <button className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }} title="Tous">
+              <Package size={13} />
+              <span className="eq-stat-value">{stats.total}</span>
+            </button>
+            <button className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`} onClick={() => { setFilterStatus('available'); setListFilter(''); setSubTab('inventory'); }} title="Disponibles">
+              <CheckCircle size={13} />
+              <span className="eq-stat-value">{stats.available}</span>
+            </button>
+            <button className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_use'); setListFilter(''); setSubTab('inventory'); }} title="En service">
+              <Clock size={13} />
+              <span className="eq-stat-value">{stats.in_use}</span>
+            </button>
+            <button className={`eq-stat-btn eq-stat-maint ${filterStatus === 'maintenance' ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }} title="Maintenance">
+              <Wrench size={13} />
+              <span className="eq-stat-value">{stats.maintenance}</span>
+            </button>
+            {stats.openTickets > 0 && (
+              <button className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`} onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }} title="Tickets SAV">
+                <AlertTriangle size={13} />
+                <span className="eq-stat-value">{stats.openTickets}</span>
+              </button>
+            )}
+            {favoriteIds.size > 0 && (
+              <button className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }} title="Favoris">
+                <Star size={13} />
+                <span className="eq-stat-value">{favoriteIds.size}</span>
+              </button>
+            )}
+            {watchIds.size > 0 && (
+              <button className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }} title="Surveillance">
+                <Eye size={13} />
+                <span className="eq-stat-value">{watchIds.size}</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="eq-toolbar-actions">
@@ -513,10 +504,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 />
                 {search && <button className="eq-search-clear" onClick={() => setSearch('')}><X size={12} /></button>}
               </div>
-              <select className="eq-filter" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                <option value="">Tous statuts</option>
-                {Object.entries(EQUIPMENT_STATUS).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
-              </select>
               <select className="eq-filter" value={filterFamily} onChange={(e) => { setFilterFamily(e.target.value); setFilterSubfamily(''); setFilterCategory(''); }}>
                 <option value="">Toutes familles</option>
                 {families.map(f => <option key={f.id} value={f.id}>{f.icon} {f.name}</option>)}
@@ -960,8 +947,8 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
           <div className="eq-detail-info-col">
             <div className="eq-detail-title-row">
               <h2>{eq.categoryIcon || eq.category_icon || '📦'} {eq.name}</h2>
-              <span className="eq-detail-status" style={{ background: st.color }}>{st.icon} {st.label}</span>
             </div>
+            <span className="eq-detail-status" style={{ background: st.color }}>{st.icon} {st.label}</span>
             {logo && (
               <div className="eq-detail-brand-logo">
                 <img src={logo} alt={eq.brand} title={eq.brand} />

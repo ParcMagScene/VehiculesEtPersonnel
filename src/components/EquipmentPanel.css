@@ -32,60 +32,74 @@
 }
 
 /* ═══ HEADER + STATS ═══ */
-.eq-header {
-  padding: 12px 16px 8px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.eq-stats-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.eq-stat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: #f1f5f9;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-size: 12px;
-  color: #475569;
-}
-
-.eq-stat:hover {
-  background: #e2e8f0;
-}
-
-.eq-stat-value {
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.eq-stat-label {
-  font-size: 11px;
-  color: #64748b;
-}
-
-.eq-stat-available .eq-stat-value { color: #10b981; }
-.eq-stat-inuse .eq-stat-value { color: #3b82f6; }
-.eq-stat-maint .eq-stat-value { color: #f59e0b; }
-.eq-stat-tickets { background: #fef2f2; }
-.eq-stat-tickets .eq-stat-value { color: #ef4444; }
 
 /* ═══ TOOLBAR ═══ */
 .eq-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   padding: 8px 16px;
   background: white;
   border-bottom: 1px solid #e2e8f0;
+  gap: 6px;
+}
+
+.eq-toolbar-top {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.eq-stats-row {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.eq-stat-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.eq-stat-btn:hover {
+  background: #e2e8f0;
+}
+
+.eq-stat-btn.active {
+  background: #e0e7ff;
+  border-color: var(--theme-primary, #667eea);
+  color: var(--theme-primary, #667eea);
+}
+
+.eq-stat-btn .eq-stat-value {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.eq-stat-btn.eq-stat-available .eq-stat-value { color: #10b981; }
+.eq-stat-btn.eq-stat-inuse .eq-stat-value { color: #3b82f6; }
+.eq-stat-btn.eq-stat-maint .eq-stat-value { color: #f59e0b; }
+.eq-stat-btn.eq-stat-tickets { background: #fef2f2; }
+.eq-stat-btn.eq-stat-tickets .eq-stat-value { color: #ef4444; }
+.eq-stat-btn.eq-stat-fav.active { background: #fffbeb; border-color: #f59e0b; }
+.eq-stat-btn.eq-stat-watch.active { background: #eff6ff; border-color: #3b82f6; }
+
+.eq-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -373,6 +387,32 @@
   color: #f1f5f9 !important;
 }
 
+/* Dark mode toolbar */
+[data-theme="dark"] .eq-toolbar {
+  background: #1e293b;
+  border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .eq-stat-btn {
+  background: #334155;
+  color: #cbd5e1;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .eq-stat-btn:hover {
+  background: #475569;
+}
+
+[data-theme="dark"] .eq-stat-btn.active {
+  background: #312e81;
+  border-color: var(--theme-primary, #667eea);
+  color: #c7d2fe;
+}
+
+[data-theme="dark"] .eq-stat-btn.eq-stat-tickets {
+  background: #451a1a;
+}
+
 /* ═══ DÉTAIL ÉQUIPEMENT ═══ */
 .eq-detail {
   display: flex;
@@ -468,16 +508,6 @@
   margin: 0 0 8px;
   font-size: 18px;
   color: #1e293b;
-}
-
-.eq-detail-status {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 12px;
 }
 
 .eq-detail-fields {
@@ -933,10 +963,10 @@
 }
 
 @media (max-width: 768px) {
-  .eq-stats-row { gap: 4px; }
-  .eq-stat { padding: 4px 8px; font-size: 11px; }
-  .eq-stat-label { display: none; }
+  .eq-stats-row { gap: 2px; }
+  .eq-stat-btn { padding: 3px 6px; font-size: 11px; }
   .eq-toolbar { flex-direction: column; align-items: stretch; }
+  .eq-toolbar-top { flex-direction: column; align-items: stretch; }
   .eq-toolbar-actions { flex-wrap: wrap; }
   .eq-search input { width: 100px; }
   .eq-table { font-size: 12px; }
@@ -1637,7 +1667,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
 
 .eq-detail-title-row h2 {
@@ -1645,6 +1675,16 @@
   font-size: 17px;
   font-weight: 700;
   color: #1e293b;
+}
+
+.eq-detail-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 
 .eq-dialog-actions {

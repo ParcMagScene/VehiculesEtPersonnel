@@ -4,6 +4,8 @@ import api, { getApiUrl } from '../utils/api';
 import './AffaireImportModal.css';
 import { extractTextFromPDF, parseBonLivraison, parseDate } from '../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../utils/indexedDB';
+import PhoneInput from './PhoneInput';
+import AddressAutocomplete from './AddressAutocomplete';
 
 const AffaireImportModal = ({ 
   isOpen, 
@@ -860,20 +862,17 @@ const AffaireImportModal = ({
               <div className="form-row">
                 <div className="form-group">
                   <label>Téléphone</label>
-                  <input
-                    type="tel"
+                  <PhoneInput
                     value={formData.tel}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tel: e.target.value }))}
-                    placeholder="01 23 45 67 89"
+                    onChange={(val) => setFormData(prev => ({ ...prev, tel: val }))}
                   />
                 </div>
 
                 <div className="form-group">
                   <label>Fax</label>
-                  <input
-                    type="tel"
+                  <PhoneInput
                     value={formData.fax}
-                    onChange={(e) => setFormData(prev => ({ ...prev, fax: e.target.value }))}
+                    onChange={(val) => setFormData(prev => ({ ...prev, fax: val }))}
                     placeholder="01 23 45 67 89"
                   />
                 </div>
@@ -905,11 +904,12 @@ const AffaireImportModal = ({
 
               <div className="form-group">
                 <label>Adresse de livraison</label>
-                <textarea
+                <AddressAutocomplete
+                  as="textarea"
                   value={formData.adresseLivraison}
-                  onChange={(e) => setFormData(prev => ({ ...prev, adresseLivraison: e.target.value }))}
+                  onChange={(val) => setFormData(prev => ({ ...prev, adresseLivraison: val }))}
                   placeholder="Adresse complète de livraison"
-                  rows="3"
+                  rows={3}
                 />
               </div>
 

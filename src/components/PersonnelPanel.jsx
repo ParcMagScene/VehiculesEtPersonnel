@@ -2,15 +2,17 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Users, Award, CalendarDays, Briefcase,
   Plus, Edit2, Trash2, X, Save, Search,
-  ChevronDown, ChevronUp, AlertTriangle, CheckCircle,
+  ChevronDown, ChevronUp, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle,
   Phone, Mail, User, Check, Clock,
   Link2, Upload, Star, Filter,
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
+import PhoneInput, { formatPhoneDisplay } from './PhoneInput';
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear,
   eachDayOfInterval, eachMonthOfInterval, format, parseISO,
   isSameDay, isWeekend as isWeekendFn,
+  isSameWeek, isSameMonth, isSameYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../utils/api';
@@ -20,7 +22,11 @@ import { LeaveRequestModal, LeaveApprovalPanel } from './LeaveRequestModal';
 import PersonnelContextMenu from './PersonnelContextMenu';
 import PeriodCalendarModal from './PeriodCalendarModal';
 import PersonnelImportModal from './PersonnelImportModal';
+import MonthSelector from './MonthSelector';
+import WeekSelector from './WeekSelector';
+import YearSelector from './YearSelector';
 import './PersonnelPanel.css';
+import './Calendar.css';
 
 // ═══════════════════════════════════════
 // Constantes
@@ -83,7 +89,7 @@ const getCategoryColor = (category) => {
 // Composant principal
 // ═══════════════════════════════════════
 
-const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, googleEvents = [], navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
+const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, currentDate, setCurrentDate, googleEvents = [], navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
   const [subTab, setSubTab] = useState(mode === 'planning' ? 'planning' : 'persons');
   const [persons, setPersons] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -295,7 +301,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, g
                   </div>
                   <div className="form-group">
                     <label>Téléphone</label>
-                    <input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+                    <PhoneInput value={editForm.phone} onChange={(val) => setEditForm({ ...editForm, phone: val })} />
                   </div>
                 </div>
                 <div className="form-row">
@@ -448,7 +454,9 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, g
             skills={skills}
             positions={positions}
             view={view}
+            setView={setView}
             currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
             googleEvents={googleEvents}
             onPersonEdit={(person) => { setPersonToEdit(person); setSubTab('persons'); }}
             navigateToPersonId={navigateToPersonId}
@@ -669,7 +677,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                         <td>
                           <span className={`pp-type-badge ${badge.cls}`}>{badge.label}</span>
                         </td>
-                        <td className="pp-phone-cell">{person.phone || '—'}</td>
+                        <td className="pp-phone-cell">{formatPhoneDisplay(person.phone) || '—'}</td>
                         <td className="pp-email-cell">{person.email || '—'}</td>
                         <td className="pp-postes-cell">
                           {postes.length > 0 ? (
@@ -832,7 +840,7 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
             </div>
             <div className="eq-form-field">
               <label>Téléphone</label>
-              <input type="text" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+              <PhoneInput value={form.phone} onChange={(val) => setForm({ ...form, phone: val })} />
             </div>
             <div className="eq-form-field">
               <label>Catégorie</label>
@@ -1197,13 +1205,50 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
 
 // NON_PERMANENT_TYPES défini en haut du fichier avec PERMANENT_TYPES
 
-const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDate = new Date(), googleEvents = [], onPersonEdit, onPersonCreate, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
+const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, currentDate = new Date(), setCurrentDate, googleEvents = [], onPersonEdit, onPersonCreate, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
   const scrollAreaRef = useRef(null);
   const headerScrollRef = useRef(null);
   const personColumnRef = useRef(null);
   const [collapsedSections, setCollapsedSections] = useState({ permanents: false, nonPermanents: false });
   const [selectedPersonForDetails, setSelectedPersonForDetails] = useState(null);
   const clickTimerRef = useRef(null);
+
+  // ═══ Navigation de dates ═══
+  const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const [showWeekSelector, setShowWeekSelector] = useState(false);
+  const [showYearSelector, setShowYearSelector] = useState(false);
+
+  const goToPrevious = () => {
+    if (!setCurrentDate) return;
+    const newDate = new Date(currentDate);
+    if (view === 'week') newDate.setDate(newDate.getDate() - 7);
+    else if (view === 'month') newDate.setMonth(newDate.getMonth() - 1);
+    else newDate.setFullYear(newDate.getFullYear() - 1);
+    setCurrentDate(newDate);
+  };
+  const goToNext = () => {
+    if (!setCurrentDate) return;
+    const newDate = new Date(currentDate);
+    if (view === 'week') newDate.setDate(newDate.getDate() + 7);
+    else if (view === 'month') newDate.setMonth(newDate.getMonth() + 1);
+    else newDate.setFullYear(newDate.getFullYear() + 1);
+    setCurrentDate(newDate);
+  };
+  const goToToday = () => setCurrentDate?.(new Date());
+  const getDateLabel = () => {
+    let label = '';
+    if (view === 'week') label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
+    else if (view === 'month') label = format(currentDate, 'MMMM yyyy', { locale: fr });
+    else label = format(currentDate, 'yyyy', { locale: fr });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+  const ppIsCurrentPeriod = () => {
+    const today = new Date();
+    if (view === 'week') return isSameWeek(currentDate, today, { weekStartsOn: 1 });
+    if (view === 'month') return isSameMonth(currentDate, today);
+    return isSameYear(currentDate, today);
+  };
+  const ppShowTodayHighlight = !ppIsCurrentPeriod();
 
   // ═══ Toolbar : recherche, filtre, favoris ═══
   const [planningSearch, setPlanningSearch] = useState('');
@@ -1959,6 +2004,32 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
     <div className="personnel-tab-content planning-full">
       {/* ═══ Toolbar Planning ═══ */}
       <div className="pp-planning-toolbar">
+        {/* Navigation de dates */}
+        {setView && setCurrentDate && (
+          <div className="cal-nav-toolbar pp-nav-toolbar">
+            <div className="cal-nav-views">
+              <button className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</button>
+              <button className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</button>
+              <button className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</button>
+            </div>
+            <div className="cal-nav-date">
+              <button className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></button>
+              <button className={`cal-nav-btn cal-nav-today ${ppShowTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</button>
+              <button className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></button>
+              <span 
+                className="cal-nav-label clickable"
+                onClick={() => {
+                  if (view === 'month') setShowMonthSelector(true);
+                  if (view === 'week') setShowWeekSelector(true);
+                  if (view === 'year') setShowYearSelector(true);
+                }}
+                title={view === 'month' ? 'Sélectionner un mois' : view === 'week' ? 'Sélectionner une semaine' : 'Sélectionner une année'}
+              >
+                {getDateLabel()}
+              </span>
+            </div>
+          </div>
+        )}
         <div className="pp-planning-search">
           <Search size={14} />
           <input
@@ -2264,6 +2335,29 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
           isAdmin={false}
           onClose={() => setPeriodCalendar(null)}
           onCreated={() => loadPlanning()}
+        />
+      )}
+
+      {/* Sélecteurs de dates */}
+      {showMonthSelector && (
+        <MonthSelector
+          currentDate={currentDate}
+          onSelectMonth={(date) => { setCurrentDate(date); setShowMonthSelector(false); }}
+          onClose={() => setShowMonthSelector(false)}
+        />
+      )}
+      {showWeekSelector && (
+        <WeekSelector
+          currentDate={currentDate}
+          onSelectWeek={(date) => { setCurrentDate(date); setShowWeekSelector(false); }}
+          onClose={() => setShowWeekSelector(false)}
+        />
+      )}
+      {showYearSelector && (
+        <YearSelector
+          currentDate={currentDate}
+          onSelectYear={(date) => { setCurrentDate(date); setShowYearSelector(false); }}
+          onClose={() => setShowYearSelector(false)}
         />
       )}
     </div>

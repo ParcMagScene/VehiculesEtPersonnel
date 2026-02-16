@@ -4,6 +4,8 @@ import { ShoppingCart, FileText, Search, Plus, Filter, Edit2, Trash2, ArrowLeft,
   Eye, Building2, Phone, Mail, MapPin, Calendar, Euro, Hash, FileCheck } from 'lucide-react';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
+import PhoneInput, { formatPhoneDisplay } from './PhoneInput';
+import AddressAutocomplete from './AddressAutocomplete';
 import './OrdersPanel.css';
 
 // ═══ Constantes ═══
@@ -501,7 +503,7 @@ const SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
           <div className="supplier-card-body">
             {supplier.contact_name && <div className="supplier-field"><UsersIcon size={13} /> {supplier.contact_name}</div>}
             {supplier.email && <div className="supplier-field"><Mail size={13} /> {supplier.email}</div>}
-            {supplier.phone && <div className="supplier-field"><Phone size={13} /> {supplier.phone}</div>}
+            {supplier.phone && <div className="supplier-field"><Phone size={13} /> {formatPhoneDisplay(supplier.phone)}</div>}
             {supplier.address && <div className="supplier-field"><MapPin size={13} /> {supplier.address}</div>}
           </div>
           <div className="supplier-card-footer">
@@ -823,7 +825,7 @@ const QuoteFormModal = React.memo(({ quote, onSave, onClose }) => {
             </div>
             <div className="form-field full-width">
               <label>Adresse client</label>
-              <input type="text" value={form.client_address} onChange={(e) => setForm(f => ({ ...f, client_address: e.target.value }))} />
+              <AddressAutocomplete value={form.client_address} onChange={(val) => setForm(f => ({ ...f, client_address: val }))} />
             </div>
             <div className="form-field">
               <label>Code affaire</label>
@@ -927,11 +929,11 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
             </div>
             <div className="form-field">
               <label>Téléphone</label>
-              <input type="tel" value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} />
+              <PhoneInput value={form.phone} onChange={(val) => setForm(f => ({ ...f, phone: val }))} />
             </div>
             <div className="form-field full-width">
               <label>Adresse</label>
-              <input type="text" value={form.address} onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))} />
+              <AddressAutocomplete value={form.address} onChange={(val) => setForm(f => ({ ...f, address: val }))} />
             </div>
             <div className="form-field full-width">
               <label>Notes</label>

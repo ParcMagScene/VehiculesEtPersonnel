@@ -3,6 +3,7 @@ import logger from "../utils/logger";
 import { X, MapPin, Navigation, Clock, Route, Mail, Phone, User } from 'lucide-react';
 import api from '../utils/api';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
+import PhoneInput from './PhoneInput';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 
@@ -396,12 +397,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                   <Phone size={16} />
                   Téléphone
                 </label>
-                <input
+                <PhoneInput
                   id="client-phone"
-                  type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="06 12 34 56 78"
+                  onChange={(val) => setFormData({ ...formData, phone: val })}
                 />
               </div>
 

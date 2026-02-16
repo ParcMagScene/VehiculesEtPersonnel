@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, ArrowLeft, FileText, AlertTriangle, Wrench, Settings, Home, Loader } from 'lucide-react';
 import api from '../../utils/api';
+import './MobileEquipmentQR.css';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX

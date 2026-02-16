@@ -1770,7 +1770,7 @@
 }
 
 .pp-slot:first-child {
-  border-left: 1px solid #e5e7eb;
+  /* Pas de border-left : la pp-person-column a déjà border-right: 2px */
 }
 
 .pp-slot.weekend {
@@ -1825,6 +1825,7 @@
 /* ── Crosshair highlight colonne + ligne ── */
 .pp-col-hovered {
   background: rgba(102, 126, 234, 0.08) !important;
+  background-clip: padding-box !important;
 }
 
 .pp-header-cell.pp-col-hovered {

@@ -142,10 +142,10 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
     printWindow.document.write(
       '<!DOCTYPE html><html><head><title>Étiquettes lot - ' + selected.length + ' matériels</title>' +
       '<style>' +
-        '@page { size: ' + PAGE_SIZE_MM + 'mm ' + PAGE_SIZE_MM + 'mm; margin: 0; }' +
+        '@page { size: A4; margin: 5mm; }' +
         '* { margin: 0; padding: 0; box-sizing: border-box; }' +
         'body { font-family: -apple-system, BlinkMacSystemFont, monospace; }' +
-        '.batch-page { width: ' + PAGE_SIZE_MM + 'mm; height: ' + PAGE_SIZE_MM + 'mm; padding: 2mm; page-break-after: always; }' +
+        '.batch-page { width: 210mm; min-height: 297mm; padding: 5mm; page-break-after: always; }' +
         '.batch-page:last-child { page-break-after: auto; }' +
         '.batch-grid { display: flex; flex-wrap: wrap; gap: ' + LABEL_GAP_MM + 'mm; align-content: flex-start; }' +
         '.batch-label { border: 0.3px dashed #bbb; border-radius: 1px; overflow: hidden; }' +
@@ -261,7 +261,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         <Tag size={14} />
         <span>{totalSelected} matériel{totalSelected > 1 ? 's' : ''} sélectionné{totalSelected > 1 ? 's' : ''}</span>
         <span className="ebl-page-info">
-          ({Math.ceil(totalSelected / calcLayout().perPage) || 0} page{Math.ceil(totalSelected / calcLayout().perPage) > 1 ? 's' : ''} de {PAGE_SIZE_MM}×{PAGE_SIZE_MM}mm)
+          ({Math.ceil(totalSelected / calcLayout().perPage) || 0} page{Math.ceil(totalSelected / calcLayout().perPage) > 1 ? 's' : ''} A4)
         </span>
       </div>
 
@@ -305,11 +305,12 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
                       {/* Mini-aperçu */}
                       <div className="ebl-mini-preview">
                         <div className="ebl-mini-label">
-                          <QRCodeSVG value={eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : '#'} size={24} level="L" />
+                          {showLogo && <img src="/Logos/logo_Noir_Transp.png" alt="" className="ebl-mini-logo" />}
                           <div>
                             <div className="ebl-mini-ref">{eq.reference}</div>
                             {eq.uid && <div className="ebl-mini-uid"><b>{eq.uid}</b></div>}
                           </div>
+                          <QRCodeSVG value={eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : '#'} size={24} level="L" />
                         </div>
                       </div>
                     </div>
@@ -325,11 +326,11 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
       <div className="ebl-actions">
         <button className="ebl-btn-export" onClick={handleExportBatchSVG} disabled={totalSelected === 0}>
           <Download size={16} />
-          Exporter SVG {totalSelected > 0 ? `(${totalSelected})` : ''}
+          Exporter (200 × 200 mm) {totalSelected > 0 ? `— ${totalSelected}` : ''}
         </button>
         <button className="ebl-btn-print" onClick={handlePrintBatch} disabled={totalSelected === 0}>
           <Printer size={16} />
-          Imprimer {totalSelected > 0 ? `${totalSelected} étiquette${totalSelected > 1 ? 's' : ''}` : 'les étiquettes'}
+          Imprimer (A4) {totalSelected > 0 ? `— ${totalSelected} étiquette${totalSelected > 1 ? 's' : ''}` : ''}
         </button>
       </div>
     </div>

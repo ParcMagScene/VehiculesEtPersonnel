@@ -121,14 +121,12 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
           '<div class="batch-label" style="width:' + layout.labelW + 'mm; height:' + layout.labelH + 'mm;">' +
             '<div class="batch-label-inner">' +
               (showLogo ? '<div class="batch-logo"><img src="/Logos/logo_Noir_Transp.png" alt="" /></div>' : '') +
-              '<div class="batch-main">' +
-                (qrUrl ? '<div class="batch-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl) + '" alt="QR" /></div>' : '') +
-                '<div class="batch-info">' +
-                  '<div class="batch-ref">' + escHtml(eq.reference || '') + '</div>' +
-                  (eq.uid ? '<div class="batch-uid"><b>UID: ' + escHtml(eq.uid) + '</b></div>' : '') +
-                  ((eq.serialNumber || eq.serial_number) ? '<div class="batch-sn"><b>S/N: ' + escHtml(eq.serialNumber || eq.serial_number) + '</b></div>' : '') +
-                '</div>' +
+              '<div class="batch-info">' +
+                '<div class="batch-ref">' + escHtml(eq.reference || '') + '</div>' +
+                (eq.uid ? '<div class="batch-uid"><b>UID: ' + escHtml(eq.uid) + '</b></div>' : '') +
+                ((eq.serialNumber || eq.serial_number) ? '<div class="batch-sn"><b>S/N: ' + escHtml(eq.serialNumber || eq.serial_number) + '</b></div>' : '') +
               '</div>' +
+              (qrUrl ? '<div class="batch-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl) + '" alt="QR" /></div>' : '') +
             '</div>' +
           '</div>'
         );
@@ -151,11 +149,10 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         '.batch-page:last-child { page-break-after: auto; }' +
         '.batch-grid { display: flex; flex-wrap: wrap; gap: ' + LABEL_GAP_MM + 'mm; align-content: flex-start; }' +
         '.batch-label { border: 0.3px dashed #bbb; border-radius: 1px; overflow: hidden; }' +
-        '.batch-label-inner { display: flex; flex-direction: column; width: 100%; height: 100%; padding: 1mm; }' +
-        '.batch-logo { text-align: center; margin-bottom: 0.5mm; line-height: 1; }' +
-        '.batch-logo img { height: 2.5mm; width: auto; }' +
-        '.batch-main { display: flex; align-items: center; gap: 1mm; flex: 1; }' +
-        '.batch-qr { flex-shrink: 0; }' +
+        '.batch-label-inner { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1mm; gap: 1mm; }' +
+        '.batch-logo { flex-shrink: 0; display: flex; align-items: center; }' +
+        '.batch-logo img { height: ' + Math.max(6, qrSize) + 'mm; width: auto; }' +
+        '.batch-qr { flex-shrink: 0; margin-left: auto; }' +
         '.batch-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
         '.batch-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 0.2mm; }' +
         '.batch-ref { font-weight: 800; font-size: 6pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
@@ -253,7 +250,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         </button>
 
         <div className="ebl-logo-toggle">
-          <span>Logo :</span>
+          <span>Logo Mag Scène :</span>
           <button className={`ebl-toggle-btn ${showLogo ? 'active' : ''}`} onClick={() => setShowLogo(true)}>Avec</button>
           <button className={`ebl-toggle-btn ${!showLogo ? 'active' : ''}`} onClick={() => setShowLogo(false)}>Sans</button>
         </div>

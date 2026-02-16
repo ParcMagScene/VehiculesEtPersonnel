@@ -95,10 +95,9 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
 
   // Calculer la disposition optimale pour 200×200mm
   const calcLayout = () => {
-    // Chaque étiquette individuelle : largeur max pour lisibilité,
-    // hauteur minimale pour graver les infos essentielles
-    const labelW = 45; // mm
-    const labelH = 20; // mm
+    // Chaque étiquette : 8 cm × 3 cm
+    const labelW = 80; // mm
+    const labelH = 30; // mm
     const cols = Math.floor((PAGE_SIZE_MM + LABEL_GAP_MM) / (labelW + LABEL_GAP_MM));
     const rows = Math.floor((PAGE_SIZE_MM + LABEL_GAP_MM) / (labelH + LABEL_GAP_MM));
     return { labelW, labelH, cols, rows, perPage: cols * rows };
@@ -149,14 +148,14 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         '.batch-page:last-child { page-break-after: auto; }' +
         '.batch-grid { display: flex; flex-wrap: wrap; gap: ' + LABEL_GAP_MM + 'mm; align-content: flex-start; }' +
         '.batch-label { border: 0.3px dashed #bbb; border-radius: 1px; overflow: hidden; }' +
-        '.batch-label-inner { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1mm; gap: 1mm; }' +
+        '.batch-label-inner { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
         '.batch-logo { flex-shrink: 0; display: flex; align-items: center; }' +
         '.batch-logo img { height: ' + qrSize + 'mm; width: auto; }' +
         '.batch-qr { flex-shrink: 0; margin-left: auto; }' +
         '.batch-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
-        '.batch-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 0.2mm; }' +
-        '.batch-ref { font-weight: 800; font-size: 6pt; overflow-wrap: break-word; word-break: break-word; }' +
-        '.batch-uid, .batch-sn { font-size: 4.5pt; font-weight: 700; overflow-wrap: break-word; word-break: break-word; font-family: monospace; }' +
+        '.batch-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
+        '.batch-ref { font-weight: 800; font-size: 10pt; line-height: 1.1; overflow-wrap: break-word; word-break: break-word; }' +
+        '.batch-uid, .batch-sn { font-size: 7.5pt; font-weight: 700; line-height: 1.1; overflow-wrap: break-word; word-break: break-word; font-family: monospace; }' +
         '@media print { .batch-label { border-color: transparent; } }' +
       '</style></head><body>' +
       pages.join('') +

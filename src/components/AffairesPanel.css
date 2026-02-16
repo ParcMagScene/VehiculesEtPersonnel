@@ -81,6 +81,215 @@
 
 
 
+/* ═══ Toolbar (recherche + filtres + navigation dates) ═══ */
+
+.affaires-toolbar-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.affaires-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.affaires-tb-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 32px;
+  min-width: 140px;
+  max-width: 220px;
+  flex: 1;
+  transition: all 0.2s;
+}
+
+.affaires-tb-search:focus-within {
+  border-color: var(--theme-primary, #667eea);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+}
+
+.affaires-tb-search svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.affaires-tb-search input {
+  background: none;
+  border: none;
+  outline: none;
+  color: #1e293b;
+  font-size: 13px;
+  width: 100%;
+  padding: 0;
+}
+
+.affaires-tb-search input::placeholder {
+  color: #94a3b8;
+}
+
+.affaires-tb-search-clear {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.affaires-tb-search-clear:hover {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.affaires-tb-filter {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 8px;
+  height: 32px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.affaires-tb-filter:hover,
+.affaires-tb-filter:focus {
+  border-color: #94a3b8;
+}
+
+.affaires-tb-divider {
+  width: 1px;
+  height: 22px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.affaires-tb-view-selector {
+  display: flex;
+  gap: 2px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.affaires-tb-view-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.affaires-tb-view-btn:hover {
+  color: #334155;
+}
+
+.affaires-tb-view-btn.active {
+  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  color: white;
+  box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
+}
+
+.affaires-tb-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.affaires-tb-nav-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.affaires-tb-nav-btn.today-hl {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+
+.affaires-tb-date-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.affaires-tb-date-label:hover {
+  background: #f1f5f9;
+  color: var(--theme-primary, #667eea);
+}
+
+.affaires-tb-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.affaires-tb-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--theme-indigo, #667eea);
+  cursor: pointer;
+  margin: 0;
+}
+
+.affaires-tb-toggle span {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.affaires-tb-toggle:hover span {
+  color: #334155;
+}
+
 /* ═══ Barre d'info (compteur + frise) ═══ */
 
 .affaires-info-bar {
@@ -659,6 +868,23 @@
 /* ═══ Responsive ═══ */
 
 @media (max-width: 768px) {
+  .affaires-toolbar-bar {
+    padding: 6px 8px;
+  }
+
+  .affaires-toolbar-actions {
+    gap: 6px;
+  }
+
+  .affaires-tb-search {
+    min-width: 100px;
+    max-width: 160px;
+  }
+
+  .affaires-tb-date-label {
+    font-size: 11px;
+  }
+
   .affaires-stats {
     gap: 8px;
   }

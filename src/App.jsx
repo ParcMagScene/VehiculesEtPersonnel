@@ -97,21 +97,6 @@ function App() {
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  // Filtres affaires (remonté ici pour le Header)
-  const [affaireSearchTerm, setAffaireSearchTerm] = useState('');
-  const [affaireFilterType, setAffaireFilterType] = useState('');
-  // Par défaut : mode Semaine glissante (J-1 → J+6)
-  const [affaireFilterDateStart, setAffaireFilterDateStart] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
-  });
-  const [affaireFilterDateEnd, setAffaireFilterDateEnd] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() + 6);
-    return d.toISOString().slice(0, 10);
-  });
-  const [affaireSlidingMode, setAffaireSlidingMode] = useState(true);
-  const [affaireViewMode, setAffaireViewMode] = useState('week'); // 'week' | 'month'
-  const [affaireShowArchived, setAffaireShowArchived] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [googleEvents, setGoogleEvents] = useState([]);
@@ -883,20 +868,6 @@ function App() {
         onOpenSettings={() => setShowSettings(true)}
         activeModule={activeModule}
         setActiveModule={setActiveModule}
-        affaireSearchTerm={affaireSearchTerm}
-        setAffaireSearchTerm={setAffaireSearchTerm}
-        affaireFilterType={affaireFilterType}
-        setAffaireFilterType={setAffaireFilterType}
-        affaireFilterDateStart={affaireFilterDateStart}
-        setAffaireFilterDateStart={setAffaireFilterDateStart}
-        affaireFilterDateEnd={affaireFilterDateEnd}
-        setAffaireFilterDateEnd={setAffaireFilterDateEnd}
-        affaireSlidingMode={affaireSlidingMode}
-        setAffaireSlidingMode={setAffaireSlidingMode}
-        affaireViewMode={affaireViewMode}
-        setAffaireViewMode={setAffaireViewMode}
-        affaireShowArchived={affaireShowArchived}
-        setAffaireShowArchived={setAffaireShowArchived}
         maintenances={maintenances}
         vehicles={vehicles}
         reservations={reservations}
@@ -1104,11 +1075,6 @@ function App() {
         }>
           <AffairesPanel
             reservations={reservations}
-            searchTerm={affaireSearchTerm}
-            filterType={affaireFilterType}
-            filterDateStart={affaireFilterDateStart}
-            filterDateEnd={affaireFilterDateEnd}
-            showArchived={affaireShowArchived}
             onNavigateToEntity={handleNavigateToEntity}
           />
         </Suspense>

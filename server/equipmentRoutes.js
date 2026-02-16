@@ -468,7 +468,7 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
 
 // ============ TICKETS SAV ============
 
-export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
+export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess) {
 
   // GET /api/sav-tickets
   app.get('/api/sav-tickets', authenticateToken, (req, res) => {
@@ -515,6 +515,46 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // GET /api/sav-tickets/report — Rapport maintenance matériel (journalier/hebdo/mensuel)
+  // Query params: start (YYYY-MM-DD), end (YYYY-MM-DD), type ('entries'|'exits'|'all')
+  app.get('/api/sav-tickets/report', authenticateToken, (req, res) => {
+    try {
+      const { start, end, type } = req.query;
+      if (!start || !end) return res.status(400).json({ error: 'Paramètres start et end requis' });
+
+      let sql = `
+        SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
+               st.created_at, st.resolved_at, st.updated_at,
+               e.name as equipment_name, e.reference as equipment_reference,
+               e.uid as equipment_uid, e.serial_number as equipment_serial_number,
+               u.name as reported_by_name
+        FROM sav_tickets st
+        LEFT JOIN equipment e ON st.equipment_id = e.id
+        LEFT JOIN users u ON st.reported_by = u.id
+        WHERE 1=1
+      `;
+      const params = [];
+
+      if (type === 'entries') {
+        sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
+        params.push(start, end);
+      } else if (type === 'exits') {
+        sql += ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
+        params.push(start, end);
+      } else {
+        // 'all' : entrées OU sorties dans la période
+        sql += ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
+        params.push(start, end, start, end);
+      }
+      sql += ' ORDER BY st.created_at DESC';
+
+      const rows = db.prepare(sql).all(...params);
+      res.json(rows);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Helper : recalcule le statut d'un équipement en fonction de ses tickets SAV et assignments
   const refreshEquipmentStatus = (equipmentId) => {
     if (!equipmentId) return;
@@ -533,7 +573,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
   };
 
   // POST /api/sav-tickets
-  app.post('/api/sav-tickets', authenticateToken, (req, res) => {
+  app.post('/api/sav-tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { equipment_id, assigned_to, type, priority, title, description } = req.body;
       if (!equipment_id || !title) return res.status(400).json({ error: 'Équipement et titre requis' });
@@ -553,7 +593,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/sav-tickets/:id
-  app.put('/api/sav-tickets/:id', authenticateToken, (req, res) => {
+  app.put('/api/sav-tickets/:id', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { assigned_to, type, priority, status, title, description, resolution, cost } = req.body;
       
@@ -579,7 +619,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // DELETE /api/sav-tickets/:id
-  app.delete('/api/sav-tickets/:id', authenticateToken, (req, res) => {
+  app.delete('/api/sav-tickets/:id', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const ticket = db.prepare('SELECT equipment_id FROM sav_tickets WHERE id = ?').get(req.params.id);
       db.prepare('DELETE FROM sav_tickets WHERE id = ?').run(req.params.id);

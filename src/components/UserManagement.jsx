@@ -252,16 +252,28 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     </td>
                     <td>
                       {!user.isAdmin && (
-                        <label className="permission-checkbox" title="Autoriser la gestion des maintenances">
-                          <input
-                            type="checkbox"
-                            checked={user.permissions?.can_manage_maintenance || false}
-                            onChange={() => handleTogglePermission(user.id, 'can_manage_maintenance', user.permissions)}
-                          />
-                          <span className="checkbox-label">
-                            🔧 Maintenance
-                          </span>
-                        </label>
+                        <div className="permissions-group">
+                          <label className="permission-checkbox" title="Autoriser la gestion des maintenances véhicules">
+                            <input
+                              type="checkbox"
+                              checked={user.permissions?.can_manage_vehicle_maintenance || user.permissions?.can_manage_maintenance || false}
+                              onChange={() => handleTogglePermission(user.id, 'can_manage_vehicle_maintenance', user.permissions)}
+                            />
+                            <span className="checkbox-label">
+                              🚗 Maint. Véhicules
+                            </span>
+                          </label>
+                          <label className="permission-checkbox" title="Autoriser la gestion des maintenances matériel (SAV)">
+                            <input
+                              type="checkbox"
+                              checked={user.permissions?.can_manage_equipment_maintenance || false}
+                              onChange={() => handleTogglePermission(user.id, 'can_manage_equipment_maintenance', user.permissions)}
+                            />
+                            <span className="checkbox-label">
+                              🔧 Maint. Matériel
+                            </span>
+                          </label>
+                        </div>
                       )}
                       {user.isAdmin && (
                         <span className="all-permissions-label">Tous les droits</span>

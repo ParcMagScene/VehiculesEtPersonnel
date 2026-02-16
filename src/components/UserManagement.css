@@ -384,6 +384,12 @@
   color: #374151;
 }
 
+.permissions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .permission-checkbox {
   display: inline-flex;
   align-items: center;

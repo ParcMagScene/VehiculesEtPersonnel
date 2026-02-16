@@ -132,19 +132,36 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// Middleware pour vérifier les droits maintenance (admin OU permission spécifique)
+// Middleware pour vérifier les droits maintenance VÉHICULES (admin OU permission spécifique)
 function requireMaintenanceAccess(req, res, next) {
   const user = db.prepare('SELECT is_admin, permissions FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
   let perms = {};
   try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
-  if (user.is_admin || perms.can_manage_maintenance) {
+  // Backward compat: can_manage_maintenance OU can_manage_vehicle_maintenance
+  if (user.is_admin || perms.can_manage_vehicle_maintenance || perms.can_manage_maintenance) {
     req.user.isAdmin = !!user.is_admin;
     req.user.canManageMaintenance = true;
     req.user.permissions = perms;
     next();
   } else {
-    return res.status(403).json({ error: 'Accès réservé — permission maintenance requise' });
+    return res.status(403).json({ error: 'Accès réservé — permission maintenance véhicules requise' });
+  }
+}
+
+// Middleware pour vérifier les droits maintenance MATÉRIEL (admin OU permission spécifique)
+function requireEquipmentMaintenanceAccess(req, res, next) {
+  const user = db.prepare('SELECT is_admin, permissions FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
+  let perms = {};
+  try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
+  if (user.is_admin || perms.can_manage_equipment_maintenance) {
+    req.user.isAdmin = !!user.is_admin;
+    req.user.canManageEquipmentMaintenance = true;
+    req.user.permissions = perms;
+    next();
+  } else {
+    return res.status(403).json({ error: 'Accès réservé — permission maintenance matériel requise' });
   }
 }
 
@@ -967,13 +984,13 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
   try {
     const maintenance = req.body;
     
-    // Vérifier permissions (admin, ou can_manage_maintenance, sinon signalement only)
+    // Vérifier permissions (admin, can_manage_vehicle_maintenance ou legacy can_manage_maintenance)
     let canFullAccess = req.user.isAdmin;
     if (!canFullAccess) {
       const userDb = db.prepare('SELECT permissions FROM users WHERE id = ?').get(req.user.id);
       try {
         const perms = userDb?.permissions ? JSON.parse(userDb.permissions) : {};
-        canFullAccess = !!perms.can_manage_maintenance;
+        canFullAccess = !!perms.can_manage_vehicle_maintenance || !!perms.can_manage_maintenance;
       } catch { /* ignore */ }
     }
     
@@ -1053,13 +1070,13 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
   try {
     const maintenance = req.body;
     
-    // Vérifier permissions
+    // Vérifier permissions (can_manage_vehicle_maintenance ou legacy can_manage_maintenance)
     let canFullAccess = req.user.isAdmin;
     if (!canFullAccess) {
       const userDb = db.prepare('SELECT permissions FROM users WHERE id = ?').get(req.user.id);
       try {
         const perms = userDb?.permissions ? JSON.parse(userDb.permissions) : {};
-        canFullAccess = !!perms.can_manage_maintenance;
+        canFullAccess = !!perms.can_manage_vehicle_maintenance || !!perms.can_manage_maintenance;
       } catch { /* ignore */ }
     }
     
@@ -2203,7 +2220,7 @@ setupAssignmentsRoutes(app, authenticateToken);
 setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentAssignmentsRoutes(app, authenticateToken);
-setupSavTicketsRoutes(app, authenticateToken, requireAdmin);
+setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess);
 setupEquipmentListsRoutes(app, authenticateToken);
 
 // Routes Commandes & Ventes

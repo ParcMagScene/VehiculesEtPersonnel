@@ -41,6 +41,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const renewalResolverRef = useRef(null);
   // Compteur d'échecs silencieux consécutifs (pour éviter les popups en boucle)
   const silentFailCountRef = useRef(0);
+  // Guard de session pour éviter les tentatives de popup répétées
+  const popupAttemptedRef = useRef(false);
 
   // Charger la configuration Google depuis le backend
   useEffect(() => {
@@ -437,6 +439,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     
     oauthLogger.log('⏰ Token expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
     
+    // Ne pas programmer de renouvellement si le token est déjà expiré
+    if (timeUntilExpiry <= 0) {
+      oauthLogger.log('⏰ Token déjà expiré, pas de renouvellement programmé');
+      return;
+    }
+    
     // Renouveler 15 minutes avant l'expiration pour avoir une grande marge
     const renewalTime = Math.max(0, timeUntilExpiry - 15 * 60 * 1000);
     
@@ -582,6 +590,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
           
           // Réinitialiser le compteur d'échecs silencieux
           silentFailCountRef.current = 0;
+          popupAttemptedRef.current = false;
           
           // Sauvegarder le token et sa date d'expiration dans localStorage
           const expiryTime = Date.now() + (response.expires_in || 3600) * 1000;
@@ -620,13 +629,9 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         if (timeUntilExpiry > 5 * 60 * 1000) {
           oauthLogger.log('✅ Token existant encore valide, pas de renouvellement nécessaire');
         } else {
-          // Token expiré ou proche de l'expiration, renouvellement silencieux
-          oauthLogger.log('🔄 Token proche de l\'expiration, renouvellement silencieux...');
-          try {
-            client.requestAccessToken({ prompt: '' });
-          } catch (err) {
-            oauthLogger.log('⚠️ Renouvellement silencieux échoué (popup bloquée?), l\'utilisateur devra se reconnecter');
-          }
+          // Token expiré — NE PAS ouvrir de popup automatiquement
+          // L'utilisateur devra cliquer sur "Se connecter" manuellement
+          oauthLogger.log('⏰ Token expiré, l\'utilisateur devra cliquer sur "Se connecter"');
         }
       }
     } catch (err) {
@@ -668,18 +673,15 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       setError(null);
       const hasAuthorized = localStorage.getItem('google_auto_signin');
       let promptType;
-      if (hasAuthorized === 'true') {
-        // Déjà autorisé : tentative silencieuse d'abord
-        // Après 2 échecs silencieux consécutifs, fallback vers consent (popup unique)
-        promptType = silentFailCountRef.current >= 2 ? 'consent' : '';
-        if (silentFailCountRef.current >= 2) {
-          // Reset le compteur pour ne pas être bloqué en boucle consent
-          silentFailCountRef.current = 0;
-        }
+      if (hasAuthorized === 'true' && !popupAttemptedRef.current) {
+        // Déjà autorisé et pas encore tenté cette session : tentative silencieuse unique
+        promptType = '';
+        popupAttemptedRef.current = true;
       } else {
+        // Soit jamais autorisé, soit la tentative silencieuse a déjà échoué → consent direct
         promptType = 'consent';
       }
-      oauthLogger.log('🔐 Connexion Google - prompt:', promptType || 'silencieux', '(échecs silencieux:', silentFailCountRef.current, ')');
+      oauthLogger.log('🔐 Connexion Google - prompt:', promptType || 'silencieux');
       tokenClient.requestAccessToken({ prompt: promptType });
     }
   };

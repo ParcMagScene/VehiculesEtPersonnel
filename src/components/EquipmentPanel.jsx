@@ -6,6 +6,7 @@ import EquipmentImportModal from './EquipmentImportModal';
 import SavImportModal from './SavImportModal';
 import EquipmentLabelPrint from './EquipmentLabelPrint';
 import { printEquipmentSheet } from './EquipmentSheetPrint';
+import MaintenanceReportModal from './MaintenanceReportModal';
 import './EquipmentPanel.css';
 
 // ═══ CONSTANTES ═══
@@ -231,6 +232,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [assignEquipment, setAssignEquipment] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSavImportModal, setShowSavImportModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [labelPrintEquipment, setLabelPrintEquipment] = useState(null);
   const [filterFamily, setFilterFamily] = useState('');
   const [filterSubfamily, setFilterSubfamily] = useState('');
@@ -247,6 +249,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [listFilter, setListFilter] = useState(''); // '' | 'favorite' | 'watch'
 
   const isAdmin = currentUser?.isAdmin === true;
+  const canManageEquipmentMaintenance = isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance === true;
 
   // ═══ CHARGEMENT ═══
   const loadData = useCallback(async () => {
@@ -547,14 +550,19 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                   <Upload size={14} /> Import SAV
                 </button>
               )}
+              <button className="eq-btn-secondary" onClick={() => setShowReportModal(true)} title="Rapport maintenance matériel">
+                <FileText size={14} /> Rapport
+              </button>
               <select className="eq-filter" value={savFilterStatus} onChange={(e) => setSavFilterStatus(e.target.value)}>
                 <option value="_active">En cours (actifs)</option>
                 <option value="">Tous statuts</option>
                 {Object.entries(SAV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
-              <button className="eq-btn-add" onClick={() => { setEditingSavTicket(null); setShowSavModal(true); }}>
-                <Plus size={14} /> Ticket SAV
-              </button>
+              {canManageEquipmentMaintenance && (
+                <button className="eq-btn-add" onClick={() => { setEditingSavTicket(null); setShowSavModal(true); }}>
+                  <Plus size={14} /> Ticket SAV
+                </button>
+              )}
             </>
           )}
         </div>
@@ -746,6 +754,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
           onClose={() => setLabelPrintEquipment(null)}
         />
       )}
+
+      <MaintenanceReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+      />
 
       {/* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */}
       {showManagement && (

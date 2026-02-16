@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Calendar, Clock, Check, XCircle, AlertTriangle, User } from 'lucide-react';
+import { X, Calendar, Clock, Check, XCircle, AlertTriangle, User, Plus, Trash2 } from 'lucide-react';
 import api from '../utils/api';
 import './LeaveRequestModal.css';
 
@@ -33,17 +33,33 @@ const LeaveRequestModal = ({
   existingRequest = null, // pour édition
 }) => {
   const [type, setType] = useState(existingRequest?.type || 'conge_paye');
-  const [startDate, setStartDate] = useState(existingRequest?.start_date || '');
-  const [endDate, setEndDate] = useState(existingRequest?.end_date || '');
-  const [startPeriod, setStartPeriod] = useState(existingRequest?.start_period || 'AM');
-  const [endPeriod, setEndPeriod] = useState(existingRequest?.end_period || 'PM');
+  const [periods, setPeriods] = useState(
+    existingRequest
+      ? [{ id: 1, startDate: existingRequest.start_date, endDate: existingRequest.end_date, startPeriod: existingRequest.start_period || 'AM', endPeriod: existingRequest.end_period || 'PM' }]
+      : [{ id: 1, startDate: '', endDate: '', startPeriod: 'AM', endPeriod: 'PM' }]
+  );
   const [reason, setReason] = useState(existingRequest?.reason || '');
   const [selectedPersonId, setSelectedPersonId] = useState(person?.id || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [nextPeriodId, setNextPeriodId] = useState(2);
 
-  // Calculer nombre de jours
-  const dayCount = useMemo(() => {
+  const updatePeriod = (id, field, value) => {
+    setPeriods(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
+  };
+
+  const addPeriod = () => {
+    setPeriods(prev => [...prev, { id: nextPeriodId, startDate: '', endDate: '', startPeriod: 'AM', endPeriod: 'PM' }]);
+    setNextPeriodId(n => n + 1);
+  };
+
+  const removePeriod = (id) => {
+    if (periods.length <= 1) return;
+    setPeriods(prev => prev.filter(p => p.id !== id));
+  };
+
+  // Calculer nombre de jours pour une période
+  const calcDays = (startDate, endDate, startPeriod, endPeriod) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -52,43 +68,62 @@ const LeaveRequestModal = ({
     const d = new Date(start);
     while (d <= end) {
       const dow = d.getDay();
-      if (dow !== 0 && dow !== 6) count++; // jours ouvrés
+      if (dow !== 0 && dow !== 6) count++;
       d.setDate(d.getDate() + 1);
     }
-    // Ajuster demi-journées
     if (startPeriod === 'PM' && count > 0) count -= 0.5;
     if (endPeriod === 'AM' && count > 0) count -= 0.5;
     return Math.max(0, count);
-  }, [startDate, endDate, startPeriod, endPeriod]);
+  };
+
+  // Total de jours toutes périodes
+  const totalDays = useMemo(() => {
+    return periods.reduce((sum, p) => sum + calcDays(p.startDate, p.endDate, p.startPeriod, p.endPeriod), 0);
+  }, [periods]);
 
   const handleSubmit = async () => {
-    if (!selectedPersonId || !startDate || !endDate) {
+    const validPeriods = periods.filter(p => p.startDate && p.endDate);
+    if (!selectedPersonId || validPeriods.length === 0) {
       setError('Veuillez remplir tous les champs obligatoires');
       return;
     }
-    if (new Date(endDate) < new Date(startDate)) {
-      setError('La date de fin doit être après la date de début');
-      return;
+    for (const p of validPeriods) {
+      if (new Date(p.endDate) < new Date(p.startDate)) {
+        setError('La date de fin doit être après la date de début');
+        return;
+      }
     }
 
     setSaving(true);
     setError('');
     try {
-      const data = {
-        person_id: selectedPersonId,
-        start_date: startDate,
-        end_date: endDate,
-        start_period: startPeriod,
-        end_period: endPeriod,
-        type,
-        reason: reason || null,
-        source: isAdmin ? 'admin' : 'request',
-      };
-
       if (existingRequest) {
-        await api.updateAvailability(existingRequest.id, data);
+        // Mode édition : une seule période
+        const p = validPeriods[0];
+        await api.updateAvailability(existingRequest.id, {
+          person_id: selectedPersonId,
+          start_date: p.startDate,
+          end_date: p.endDate,
+          start_period: p.startPeriod,
+          end_period: p.endPeriod,
+          type,
+          reason: reason || null,
+          source: isAdmin ? 'admin' : 'request',
+        });
       } else {
-        await api.createAvailability(data);
+        // Mode création : créer chaque période
+        for (const p of validPeriods) {
+          await api.createAvailability({
+            person_id: selectedPersonId,
+            start_date: p.startDate,
+            end_date: p.endDate,
+            start_period: p.startPeriod,
+            end_period: p.endPeriod,
+            type,
+            reason: reason || null,
+            source: isAdmin ? 'admin' : 'request',
+          });
+        }
       }
       onCreated?.();
       onClose();
@@ -154,31 +189,62 @@ const LeaveRequestModal = ({
             </div>
           </div>
 
-          {/* Dates */}
-          <div className="leave-dates-row">
-            <div className="leave-field">
-              <label><Calendar size={13} /> Début</label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-              <div className="leave-period-toggle">
-                <button className={startPeriod === 'AM' ? 'active' : ''} onClick={() => setStartPeriod('AM')}>Matin</button>
-                <button className={startPeriod === 'PM' ? 'active' : ''} onClick={() => setStartPeriod('PM')}>Après-midi</button>
-              </div>
+          {/* Périodes (multi-sélection) */}
+          <div className="leave-periods-section">
+            <div className="leave-periods-header">
+              <label><Calendar size={13} /> Période{periods.length > 1 ? 's' : ''}</label>
+              {!existingRequest && (
+                <button type="button" className="leave-add-period-btn" onClick={addPeriod}>
+                  <Plus size={13} /> Ajouter une période
+                </button>
+              )}
             </div>
-            <div className="leave-field">
-              <label><Calendar size={13} /> Fin</label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} />
-              <div className="leave-period-toggle">
-                <button className={endPeriod === 'AM' ? 'active' : ''} onClick={() => setEndPeriod('AM')}>Matin</button>
-                <button className={endPeriod === 'PM' ? 'active' : ''} onClick={() => setEndPeriod('PM')}>Après-midi</button>
-              </div>
-            </div>
+            {periods.map((p, idx) => {
+              const days = calcDays(p.startDate, p.endDate, p.startPeriod, p.endPeriod);
+              return (
+                <div key={p.id} className="leave-period-card">
+                  {periods.length > 1 && (
+                    <div className="leave-period-card-header">
+                      <span className="leave-period-num">Période {idx + 1}</span>
+                      <button type="button" className="leave-period-remove" onClick={() => removePeriod(p.id)}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="leave-dates-row">
+                    <div className="leave-field">
+                      <label><Calendar size={13} /> Début</label>
+                      <input type="date" value={p.startDate} onChange={e => updatePeriod(p.id, 'startDate', e.target.value)} />
+                      <div className="leave-period-toggle">
+                        <button className={p.startPeriod === 'AM' ? 'active' : ''} onClick={() => updatePeriod(p.id, 'startPeriod', 'AM')}>Matin</button>
+                        <button className={p.startPeriod === 'PM' ? 'active' : ''} onClick={() => updatePeriod(p.id, 'startPeriod', 'PM')}>Après-midi</button>
+                      </div>
+                    </div>
+                    <div className="leave-field">
+                      <label><Calendar size={13} /> Fin</label>
+                      <input type="date" value={p.endDate} onChange={e => updatePeriod(p.id, 'endDate', e.target.value)} min={p.startDate} />
+                      <div className="leave-period-toggle">
+                        <button className={p.endPeriod === 'AM' ? 'active' : ''} onClick={() => updatePeriod(p.id, 'endPeriod', 'AM')}>Matin</button>
+                        <button className={p.endPeriod === 'PM' ? 'active' : ''} onClick={() => updatePeriod(p.id, 'endPeriod', 'PM')}>Après-midi</button>
+                      </div>
+                    </div>
+                  </div>
+                  {days > 0 && (
+                    <div className="leave-day-count leave-day-count-inline" style={{ color: typeInfo.color }}>
+                      <Clock size={13} />
+                      <span>{days} jour{days > 1 ? 's' : ''} ouvré{days > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Compteur de jours */}
-          {dayCount > 0 && (
-            <div className="leave-day-count" style={{ color: typeInfo.color }}>
+          {/* Total de jours (si multi-périodes) */}
+          {periods.length > 1 && totalDays > 0 && (
+            <div className="leave-day-count leave-total-days" style={{ color: typeInfo.color }}>
               <Clock size={14} />
-              <span>{dayCount} jour{dayCount > 1 ? 's' : ''} ouvré{dayCount > 1 ? 's' : ''}</span>
+              <span><strong>Total : {totalDays} jour{totalDays > 1 ? 's' : ''} ouvré{totalDays > 1 ? 's' : ''}</strong></span>
             </div>
           )}
 
@@ -207,10 +273,14 @@ const LeaveRequestModal = ({
           <button
             className="leave-btn-submit"
             onClick={handleSubmit}
-            disabled={saving || !startDate || !endDate || (!person && !selectedPersonId)}
+            disabled={saving || periods.every(p => !p.startDate || !p.endDate) || (!person && !selectedPersonId)}
             style={{ backgroundColor: typeInfo.color }}
           >
-            {saving ? 'Enregistrement...' : isAdmin ? 'Ajouter' : 'Envoyer la demande'}
+            {saving ? 'Enregistrement...' : isAdmin
+              ? (periods.filter(p => p.startDate && p.endDate).length > 1
+                ? `Ajouter ${periods.filter(p => p.startDate && p.endDate).length} périodes`
+                : 'Ajouter')
+              : 'Envoyer la demande'}
           </button>
         </div>
       </div>

@@ -215,9 +215,12 @@ function App() {
 
   // Enregistrement Service Worker + PWA install prompt
   useEffect(() => {
-    // Enregistrer le Service Worker
+    // Enregistrer le Service Worker avec mise à jour forcée
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js').then((registration) => {
+        // Forcer la vérification de mise à jour
+        registration.update();
+      }).catch(() => {});
     }
     // Capturer l'événement beforeinstallprompt
     const handler = (e) => {

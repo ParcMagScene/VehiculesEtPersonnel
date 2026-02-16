@@ -198,6 +198,12 @@
   cursor: pointer;
 }
 
+.eq-filter-tree {
+  min-width: 200px;
+  max-width: 300px;
+  font-family: monospace, sans-serif;
+}
+
 .eq-btn-add {
   display: flex;
   align-items: center;

@@ -218,7 +218,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   // Filtres
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  const [filterCatTree, setFilterCatTree] = useState('');
   const [savFilterStatus, setSavFilterStatus] = useState('_active');
 
   // Modals
@@ -236,8 +236,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [labelPrintEquipment, setLabelPrintEquipment] = useState(null);
   const [mgmtTab, setMgmtTab] = useState('imports');
-  const [filterFamily, setFilterFamily] = useState('');
-  const [filterSubfamily, setFilterSubfamily] = useState('');
+
 
   // SAV volets
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -288,21 +287,29 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const subfamilies = useMemo(() => categories.filter(c => c.level === 'subfamily'), [categories]);
   const leafCategories = useMemo(() => categories.filter(c => c.level === 'category'), [categories]);
 
-  // Sous-familles filtrées par famille
-  const filteredSubfamilies = useMemo(() => {
-    if (!filterFamily) return subfamilies;
-    return subfamilies.filter(sf => (sf.parentId || sf.parent_id) === parseInt(filterFamily));
-  }, [subfamilies, filterFamily]);
+  // Options arborescentes pour le select unique
+  const categoryTreeOptions = useMemo(() => {
+    const opts = [];
+    families.forEach(fam => {
+      opts.push({ value: `family:${fam.id}`, label: `${fam.icon || ''} ${fam.name}`.trim(), level: 0 });
+      const subs = subfamilies.filter(s => (s.parentId || s.parent_id) === fam.id);
+      subs.forEach(sf => {
+        opts.push({ value: `subfamily:${sf.id}`, label: sf.name, level: 1 });
+        const cats = leafCategories.filter(c => (c.parentId || c.parent_id) === sf.id);
+        cats.forEach(cat => {
+          opts.push({ value: `category:${cat.id}`, label: cat.name, level: 2 });
+        });
+      });
+    });
+    return opts;
+  }, [families, subfamilies, leafCategories]);
 
-  // Catégories filtrées par sous-famille
-  const filteredLeafCategories = useMemo(() => {
-    if (!filterSubfamily) {
-      if (!filterFamily) return leafCategories;
-      const sfIds = subfamilies.filter(sf => (sf.parentId || sf.parent_id) === parseInt(filterFamily)).map(sf => sf.id);
-      return leafCategories.filter(c => sfIds.includes(c.parentId || c.parent_id));
-    }
-    return leafCategories.filter(c => (c.parentId || c.parent_id) === parseInt(filterSubfamily));
-  }, [leafCategories, filterFamily, filterSubfamily, subfamilies]);
+  // Parsing du filtre arborescent
+  const parsedCatFilter = useMemo(() => {
+    if (!filterCatTree) return { type: null, id: null };
+    const [type, idStr] = filterCatTree.split(':');
+    return { type, id: parseInt(idStr) };
+  }, [filterCatTree]);
 
   // ═══ FILTRAGE ═══
   const favoriteIds = useMemo(() => new Set(equipmentLists.filter(l => l.list_type === 'favorite').map(l => l.equipment_id)), [equipmentLists]);
@@ -318,20 +325,20 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       
       // Filtre hiérarchique — eq.categoryId (camelCase via API transform)
       const eqCatId = eq.categoryId || eq.category_id;
-      if (filterFamily) {
-        const familyId = parseInt(filterFamily);
+      if (parsedCatFilter.type === 'family') {
+        const familyId = parsedCatFilter.id;
         const sfIds = subfamilies.filter(sf => sf.parentId === familyId || sf.parent_id === familyId).map(sf => sf.id);
         const catIds = leafCategories.filter(c => sfIds.includes(c.parentId || c.parent_id)).map(c => c.id);
         const allValidIds = [familyId, ...sfIds, ...catIds];
         if (!allValidIds.includes(eqCatId)) return false;
       }
-      if (filterSubfamily) {
-        const sfId = parseInt(filterSubfamily);
+      if (parsedCatFilter.type === 'subfamily') {
+        const sfId = parsedCatFilter.id;
         const catIds = leafCategories.filter(c => (c.parentId || c.parent_id) === sfId).map(c => c.id);
         const allValidIds = [sfId, ...catIds];
         if (!allValidIds.includes(eqCatId)) return false;
       }
-      if (filterCategory && eqCatId !== parseInt(filterCategory)) return false;
+      if (parsedCatFilter.type === 'category' && eqCatId !== parsedCatFilter.id) return false;
       
       if (search) {
         const s = search.toLowerCase();
@@ -339,7 +346,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       }
       return true;
     });
-  }, [equipment, filterStatus, filterFamily, filterSubfamily, filterCategory, search, subfamilies, leafCategories, listFilter, favoriteIds, watchIds]);
+  }, [equipment, filterStatus, parsedCatFilter, search, subfamilies, leafCategories, listFilter, favoriteIds, watchIds]);
 
   const filteredTickets = useMemo(() => {
     return savTickets.filter(t => {
@@ -506,27 +513,14 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 />
                 {search && <button className="eq-search-clear" onClick={() => setSearch('')}><X size={12} /></button>}
               </div>
-              <select className="eq-filter" value={filterFamily} onChange={(e) => { setFilterFamily(e.target.value); setFilterSubfamily(''); setFilterCategory(''); }}>
+              <select className="eq-filter eq-filter-tree" value={filterCatTree} onChange={(e) => setFilterCatTree(e.target.value)}>
                 <option value="">Toutes familles</option>
-                {families.map(f => <option key={f.id} value={f.id}>{f.icon} {f.name}</option>)}
+                {categoryTreeOptions.map((opt, i) => (
+                  <option key={i} value={opt.value}>
+                    {'\u00A0\u00A0'.repeat(opt.level)}{opt.level === 1 ? '├ ' : opt.level === 2 ? '└ ' : ''}{opt.label}
+                  </option>
+                ))}
               </select>
-              {filterFamily && filteredSubfamilies.length > 0 && (
-                <select className="eq-filter" value={filterSubfamily} onChange={(e) => { setFilterSubfamily(e.target.value); setFilterCategory(''); }}>
-                  <option value="">Toutes sous-familles</option>
-                  {filteredSubfamilies.map(sf => <option key={sf.id} value={sf.id}>{sf.name}</option>)}
-                </select>
-              )}
-              {(filterSubfamily || filterFamily) && filteredLeafCategories.length > 0 && (
-                <select className="eq-filter" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-                  <option value="">Toutes catégories</option>
-                  {filteredLeafCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              )}
-              {isAdmin && (
-                <button className="eq-btn-secondary" onClick={() => setShowImportModal(true)} title="Importer depuis un CSV">
-                  <Upload size={14} /> Import CSV
-                </button>
-              )}
               <button className="eq-btn-add" onClick={() => { setEditingEquipment(null); setShowEquipmentModal(true); }}>
                 <Plus size={14} /> Matériel
               </button>

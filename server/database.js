@@ -623,7 +623,22 @@ function initializeDatabase() {
       ('Chargé de production', 'production', 0),
       ('Administrateur de tournée', 'production', 0),
       ('Booker / programmateur', 'production', 0),
-      ('Assistant production', 'production', 0)
+      ('Assistant production', 'production', 0),
+      ('Directeur général', 'administratif', 0),
+      ('Directeur adjoint', 'administratif', 0),
+      ('Directeur administratif et financier', 'administratif', 0),
+      ('Cadre administratif', 'administratif', 0),
+      ('Responsable administratif', 'administratif', 0),
+      ('Secrétaire de direction', 'administratif', 0),
+      ('Assistant(e) administratif(ve)', 'administratif', 0),
+      ('Comptable', 'administratif', 0),
+      ('Responsable RH', 'administratif', 0),
+      ('Assistant(e) RH', 'administratif', 0),
+      ('Responsable commercial', 'administratif', 0),
+      ('Chargé(e) de communication', 'administratif', 0),
+      ('Responsable logistique', 'administratif', 0),
+      ('Responsable achats', 'administratif', 0),
+      ('Coordinateur(trice) de projets', 'administratif', 0)
   `);
 
   console.log('✅ Module Postes initialisé');

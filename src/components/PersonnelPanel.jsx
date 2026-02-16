@@ -67,7 +67,8 @@ const SKILL_LEVELS = [
 ];
 
 const POSITION_CATEGORIES = [
-  { value: 'direction', label: 'Direction & Coordination', color: '#dc2626' },
+  { value: 'administratif', label: 'Administration & Direction', color: '#7c3aed' },
+  { value: 'direction', label: 'Direction technique & Régie', color: '#dc2626' },
   { value: 'son', label: 'Son (Audio)', color: '#3b82f6' },
   { value: 'lumiere', label: 'Lumière', color: '#eab308' },
   { value: 'video', label: 'Vidéo & Média', color: '#8b5cf6' },
@@ -77,7 +78,7 @@ const POSITION_CATEGORIES = [
   { value: 'electricite', label: 'Électricité & Réseaux', color: '#06b6d4' },
   { value: 'logistique', label: 'Logistique & Transport', color: '#10b981' },
   { value: 'captation', label: 'Audiovisuel & Captation', color: '#6366f1' },
-  { value: 'production', label: 'Production & Administration', color: '#78716c' },
+  { value: 'production', label: 'Production & Coordination', color: '#78716c' },
   { value: 'autre', label: 'Autre', color: '#6b7280' },
 ];
 

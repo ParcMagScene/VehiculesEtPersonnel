@@ -11,7 +11,8 @@ import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './AssignmentDialog.css';
 
 const POSITION_CATEGORIES = [
-  { value: 'direction', label: 'Direction', color: '#dc2626' },
+  { value: 'administratif', label: 'Administration', color: '#7c3aed' },
+  { value: 'direction', label: 'Direction technique', color: '#dc2626' },
   { value: 'son', label: 'Son', color: '#3b82f6' },
   { value: 'lumiere', label: 'Lumière', color: '#eab308' },
   { value: 'video', label: 'Vidéo', color: '#8b5cf6' },

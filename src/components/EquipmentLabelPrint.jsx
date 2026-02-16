@@ -101,7 +101,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     const labels = [];
-    const qrSize = Math.max(12, format.height - 6);
+    const qrSize = Math.round(format.height * 0.5);
 
     for (let i = 0; i < quantity; i++) {
       labels.push(
@@ -145,7 +145,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
     printWindow.document.close();
   };
 
-  const qrPreviewSize = Math.min(format.height * 2.5, 70);
+  const qrPreviewSize = Math.min(format.height * 1.5, 50);
 
   return (
     <div className="elp-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>

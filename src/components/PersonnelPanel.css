@@ -1707,6 +1707,7 @@
   background: white;
   position: relative;
   z-index: 2;
+  contain: paint;
 }
 
 .pp-person-column::-webkit-scrollbar {
@@ -1743,6 +1744,7 @@
   min-width: 0;
   scrollbar-width: thin;
   scrollbar-gutter: stable;
+  isolation: isolate;
 }
 
 .pp-grid {

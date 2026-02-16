@@ -1794,7 +1794,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
     const resizingSpanId = isResizing ? resizeState.span.missionId : null;
 
     return (
-      <div key={person.id} className={`pp-person-row${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}`}
+      <div key={person.id} className="pp-person-row"
            onMouseUp={handleGlobalMouseUp}
       >
         {timeSlots.map((slot, slotIndex) => {

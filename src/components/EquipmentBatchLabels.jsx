@@ -110,7 +110,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
     const layout = calcLayout();
     const printWindow = window.open('', '_blank');
     const pages = [];
-    const qrSize = layout.labelH - 4;
+    const qrSize = Math.round(layout.labelH * 0.5);
 
     for (let i = 0; i < selected.length; i += layout.perPage) {
       const pageItems = selected.slice(i, i + layout.perPage);

@@ -111,6 +111,96 @@ const matchLogoToBrand = (logos, brand) => {
   return null;
 };
 
+// ═══ ARBORESCENCE CATÉGORIES (accordéon 3 niveaux) ═══
+const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, categories, equipment }) => {
+  const [expandedFamilies, setExpandedFamilies] = useState({});
+  const [expandedSubs, setExpandedSubs] = useState({});
+
+  const toggleFamily = (id) => setExpandedFamilies(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleSub = (id) => setExpandedSubs(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const countEquipment = (familyId) => {
+    return equipment.filter(e => {
+      const cat = categories.find(c => c.id === e.category_id);
+      if (!cat) return false;
+      if (cat.id === familyId) return true;
+      if (cat.parent_id === familyId) return true;
+      const sub = categories.find(s => s.id === cat.parent_id);
+      return sub?.parent_id === familyId;
+    }).length;
+  };
+
+  const countSubEquipment = (subId) => {
+    return equipment.filter(e => {
+      const cat = categories.find(c => c.id === e.category_id);
+      if (!cat) return false;
+      return cat.id === subId || cat.parent_id === subId;
+    }).length;
+  };
+
+  const countLeafEquipment = (catId) => equipment.filter(e => e.category_id === catId).length;
+
+  if (families.length === 0) {
+    return <p className="eq-cat-empty">Aucune catégorie définie. Importez un CSV pour créer la hiérarchie.</p>;
+  }
+
+  return (
+    <div className="eq-cat-tree">
+      {families.map(fam => {
+        const isOpen = expandedFamilies[fam.id];
+        const subs = subfamilies.filter(s => s.parent_id === fam.id);
+        const famCount = countEquipment(fam.id);
+        return (
+          <div key={fam.id} className={`eq-cat-family ${isOpen ? 'open' : ''}`}>
+            <button className="eq-cat-family-btn" onClick={() => toggleFamily(fam.id)}>
+              <ChevronRight size={14} className={`eq-cat-chevron ${isOpen ? 'rotated' : ''}`} />
+              <span className="eq-cat-family-icon" style={{ color: fam.color || '#6b7280' }}>{fam.icon || '📦'}</span>
+              <span className="eq-cat-family-name">{fam.name}</span>
+              <span className="eq-cat-badge-sub">{subs.length} sous-fam.</span>
+              <span className="eq-cat-badge-count">{famCount} éq.</span>
+            </button>
+            {isOpen && (
+              <div className="eq-cat-children">
+                {subs.length === 0 && <span className="eq-cat-empty-child">Aucune sous-famille</span>}
+                {subs.map(sub => {
+                  const isSubOpen = expandedSubs[sub.id];
+                  const leaves = leafCategories.filter(c => c.parent_id === sub.id);
+                  const subCount = countSubEquipment(sub.id);
+                  return (
+                    <div key={sub.id} className={`eq-cat-sub ${isSubOpen ? 'open' : ''}`}>
+                      <button className="eq-cat-sub-btn" onClick={() => toggleSub(sub.id)}>
+                        <ChevronRight size={12} className={`eq-cat-chevron ${isSubOpen ? 'rotated' : ''}`} />
+                        <span className="eq-cat-sub-name">{sub.name}</span>
+                        <span className="eq-cat-badge-leaf">{leaves.length} cat.</span>
+                        <span className="eq-cat-badge-count">{subCount} éq.</span>
+                      </button>
+                      {isSubOpen && (
+                        <div className="eq-cat-leaves">
+                          {leaves.length === 0 && <span className="eq-cat-empty-child">Aucune catégorie</span>}
+                          {leaves.map(leaf => {
+                            const leafCount = countLeafEquipment(leaf.id);
+                            return (
+                              <div key={leaf.id} className="eq-cat-leaf">
+                                <span className="eq-cat-leaf-dot" />
+                                <span className="eq-cat-leaf-name">{leaf.name}</span>
+                                <span className="eq-cat-badge-count">{leafCount} éq.</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 // ═══ COMPOSANT PRINCIPAL ═══
 const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [subTab, setSubTab] = useState('inventory'); // inventory | sav
@@ -125,7 +215,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [savFilterStatus, setSavFilterStatus] = useState('');
+  const [savFilterStatus, setSavFilterStatus] = useState('_active');
 
   // Modals
   const [showEquipmentModal, setShowEquipmentModal] = useState(false);
@@ -245,6 +335,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 
   const filteredTickets = useMemo(() => {
     return savTickets.filter(t => {
+      if (savFilterStatus === '_active') return t.status !== 'resolved' && t.status !== 'closed';
       if (savFilterStatus && t.status !== savFilterStatus) return false;
       return true;
     });
@@ -368,7 +459,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             <span className="eq-stat-label">Maintenance</span>
           </div>
           {stats.openTickets > 0 && (
-            <div className="eq-stat eq-stat-tickets" onClick={() => { setSavFilterStatus(''); setSubTab('sav'); }}>
+            <div className="eq-stat eq-stat-tickets" onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }}>
               <AlertTriangle size={16} />
               <span className="eq-stat-value">{stats.openTickets}</span>
               <span className="eq-stat-label">Tickets SAV</span>
@@ -454,6 +545,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 </button>
               )}
               <select className="eq-filter" value={savFilterStatus} onChange={(e) => setSavFilterStatus(e.target.value)}>
+                <option value="_active">En cours (actifs)</option>
                 <option value="">Tous statuts</option>
                 {Object.entries(SAV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
@@ -525,23 +617,37 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
           )}
         </div>
 
-        {/* Volet de détail rapide (clic simple) */}
-        <EquipmentSlidePanel
-          equipment={selectedEquipment}
-          categories={categories}
-          persons={persons}
-          photosList={photosList}
-          logosList={logosList}
-          favoriteIds={favoriteIds}
-          watchIds={watchIds}
-          onToggleList={toggleList}
-          onClose={() => setSelectedEquipment(null)}
-          onOpenDialog={(eq) => { setSelectedEquipment(null); setDialogEquipment(eq); }}
-          onEdit={(eq) => { setEditingEquipment(eq); setShowEquipmentModal(true); }}
-          onAssign={(eq) => { setAssignEquipment(eq); setShowAssignModal(true); }}
-          onReturn={handleReturn}
-          isAdmin={isAdmin}
-        />
+        {/* Volet de détail rapide – Matériel (clic simple) */}
+        {subTab === 'inventory' && (
+          <EquipmentSlidePanel
+            equipment={selectedEquipment}
+            categories={categories}
+            persons={persons}
+            photosList={photosList}
+            logosList={logosList}
+            favoriteIds={favoriteIds}
+            watchIds={watchIds}
+            onToggleList={toggleList}
+            onClose={() => setSelectedEquipment(null)}
+            onOpenDialog={(eq) => { setSelectedEquipment(null); setDialogEquipment(eq); }}
+            onEdit={(eq) => { setEditingEquipment(eq); setShowEquipmentModal(true); }}
+            onAssign={(eq) => { setAssignEquipment(eq); setShowAssignModal(true); }}
+            onReturn={handleReturn}
+            isAdmin={isAdmin}
+          />
+        )}
+
+        {/* Volet de détail rapide – SAV (clic simple) */}
+        {subTab === 'sav' && (
+          <SavSlidePanel
+            ticket={selectedTicket}
+            equipment={equipment}
+            persons={persons}
+            onClose={() => setSelectedTicket(null)}
+            onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
+            onOpenDialog={(t) => { setSelectedTicket(null); setDialogTicket(t); }}
+          />
+        )}
       </div>
 
       {/* Dialog détail complet (double-clic) */}
@@ -562,16 +668,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         onReturn={handleReturn}
         onCreateTicket={(eq) => { setEditingSavTicket(null); setShowSavModal(true); }}
         onRefresh={loadData}
-      />
-
-      {/* Volet SAV (clic simple) */}
-      <SavSlidePanel
-        ticket={selectedTicket}
-        equipment={equipment}
-        persons={persons}
-        onClose={() => setSelectedTicket(null)}
-        onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
-        onOpenDialog={(t) => { setSelectedTicket(null); setDialogTicket(t); }}
       />
 
       {/* Dialog SAV (double-clic) */}
@@ -636,8 +732,8 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 
       {/* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */}
       {showManagement && (
-        <div className="eq-management-overlay">
-          <div className="eq-management-panel">
+        <div className="eq-management-overlay" onClick={onCloseManagement}>
+          <div className="eq-management-panel" onClick={(e) => e.stopPropagation()}>
             <div className="eq-management-header">
               <h2><Package size={22} /> Gestion du Matériel</h2>
               <button className="eq-management-close" onClick={onCloseManagement}><X size={20} /></button>
@@ -659,35 +755,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
               </div>
               <div className="eq-management-section">
                 <h3><Tag size={18} /> Catégories ({categories.length})</h3>
-                <div className="eq-management-categories">
-                  {families.map(fam => (
-                    <div key={fam.id} className="eq-mgmt-family">
-                      <div className="eq-mgmt-family-header">
-                        <span className="eq-mgmt-family-icon" style={{ color: fam.color || '#6b7280' }}>{fam.icon || '📦'}</span>
-                        <strong>{fam.name}</strong>
-                        <span className="eq-mgmt-count">{equipment.filter(e => {
-                          const cat = categories.find(c => c.id === e.category_id);
-                          if (!cat) return false;
-                          if (cat.id === fam.id) return true;
-                          if (cat.parent_id === fam.id) return true;
-                          const sub = categories.find(s => s.id === cat.parent_id);
-                          return sub?.parent_id === fam.id;
-                        }).length} éq.</span>
-                      </div>
-                      <div className="eq-mgmt-subfamilies">
-                        {subfamilies.filter(s => s.parent_id === fam.id).map(sub => (
-                          <div key={sub.id} className="eq-mgmt-subfamily">
-                            <span className="eq-mgmt-sub-name">{sub.name}</span>
-                            <span className="eq-mgmt-sub-cats">
-                              {leafCategories.filter(c => c.parent_id === sub.id).map(c => c.name).join(', ') || '—'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  {families.length === 0 && <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Aucune catégorie définie. Importez un CSV pour créer la hiérarchie.</p>}
-                </div>
+                <EquipmentCategoriesTree families={families} subfamilies={subfamilies} leafCategories={leafCategories} categories={categories} equipment={equipment} />
               </div>
               <div className="eq-management-section">
                 <h3>📊 Statistiques</h3>
@@ -989,7 +1057,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
               {!compact && t.description && <p>{t.description}</p>}
               {!compact && t.resolution && <p className="eq-ticket-resolution">✅ {t.resolution}</p>}
               <div className="eq-ticket-meta">
-                <span>{safeDate(t.created_at)} → {safeDate(t.resolved_at)}</span>
+                <span>{safeDate(t.createdAt)} → {safeDate(t.resolvedAt)}</span>
                 {t.cost != null && t.cost > 0 && <span>{parseFloat(t.cost).toFixed(2)} €</span>}
               </div>
             </div>
@@ -1189,12 +1257,12 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
                 <td><span className="eq-pri-dot" style={{ background: pri.color }} title={pri.label} /></td>
                 <td className="eq-ticket-title-cell">{t.title}</td>
                 <td>
-                  <span className="eq-ticket-eq">{t.category_icon} {t.equipment_name || <em style={{ color: '#9ca3af' }}>Non lié</em>}</span>
+                  <span className="eq-ticket-eq">{t.categoryIcon} {t.equipmentName || <em style={{ color: '#9ca3af' }}>Non lié</em>}</span>
                 </td>
                 <td>{SAV_TYPES[t.type] || t.type}</td>
                 <td><span className="eq-status-badge" style={{ background: tst.color }}>{tst.label}</span></td>
-                <td>{safeDate(t.created_at)}</td>
-                <td>{safeDate(t.resolved_at)}</td>
+                <td>{safeDate(t.createdAt)}</td>
+                <td>{safeDate(t.resolvedAt)}</td>
                 <td>{t.cost != null ? `${parseFloat(t.cost).toFixed(2)} €` : '—'}</td>
                 <td>
                   <div className="eq-table-actions">
@@ -1551,7 +1619,7 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDial
   const t = ticket || {};
   const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
   const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
-  const eq = equipment.find(e => e.id === t.equipment_id || e.id === t.equipmentId);
+  const eq = equipment.find(e => e.id === t.equipmentId);
 
   return (
     <div className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
@@ -1569,8 +1637,8 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDial
           <div className="eq-detail-field"><span>🎯</span><span>Priorité</span><strong style={{ color: pri.color }}>{pri.label}</strong></div>
           <div className="eq-detail-field"><span>🔧</span><span>Type</span><strong>{SAV_TYPES[t.type] || t.type}</strong></div>
           {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong>{eq.name}</strong></div>}
-          <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.created_at || t.createdAt)}</strong></div>
-          {(t.resolved_at || t.resolvedAt) && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolved_at || t.resolvedAt)}</strong></div>}
+          <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.createdAt)}</strong></div>
+          {t.resolvedAt && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolvedAt)}</strong></div>}
           {t.cost != null && t.cost > 0 && <div className="eq-detail-field"><DollarSign size={14} /><span>Coût</span><strong>{parseFloat(t.cost).toFixed(2)} €</strong></div>}
         </div>
         {t.description && <div className="eq-detail-notes"><h4>Description</h4><p>{t.description}</p></div>}
@@ -1609,8 +1677,8 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
   const t = ticket;
   const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
   const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
-  const eq = equipment.find(e => e.id === t.equipment_id || e.id === t.equipmentId);
-  const tech = t.assigned_to ? persons.find(p => p.id === t.assigned_to) : null;
+  const eq = equipment.find(e => e.id === t.equipmentId);
+  const tech = t.assignedTo ? persons.find(p => p.id === t.assignedTo) : null;
 
   return (
     <div className={`eq-dialog-overlay ${isClosing ? 'closing' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
@@ -1631,10 +1699,10 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
             <div className="eq-detail-fields">
               <div className="eq-detail-field"><span>🎯</span><span>Priorité</span><strong style={{ color: pri.color }}>{pri.label}</strong></div>
               <div className="eq-detail-field"><span>🔧</span><span>Type</span><strong>{SAV_TYPES[t.type] || t.type}</strong></div>
-              {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong>{eq.categoryIcon || eq.category_icon || '📦'} {eq.name} {eq.reference ? `(${eq.reference})` : ''}</strong></div>}
-              {tech && <div className="eq-detail-field"><User size={14} /><span>Technicien</span><strong>{tech.firstName || tech.first_name} {tech.lastName || tech.last_name}</strong></div>}
-              <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.created_at || t.createdAt)}</strong></div>
-              {(t.resolved_at || t.resolvedAt) && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolved_at || t.resolvedAt)}</strong></div>}
+              {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong>{eq.categoryIcon || '📦'} {eq.name} {eq.reference ? `(${eq.reference})` : ''}</strong></div>}
+              {tech && <div className="eq-detail-field"><User size={14} /><span>Technicien</span><strong>{tech.firstName} {tech.lastName}</strong></div>}
+              <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.createdAt)}</strong></div>
+              {t.resolvedAt && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolvedAt)}</strong></div>}
               {t.cost != null && t.cost > 0 && <div className="eq-detail-field"><DollarSign size={14} /><span>Coût</span><strong>{parseFloat(t.cost).toFixed(2)} €</strong></div>}
             </div>
             {t.description && <div className="eq-detail-notes"><h4>Description</h4><p>{t.description}</p></div>}

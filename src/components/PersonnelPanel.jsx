@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Users, Award, CalendarDays, Briefcase,
   Plus, Edit2, Trash2, X, Save, Search,
-  ChevronDown, ChevronUp, AlertTriangle,
+  ChevronDown, ChevronUp, AlertTriangle, CheckCircle,
   Phone, Mail, User, Check, Clock,
-  Link2,
+  Link2, Upload, Star, Filter,
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import {
@@ -17,6 +17,7 @@ import api from '../utils/api';
 import AssignmentDialog from './AssignmentDialog';
 import { PersonnelSlidePanel } from './PersonnelDetailPanel';
 import { LeaveRequestModal, LeaveApprovalPanel } from './LeaveRequestModal';
+import PersonnelImportModal from './PersonnelImportModal';
 import './PersonnelPanel.css';
 
 // ═══════════════════════════════════════
@@ -25,6 +26,7 @@ import './PersonnelPanel.css';
 
 const PERSON_TYPES = [
   { value: 'permanent', label: 'Permanent' },
+  { value: 'salarié', label: 'Salarié' },
   { value: 'contractuel', label: 'Contractuel' },
   { value: 'stagiaire', label: 'Stagiaire' },
 ];
@@ -459,66 +461,50 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, currentDate, g
 };
 
 // ═══════════════════════════════════════
-// Onglet PERSONNES
+// Onglet PERSONNES (pattern Parc : table + modal)
 // ═══════════════════════════════════════
+
+const PERMANENT_TYPES = ['permanent', 'stagiaire'];
+const NON_PERMANENT_TYPES = ['contractuel', 'salarié'];
 
 const PersonsTab = ({ persons, setPersons, skills, positions = [], users, currentUser, personToEdit, onPersonToEditConsumed }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [showFormModal, setShowFormModal] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
-  const [expandedPerson, setExpandedPerson] = useState(null);
-  const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '', phone: '',
-    type: 'permanent', contractType: '', userId: null,
-    status: 'active', notes: '',
-    skills: [],
-    defaultPositions: [],
-  });
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
-  const filteredPersons = persons.filter(p => {
-    const matchSearch = `${p.firstName} ${p.lastName} ${p.email || ''}`
+  const filteredPersons = useMemo(() => persons.filter(p => {
+    const matchSearch = `${p.firstName} ${p.lastName} ${p.email || ''} ${p.phone || ''}`
       .toLowerCase().includes(searchTerm.toLowerCase());
-    const matchType = !filterType || p.type === filterType;
-    return matchSearch && matchType;
-  });
+    const matchType = !filterType ||
+      (filterType === '_permanent' ? PERMANENT_TYPES.includes(p.type) :
+       filterType === '_non_permanent' ? NON_PERMANENT_TYPES.includes(p.type) :
+       p.type === filterType);
+    const matchStatus = !filterStatus || p.status === filterStatus;
+    return matchSearch && matchType && matchStatus;
+  }), [persons, searchTerm, filterType, filterStatus]);
 
-  const resetForm = () => {
-    setForm({
-      firstName: '', lastName: '', email: '', phone: '',
-      type: 'permanent', contractType: '', userId: null,
-      status: 'active', notes: '',
-      skills: [],
-      defaultPositions: [],
-    });
-    setEditingPerson(null);
-    setShowForm(false);
-  };
+  // Stats
+  const stats = useMemo(() => {
+    const total = persons.length;
+    const active = persons.filter(p => p.status === 'active').length;
+    const permanent = persons.filter(p => PERMANENT_TYPES.includes(p.type)).length;
+    const nonPermanent = persons.filter(p => NON_PERMANENT_TYPES.includes(p.type)).length;
+    const inactive = persons.filter(p => p.status === 'inactive').length;
+    return { total, active, permanent, nonPermanent, inactive };
+  }, [persons]);
 
   const openEdit = (person) => {
-    let defaultPos = [];
-    try {
-      const raw = person.defaultPositions || person.default_positions;
-      defaultPos = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
-    } catch { /* ignore */ }
-    setForm({
-      firstName: person.firstName || '',
-      lastName: person.lastName || '',
-      email: person.email || '',
-      phone: person.phone || '',
-      type: person.type || 'permanent',
-      contractType: person.contractType || '',
-      userId: person.userId || null,
-      status: person.status || 'active',
-      notes: person.notes || '',
-      skills: (person.skills || []).map(s => ({
-        skillId: s.skillId || s.skill_id,
-        level: s.level || 'intermédiaire',
-      })),
-      defaultPositions: defaultPos,
-    });
     setEditingPerson(person);
-    setShowForm(true);
+    setShowFormModal(true);
+  };
+
+  const openCreate = () => {
+    setEditingPerson(null);
+    setShowFormModal(true);
   };
 
   // Ouvrir automatiquement la fiche si une personne est demandée par le parent
@@ -529,26 +515,8 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
     }
   }, [personToEdit]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSave = async (payload) => {
     try {
-      const payload = {
-        first_name: form.firstName,
-        last_name: form.lastName,
-        email: form.email || null,
-        phone: form.phone || null,
-        type: form.type,
-        contract_type: form.type === 'contractuel' ? (form.contractType || 'intermittent') : null,
-        user_id: form.userId ? Number(form.userId) : null,
-        status: form.status,
-        notes: form.notes || null,
-        default_positions: JSON.stringify(form.defaultPositions || []),
-        skills: form.skills.map(s => ({
-          skill_id: s.skillId,
-          level: s.level,
-        })),
-      };
-
       if (editingPerson) {
         const updated = await api.updatePerson(editingPerson.id, payload);
         setPersons(prev => prev.map(p => p.id === editingPerson.id ? updated : p));
@@ -556,7 +524,8 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
         const created = await api.createPerson(payload);
         setPersons(prev => [...prev, created]);
       }
-      resetForm();
+      setShowFormModal(false);
+      setEditingPerson(null);
     } catch (err) {
       alert('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
     }
@@ -567,17 +536,266 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
     try {
       await api.deletePerson(id);
       setPersons(prev => prev.filter(p => p.id !== id));
+      if (selectedPerson?.id === id) setSelectedPerson(null);
     } catch (err) {
       alert('Erreur : ' + (err.message || 'Impossible de supprimer'));
     }
   };
 
+  const getTypeBadge = (person) => {
+    const t = person.type;
+    if (t === 'permanent') return { label: 'Permanent', cls: 'type-permanent' };
+    if (t === 'salarié') return { label: 'Salarié', cls: 'type-salarie' };
+    if (t === 'stagiaire') return { label: 'Stagiaire', cls: 'type-stagiaire' };
+    if (t === 'contractuel') {
+      const sub = CONTRACT_TYPES.find(c => c.value === person.contractType)?.label || person.contractType || 'Contractuel';
+      return { label: sub, cls: 'type-contractuel' };
+    }
+    return { label: t, cls: '' };
+  };
+
+  return (
+    <div className="personnel-tab-content">
+      {/* Stats row */}
+      <div className="eq-header pp-header">
+        <div className="eq-stats-row">
+          <div className={`eq-stat ${!filterType && !filterStatus ? 'active' : ''}`} onClick={() => { setFilterType(''); setFilterStatus(''); }}>
+            <Users size={16} />
+            <span className="eq-stat-value">{stats.total}</span>
+            <span className="eq-stat-label">Total</span>
+          </div>
+          <div className={`eq-stat eq-stat-available ${filterStatus === 'active' ? 'active' : ''}`} onClick={() => { setFilterStatus(filterStatus === 'active' ? '' : 'active'); setFilterType(''); }}>
+            <CheckCircle size={16} />
+            <span className="eq-stat-value">{stats.active}</span>
+            <span className="eq-stat-label">Actifs</span>
+          </div>
+          <div className={`eq-stat eq-stat-inuse ${filterType === '_permanent' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setFilterType(filterType === '_permanent' ? '' : '_permanent'); }}>
+            <User size={16} />
+            <span className="eq-stat-value">{stats.permanent}</span>
+            <span className="eq-stat-label">Permanents</span>
+          </div>
+          <div className={`eq-stat eq-stat-maint ${filterType === '_non_permanent' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setFilterType(filterType === '_non_permanent' ? '' : '_non_permanent'); }}>
+            <Clock size={16} />
+            <span className="eq-stat-value">{stats.nonPermanent}</span>
+            <span className="eq-stat-label">Non-permanents</span>
+          </div>
+          {stats.inactive > 0 && (
+            <div className={`eq-stat eq-stat-tickets ${filterStatus === 'inactive' ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === 'inactive' ? '' : 'inactive')}>
+              <AlertTriangle size={16} />
+              <span className="eq-stat-value">{stats.inactive}</span>
+              <span className="eq-stat-label">Inactifs</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <div className="eq-toolbar pp-toolbar">
+        <div className="eq-toolbar-actions">
+          <div className="eq-search">
+            <Search size={14} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Rechercher..."
+            />
+            {searchTerm && <button className="eq-search-clear" onClick={() => setSearchTerm('')}><X size={12} /></button>}
+          </div>
+          <select className="eq-filter" value={filterType} onChange={e => setFilterType(e.target.value)}>
+            <option value="">Tous les types</option>
+            {PERSON_TYPES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          {currentUser?.isAdmin && (
+            <button className="eq-btn-secondary" onClick={() => setShowImportModal(true)} title="Importer depuis un CSV">
+              <Upload size={14} /> Import CSV
+            </button>
+          )}
+          <button className="eq-btn-add" onClick={openCreate}>
+            <Plus size={14} /> Personnel
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="eq-content-wrapper">
+        <div className="eq-content">
+          {filteredPersons.length === 0 ? (
+            <div className="eq-empty">
+              <Users size={48} strokeWidth={1} />
+              <p>{searchTerm ? 'Aucun résultat' : 'Aucune personne enregistrée'}</p>
+              <span>Ajoutez votre premier personnel avec le bouton +</span>
+            </div>
+          ) : (
+            <div className="eq-table-wrap">
+              <table className="eq-table pp-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}></th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Catégorie</th>
+                    <th>Téléphone</th>
+                    <th>Email</th>
+                    <th>Postes</th>
+                    <th>Statut</th>
+                    <th style={{ width: 70 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPersons.map(person => {
+                    const badge = getTypeBadge(person);
+                    let postes = [];
+                    try {
+                      const raw = person.defaultPositions || person.default_positions;
+                      postes = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+                    } catch { /* ignore */ }
+                    return (
+                      <tr
+                        key={person.id}
+                        className={`eq-table-row${selectedPerson?.id === person.id ? ' selected' : ''}${person.status === 'inactive' ? ' pp-row-inactive' : ''}`}
+                        onClick={() => setSelectedPerson(selectedPerson?.id === person.id ? null : person)}
+                        onDoubleClick={() => openEdit(person)}
+                      >
+                        <td className="eq-table-thumb">
+                          <span className="pp-avatar-cell"><User size={16} /></span>
+                        </td>
+                        <td className="eq-table-name">{person.lastName}</td>
+                        <td>{person.firstName}</td>
+                        <td>
+                          <span className={`pp-type-badge ${badge.cls}`}>{badge.label}</span>
+                        </td>
+                        <td className="pp-phone-cell">{person.phone || '—'}</td>
+                        <td className="pp-email-cell">{person.email || '—'}</td>
+                        <td className="pp-postes-cell">
+                          {postes.length > 0 ? (
+                            <div className="pp-postes-chips">
+                              {postes.slice(0, 2).map((name, i) => {
+                                const posObj = positions.find(p => p.name === name);
+                                const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || '#6b7280';
+                                return <span key={i} className="skill-chip-mini" style={{ '--chip-color': catColor }}>{name}</span>;
+                              })}
+                              {postes.length > 2 && <span className="skill-more">+{postes.length - 2}</span>}
+                            </div>
+                          ) : '—'}
+                        </td>
+                        <td>
+                          <span className={`pp-status-dot ${person.status}`}>
+                            {person.status === 'active' ? '● Actif' : '○ Inactif'}
+                          </span>
+                        </td>
+                        <td className="pp-actions-cell">
+                          <button className="icon-btn" onClick={(e) => { e.stopPropagation(); openEdit(person); }} title="Modifier">
+                            <Edit2 size={14} />
+                          </button>
+                          {currentUser?.isAdmin && (
+                            <button className="icon-btn danger" onClick={(e) => { e.stopPropagation(); handleDelete(person.id); }} title="Supprimer">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Slide panel détail (clic simple) */}
+        <PersonnelSlidePanel
+          person={selectedPerson}
+          positions={positions}
+          skills={skills}
+          onClose={() => setSelectedPerson(null)}
+          onEdit={(person) => { setSelectedPerson(null); openEdit(person); }}
+        />
+      </div>
+
+      {/* Modal formulaire (ajout/édition) */}
+      {showFormModal && (
+        <PersonFormModal
+          person={editingPerson}
+          skills={skills}
+          positions={positions}
+          users={users}
+          onSave={handleSave}
+          onClose={() => { setShowFormModal(false); setEditingPerson(null); }}
+        />
+      )}
+
+      {/* Modal Import CSV */}
+      {showImportModal && (
+        <PersonnelImportModal
+          onClose={() => setShowImportModal(false)}
+          onImportDone={async () => {
+            try {
+              const data = await api.getPersons();
+              setPersons(data);
+            } catch (e) { console.error(e); }
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════
+// Modal formulaire personnel (pattern Parc)
+// ═══════════════════════════════════════
+
+const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) => {
+  const [form, setForm] = useState(() => {
+    let defaultPos = [];
+    if (person) {
+      try {
+        const raw = person.defaultPositions || person.default_positions;
+        defaultPos = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+      } catch { /* ignore */ }
+    }
+    return {
+      firstName: person?.firstName || '',
+      lastName: person?.lastName || '',
+      email: person?.email || '',
+      phone: person?.phone || '',
+      type: person?.type || 'permanent',
+      contractType: person?.contractType || '',
+      userId: person?.userId || null,
+      status: person?.status || 'active',
+      notes: person?.notes || '',
+      skills: (person?.skills || []).map(s => ({
+        skillId: s.skillId || s.skill_id,
+        level: s.level || 'intermédiaire',
+      })),
+      defaultPositions: defaultPos,
+    };
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.firstName.trim() || !form.lastName.trim()) return alert('Prénom et nom requis');
+    onSave({
+      first_name: form.firstName,
+      last_name: form.lastName,
+      email: form.email || null,
+      phone: form.phone || null,
+      type: form.type,
+      contract_type: form.type === 'contractuel' ? (form.contractType || 'intermittent') : null,
+      user_id: form.userId ? Number(form.userId) : null,
+      status: form.status,
+      notes: form.notes || null,
+      default_positions: JSON.stringify(form.defaultPositions || []),
+      skills: form.skills.map(s => ({ skill_id: s.skillId, level: s.level })),
+    });
+  };
+
   const toggleSkill = (skillId) => {
     setForm(prev => {
       const existing = prev.skills.find(s => s.skillId === skillId);
-      if (existing) {
-        return { ...prev, skills: prev.skills.filter(s => s.skillId !== skillId) };
-      }
+      if (existing) return { ...prev, skills: prev.skills.filter(s => s.skillId !== skillId) };
       return { ...prev, skills: [...prev.skills, { skillId, level: 'intermédiaire' }] };
     });
   };
@@ -590,132 +808,83 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
   };
 
   return (
-    <div className="personnel-tab-content">
-      {/* Barre de recherche + filtres */}
-      <div className="personnel-toolbar">
-        <div className="personnel-search">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+    <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="eq-modal pp-form-modal">
+        <div className="eq-modal-header">
+          <h3>{person ? '✏️ Modifier la fiche' : '➕ Nouvelle personne'}</h3>
+          <button onClick={onClose}><X size={18} /></button>
         </div>
-        <select
-          className="personnel-filter"
-          value={filterType}
-          onChange={e => setFilterType(e.target.value)}
-        >
-          <option value="">Tous les types</option>
-          {PERSON_TYPES.map(t => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
-        <button className="personnel-add-btn" onClick={() => { resetForm(); setShowForm(true); }}>
-          <Plus size={16} /> Ajouter
-        </button>
-      </div>
-
-      {/* Formulaire */}
-      {showForm && (
-        <div className="personnel-form-overlay">
-          <form className="personnel-form" onSubmit={handleSubmit}>
-            <div className="personnel-form-header">
-              <h3>{editingPerson ? 'Modifier' : 'Nouvelle personne'}</h3>
-              <button type="button" className="close-btn" onClick={resetForm}><X size={18} /></button>
+        <form onSubmit={handleSubmit} className="eq-modal-body">
+          <div className="eq-form-grid">
+            <div className="eq-form-field">
+              <label>Prénom *</label>
+              <input type="text" required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} autoFocus />
             </div>
-
-            <div className="personnel-form-grid">
-              <div className="form-field">
-                <label>Prénom *</label>
-                <input required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Nom *</label>
-                <input required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Email</label>
-                <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Téléphone</label>
-                <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Catégorie</label>
-                <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value, contractType: e.target.value === 'permanent' ? '' : form.contractType })}>
-                  {PERSON_TYPES.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              {form.type === 'contractuel' && (
-                <div className="form-field">
-                  <label>Type de contrat</label>
-                  <select value={form.contractType} onChange={e => setForm({ ...form, contractType: e.target.value })}>
-                    <option value="">-- Choisir --</option>
-                    {CONTRACT_TYPES.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div className="form-field">
-                <label>Statut</label>
-                <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                  <option value="active">Actif</option>
-                  <option value="inactive">Inactif</option>
-                </select>
-              </div>
-              <div className="form-field">
-                <label><Link2 size={14} /> Compte utilisateur</label>
-                <select
-                  value={form.userId || ''}
-                  onChange={e => setForm({ ...form, userId: e.target.value || null })}
-                  className={form.userId ? 'linked' : ''}
-                >
-                  <option value="">Aucun (non lié)</option>
-                  {(users || []).map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.name || u.email || `Utilisateur #${u.id}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="eq-form-field">
+              <label>Nom *</label>
+              <input type="text" required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
             </div>
-
-            <div className="form-field full-width">
+            <div className="eq-form-field">
+              <label>Email</label>
+              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div className="eq-form-field">
+              <label>Téléphone</label>
+              <input type="text" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div className="eq-form-field">
+              <label>Catégorie</label>
+              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value, contractType: e.target.value !== 'contractuel' ? '' : form.contractType })}>
+                {PERSON_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            {form.type === 'contractuel' && (
+              <div className="eq-form-field">
+                <label>Type de contrat</label>
+                <select value={form.contractType} onChange={e => setForm({ ...form, contractType: e.target.value })}>
+                  <option value="">— Choisir —</option>
+                  {CONTRACT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="eq-form-field">
+              <label>Statut</label>
+              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                <option value="active">Actif</option>
+                <option value="inactive">Inactif</option>
+              </select>
+            </div>
+            <div className="eq-form-field">
+              <label><Link2 size={14} /> Compte utilisateur</label>
+              <select
+                value={form.userId || ''}
+                onChange={e => setForm({ ...form, userId: e.target.value || null })}
+              >
+                <option value="">Aucun (non lié)</option>
+                {(users || []).map(u => (
+                  <option key={u.id} value={u.id}>{u.name || u.email || `Utilisateur #${u.id}`}</option>
+                ))}
+              </select>
+            </div>
+            <div className="eq-form-field eq-form-full">
               <label>Notes</label>
               <textarea rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
             </div>
 
-            {/* Sélecteur de compétences */}
-            <div className="form-field full-width">
+            {/* Compétences */}
+            <div className="eq-form-field eq-form-full">
               <label>Compétences</label>
               <div className="skills-selector">
                 {skills.map(skill => {
                   const selected = form.skills.find(s => s.skillId === skill.id);
                   return (
                     <div key={skill.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                      <button
-                        type="button"
-                        className="skill-toggle"
-                        onClick={() => toggleSkill(skill.id)}
-                        style={{ '--chip-color': getCategoryColor(skill.category) }}
-                      >
+                      <button type="button" className="skill-toggle" onClick={() => toggleSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
                         {selected && <Check size={12} />} {skill.name}
                       </button>
                       {selected && (
-                        <select
-                          className="skill-level-select"
-                          value={selected.level}
-                          onChange={e => updateSkillLevel(skill.id, e.target.value)}
-                        >
-                          {SKILL_LEVELS.map(l => (
-                            <option key={l.value} value={l.value}>{l.label}</option>
-                          ))}
+                        <select className="skill-level-select" value={selected.level} onChange={e => updateSkillLevel(skill.id, e.target.value)}>
+                          {SKILL_LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                         </select>
                       )}
                     </div>
@@ -724,8 +893,8 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
               </div>
             </div>
 
-            {/* Sélecteur de postes habituels */}
-            <div className="form-field full-width">
+            {/* Postes habituels */}
+            <div className="eq-form-field eq-form-full">
               <label>Postes habituels</label>
               <div className="skills-selector">
                 {positions.map(pos => {
@@ -733,19 +902,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                   const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || '#6b7280';
                   return (
                     <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                      <button
-                        type="button"
-                        className="skill-toggle"
-                        onClick={() => {
-                          setForm(prev => ({
-                            ...prev,
-                            defaultPositions: selected
-                              ? prev.defaultPositions.filter(n => n !== pos.name)
-                              : [...prev.defaultPositions, pos.name],
-                          }));
-                        }}
-                        style={{ '--chip-color': catColor }}
-                      >
+                      <button type="button" className="skill-toggle" onClick={() => setForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
                         {selected && <Check size={12} />} {pos.name}
                       </button>
                     </div>
@@ -753,191 +910,12 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                 })}
               </div>
             </div>
-
-            <div className="personnel-form-actions">
-              <button type="button" className="cancel-btn" onClick={resetForm}>Annuler</button>
-              <button type="submit" className="save-btn"><Save size={16} /> Enregistrer</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Liste */}
-      <div className="personnel-list">
-        {filteredPersons.length === 0 ? (
-          <div className="personnel-empty">
-            <Users size={48} />
-            <p>{searchTerm ? 'Aucun résultat' : 'Aucune personne enregistrée'}</p>
           </div>
-        ) : (
-          filteredPersons.map(person => (
-            <div
-              key={person.id}
-              className={`person-card ${person.status === 'inactive' ? 'inactive' : ''}`}
-            >
-              <div className="person-card-main" onClick={() => setExpandedPerson(expandedPerson === person.id ? null : person.id)}>
-                <div className="person-avatar">
-                  <User size={20} />
-                </div>
-                <div className="person-info">
-                  <div className="person-name">
-                    {person.firstName} {person.lastName}
-                    <span className={`person-type-badge type-${person.type}`}>{person.type === 'permanent' ? 'Permanent' : 'Contractuel'}</span>
-                    {person.type === 'contractuel' && person.contractType && (
-                      <span className={`person-type-badge contract-type type-${person.contractType}`}>
-                        {CONTRACT_TYPES.find(c => c.value === person.contractType)?.label || person.contractType}
-                      </span>
-                    )}
-                    {person.userId && <span className="person-linked-badge" title="Lié à un compte utilisateur"><Link2 size={10} /></span>}
-                    {person.status === 'inactive' && <span className="person-status-badge inactive">Inactif</span>}
-                  </div>
-                  <div className="person-contact">
-                    {person.phone && <span><Phone size={12} /> {person.phone}</span>}
-                    {person.email && <span><Mail size={12} /> {person.email}</span>}
-                  </div>
-                  {/* Postes habituels — preview */}
-                  {(() => {
-                    let postes = [];
-                    try {
-                      const raw = person.defaultPositions || person.default_positions;
-                      postes = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
-                    } catch { /* ignore */ }
-                    return postes.length > 0 ? (
-                      <div className="person-skills-preview">
-                        {postes.slice(0, 3).map((name, i) => {
-                          const posObj = positions.find(p => p.name === name);
-                          const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || '#6b7280';
-                          return (
-                            <span key={i} className="skill-chip-mini" style={{ '--chip-color': catColor }}>
-                              {name}
-                            </span>
-                          );
-                        })}
-                        {postes.length > 3 && <span className="skill-more">+{postes.length - 3}</span>}
-                      </div>
-                    ) : null;
-                  })()}
-                  {person.skills && person.skills.length > 0 && (
-                    <div className="person-skills-preview">
-                      {person.skills.slice(0, 4).map((s, i) => (
-                        <span
-                          key={i}
-                          className="skill-chip-mini"
-                          style={{ '--chip-color': getCategoryColor(s.category) }}
-                        >
-                          {s.name}
-                        </span>
-                      ))}
-                      {person.skills.length > 4 && <span className="skill-more">+{person.skills.length - 4}</span>}
-                    </div>
-                  )}
-                </div>
-                <div className="person-actions">
-                  <button className="icon-btn" onClick={(e) => { e.stopPropagation(); openEdit(person); }}>
-                    <Edit2 size={14} />
-                  </button>
-                  {currentUser?.isAdmin && (
-                    <button className="icon-btn danger" onClick={(e) => { e.stopPropagation(); handleDelete(person.id); }}>
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                  {expandedPerson === person.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </div>
-              </div>
-
-              {expandedPerson === person.id && (
-                <div className="person-expanded">
-                  {person.userId && (
-                    <p className="person-linked-info">
-                      <Link2 size={14} /> Lié au compte : <strong>{(users || []).find(u => u.id === person.userId)?.name || `#${person.userId}`}</strong>
-                    </p>
-                  )}
-                  {person.notes && <p className="person-notes">{person.notes}</p>}
-                  {/* Postes habituels — sélecteur interactif */}
-                  {(() => {
-                    let postes = [];
-                    try {
-                      const raw = person.defaultPositions || person.default_positions;
-                      postes = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
-                    } catch { /* ignore */ }
-                    
-                    const togglePosition = async (posName) => {
-                      const newPositions = postes.includes(posName)
-                        ? postes.filter(n => n !== posName)
-                        : [...postes, posName];
-                      try {
-                        const updated = await api.updatePerson(person.id, {
-                          default_positions: JSON.stringify(newPositions),
-                        });
-                        setPersons(prev => prev.map(p => p.id === person.id ? updated : p));
-                      } catch (err) {
-                        console.error('Erreur mise à jour postes:', err);
-                      }
-                    };
-
-                    return (
-                      <div className="person-skills-detail">
-                        <strong>Postes habituels :</strong>
-                        <div className="skills-detail-grid">
-                          {positions.filter(p => p.isCommon || postes.includes(p.name)).map(pos => {
-                            const selected = postes.includes(pos.name);
-                            const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || '#6b7280';
-                            return (
-                              <div
-                                key={pos.id}
-                                className={`skill-detail-item clickable ${selected ? 'selected' : ''}`}
-                                style={{ '--chip-color': catColor }}
-                                onClick={() => togglePosition(pos.name)}
-                                title={selected ? 'Retirer ce poste' : 'Ajouter ce poste'}
-                              >
-                                {selected && <Check size={10} />}
-                                <span className="skill-name">{pos.name}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {positions.filter(p => !p.isCommon && !postes.includes(p.name)).length > 0 && (
-                          <details className="person-positions-more">
-                            <summary>Voir tous les postes...</summary>
-                            <div className="skills-detail-grid">
-                              {positions.filter(p => !p.isCommon && !postes.includes(p.name)).map(pos => {
-                                const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || '#6b7280';
-                                return (
-                                  <div
-                                    key={pos.id}
-                                    className="skill-detail-item clickable"
-                                    style={{ '--chip-color': catColor }}
-                                    onClick={() => togglePosition(pos.name)}
-                                    title="Ajouter ce poste"
-                                  >
-                                    <span className="skill-name">{pos.name}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </details>
-                        )}
-                      </div>
-                    );
-                  })()}
-                  {person.skills && person.skills.length > 0 && (
-                    <div className="person-skills-detail">
-                      <strong>Compétences :</strong>
-                      <div className="skills-detail-grid">
-                        {person.skills.map((s, i) => (
-                          <div key={i} className="skill-detail-item" style={{ '--chip-color': getCategoryColor(s.category) }}>
-                            <span className="skill-name">{s.name}</span>
-                            <span className="skill-level">{s.level}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))
-        )}
+          <div className="eq-modal-footer">
+            <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
+            <button type="submit" className="eq-btn-save">{person ? 'Enregistrer' : 'Créer'}</button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -1215,16 +1193,34 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
 // Onglet PLANNING
 // ═══════════════════════════════════════
 
-const PERMANENT_TYPES = ['permanent', 'stagiaire'];
-const CONTRACTUEL_TYPES = ['contractuel'];
+// NON_PERMANENT_TYPES défini en haut du fichier avec PERMANENT_TYPES
 
 const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDate = new Date(), googleEvents = [], onPersonEdit, onPersonCreate, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
   const scrollAreaRef = useRef(null);
   const headerScrollRef = useRef(null);
   const personColumnRef = useRef(null);
-  const [collapsedSections, setCollapsedSections] = useState({ permanents: false, contractuels: false });
+  const [collapsedSections, setCollapsedSections] = useState({ permanents: false, nonPermanents: false });
   const [selectedPersonForDetails, setSelectedPersonForDetails] = useState(null);
   const clickTimerRef = useRef(null);
+
+  // ═══ Toolbar : recherche, filtre, favoris ═══
+  const [planningSearch, setPlanningSearch] = useState('');
+  const [planningFilter, setPlanningFilter] = useState(''); // '', 'permanent', 'salarié', 'contractuel', 'stagiaire'
+  const [sortByFavorites, setSortByFavorites] = useState(true);
+  const [favoriteIds, setFavoriteIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('personnel_favorites');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  const toggleFavorite = useCallback((personId) => {
+    setFavoriteIds(prev => {
+      const next = prev.includes(personId) ? prev.filter(id => id !== personId) : [...prev, personId];
+      localStorage.setItem('personnel_favorites', JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   // Navigation croisée depuis un autre module
   useEffect(() => {
@@ -1510,8 +1506,29 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
   const isToday = (day) => isSameDay(day, new Date());
 
   const activePersons = persons.filter(p => p.isActive !== false);
-  const permanents = activePersons.filter(p => PERMANENT_TYPES.includes(p.type));
-  const contractuels = activePersons.filter(p => CONTRACTUEL_TYPES.includes(p.type));
+
+  // Appliquer recherche et filtre
+  const filteredPersons = useMemo(() => {
+    return activePersons.filter(p => {
+      const matchSearch = !planningSearch || `${p.firstName} ${p.lastName}`.toLowerCase().includes(planningSearch.toLowerCase());
+      const matchFilter = !planningFilter || p.type === planningFilter;
+      return matchSearch && matchFilter;
+    });
+  }, [activePersons, planningSearch, planningFilter]);
+
+  const permanents = filteredPersons.filter(p => PERMANENT_TYPES.includes(p.type));
+  const nonPermanentsRaw = filteredPersons.filter(p => NON_PERMANENT_TYPES.includes(p.type));
+
+  // Tri : favoris en haut des non-permanents
+  const nonPermanents = useMemo(() => {
+    if (!sortByFavorites) return nonPermanentsRaw;
+    return [...nonPermanentsRaw].sort((a, b) => {
+      const aFav = favoriteIds.includes(a.id) ? 0 : 1;
+      const bFav = favoriteIds.includes(b.id) ? 0 : 1;
+      if (aFav !== bFav) return aFav - bFav;
+      return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+    });
+  }, [nonPermanentsRaw, favoriteIds, sortByFavorites]);
 
   // ═══ DRAG-TO-CREATE : cliquer-glisser sur cellules vides ═══
   const handleSlotMouseDown = (person, slotIndex, e) => {
@@ -1708,7 +1725,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
   const renderPersonRow = (person) => {
     const personSpanList = missionSpans[person.id] || [];
     const covered = coveredSlotsForPerson(person.id);
-    const personName = `${person.firstName} ${person.lastName?.[0] || ''}.`;
+    const personName = `${person.firstName} ${person.lastName || ''}`;
 
     // Calcul des positions pour drag-move et resize previews
     const isMoving = dragMove && dragMove.person.id === person.id;
@@ -1926,6 +1943,42 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
 
   return (
     <div className="personnel-tab-content planning-full">
+      {/* ═══ Toolbar Planning ═══ */}
+      <div className="pp-planning-toolbar">
+        <div className="pp-planning-search">
+          <Search size={14} />
+          <input
+            type="text"
+            placeholder="Rechercher un personnel..."
+            value={planningSearch}
+            onChange={e => setPlanningSearch(e.target.value)}
+            className="pp-planning-search-input"
+          />
+          {planningSearch && (
+            <button className="pp-planning-search-clear" onClick={() => setPlanningSearch('')}><X size={12} /></button>
+          )}
+        </div>
+        <div className="pp-planning-filters">
+          <Filter size={14} />
+          <select
+            value={planningFilter}
+            onChange={e => setPlanningFilter(e.target.value)}
+            className="pp-planning-filter-select"
+          >
+            <option value="">Tous les types</option>
+            {PERSON_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        </div>
+        <button
+          className={`pp-planning-fav-btn${sortByFavorites ? ' active' : ''}`}
+          onClick={() => setSortByFavorites(v => !v)}
+          title={sortByFavorites ? 'Tri par favoris actif' : 'Activer le tri par favoris'}
+        >
+          <Star size={14} fill={sortByFavorites ? 'currentColor' : 'none'} />
+          Favoris
+        </button>
+      </div>
+
       {activePersons.length === 0 ? (
         <div className="personnel-empty">
           <CalendarDays size={48} />
@@ -2028,25 +2081,28 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
                     onPersonEdit && onPersonEdit(person);
                   }}
                   style={{ cursor: 'pointer' }}
-                >                  <span className="pp-person-name">{person.firstName} {person.lastName?.[0] || ''}.</span>
-                  <span className={`person-type-badge mini type-permanent`}>Permanent</span>
+                >
+                  <span className="pp-person-name">{person.firstName} {person.lastName || ''}</span>
+                  <span className={`person-type-badge mini type-${person.type}`}>
+                    {PERSON_TYPES.find(t => t.value === person.type)?.label || person.type}
+                  </span>
                 </div>
               ))}
 
               {/* Section Contractuels — header */}
-              {contractuels.length > 0 && (
+              {nonPermanents.length > 0 && (
                 <div className="pp-section-header">
-                  <span>Contractuels</span>
+                  <span>Non-permanents</span>
                   <button
                     className="pp-section-toggle"
-                    onClick={() => setCollapsedSections(prev => ({ ...prev, contractuels: !prev.contractuels }))}
+                    onClick={() => setCollapsedSections(prev => ({ ...prev, nonPermanents: !prev.nonPermanents }))}
                   >
-                    {collapsedSections.contractuels ? '▼' : '▲'}
+                    {collapsedSections.nonPermanents ? '▼' : '▲'}
                   </button>
                 </div>
               )}
-              {!collapsedSections.contractuels && contractuels.map(person => (
-                <div key={person.id} className={`pp-person-cell${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}`}
+              {!collapsedSections.nonPermanents && nonPermanents.map(person => (
+                <div key={person.id} className={`pp-person-cell${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}${favoriteIds.includes(person.id) ? ' pp-person-favorite' : ''}`}
                   onClick={() => {
                     if (clickTimerRef.current) return;
                     clickTimerRef.current = setTimeout(() => {
@@ -2060,9 +2116,19 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
                     onPersonEdit && onPersonEdit(person);
                   }}
                   style={{ cursor: 'pointer' }}
-                >                  <span className="pp-person-name">{person.firstName} {person.lastName?.[0] || ''}.</span>
-                  <span className={`person-type-badge mini type-contractuel`}>
-                    {CONTRACT_TYPES.find(c => c.value === person.contractType)?.label || 'Contractuel'}
+                >
+                  <button
+                    className={`pp-fav-star${favoriteIds.includes(person.id) ? ' active' : ''}`}
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(person.id); }}
+                    title={favoriteIds.includes(person.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                  >
+                    <Star size={12} fill={favoriteIds.includes(person.id) ? 'currentColor' : 'none'} />
+                  </button>
+                  <span className="pp-person-name">{person.firstName} {person.lastName || ''}</span>
+                  <span className={`person-type-badge mini type-${person.type}`}>
+                    {person.type === 'contractuel'
+                      ? (CONTRACT_TYPES.find(c => c.value === person.contractType)?.label || 'Contractuel')
+                      : (PERSON_TYPES.find(t => t.value === person.type)?.label || person.type)}
                   </span>
                 </div>
               ))}
@@ -2074,20 +2140,20 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
                 {!collapsedSections.permanents && permanents.map(renderPersonRow)}
 
                 {/* Séparateur Contractuels dans la grille */}
-                {contractuels.length > 0 && (
+                {nonPermanents.length > 0 && (
                   <div className="pp-section-separator" style={{ gridColumn: '1 / -1' }}>
-                    <span>Contractuels</span>
+                    <span>Non-permanents</span>
                     <button
                       className="pp-section-toggle"
-                      onClick={() => setCollapsedSections(prev => ({ ...prev, contractuels: !prev.contractuels }))}
+                      onClick={() => setCollapsedSections(prev => ({ ...prev, nonPermanents: !prev.nonPermanents }))}
                     >
-                      {collapsedSections.contractuels ? '▼' : '▲'}
+                      {collapsedSections.nonPermanents ? '▼' : '▲'}
                     </button>
                   </div>
                 )}
 
                 {/* Lignes Contractuels */}
-                {!collapsedSections.contractuels && contractuels.map(renderPersonRow)}
+                {!collapsedSections.nonPermanents && nonPermanents.map(renderPersonRow)}
               </div>
             </div>
           </div>

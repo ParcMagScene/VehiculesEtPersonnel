@@ -1,0 +1,271 @@
+/* ============================================================
+   STYLES IMPORT CSV PERSONNEL — MagLog 1.0
+   ============================================================ */
+
+.pi-import-modal {
+  max-width: 900px;
+  width: 95vw;
+  max-height: 85vh;
+}
+
+.pi-import-body {
+  overflow-y: auto;
+  max-height: calc(85vh - 120px);
+  padding: 16px !important;
+}
+
+/* ---------- PREVIEW ---------- */
+.pi-import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---------- COLLISION SUMMARY ---------- */
+.pi-collision-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pi-collision-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light, #e0e0e0);
+  background: var(--bg-card, #fff);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #666);
+  min-width: 80px;
+}
+
+.pi-collision-stat:hover {
+  background: var(--bg-hover, #f5f5f5);
+}
+
+.pi-collision-stat.active {
+  border-color: var(--primary, #3b82f6);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.pi-collision-stat.info {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.pi-collision-count {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.pi-collision-stat.create .pi-collision-count { color: #10b981; }
+.pi-collision-stat.update .pi-collision-count { color: #f59e0b; }
+.pi-collision-stat.conflict .pi-collision-count { color: #ef4444; }
+
+.pi-collision-stat.create { border-left: 3px solid #10b981; }
+.pi-collision-stat.update { border-left: 3px solid #f59e0b; }
+.pi-collision-stat.conflict { border-left: 3px solid #ef4444; }
+
+/* ---------- COLLISION DETAIL ---------- */
+.pi-collision-detail {
+  margin-top: 8px;
+}
+
+.pi-collision-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.pi-collision-header:hover {
+  background: var(--bg-hover, #f5f5f5);
+}
+
+.pi-collision-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light, #e0e0e0);
+}
+
+/* ---------- TABLE ROWS PAR ACTION ---------- */
+.pi-row-create td:first-child { border-left: 3px solid #10b981; }
+.pi-row-update td:first-child { border-left: 3px solid #f59e0b; }
+.pi-row-conflict td:first-child { border-left: 3px solid #ef4444; }
+
+/* ---------- ACTION BADGES ---------- */
+.pi-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.pi-action-badge.create {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.pi-action-badge.update {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.pi-action-badge.conflict {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+/* ---------- TYPE TAGS ---------- */
+.pi-type-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pi-type-salari {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.pi-type-intermittent {
+  background: rgba(139, 92, 246, 0.12);
+  color: #7c3aed;
+}
+
+.pi-type-autoentrepreneur {
+  background: rgba(236, 72, 153, 0.12);
+  color: #db2777;
+}
+
+/* ---------- COLLISION MATCH ---------- */
+.pi-collision-match {
+  font-size: 0.82rem;
+  color: var(--text-primary, #333);
+}
+
+.pi-collision-via {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #999);
+  margin-left: 4px;
+}
+
+/* ---------- ANALYZE CTA ---------- */
+.pi-analyze-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 0;
+}
+
+.pi-analyze-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #999);
+}
+
+/* ---------- DARK MODE ---------- */
+[data-theme="dark"] .pi-collision-stat {
+  border-color: var(--border-dark, #3a3a3a);
+  background: var(--bg-card-dark, #2a2a2a);
+  color: var(--text-secondary-dark, #aaa);
+}
+
+[data-theme="dark"] .pi-collision-stat:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .pi-collision-stat.active {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+[data-theme="dark"] .pi-collision-header {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+[data-theme="dark"] .pi-collision-header:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .pi-collision-list {
+  border-color: var(--border-dark, #3a3a3a);
+}
+
+[data-theme="dark"] .pi-collision-match {
+  color: var(--text-primary-dark, #ddd);
+}
+
+[data-theme="dark"] .pi-action-badge.create {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+[data-theme="dark"] .pi-action-badge.update {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .pi-action-badge.conflict {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+[data-theme="dark"] .pi-type-salari {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .pi-type-intermittent {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+[data-theme="dark"] .pi-type-autoentrepreneur {
+  background: rgba(236, 72, 153, 0.2);
+  color: #f472b6;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 640px) {
+  .pi-import-modal {
+    width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .pi-collision-summary {
+    gap: 6px;
+  }
+
+  .pi-collision-stat {
+    min-width: 60px;
+    padding: 6px 10px;
+  }
+
+  .pi-collision-count {
+    font-size: 1.1rem;
+  }
+}

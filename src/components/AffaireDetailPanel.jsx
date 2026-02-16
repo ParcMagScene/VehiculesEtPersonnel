@@ -649,12 +649,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             return !driveLinks.some(dl => dl.url === link.url);
           });
 
-          // 4. Liens vers les événements Google Calendar (utiliser htmlLink de l'API)
-          const calendarLinks = googleEvents
-            .filter(ev => ev.htmlLink)
-            .map(ev => ({ url: ev.htmlLink, label: ev.summary || 'Événement Google Calendar', isCalendar: true }));
-
-          const totalItems = attachmentFiles.length + driveLinks.length + descLinks.length + calendarLinks.length;
+          const totalItems = attachmentFiles.length + driveLinks.length + descLinks.length;
 
           if (totalItems === 0) {
             return <p className="detail-empty">Aucune pièce jointe ou lien</p>;
@@ -703,14 +698,6 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                   ))}
                 </>
               )}
-              {/* Lien vers l'événement Google Calendar */}
-              {calendarLinks.map((link, i) => (
-                <a key={`cal-${i}`} href={link.url} target="_blank" rel="noopener noreferrer" className="detail-list-item link-item calendar-link">
-                  <Calendar size={13} />
-                  <span className="link-name">{link.label}</span>
-                  <ExternalLink size={12} className="link-external-icon" />
-                </a>
-              ))}
             </div>
           );
         })()}

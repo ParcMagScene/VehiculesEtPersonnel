@@ -540,6 +540,14 @@ class ApiClient {
     });
   }
 
+  async importPersonnelCsv(data, mode = 'import') {
+    return this.request('/persons/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
+  }
+
+  async bulkDeletePersons(ids) {
+    return this.request('/persons/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) });
+  }
+
   // — Compétences —
 
   async getSkills() {

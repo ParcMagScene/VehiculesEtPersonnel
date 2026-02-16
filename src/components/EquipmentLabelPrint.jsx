@@ -99,7 +99,6 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   };
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
     const labels = [];
     const qrSize = Math.round(format.height - 4);
 
@@ -121,7 +120,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
       );
     }
 
-    printWindow.document.write(
+    const htmlContent =
       '<!DOCTYPE html><html><head><title>Etiquettes - ' + escSvg(eq.reference || cleanName(eq.name)) + '</title>' +
       '<style>' +
         '@page { size: A4; margin: 5mm; }' +
@@ -138,10 +137,30 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '6' : format.height < 35 ? '7.5' : '9') + 'pt; color: #222; font-family: monospace; font-weight: 700; line-height: 1.1; white-space: nowrap; }' +
       '</style></head><body>' +
       labels.join('') +
-      '<script>window.onload=function(){setTimeout(function(){window.print();window.onafterprint=function(){window.close()};},500)};<\/script>' +
-      '</body></html>'
-    );
-    printWindow.document.close();
+      '</body></html>';
+
+    // Utiliser un iframe caché pour éviter le bloqueur de popups
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(htmlContent);
+    iframeDoc.close();
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 500);
+    };
   };
 
   const qrPreviewSize = Math.min(format.height * 2.2, 55);

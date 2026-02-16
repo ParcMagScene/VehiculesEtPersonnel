@@ -135,6 +135,24 @@
   width: 100%;
 }
 
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: var(--theme-primary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 0;
+  text-decoration: none;
+  text-align: right;
+  transition: color 0.2s;
+  width: 100%;
+}
+
+.forgot-password-link:hover {
+  color: var(--theme-primary-dark);
+  text-decoration: underline;
+}
+
 .access-request-button:hover {
   border-color: var(--theme-primary);
   color: var(--theme-primary);

@@ -20,6 +20,9 @@ const LoginForm = ({ onLogin }) => {
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState(false);
 
   // Détecter le paramètre URL ?setup=email pour ouvrir le modal de création directe
   useEffect(() => {
@@ -117,6 +120,31 @@ const LoginForm = ({ onLogin }) => {
       setLoading(false);
     }
   };
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch(`${getApiUrl()}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erreur lors de la demande');
+      }
+
+      setForgotSuccess(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSetNewPassword = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -275,6 +303,19 @@ const LoginForm = ({ onLogin }) => {
 
           <button
             type="button"
+            className="forgot-password-link"
+            onClick={() => {
+              setShowForgotPassword(true);
+              setForgotEmail(email || (selectedUser ? selectedUser.email : ''));
+              setForgotSuccess(false);
+              setError('');
+            }}
+          >
+            Mot de passe oublié ?
+          </button>
+
+          <button
+            type="button"
             className="access-request-button"
             onClick={() => setShowAccessRequest(true)}
           >
@@ -334,6 +375,97 @@ const LoginForm = ({ onLogin }) => {
                     {loading ? 'Connexion...' : 'Fermer les autres sessions et se connecter'}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showForgotPassword && (
+          <div className="modal-overlay" onClick={() => setShowForgotPassword(false)}>
+            <div className="modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                <h3>🔑 Mot de passe oublié</h3>
+              </div>
+              <div className="modal-body">
+                {!forgotSuccess ? (
+                  <>
+                    <p style={{ marginBottom: '16px', color: '#374151' }}>
+                      Entrez l'adresse email de votre compte pour réinitialiser votre mot de passe.
+                    </p>
+                    
+                    <form onSubmit={handleForgotPassword}>
+                      <div className="form-group" style={{ marginBottom: '16px' }}>
+                        <label htmlFor="forgot-email" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                          Adresse email
+                        </label>
+                        <input
+                          id="forgot-email"
+                          type="email"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          placeholder="email@exemple.com"
+                          required
+                          autoFocus
+                          style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                        />
+                      </div>
+
+                      {error && (
+                        <div className="error-message" style={{ marginBottom: '16px' }}>
+                          {error}
+                        </div>
+                      )}
+                      
+                      <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => {
+                            setShowForgotPassword(false);
+                            setForgotEmail('');
+                            setError('');
+                          }}
+                          disabled={loading}
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="submit"
+                          className="btn-primary"
+                          disabled={loading || !forgotEmail}
+                        >
+                          {loading ? 'Envoi...' : 'Réinitialiser'}
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                      <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+                      <p style={{ color: '#374151', marginBottom: '8px', fontWeight: '500' }}>
+                        Demande envoyée
+                      </p>
+                      <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>
+                        Si cette adresse correspond à un compte, il a été préparé pour une réinitialisation.<br/>
+                        <strong>Reconnectez-vous</strong> pour définir un nouveau mot de passe.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        onClick={() => {
+                          setShowForgotPassword(false);
+                          setForgotEmail('');
+                          setForgotSuccess(false);
+                        }}
+                      >
+                        Retour à la connexion
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

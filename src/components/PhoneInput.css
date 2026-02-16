@@ -1,0 +1,225 @@
+/* ===== PhoneInput Component ===== */
+
+.phone-input-container {
+  display: flex;
+  width: 100%;
+}
+
+.phone-input-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.phone-prefix-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 8px 10px;
+  border: 1px solid #d1d5db;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 13px;
+  height: 100%;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.phone-prefix-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.phone-prefix-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.phone-prefix-flag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.phone-prefix-code {
+  font-weight: 500;
+  color: #374151;
+  font-size: 12px;
+  min-width: 32px;
+}
+
+.phone-prefix-arrow {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-left: 2px;
+}
+
+.phone-local-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 0 8px 8px 0;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.phone-local-input:focus {
+  border-color: var(--primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Dropdown */
+.phone-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  min-width: 240px;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.phone-dropdown-search {
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+  outline: none;
+}
+
+.phone-dropdown-search::placeholder {
+  color: #9ca3af;
+}
+
+.phone-dropdown-list {
+  overflow-y: auto;
+  max-height: 250px;
+}
+
+.phone-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+
+.phone-dropdown-item:hover {
+  background: #f3f4f6;
+}
+
+.phone-dropdown-item.active {
+  background: #eef2ff;
+  font-weight: 600;
+}
+
+.phone-dropdown-flag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.phone-dropdown-label {
+  flex: 1;
+  color: #374151;
+}
+
+.phone-dropdown-code {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ===== Dark Mode ===== */
+[data-theme="dark"] .phone-prefix-btn {
+  background: #1e293b;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .phone-prefix-btn:hover {
+  background: #334155;
+  border-color: #64748b;
+}
+
+[data-theme="dark"] .phone-prefix-code {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .phone-local-input {
+  background: #1e293b;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .phone-local-input:focus {
+  border-color: var(--primary, #818cf8);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+}
+
+[data-theme="dark"] .phone-dropdown {
+  background: #1e293b;
+  border-color: #475569;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .phone-dropdown-search {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .phone-dropdown-item {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .phone-dropdown-item:hover {
+  background: #334155;
+}
+
+[data-theme="dark"] .phone-dropdown-item.active {
+  background: #312e81;
+}
+
+[data-theme="dark"] .phone-dropdown-label {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .phone-dropdown-code {
+  color: #94a3b8;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .phone-prefix-code {
+    font-size: 11px;
+    min-width: 28px;
+  }
+  
+  .phone-prefix-btn {
+    padding: 6px 6px 6px 8px;
+  }
+  
+  .phone-local-input {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+  
+  .phone-dropdown {
+    min-width: 200px;
+  }
+}

@@ -6,6 +6,7 @@ import LocationDialog from './LocationDialog';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import DriverSelect from './DriverSelect';
 import api from '../utils/api';
+import AddressAutocomplete from './AddressAutocomplete';
 
 const TripDetailsModal = ({
   event,
@@ -1103,15 +1104,13 @@ const TripDetailsModal = ({
               <div className="form-group">
                 <label>Départ</label>
                 <div className="location-input-wrapper">
-                  <input
-                    type="text"
+                  <AddressAutocomplete
                     name="departureLocation"
                     value={formData.departureLocation}
-                    onChange={handleChange}
+                    onChange={(val) => setFormData(prev => ({ ...prev, departureLocation: val }))}
                     list="locations-list"
                     placeholder="Tapez une adresse..."
                     required
-                    style={savedFieldStyle}
                   />
                   <button
                     type="button"
@@ -1223,15 +1222,13 @@ const TripDetailsModal = ({
               <div className="form-group">
                 <label>Arrivée</label>
                 <div className="location-input-wrapper">
-                  <input
-                    type="text"
+                  <AddressAutocomplete
                     name="arrivalLocation"
                     value={formData.arrivalLocation}
-                    onChange={handleChange}
+                    onChange={(val) => setFormData(prev => ({ ...prev, arrivalLocation: val }))}
                     list="locations-list"
                     placeholder="Tapez une adresse..."
                     required
-                    style={savedFieldStyle}
                   />
                   <button
                     type="button"
@@ -1303,15 +1300,13 @@ const TripDetailsModal = ({
               <div className="form-group">
                 <label>Départ</label>
                 <div className="location-input-wrapper">
-                  <input
-                    type="text"
+                  <AddressAutocomplete
                     name="returnDepartureLocation"
                     value={formData.returnDepartureLocation}
-                    onChange={handleChange}
+                    onChange={(val) => setFormData(prev => ({ ...prev, returnDepartureLocation: val }))}
                     list="locations-list"
                     placeholder="Tapez une adresse..."
                     required
-                    style={savedFieldStyle}
                   />
                   <button
                     type="button"
@@ -1423,15 +1418,13 @@ const TripDetailsModal = ({
               <div className="form-group">
                 <label>Arrivée</label>
                 <div className="location-input-wrapper">
-                  <input
-                    type="text"
+                  <AddressAutocomplete
                     name="returnArrivalLocation"
                     value={formData.returnArrivalLocation}
-                    onChange={handleChange}
+                    onChange={(val) => setFormData(prev => ({ ...prev, returnArrivalLocation: val }))}
                     list="locations-list"
                     placeholder="Tapez une adresse..."
                     required
-                    style={savedFieldStyle}
                   />
                   <button
                     type="button"

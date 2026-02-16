@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Search, User, Phone, Mail, MapPin, ChevronRight, Star, Shield, Truck } from 'lucide-react';
 import api from '../../utils/api';
+import { formatPhoneDisplay } from '../PhoneInput';
 import './MobilePersonnel.css';
 
 const getInitials = (firstName, lastName) => {
@@ -106,9 +107,9 @@ function MobilePersonnel({ onBack }) {
               </a>
             )}
             {p.phone && (
-              <a href={`tel:${p.phone}`} className="mpers-info-row">
+              <a href={`tel:${p.phone.replace(/[^\d+]/g, '')}`} className="mpers-info-row">
                 <Phone size={16} />
-                <span>{p.phone}</span>
+                <span>{formatPhoneDisplay(p.phone)}</span>
               </a>
             )}
             {!p.email && !p.phone && (

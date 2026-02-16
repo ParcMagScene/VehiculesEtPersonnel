@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2, Gauge, UserCog } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
+import { formatPhoneDisplay } from './PhoneInput';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
 import { getVehicleAvatar } from '../utils/vehicleAvatars';
 import UserManagement from './UserManagement';
@@ -1081,7 +1082,7 @@ const ManagementPanel = ({
                                 <div className="item-detail">@ {item.email}</div>
                               )}
                               {item.phone && (
-                                <div className="item-detail">📞 {item.phone}</div>
+                                <div className="item-detail">📞 {formatPhoneDisplay(item.phone)}</div>
                               )}
                               {item.address && (
                                 <div className="item-detail">📍 {item.address}</div>

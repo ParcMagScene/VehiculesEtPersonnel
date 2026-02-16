@@ -16,13 +16,19 @@ import {
   isToday,
   getWeek,
   setMonth,
+  isSameWeek,
+  isSameMonth,
+  isSameYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Truck, Link, Link2, MapPin, Trash2 } from 'lucide-react';
+import { Truck, Link, Link2, MapPin, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../utils/dateUtils';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
 import { loadFromIndexedDB } from '../utils/indexedDB';
 import { getVehicleAvatar } from '../utils/vehicleAvatars';
+import MonthSelector from './MonthSelector';
+import WeekSelector from './WeekSelector';
+import YearSelector from './YearSelector';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
@@ -613,6 +619,42 @@ const Calendar = ({
   
   // État pour le tooltip global
   const [tooltipState, setTooltipState] = useState({ visible: false, block: null, x: 0, y: 0 });
+
+  // États pour la navigation de dates (toolbar calendrier)
+  const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const [showWeekSelector, setShowWeekSelector] = useState(false);
+  const [showYearSelector, setShowYearSelector] = useState(false);
+
+  // Fonctions de navigation
+  const goToPrevious = () => {
+    const newDate = new Date(currentDate);
+    if (view === 'week') newDate.setDate(newDate.getDate() - 7);
+    else if (view === 'month') newDate.setMonth(newDate.getMonth() - 1);
+    else newDate.setFullYear(newDate.getFullYear() - 1);
+    setCurrentDate(newDate);
+  };
+  const goToNext = () => {
+    const newDate = new Date(currentDate);
+    if (view === 'week') newDate.setDate(newDate.getDate() + 7);
+    else if (view === 'month') newDate.setMonth(newDate.getMonth() + 1);
+    else newDate.setFullYear(newDate.getFullYear() + 1);
+    setCurrentDate(newDate);
+  };
+  const goToToday = () => setCurrentDate(new Date());
+  const getDateLabel = () => {
+    let label = '';
+    if (view === 'week') label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
+    else if (view === 'month') label = format(currentDate, 'MMMM yyyy', { locale: fr });
+    else label = format(currentDate, 'yyyy', { locale: fr });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+  const isCurrentPeriod = () => {
+    const today = new Date();
+    if (view === 'week') return isSameWeek(currentDate, today, { weekStartsOn: 1 });
+    if (view === 'month') return isSameMonth(currentDate, today);
+    return isSameYear(currentDate, today);
+  };
+  const showTodayHighlight = !isCurrentPeriod();
 
   // États pour TripDetailsModal ouvert depuis le calendrier
   const [calendarTripModal, setCalendarTripModal] = useState(null); // { reservation, event, tripDetail, combinedEvents, vehicle }
@@ -1811,6 +1853,30 @@ const Calendar = ({
       onMouseMove={handleGlobalMouseMove}
       onMouseUp={handleGlobalMouseUp}
     >
+      {/* Toolbar de navigation */}
+      <div className="cal-nav-toolbar">
+        <div className="cal-nav-views">
+          <button className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</button>
+          <button className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</button>
+          <button className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</button>
+        </div>
+        <div className="cal-nav-date">
+          <button className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></button>
+          <button className={`cal-nav-btn cal-nav-today ${showTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</button>
+          <button className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></button>
+          <span 
+            className="cal-nav-label clickable"
+            onClick={() => {
+              if (view === 'month') setShowMonthSelector(true);
+              if (view === 'week') setShowWeekSelector(true);
+              if (view === 'year') setShowYearSelector(true);
+            }}
+            title={view === 'month' ? 'Sélectionner un mois' : view === 'week' ? 'Sélectionner une semaine' : 'Sélectionner une année'}
+          >
+            {getDateLabel()}
+          </span>
+        </div>
+      </div>
       <div className="calendar">
         {/* Ligne des headers - fixe, non scrollable */}
         <div className="calendar-headers-row">
@@ -2704,6 +2770,29 @@ const Calendar = ({
             </span>
           </div>
         </div>
+      )}
+
+      {/* Sélecteurs de dates */}
+      {showMonthSelector && (
+        <MonthSelector
+          currentDate={currentDate}
+          onSelectMonth={(date) => { setCurrentDate(date); setShowMonthSelector(false); }}
+          onClose={() => setShowMonthSelector(false)}
+        />
+      )}
+      {showWeekSelector && (
+        <WeekSelector
+          currentDate={currentDate}
+          onSelectWeek={(date) => { setCurrentDate(date); setShowWeekSelector(false); }}
+          onClose={() => setShowWeekSelector(false)}
+        />
+      )}
+      {showYearSelector && (
+        <YearSelector
+          currentDate={currentDate}
+          onSelectYear={(date) => { setCurrentDate(date); setShowYearSelector(false); }}
+          onClose={() => setShowYearSelector(false)}
+        />
       )}
     </div>
   );

@@ -240,6 +240,31 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// Mot de passe oublié (self-service)
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+
+    const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (user) {
+      // Marquer le compte pour réinitialisation et fermer les sessions
+      db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?').run(user.id);
+      db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
+      console.log(`🔑 Mot de passe oublié demandé pour: ${email}`);
+    }
+
+    // Toujours retourner le même message (ne pas révéler si l'email existe)
+    res.json({
+      message: 'Si cette adresse correspond à un compte, il a été préparé pour une réinitialisation. Reconnectez-vous pour définir un nouveau mot de passe.'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Connexion
 app.post('/api/auth/login', async (req, res) => {
   try {

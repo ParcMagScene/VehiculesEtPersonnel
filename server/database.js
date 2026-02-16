@@ -394,6 +394,22 @@ function initializeDatabase() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_balances_person ON leave_balances(person_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_balances_year ON leave_balances(year)`);
 
+  // Table des votes pour les demandes de congés
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS leave_votes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      availability_id INTEGER NOT NULL,
+      voter_id INTEGER NOT NULL,
+      vote TEXT NOT NULL CHECK(vote IN ('approve', 'reject')),
+      comment TEXT,
+      voted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(availability_id, voter_id),
+      FOREIGN KEY (availability_id) REFERENCES availabilities(id) ON DELETE CASCADE,
+      FOREIGN KEY (voter_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_votes_availability ON leave_votes(availability_id)`);
+
   // Table des missions
   db.exec(`
     CREATE TABLE IF NOT EXISTS missions (

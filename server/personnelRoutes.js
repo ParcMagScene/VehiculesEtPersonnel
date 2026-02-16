@@ -561,9 +561,19 @@ const LEAVE_TYPES = {
   maladie: 'Maladie',
   sans_solde: 'Sans solde',
   formation: 'Formation',
+  entreprise: 'Entreprise',
+  workshop: 'Workshop',
+  examen: 'Examen',
+  rdv: 'RDV',
   repos: 'Jour de repos',
   autre: 'Autre',
 };
+
+// Types qui nécessitent une approbation (congés)
+const APPROVAL_REQUIRED_TYPES = ['conge_paye', 'rtt', 'maladie', 'sans_solde'];
+
+// Types auto-approuvés même pour les utilisateurs non-admin
+const AUTO_APPROVED_TYPES = ['formation', 'entreprise', 'workshop', 'examen', 'rdv'];
 
 export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) {
 
@@ -632,11 +642,37 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       const person = db.prepare('SELECT id FROM persons WHERE id = ?').get(a.person_id);
       if (!person) return res.status(404).json({ error: 'Personne non trouvée' });
 
-      // Si source = 'request' → statut 'pending', sinon 'approved' (admin direct)
-      const isRequest = a.source === 'request';
-      const status = isRequest ? 'pending' : 'approved';
-      const approvedBy = isRequest ? null : req.user.id;
-      const approvedAt = isRequest ? null : new Date().toISOString();
+      // Détection de conflits — vérifier les périodes existantes qui se chevauchent
+      const conflicting = db.prepare(`
+        SELECT id, type, start_date, end_date, status FROM availabilities
+        WHERE person_id = ? AND status != 'rejected'
+          AND start_date <= ? AND end_date >= ?
+      `).all(a.person_id, a.end_date, a.start_date);
+
+      if (conflicting.length > 0) {
+        const conflictDescs = conflicting.map(c =>
+          `${LEAVE_TYPES[c.type] || c.type} (${c.start_date} → ${c.end_date})`
+        ).join(', ');
+        // Avertissement mais pas bloquant — on informe dans la réponse
+        // Pour les congés payés, on bloque si conflit avec un autre congé approuvé
+        const blockers = conflicting.filter(c => c.status === 'approved' && APPROVAL_REQUIRED_TYPES.includes(c.type));
+        if (blockers.length > 0 && APPROVAL_REQUIRED_TYPES.includes(a.type || 'unavailable')) {
+          return res.status(409).json({
+            error: `Conflit avec une période existante : ${conflictDescs}`,
+            conflicts: conflicting,
+          });
+        }
+      }
+
+      // Déterminer le statut selon le type et la source
+      // Types auto-approuvés : formation, entreprise, workshop, examen, rdv → toujours approved
+      // Types nécessitant approbation : conge_paye, rtt, maladie, sans_solde → pending si source='request'
+      const typeVal = a.type || 'unavailable';
+      const isAutoApproved = AUTO_APPROVED_TYPES.includes(typeVal);
+      const isAdminSource = a.source === 'admin';
+      const status = (isAutoApproved || isAdminSource) ? 'approved' : 'pending';
+      const approvedBy = status === 'approved' ? req.user.id : null;
+      const approvedAt = status === 'approved' ? new Date().toISOString() : null;
 
       const result = db.prepare(`
         INSERT INTO availabilities (person_id, start_date, end_date, start_period, end_period,
@@ -774,7 +810,120 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       if (!existing) return res.status(404).json({ error: 'Disponibilité non trouvée' });
 
       db.prepare('DELETE FROM availabilities WHERE id = ?').run(req.params.id);
+      // Supprimer aussi les votes associés
+      db.prepare('DELETE FROM leave_votes WHERE availability_id = ?').run(req.params.id);
       res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ═══ SYSTÈME DE VOTE POUR LES CONGÉS ═══
+
+  // POST /api/leave-requests/:id/vote — Voter pour/contre une demande de congé (admin)
+  app.post('/api/leave-requests/:id/vote', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { vote, comment } = req.body;
+      if (!vote || !['approve', 'reject'].includes(vote)) {
+        return res.status(400).json({ error: 'Vote invalide: approve ou reject attendu' });
+      }
+
+      const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (existing.status !== 'pending') {
+        return res.status(400).json({ error: 'Seules les demandes en attente peuvent recevoir des votes' });
+      }
+
+      // Upsert le vote (un admin peut changer son vote)
+      db.prepare(`
+        INSERT INTO leave_votes (availability_id, voter_id, vote, comment)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(availability_id, voter_id) DO UPDATE SET vote = ?, comment = ?, voted_at = datetime('now')
+      `).run(req.params.id, req.user.id, vote, comment || null, vote, comment || null);
+
+      // Compter les votes
+      const votes = db.prepare('SELECT * FROM leave_votes WHERE availability_id = ?').all(req.params.id);
+      const approveCount = votes.filter(v => v.vote === 'approve').length;
+      const rejectCount = votes.filter(v => v.vote === 'reject').length;
+
+      // Nombre d'admins dans le système
+      const adminCount = db.prepare("SELECT COUNT(*) as count FROM users WHERE is_admin = 1").get().count;
+      // Seuil de validation : majorité des admins (au moins 2 votes ou 50%+ des admins)
+      const threshold = Math.max(2, Math.ceil(adminCount / 2));
+
+      let finalStatus = 'pending';
+      if (approveCount >= threshold) {
+        finalStatus = 'approved';
+        // Approuver automatiquement
+        db.prepare(`
+          UPDATE availabilities SET status = 'approved', approved_by = ?, approved_at = datetime('now')
+          WHERE id = ?
+        `).run(req.user.id, req.params.id);
+
+        // Mettre à jour le solde de congés si applicable
+        const trackedTypes = ['conge_paye', 'rtt'];
+        if (trackedTypes.includes(existing.type)) {
+          const start = new Date(existing.start_date);
+          const end = new Date(existing.end_date);
+          const daysTaken = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+          const year = start.getFullYear();
+          const balance = db.prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+            .get(existing.person_id, year, existing.type);
+          if (balance) {
+            db.prepare('UPDATE leave_balances SET days_taken = days_taken + ? WHERE id = ?')
+              .run(daysTaken, balance.id);
+          } else {
+            db.prepare('INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, ?)')
+              .run(existing.person_id, year, existing.type, existing.type === 'conge_paye' ? 25 : 10, daysTaken);
+          }
+        }
+      } else if (rejectCount >= threshold) {
+        finalStatus = 'rejected';
+        db.prepare(`
+          UPDATE availabilities SET status = 'rejected', approved_by = ?, approved_at = datetime('now'), rejection_reason = ?
+          WHERE id = ?
+        `).run(req.user.id, 'Rejeté par vote majoritaire', req.params.id);
+      }
+
+      // Récupérer les votes enrichis
+      const enrichedVotes = db.prepare(`
+        SELECT lv.*, u.name as voter_name, u.email as voter_email
+        FROM leave_votes lv
+        JOIN users u ON u.id = lv.voter_id
+        WHERE lv.availability_id = ?
+        ORDER BY lv.voted_at
+      `).all(req.params.id);
+
+      res.json({
+        votes: enrichedVotes,
+        approveCount,
+        rejectCount,
+        threshold,
+        adminCount,
+        finalStatus,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/leave-requests/:id/votes — Récupérer les votes d'une demande
+  app.get('/api/leave-requests/:id/votes', authenticateToken, (req, res) => {
+    try {
+      const votes = db.prepare(`
+        SELECT lv.*, u.name as voter_name, u.email as voter_email
+        FROM leave_votes lv
+        JOIN users u ON u.id = lv.voter_id
+        WHERE lv.availability_id = ?
+        ORDER BY lv.voted_at
+      `).all(req.params.id);
+
+      const approveCount = votes.filter(v => v.vote === 'approve').length;
+      const rejectCount = votes.filter(v => v.vote === 'reject').length;
+      const adminCount = db.prepare("SELECT COUNT(*) as count FROM users WHERE is_admin = 1").get().count;
+      const threshold = Math.max(2, Math.ceil(adminCount / 2));
+
+      res.json({ votes, approveCount, rejectCount, threshold, adminCount });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

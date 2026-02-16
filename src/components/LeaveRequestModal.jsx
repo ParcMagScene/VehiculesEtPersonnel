@@ -8,7 +8,11 @@ const LEAVE_TYPES = [
   { value: 'rtt', label: 'RTT', icon: '🕐', color: '#a78bfa' },
   { value: 'maladie', label: 'Maladie', icon: '🏥', color: '#f87171' },
   { value: 'sans_solde', label: 'Sans solde', icon: '💤', color: '#fb923c' },
-  { value: 'formation', label: 'Formation', icon: '📚', color: '#34d399' },
+  { value: 'formation', label: 'Formation', icon: '🎓', color: '#8b5cf6' },
+  { value: 'entreprise', label: 'Entreprise', icon: '🏢', color: '#3b82f6' },
+  { value: 'workshop', label: 'Workshop', icon: '🔧', color: '#f59e0b' },
+  { value: 'examen', label: 'Examen', icon: '📝', color: '#10b981' },
+  { value: 'rdv', label: 'RDV', icon: '📅', color: '#06b6d4' },
   { value: 'repos', label: 'Jour de repos', icon: '😴', color: '#fbbf24' },
   { value: 'unavailable', label: 'Indisponible', icon: '🚫', color: '#94a3b8' },
   { value: 'autre', label: 'Autre', icon: '📋', color: '#9ca3af' },
@@ -215,18 +219,29 @@ const LeaveRequestModal = ({
 };
 
 /* ═══════════════════════════════════════
-   Panneau d'approbation des congés (admin)
+   Panneau d'approbation des congés (admin) — avec système de vote
    ═══════════════════════════════════════ */
 const LeaveApprovalPanel = ({ onClose, onUpdated }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rejectId, setRejectId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [votesData, setVotesData] = useState({}); // { [reqId]: { votes, approveCount, rejectCount, threshold, adminCount } }
+  const [voteComment, setVoteComment] = useState('');
 
   const loadRequests = async () => {
     try {
       const data = await api.getAvailabilities({ status: 'pending' });
       setRequests(data);
+      // Charger les votes pour chaque demande
+      const votesMap = {};
+      for (const req of data) {
+        try {
+          const vd = await api.get(`/api/leave-requests/${req.id}/votes`);
+          votesMap[req.id] = vd.data || vd;
+        } catch { /* ignore */ }
+      }
+      setVotesData(votesMap);
     } catch (err) {
       console.error('Erreur chargement demandes:', err);
     } finally {
@@ -236,6 +251,30 @@ const LeaveApprovalPanel = ({ onClose, onUpdated }) => {
 
   useEffect(() => { loadRequests(); }, []);
 
+  // Vote (approve/reject) au lieu d'approbation directe
+  const handleVote = async (id, vote) => {
+    try {
+      const result = await api.post(`/api/leave-requests/${id}/vote`, {
+        vote,
+        comment: (vote === 'reject' && rejectId === id) ? rejectReason : (voteComment || undefined),
+      });
+      const voteResult = result.data || result;
+      setVotesData(prev => ({ ...prev, [id]: voteResult }));
+
+      // Si la demande a été automatiquement approuvée/rejetée par le vote
+      if (voteResult.finalStatus === 'approved' || voteResult.finalStatus === 'rejected') {
+        setRequests(prev => prev.filter(r => r.id !== id));
+        onUpdated?.();
+      }
+      setRejectId(null);
+      setRejectReason('');
+      setVoteComment('');
+    } catch (err) {
+      console.error('Erreur vote:', err);
+    }
+  };
+
+  // Garder les anciennes fonctions pour compatibilité (approbation directe admin)
   const handleApprove = async (id) => {
     try {
       await api.approveLeaveRequest(id);
@@ -258,7 +297,10 @@ const LeaveApprovalPanel = ({ onClose, onUpdated }) => {
     }
   };
 
-  const getTypeInfo = (type) => LEAVE_TYPES.find(t => t.value === type) || LEAVE_TYPES[7];
+  const getTypeInfo = (type) => LEAVE_TYPES.find(t => t.value === type) || LEAVE_TYPES[LEAVE_TYPES.length - 1];
+
+  // Types nécessitant un vote
+  const APPROVAL_TYPES = ['conge_paye', 'rtt', 'maladie', 'sans_solde'];
 
   return (
     <div className="leave-approval-panel">
@@ -280,6 +322,9 @@ const LeaveApprovalPanel = ({ onClose, onUpdated }) => {
             const ti = getTypeInfo(req.type);
             const start = req.start_date || req.startDate;
             const end = req.end_date || req.endDate;
+            const vd = votesData[req.id];
+            const needsVoting = APPROVAL_TYPES.includes(req.type);
+
             return (
               <div key={req.id} className="leave-request-card" style={{ '--lr-color': ti.color }}>
                 <div className="lr-header">
@@ -297,28 +342,75 @@ const LeaveApprovalPanel = ({ onClose, onUpdated }) => {
                 </div>
                 {req.reason && <div className="lr-reason">{req.reason}</div>}
 
+                {/* Système de vote pour les congés */}
+                {needsVoting && vd && (
+                  <div className="lr-votes-section">
+                    <div className="lr-votes-bar">
+                      <div className="lr-votes-progress">
+                        <div className="lr-votes-approve-bar" style={{
+                          width: `${vd.adminCount > 0 ? (vd.approveCount / vd.adminCount * 100) : 0}%`
+                        }} />
+                        <div className="lr-votes-reject-bar" style={{
+                          width: `${vd.adminCount > 0 ? (vd.rejectCount / vd.adminCount * 100) : 0}%`
+                        }} />
+                      </div>
+                      <span className="lr-votes-count">
+                        ✅ {vd.approveCount} / ❌ {vd.rejectCount} — Seuil : {vd.threshold}
+                      </span>
+                    </div>
+                    {vd.votes && vd.votes.length > 0 && (
+                      <div className="lr-votes-list">
+                        {vd.votes.map(v => (
+                          <div key={v.id} className={`lr-vote-chip ${v.vote}`}>
+                            <span>{v.vote === 'approve' ? '✅' : '❌'}</span>
+                            <span>{v.voterName || v.voter_name}</span>
+                            {v.comment && <em>({v.comment})</em>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {rejectId === req.id ? (
                   <div className="lr-reject-form">
                     <input
                       type="text"
-                      placeholder="Motif du refus (optionnel)..."
+                      placeholder="Commentaire (optionnel)..."
                       value={rejectReason}
                       onChange={e => setRejectReason(e.target.value)}
                       autoFocus
                     />
                     <div className="lr-reject-actions">
                       <button className="lr-btn lr-btn-cancel" onClick={() => { setRejectId(null); setRejectReason(''); }}>Annuler</button>
-                      <button className="lr-btn lr-btn-reject" onClick={() => handleReject(req.id)}>Confirmer le refus</button>
+                      {needsVoting ? (
+                        <button className="lr-btn lr-btn-reject" onClick={() => handleVote(req.id, 'reject')}>Voter Contre</button>
+                      ) : (
+                        <button className="lr-btn lr-btn-reject" onClick={() => handleReject(req.id)}>Confirmer le refus</button>
+                      )}
                     </div>
                   </div>
                 ) : (
                   <div className="lr-actions">
-                    <button className="lr-btn lr-btn-approve" onClick={() => handleApprove(req.id)}>
-                      <Check size={14} /> Approuver
-                    </button>
-                    <button className="lr-btn lr-btn-reject" onClick={() => setRejectId(req.id)}>
-                      <XCircle size={14} /> Refuser
-                    </button>
+                    {needsVoting ? (
+                      <>
+                        <button className="lr-btn lr-btn-approve" onClick={() => handleVote(req.id, 'approve')}>
+                          <Check size={14} /> Voter Pour
+                        </button>
+                        <button className="lr-btn lr-btn-reject" onClick={() => setRejectId(req.id)}>
+                          <XCircle size={14} /> Voter Contre
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="lr-btn lr-btn-approve" onClick={() => handleApprove(req.id)}>
+                          <Check size={14} /> Approuver
+                        </button>
+                        <button className="lr-btn lr-btn-reject" onClick={() => setRejectId(req.id)}>
+                          <XCircle size={14} /> Refuser
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

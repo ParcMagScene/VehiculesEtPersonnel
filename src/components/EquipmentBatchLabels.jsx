@@ -3,6 +3,8 @@ import { Tag, Search, X, CheckSquare, Square, Printer, Download, ChevronDown, Ch
 import { QRCodeSVG } from 'qrcode.react';
 import './EquipmentBatchLabels.css';
 
+const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
+
 const PAGE_SIZE_MM = 200; // 200×200 mm
 const LABEL_GAP_MM = 2;
 
@@ -301,7 +303,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
                       <div className="ebl-item-info">
                         {eq.uid && <span className="ebl-uid">UID: {eq.uid}</span>}
                         {(eq.serialNumber || eq.serial_number) && <span className="ebl-sn">S/N: {eq.serialNumber || eq.serial_number}</span>}
-                        {eq.name && <span className="ebl-name">{eq.name}</span>}
+                        {eq.name && <span className="ebl-name">{cleanName(eq.name)}</span>}
                       </div>
                       {/* Mini-aperçu */}
                       <div className="ebl-mini-preview">

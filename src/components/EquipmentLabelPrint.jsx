@@ -3,6 +3,8 @@ import { X, Printer, Tag, Download } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './EquipmentLabelPrint.css';
 
+const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
+
 const LABEL_FORMATS = [
   { name: 'Auto', width: 0, height: 0, auto: true },
   { name: 'Petit (2×4 cm)', width: 40, height: 20 },
@@ -122,7 +124,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
     }
 
     printWindow.document.write(
-      '<!DOCTYPE html><html><head><title>Etiquettes - ' + escSvg(eq.reference || eq.name) + '</title>' +
+      '<!DOCTYPE html><html><head><title>Etiquettes - ' + escSvg(eq.reference || cleanName(eq.name)) + '</title>' +
       '<style>' +
         '@page { size: A4; margin: 5mm; }' +
         '* { margin: 0; padding: 0; box-sizing: border-box; }' +
@@ -154,7 +156,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         <div className="elp-header">
           <div className="elp-header-title">
             <Tag size={18} />
-            <span>Étiquette — {eq.reference || eq.name}</span>
+            <span>Étiquette — {eq.reference || cleanName(eq.name)}</span>
           </div>
           <button className="elp-close" onClick={onClose}><X size={18} /></button>
         </div>

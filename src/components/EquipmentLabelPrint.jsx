@@ -127,7 +127,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '@page { size: A4; margin: 5mm; }' +
         '* { margin: 0; padding: 0; box-sizing: border-box; }' +
         'body { font-family: -apple-system, BlinkMacSystemFont, monospace; display: flex; flex-wrap: wrap; gap: 2mm; padding: 5mm; align-content: flex-start; }' +
-        '.label { border: 0.5px dashed #ccc; border-radius: 2px; overflow: hidden; page-break-inside: avoid; }' +
+        '.label { border: 0.5px dashed #999; border-radius: 2px; overflow: hidden; page-break-inside: avoid; }' +
         '.label-content { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
         '.label-logo { flex-shrink: 0; display: flex; align-items: center; }' +
         '.label-logo img { height: ' + qrSize + 'mm; width: auto; }' +
@@ -136,7 +136,6 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '.label-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
         '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '8' : format.height < 35 ? '10' : '12') + 'pt; line-height: 1.1; white-space: nowrap; }' +
         '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '6' : format.height < 35 ? '7.5' : '9') + 'pt; color: #222; font-family: monospace; font-weight: 700; line-height: 1.1; white-space: nowrap; }' +
-        '@media print { .label { border-color: transparent; } }' +
       '</style></head><body>' +
       labels.join('') +
       '<script>window.onload=function(){setTimeout(function(){window.print();window.onafterprint=function(){window.close()};},500)};<\/script>' +

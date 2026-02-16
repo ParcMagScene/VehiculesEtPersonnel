@@ -133,9 +133,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '.label-logo img { height: ' + qrSize + 'mm; width: auto; }' +
         '.label-qr { flex-shrink: 0; margin-left: auto; }' +
         '.label-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
-        '.label-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
-        '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '8' : format.height < 35 ? '10' : '12') + 'pt; line-height: 1.1; overflow-wrap: break-word; word-break: break-word; }' +
-        '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '6' : format.height < 35 ? '7.5' : '9') + 'pt; color: #222; font-family: monospace; font-weight: 700; line-height: 1.1; overflow-wrap: break-word; word-break: break-word; }' +
+        '.label-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
+        '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '8' : format.height < 35 ? '10' : '12') + 'pt; line-height: 1.1; white-space: nowrap; }' +
+        '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '6' : format.height < 35 ? '7.5' : '9') + 'pt; color: #222; font-family: monospace; font-weight: 700; line-height: 1.1; white-space: nowrap; }' +
         '@media print { .label { border-color: transparent; } }' +
       '</style></head><body>' +
       labels.join('') +

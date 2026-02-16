@@ -132,23 +132,20 @@
   font-weight: 800;
   font-size: 13px;
   color: #1e293b;
-  overflow-wrap: break-word;
-  word-break: break-word;
+  white-space: nowrap;
 }
 
 .elp-label-uid {
   font-size: 9px;
   color: #64748b;
   font-family: monospace;
-  overflow-wrap: break-word;
-  word-break: break-word;
+  white-space: nowrap;
 }
 
 .elp-label-serial {
   font-size: 9px;
   color: #64748b;
-  overflow-wrap: break-word;
-  word-break: break-word;
+  white-space: nowrap;
 }
 
 .elp-label-logo {

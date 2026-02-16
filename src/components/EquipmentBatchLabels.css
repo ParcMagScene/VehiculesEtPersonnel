@@ -5,7 +5,8 @@
 .ebl-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   gap: 0;
 }
 
@@ -274,6 +275,12 @@
   border-radius: 4px;
 }
 
+.ebl-mini-logo {
+  height: 18px;
+  width: auto;
+  flex-shrink: 0;
+}
+
 .ebl-mini-ref {
   font-size: 8px;
   font-weight: 800;
@@ -298,6 +305,10 @@
   background: white;
   border-top: 1px solid #e2e8f0;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
 }
 
 .ebl-btn-export {

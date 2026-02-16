@@ -107,16 +107,14 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
       labels.push(
         '<div class="label" style="width: ' + format.width + 'mm; height: ' + format.height + 'mm;">' +
           '<div class="label-content">' +
-            (showLogo ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Mag Scene" /></div>' : '') +
-            '<div class="label-main">' +
-              '<div class="label-qr">' +
-                (qrUrl ? '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl) + '" alt="QR" />' : '') +
-              '</div>' +
-              '<div class="label-info">' +
-                '<div class="label-ref">' + escSvg(eq.reference || '') + '</div>' +
-                (eq.uid ? '<div class="label-uid"><b>UID: ' + escSvg(eq.uid) + '</b></div>' : '') +
-                ((eq.serialNumber || eq.serial_number) ? '<div class="label-serial"><b>S/N: ' + escSvg(eq.serialNumber || eq.serial_number) + '</b></div>' : '') +
-              '</div>' +
+            (showLogo ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" /></div>' : '') +
+            '<div class="label-info">' +
+              '<div class="label-ref">' + escSvg(eq.reference || '') + '</div>' +
+              (eq.uid ? '<div class="label-uid"><b>UID: ' + escSvg(eq.uid) + '</b></div>' : '') +
+              ((eq.serialNumber || eq.serial_number) ? '<div class="label-serial"><b>S/N: ' + escSvg(eq.serialNumber || eq.serial_number) + '</b></div>' : '') +
+            '</div>' +
+            '<div class="label-qr">' +
+              (qrUrl ? '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl) + '" alt="QR" />' : '') +
             '</div>' +
           '</div>' +
         '</div>'
@@ -130,11 +128,10 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '* { margin: 0; padding: 0; box-sizing: border-box; }' +
         'body { font-family: -apple-system, BlinkMacSystemFont, monospace; display: flex; flex-wrap: wrap; gap: 2mm; padding: 5mm; align-content: flex-start; }' +
         '.label { border: 0.5px dashed #ccc; border-radius: 2px; overflow: hidden; page-break-inside: avoid; }' +
-        '.label-content { display: flex; flex-direction: column; width: 100%; height: 100%; padding: 1.5mm; }' +
-        '.label-logo { text-align: center; margin-bottom: 1mm; }' +
-        '.label-logo img { height: 3mm; width: auto; }' +
-        '.label-main { display: flex; align-items: center; gap: 2mm; flex: 1; }' +
-        '.label-qr { flex-shrink: 0; }' +
+        '.label-content { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
+        '.label-logo { flex-shrink: 0; display: flex; align-items: center; }' +
+        '.label-logo img { height: ' + Math.max(8, format.height - 4) + 'mm; width: auto; }' +
+        '.label-qr { flex-shrink: 0; margin-left: auto; }' +
         '.label-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
         '.label-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 0.3mm; }' +
         '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '7' : '9') + 'pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
@@ -169,23 +166,21 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               ref={svgRef}
               style={{ width: format.width * 3 + 'px', height: format.height * 3 + 'px', maxWidth: '100%' }}
             >
-              <div className="elp-label-content" style={{ flexDirection: 'column' }}>
+              <div className="elp-label-content" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                 {showLogo && (
                   <div className="elp-label-logo">
-                    <img src="/Logos/logo_Noir_Transp.png" alt="Mag Scene" style={{ height: Math.min(14, format.height * 0.3) + 'px', width: 'auto' }} />
+                    <img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" style={{ height: Math.min(40, format.height * 2) + 'px', width: 'auto' }} />
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                  <div className="elp-label-qr">
-                    {qrUrl && <QRCodeSVG value={qrUrl} size={qrPreviewSize} level="M" />}
-                  </div>
-                  <div className="elp-label-info">
-                    <div className="elp-label-ref">{eq.reference || '—'}</div>
-                    {eq.uid && <div className="elp-label-uid"><strong>UID: {eq.uid}</strong></div>}
-                    {(eq.serialNumber || eq.serial_number) && (
-                      <div className="elp-label-serial"><strong>S/N: {eq.serialNumber || eq.serial_number}</strong></div>
-                    )}
-                  </div>
+                <div className="elp-label-info" style={{ flex: 1 }}>
+                  <div className="elp-label-ref">{eq.reference || '—'}</div>
+                  {eq.uid && <div className="elp-label-uid"><strong>UID: {eq.uid}</strong></div>}
+                  {(eq.serialNumber || eq.serial_number) && (
+                    <div className="elp-label-serial"><strong>S/N: {eq.serialNumber || eq.serial_number}</strong></div>
+                  )}
+                </div>
+                <div className="elp-label-qr">
+                  {qrUrl && <QRCodeSVG value={qrUrl} size={qrPreviewSize} level="M" />}
                 </div>
               </div>
             </div>

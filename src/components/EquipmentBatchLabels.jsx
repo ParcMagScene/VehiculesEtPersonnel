@@ -95,9 +95,9 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
 
   // Calculer la disposition optimale pour 200×200mm
   const calcLayout = () => {
-    // Chaque étiquette : 8 cm × 3 cm
+    // Chaque étiquette : 8 cm × 2 cm
     const labelW = 80; // mm
-    const labelH = 30; // mm
+    const labelH = 20; // mm
     const cols = Math.floor((PAGE_SIZE_MM + LABEL_GAP_MM) / (labelW + LABEL_GAP_MM));
     const rows = Math.floor((PAGE_SIZE_MM + LABEL_GAP_MM) / (labelH + LABEL_GAP_MM));
     return { labelW, labelH, cols, rows, perPage: cols * rows };
@@ -110,7 +110,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
     const layout = calcLayout();
     const printWindow = window.open('', '_blank');
     const pages = [];
-    const qrSize = Math.round(layout.labelH * 0.5);
+    const qrSize = Math.round(layout.labelH - 4);
 
     for (let i = 0; i < selected.length; i += layout.perPage) {
       const pageItems = selected.slice(i, i + layout.perPage);
@@ -151,7 +151,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         '.batch-label-inner { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
         '.batch-logo { flex-shrink: 0; display: flex; align-items: center; }' +
         '.batch-logo img { height: ' + qrSize + 'mm; width: auto; }' +
-        '.batch-qr { flex-shrink: 0; margin-left: auto; }' +
+        '.batch-qr { flex-shrink: 0; }' +
         '.batch-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
         '.batch-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
         '.batch-ref { font-weight: 800; font-size: 10pt; line-height: 1.1; white-space: nowrap; }' +

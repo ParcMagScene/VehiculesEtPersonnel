@@ -3,7 +3,7 @@
 
 .m-eq-qr {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #f8fafc;
   color: var(--theme-text-primary, #1e293b);
   padding-bottom: env(safe-area-inset-bottom, 20px);
 }

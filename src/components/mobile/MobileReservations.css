@@ -5,8 +5,8 @@
 .mobile-reservations .screen-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .mobile-reservations .back-button,
@@ -15,215 +15,524 @@
   border: none;
   width: 40px;
   height: 40px;
-  border-radius: 0.5rem;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   color: #374151;
+  transition: transform 0.15s;
+}
+
+.mobile-reservations .back-button:active,
+.mobile-reservations .add-button:active {
+  transform: scale(0.95);
 }
 
 .mobile-reservations .screen-header h2 {
   flex: 1;
   margin: 0;
   font-size: 1.25rem;
-  color: #1f2937;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .mobile-reservations .add-button {
-  background: var(--theme-gradient);
+  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
   color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-/* Formulaire */
+/* ═══ FORMULAIRE ═══ */
 .mobile-reservations .reservation-form {
   background: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
 }
 
 .mobile-reservations .form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 18px;
 }
 
 .mobile-reservations .form-group label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
+  gap: 8px;
+  font-weight: 700;
   color: #374151;
   font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
 
 .mobile-reservations .form-group input,
 .mobile-reservations .form-group select,
 .mobile-reservations .form-group textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
   font-size: 1rem;
   font-family: inherit;
   box-shadow: none;
+  background: white;
+  color: #1e293b;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
 .mobile-reservations .form-group input:focus,
 .mobile-reservations .form-group select:focus,
 .mobile-reservations .form-group textarea:focus {
   outline: none;
-  border-color: var(--theme-primary);
-  box-shadow: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
 .mobile-reservations .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .mobile-reservations .form-error {
-  padding: 0.75rem;
-  background: #fee2e2;
+  padding: 12px 16px;
+  background: #fef2f2;
   color: #dc2626;
-  border-radius: 0.5rem;
+  border-radius: 12px;
   font-size: 0.875rem;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
+  border: 1px solid #fecaca;
+  font-weight: 500;
 }
 
 .mobile-reservations .form-actions {
   display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .mobile-reservations .btn-cancel,
 .mobile-reservations .btn-submit {
   flex: 1;
-  padding: 0.875rem;
+  padding: 14px;
   border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
+  border-radius: 14px;
+  font-weight: 700;
   cursor: pointer;
   font-size: 1rem;
+  transition: transform 0.15s;
 }
 
 .mobile-reservations .btn-cancel {
-  background: #f3f4f6;
-  color: #374151;
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .mobile-reservations .btn-submit {
-  background: var(--theme-gradient);
+  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
   color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.mobile-reservations .btn-cancel:active,
+.mobile-reservations .btn-submit:active {
+  transform: scale(0.97);
 }
 
 .mobile-reservations .btn-submit:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Liste des réservations */
+/* ═══ VEHICLE PICKER ═══ */
+.vehicle-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  color: #1e293b;
+  text-align: left;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.vehicle-picker-btn:active {
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.vehicle-picker-btn.selected {
+  border-color: #667eea;
+  background: #fafaff;
+}
+
+.vehicle-picker-placeholder {
+  color: #94a3b8;
+  flex: 1;
+}
+
+.vehicle-picker-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f1f5f9;
+}
+
+.vehicle-picker-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vehicle-picker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vehicle-picker-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.vehicle-picker-reg {
+  font-size: 12px;
+  color: #64748b;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.vehicle-picker-chevron {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* Vehicle picker modal */
+.vehicle-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  animation: vp-overlay-in 0.2s ease;
+}
+
+@keyframes vp-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vehicle-picker-modal {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: vp-slide-up 0.3s ease;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes vp-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.vehicle-picker-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.vehicle-picker-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.vehicle-picker-modal-header button {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: #64748b;
+}
+
+.vehicle-picker-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 12px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.vehicle-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 14px;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.vehicle-picker-item:active {
+  background: #f8fafc;
+}
+
+.vehicle-picker-item.active {
+  background: #eef2ff;
+  box-shadow: inset 0 0 0 2px #667eea;
+}
+
+.vehicle-picker-item-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.vehicle-picker-item-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vehicle-picker-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vehicle-picker-item-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #1e293b;
+}
+
+.vehicle-picker-item-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.vp-brand {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 1px 8px;
+  border-radius: 6px;
+}
+
+.vp-type {
+  font-size: 11px;
+  font-weight: 500;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 1px 8px;
+  border-radius: 6px;
+}
+
+.vehicle-picker-item-reg {
+  font-size: 12px;
+  color: #64748b;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.vehicle-picker-check {
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.vehicle-picker-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #94a3b8;
+}
+
+.vehicle-picker-empty svg {
+  opacity: 0.4;
+  margin-bottom: 12px;
+}
+
+.vehicle-picker-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ═══ LISTE DES RÉSERVATIONS ═══ */
 .mobile-reservations .reservations-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .mobile-reservations .reservation-card {
   background: white;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
 }
 
 .mobile-reservations .reservation-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.mobile-reservations .reservation-vehicle-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.mobile-reservations .reservation-vehicle-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-reservations .reservation-vehicle-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .mobile-reservations .vehicle-name {
-  font-weight: 600;
-  color: #1f2937;
-  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 1rem;
 }
 
 .mobile-reservations .vehicle-plate {
-  background: #ede9fe;
-  color: var(--theme-primary);
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 600;
+  background: #eef2ff;
+  color: #667eea;
+  padding: 2px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  width: fit-content;
+  font-family: 'Monaco', 'Courier New', monospace;
 }
 
 .mobile-reservations .reservation-dates {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #6b7280;
+  gap: 8px;
+  color: #475569;
   font-size: 0.875rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 10px;
+  font-weight: 500;
 }
 
 .mobile-reservations .reservation-details {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 6px;
 }
 
 .mobile-reservations .detail-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #6b7280;
+  gap: 8px;
+  color: #64748b;
   font-size: 0.875rem;
 }
 
 .mobile-reservations .detail-item svg {
   flex-shrink: 0;
+  color: #94a3b8;
 }
 
 .mobile-reservations .reservation-notes {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: #f9fafb;
-  border-radius: 0.5rem;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 12px;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #64748b;
   font-style: italic;
+  border: 1px solid #e2e8f0;
 }
 
-/* État vide */
+/* ═══ ÉTAT VIDE ═══ */
 .mobile-reservations .empty-state {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 48px 24px;
   background: white;
-  border-radius: 0.75rem;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
 }
 
 .mobile-reservations .empty-state svg {
   color: #d1d5db;
-  margin-bottom: 1rem;
+  margin-bottom: 12px;
 }
 
 .mobile-reservations .empty-state p {
-  color: #6b7280;
-  margin-bottom: 1.5rem;
+  color: #64748b;
+  margin-bottom: 20px;
+  font-size: 15px;
 }
 
 .mobile-reservations .btn-primary {
-  background: var(--theme-gradient);
+  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
   color: white;
   border: none;
-  padding: 0.875rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
+  padding: 14px 24px;
+  border-radius: 14px;
+  font-weight: 700;
   cursor: pointer;
-  font-size: inherit;
-  transition: none;
+  font-size: 15px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: transform 0.15s;
+}
+
+.mobile-reservations .btn-primary:active {
+  transform: scale(0.97);
 }

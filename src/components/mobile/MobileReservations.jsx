@@ -1,7 +1,8 @@
 import React, { useState, useImperativeHandle, forwardRef } from 'react';
 import { format, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ArrowLeft, Car, Calendar, Users, MapPin, Plus } from 'lucide-react';
+import { ArrowLeft, Car, Calendar, Users, MapPin, Plus, ChevronRight, Check } from 'lucide-react';
+import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import api from '../../utils/api';
 import './MobileReservations.css';
 
@@ -21,6 +22,7 @@ const safeFormatDate = (dateValue, formatStr = 'dd MMM yyyy') => {
 const MobileReservations = forwardRef(({ vehicles, reservations, clients, drivers, currentUser, onReservationCreated, onBack }, ref) => {
   const [showForm, setShowForm] = useState(false);
   const [openedDirectly, setOpenedDirectly] = useState(false);
+  const [showVehiclePicker, setShowVehiclePicker] = useState(false);
   
   // Exposer la méthode openForm au parent
   useImperativeHandle(ref, () => ({
@@ -139,18 +141,88 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
               <Car size={18} />
               Véhicule
             </label>
-            <select
-              value={formData.vehicleId}
-              onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
-              required
+            {/* Custom vehicle picker with photos */}
+            <button
+              type="button"
+              className={`vehicle-picker-btn ${formData.vehicleId ? 'selected' : ''}`}
+              onClick={() => setShowVehiclePicker(true)}
             >
-              <option value="">Sélectionner un véhicule</option>
-              {availableVehicles.map(vehicle => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.name} - {vehicle.registration || vehicle.immatriculation}
-                </option>
-              ))}
-            </select>
+              {formData.vehicleId ? (() => {
+                const v = availableVehicles.find(veh => String(veh.id) === String(formData.vehicleId));
+                if (!v) return <span className="vehicle-picker-placeholder">Sélectionner un véhicule</span>;
+                return (
+                  <>
+                    <div className="vehicle-picker-thumb">
+                      <img
+                        src={v.photo ? `/Photos/${v.photo}` : getVehicleAvatar(v.type)}
+                        alt={v.name}
+                        onError={(e) => { e.target.src = getVehicleAvatar(v.type); }}
+                      />
+                    </div>
+                    <div className="vehicle-picker-info">
+                      <span className="vehicle-picker-name">{v.name}</span>
+                      <span className="vehicle-picker-reg">{v.registration || v.immatriculation}</span>
+                    </div>
+                    <ChevronRight size={18} className="vehicle-picker-chevron" />
+                  </>
+                );
+              })() : (
+                <>
+                  <span className="vehicle-picker-placeholder">Sélectionner un véhicule</span>
+                  <ChevronRight size={18} className="vehicle-picker-chevron" />
+                </>
+              )}
+            </button>
+
+            {/* Vehicle picker modal */}
+            {showVehiclePicker && (
+              <div className="vehicle-picker-overlay" onClick={() => setShowVehiclePicker(false)}>
+                <div className="vehicle-picker-modal" onClick={e => e.stopPropagation()}>
+                  <div className="vehicle-picker-modal-header">
+                    <h3>Choisir un véhicule</h3>
+                    <button type="button" onClick={() => setShowVehiclePicker(false)}>✕</button>
+                  </div>
+                  <div className="vehicle-picker-list">
+                    {availableVehicles.map(vehicle => (
+                      <button
+                        key={vehicle.id}
+                        type="button"
+                        className={`vehicle-picker-item ${String(formData.vehicleId) === String(vehicle.id) ? 'active' : ''}`}
+                        onClick={() => {
+                          setFormData({ ...formData, vehicleId: vehicle.id });
+                          setShowVehiclePicker(false);
+                        }}
+                      >
+                        <div className="vehicle-picker-item-photo">
+                          <img
+                            src={vehicle.photo ? `/Photos/${vehicle.photo}` : getVehicleAvatar(vehicle.type)}
+                            alt={vehicle.name}
+                            onError={(e) => { e.target.src = getVehicleAvatar(vehicle.type); }}
+                          />
+                        </div>
+                        <div className="vehicle-picker-item-info">
+                          <span className="vehicle-picker-item-name">{vehicle.name}</span>
+                          <span className="vehicle-picker-item-meta">
+                            {vehicle.brand && <span className="vp-brand">{vehicle.brand}</span>}
+                            <span className="vp-type">{vehicle.type}</span>
+                          </span>
+                          <span className="vehicle-picker-item-reg">{vehicle.registration || vehicle.immatriculation}</span>
+                        </div>
+                        {String(formData.vehicleId) === String(vehicle.id) && (
+                          <Check size={20} className="vehicle-picker-check" />
+                        )}
+                      </button>
+                    ))}
+                    {availableVehicles.length === 0 && (
+                      <div className="vehicle-picker-empty">
+                        <Car size={32} />
+                        <p>Aucun véhicule disponible pour ces dates</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="form-row">
@@ -267,8 +339,17 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
             return (
               <div key={reservation.id} className="reservation-card">
                 <div className="reservation-header">
-                  <div className="vehicle-name">{vehicle?.name || 'Véhicule'}</div>
-                  <div className="vehicle-plate">{vehicle?.immatriculation}</div>
+                  <div className="reservation-vehicle-thumb">
+                    <img
+                      src={vehicle?.photo ? `/Photos/${vehicle.photo}` : getVehicleAvatar(vehicle?.type)}
+                      alt={vehicle?.name || 'Véhicule'}
+                      onError={(e) => { e.target.src = getVehicleAvatar(vehicle?.type); }}
+                    />
+                  </div>
+                  <div className="reservation-vehicle-info">
+                    <div className="vehicle-name">{vehicle?.name || 'Véhicule'}</div>
+                    <div className="vehicle-plate">{vehicle?.immatriculation}</div>
+                  </div>
                 </div>
                 
                 <div className="reservation-dates">

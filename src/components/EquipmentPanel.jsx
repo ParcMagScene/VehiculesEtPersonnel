@@ -5,6 +5,7 @@ import api from '../utils/api';
 import EquipmentImportModal from './EquipmentImportModal';
 import SavImportModal from './SavImportModal';
 import EquipmentLabelPrint from './EquipmentLabelPrint';
+import EquipmentBatchLabels from './EquipmentBatchLabels';
 import { printEquipmentSheet } from './EquipmentSheetPrint';
 import MaintenanceReportModal from './MaintenanceReportModal';
 import './EquipmentPanel.css';
@@ -452,6 +453,9 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
               <Wrench size={14} /> SAV
               {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
             </button>
+            <button className={`eq-tab ${subTab === 'labels' ? 'active' : ''}`} onClick={() => setSubTab('labels')}>
+              <Tag size={14} /> Étiquettes
+            </button>
           </div>
           <div className="eq-stats-row">
             <button className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }} title="Tous">
@@ -586,6 +590,13 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 setDialogEquipment(eq);
                 api.getEquipmentById(eq.id).then(detail => setDialogEquipment(detail)).catch(() => {});
               }}
+            />
+          )}
+
+          {subTab === 'labels' && (
+            <EquipmentBatchLabels
+              equipment={equipment}
+              onPrintSingle={(eq) => setLabelPrintEquipment(eq)}
             />
           )}
 

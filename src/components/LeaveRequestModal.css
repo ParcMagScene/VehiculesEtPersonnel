@@ -561,3 +561,104 @@
   color: #94a3b8;
   font-style: italic;
 }
+
+/* ═══ Multi-périodes ═══ */
+.leave-periods-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leave-periods-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.leave-periods-header > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leave-add-period-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px dashed #94a3b8;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.leave-add-period-btn:hover {
+  border-color: #6366f1;
+  background: #f5f3ff;
+}
+
+.leave-period-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fafbfc;
+  transition: border-color 0.15s;
+}
+
+.leave-period-card:hover {
+  border-color: #cbd5e1;
+}
+
+.leave-period-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.leave-period-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.leave-period-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.leave-period-remove:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.leave-day-count-inline {
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.leave-total-days {
+  font-size: 14px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  border: 1px solid #c7d2fe;
+}

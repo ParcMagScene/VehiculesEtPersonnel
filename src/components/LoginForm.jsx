@@ -17,12 +17,12 @@ const LoginForm = ({ onLogin }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showSessionConflict, setShowSessionConflict] = useState(false);
   const [conflictUser, setConflictUser] = useState(null);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetFormEmail, setResetFormEmail] = useState('');
+  const [resetFormName, setResetFormName] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [resetError, setResetError] = useState('');
 
   // Détecter le paramètre URL ?setup=email pour ouvrir le modal de création directe
   useEffect(() => {
@@ -74,8 +74,9 @@ const LoginForm = ({ onLogin }) => {
       } 
       // Vérifier si c'est une demande de réinitialisation de mot de passe
       else if (err.response?.status === 403 && err.response?.data?.error === 'PASSWORD_RESET_REQUIRED') {
-        setResetEmail(email);
-        setShowPasswordReset(true);
+        setResetFormEmail(email);
+        setShowResetPassword(true);
+        setResetError('Votre compte nécessite une réinitialisation du mot de passe.');
         setError('');
       } 
       else {
@@ -120,49 +121,29 @@ const LoginForm = ({ onLogin }) => {
       setLoading(false);
     }
   };
-  const handleForgotPassword = async (e) => {
+  const handleSelfResetPassword = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    
-    try {
-      const response = await fetch(`${getApiUrl()}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail })
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la demande');
-      }
-
-      setForgotSuccess(true);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (newPassword !== newPasswordConfirm) {
+      setResetError('Les mots de passe ne correspondent pas');
+      return;
     }
-  };
-
-  const handleSetNewPassword = async (e) => {
-    e.preventDefault();
     setLoading(true);
-    setError('');
+    setResetError('');
     
     try {
-      const response = await fetch(`${getApiUrl()}/auth/set-new-password`, {
+      const response = await fetch(`${getApiUrl()}/auth/self-reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          email: resetEmail, 
+          email: resetFormEmail, 
+          name: resetFormName,
           newPassword: newPassword 
         })
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la définition du mot de passe');
+        throw new Error(data.error || 'Erreur lors de la réinitialisation');
       }
 
       const data = await response.json();
@@ -172,10 +153,10 @@ const LoginForm = ({ onLogin }) => {
       localStorage.setItem('auth_user', JSON.stringify(data.user));
       
       // Fermer le modal et recharger
-      setShowPasswordReset(false);
+      setShowResetPassword(false);
       window.location.reload();
     } catch (err) {
-      setError(err.message);
+      setResetError(err.message);
     } finally {
       setLoading(false);
     }
@@ -305,10 +286,12 @@ const LoginForm = ({ onLogin }) => {
             type="button"
             className="forgot-password-link"
             onClick={() => {
-              setShowForgotPassword(true);
-              setForgotEmail(email || (selectedUser ? selectedUser.email : ''));
-              setForgotSuccess(false);
-              setError('');
+              setShowResetPassword(true);
+              setResetFormEmail(email || (selectedUser ? selectedUser.email : ''));
+              setResetFormName('');
+              setNewPassword('');
+              setNewPasswordConfirm('');
+              setResetError('');
             }}
           >
             Mot de passe oublié ?
@@ -380,114 +363,50 @@ const LoginForm = ({ onLogin }) => {
           </div>
         )}
 
-        {showForgotPassword && (
-          <div className="modal-overlay" onClick={() => setShowForgotPassword(false)}>
+        {showResetPassword && (
+          <div className="modal-overlay" onClick={() => setShowResetPassword(false)}>
             <div className="modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-                <h3>🔑 Mot de passe oublié</h3>
-              </div>
-              <div className="modal-body">
-                {!forgotSuccess ? (
-                  <>
-                    <p style={{ marginBottom: '16px', color: '#374151' }}>
-                      Entrez l'adresse email de votre compte pour réinitialiser votre mot de passe.
-                    </p>
-                    
-                    <form onSubmit={handleForgotPassword}>
-                      <div className="form-group" style={{ marginBottom: '16px' }}>
-                        <label htmlFor="forgot-email" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                          Adresse email
-                        </label>
-                        <input
-                          id="forgot-email"
-                          type="email"
-                          value={forgotEmail}
-                          onChange={(e) => setForgotEmail(e.target.value)}
-                          placeholder="email@exemple.com"
-                          required
-                          autoFocus
-                          style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
-                        />
-                      </div>
-
-                      {error && (
-                        <div className="error-message" style={{ marginBottom: '16px' }}>
-                          {error}
-                        </div>
-                      )}
-                      
-                      <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          onClick={() => {
-                            setShowForgotPassword(false);
-                            setForgotEmail('');
-                            setError('');
-                          }}
-                          disabled={loading}
-                        >
-                          Annuler
-                        </button>
-                        <button
-                          type="submit"
-                          className="btn-primary"
-                          disabled={loading || !forgotEmail}
-                        >
-                          {loading ? 'Envoi...' : 'Réinitialiser'}
-                        </button>
-                      </div>
-                    </form>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                      <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-                      <p style={{ color: '#374151', marginBottom: '8px', fontWeight: '500' }}>
-                        Demande envoyée
-                      </p>
-                      <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>
-                        Si cette adresse correspond à un compte, il a été préparé pour une réinitialisation.<br/>
-                        <strong>Reconnectez-vous</strong> pour définir un nouveau mot de passe.
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <button
-                        type="button"
-                        className="btn-primary"
-                        onClick={() => {
-                          setShowForgotPassword(false);
-                          setForgotEmail('');
-                          setForgotSuccess(false);
-                        }}
-                      >
-                        Retour à la connexion
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showPasswordReset && (
-          <div className="modal-overlay" onClick={() => setShowPasswordReset(false)}>
-            <div className="modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>🔐 Compte réinitialisé</h3>
+                <h3>🔑 Réinitialiser le mot de passe</h3>
               </div>
               <div className="modal-body">
                 <p style={{ marginBottom: '16px', color: '#374151' }}>
-                  Votre administrateur a réinitialisé votre compte.
-                </p>
-                <p style={{ marginBottom: '24px', color: '#6b7280', fontSize: '14px' }}>
-                  Veuillez définir un nouveau mot de passe pour continuer.<br/>
-                  Le mot de passe doit contenir au moins 6 caractères.
+                  Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
                 </p>
                 
-                <form onSubmit={handleSetNewPassword}>
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                <form onSubmit={handleSelfResetPassword}>
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label htmlFor="reset-email" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                      Adresse email
+                    </label>
+                    <input
+                      id="reset-email"
+                      type="email"
+                      value={resetFormEmail}
+                      onChange={(e) => setResetFormEmail(e.target.value)}
+                      placeholder="email@exemple.com"
+                      required
+                      autoFocus
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label htmlFor="reset-name" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                      Nom complet
+                    </label>
+                    <input
+                      id="reset-name"
+                      type="text"
+                      value={resetFormName}
+                      onChange={(e) => setResetFormName(e.target.value)}
+                      placeholder="Prénom Nom"
+                      required
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
                     <label htmlFor="new-password" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                       Nouveau mot de passe
                     </label>
@@ -499,14 +418,29 @@ const LoginForm = ({ onLogin }) => {
                       placeholder="Entrez votre nouveau mot de passe"
                       minLength={6}
                       required
-                      autoFocus
                       style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
                     />
                   </div>
 
-                  {error && (
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label htmlFor="confirm-password" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                      Confirmer le mot de passe
+                    </label>
+                    <input
+                      id="confirm-password"
+                      type="password"
+                      value={newPasswordConfirm}
+                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                      placeholder="Confirmez votre nouveau mot de passe"
+                      minLength={6}
+                      required
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                    />
+                  </div>
+
+                  {resetError && (
                     <div className="error-message" style={{ marginBottom: '16px' }}>
-                      {error}
+                      {resetError}
                     </div>
                   )}
                   
@@ -515,8 +449,8 @@ const LoginForm = ({ onLogin }) => {
                       type="button"
                       className="btn-secondary"
                       onClick={() => {
-                        setShowPasswordReset(false);
-                        setNewPassword('');
+                        setShowResetPassword(false);
+                        setResetError('');
                       }}
                       disabled={loading}
                     >
@@ -525,9 +459,9 @@ const LoginForm = ({ onLogin }) => {
                     <button
                       type="submit"
                       className="btn-primary"
-                      disabled={loading || newPassword.length < 6}
+                      disabled={loading || !resetFormEmail || !resetFormName || newPassword.length < 6 || !newPasswordConfirm}
                     >
-                      {loading ? 'Définition...' : 'Définir mon mot de passe'}
+                      {loading ? 'Réinitialisation...' : 'Réinitialiser'}
                     </button>
                   </div>
                 </form>

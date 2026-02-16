@@ -10,6 +10,7 @@ import MobilePersonnel from './MobilePersonnel';
 import MobileMessaging from './MobileMessaging';
 import MobileEquipment from './MobileEquipment';
 import MobileEquipmentQR from './MobileEquipmentQR';
+import MobileQRLanding from './MobileQRLanding';
 import MobileOrders from './MobileOrders';
 import MobileLogin from './MobileLogin';
 import api from '../../utils/api';
@@ -102,7 +103,7 @@ function MobileApp({ onSwitchToDesktop }) {
       const match = hash.match(/#\/mobile\/equipment\/(EMAG-\d+)/i);
       if (match) {
         setQrEquipmentUid(match[1]);
-        setCurrentScreen('equipment-qr');
+        setCurrentScreen('qr-landing');
       }
     };
     checkQrHash();
@@ -202,6 +203,17 @@ function MobileApp({ onSwitchToDesktop }) {
 
   if (!isAuthenticated) {
     return <MobileLogin onLogin={handleLogin} />;
+  }
+
+  // Écran d'atterrissage QR — plein écran, sans header/menu
+  if (currentScreen === 'qr-landing' && qrEquipmentUid) {
+    return (
+      <MobileQRLanding
+        uid={qrEquipmentUid}
+        onGoToEquipment={() => setCurrentScreen('equipment-qr')}
+        onGoHome={() => { setQrEquipmentUid(null); setCurrentScreen('home'); window.location.hash = '#/mobile'; }}
+      />
+    );
   }
 
   return (

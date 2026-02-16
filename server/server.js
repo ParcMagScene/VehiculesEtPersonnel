@@ -95,6 +95,7 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/set-new-password', authLimiter);
+app.use('/api/auth/self-reset-password', authLimiter);
 
 // Servir les fichiers statiques depuis le dossier public/attachments
 const attachmentsPath = path.join(__dirname, '..', 'public', 'attachments');
@@ -262,6 +263,65 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Réinitialisation directe du mot de passe (self-service, sans ancien mot de passe)
+// Sécurité : l'utilisateur doit fournir son email ET son nom exact pour prouver son identité
+app.post('/api/auth/self-reset-password', async (req, res) => {
+  try {
+    const { email, name, newPassword } = req.body;
+
+    if (!email || !name || !newPassword) {
+      return res.status(400).json({ error: 'Email, nom et nouveau mot de passe requis' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (!user) {
+      // Message générique pour ne pas révéler si le compte existe
+      return res.status(400).json({ error: 'Les informations saisies ne correspondent à aucun compte' });
+    }
+
+    // Vérifier que le nom correspond (insensible à la casse, trim)
+    const nameMatch = user.name.trim().toLowerCase() === name.trim().toLowerCase();
+    if (!nameMatch) {
+      return res.status(400).json({ error: 'Les informations saisies ne correspondent à aucun compte' });
+    }
+
+    // Mettre à jour le mot de passe
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    db.prepare('UPDATE users SET password_hash = ?, password_reset_required = 0 WHERE id = ?').run(passwordHash, user.id);
+
+    // Fermer toutes les sessions existantes
+    db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
+
+    // Créer un nouveau token pour connecter directement l'utilisateur
+    let perms = {};
+    try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
+      JWT_SECRET,
+      { expiresIn: `${JWT_EXPIRY_DAYS}d` }
+    );
+
+    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    db.prepare('INSERT INTO active_sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)').run(user.id, tokenHash, expiresAt);
+
+    console.log(`🔑 Mot de passe réinitialisé (self-service) pour: ${email}`);
+
+    res.json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms }
+    });
+  } catch (error) {
+    console.error('Erreur self-reset-password:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

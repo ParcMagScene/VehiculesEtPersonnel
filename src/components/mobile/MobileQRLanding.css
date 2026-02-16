@@ -1,0 +1,184 @@
+/* ═══ QR LANDING — PAGE D'ATTERRISSAGE SCAN QR CODE ═══ */
+
+.qr-landing {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+.qr-landing * {
+  box-sizing: border-box;
+}
+
+.qr-landing-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 380px;
+  overflow: hidden;
+  animation: qrLandingSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes qrLandingSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Header ── */
+.qr-landing-header {
+  background: linear-gradient(135deg, #1e3a5f, #2563eb);
+  padding: 28px 24px 24px;
+  text-align: center;
+  color: white;
+}
+
+.qr-landing-logo {
+  width: 64px;
+  height: 64px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.qr-landing-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: 0.5px;
+}
+
+.qr-landing-subtitle {
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  margin: 0;
+}
+
+/* ── Equipment Info ── */
+.qr-landing-info {
+  padding: 24px 24px 16px;
+  text-align: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.qr-landing-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #64748b;
+  padding: 12px 0;
+}
+
+.qr-spinner {
+  animation: qrSpin 1s linear infinite;
+}
+
+@keyframes qrSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.qr-landing-error {
+  color: #ef4444;
+  font-size: 14px;
+  padding: 12px 0;
+}
+
+.qr-landing-uid {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  color: #64748b;
+  background: #f1f5f9;
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.qr-landing-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.qr-landing-detail {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.qr-landing-status {
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ── Action Buttons ── */
+.qr-landing-actions {
+  padding: 20px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qr-landing-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.qr-landing-btn span {
+  flex: 1;
+}
+
+.qr-landing-btn:active {
+  transform: scale(0.97);
+}
+
+.qr-landing-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Bouton "Aller au matériel" — accent bleu */
+.qr-landing-btn-equipment {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.qr-landing-btn-equipment:active:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+/* Bouton "Accueil eM@g" — gris/neutre */
+.qr-landing-btn-home {
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+}
+
+.qr-landing-btn-home:active {
+  background: #e2e8f0;
+}

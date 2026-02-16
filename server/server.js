@@ -316,6 +316,10 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: `${JWT_EXPIRY_DAYS}d` }
     );
     
+    // Parser les permissions
+    let perms = {};
+    try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
+
     // Enregistrer la session
     const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
     const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -325,7 +329,7 @@ app.post('/api/auth/login', async (req, res) => {
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
     
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -1745,6 +1745,7 @@
   scrollbar-width: thin;
   scrollbar-gutter: stable;
   isolation: isolate;
+  position: relative;
 }
 
 .pp-grid {
@@ -1809,6 +1810,16 @@
 }
 
 /* ── Tooltip au survol — système unifié [data-emag-tooltip] de theme.css ── */
+
+/* Empêcher le tooltip des slots de 1ère colonne de déborder à gauche */
+.pp-slot:first-child[data-emag-tooltip]::before {
+  left: 0;
+  transform: none;
+}
+.pp-slot:first-child[data-emag-tooltip]::after {
+  left: 16px;
+  transform: none;
+}
 
 /* ── Crosshair highlight colonne + ligne ── */
 .pp-col-hovered {

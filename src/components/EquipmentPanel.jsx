@@ -875,7 +875,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
               ))}
             </div>
 
-            <div className="eq-management-content">
+            <div className={`eq-management-content ${mgmtTab === 'labels' ? 'eq-mgmt-content-labels' : ''}`}>
               {/* Onglet Imports */}
               {mgmtTab === 'imports' && (
                 <>

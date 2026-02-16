@@ -130,12 +130,12 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '.label { border: 0.5px dashed #ccc; border-radius: 2px; overflow: hidden; page-break-inside: avoid; }' +
         '.label-content { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
         '.label-logo { flex-shrink: 0; display: flex; align-items: center; }' +
-        '.label-logo img { height: ' + Math.max(8, format.height - 4) + 'mm; width: auto; }' +
+        '.label-logo img { height: ' + qrSize + 'mm; width: auto; }' +
         '.label-qr { flex-shrink: 0; margin-left: auto; }' +
         '.label-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
         '.label-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 0.3mm; }' +
-        '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '7' : '9') + 'pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
-        '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '5.5' : '6.5') + 'pt; color: #222; font-family: monospace; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
+        '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '7' : '9') + 'pt; overflow-wrap: break-word; word-break: break-word; }' +
+        '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '5.5' : '6.5') + 'pt; color: #222; font-family: monospace; font-weight: 700; overflow-wrap: break-word; word-break: break-word; }' +
         '@media print { .label { border-color: transparent; } }' +
       '</style></head><body>' +
       labels.join('') +
@@ -169,7 +169,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <div className="elp-label-content" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                 {showLogo && (
                   <div className="elp-label-logo">
-                    <img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" style={{ height: Math.min(40, format.height * 2) + 'px', width: 'auto' }} />
+                    <img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" style={{ height: qrPreviewSize + 'px', width: 'auto' }} />
                   </div>
                 )}
                 <div className="elp-label-info" style={{ flex: 1 }}>

@@ -1288,6 +1288,13 @@
   flex-direction: column;
   gap: 24px;
   flex: 1;
+  min-height: 0;
+}
+
+.eq-management-content.eq-mgmt-content-labels {
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
 }
 
 .eq-management-section {

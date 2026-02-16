@@ -254,6 +254,17 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
           <button className={`ebl-toggle-btn ${showLogo ? 'active' : ''}`} onClick={() => setShowLogo(true)}>Avec</button>
           <button className={`ebl-toggle-btn ${!showLogo ? 'active' : ''}`} onClick={() => setShowLogo(false)}>Sans</button>
         </div>
+
+        <div className="ebl-toolbar-actions">
+          <button className="ebl-btn-export" onClick={handleExportBatchSVG} disabled={totalSelected === 0}>
+            <Download size={16} />
+            Exporter (200 × 200 mm) {totalSelected > 0 ? `— ${totalSelected}` : ''}
+          </button>
+          <button className="ebl-btn-print" onClick={handlePrintBatch} disabled={totalSelected === 0}>
+            <Printer size={16} />
+            Imprimer (A4) {totalSelected > 0 ? `— ${totalSelected} étiquette${totalSelected > 1 ? 's' : ''}` : ''}
+          </button>
+        </div>
       </div>
 
       {/* Info sélection */}
@@ -322,17 +333,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         })}
       </div>
 
-      {/* Actions */}
-      <div className="ebl-actions">
-        <button className="ebl-btn-export" onClick={handleExportBatchSVG} disabled={totalSelected === 0}>
-          <Download size={16} />
-          Exporter (200 × 200 mm) {totalSelected > 0 ? `— ${totalSelected}` : ''}
-        </button>
-        <button className="ebl-btn-print" onClick={handlePrintBatch} disabled={totalSelected === 0}>
-          <Printer size={16} />
-          Imprimer (A4) {totalSelected > 0 ? `— ${totalSelected} étiquette${totalSelected > 1 ? 's' : ''}` : ''}
-        </button>
-      </div>
+
     </div>
   );
 };

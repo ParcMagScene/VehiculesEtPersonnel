@@ -58,6 +58,9 @@ const SAV_TYPES = {
 
 // URL de base pour les QR codes — toujours utiliser l'URL production accessible depuis un mobile
 const APP_BASE_URL = (() => {
+
+// Nettoyer les guillemets inutiles dans les noms
+const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
   const origin = window.location.origin;
   // Si on est sur le domaine de production, utiliser directement
   if (origin.includes('magsav.duckdns.org')) return origin;
@@ -932,7 +935,7 @@ const EquipmentGrid = ({ equipment, selectedId, photosList, logosList, favoriteI
                 </td>
                 <td className="eq-table-name">
                   <div className="eq-table-name-cell">
-                    <span>{eq.name}</span>
+                    <span>{cleanName(eq.name)}</span>
                     <div className="eq-table-list-icons">
                       {isFav && <Star size={12} className="eq-list-star active" />}
                       {isWatch && <Eye size={12} className="eq-list-eye active" />}
@@ -986,12 +989,12 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
         <div className="eq-detail-media-row">
           {photo && (
             <div className="eq-detail-photo">
-              <img src={photo} alt={eq.name} />
+              <img src={photo} alt={cleanName(eq.name)} />
             </div>
           )}
           <div className="eq-detail-info-col">
             <div className="eq-detail-title-row">
-              <h2>{eq.categoryIcon || eq.category_icon || '📦'} {eq.name}</h2>
+              <h2>{eq.categoryIcon || eq.category_icon || '📦'} {cleanName(eq.name)}</h2>
             </div>
             <span className="eq-detail-status" style={{ background: st.color }}>{st.icon} {st.label}</span>
             {logo && (
@@ -1215,7 +1218,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
     <div className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
       <div className="eq-slide-header">
         <div className="eq-slide-title-row">
-          <span className="eq-slide-name">{currentEq.name}</span>
+          <span className="eq-slide-name">{cleanName(currentEq.name)}</span>
           <span className="eq-slide-status" style={{ background: st.color }}>{st.icon} {st.label}</span>
         </div>
         <button className="eq-slide-close" onClick={handleClose} title="Fermer">
@@ -1274,7 +1277,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             <span className="eq-dialog-cat" style={{ background: (eq.categoryColor || eq.category_color || '#6366f1') }}>
               {eq.categoryIcon || eq.category_icon || '📦'} {eq.categoryName || eq.category_name || ''}
             </span>
-            <span className="eq-dialog-name">{eq.name}</span>
+            <span className="eq-dialog-name">{cleanName(eq.name)}</span>
           </div>
           <button className="eq-dialog-close" onClick={handleClose} title="Fermer">
             <X size={20} />
@@ -1550,7 +1553,7 @@ const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, 
               <label>Équipement *</label>
               <select value={form.equipment_id} onChange={(e) => setForm({ ...form, equipment_id: e.target.value })} required>
                 <option value="">— Sélectionner —</option>
-                {equipment.map(eq => <option key={eq.id} value={eq.id}>{eq.category_icon} {eq.name} {eq.reference ? `(${eq.reference})` : ''}</option>)}
+                {equipment.map(eq => <option key={eq.id} value={eq.id}>{eq.category_icon} {cleanName(eq.name)} {eq.reference ? `(${eq.reference})` : ''}</option>)}
               </select>
             </div>
             <div className="eq-form-field eq-form-full">
@@ -1635,7 +1638,7 @@ const AssignModal = ({ equipment: eq, persons, onSave, onClose }) => {
     <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eq-modal eq-modal-sm">
         <div className="eq-modal-header">
-          <h3>👤 Attribuer : {eq.name}</h3>
+          <h3>👤 Attribuer : {cleanName(eq.name)}</h3>
           <button onClick={onClose}><X size={18} /></button>
         </div>
         <form onSubmit={handleSubmit} className="eq-modal-body">
@@ -1721,7 +1724,7 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDial
         <div className="eq-detail-fields">
           <div className="eq-detail-field"><span>🎯</span><span>Priorité</span><strong style={{ color: pri.color }}>{pri.label}</strong></div>
           <div className="eq-detail-field"><span>🔧</span><span>Type</span><strong>{SAV_TYPES[t.type] || t.type}</strong></div>
-          {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong className="eq-clickable-link" onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}>{eq.categoryIcon || '📦'} {eq.name}</strong></div>}
+          {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong className="eq-clickable-link" onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}>{eq.categoryIcon || '📦'} {cleanName(eq.name)}</strong></div>}
           <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.createdAt)}</strong></div>
           {t.resolvedAt && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolvedAt)}</strong></div>}
           {t.cost != null && t.cost > 0 && <div className="eq-detail-field"><DollarSign size={14} /><span>Coût</span><strong>{parseFloat(t.cost).toFixed(2)} €</strong></div>}
@@ -1784,7 +1787,7 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
             <div className="eq-detail-fields">
               <div className="eq-detail-field"><span>🎯</span><span>Priorité</span><strong style={{ color: pri.color }}>{pri.label}</strong></div>
               <div className="eq-detail-field"><span>🔧</span><span>Type</span><strong>{SAV_TYPES[t.type] || t.type}</strong></div>
-              {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong className="eq-clickable-link" onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}>{eq.categoryIcon || '📦'} {eq.name} {eq.reference ? `(${eq.reference})` : ''}</strong></div>}
+              {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong className="eq-clickable-link" onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}>{eq.categoryIcon || '📦'} {cleanName(eq.name)} {eq.reference ? `(${eq.reference})` : ''}</strong></div>}
               {tech && <div className="eq-detail-field"><User size={14} /><span>Technicien</span><strong>{tech.firstName} {tech.lastName}</strong></div>}
               <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.createdAt)}</strong></div>
               {t.resolvedAt && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolvedAt)}</strong></div>}

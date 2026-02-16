@@ -1,5 +1,7 @@
 import React from 'react';
 
+const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
+
 // URL de base pour les QR codes
 const APP_BASE_URL = (() => {
   const origin = window.location.origin;
@@ -93,7 +95,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Fiche - ${eq.name}</title>
+  <title>Fiche - ${cleanName(eq.name)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; padding: 20px; max-width: 210mm; margin: 0 auto; }
@@ -148,7 +150,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
   <div class="sheet-header">
     ${photoPath ? `<img src="${photoPath}" class="sheet-photo" />` : ''}
     <div class="sheet-header-info">
-      <h1>${eq.categoryIcon || eq.category_icon || '📦'} ${eq.name}</h1>
+      <h1>${eq.categoryIcon || eq.category_icon || '📦'} ${cleanName(eq.name)}</h1>
       <div class="sheet-category">${eq.categoryName || eq.category_name || 'Non catégorisé'}</div>
       <div style="margin-top: 6px;">
         <span class="sheet-status" style="background: ${st.color}">${st.icon} ${st.label}</span>
@@ -239,7 +241,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
   </div>
 
   <div class="sheet-footer">
-    <span>Fiche matériel — ${eq.name}</span>
+    <span>Fiche matériel — ${cleanName(eq.name)}</span>
     <span>Imprimée le ${today}</span>
   </div>
 

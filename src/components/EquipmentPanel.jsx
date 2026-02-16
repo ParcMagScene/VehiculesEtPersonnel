@@ -646,6 +646,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             onClose={() => setSelectedTicket(null)}
             onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
             onOpenDialog={(t) => { setSelectedTicket(null); setDialogTicket(t); }}
+            onOpenEquipmentDialog={(eq) => { setSelectedTicket(null); setDialogEquipment(eq); }}
           />
         )}
       </div>
@@ -668,6 +669,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         onReturn={handleReturn}
         onCreateTicket={(eq) => { setEditingSavTicket(null); setShowSavModal(true); }}
         onRefresh={loadData}
+        onOpenTicketDialog={(t) => { setDialogEquipment(null); setDialogTicket(t); }}
       />
 
       {/* Dialog SAV (double-clic) */}
@@ -684,6 +686,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
           setDialogTicket(null);
           loadData();
         }}
+        onOpenEquipmentDialog={(eq) => { setDialogTicket(null); setDialogEquipment(eq); }}
       />
 
       {/* Modals */}
@@ -908,7 +911,7 @@ const EquipmentGrid = ({ equipment, selectedId, photosList, logosList, favoriteI
 };
 
 // ═══ CONTENU DÉTAIL PARTAGÉ ═══
-const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, photosList, logosList, favoriteIds, watchIds, onToggleList }) => {
+const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog }) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
@@ -1047,7 +1050,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
           const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
           const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
           return (
-            <div key={t.id} className="eq-ticket-item">
+            <div key={t.id} className={`eq-ticket-item ${onOpenTicketDialog ? 'eq-clickable-ticket' : ''}`} onClick={() => onOpenTicketDialog && onOpenTicketDialog(t)} style={onOpenTicketDialog ? { cursor: 'pointer' } : {}}>
               <div className="eq-ticket-header">
                 <span className="eq-ticket-type">{SAV_TYPES[t.type] || t.type}</span>
                 <span className="eq-ticket-priority" style={{ color: pri.color }}>{pri.label}</span>
@@ -1163,7 +1166,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
 };
 
 // ═══ MODAL DÉTAIL COMPLET (double-clic) ═══
-const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh }) => {
+const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh, onOpenTicketDialog }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -1213,6 +1216,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             favoriteIds={favoriteIds}
             watchIds={watchIds}
             onToggleList={onToggleList}
+            onOpenTicketDialog={onOpenTicketDialog}
           />
         </div>
       </div>
@@ -1430,8 +1434,8 @@ const EquipmentFormModal = ({ equipment: eq, categories, onSave, onClose }) => {
 // ═══ MODAL TICKET SAV ═══
 const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, onSave, onClose }) => {
   const [form, setForm] = useState({
-    equipment_id: ticket?.equipment_id || preselectedEquipment?.id || '',
-    assigned_to: ticket?.assigned_to || '',
+    equipment_id: ticket?.equipmentId || ticket?.equipment_id || preselectedEquipment?.id || '',
+    assigned_to: ticket?.assignedTo || ticket?.assigned_to || '',
     type: ticket?.type || 'panne',
     priority: ticket?.priority || 'medium',
     status: ticket?.status || 'open',
@@ -1586,7 +1590,7 @@ const AssignModal = ({ equipment: eq, persons, onSave, onClose }) => {
 };
 
 // ═══ VOLET LATÉRAL SAV (clic simple) ═══
-const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDialog }) => {
+const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDialog, onOpenEquipmentDialog }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -1636,7 +1640,7 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDial
         <div className="eq-detail-fields">
           <div className="eq-detail-field"><span>🎯</span><span>Priorité</span><strong style={{ color: pri.color }}>{pri.label}</strong></div>
           <div className="eq-detail-field"><span>🔧</span><span>Type</span><strong>{SAV_TYPES[t.type] || t.type}</strong></div>
-          {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong>{eq.name}</strong></div>}
+          {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong className="eq-clickable-link" onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}>{eq.categoryIcon || '📦'} {eq.name}</strong></div>}
           <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.createdAt)}</strong></div>
           {t.resolvedAt && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolvedAt)}</strong></div>}
           {t.cost != null && t.cost > 0 && <div className="eq-detail-field"><DollarSign size={14} /><span>Coût</span><strong>{parseFloat(t.cost).toFixed(2)} €</strong></div>}
@@ -1655,7 +1659,7 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDial
 };
 
 // ═══ DIALOG DÉTAIL SAV (double-clic) ═══
-const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit, onDelete }) => {
+const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit, onDelete, onOpenEquipmentDialog }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -1699,7 +1703,7 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
             <div className="eq-detail-fields">
               <div className="eq-detail-field"><span>🎯</span><span>Priorité</span><strong style={{ color: pri.color }}>{pri.label}</strong></div>
               <div className="eq-detail-field"><span>🔧</span><span>Type</span><strong>{SAV_TYPES[t.type] || t.type}</strong></div>
-              {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong>{eq.categoryIcon || '📦'} {eq.name} {eq.reference ? `(${eq.reference})` : ''}</strong></div>}
+              {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong className="eq-clickable-link" onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}>{eq.categoryIcon || '📦'} {eq.name} {eq.reference ? `(${eq.reference})` : ''}</strong></div>}
               {tech && <div className="eq-detail-field"><User size={14} /><span>Technicien</span><strong>{tech.firstName} {tech.lastName}</strong></div>}
               <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.createdAt)}</strong></div>
               {t.resolvedAt && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolvedAt)}</strong></div>}

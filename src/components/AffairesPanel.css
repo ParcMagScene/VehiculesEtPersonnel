@@ -442,6 +442,7 @@
   gap: 8px;
   transition: background 0.15s;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .affaire-row:last-child {

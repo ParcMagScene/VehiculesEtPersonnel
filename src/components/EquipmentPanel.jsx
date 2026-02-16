@@ -56,11 +56,11 @@ const SAV_TYPES = {
   calibrage: 'Calibrage',
 };
 
-// URL de base pour les QR codes — toujours utiliser l'URL production accessible depuis un mobile
-const APP_BASE_URL = (() => {
-
 // Nettoyer les guillemets inutiles dans les noms
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
+
+// URL de base pour les QR codes — toujours utiliser l'URL production accessible depuis un mobile
+const APP_BASE_URL = (() => {
   const origin = window.location.origin;
   // Si on est sur le domaine de production, utiliser directement
   if (origin.includes('magsav.duckdns.org')) return origin;
@@ -116,6 +116,123 @@ const matchLogoToBrand = (logos, brand) => {
     if (ln.includes(b) || b.includes(ln)) return `/Logos/${l}`;
   }
   return null;
+};
+
+// ═══ RÉSOLUTION HIÉRARCHIE CATÉGORIE ═══
+const getCategoryHierarchy = (eq, categories) => {
+  if (!eq || !categories || categories.length === 0) return null;
+  const catId = eq.categoryId || eq.category_id;
+  if (!catId) return null;
+  const cat = categories.find(c => c.id === catId);
+  if (!cat) return null;
+  const result = { family: null, subfamily: null, category: null };
+  if (cat.level === 'family') {
+    result.family = cat;
+  } else if (cat.level === 'subfamily') {
+    result.subfamily = cat;
+    result.family = categories.find(c => c.id === (cat.parentId || cat.parent_id));
+  } else if (cat.level === 'category') {
+    result.category = cat;
+    const sub = categories.find(c => c.id === (cat.parentId || cat.parent_id));
+    if (sub) {
+      result.subfamily = sub;
+      result.family = categories.find(c => c.id === (sub.parentId || sub.parent_id));
+    }
+  }
+  return result;
+};
+
+// ═══ FILTRE CATÉGORIES EN CASCADE (hover) ═══
+const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hoveredFamily, setHoveredFamily] = useState(null);
+  const [hoveredSub, setHoveredSub] = useState(null);
+  const containerRef = useRef(null);
+  const closeTimer = useRef(null);
+
+  const startClose = () => { closeTimer.current = setTimeout(() => { setIsOpen(false); setHoveredFamily(null); setHoveredSub(null); }, 200); };
+  const cancelClose = () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false); setHoveredFamily(null); setHoveredSub(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getLabel = () => {
+    if (!value) return '🏷️ Toutes familles';
+    const [type, idStr] = value.split(':');
+    const id = parseInt(idStr);
+    if (type === 'family') { const f = families.find(x => x.id === id); return f ? `${f.icon || '📦'} ${f.name}` : value; }
+    if (type === 'subfamily') { const sf = subfamilies.find(x => x.id === id); return sf ? `├ ${sf.name}` : value; }
+    if (type === 'category') { const c = leafCategories.find(x => x.id === id); return c ? `└ ${c.name}` : value; }
+    return value;
+  };
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setIsOpen(false); setHoveredFamily(null); setHoveredSub(null);
+  };
+
+  return (
+    <div className="eq-cascade-filter" ref={containerRef} onMouseLeave={startClose} onMouseEnter={cancelClose}>
+      <button className={`eq-cascade-btn ${value ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+        <Filter size={13} />
+        <span>{getLabel()}</span>
+        <ChevronRight size={12} className={`eq-cascade-arrow ${isOpen ? 'open' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="eq-cascade-menu eq-cascade-l1">
+          <div className="eq-cascade-item eq-cascade-all" onClick={() => handleSelect('')}>
+            Toutes familles
+          </div>
+          {families.map(fam => {
+            const subs = subfamilies.filter(s => (s.parentId || s.parent_id) === fam.id);
+            const isHovered = hoveredFamily === fam.id;
+            return (
+              <div key={fam.id} className={`eq-cascade-item ${isHovered ? 'hovered' : ''} ${value === `family:${fam.id}` ? 'selected' : ''}`}
+                onMouseEnter={() => { setHoveredFamily(fam.id); setHoveredSub(null); cancelClose(); }}
+                onClick={() => handleSelect(`family:${fam.id}`)}>
+                <span className="eq-cascade-icon" style={{ color: fam.color || '#6b7280' }}>{fam.icon || '📦'}</span>
+                <span className="eq-cascade-label">{fam.name}</span>
+                {subs.length > 0 && <ChevronRight size={12} className="eq-cascade-sub-arrow" />}
+                {isHovered && subs.length > 0 && (
+                  <div className="eq-cascade-menu eq-cascade-l2" onMouseEnter={cancelClose}>
+                    {subs.map(sf => {
+                      const cats = leafCategories.filter(c => (c.parentId || c.parent_id) === sf.id);
+                      const isSubHovered = hoveredSub === sf.id;
+                      return (
+                        <div key={sf.id} className={`eq-cascade-item ${isSubHovered ? 'hovered' : ''} ${value === `subfamily:${sf.id}` ? 'selected' : ''}`}
+                          onMouseEnter={() => { setHoveredSub(sf.id); cancelClose(); }}
+                          onClick={(e) => { e.stopPropagation(); handleSelect(`subfamily:${sf.id}`); }}>
+                          <span className="eq-cascade-label">{sf.name}</span>
+                          {cats.length > 0 && <ChevronRight size={12} className="eq-cascade-sub-arrow" />}
+                          {isSubHovered && cats.length > 0 && (
+                            <div className="eq-cascade-menu eq-cascade-l3" onMouseEnter={cancelClose}>
+                              {cats.map(cat => (
+                                <div key={cat.id} className={`eq-cascade-item ${value === `category:${cat.id}` ? 'selected' : ''}`}
+                                  onClick={(e) => { e.stopPropagation(); handleSelect(`category:${cat.id}`); }}>
+                                  <span className="eq-cascade-label">{cat.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 };
 
 // ═══ ARBORESCENCE CATÉGORIES (accordéon 3 niveaux) ═══
@@ -289,23 +406,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const families = useMemo(() => categories.filter(c => c.level === 'family'), [categories]);
   const subfamilies = useMemo(() => categories.filter(c => c.level === 'subfamily'), [categories]);
   const leafCategories = useMemo(() => categories.filter(c => c.level === 'category'), [categories]);
-
-  // Options arborescentes pour le select unique
-  const categoryTreeOptions = useMemo(() => {
-    const opts = [];
-    families.forEach(fam => {
-      opts.push({ value: `family:${fam.id}`, label: `${fam.icon || ''} ${fam.name}`.trim(), level: 0 });
-      const subs = subfamilies.filter(s => (s.parentId || s.parent_id) === fam.id);
-      subs.forEach(sf => {
-        opts.push({ value: `subfamily:${sf.id}`, label: sf.name, level: 1 });
-        const cats = leafCategories.filter(c => (c.parentId || c.parent_id) === sf.id);
-        cats.forEach(cat => {
-          opts.push({ value: `category:${cat.id}`, label: cat.name, level: 2 });
-        });
-      });
-    });
-    return opts;
-  }, [families, subfamilies, leafCategories]);
 
   // Parsing du filtre arborescent
   const parsedCatFilter = useMemo(() => {
@@ -516,14 +616,13 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 />
                 {search && <button className="eq-search-clear" onClick={() => setSearch('')}><X size={12} /></button>}
               </div>
-              <select className="eq-filter eq-filter-tree" value={filterCatTree} onChange={(e) => setFilterCatTree(e.target.value)}>
-                <option value="">Toutes familles</option>
-                {categoryTreeOptions.map((opt, i) => (
-                  <option key={i} value={opt.value}>
-                    {'\u00A0\u00A0'.repeat(opt.level)}{opt.level === 1 ? '├ ' : opt.level === 2 ? '└ ' : ''}{opt.label}
-                  </option>
-                ))}
-              </select>
+              <CategoryCascadeFilter
+                families={families}
+                subfamilies={subfamilies}
+                leafCategories={leafCategories}
+                value={filterCatTree}
+                onChange={setFilterCatTree}
+              />
               <button className="eq-btn-add" onClick={() => { setEditingEquipment(null); setShowEquipmentModal(true); }}>
                 <Plus size={14} /> Matériel
               </button>
@@ -973,7 +1072,7 @@ const EquipmentGrid = ({ equipment, selectedId, photosList, logosList, favoriteI
 };
 
 // ═══ CONTENU DÉTAIL PARTAGÉ ═══
-const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog }) => {
+const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, categories: catList }) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
@@ -981,6 +1080,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
   const qrUrl = eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : null;
   const isFav = favoriteIds?.has(eq.id);
   const isWatch = watchIds?.has(eq.id);
+  const hierarchy = getCategoryHierarchy(eq, catList || []);
 
   return (
     <div className="eq-detail-body">
@@ -1032,6 +1132,27 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
         </div>
 
         <div className="eq-detail-fields">
+          {hierarchy && (
+            <div className="eq-detail-hierarchy">
+              {hierarchy.family && (
+                <span className="eq-hier-badge eq-hier-family" style={{ background: hierarchy.family.color || '#6366f1' }}>
+                  {hierarchy.family.icon || '📦'} {hierarchy.family.name}
+                </span>
+              )}
+              {hierarchy.subfamily && (
+                <>
+                  <ChevronRight size={12} className="eq-hier-sep" />
+                  <span className="eq-hier-badge eq-hier-sub">{hierarchy.subfamily.name}</span>
+                </>
+              )}
+              {hierarchy.category && (
+                <>
+                  <ChevronRight size={12} className="eq-hier-sep" />
+                  <span className="eq-hier-badge eq-hier-cat">{hierarchy.category.name}</span>
+                </>
+              )}
+            </div>
+          )}
           {(eq.reference || eq.serialNumber || eq.serial_number) && (
             <>
               {(eq.reference) && <div className="eq-detail-field"><Tag size={14} /><span>Réf.</span><strong>{eq.reference}</strong></div>}
@@ -1226,7 +1347,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
         </button>
       </div>
       <div className="eq-slide-body">
-        <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} onReturn={onReturn} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} />
+        <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} onReturn={onReturn} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} categories={categories} />
       </div>
       <div className="eq-slide-footer">
         {onPrintLabel && (
@@ -1301,6 +1422,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             onOpenTicketDialog={onOpenTicketDialog}
             onPrintLabel={onPrintLabel}
             onPrintSheet={onPrintSheet}
+            categories={categories}
           />
         </div>
       </div>

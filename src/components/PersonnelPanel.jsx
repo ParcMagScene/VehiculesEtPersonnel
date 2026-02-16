@@ -275,7 +275,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
             <button onClick={loadData}>Réessayer</button>
           </div>
         )}
-        <PlanningTab persons={persons} skills={skills} positions={positions} view={view} currentDate={currentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} />
+        <PlanningTab persons={persons} skills={skills} positions={positions} view={view} setView={setView} currentDate={currentDate} setCurrentDate={setCurrentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} />
         {editFormVisible && (
           <div className="modal-overlay" onClick={resetEditForm}>
             <div className="personnel-edit-modal" onClick={(e) => e.stopPropagation()}>

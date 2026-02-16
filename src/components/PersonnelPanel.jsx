@@ -17,6 +17,8 @@ import api from '../utils/api';
 import AssignmentDialog from './AssignmentDialog';
 import { PersonnelSlidePanel } from './PersonnelDetailPanel';
 import { LeaveRequestModal, LeaveApprovalPanel } from './LeaveRequestModal';
+import PersonnelContextMenu from './PersonnelContextMenu';
+import PeriodCalendarModal from './PeriodCalendarModal';
 import PersonnelImportModal from './PersonnelImportModal';
 import './PersonnelPanel.css';
 
@@ -1257,6 +1259,10 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
   const [showLeaveApproval, setShowLeaveApproval] = useState(false);
   const [pendingLeaveCount, setPendingLeaveCount] = useState(0);
 
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState(null); // { x, y, person }
+  const [periodCalendar, setPeriodCalendar] = useState(null); // { person, type }
+
   // Drag-to-create state
   const [dragCreate, setDragCreate] = useState(null); // { person, startSlotIdx, endSlotIdx }
   const isDragCreatingRef = useRef(false);
@@ -1411,7 +1417,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
     rtt: '#a78bfa',          // violet
     maladie: '#f87171',      // rouge
     sans_solde: '#fb923c',   // orange
-    formation: '#34d399',    // vert
+    formation: '#8b5cf6',    // violet foncé
+    entreprise: '#3b82f6',   // bleu
+    workshop: '#f59e0b',     // ambre
+    examen: '#10b981',       // vert
+    rdv: '#06b6d4',          // cyan
     repos: '#fbbf24',        // jaune
     autre: '#9ca3af',        // gris
   };
@@ -1421,7 +1431,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
     rtt: 'RTT',
     maladie: 'Maladie',
     sans_solde: 'SS',
-    formation: 'Formation',
+    formation: 'Form.',
+    entreprise: 'Entr.',
+    workshop: 'Work.',
+    examen: 'Exam.',
+    rdv: 'RDV',
     repos: 'Repos',
     autre: 'Autre',
   };
@@ -2080,6 +2094,10 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
                     if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
                     onPersonEdit && onPersonEdit(person);
                   }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY, person });
+                  }}
                   style={{ cursor: 'pointer' }}
                 >
                   <span className="pp-person-name">{person.firstName} {person.lastName || ''}</span>
@@ -2114,6 +2132,10 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
                     e.stopPropagation();
                     if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
                     onPersonEdit && onPersonEdit(person);
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY, person });
                   }}
                   style={{ cursor: 'pointer' }}
                 >
@@ -2217,6 +2239,31 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', currentDa
         <LeaveApprovalPanel
           onClose={() => setShowLeaveApproval(false)}
           onUpdated={() => loadPlanning()}
+        />
+      )}
+
+      {/* Menu contextuel personnel */}
+      {contextMenu && (
+        <PersonnelContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          person={contextMenu.person}
+          onSelect={(type, person) => {
+            setContextMenu(null);
+            setPeriodCalendar({ person, type });
+          }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {/* Modal calendrier de période */}
+      {periodCalendar && (
+        <PeriodCalendarModal
+          person={periodCalendar.person}
+          periodType={periodCalendar.type}
+          isAdmin={false}
+          onClose={() => setPeriodCalendar(null)}
+          onCreated={() => loadPlanning()}
         />
       )}
     </div>

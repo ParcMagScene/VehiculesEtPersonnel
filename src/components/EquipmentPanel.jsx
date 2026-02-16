@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, ArrowLeft, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash } from 'lucide-react';
+import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, ArrowLeft, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../utils/api';
 import EquipmentImportModal from './EquipmentImportModal';
 import SavImportModal from './SavImportModal';
+import EquipmentLabelPrint from './EquipmentLabelPrint';
+import { printEquipmentSheet } from './EquipmentSheetPrint';
 import './EquipmentPanel.css';
 
 // ═══ CONSTANTES ═══
@@ -229,6 +231,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [assignEquipment, setAssignEquipment] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSavImportModal, setShowSavImportModal] = useState(false);
+  const [labelPrintEquipment, setLabelPrintEquipment] = useState(null);
   const [filterFamily, setFilterFamily] = useState('');
   const [filterSubfamily, setFilterSubfamily] = useState('');
 
@@ -633,6 +636,8 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             onEdit={(eq) => { setEditingEquipment(eq); setShowEquipmentModal(true); }}
             onAssign={(eq) => { setAssignEquipment(eq); setShowAssignModal(true); }}
             onReturn={handleReturn}
+            onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
+            onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
             isAdmin={isAdmin}
           />
         )}
@@ -670,6 +675,8 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         onCreateTicket={(eq) => { setEditingSavTicket(null); setShowSavModal(true); }}
         onRefresh={loadData}
         onOpenTicketDialog={(t) => { setDialogEquipment(null); setDialogTicket(t); }}
+        onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
+        onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
       />
 
       {/* Dialog SAV (double-clic) */}
@@ -730,6 +737,13 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         <SavImportModal
           onClose={() => setShowSavImportModal(false)}
           onImportDone={loadData}
+        />
+      )}
+
+      {labelPrintEquipment && (
+        <EquipmentLabelPrint
+          equipment={labelPrintEquipment}
+          onClose={() => setLabelPrintEquipment(null)}
         />
       )}
 
@@ -911,7 +925,7 @@ const EquipmentGrid = ({ equipment, selectedId, photosList, logosList, favoriteI
 };
 
 // ═══ CONTENU DÉTAIL PARTAGÉ ═══
-const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog }) => {
+const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog }) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
@@ -999,6 +1013,16 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
           {onCreateTicket && (
             <button className="eq-btn-secondary" onClick={() => onCreateTicket(eq)}>
               <Wrench size={14} /> Ticket SAV
+            </button>
+          )}
+          {onPrintLabel && (
+            <button className="eq-btn-secondary" onClick={() => onPrintLabel(eq)}>
+              <Printer size={14} /> Étiquette
+            </button>
+          )}
+          {onPrintSheet && (
+            <button className="eq-btn-secondary" onClick={() => onPrintSheet(eq)}>
+              <FileText size={14} /> Imprimer fiche
             </button>
           )}
           {isAdmin && onDelete && (
@@ -1096,7 +1120,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
 };
 
 // ═══ VOLET LATÉRAL (clic simple) ═══
-const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, onEdit, onAssign, onReturn, isAdmin }) => {
+const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, onEdit, onAssign, onReturn, onPrintLabel, onPrintSheet, isAdmin }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -1157,7 +1181,17 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
         <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} onReturn={onReturn} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} />
       </div>
       <div className="eq-slide-footer">
-        <button className="eq-slide-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentEq); }}>
+        {onPrintLabel && (
+          <button className="eq-btn-secondary" onClick={() => onPrintLabel(currentEq)} title="Imprimer étiquette" style={{ padding: '8px 12px' }}>
+            <Printer size={14} />
+          </button>
+        )}
+        {onPrintSheet && (
+          <button className="eq-btn-secondary" onClick={() => onPrintSheet(currentEq)} title="Imprimer la fiche" style={{ padding: '8px 12px' }}>
+            <FileText size={14} />
+          </button>
+        )}
+        <button className="eq-slide-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentEq); }} style={{ flex: 1 }}>
           <ExternalLink size={14} /> Ouvrir la fiche complète
         </button>
       </div>
@@ -1166,7 +1200,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
 };
 
 // ═══ MODAL DÉTAIL COMPLET (double-clic) ═══
-const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh, onOpenTicketDialog }) => {
+const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -1217,6 +1251,8 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             watchIds={watchIds}
             onToggleList={onToggleList}
             onOpenTicketDialog={onOpenTicketDialog}
+            onPrintLabel={onPrintLabel}
+            onPrintSheet={onPrintSheet}
           />
         </div>
       </div>

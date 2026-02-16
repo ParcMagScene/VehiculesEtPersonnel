@@ -1701,13 +1701,12 @@
   width: 250px;
   flex-shrink: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: clip;
   border-right: 2px solid #e5e7eb;
   scrollbar-width: none;
   background: white;
   position: relative;
   z-index: 2;
-  contain: paint;
 }
 
 .pp-person-column::-webkit-scrollbar {
@@ -1815,6 +1814,8 @@
 .pp-slot:first-child[data-emag-tooltip]::before {
   left: 0;
   transform: none;
+  /* Clipper l'ombre à gauche pour éviter le débordement visuel */
+  clip-path: inset(-20px -20px -20px 0);
 }
 .pp-slot:first-child[data-emag-tooltip]::after {
   left: 16px;
@@ -1832,8 +1833,8 @@
 }
 
 .pp-person-cell.pp-row-hovered {
-  background: rgba(102, 126, 234, 0.08);
-  box-shadow: inset 3px 0 0 var(--theme-primary);
+  border-left: 3px solid var(--theme-primary);
+  padding-left: 7px;
 }
 
 .pp-person-cell.pp-row-hovered .pp-person-name {

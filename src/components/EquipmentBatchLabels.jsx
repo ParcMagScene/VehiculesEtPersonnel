@@ -120,7 +120,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         return (
           '<div class="batch-label" style="width:' + layout.labelW + 'mm; height:' + layout.labelH + 'mm;">' +
             '<div class="batch-label-inner">' +
-              (showLogo ? '<div class="batch-logo"><img src="/Logos/Logo_MAGSCENE_Noir_Transp.png" alt="" /></div>' : '') +
+              (showLogo ? '<div class="batch-logo"><img src="/Logos/logo_Noir_Transp.png" alt="" /></div>' : '') +
               '<div class="batch-main">' +
                 (qrUrl ? '<div class="batch-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl) + '" alt="QR" /></div>' : '') +
                 '<div class="batch-info">' +
@@ -325,18 +325,16 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
       </div>
 
       {/* Actions */}
-      {totalSelected > 0 && (
-        <div className="ebl-actions">
-          <button className="ebl-btn-export" onClick={handleExportBatchSVG}>
-            <Download size={16} />
-            SVG ({totalSelected})
-          </button>
-          <button className="ebl-btn-print" onClick={handlePrintBatch}>
-            <Printer size={16} />
-            Imprimer {totalSelected} étiquette{totalSelected > 1 ? 's' : ''} ({PAGE_SIZE_MM}×{PAGE_SIZE_MM}mm)
-          </button>
-        </div>
-      )}
+      <div className="ebl-actions">
+        <button className="ebl-btn-export" onClick={handleExportBatchSVG} disabled={totalSelected === 0}>
+          <Download size={16} />
+          Exporter SVG {totalSelected > 0 ? `(${totalSelected})` : ''}
+        </button>
+        <button className="ebl-btn-print" onClick={handlePrintBatch} disabled={totalSelected === 0}>
+          <Printer size={16} />
+          Imprimer {totalSelected > 0 ? `${totalSelected} étiquette${totalSelected > 1 ? 's' : ''}` : 'les étiquettes'}
+        </button>
+      </div>
     </div>
   );
 };

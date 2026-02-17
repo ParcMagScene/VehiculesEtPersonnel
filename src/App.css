@@ -1714,45 +1714,6 @@
   border-radius: 0.25rem;
 }
 
-.time-slot {
-  padding: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  border-right: 1px solid #e5e7eb;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-height: 60px;
-  position: relative;
-  isolation: isolate;
-}
-
-.time-slot:hover {
-  background-color: #f0f9ff;
-}
-
-.time-slot.reserved {
-  background-color: #dbeafe;
-}
-
-.reservation {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 500;
-  position: relative;
-  transform: translateZ(0);
-}
-
-.reservation:hover {
-  opacity: 0.8;
-  transform: translateY(-1px);
-}
-
 /* Pastille utilisateur créateur */
 .user-badge {
   position: absolute;

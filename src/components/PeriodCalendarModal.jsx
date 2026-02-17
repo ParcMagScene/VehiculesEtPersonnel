@@ -28,6 +28,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successCount, setSuccessCount] = useState(0);
+  const [savedRanges, setSavedRanges] = useState([]);
 
   const periodInfo = PERIOD_MENU_ITEMS.find(p => p.type === periodType) || PERIOD_MENU_ITEMS[0];
 
@@ -135,6 +136,8 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
 
       if (onCreated) onCreated();
       setSuccessCount(c => c + 1);
+      // Sauvegarder la plage pour la garder surlignée
+      setSavedRanges(prev => [...prev, { start: new Date(startDate), end: new Date(end) }]);
       // Reset pour permettre un nouvel ajout
       setStartDate(null);
       setEndDate(null);
@@ -195,6 +198,10 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                 const rangeStart = isRangeStart(day);
                 const rangeEnd = isRangeEnd(day);
                 const today = isSameDay(day, new Date());
+                const isSaved = savedRanges.some(r =>
+                  (isSameDay(day, r.start) || isAfter(day, r.start)) &&
+                  (isSameDay(day, r.end) || isBefore(day, r.end))
+                );
 
                 return (
                   <button
@@ -206,9 +213,10 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                       inRange && 'in-range',
                       rangeStart && 'range-start',
                       rangeEnd && 'range-end',
+                      isSaved && 'saved',
                       today && 'today',
                     ].filter(Boolean).join(' ')}
-                    style={inRange ? { '--range-color': periodInfo.color } : undefined}
+                    style={(inRange || isSaved) ? { '--range-color': periodInfo.color } : undefined}
                     onClick={() => handleDayClick(day)}
                     onMouseEnter={() => {
                       if (startDate && !endDate) setHoverDate(day);

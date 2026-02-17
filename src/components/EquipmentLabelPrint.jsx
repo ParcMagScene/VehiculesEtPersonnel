@@ -42,10 +42,13 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
     const hasUid = !!eq.uid;
     const hasSerial = !!(eq.serialNumber || eq.serial_number);
     const refLen = (eq.reference || '').length;
-    const textW = Math.max(50, refLen * 3.5 + (hasQr ? 28 : 0) + (showLogo ? 15 : 0));
-    const w = Math.min(100, Math.max(60, textW));
+    const uidLen = hasUid ? (eq.uid || '').length + 5 : 0; // "UID: " prefix
+    const serialLen = hasSerial ? ((eq.serialNumber || eq.serial_number || '').length + 5) : 0;
+    const maxTextLen = Math.max(refLen, uidLen, serialLen);
+    const textW = maxTextLen * 2.8 + (hasQr ? 22 : 0) + (showLogo ? 15 : 0) + 8;
+    const w = Math.min(100, Math.max(45, textW));
     const lines = 1 + (hasUid ? 1 : 0) + (hasSerial ? 1 : 0);
-    const h = Math.max(25, lines * 8 + 8 + (showLogo ? 5 : 0));
+    const h = Math.max(20, lines * 7 + 6 + (showLogo ? 3 : 0));
     return { width: w, height: h };
   };
 
@@ -132,7 +135,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         '.label-logo img { height: ' + qrSize + 'mm; width: auto; }' +
         '.label-qr { flex-shrink: 0; }' +
         '.label-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
-        '.label-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
+        '.label-info { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
         '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '8' : format.height < 35 ? '10' : '12') + 'pt; line-height: 1.1; white-space: nowrap; }' +
         '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '6' : format.height < 35 ? '7.5' : '9') + 'pt; color: #222; font-family: monospace; font-weight: 700; line-height: 1.1; white-space: nowrap; }' +
       '</style></head><body>' +
@@ -190,7 +193,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
                     <img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" style={{ height: qrPreviewSize + 'px', width: 'auto' }} />
                   </div>
                 )}
-                <div className="elp-label-info" style={{ flex: 1 }}>
+                <div className="elp-label-info">
                   <div className="elp-label-ref">{eq.reference || '—'}</div>
                   {eq.uid && <div className="elp-label-uid"><strong>UID: {eq.uid}</strong></div>}
                   {(eq.serialNumber || eq.serial_number) && (

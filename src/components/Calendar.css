@@ -568,17 +568,15 @@
 }
 
 .calendar-header-cell.day-header.today {
-  border-top: 3px solid #10b981;
-  border-left: 3px solid #10b981;
-  border-right: 3px solid #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .calendar-header-cell.period-cell.today.today-left {
-  border-left: 3px solid #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .calendar-header-cell.period-cell.today.today-right {
-  border-right: 3px solid #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 /* Corps */
@@ -791,26 +789,13 @@
   z-index: 10;
 }
 
-/* Bordures du jour actuel via box-shadow inset (évite les ::after et les problèmes de compositing) */
-.time-slot.today-slot.today-left {
-  box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.7);
+/* Jour actuel - fond légèrement teinté, pas de bordure ni ombre */
+.time-slot.today-slot {
+  background-color: rgba(16, 185, 129, 0.06);
 }
 
-.time-slot.today-slot.today-right {
-  box-shadow: inset -3px 0 0 rgba(16, 185, 129, 0.7);
-}
-
-/* Bordure inférieure pour la dernière ligne du jour actuel */
-.vehicle-row:last-child .time-slot.today-slot.today-left {
-  box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.7), inset 0 -3px 0 rgba(16, 185, 129, 0.7);
-}
-
-.vehicle-row:last-child .time-slot.today-slot.today-right {
-  box-shadow: inset -3px 0 0 rgba(16, 185, 129, 0.7), inset 0 -3px 0 rgba(16, 185, 129, 0.7);
-}
-
-.vehicle-row:last-child .time-slot.today-slot:not(.today-left):not(.today-right) {
-  box-shadow: inset 0 -3px 0 rgba(16, 185, 129, 0.7);
+.time-slot.today-slot:hover:not(.reserved) {
+  background-color: rgba(16, 185, 129, 0.12) !important;
 }
 
 .time-slot.reserved {
@@ -828,26 +813,6 @@
               inset 0 0 0 1px rgba(0, 0, 0, 0.25);
   border-radius: 4px;
   transition: box-shadow 0.2s, transform 0.2s;
-}
-
-.time-slot.today-slot.today-left.reserved {
-  box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.7);
-}
-
-.time-slot.today-slot.today-right.reserved {
-  box-shadow: inset -3px 0 0 rgba(16, 185, 129, 0.7);
-}
-
-.vehicle-row:last-child .time-slot.today-slot.reserved {
-  box-shadow: inset 0 -3px 0 rgba(16, 185, 129, 0.7);
-}
-
-.vehicle-row:last-child .time-slot.today-slot.today-left.reserved {
-  box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.7), inset 0 -3px 0 rgba(16, 185, 129, 0.7);
-}
-
-.vehicle-row:last-child .time-slot.today-slot.today-right.reserved {
-  box-shadow: inset -3px 0 0 rgba(16, 185, 129, 0.7), inset 0 -3px 0 rgba(16, 185, 129, 0.7);
 }
 
 .reservation.highlighted {

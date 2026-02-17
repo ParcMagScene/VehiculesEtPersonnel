@@ -121,7 +121,7 @@
 }
 
 .elp-label-info {
-  flex: 1;
+  flex: 0 1 auto;
   overflow: hidden;
   display: flex;
   flex-direction: column;

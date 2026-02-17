@@ -152,7 +152,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         '.batch-logo img { height: ' + qrSize + 'mm; width: auto; }' +
         '.batch-qr { flex-shrink: 0; }' +
         '.batch-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
-        '.batch-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
+        '.batch-info { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
         '.batch-ref { font-weight: 800; font-size: 10pt; line-height: 1.1; white-space: nowrap; }' +
         '.batch-uid, .batch-sn { font-size: 7.5pt; font-weight: 700; line-height: 1.1; white-space: nowrap; font-family: monospace; }' +
       '</style></head><body>' +

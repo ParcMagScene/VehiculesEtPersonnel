@@ -307,7 +307,7 @@ const LeaveApprovalPanel = ({ onClose, onUpdated }) => {
       const votesMap = {};
       for (const req of data) {
         try {
-          const vd = await api.get(`/api/leave-requests/${req.id}/votes`);
+          const vd = await api.request(`/leave-requests/${req.id}/votes`);
           votesMap[req.id] = vd.data || vd;
         } catch { /* ignore */ }
       }
@@ -324,9 +324,12 @@ const LeaveApprovalPanel = ({ onClose, onUpdated }) => {
   // Vote (approve/reject) au lieu d'approbation directe
   const handleVote = async (id, vote) => {
     try {
-      const result = await api.post(`/api/leave-requests/${id}/vote`, {
-        vote,
-        comment: (vote === 'reject' && rejectId === id) ? rejectReason : (voteComment || undefined),
+      const result = await api.request(`/leave-requests/${id}/vote`, {
+        method: 'POST',
+        body: JSON.stringify({
+          vote,
+          comment: (vote === 'reject' && rejectId === id) ? rejectReason : (voteComment || undefined),
+        }),
       });
       const voteResult = result.data || result;
       setVotesData(prev => ({ ...prev, [id]: voteResult }));

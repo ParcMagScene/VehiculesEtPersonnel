@@ -27,6 +27,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   const [conflicts, setConflicts] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [successCount, setSuccessCount] = useState(0);
 
   const periodInfo = PERIOD_MENU_ITEMS.find(p => p.type === periodType) || PERIOD_MENU_ITEMS[0];
 
@@ -87,8 +88,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
     try {
       const startStr = format(start, 'yyyy-MM-dd');
       const endStr = format(end, 'yyyy-MM-dd');
-      const res = await api.get(`/api/availabilities?person_id=${person.id}&start=${startStr}&end=${endStr}`);
-      const data = res.data || res;
+      const data = await api.getAvailabilities({ personId: person.id, startDate: startStr, endDate: endStr });
       const existing = Array.isArray(data) ? data : (data.availabilities || []);
       // Filtrer les conflits (pas les rejetés)
       const activeConflicts = existing.filter(a => a.status !== 'rejected');
@@ -122,7 +122,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
       // Pour les autres types : toujours auto-approuvé
       const source = periodInfo.requiresApproval && !isAdmin ? 'request' : 'admin';
 
-      await api.post('/api/availabilities', {
+      await api.createAvailability({
         person_id: person.id,
         start_date: format(startDate, 'yyyy-MM-dd'),
         end_date: format(end, 'yyyy-MM-dd'),
@@ -134,7 +134,15 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
       });
 
       if (onCreated) onCreated();
-      onClose();
+      setSuccessCount(c => c + 1);
+      // Reset pour permettre un nouvel ajout
+      setStartDate(null);
+      setEndDate(null);
+      setHoverDate(null);
+      setStartPeriod('AM');
+      setEndPeriod('PM');
+      setReason('');
+      setConflicts([]);
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Erreur lors de la création');
     } finally {
@@ -285,11 +293,21 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
               )}
             </div>
           )}
+
+          {/* Message de succès */}
+          {successCount > 0 && !startDate && (
+            <div className="pcm-success-banner" style={{ borderColor: periodInfo.color }}>
+              <Check size={16} style={{ color: periodInfo.color }} />
+              <span>{successCount} période{successCount > 1 ? 's' : ''} enregistrée{successCount > 1 ? 's' : ''} — sélectionnez de nouvelles dates ou fermez</span>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="pcm-footer">
-          <button className="pcm-btn-cancel" onClick={onClose}>Annuler</button>
+          <button className="pcm-btn-cancel" onClick={onClose}>
+            {successCount > 0 ? 'Fermer' : 'Annuler'}
+          </button>
           <button
             className="pcm-btn-submit"
             style={{ background: periodInfo.color }}
@@ -298,7 +316,9 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
           >
             <Check size={16} />
             {submitting ? 'Enregistrement…' : (
-              periodInfo.requiresApproval && !isAdmin ? 'Soumettre la demande' : 'Enregistrer'
+              periodInfo.requiresApproval && !isAdmin ? 'Soumettre la demande' : (
+                successCount > 0 ? 'Ajouter cette période' : 'Enregistrer'
+              )
             )}
           </button>
         </div>

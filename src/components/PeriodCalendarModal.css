@@ -201,6 +201,37 @@
   border-radius: 8px;
 }
 
+/* Périodes déjà enregistrées */
+.pcm-cal-day.saved {
+  background: color-mix(in srgb, var(--range-color, #3b82f6) 22%, transparent);
+  border-radius: 0;
+  position: relative;
+}
+
+.pcm-cal-day.saved::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--range-color, #3b82f6);
+  opacity: 0.7;
+}
+
+/* Quand saved + in-range, la sélection active prime */
+.pcm-cal-day.saved.in-range {
+  background: color-mix(in srgb, var(--range-color, #3b82f6) 12%, transparent);
+}
+
+.pcm-cal-day.saved.range-start,
+.pcm-cal-day.saved.range-end {
+  background: var(--range-color, #3b82f6);
+  color: white;
+}
+
 /* ── Options ── */
 .pcm-options {
   display: flex;

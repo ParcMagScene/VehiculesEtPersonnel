@@ -774,7 +774,7 @@
   border-bottom: 1px solid #e5e7eb;
   padding: 0;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s;
   position: relative;
   height: 80px;
   background-color: white;
@@ -792,7 +792,6 @@
 }
 
 .time-slot.today-slot {
-  background-color: transparent;
   position: relative;
 }
 
@@ -804,7 +803,7 @@
   right: 0;
   bottom: 0;
   pointer-events: none;
-  z-index: 200 !important;
+  z-index: 2;
 }
 
 .time-slot.today-slot.today-left::after {
@@ -854,7 +853,7 @@
   bottom: 0;
   border-left: 3px solid rgba(16, 185, 129, 0.7);
   pointer-events: none;
-  z-index: 1000;
+  z-index: 10;
 }
 
 .time-slot.today-slot.today-right.reserved .reservation::after {
@@ -865,7 +864,7 @@
   bottom: 0;
   border-right: 3px solid rgba(16, 185, 129, 0.7);
   pointer-events: none;
-  z-index: 1000;
+  z-index: 10;
 }
 
 .vehicle-row:last-child .time-slot.today-slot.reserved .reservation {

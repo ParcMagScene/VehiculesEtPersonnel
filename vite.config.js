@@ -31,6 +31,11 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 4173,
     allowedHosts: ['magsav.duckdns.org', '.duckdns.org'],
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3002',

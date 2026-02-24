@@ -84,7 +84,7 @@ function App() {
     }
   }, [isMobile]);
   
-  const [view, setView] = useState('week'); // 'week', 'month', 'year'
+  const [view, setView] = useState('week'); // 'day', 'week', 'month', 'year'
   const [currentDate, setCurrentDate] = useState(new Date());
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
@@ -187,7 +187,8 @@ function App() {
     nav_prev: () => {
       if (activeModule !== 'vehicles') return;
       const d = new Date(currentDate);
-      if (view === 'week') d.setDate(d.getDate() - 7);
+      if (view === 'day') d.setDate(d.getDate() - 1);
+      else if (view === 'week') d.setDate(d.getDate() - 7);
       else if (view === 'month') d.setMonth(d.getMonth() - 1);
       else d.setFullYear(d.getFullYear() - 1);
       setCurrentDate(d);
@@ -195,7 +196,8 @@ function App() {
     nav_next: () => {
       if (activeModule !== 'vehicles') return;
       const d = new Date(currentDate);
-      if (view === 'week') d.setDate(d.getDate() + 7);
+      if (view === 'day') d.setDate(d.getDate() + 1);
+      else if (view === 'week') d.setDate(d.getDate() + 7);
       else if (view === 'month') d.setMonth(d.getMonth() + 1);
       else d.setFullYear(d.getFullYear() + 1);
       setCurrentDate(d);
@@ -1005,6 +1007,7 @@ function App() {
               onOpenMaintenance={setSelectedVehicleForMaintenance}
               clients={clients}
               drivers={drivers}
+              persons={persons}
             />
           ) : (
             <div className="calendar-with-vehicle-panel">

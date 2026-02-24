@@ -427,8 +427,56 @@
   grid-template-columns: repeat(62, minmax(55px, 1fr));
 }
 
+.day-view {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .year-view {
   grid-template-columns: repeat(12, minmax(150px, 1fr));
+}
+
+/* Vue jour — en-têtes larges */
+.day-view-header {
+  text-align: center;
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem;
+}
+
+.day-view-header .day-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.day-view-header .day-number {
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  opacity: 0.7;
+}
+
+/* Vue jour — cellules de réservation plus grandes */
+.day-view .vehicle-row .time-slot {
+  min-height: 60px;
+}
+
+.day-view .vehicle-row .time-slot.reserved {
+  min-height: 60px;
+}
+
+.day-view .reservation-block {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.day-view .reservation-block .block-client {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.day-view .reservation-block .block-driver,
+.day-view .reservation-block .block-details {
+  font-size: 0.8rem;
+  white-space: normal;
+  overflow: visible;
 }
 
 /* En-tête */

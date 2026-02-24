@@ -149,7 +149,6 @@ class ApiClient {
             'Content-Type': 'application/json'
           }
         });
-        console.log('✅ Déconnexion côté serveur réussie');
       } catch (err) {
         console.error('❌ Erreur lors de la déconnexion côté serveur:', err);
       }

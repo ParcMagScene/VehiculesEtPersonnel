@@ -99,7 +99,6 @@ const ManagementPanel = ({
       try {
         const config = await loadFromIndexedDB('calendarConfig', {});
         const address = config.companyAddress || '';
-        console.log('📍 Adresse Mag Scène chargée:', address);
         setCompanyAddress(address);
       } catch (error) {
         console.error('Erreur chargement adresse entreprise:', error);
@@ -203,7 +202,6 @@ const ManagementPanel = ({
       case 'drivers': return drivers;
       case 'locations': {
         // Ajouter Mag Scène comme premier lieu si une adresse est configurée
-        console.log('🏢 Chargement lieux, companyAddress:', companyAddress);
         if (companyAddress) {
           const magSceneLocation = {
             id: 'mag-scene',
@@ -212,10 +210,8 @@ const ManagementPanel = ({
             type: 'Dépôt',
             isCompanyLocation: true
           };
-          console.log('✅ Mag Scène ajouté à la liste');
           return [magSceneLocation, ...locations];
         }
-        console.log('❌ Pas d\'adresse Mag Scène configurée');
         return locations;
       }
       default: return [];
@@ -283,32 +279,27 @@ const ManagementPanel = ({
 
     // Appeler l'API backend pour créer l'élément
     try {
-      console.log('🔄 Création élément:', activeTab, itemToAdd);
       
       if (activeTab === 'vehicles') {
         const createdVehicle = await api.createVehicle(itemToAdd);
-        console.log('✅ Véhicule créé:', createdVehicle);
         const vehicleWithId = { ...itemToAdd, id: createdVehicle.id || itemToAdd.id };
         const newList = [...currentList, vehicleWithId];
         setVehicles(newList);
         saveToIndexedDB(STORES.vehicles, newList);
       } else if (activeTab === 'clients') {
         const createdClient = await api.createClient(itemToAdd);
-        console.log('✅ Client créé:', createdClient);
         const clientWithId = { ...itemToAdd, id: createdClient.id || itemToAdd.id };
         const newList = [...currentList, clientWithId];
         setClients(newList);
         saveToIndexedDB(STORES.clients, newList);
       } else if (activeTab === 'drivers') {
         const createdDriver = await api.createDriver(itemToAdd);
-        console.log('✅ Conducteur créé:', createdDriver);
         const driverWithId = { ...itemToAdd, id: createdDriver.id || itemToAdd.id };
         const newList = [...currentList, driverWithId];
         setDrivers(newList);
         saveToIndexedDB(STORES.drivers, newList);
       } else if (activeTab === 'locations') {
         const createdLocation = await api.createLocation(itemToAdd);
-        console.log('✅ Lieu créé:', createdLocation);
         const locationWithId = { ...itemToAdd, id: createdLocation.id || itemToAdd.id };
         const newList = [...currentList, locationWithId];
         setLocations(newList);

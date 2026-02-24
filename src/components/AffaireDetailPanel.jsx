@@ -67,6 +67,16 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   const [missionTitle, setMissionTitle] = useState('');
   const [actionFeedback, setActionFeedback] = useState(null);
   const fileInputRef = useRef(null);
+  const feedbackTimerRef = useRef(null);
+
+  // Cleanup feedback timer on unmount
+  useEffect(() => () => clearTimeout(feedbackTimerRef.current), []);
+
+  const showFeedback = useCallback((msg, duration = 3000) => {
+    clearTimeout(feedbackTimerRef.current);
+    setActionFeedback(msg);
+    feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), duration);
+  }, []);
 
   // ═══ États pour consultation réservation / événement ═══
   const [viewedReservation, setViewedReservation] = useState(null);
@@ -150,13 +160,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         await api.createReservation({ id: `${Date.now()}.${Math.random()}`, ...formData });
       }
       setShowReservationModal(false);
-      setActionFeedback({ type: 'success', message: 'Réservation créée avec succès' });
-      setTimeout(() => setActionFeedback(null), 3000);
+      showFeedback({ type: 'success', message: 'Réservation créée avec succès' });
       if (onDataChanged) onDataChanged();
     } catch (err) {
       console.error('Erreur création réservation:', err);
-      setActionFeedback({ type: 'error', message: 'Erreur: ' + err.message });
-      setTimeout(() => setActionFeedback(null), 4000);
+      showFeedback({ type: 'error', message: 'Erreur: ' + err.message }, 4000);
     }
   }, [onDataChanged]);
 
@@ -184,12 +192,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     setUploadProgress(null);
     setShowUploadForm(false);
     if (successCount > 0) {
-      setActionFeedback({ type: 'success', message: `${successCount} fichier(s) importé(s)` });
+      showFeedback({ type: 'success', message: `${successCount} fichier(s) importé(s)` });
       if (onDataChanged) onDataChanged();
     } else {
-      setActionFeedback({ type: 'error', message: 'Erreur lors de l\'import' });
+      showFeedback({ type: 'error', message: 'Erreur lors de l\'import' });
     }
-    setTimeout(() => setActionFeedback(null), 3000);
   }, [affaire.numeroAffaire, onDataChanged]);
 
   // Assigner du personnel
@@ -221,13 +228,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
       setShowPersonnelForm(false);
       setSelectedPersonId('');
       setMissionTitle('');
-      setActionFeedback({ type: 'success', message: 'Personnel affecté avec succès' });
-      setTimeout(() => setActionFeedback(null), 3000);
+      showFeedback({ type: 'success', message: 'Personnel affecté avec succès' });
       if (onDataChanged) onDataChanged();
     } catch (err) {
       console.error('Erreur affectation:', err);
-      setActionFeedback({ type: 'error', message: 'Erreur: ' + err.message });
-      setTimeout(() => setActionFeedback(null), 4000);
+      showFeedback({ type: 'error', message: 'Erreur: ' + err.message }, 4000);
     }
   }, [selectedPersonId, missionTitle, affaire, reservations, onDataChanged]);
 
@@ -742,24 +747,20 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               try {
                 await api.updateReservation(viewedReservation.id, { ...data, id: viewedReservation.id });
                 setViewedReservation(null);
-                setActionFeedback({ type: 'success', message: 'Réservation mise à jour' });
-                setTimeout(() => setActionFeedback(null), 3000);
+                showFeedback({ type: 'success', message: 'Réservation mise à jour' });
                 if (onDataChanged) onDataChanged();
               } catch (err) {
-                setActionFeedback({ type: 'error', message: 'Erreur: ' + err.message });
-                setTimeout(() => setActionFeedback(null), 4000);
+                showFeedback({ type: 'error', message: 'Erreur: ' + err.message }, 4000);
               }
             }}
             onDelete={async () => {
               try {
                 await api.deleteReservation(viewedReservation.id);
                 setViewedReservation(null);
-                setActionFeedback({ type: 'success', message: 'Réservation supprimée' });
-                setTimeout(() => setActionFeedback(null), 3000);
+                showFeedback({ type: 'success', message: 'Réservation supprimée' });
                 if (onDataChanged) onDataChanged();
               } catch (err) {
-                setActionFeedback({ type: 'error', message: 'Erreur: ' + err.message });
-                setTimeout(() => setActionFeedback(null), 4000);
+                showFeedback({ type: 'error', message: 'Erreur: ' + err.message }, 4000);
               }
             }}
             onClose={() => setViewedReservation(null)}

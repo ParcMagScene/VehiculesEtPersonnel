@@ -405,7 +405,6 @@ const AffaireImportModal = ({
               
               if (response.ok) {
                 const result = await response.json();
-                console.log('✅ PDF sauvegardé sur le serveur:', result.path);
                 pdfData.serverPath = result.path;
               } else {
                 console.warn('⚠️ Échec sauvegarde serveur, PDF uniquement dans IndexedDB');

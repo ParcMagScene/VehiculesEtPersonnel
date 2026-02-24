@@ -29,7 +29,8 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(enriched);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -62,7 +63,8 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(person);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -115,7 +117,8 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(created);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -181,7 +184,8 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -196,7 +200,8 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -384,7 +389,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
     } catch (error) {
       console.error('Erreur import CSV personnel:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -411,7 +416,8 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json({ success: true, deleted });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -426,7 +432,8 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       const skills = db.prepare('SELECT * FROM skills ORDER BY category, name').all();
       res.json(skills);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -446,7 +453,8 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       if (error.message.includes('UNIQUE constraint')) {
         return res.status(409).json({ error: 'Cette compétence existe déjà' });
       }
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -467,7 +475,8 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       if (error.message.includes('UNIQUE constraint')) {
         return res.status(409).json({ error: 'Ce nom de compétence existe déjà' });
       }
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -480,7 +489,8 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       db.prepare('DELETE FROM skills WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -492,7 +502,8 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       const positions = db.prepare('SELECT * FROM positions ORDER BY category, name').all();
       res.json(positions);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -512,7 +523,8 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       if (error.message.includes('UNIQUE constraint')) {
         return res.status(409).json({ error: 'Ce poste existe déjà' });
       }
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -533,7 +545,8 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       if (error.message.includes('UNIQUE constraint')) {
         return res.status(409).json({ error: 'Ce nom de poste existe déjà' });
       }
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -546,7 +559,8 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       db.prepare('DELETE FROM positions WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -612,7 +626,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       const availabilities = db.prepare(sql).all(...params);
       res.json(availabilities);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -679,7 +694,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       const created = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(result.lastInsertRowid);
       res.json(created);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -712,7 +728,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       const updated = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -759,7 +776,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       `).get(req.params.id);
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -787,7 +805,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       `).get(req.params.id);
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -802,7 +821,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       db.prepare('DELETE FROM leave_votes WHERE availability_id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -868,7 +888,8 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(enriched);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -902,7 +923,8 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(mission);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -944,7 +966,8 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
       created.assignments = [];
       res.json(created);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -995,7 +1018,8 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -1010,7 +1034,8 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
 
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -1057,7 +1082,8 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       const assignments = db.prepare(sql).all(...params);
       res.json(assignments);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -1131,7 +1157,8 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       if (error.message.includes('UNIQUE constraint')) {
         return res.status(409).json({ error: 'Cette personne est déjà affectée à cette mission' });
       }
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -1193,7 +1220,8 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
 
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -1208,7 +1236,8 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
 
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -1283,7 +1312,8 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
         availabilities,
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }

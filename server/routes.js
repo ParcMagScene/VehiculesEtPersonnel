@@ -9,7 +9,8 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
       const clients = stmt.all();
       res.json(clients);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -27,7 +28,8 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true, id: result.lastInsertRowid });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -46,7 +48,8 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -59,7 +62,8 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -73,7 +77,8 @@ export function setupDriversRoutes(app, authenticateToken, requireAdmin) {
       const drivers = stmt.all();
       res.json(drivers);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -91,7 +96,8 @@ export function setupDriversRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true, id: result.lastInsertRowid });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -110,7 +116,8 @@ export function setupDriversRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -123,7 +130,8 @@ export function setupDriversRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -137,7 +145,8 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
       const locations = stmt.all();
       res.json(locations);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -166,7 +175,8 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
       
       res.json(createdLocation);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -196,7 +206,8 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
       
       res.json(updatedLocation);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -209,7 +220,8 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -223,7 +235,8 @@ export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
       const garages = stmt.all();
       res.json(garages);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -241,7 +254,8 @@ export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true, id: result.lastInsertRowid });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -260,7 +274,8 @@ export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -273,7 +288,8 @@ export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -287,7 +303,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       const config = stmt.get(req.params.key);
       res.json(config ? JSON.parse(config.value) : null);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -302,7 +319,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -313,7 +331,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       const config = stmt.get('google_client_id');
       res.json({ value: config ? config.value : '' });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -323,7 +342,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       const config = stmt.get('google_calendar_id');
       res.json({ value: config ? config.value : '' });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -333,7 +353,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       const config = stmt.get('google_maps_api_key');
       res.json({ value: config ? config.value : '' });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -347,7 +368,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       stmt.run('google_client_id', value, req.user.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -361,7 +383,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       stmt.run('google_calendar_id', value, req.user.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -375,7 +398,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       stmt.run('google_maps_api_key', value, req.user.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -394,7 +418,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       
       res.json(enrichedDetails);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -467,7 +492,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
         pauses: savedPauses
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -522,7 +548,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -532,7 +559,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
       stmt.run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -595,7 +623,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
 
       res.json({ success: true, groupId, tripDetails: enrichedDetails });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -635,7 +664,8 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
 
       res.json({ success: true, tripDetails: enrichedDetails });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }

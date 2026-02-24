@@ -157,7 +157,6 @@ const TripDetailsModal = ({
           });
         },
         (error) => {
-          console.log('Géolocalisation non disponible:', error.message);
         }
       );
     }
@@ -165,13 +164,9 @@ const TripDetailsModal = ({
 
   // Charger les lieux et l'adresse de Mag Scène
   useEffect(() => {
-    console.log('🚗 TripDetails: useEffect déclenché');
-    console.log('🚗 TripDetails: initialLocations reçus:', initialLocations.length);
-    console.log('🚗 TripDetails: companyAddress reçu:', companyAddress);
     
     // Si on a déjà les lieux depuis le parent, les utiliser directement
     if (initialLocations.length > 0) {
-      console.log('🚗 TripDetails: Utilisation des lieux du parent');
       setAllLocations(initialLocations);
       setLocations(initialLocations.filter(loc => !loc.isCompanyLocation));
       return;
@@ -181,9 +176,7 @@ const TripDetailsModal = ({
     const loadLocationsAndCompanyAddress = async () => {
       try {
         // Charger les lieux
-        console.log('🚗 TripDetails: Chargement des lieux depuis API...');
         const locationsData = await api.getLocations();
-        console.log('🚗 TripDetails: Lieux chargés:', locationsData.length);
         setLocations(locationsData);
         
         // Utiliser companyAddress si fourni, sinon charger depuis l'API
@@ -204,7 +197,6 @@ const TripDetailsModal = ({
           }
         }
         
-        console.log('🚗 TripDetails: Adresse Mag Scène:', address);
         
         // Créer un lieu virtuel pour Mag Scène si une adresse existe
         if (address) {
@@ -214,10 +206,8 @@ const TripDetailsModal = ({
             address: address,
             type: 'Dépôt'
           };
-          console.log('🚗 TripDetails: Mag Scène ajouté, total lieux:', [magSceneLocation, ...locationsData].length);
           setAllLocations([magSceneLocation, ...locationsData]);
         } else {
-          console.log('🚗 TripDetails: Pas d\'adresse Mag Scène');
           setAllLocations(locationsData);
         }
       } catch (error) {
@@ -430,12 +420,6 @@ const TripDetailsModal = ({
                    vehicle?.type?.toUpperCase().includes('PORTEUR') ||
                    vehicle?.type?.toUpperCase().includes('SEMI');
       
-      console.log('🚛 Calcul durée trajet:', {
-        vehicleType: vehicle?.type,
-        isPL: isPL,
-        coefficient: isPL ? 1.25 : 1.0
-      });
-      
       // Récupérer les pauses avec location pour ce type de trajet
       const relevantPauses = pauses
         .filter(p => p.pauseType === type && p.location && pausesWithValidatedLocation.has(p.id))
@@ -472,13 +456,6 @@ const TripDetailsModal = ({
           const plCoefficient = isPL ? 1.25 : 1.0; // +25% pour les PL
           
           const durationMinutes = Math.round((totalDurationSeconds / 60) * plCoefficient);
-          
-          console.log('⏱️ Résultat calcul:', {
-            durationSeconds: totalDurationSeconds,
-            durationMinutesBase: Math.round(totalDurationSeconds / 60),
-            coefficient: plCoefficient,
-            durationFinal: durationMinutes
-          });
           
           setFormData(prev => ({
             ...prev,

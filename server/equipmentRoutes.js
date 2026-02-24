@@ -17,7 +17,8 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       const categories = db.prepare('SELECT * FROM equipment_categories ORDER BY level, name').all();
       res.json(categories);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -38,7 +39,8 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       }));
       res.json(tree);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -54,7 +56,8 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       
       res.json({ id: result.lastInsertRowid, name, icon, color, description, parent_id, level });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -67,7 +70,8 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       ).run(name, icon, color, description, parent_id || null, level || 'category', req.params.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -82,7 +86,8 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       db.prepare('DELETE FROM equipment_categories WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -136,7 +141,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       res.json(equipment);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -174,7 +180,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       res.json(eq);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -198,7 +205,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       const created = db.prepare('SELECT * FROM equipment WHERE id = ?').get(result.lastInsertRowid);
       res.json(created);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -216,7 +224,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -232,7 +241,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -390,7 +400,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       console.error('Erreur import CSV:', error);
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -420,7 +431,8 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       
       res.json(db.prepare(sql).all(...params));
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -440,7 +452,8 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -461,7 +474,8 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -494,7 +508,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       
       res.json(db.prepare(sql).all(...params));
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -511,7 +526,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       };
       res.json(stats);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -551,7 +567,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       const rows = db.prepare(sql).all(...params);
       res.json(rows);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -588,7 +605,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -614,7 +632,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -627,7 +646,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       if (ticket) refreshEquipmentStatus(ticket.equipment_id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -853,7 +873,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       });
     } catch (error) {
       console.error('Erreur import CSV interventions:', error);
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -867,7 +888,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       `).all();
       res.json(tickets);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -883,7 +905,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       db.prepare('UPDATE sav_tickets SET equipment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(equipment_id, req.params.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -905,7 +928,8 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       `).all(req.user.id);
       res.json(lists);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -919,7 +943,8 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       db.prepare('INSERT OR IGNORE INTO equipment_lists (equipment_id, user_id, list_type) VALUES (?, ?, ?)').run(equipment_id, req.user.id, list_type);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -932,7 +957,8 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       db.prepare('DELETE FROM equipment_lists WHERE equipment_id = ? AND user_id = ? AND list_type = ?').run(equipment_id, req.user.id, list_type);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -962,7 +988,8 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       
       res.json(eq);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -985,7 +1012,8 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       
       res.json({ photos, logos });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }

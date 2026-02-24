@@ -64,7 +64,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -108,7 +109,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       res.json({ id: convId, success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -163,7 +165,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -205,7 +208,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
         attachments: [],
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -275,7 +279,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
         }],
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -287,7 +292,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
       ).run(req.params.id, req.user.id);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -309,7 +315,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       res.json({ unread: result.total_unread });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }

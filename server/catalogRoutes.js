@@ -67,7 +67,8 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json({ items, total });
     } catch (error) {
       console.error('GET /api/catalog/equipment error:', error);
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -79,7 +80,8 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       ).all();
       res.json(families.map(f => f.family));
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -91,7 +93,8 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       ).all();
       res.json(categories.map(c => c.category));
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -108,7 +111,8 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
 
       res.json(item);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -141,7 +145,8 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
         return res.status(409).json({ error: 'Référence déjà existante' });
       }
       console.error('POST /api/catalog/equipment error:', error);
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -181,7 +186,8 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       if (error.message.includes('UNIQUE constraint')) {
         return res.status(409).json({ error: 'Référence déjà existante' });
       }
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -202,7 +208,8 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
 
       res.json({ success: true, message: 'Équipement catalogue supprimé' });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -232,7 +239,8 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
       const items = db.prepare(query).all(...params);
       res.json(items);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -243,7 +251,8 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
       if (!item) return res.status(404).json({ error: 'Flight-case non trouvé' });
       res.json(item);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -272,7 +281,8 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
       const created = db.prepare('SELECT * FROM flightcases WHERE id = ?').get(id);
       res.status(201).json(created);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -307,7 +317,8 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
       const updated = db.prepare('SELECT * FROM flightcases WHERE id = ?').get(req.params.id);
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -331,7 +342,8 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
 
       res.json({ success: true, message: 'Flight-case supprimé' });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -361,7 +373,8 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
       const items = db.prepare(query).all(...params);
       res.json(items);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -372,7 +385,8 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
       if (!item) return res.status(404).json({ error: 'Modèle de camion non trouvé' });
       res.json(item);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -404,7 +418,8 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
       const created = db.prepare('SELECT * FROM truck_models WHERE id = ?').get(id);
       res.status(201).json(created);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -442,7 +457,8 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
       const updated = db.prepare('SELECT * FROM truck_models WHERE id = ?').get(req.params.id);
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -457,7 +473,8 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
 
       res.json({ success: true, message: 'Modèle de camion supprimé' });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
@@ -505,7 +522,8 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
         }
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -557,7 +575,8 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
 
       res.status(201).json(created);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -579,7 +598,8 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
 
       res.json({ success: true, message: 'Équipement retiré de la réservation' });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
@@ -651,7 +671,8 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
       res.json(exportData);
     } catch (error) {
       console.error('GET /api/reservations/:id/chargement-export error:', error);
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }

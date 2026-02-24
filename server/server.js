@@ -40,6 +40,7 @@ import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes } from './or
 import { setupMessagingRoutes } from './messagingRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, setupReservationEquipmentRoutes } from './catalogRoutes.js';
+import { setupMailingRoutes } from './mailingRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1982,6 +1983,7 @@ setupLocationsRoutes(app, authenticateToken, requireAdmin);
 setupGaragesRoutes(app, authenticateToken, requireAdmin);
 setupConfigRoutes(app, authenticateToken, requireAdmin);
 setupMessagingRoutes(app, authenticateToken);
+setupMailingRoutes(app, authenticateToken, requireAdmin);
 
 // ═══ CONFIGURATION EMAIL ═══
 

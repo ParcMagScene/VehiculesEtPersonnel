@@ -1481,6 +1481,41 @@ function initializeDatabase() {
   db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_reservation ON equipment_to_vehicle(reservation_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_equipment ON equipment_to_vehicle(equipment_id)');
 
+  // ═══ Module Mailing Avancé ═══
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS mail_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        subject TEXT NOT NULL DEFAULT '',
+        html_body TEXT NOT NULL DEFAULT '',
+        variables TEXT DEFAULT '[]',
+        category TEXT DEFAULT 'general',
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS mail_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        template_id INTEGER,
+        recipients TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        status TEXT DEFAULT 'sent',
+        error_message TEXT,
+        sent_by INTEGER,
+        sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (template_id) REFERENCES mail_templates(id) ON DELETE SET NULL,
+        FOREIGN KEY (sent_by) REFERENCES users(id)
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_mail_history_sent_at ON mail_history(sent_at)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_mail_history_template ON mail_history(template_id)');
+  } catch (error) {
+    console.warn('⚠️ Migration mailing:', error.message);
+  }
+
   console.log('✅ Base de données initialisée');
 }
 

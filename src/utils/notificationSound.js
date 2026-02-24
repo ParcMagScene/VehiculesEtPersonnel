@@ -1,69 +1,141 @@
 /**
- * Son de notification généré via Web Audio API
- * Pas de fichier audio externe nécessaire
+ * Système audio & feedback via Web Audio API
+ * Sons synthétiques, vibration, volume global
  */
 
 let audioCtx = null;
+let masterVolume = 0.7; // 0..1
 
 const getAudioContext = () => {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 };
 
+/** Régler le volume global (0..1) */
+export const setVolume = (v) => { masterVolume = Math.max(0, Math.min(1, v)); };
+export const getVolume = () => masterVolume;
+
+// ── Helpers internes ──────────────────────────────────────────
+const note = (ctx, freq, start, dur, vol, type = 'sine') => {
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+  g.gain.setValueAtTime(vol * masterVolume, start);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+  osc.connect(g).connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start + dur);
+};
+
+// ── Sons disponibles ──────────────────────────────────────────
+
+/** Arpège ascendant Do-Mi-Sol (son original de message) */
+const playNotification = (ctx, t) => {
+  note(ctx, 523, t, 0.15, 0.15);
+  note(ctx, 659, t + 0.1, 0.2, 0.15);
+  note(ctx, 784, t + 0.2, 0.25, 0.12);
+};
+
+/** Accord majeur bref — confirmation positive */
+const playSuccess = (ctx, t) => {
+  note(ctx, 523, t, 0.12, 0.12);       // Do5
+  note(ctx, 659, t, 0.12, 0.10);       // Mi5
+  note(ctx, 784, t, 0.12, 0.10);       // Sol5
+  note(ctx, 1047, t + 0.1, 0.2, 0.08); // Do6 résolution
+};
+
+/** Deux notes descendantes — erreur / échec */
+const playError = (ctx, t) => {
+  note(ctx, 440, t, 0.15, 0.18, 'square');       // La4
+  note(ctx, 349, t + 0.15, 0.25, 0.14, 'square'); // Fa4
+};
+
+/** Deux bips courts — attention */
+const playWarning = (ctx, t) => {
+  note(ctx, 880, t, 0.08, 0.12, 'triangle');
+  note(ctx, 880, t + 0.15, 0.08, 0.12, 'triangle');
+};
+
+/** Micro-clic UI */
+const playClick = (ctx, t) => {
+  note(ctx, 1200, t, 0.03, 0.06, 'sine');
+};
+
+/** Son de suppression — balayage descendant */
+const playDelete = (ctx, t) => {
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(600, t);
+  osc.frequency.exponentialRampToValueAtTime(200, t + 0.2);
+  g.gain.setValueAtTime(0.12 * masterVolume, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  osc.connect(g).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.25);
+};
+
+const SOUNDS = {
+  notification: playNotification,
+  success: playSuccess,
+  error: playError,
+  warning: playWarning,
+  click: playClick,
+  delete: playDelete,
+};
+
+export const SOUND_TYPES = Object.keys(SOUNDS);
+
 /**
- * Joue un son de notification court et agréable (deux notes ascendantes)
+ * Joue un son par type
+ * @param {'notification'|'success'|'error'|'warning'|'click'|'delete'} type
  */
-export const playNotificationSound = () => {
+export const playSound = (type = 'notification') => {
   try {
+    const fn = SOUNDS[type] || SOUNDS.notification;
     const ctx = getAudioContext();
-    
-    // Reprendre le contexte si suspendu (requis par les navigateurs modernes)
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
-    
-    const now = ctx.currentTime;
-
-    // Note 1 — Do5 (523 Hz)
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(523, now);
-    gain1.gain.setValueAtTime(0.15, now);
-    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-    osc1.connect(gain1).connect(ctx.destination);
-    osc1.start(now);
-    osc1.stop(now + 0.15);
-
-    // Note 2 — Mi5 (659 Hz) — légèrement décalée
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(659, now + 0.1);
-    gain2.gain.setValueAtTime(0, now);
-    gain2.gain.setValueAtTime(0.15, now + 0.1);
-    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-    osc2.connect(gain2).connect(ctx.destination);
-    osc2.start(now + 0.1);
-    osc2.stop(now + 0.3);
-
-    // Note 3 — Sol5 (784 Hz) — résolution
-    const osc3 = ctx.createOscillator();
-    const gain3 = ctx.createGain();
-    osc3.type = 'sine';
-    osc3.frequency.setValueAtTime(784, now + 0.2);
-    gain3.gain.setValueAtTime(0, now);
-    gain3.gain.setValueAtTime(0.12, now + 0.2);
-    gain3.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-    osc3.connect(gain3).connect(ctx.destination);
-    osc3.start(now + 0.2);
-    osc3.stop(now + 0.45);
+    fn(ctx, ctx.currentTime);
   } catch (e) {
-    // Silencieux si l'audio n'est pas disponible
-    console.warn('Notification sonore indisponible:', e.message);
+    console.warn('Son indisponible:', e.message);
   }
+};
+
+/** Rétro-compatibilité */
+export const playNotificationSound = () => playSound('notification');
+
+// ── Vibration ─────────────────────────────────────────────────
+const VIBRATION_PATTERNS = {
+  notification: [100, 50, 100],
+  success: [50],
+  error: [100, 30, 100, 30, 100],
+  warning: [80, 40, 80],
+  click: [15],
+  delete: [40, 20, 40],
+};
+
+/**
+ * Vibration haptique (mobile uniquement)
+ * @param {'notification'|'success'|'error'|'warning'|'click'|'delete'} type
+ */
+export const vibrate = (type = 'notification') => {
+  if (navigator.vibrate) {
+    navigator.vibrate(VIBRATION_PATTERNS[type] || VIBRATION_PATTERNS.notification);
+  }
+};
+
+/**
+ * Feedback combiné : son + vibration
+ * @param {'notification'|'success'|'error'|'warning'|'click'|'delete'} type
+ * @param {{ sound?: boolean, haptic?: boolean }} opts
+ */
+export const feedback = (type = 'notification', opts = {}) => {
+  const { sound = true, haptic = true } = opts;
+  if (sound) playSound(type);
+  if (haptic) vibrate(type);
 };
 
 /**

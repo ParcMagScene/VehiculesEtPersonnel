@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Container } from 'lucide-react';
+import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Container } from 'lucide-react';
 import api from '../utils/api';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../utils/notificationSound';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, getVolume, SOUND_TYPES } from '../utils/notificationSound';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './UserPreferencesModal.css';
 
@@ -24,6 +24,7 @@ const DEFAULT_PREFS = {
   compactMode: false,
   notificationsEnabled: true,
   soundEnabled: true,
+  soundVolume: 70,
   colorTheme: 'default',
   tabOrder: DEFAULT_TAB_ORDER,
   hiddenTabs: DEFAULT_HIDDEN_TABS,
@@ -280,11 +281,53 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
               </label>
             </div>
 
+            {prefs.soundEnabled && (
+              <div className="prefs-field prefs-volume-row">
+                <span className="prefs-field-label">
+                  {prefs.soundVolume > 0 ? <Volume2 size={14} /> : <VolumeX size={14} />} Volume
+                  <span className="prefs-volume-val">{prefs.soundVolume}%</span>
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={prefs.soundVolume}
+                  className="prefs-volume-slider"
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    updatePref('soundVolume', v);
+                    setVolume(v / 100);
+                  }}
+                />
+              </div>
+            )}
+
+            {prefs.soundEnabled && (
+              <div className="prefs-sound-test">
+                <span className="prefs-field-label" style={{ marginBottom: 6 }}>Tester les sons :</span>
+                <div className="prefs-sound-btns">
+                  {SOUND_TYPES.map(st => (
+                    <button
+                      key={st}
+                      className="prefs-sound-btn"
+                      onClick={() => { setVolume(prefs.soundVolume / 100); playSound(st); }}
+                      title={st}
+                    >
+                      {st === 'notification' ? '🔔' : st === 'success' ? '✅' : st === 'error' ? '❌' : st === 'warning' ? '⚠️' : st === 'click' ? '👆' : '🗑️'}
+                      <span>{st}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="prefs-field">
               <button
                 className="prefs-test-btn"
                 onClick={async () => {
                   // Tester le son
+                  setVolume(prefs.soundVolume / 100);
                   playNotificationSound();
                   // Tester la notification navigateur
                   const granted = await requestNotificationPermission();

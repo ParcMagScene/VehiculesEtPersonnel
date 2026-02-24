@@ -63,33 +63,33 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
   });
 
   return (
-    <div className="ad-field ad-position-selector" ref={containerRef}>
+    <div className="asd-field asd-position-selector" ref={containerRef}>
       <label>
         Poste(s) occupé(s)
-        {selectedPositions.length > 0 && <span className="ad-count-badge">{selectedPositions.length}</span>}
+        {selectedPositions.length > 0 && <span className="asd-count-badge">{selectedPositions.length}</span>}
       </label>
 
       {/* Zone cliquable : affiche les postes sélectionnés ou placeholder */}
       <div
-        className="ad-position-trigger"
+        className="asd-position-trigger"
         onClick={() => setOpen(prev => !prev)}
       >
         {selectedPositions.length === 0 ? (
-          <span className="ad-position-placeholder">Choisir un ou plusieurs postes…</span>
+          <span className="asd-position-placeholder">Choisir un ou plusieurs postes…</span>
         ) : (
-          <div className="ad-position-tags">
+          <div className="asd-position-tags">
             {selectedPositions.map(name => {
               const posObj = positions.find(p => p.name === name);
               const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || '#6b7280';
               return (
                 <span
                   key={name}
-                  className="ad-position-tag"
+                  className="asd-position-tag"
                   style={{ borderColor: catColor, color: catColor }}
                 >
                   {name}
                   <span
-                    className="ad-position-tag-remove"
+                    className="asd-position-tag-remove"
                     onClick={(e) => { e.stopPropagation(); toggle(name); }}
                   >×</span>
                 </span>
@@ -97,13 +97,13 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
             })}
           </div>
         )}
-        <ChevronDown size={14} className={`ad-position-chevron ${open ? 'open' : ''}`} />
+        <ChevronDown size={14} className={`asd-position-chevron ${open ? 'open' : ''}`} />
       </div>
 
       {/* Dropdown */}
       {open && (
-        <div className="ad-position-dropdown">
-          <div className="ad-position-search">
+        <div className="asd-position-dropdown">
+          <div className="asd-position-search">
             <Search size={14} />
             <input
               type="text"
@@ -115,22 +115,22 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
             />
           </div>
 
-          <div className="ad-position-list">
+          <div className="asd-position-list">
             {commonPositions.length > 0 && (
-              <div className="ad-position-group">
-                <div className="ad-position-group-label" style={{ color: '#d97706' }}>⭐ Courants</div>
+              <div className="asd-position-group">
+                <div className="asd-position-group-label" style={{ color: '#d97706' }}>⭐ Courants</div>
                 {commonPositions.map(p => {
                   const checked = selectedPositions.includes(p.name);
                   const catColor = POSITION_CATEGORIES.find(c => c.value === p.category)?.color || '#6b7280';
                   return (
                     <div
                       key={`c-${p.id}`}
-                      className={`ad-position-item${checked ? ' selected' : ''}`}
+                      className={`asd-position-item${checked ? ' selected' : ''}`}
                       onClick={() => toggle(p.name)}
                     >
-                      <span className="ad-position-check">{checked ? '✓' : ''}</span>
-                      <span className="ad-position-dot" style={{ background: catColor }} />
-                      <span className="ad-position-name">{p.name}</span>
+                      <span className="asd-position-check">{checked ? '✓' : ''}</span>
+                      <span className="asd-position-dot" style={{ background: catColor }} />
+                      <span className="asd-position-name">{p.name}</span>
                     </div>
                   );
                 })}
@@ -141,19 +141,19 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
               const catPositions = positionsByCategory[cat.value];
               if (!catPositions || catPositions.length === 0) return null;
               return (
-                <div key={cat.value} className="ad-position-group">
-                  <div className="ad-position-group-label" style={{ color: cat.color }}>{cat.label}</div>
+                <div key={cat.value} className="asd-position-group">
+                  <div className="asd-position-group-label" style={{ color: cat.color }}>{cat.label}</div>
                   {catPositions.map(p => {
                     const checked = selectedPositions.includes(p.name);
                     return (
                       <div
                         key={p.id}
-                        className={`ad-position-item${checked ? ' selected' : ''}`}
+                        className={`asd-position-item${checked ? ' selected' : ''}`}
                         onClick={() => toggle(p.name)}
                       >
-                        <span className="ad-position-check">{checked ? '✓' : ''}</span>
-                        <span className="ad-position-dot" style={{ background: cat.color }} />
-                        <span className="ad-position-name">{p.name}</span>
+                        <span className="asd-position-check">{checked ? '✓' : ''}</span>
+                        <span className="asd-position-dot" style={{ background: cat.color }} />
+                        <span className="asd-position-name">{p.name}</span>
                       </div>
                     );
                   })}
@@ -162,7 +162,7 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
             })}
 
             {filtered.length === 0 && (
-              <div className="ad-position-empty">Aucun poste trouvé</div>
+              <div className="asd-position-empty">Aucun poste trouvé</div>
             )}
           </div>
         </div>
@@ -648,7 +648,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           <div className="assignment-dialog-header-actions">
             {isEdit && onDelete && (
               <button
-                className="ad-btn-header-delete"
+                className="asd-btn-header-delete"
                 onClick={() => onDelete(existingMission)}
                 title="Supprimer cette mission"
               >
@@ -664,47 +664,47 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         {/* Body */}
         <div className="assignment-dialog-body">
           {/* Personne */}
-          <div className="ad-section ad-person-section">
-            <div className="ad-section-label">
+          <div className="asd-section asd-person-section">
+            <div className="asd-section-label">
               <User size={14} />
               <span>Personnel</span>
-              {isEdit && <span className="ad-optional">(cliquer pour changer)</span>}
+              {isEdit && <span className="asd-optional">(cliquer pour changer)</span>}
             </div>
             {isEdit ? (
-              <div className="ad-person-selector">
+              <div className="asd-person-selector">
                 <div
-                  className="ad-person-badge ad-person-selectable"
+                  className="asd-person-badge asd-person-selectable"
                   onClick={() => setShowPersonDropdown(!showPersonDropdown)}
                 >
-                  <span className="ad-person-name">{selectedPerson.firstName} {selectedPerson.lastName}</span>
-                  <span className={`ad-person-type type-${selectedPerson.type}`}>
+                  <span className="asd-person-name">{selectedPerson.firstName} {selectedPerson.lastName}</span>
+                  <span className={`asd-person-type type-${selectedPerson.type}`}>
                     {selectedPerson.type === 'permanent' ? 'Permanent' : selectedPerson.contractType || 'Contractuel'}
                   </span>
-                  <ChevronDown size={14} className="ad-person-chevron" />
+                  <ChevronDown size={14} className="asd-person-chevron" />
                 </div>
                 {showPersonDropdown && (
-                  <div className="ad-person-dropdown-wrapper">
+                  <div className="asd-person-dropdown-wrapper">
                     <input
                       type="text"
-                      className="ad-person-search"
+                      className="asd-person-search"
                       placeholder="Rechercher un personnel…"
                       value={personSearch}
                       onChange={e => setPersonSearch(e.target.value)}
                       autoFocus
                     />
-                    <div className="ad-person-dropdown">
+                    <div className="asd-person-dropdown">
                       {filteredPersons.map(p => (
                         <div
                           key={p.id}
-                          className={`ad-person-option${p.id === selectedPersonId ? ' selected' : ''}`}
+                          className={`asd-person-option${p.id === selectedPersonId ? ' selected' : ''}`}
                           onClick={() => {
                             setSelectedPersonId(p.id);
                             setShowPersonDropdown(false);
                             setPersonSearch('');
                           }}
                         >
-                          <span className="ad-person-opt-name">{p.firstName} {p.lastName}</span>
-                          <span className={`ad-person-opt-type type-${p.type}`}>
+                          <span className="asd-person-opt-name">{p.firstName} {p.lastName}</span>
+                          <span className={`asd-person-opt-type type-${p.type}`}>
                             {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
                           </span>
                           {p.id === selectedPersonId && <Check size={14} />}
@@ -715,17 +715,17 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 )}
               </div>
             ) : (
-              <div className="ad-person-badge">
-                <span className="ad-person-name">{person.firstName} {person.lastName}</span>
-                <span className={`ad-person-type type-${person.type}`}>
+              <div className="asd-person-badge">
+                <span className="asd-person-name">{person.firstName} {person.lastName}</span>
+                <span className={`asd-person-type type-${person.type}`}>
                   {person.type === 'permanent' ? 'Permanent' : person.contractType || 'Contractuel'}
                 </span>
                 {person.skills?.length > 0 && (
-                  <div className="ad-person-skills">
+                  <div className="asd-person-skills">
                     {person.skills.map(s => {
                       const cat = SKILL_CATEGORIES.find(c => c.value === s.category);
                       return (
-                        <span key={s.skillId} className="ad-skill-tag" style={{ backgroundColor: cat?.color + '20', color: cat?.color, borderColor: cat?.color + '40' }}>
+                        <span key={s.skillId} className="asd-skill-tag" style={{ backgroundColor: cat?.color + '20', color: cat?.color, borderColor: cat?.color + '40' }}>
                           {s.name}
                         </span>
                       );
@@ -737,66 +737,67 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           </div>
 
           {/* Affaire / Événement */}
-          <div className="ad-section">
-            <div className="ad-section-label">
+          <div className="asd-section">
+            <div className="asd-section-label">
               <Calendar size={14} />
               <span>Événement / Affaire</span>
-              <span className="ad-optional">(optionnel)</span>
+              <span className="asd-optional">(optionnel)</span>
             </div>
-            <div className="ad-affaire-selector">
+            <div className="asd-affaire-selector">
               {selectedAffaire ? (
-                <div className="ad-affaire-selected">
-                  <div className="ad-affaire-info">
-                    <span className="ad-affaire-numero">{selectedAffaire.numeroAffaire}</span>
-                    <span className="ad-affaire-titre">{selectedAffaire.titre || selectedAffaire.eventName || ''}</span>
-                    <span className="ad-affaire-client">{selectedAffaire.client || ''}</span>
+                <div className="asd-affaire-selected">
+                  <div className="asd-affaire-info">
+                    <span className="asd-affaire-numero">{selectedAffaire.numeroAffaire}</span>
+                    <span className="asd-affaire-titre">{selectedAffaire.titre || selectedAffaire.eventName || ''}</span>
+                    <span className="asd-affaire-client">{selectedAffaire.client || ''}</span>
                     {selectedAffaire.dateDebut && (
-                      <span className="ad-affaire-dates">
+                      <span className="asd-affaire-dates">
                         {format(parseISO(selectedAffaire.dateDebut.split('T')[0]), 'd MMM', { locale: fr })}
                         {selectedAffaire.dateFin && ` → ${format(parseISO(selectedAffaire.dateFin.split('T')[0]), 'd MMM yyyy', { locale: fr })}`}
                       </span>
                     )}
                   </div>
-                  <button className="ad-affaire-remove" onClick={() => setSelectedAffaire(null)}>
+                  <button className="asd-affaire-remove" onClick={() => setSelectedAffaire(null)}>
                     <X size={14} />
                   </button>
                 </div>
               ) : (
-                <div className="ad-affaire-dropdown-wrapper">
+                <div className="asd-affaire-dropdown-wrapper">
                   <input
                     type="text"
-                    className="ad-affaire-search"
+                    className="asd-affaire-search"
                     placeholder={loading ? 'Chargement…' : `Rechercher parmi ${affaires.length} affaire(s)…`}
                     value={affaireSearch}
                     onChange={e => { setAffaireSearch(e.target.value); setShowAffaireDropdown(true); }}
                     onFocus={() => setShowAffaireDropdown(true)}
+                   
                   />
                   {showAffaireDropdown && (
-                    <div className="ad-affaire-dropdown">
+                    <div className="asd-affaire-dropdown">
                       {filteredAffaires.length === 0 ? (
-                        <div className="ad-affaire-empty">
+                        <div className="asd-affaire-empty">
                           {affaires.length === 0 ? 'Aucune affaire en base' : 'Aucun résultat pour cette recherche'}
                         </div>
                       ) : (
                         filteredAffaires.slice(0, 20).map(a => (
                           <div
                             key={a.id || a.numeroAffaire}
-                            className={`ad-affaire-option ${a._overlaps ? 'overlaps' : 'no-overlap'}`}
+                            className={`asd-affaire-option ${a._overlaps ? 'overlaps' : 'no-overlap'}`}
                             onClick={() => selectAffaire(a)}
                           >
-                            <div className="ad-affaire-opt-left">
-                              <span className="ad-affaire-opt-num">{a.numeroAffaire}</span>
-                              <span className="ad-affaire-opt-title">{a.titre || a.eventName || ''}</span>
+                            <div className="asd-affaire-opt-left">
+                              <span className="asd-affaire-opt-num">{a.numeroAffaire}</span>
+                              <span className="asd-affaire-opt-title">{a.titre || a.eventName || ''}</span>
                             </div>
-                            <div className="ad-affaire-opt-right">
-                              <span className="ad-affaire-opt-client">{a.client || ''}</span>
+                            <div className="asd-affaire-opt-right">
+                              <span className="asd-affaire-opt-client">{a.client || ''}</span>
                               {a.dateDebut && (
-                                <span className="ad-affaire-opt-dates">
+                                <span className="asd-affaire-opt-dates">
                                   {format(parseISO(a.dateDebut.split('T')[0]), 'dd/MM', { locale: fr })}
                                   {a.dateFin && ` → ${format(parseISO(a.dateFin.split('T')[0]), 'dd/MM', { locale: fr })}`}
                                 </span>
                               )}
-                              {!a._overlaps && <span className="ad-affaire-opt-warn">hors période</span>}
+                              {!a._overlaps && <span className="asd-affaire-opt-warn">hors période</span>}
                             </div>
                           </div>
                         ))
@@ -809,25 +810,25 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           </div>
 
           {/* Dates & Horaires */}
-          <div className="ad-section">
-            <div className="ad-section-label">
+          <div className="asd-section">
+            <div className="asd-section-label">
               <Clock size={14} />
               <span>Dates & Horaires</span>
             </div>
-            <div className="ad-dates-grid">
-              <div className="ad-field">
+            <div className="asd-dates-grid">
+              <div className="asd-field">
                 <label>Début</label>
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
               </div>
-              <div className="ad-field">
+              <div className="asd-field">
                 <label>Fin</label>
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
               </div>
-              <div className="ad-field">
+              <div className="asd-field">
                 <label>Heure début</label>
                 <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
               </div>
-              <div className="ad-field">
+              <div className="asd-field">
                 <label>Heure fin</label>
                 <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
               </div>
@@ -836,16 +837,16 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
           {/* Jours ON / OFF si multi-jours */}
           {rangeDays.length > 1 && (
-            <div className="ad-section">
-              <div className="ad-section-label">
+            <div className="asd-section">
+              <div className="asd-section-label">
                 <Calendar size={14} />
                 <span>Jours d'activité</span>
-                <span className="ad-day-count">{onDays.length}/{rangeDays.length} jour(s) ON</span>
+                <span className="asd-day-count">{onDays.length}/{rangeDays.length} jour(s) ON</span>
               </div>
-              <div className="ad-days-actions">
-                <button className="ad-days-btn" onClick={() => setAllDays('on')}>Tous ON</button>
-                <button className="ad-days-btn" onClick={() => setAllDays('off')}>Tous OFF</button>
-                <button className="ad-days-btn" onClick={() => {
+              <div className="asd-days-actions">
+                <button className="asd-days-btn" onClick={() => setAllDays('on')}>Tous ON</button>
+                <button className="asd-days-btn" onClick={() => setAllDays('off')}>Tous OFF</button>
+                <button className="asd-days-btn" onClick={() => {
                   // Toggle weekends OFF
                   setDayStates(prev => {
                     const next = { ...prev };
@@ -857,7 +858,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                   });
                 }}>Toggle W-E</button>
               </div>
-              <div className="ad-days-grid">
+              <div className="asd-days-grid">
                 {rangeDays.map(d => {
                   const key = format(d, 'yyyy-MM-dd');
                   const isOff = dayStates[key] === 'off';
@@ -866,13 +867,13 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                   return (
                     <div
                       key={key}
-                      className={`ad-day-cell ${isOff ? 'off' : 'on'} ${weekend ? 'weekend' : ''} ${today ? 'today' : ''}`}
+                      className={`asd-day-cell ${isOff ? 'off' : 'on'} ${weekend ? 'weekend' : ''} ${today ? 'today' : ''}`}
                       onClick={() => toggleDayState(key)}
                       title={`${format(d, 'EEEE d MMMM', { locale: fr })} — ${isOff ? 'OFF' : 'ON'}`}
                     >
-                      <span className="ad-day-label">{format(d, 'EEE', { locale: fr })}</span>
-                      <span className="ad-day-num">{format(d, 'd', { locale: fr })}</span>
-                      <span className={`ad-day-state ${isOff ? 'off' : 'on'}`}>
+                      <span className="asd-day-label">{format(d, 'EEE', { locale: fr })}</span>
+                      <span className="asd-day-num">{format(d, 'd', { locale: fr })}</span>
+                      <span className={`asd-day-state ${isOff ? 'off' : 'on'}`}>
                         {isOff ? 'OFF' : 'ON'}
                       </span>
                     </div>
@@ -883,32 +884,32 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           )}
 
           {/* Poste / Compétence requise */}
-          <div className="ad-section">
-            <div className="ad-section-label">
+          <div className="asd-section">
+            <div className="asd-section-label">
               <Briefcase size={14} />
               <span>Poste & Compétence</span>
             </div>
-            <div className="ad-post-grid">
+            <div className="asd-post-grid">
               <PositionSelector
                 positions={positions}
                 selectedPositions={selectedPositions}
                 setSelectedPositions={setSelectedPositions}
               />
-              <div className="ad-field">
+              <div className="asd-field">
                 <label>Compétences requises</label>
-                <div className="ad-skills-multi">
+                <div className="asd-skills-multi">
                   {Object.entries(skillsByCategory).map(([cat, catSkills]) => {
                     const catInfo = SKILL_CATEGORIES.find(c => c.value === cat);
                     return (
-                      <div key={cat} className="ad-skills-category">
-                        <span className="ad-skills-cat-label" style={{ color: catInfo?.color }}>{catInfo?.label || cat}</span>
-                        <div className="ad-skills-cat-items">
+                      <div key={cat} className="asd-skills-category">
+                        <span className="asd-skills-cat-label" style={{ color: catInfo?.color }}>{catInfo?.label || cat}</span>
+                        <div className="asd-skills-cat-items">
                           {catSkills.map(s => {
                             const checked = selectedSkillIds.includes(s.id);
                             return (
                               <div
                                 key={s.id}
-                                className={`ad-skill-checkbox${checked ? ' checked' : ''}`}
+                                className={`asd-skill-checkbox${checked ? ' checked' : ''}`}
                                 style={{ '--skill-color': catInfo?.color || '#6b7280' }}
                                 onClick={() => {
                                   setSelectedSkillIds(prev =>
@@ -917,7 +918,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                                 }}
                               >
                                 {checked && <Check size={10} />}
-                                <span className="ad-skill-check-name">{s.name}</span>
+                                <span className="asd-skill-check-name">{s.name}</span>
                               </div>
                             );
                           })}
@@ -931,7 +932,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
             {/* Warning compétences non détenues */}
             {skillWarnings && (
-              <div className="ad-skill-warning">
+              <div className="asd-skill-warning">
                 <AlertTriangle size={14} />
                 <span>{skillWarnings}</span>
               </div>
@@ -939,15 +940,15 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           </div>
 
           {/* Statut & Notes */}
-          <div className="ad-section">
-            <div className="ad-section-label">
+          <div className="asd-section">
+            <div className="asd-section-label">
               <Info size={14} />
               <span>Statut & Notes</span>
             </div>
-            <div className="ad-status-grid">
-              <div className="ad-field">
+            <div className="asd-status-grid">
+              <div className="asd-field">
                 <label>Statut de l'affectation</label>
-                <div className="ad-status-options">
+                <div className="asd-status-options">
                   {[
                     { value: 'confirmed', label: 'Confirmé', color: '#10b981' },
                     { value: 'option', label: 'Option', color: '#f59e0b' },
@@ -955,7 +956,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                   ].map(opt => (
                     <button
                       key={opt.value}
-                      className={`ad-status-btn ${status === opt.value ? 'active' : ''}`}
+                      className={`asd-status-btn ${status === opt.value ? 'active' : ''}`}
                       style={{ '--btn-color': opt.color }}
                       onClick={() => setStatus(opt.value)}
                     >
@@ -965,7 +966,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                   ))}
                 </div>
               </div>
-              <div className="ad-field">
+              <div className="asd-field">
                 <label>Notes</label>
                 <textarea
                   value={notes}
@@ -979,13 +980,13 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
           {/* Erreur / Succès */}
           {error && (
-            <div className="ad-message ad-error">
+            <div className="asd-message asd-error">
               <AlertTriangle size={14} />
               <span>{error}</span>
             </div>
           )}
           {success && (
-            <div className="ad-message ad-success">
+            <div className="asd-message asd-success">
               <Check size={14} />
               <span>{isEdit ? 'Affectation mise \u00e0 jour !' : 'Affectation cr\u00e9\u00e9e avec succ\u00e8s !'}</span>
             </div>
@@ -994,17 +995,17 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
         {/* Footer */}
         <div className="assignment-dialog-footer">
-          <button className="ad-btn ad-btn-cancel" onClick={handleSafeClose} disabled={saving}>
+          <button className="asd-btn asd-btn-cancel" onClick={handleSafeClose} disabled={saving}>
             Annuler
           </button>
           <button
-            className="ad-btn ad-btn-save"
+            className="asd-btn asd-btn-save"
             onClick={handleSave}
             disabled={saving || success}
           >
             {saving ? (
               <>
-                <div className="ad-spinner" />
+                <div className="asd-spinner" />
                 Enregistrement…
               </>
             ) : (

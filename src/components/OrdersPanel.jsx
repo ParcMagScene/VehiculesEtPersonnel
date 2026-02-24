@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShoppingCart, FileText, Search, Plus, Filter, Edit2, Trash2, ArrowLeft, 
   Users as UsersIcon, Package, Send, Check, X, ArrowRight, 
   Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck } from 'lucide-react';
@@ -64,31 +64,55 @@ function OrdersPanel({ currentUser }) {
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   // ═══ Chargement des données ═══
+  const abortRef = useRef(null);
+  const debounceRef = useRef(null);
+
   const loadData = useCallback(async () => {
+    // Annuler requêtes précédentes
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     try {
       const params = {};
       if (searchTerm) params.search = searchTerm;
       if (statusFilter) params.status = statusFilter;
 
-      const [ordersData, quotesData, suppliersData, statsData] = await Promise.all([
-        api.getOrders(params),
-        api.getQuotes(params),
-        api.getSuppliers(searchTerm ? { search: searchTerm } : {}),
-        api.getOrdersStats()
-      ]);
-      setOrders(ordersData);
-      setQuotes(quotesData);
-      setSuppliers(suppliersData);
-      setStats(statsData);
-    } catch (error) {
-      console.error('Erreur chargement commandes:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, statusFilter]);
+      // Charger seulement les données de l'onglet actif + fournisseurs (nécessaires pour le formulaire commande)
+      const promises = [api.getSuppliers(searchTerm ? { search: searchTerm } : {})];
+      if (activeTab === 'orders' || !orders.length) promises.push(api.getOrders(params));
+      if (activeTab === 'quotes' || !quotes.length) promises.push(api.getQuotes(params));
+      promises.push(api.getOrdersStats());
 
-  useEffect(() => { loadData(); }, [loadData]);
+      const results = await Promise.all(promises);
+
+      if (controller.signal.aborted) return;
+
+      let idx = 0;
+      setSuppliers(results[idx++]);
+      if (activeTab === 'orders' || !orders.length) setOrders(results[idx++]);
+      if (activeTab === 'quotes' || !quotes.length) setQuotes(results[idx++]);
+      setStats(results[idx]);
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Erreur chargement commandes:', error);
+      }
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter, activeTab]);
+
+  // Debounce search: déclencher loadData après 300ms d'inactivité
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => loadData(), 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, [loadData]);
 
   // ═══ Handlers Commandes ═══
   const handleSaveOrder = async (data) => {
@@ -671,19 +695,25 @@ const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, on
 
 // ═══ Formulaire Commande ═══
 const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
-  const [form, setForm] = useState({
-    type: order?.type || 'purchase',
-    supplier_id: order?.supplier_id || '',
-    affaire_id: order?.affaire_id || '',
-    status: order?.status || 'draft',
-    order_date: order?.order_date || new Date().toISOString().slice(0, 10),
-    expected_date: order?.expected_date || '',
-    tva_rate: order?.tva_rate || 20,
-    notes: order?.notes || '',
-    items: order?.items || [{ designation: '', quantity: 1, unit: 'u', unit_price_ht: 0 }],
+  const itemIdCounter = useRef(0);
+  const generateItemId = () => `item-${++itemIdCounter.current}`;
+  const [form, setForm] = useState(() => {
+    const items = (order?.items || [{ designation: '', quantity: 1, unit: 'u', unit_price_ht: 0 }])
+      .map(i => ({ ...i, _key: generateItemId() }));
+    return {
+      type: order?.type || 'purchase',
+      supplier_id: order?.supplier_id || '',
+      affaire_id: order?.affaire_id || '',
+      status: order?.status || 'draft',
+      order_date: order?.order_date || new Date().toISOString().slice(0, 10),
+      expected_date: order?.expected_date || '',
+      tva_rate: order?.tva_rate || 20,
+      notes: order?.notes || '',
+      items,
+    };
   });
 
-  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { designation: '', quantity: 1, unit: 'u', unit_price_ht: 0 }] }));
+  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { designation: '', quantity: 1, unit: 'u', unit_price_ht: 0, _key: generateItemId() }] }));
   const removeItem = (idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
   const updateItem = (idx, field, value) => {
     setForm(f => {
@@ -744,7 +774,7 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
               <button type="button" className="add-item-btn" onClick={addItem}><Plus size={14} /> Ajouter une ligne</button>
             </div>
             {form.items.map((item, idx) => (
-              <div key={idx} className="item-row">
+              <div key={item._key} className="item-row">
                 <input type="text" placeholder="Désignation" value={item.designation} onChange={(e) => updateItem(idx, 'designation', e.target.value)} className="item-designation" />
                 <input type="number" placeholder="Qté" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} className="item-qty" />
                 <select value={item.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} className="item-unit">
@@ -782,20 +812,26 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
 
 // ═══ Formulaire Devis ═══
 const QuoteFormModal = React.memo(({ quote, onSave, onClose }) => {
-  const [form, setForm] = useState({
-    client_name: quote?.client_name || '',
-    client_email: quote?.client_email || '',
-    client_address: quote?.client_address || '',
-    affaire_id: quote?.affaire_id || '',
-    status: quote?.status || 'draft',
-    quote_date: quote?.quote_date || new Date().toISOString().slice(0, 10),
-    validity_date: quote?.validity_date || '',
-    tva_rate: quote?.tva_rate || 20,
-    notes: quote?.notes || '',
-    items: quote?.items || [{ designation: '', quantity: 1, unit: 'u', unit_price_ht: 0 }],
+  const itemIdCounter = useRef(0);
+  const generateItemId = () => `item-${++itemIdCounter.current}`;
+  const [form, setForm] = useState(() => {
+    const items = (quote?.items || [{ designation: '', quantity: 1, unit: 'u', unit_price_ht: 0 }])
+      .map(i => ({ ...i, _key: generateItemId() }));
+    return {
+      client_name: quote?.client_name || '',
+      client_email: quote?.client_email || '',
+      client_address: quote?.client_address || '',
+      affaire_id: quote?.affaire_id || '',
+      status: quote?.status || 'draft',
+      quote_date: quote?.quote_date || new Date().toISOString().slice(0, 10),
+      validity_date: quote?.validity_date || '',
+      tva_rate: quote?.tva_rate || 20,
+      notes: quote?.notes || '',
+      items,
+    };
   });
 
-  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { designation: '', quantity: 1, unit: 'u', unit_price_ht: 0 }] }));
+  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { designation: '', quantity: 1, unit: 'u', unit_price_ht: 0, _key: generateItemId() }] }));
   const removeItem = (idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
   const updateItem = (idx, field, value) => {
     setForm(f => {
@@ -861,7 +897,7 @@ const QuoteFormModal = React.memo(({ quote, onSave, onClose }) => {
               <button type="button" className="add-item-btn" onClick={addItem}><Plus size={14} /> Ajouter une ligne</button>
             </div>
             {form.items.map((item, idx) => (
-              <div key={idx} className="item-row">
+              <div key={item._key} className="item-row">
                 <input type="text" placeholder="Désignation" value={item.designation} onChange={(e) => updateItem(idx, 'designation', e.target.value)} className="item-designation" />
                 <input type="number" placeholder="Qté" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} className="item-qty" />
                 <select value={item.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} className="item-unit">

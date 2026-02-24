@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Users, MapPin, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Wrench, Map, Cloud, Building2, Gauge, UserCog } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Map, Cloud, Gauge } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
 import { formatPhoneDisplay } from './PhoneInput';

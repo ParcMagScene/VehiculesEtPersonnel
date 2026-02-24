@@ -370,7 +370,7 @@
 /* ─── RESPONSIVE ─── */
 @media (max-width: 640px) {
   .lrp-overlay { padding: 0; }
-  .lrp-panel { max-width: 100%; max-height: 100vh; border-radius: 0; }
+  .lrp-panel { max-width: 100%; max-height: 100dvh; border-radius: 0; }
   .lrp-balance-bar { flex-wrap: wrap; gap: 8px; }
   .lrp-stats { gap: 2px; }
   .lrp-stat { font-size: 11px; padding: 3px 8px; }

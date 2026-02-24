@@ -505,8 +505,8 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // GET /api/leaves — Toutes les demandes (admin) ou filtrées
-  app.get('/api/leaves', authenticateToken, (req, res) => {
+  // GET /api/leaves — Toutes les demandes (admin uniquement)
+  app.get('/api/leaves', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { status, personId, leaveType, startDate, endDate } = req.query;
 
@@ -538,7 +538,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // GET /api/leaves/pending — Demandes en attente (admin)
-  app.get('/api/leaves/pending', authenticateToken, (req, res) => {
+  app.get('/api/leaves/pending', authenticateToken, requireAdmin, (req, res) => {
     try {
       const requests = db.prepare(`
         SELECT lr.*, p.first_name, p.last_name, p.email as person_email, p.photo as person_photo,
@@ -554,8 +554,8 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // GET /api/leaves/pending/count — Nombre de demandes en attente
-  app.get('/api/leaves/pending/count', authenticateToken, (req, res) => {
+  // GET /api/leaves/pending/count — Nombre de demandes en attente (admin)
+  app.get('/api/leaves/pending/count', authenticateToken, requireAdmin, (req, res) => {
     try {
       const result = db.prepare('SELECT COUNT(*) as count FROM leave_requests WHERE status = ?').get('pending');
       res.json({ count: result.count });
@@ -570,7 +570,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const request = db.prepare(`
         SELECT lr.*, p.first_name, p.last_name, p.email as person_email, p.photo as person_photo,
                p.type as person_type, p.contract_type, p.created_at as person_created_at,
-               u.name as decision_by_name
+               u.name as decision_by_name, p.user_id as owner_user_id
         FROM leave_requests lr
         JOIN persons p ON p.id = lr.person_id
         LEFT JOIN users u ON u.id = lr.decision_by
@@ -578,6 +578,13 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       `).get(req.params.id);
 
       if (!request) return res.status(404).json({ error: 'Demande non trouvée' });
+
+      // Vérifier propriété : propriétaire ou admin
+      const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+      if (!currentUser?.is_admin && request.owner_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+      }
+      delete request.owner_user_id;
 
       // Charger l'historique
       request.history = db.prepare(`
@@ -589,8 +596,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       `).all(req.params.id);
 
       // Marquer la réception si admin et pas encore fait
-      const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-      if (user?.is_admin && !request.reception_date && request.status === 'pending') {
+      if (currentUser?.is_admin && !request.reception_date && request.status === 'pending') {
         db.prepare('UPDATE leave_requests SET reception_date = datetime("now") WHERE id = ?')
           .run(req.params.id);
         request.reception_date = new Date().toISOString();
@@ -729,8 +735,17 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Signature et rôle requis' });
       }
 
-      const existing = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
+      const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+
+      // Vérifier propriété pour signature employee, ou admin pour signature admin
+      const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+      if (role === 'employee' && existing.owner_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Vous ne pouvez signer que vos propres demandes' });
+      }
+      if (role === 'admin' && !currentUser?.is_admin) {
+        return res.status(403).json({ error: 'Accès admin requis' });
+      }
 
       if (role === 'employee') {
         db.prepare(`
@@ -738,8 +753,6 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
           WHERE id = ?
         `).run(signature, req.params.id);
       } else if (role === 'admin') {
-        const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-        if (!user?.is_admin) return res.status(403).json({ error: 'Accès admin requis' });
         db.prepare(`
           UPDATE leave_requests SET signature_admin = ?, signature_admin_date = datetime('now'), updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
@@ -768,8 +781,14 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // PUT /api/leaves/:id/cancel — Annuler une demande (salarié, si délai respecté)
   app.put('/api/leaves/:id/cancel', authenticateToken, (req, res) => {
     try {
-      const existing = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
+      const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+
+      // Vérifier propriété : propriétaire ou admin
+      const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+      if (!currentUser?.is_admin && existing.owner_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Vous ne pouvez annuler que vos propres demandes' });
+      }
 
       // Seules les demandes pending ou accepted peuvent être annulées
       if (!['pending', 'accepted'].includes(existing.status)) {
@@ -822,8 +841,14 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/leaves/:id/justification — Upload du justificatif
   app.post('/api/leaves/:id/justification', authenticateToken, (req, res) => {
     try {
-      const existing = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
+      const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+
+      // Vérifier propriété : propriétaire ou admin
+      const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+      if (!currentUser?.is_admin && existing.owner_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres demandes' });
+      }
 
       // Le fichier est envoyé en base64 dans le body
       const { filename, data } = req.body;
@@ -859,8 +884,8 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // SOLDES DE CONGÉS (enrichi)
   // ──────────────────────────────────────
 
-  // GET /api/leaves/balances — Soldes de congés avec calcul automatique
-  app.get('/api/leaves/balances', authenticateToken, (req, res) => {
+  // GET /api/leaves/balances — Soldes de congés avec calcul automatique (admin)
+  app.get('/api/leaves/balances', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { personId, year } = req.query;
       const targetYear = year || new Date().getFullYear();
@@ -920,7 +945,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const request = db.prepare(`
         SELECT lr.*, p.first_name, p.last_name, p.email as person_email,
                p.type as person_type, p.contract_type,
-               u.name as decision_by_name
+               u.name as decision_by_name, p.user_id as owner_user_id
         FROM leave_requests lr
         JOIN persons p ON p.id = lr.person_id
         LEFT JOIN users u ON u.id = lr.decision_by
@@ -928,6 +953,13 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       `).get(req.params.id);
 
       if (!request) return res.status(404).json({ error: 'Demande non trouvée' });
+
+      // Vérifier propriété : propriétaire ou admin
+      const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+      if (!currentUser?.is_admin && request.owner_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+      }
+      delete request.owner_user_id;
 
       // Générer le HTML du PDF
       const html = generateLeaveRequestPdfHtml(request);
@@ -949,7 +981,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────────────────────────
 
   // GET /api/leaves/stats — Statistiques congés (admin)
-  app.get('/api/leaves/stats', authenticateToken, (req, res) => {
+  app.get('/api/leaves/stats', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { year } = req.query;
       const targetYear = year || new Date().getFullYear();
@@ -1026,6 +1058,14 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/leaves/:id/history — Historique d'une demande
   app.get('/api/leaves/:id/history', authenticateToken, (req, res) => {
     try {
+      // Vérifier propriété : propriétaire ou admin
+      const leaveReq = db.prepare('SELECT lr.person_id, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
+      if (!leaveReq) return res.status(404).json({ error: 'Demande non trouvée' });
+      const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+      if (!currentUser?.is_admin && leaveReq.owner_user_id !== req.user.id) {
+        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+      }
+
       const history = db.prepare(`
         SELECT lrh.*, u.name as performer_name
         FROM leave_request_history lrh

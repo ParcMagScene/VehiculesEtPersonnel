@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Users, Award, CalendarDays, Briefcase,
   Plus, Edit2, Trash2, X, Save, Search,
-  ChevronDown, ChevronUp, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle,
-  Phone, Mail, User, Check, Clock,
+  ChevronLeft, ChevronRight, AlertTriangle, CheckCircle,
+  User, Check, Clock,
   Link2, Upload, Star, Filter,
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';

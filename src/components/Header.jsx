@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container } from 'lucide-react';
 import api from '../utils/api';
-import { format, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import QRCodeModal from './QRCodeModal';

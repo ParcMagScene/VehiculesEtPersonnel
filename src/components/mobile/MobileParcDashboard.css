@@ -1,6 +1,7 @@
 .mobile-parc-dashboard {
   margin: -1rem;
   min-height: calc(100vh - 60px);
+  min-height: calc(100dvh - 60px);
   background: #f8fafc;
 }
 

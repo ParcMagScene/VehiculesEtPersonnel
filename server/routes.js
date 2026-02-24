@@ -2,7 +2,7 @@ import db, { addToHistory } from './database.js';
 
 // ============ CLIENTS ============
 
-export function setupClientsRoutes(app, authenticateToken) {
+export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/clients', authenticateToken, (req, res) => {
     try {
       const stmt = db.prepare('SELECT * FROM clients');
@@ -50,7 +50,7 @@ export function setupClientsRoutes(app, authenticateToken) {
     }
   });
 
-  app.delete('/api/clients/:id', authenticateToken, (req, res) => {
+  app.delete('/api/clients/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const stmt = db.prepare('DELETE FROM clients WHERE id = ?');
       stmt.run(req.params.id);
@@ -66,7 +66,7 @@ export function setupClientsRoutes(app, authenticateToken) {
 
 // ============ CONDUCTEURS ============
 
-export function setupDriversRoutes(app, authenticateToken) {
+export function setupDriversRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/drivers', authenticateToken, (req, res) => {
     try {
       const stmt = db.prepare('SELECT * FROM drivers');
@@ -114,7 +114,7 @@ export function setupDriversRoutes(app, authenticateToken) {
     }
   });
 
-  app.delete('/api/drivers/:id', authenticateToken, (req, res) => {
+  app.delete('/api/drivers/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const stmt = db.prepare('DELETE FROM drivers WHERE id = ?');
       stmt.run(req.params.id);
@@ -130,7 +130,7 @@ export function setupDriversRoutes(app, authenticateToken) {
 
 // ============ LIEUX ============
 
-export function setupLocationsRoutes(app, authenticateToken) {
+export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/locations', authenticateToken, (req, res) => {
     try {
       const stmt = db.prepare('SELECT * FROM locations');
@@ -200,7 +200,7 @@ export function setupLocationsRoutes(app, authenticateToken) {
     }
   });
 
-  app.delete('/api/locations/:id', authenticateToken, (req, res) => {
+  app.delete('/api/locations/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const stmt = db.prepare('DELETE FROM locations WHERE id = ?');
       stmt.run(req.params.id);
@@ -216,7 +216,7 @@ export function setupLocationsRoutes(app, authenticateToken) {
 
 // ============ GARAGES ============
 
-export function setupGaragesRoutes(app, authenticateToken) {
+export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/garages', authenticateToken, (req, res) => {
     try {
       const stmt = db.prepare('SELECT * FROM garages');
@@ -264,7 +264,7 @@ export function setupGaragesRoutes(app, authenticateToken) {
     }
   });
 
-  app.delete('/api/garages/:id', authenticateToken, (req, res) => {
+  app.delete('/api/garages/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const stmt = db.prepare('DELETE FROM garages WHERE id = ?');
       stmt.run(req.params.id);
@@ -291,7 +291,7 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  app.post('/api/config/:key', authenticateToken, (req, res) => {
+  app.post('/api/config/:key', authenticateToken, requireAdmin, (req, res) => {
     try {
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO config (key, value, modified_by, modified_at)

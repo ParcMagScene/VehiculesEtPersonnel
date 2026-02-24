@@ -3,7 +3,7 @@ import db, { addToHistory } from './database.js';
 // ═══════════════════════════════════════════════════════════════
 // Fournisseurs
 // ═══════════════════════════════════════════════════════════════
-export function setupSuppliersRoutes(app, authenticateToken) {
+export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
   // Liste des fournisseurs
   app.get('/api/suppliers', authenticateToken, (req, res) => {
     try {
@@ -52,7 +52,7 @@ export function setupSuppliersRoutes(app, authenticateToken) {
   });
 
   // Supprimer un fournisseur
-  app.delete('/api/suppliers/:id', authenticateToken, (req, res) => {
+  app.delete('/api/suppliers/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const orderCount = db.prepare('SELECT COUNT(*) as count FROM orders WHERE supplier_id = ?').get(req.params.id);
       if (orderCount.count > 0) {
@@ -69,7 +69,7 @@ export function setupSuppliersRoutes(app, authenticateToken) {
 // ═══════════════════════════════════════════════════════════════
 // Commandes (Bons de commande)
 // ═══════════════════════════════════════════════════════════════
-export function setupOrdersRoutes(app, authenticateToken) {
+export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
   // Générer référence auto
   function generateReference(prefix) {
     const year = new Date().getFullYear();
@@ -261,7 +261,7 @@ export function setupOrdersRoutes(app, authenticateToken) {
   });
 
   // Supprimer une commande
-  app.delete('/api/orders/:id', authenticateToken, (req, res) => {
+  app.delete('/api/orders/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       db.prepare('DELETE FROM order_items WHERE order_id = ?').run(req.params.id);
       db.prepare('DELETE FROM orders WHERE id = ?').run(req.params.id);
@@ -276,7 +276,7 @@ export function setupOrdersRoutes(app, authenticateToken) {
 // ═══════════════════════════════════════════════════════════════
 // Devis
 // ═══════════════════════════════════════════════════════════════
-export function setupQuotesRoutes(app, authenticateToken) {
+export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   function generateQuoteReference() {
     const year = new Date().getFullYear();
     const last = db.prepare(
@@ -474,7 +474,7 @@ export function setupQuotesRoutes(app, authenticateToken) {
   });
 
   // Supprimer un devis
-  app.delete('/api/quotes/:id', authenticateToken, (req, res) => {
+  app.delete('/api/quotes/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       db.prepare('DELETE FROM quote_items WHERE quote_id = ?').run(req.params.id);
       db.prepare('DELETE FROM quotes WHERE id = ?').run(req.params.id);

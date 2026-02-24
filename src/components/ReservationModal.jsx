@@ -1,10 +1,10 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, Trash2, MapPin, Link2, Unlink, Paperclip, Car, Check } from 'lucide-react';
+import { X, Trash2, MapPin, Link2, Unlink, Paperclip } from 'lucide-react';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import { useAutocomplete } from '../hooks/useAutocomplete';
-import { useGooglePlacesAutocomplete } from '../hooks/useGooglePlacesAutocomplete';
+
 import TripDetailsModal from './TripDetailsModal';
 import LocationDialog from './LocationDialog';
 import VehiclePickerCards from './VehiclePickerCards';

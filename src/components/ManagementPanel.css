@@ -17,6 +17,7 @@
   width: 100%;
   max-width: 1400px;
   height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ShoppingCart, FileText, Search, Plus, Filter, Edit2, Trash2, ArrowLeft, 
-  ChevronDown, Users as UsersIcon, Package, Send, Check, X, RefreshCw, ArrowRight, 
-  Eye, Building2, Phone, Mail, MapPin, Calendar, Euro, Hash, FileCheck } from 'lucide-react';
+  Users as UsersIcon, Package, Send, Check, X, ArrowRight, 
+  Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck } from 'lucide-react';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
 import PhoneInput, { formatPhoneDisplay } from './PhoneInput';

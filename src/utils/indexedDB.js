@@ -168,47 +168,4 @@ export const updateInIndexedDB = async (storeName, item) => {
   }
 };
 
-// Supprimer un élément
-export const deleteFromIndexedDB = async (storeName, id) => {
-  try {
-    const db = await openDB();
-    const transaction = db.transaction(storeName, 'readwrite');
-    const store = transaction.objectStore(storeName);
-    const request = store.delete(id);
-
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        db.close();
-        resolve();
-      };
-      request.onerror = () => {
-        db.close();
-        reject(request.error);
-      };
-    });
-  } catch (error) {
-    console.error(`Erreur lors de la suppression dans ${storeName}:`, error);
-    throw error;
-  }
-};
-
-// Vider complètement la base de données
-export const clearIndexedDB = async () => {
-  try {
-    const db = await openDB();
-    const storeNames = Object.values(STORES);
-    
-    for (const storeName of storeNames) {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      await store.clear();
-    }
-    
-    db.close();
-  } catch (error) {
-    console.error('Erreur lors du vidage de la base:', error);
-    throw error;
-  }
-};
-
 export { STORES };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container, Mail, Boxes } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container, Mail, Boxes, Sun, Moon } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -9,7 +9,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {} }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -221,6 +221,14 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             <button className="help-trigger-btn" onClick={onOpenHelp} title="Aide — Guide d'utilisation" aria-label="Aide">
               <HelpCircle size={18} />
               <span>Aide</span>
+            </button>
+            <button 
+              className="theme-toggle-btn" 
+              onClick={onToggleTheme} 
+              title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'} 
+              aria-label="Basculer le thème"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           </div>
           <div className="module-tabs" role="tablist" aria-label="Module principal">

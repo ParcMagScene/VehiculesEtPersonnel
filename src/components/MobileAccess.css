@@ -23,12 +23,12 @@
 .access-header h2 {
   margin: 0 0 0.5rem;
   font-size: 1.75rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .access-header p {
   margin: 0;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .access-content {
@@ -49,7 +49,7 @@
   display: inline-block;
   padding: 1rem;
   background: white;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -63,7 +63,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 0.875rem;
   margin: 0;
 }
@@ -80,7 +80,7 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--theme-text-body);
   margin-bottom: 0.75rem;
 }
 
@@ -92,11 +92,11 @@
 .url-input-group input {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-family: monospace;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
 }
 
 .url-input-group input:focus {
@@ -142,7 +142,7 @@
 .features-section h3 {
   margin: 0 0 1rem;
   font-size: 1.125rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .features-section ul {
@@ -160,7 +160,7 @@
 }
 
 .access-info {
-  background: #fffbeb;
+  background: var(--theme-warning-bg);
   border: 1px solid #fcd34d;
   border-radius: 0.75rem;
   padding: 1rem;

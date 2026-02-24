@@ -35,9 +35,9 @@
 }
 
 /* Types */
-.toast-success { background: linear-gradient(135deg, #22c55e, #16a34a); }
-.toast-error   { background: linear-gradient(135deg, #ef4444, #dc2626); }
-.toast-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.toast-success { background: linear-gradient(135deg, var(--theme-success), var(--theme-success-dark)); }
+.toast-error   { background: linear-gradient(135deg, var(--theme-danger), var(--theme-danger-dark)); }
+.toast-warning { background: linear-gradient(135deg, var(--theme-warning), var(--theme-warning-dark)); }
 .toast-info    { background: linear-gradient(135deg, #6366f1, #4f46e5); }
 
 /* Icône */

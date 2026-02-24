@@ -32,7 +32,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--theme-border-medium);
   background: var(--theme-gradient);
   color: white;
   border-radius: 0.98rem 0.98rem 0 0;
@@ -52,8 +52,8 @@
 }
 
 .year-item {
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  background: var(--theme-bg-secondary);
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.75rem;
   padding: 1.5rem 1rem;
   cursor: pointer;
@@ -80,15 +80,15 @@
 }
 
 .year-item.today {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--theme-info) 0%, var(--theme-info-dark) 100%);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--theme-info);
   font-weight: 700;
 }
 
 .year-item.today:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border-color: #2563eb;
+  background: linear-gradient(135deg, var(--theme-info-dark) 0%, #1d4ed8 100%);
+  border-color: var(--theme-info-dark);
 }
 
 .year-number {
@@ -106,7 +106,7 @@
 .indicator-dot {
   width: 8px;
   height: 8px;
-  background: #10b981;
+  background: var(--theme-success-alt);
   border-radius: 50%;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
   animation: pulse 2s infinite;

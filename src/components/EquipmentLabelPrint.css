@@ -92,7 +92,7 @@
 .elp-preview-container h4 {
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   align-self: flex-start;
@@ -131,20 +131,20 @@
 .elp-label-ref {
   font-weight: 800;
   font-size: 13px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   white-space: nowrap;
 }
 
 .elp-label-uid {
   font-size: 9px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-family: monospace;
   white-space: nowrap;
 }
 
 .elp-label-serial {
   font-size: 9px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
 }
 
@@ -159,7 +159,7 @@
 
 .elp-dimensions {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   font-weight: 500;
 }
 
@@ -179,7 +179,7 @@
 .elp-field > label {
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
 }
 
 .elp-format-options {
@@ -190,18 +190,18 @@
 
 .elp-format-btn {
   padding: 6px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   background: white;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .elp-format-btn:hover {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   border-color: #cbd5e1;
 }
 
@@ -225,14 +225,14 @@
 .elp-field-inline label {
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
 }
 
 .elp-field-inline input {
   width: 70px;
   padding: 6px 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   font-size: 13px;
   text-align: center;
@@ -252,23 +252,23 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--theme-border);
 }
 
 .elp-btn-cancel {
   padding: 8px 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   background: white;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .elp-btn-cancel:hover {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
 }
 
 .elp-btn-print {
@@ -294,7 +294,7 @@
 .elp-toggle-group {
   display: flex;
   gap: 0;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -305,10 +305,10 @@
   background: white;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--theme-border);
 }
 
 .elp-toggle-btn:last-child {
@@ -316,7 +316,7 @@
 }
 
 .elp-toggle-btn:hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .elp-toggle-btn.active {
@@ -341,7 +341,7 @@
 }
 
 .elp-btn-export:hover {
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
 }
 
 /* Responsive */

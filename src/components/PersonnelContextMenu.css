@@ -29,7 +29,7 @@
 .pp-context-menu-person {
   font-weight: 700;
   font-size: 13px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -37,13 +37,13 @@
 
 .pp-context-menu-subtitle {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   font-weight: 500;
 }
 
 .pp-context-menu-divider {
   height: 1px;
-  background: #e2e8f0;
+  background: var(--theme-border);
   margin: 4px 8px;
 }
 
@@ -59,14 +59,14 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #334155;
+  color: var(--theme-text-dark);
   transition: all 0.12s ease;
   text-align: left;
 }
 
 .pp-context-menu-item:hover {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: var(--theme-border-light);
+  color: var(--theme-text-primary);
 }
 
 .pp-context-menu-icon {
@@ -91,7 +91,7 @@
 .pp-context-menu-badge {
   font-size: 9px;
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--theme-warning);
   background: #fef3c7;
   padding: 2px 6px;
   border-radius: 4px;

@@ -3,7 +3,7 @@
 .qr-landing {
   min-height: 100vh;
   min-height: 100dvh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, var(--theme-text-primary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,7 +33,7 @@
 
 /* ── Header ── */
 .qr-landing-header {
-  background: linear-gradient(135deg, #1e3a5f, #2563eb);
+  background: linear-gradient(135deg, #1e3a5f, var(--theme-info-dark));
   padding: 28px 24px 24px;
   text-align: center;
   color: white;
@@ -67,7 +67,7 @@
 .qr-landing-info {
   padding: 24px 24px 16px;
   text-align: center;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--theme-border-light);
 }
 
 .qr-landing-loading {
@@ -75,7 +75,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   padding: 12px 0;
 }
 
@@ -89,7 +89,7 @@
 }
 
 .qr-landing-error {
-  color: #ef4444;
+  color: var(--theme-danger);
   font-size: 14px;
   padding: 12px 0;
 }
@@ -97,8 +97,8 @@
 .qr-landing-uid {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 13px;
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--theme-text-secondary);
+  background: var(--theme-border-light);
   display: inline-block;
   padding: 4px 12px;
   border-radius: 6px;
@@ -109,13 +109,13 @@
 .qr-landing-name {
   font-size: 18px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   margin-bottom: 4px;
 }
 
 .qr-landing-detail {
   font-size: 14px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   margin-bottom: 6px;
 }
 
@@ -163,7 +163,7 @@
 
 /* Bouton "Aller au matériel" — accent bleu */
 .qr-landing-btn-equipment {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, var(--theme-info-dark), #1d4ed8);
   color: white;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
@@ -174,11 +174,11 @@
 
 /* Bouton "Accueil eM@g" — gris/neutre */
 .qr-landing-btn-home {
-  background: #f1f5f9;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
+  background: var(--theme-border-light);
+  color: var(--theme-text-primary);
+  border: 1px solid var(--theme-border);
 }
 
 .qr-landing-btn-home:active {
-  background: #e2e8f0;
+  background: var(--theme-border);
 }

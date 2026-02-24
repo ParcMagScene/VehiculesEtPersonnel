@@ -7,7 +7,7 @@
 .google-calendar-config-loading {
   padding: 40px;
   text-align: center;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 16px;
 }
 
@@ -25,19 +25,19 @@
   gap: 10px;
   margin: 0 0 12px 0;
   font-size: 18px;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .config-description {
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 14px;
   line-height: 1.6;
   margin: 0;
 }
 
 .environment-info {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border: 2px solid #86efac;
+  background: linear-gradient(135deg, var(--theme-success-bg) 0%, #dcfce7 100%);
+  border: 2px solid var(--theme-success-border);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
@@ -73,7 +73,7 @@
   font-family: 'Monaco', 'Courier New', monospace;
   font-size: 13px;
   color: #059669;
-  border: 1px solid #86efac;
+  border: 1px solid var(--theme-success-border);
   display: inline-block;
 }
 
@@ -139,7 +139,7 @@
 .btn-copy-small {
   align-self: flex-start;
   padding: 6px 12px;
-  background: #f59e0b;
+  background: var(--theme-warning);
   color: white;
   border: none;
   border-radius: var(--btn-radius);
@@ -150,7 +150,7 @@
 }
 
 .btn-copy-small:hover {
-  background: #d97706;
+  background: var(--theme-warning-dark);
   transform: translateY(-1px);
 }
 
@@ -176,7 +176,7 @@
 .google-calendar-config .form-group label {
   display: block;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   margin-bottom: 6px;
   font-size: 10px;
   text-transform: uppercase;
@@ -184,18 +184,18 @@
 }
 
 .google-calendar-config .form-group .required {
-  color: #dc2626;
+  color: var(--theme-danger-dark);
   margin-left: 4px;
 }
 
 .google-calendar-config .form-group input {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 7px;
   font-size: 13px;
   font-family: 'Courier New', monospace;
-  color: #334155;
+  color: var(--theme-text-dark);
   background: white;
   transition: border-color 0.15s;
 }
@@ -212,34 +212,34 @@
   gap: 6px;
   margin-top: 6px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .client-id-help {
   margin-top: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .client-id-help summary {
   padding: 12px 16px;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--theme-text-body);
   user-select: none;
   transition: background 0.2s;
 }
 
 .client-id-help summary:hover {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
 }
 
 .client-id-help[open] summary {
-  border-bottom: 1px solid #e5e7eb;
-  background: #eff6ff;
+  border-bottom: 1px solid var(--theme-border-medium);
+  background: var(--theme-info-bg);
   color: #1e40af;
 }
 
@@ -253,7 +253,7 @@
 .help-content p {
   margin: 0 0 8px 0;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .help-content ul {
@@ -267,7 +267,7 @@
 }
 
 .warning-note {
-  background: #fef2f2;
+  background: var(--theme-danger-bg);
   border: 1px solid #fecaca;
   border-radius: 6px;
   padding: 12px;
@@ -309,7 +309,7 @@
 }
 
 .oauth-actions {
-  background: #fef2f2;
+  background: var(--theme-danger-bg);
   border: 1px solid #fecaca;
   border-radius: 12px;
   padding: 20px;
@@ -381,7 +381,7 @@
 
 .config-info {
   background: #f0f9ff;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--theme-info-border);
   border-radius: 12px;
   padding: 20px;
 }
@@ -405,12 +405,12 @@
 }
 
 .config-info a {
-  color: #3b82f6;
+  color: var(--theme-info);
   text-decoration: underline;
 }
 
 .config-info a:hover {
-  color: #2563eb;
+  color: var(--theme-info-dark);
 }
 
 .config-info code {
@@ -420,5 +420,5 @@
   font-family: 'Courier New', monospace;
   font-size: 12px;
   color: #1e3a8a;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--theme-info-border);
 }

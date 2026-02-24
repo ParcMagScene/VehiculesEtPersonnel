@@ -19,7 +19,7 @@
 }
 
 .confirm-dialog {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   border-radius: 16px;
   padding: 24px 28px;
   max-width: 420px;
@@ -96,12 +96,12 @@
 }
 
 .confirm-dialog-btn.confirm-discard {
-  background: var(--btn-danger-filled-bg, #ef4444);
+  background: var(--btn-danger-filled-bg, var(--theme-danger));
   color: var(--btn-danger-filled-color, white);
 }
 
 .confirm-dialog-btn.confirm-discard:hover {
-  background: var(--theme-danger-dark, #dc2626);
+  background: var(--theme-danger-dark, var(--theme-danger-dark));
   transform: translateY(-1px);
 }
 

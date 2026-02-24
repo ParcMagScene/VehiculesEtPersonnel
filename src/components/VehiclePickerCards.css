@@ -9,7 +9,7 @@
   gap: 0.5rem;
   max-height: 280px;
   overflow-y: auto;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.5rem;
   padding: 0.5rem;
 }
@@ -19,7 +19,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -47,7 +47,7 @@
   border-radius: 0.5rem;
   overflow: hidden;
   flex-shrink: 0;
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
 }
 
 .vehicle-picker-photo img {
@@ -73,7 +73,7 @@
 .vehicle-picker-name {
   font-weight: 600;
   font-size: 0.9rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -89,14 +89,14 @@
 
 .vehicle-picker-brand {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-weight: 500;
 }
 
 .vehicle-picker-type {
   font-size: 0.7rem;
   color: #9ca3af;
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   padding: 0.1rem 0.4rem;
   border-radius: 0.25rem;
 }
@@ -135,7 +135,7 @@
   max-height: 320px;
   overflow-y: auto;
   padding: 0.5rem;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.5rem;
 }
 
@@ -145,7 +145,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.75rem;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -155,7 +155,7 @@
 }
 
 .vehicle-picker-card-desktop:hover {
-  border-color: #c7d2fe;
+  border-color: var(--theme-bg-indigo-lighter);
   background: #f8f7ff;
 }
 
@@ -175,7 +175,7 @@
   height: 60px;
   border-radius: 0.5rem;
   overflow: hidden;
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
 }
 
 .vehicle-picker-photo-desktop img {
@@ -201,7 +201,7 @@
 .vehicle-picker-name-desktop {
   font-weight: 600;
   font-size: 0.85rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -218,14 +218,14 @@
 
 .vehicle-picker-brand-desktop {
   font-size: 0.7rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-weight: 500;
 }
 
 .vehicle-picker-type-desktop {
   font-size: 0.65rem;
   color: #9ca3af;
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   padding: 0.1rem 0.35rem;
   border-radius: 0.25rem;
 }

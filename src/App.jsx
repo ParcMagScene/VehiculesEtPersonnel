@@ -14,6 +14,7 @@ import logger from './utils/logger';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification, setVolume } from './utils/notificationSound';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFeedback } from './hooks/useFeedback';
+import { useTheme } from './hooks/useTheme';
 import './App.css';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
@@ -145,6 +146,7 @@ function App() {
   const [tabPrefs, setTabPrefs] = useState({ tabOrder: null, hiddenTabs: [] }); // Préférences onglets
   const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
   const { toastRef, toast } = useFeedback();
+  const { theme, toggleTheme, isDark } = useTheme();
 
   // Raccourcis clavier globaux avec détection OS
   useKeyboardShortcuts({
@@ -902,6 +904,8 @@ function App() {
         onOpenPreferences={() => setShowPreferences(true)}
         onOpenHelp={() => setShowHelp(true)}
         tabPrefs={tabPrefs}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Bannière installation PWA */}

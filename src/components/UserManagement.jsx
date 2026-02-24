@@ -273,6 +273,26 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               🔧 Maint. Matériel
                             </span>
                           </label>
+                          <label className="permission-checkbox" title="Autoriser la gestion du catalogue d'équipements et flight-cases">
+                            <input
+                              type="checkbox"
+                              checked={user.permissions?.can_manage_catalog || false}
+                              onChange={() => handleTogglePermission(user.id, 'can_manage_catalog', user.permissions)}
+                            />
+                            <span className="checkbox-label">
+                              📦 Catalogue
+                            </span>
+                          </label>
+                          <label className="permission-checkbox" title="Autoriser la gestion des modèles de camions">
+                            <input
+                              type="checkbox"
+                              checked={user.permissions?.can_manage_trucks || false}
+                              onChange={() => handleTogglePermission(user.id, 'can_manage_trucks', user.permissions)}
+                            />
+                            <span className="checkbox-label">
+                              🚛 Camions
+                            </span>
+                          </label>
                         </div>
                       )}
                       {user.isAdmin && (

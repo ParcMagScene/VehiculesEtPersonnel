@@ -681,6 +681,132 @@ function initializeDatabase() {
   // FIN MODULE PLANNING PERSONNEL
   // ═══════════════════════════════════════════════════════
 
+  // ═══════════════════════════════════════════════════════
+  // MODULE GESTION DES CONGÉS — Conforme IDCC 3252
+  // ═══════════════════════════════════════════════════════
+
+  // Table principale des demandes de congés
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS leave_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      person_id INTEGER NOT NULL,
+      user_id INTEGER,
+      request_date TEXT NOT NULL DEFAULT (date('now')),
+      leave_type TEXT NOT NULL DEFAULT 'conge_paye',
+      exceptional_type TEXT,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      start_period TEXT DEFAULT 'AM',
+      end_period TEXT DEFAULT 'PM',
+      working_days REAL NOT NULL DEFAULT 0,
+      employee_comment TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      admin_comment TEXT,
+      decision_date TEXT,
+      decision_by INTEGER,
+      reception_date TEXT,
+      modified_start_date TEXT,
+      modified_end_date TEXT,
+      modified_working_days REAL,
+      signature_employee TEXT,
+      signature_employee_date TEXT,
+      signature_admin TEXT,
+      signature_admin_date TEXT,
+      justification_path TEXT,
+      justification_filename TEXT,
+      pdf_path TEXT,
+      priority_score INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (decision_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_leave_requests_person ON leave_requests(person_id);
+    CREATE INDEX IF NOT EXISTS idx_leave_requests_status ON leave_requests(status);
+    CREATE INDEX IF NOT EXISTS idx_leave_requests_dates ON leave_requests(start_date, end_date);
+    CREATE INDEX IF NOT EXISTS idx_leave_requests_type ON leave_requests(leave_type);
+    CREATE INDEX IF NOT EXISTS idx_leave_requests_user ON leave_requests(user_id);
+  `);
+
+  // Historique des modifications de demandes
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS leave_request_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      leave_request_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      old_value TEXT,
+      new_value TEXT,
+      performed_by INTEGER,
+      performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (leave_request_id) REFERENCES leave_requests(id) ON DELETE CASCADE,
+      FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_history_request ON leave_request_history(leave_request_id)`);
+
+  // Jours fériés (configurables par admin)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS public_holidays (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      name TEXT NOT NULL,
+      year INTEGER NOT NULL,
+      is_custom BOOLEAN DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(date)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_holidays_year ON public_holidays(year)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_holidays_date ON public_holidays(date)`);
+
+  // Pré-remplir les jours fériés 2025-2027
+  db.exec(`
+    INSERT OR IGNORE INTO public_holidays (date, name, year) VALUES
+      ('2025-01-01', 'Jour de l''An', 2025),
+      ('2025-04-21', 'Lundi de Pâques', 2025),
+      ('2025-05-01', 'Fête du Travail', 2025),
+      ('2025-05-08', 'Victoire 1945', 2025),
+      ('2025-05-29', 'Ascension', 2025),
+      ('2025-06-09', 'Lundi de Pentecôte', 2025),
+      ('2025-07-14', 'Fête Nationale', 2025),
+      ('2025-08-15', 'Assomption', 2025),
+      ('2025-11-01', 'Toussaint', 2025),
+      ('2025-11-11', 'Armistice', 2025),
+      ('2025-12-25', 'Noël', 2025),
+      ('2026-01-01', 'Jour de l''An', 2026),
+      ('2026-04-06', 'Lundi de Pâques', 2026),
+      ('2026-05-01', 'Fête du Travail', 2026),
+      ('2026-05-08', 'Victoire 1945', 2026),
+      ('2026-05-14', 'Ascension', 2026),
+      ('2026-05-25', 'Lundi de Pentecôte', 2026),
+      ('2026-07-14', 'Fête Nationale', 2026),
+      ('2026-08-15', 'Assomption', 2026),
+      ('2026-11-01', 'Toussaint', 2026),
+      ('2026-11-11', 'Armistice', 2026),
+      ('2026-12-25', 'Noël', 2026),
+      ('2027-01-01', 'Jour de l''An', 2027),
+      ('2027-03-29', 'Lundi de Pâques', 2027),
+      ('2027-05-01', 'Fête du Travail', 2027),
+      ('2027-05-06', 'Ascension', 2027),
+      ('2027-05-08', 'Victoire 1945', 2027),
+      ('2027-05-17', 'Lundi de Pentecôte', 2027),
+      ('2027-07-14', 'Fête Nationale', 2027),
+      ('2027-08-15', 'Assomption', 2027),
+      ('2027-11-01', 'Toussaint', 2027),
+      ('2027-11-11', 'Armistice', 2027),
+      ('2027-12-25', 'Noël', 2027)
+  `);
+
+  console.log('✅ Module Gestion des Congés initialisé');
+
+  // ═══════════════════════════════════════════════════════
+  // FIN MODULE GESTION DES CONGÉS
+  // ═══════════════════════════════════════════════════════
+
   // Ajouter les colonnes kilométrage et contrôle technique si elles n'existent pas
   // NOTE: Les colonnes controle_technique_type, controle_technique_date, controle_technique_deadline
   // sont LEGACY — remplacées par la colonne JSON controles_techniques (format tableau).
@@ -1279,6 +1405,81 @@ function initializeDatabase() {
   } catch (error) {
     console.log('Info: Migration code_libre/postal_code/city:', error.message);
   }
+
+  // ============================================================
+  // Tables Catalogue Matériel + Flight-Cases + Modèles Camions
+  // Intégration eM@g ↔ Catalogue ↔ Chargement 3D
+  // ============================================================
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS equipment_catalog (
+      id TEXT PRIMARY KEY,
+      reference TEXT UNIQUE,
+      name TEXT NOT NULL,
+      family TEXT,
+      subfamily TEXT,
+      category TEXT,
+      dimensions TEXT,
+      weight REAL,
+      default_flightcase_id TEXT,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS flightcases (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      internal_code TEXT,
+      dimensions TEXT,
+      capacity INTEGER DEFAULT 1,
+      category TEXT,
+      texture TEXT,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS truck_models (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT CHECK(type IN ('semi', 'porteur', 'utilitaire')),
+      internal_code TEXT,
+      dimensions TEXT,
+      axle_config TEXT,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS equipment_to_vehicle (
+      id TEXT PRIMARY KEY,
+      reservation_id TEXT NOT NULL,
+      equipment_id TEXT NOT NULL,
+      quantity INTEGER DEFAULT 1,
+      flightcase_id TEXT,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE,
+      FOREIGN KEY (equipment_id) REFERENCES equipment_catalog(id),
+      FOREIGN KEY (flightcase_id) REFERENCES flightcases(id)
+    )
+  `);
+
+  // Index pour les nouvelles tables
+  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_family ON equipment_catalog(family)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_category ON equipment_catalog(category)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_reference ON equipment_catalog(reference)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_flightcases_category ON flightcases(category)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_truck_models_type ON truck_models(type)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_reservation ON equipment_to_vehicle(reservation_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_equipment ON equipment_to_vehicle(equipment_id)');
 
   console.log('✅ Base de données initialisée');
 }

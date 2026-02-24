@@ -1,0 +1,537 @@
+/* ============================================================
+   Catalogue Matériel + Flight-Cases + Modèles Camions — Styles
+   ============================================================ */
+
+/* ─── Layout commun ─── */
+.catalog-panel,
+.flightcase-panel,
+.truck-model-panel {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.catalog-panel .panel-header,
+.flightcase-panel .panel-header,
+.truck-model-panel .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.catalog-panel .panel-header h2,
+.flightcase-panel .panel-header h2,
+.truck-model-panel .panel-header h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.catalog-panel .panel-header h2 svg,
+.flightcase-panel .panel-header h2 svg,
+.truck-model-panel .panel-header h2 svg {
+  color: var(--primary, #6366f1);
+}
+
+/* ─── Toolbar filtres ─── */
+.catalog-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary, #f1f5f9);
+  border-radius: 10px;
+}
+
+.catalog-toolbar input[type="text"],
+.catalog-toolbar select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, #1e293b);
+  min-width: 160px;
+}
+
+.catalog-toolbar input[type="text"]:focus,
+.catalog-toolbar select:focus {
+  outline: none;
+  border-color: var(--primary, #6366f1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.catalog-toolbar .search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.catalog-toolbar .filter-count {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+  margin-left: auto;
+}
+
+/* ─── Boutons ─── */
+.catalog-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.catalog-btn-primary {
+  background: var(--primary, #6366f1);
+  color: white;
+}
+.catalog-btn-primary:hover {
+  background: var(--primary-dark, #4f46e5);
+  transform: translateY(-1px);
+}
+
+.catalog-btn-secondary {
+  background: var(--bg-secondary, #f1f5f9);
+  color: var(--text-primary, #1e293b);
+  border: 1px solid var(--border, #e2e8f0);
+}
+.catalog-btn-secondary:hover {
+  background: var(--bg-hover, #e2e8f0);
+}
+
+.catalog-btn-danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.catalog-btn-danger:hover {
+  background: #fecaca;
+}
+
+.catalog-btn-3d {
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  color: white;
+}
+.catalog-btn-3d:hover {
+  background: linear-gradient(135deg, #0891b2, #2563eb);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.catalog-btn-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+/* ─── Table ─── */
+.catalog-table-wrapper {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+.catalog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.catalog-table th {
+  background: var(--bg-secondary, #f1f5f9);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--border, #e2e8f0);
+}
+
+.catalog-table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  color: var(--text-primary, #1e293b);
+  vertical-align: middle;
+}
+
+.catalog-table tr:hover {
+  background: var(--bg-hover, rgba(99, 102, 241, 0.04));
+}
+
+.catalog-table .td-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.catalog-table .td-dim {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.catalog-table .td-weight {
+  font-weight: 600;
+}
+
+.catalog-table .td-ref {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: var(--primary, #6366f1);
+  font-weight: 600;
+}
+
+/* ─── Badges ─── */
+.catalog-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.catalog-badge-family {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.catalog-badge-category {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.catalog-badge-semi {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.catalog-badge-porteur {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.catalog-badge-utilitaire {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+/* ─── Modal Dialog ─── */
+.catalog-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: catalogFadeIn 0.2s ease;
+}
+
+@keyframes catalogFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.catalog-modal {
+  background: var(--bg-primary, white);
+  border-radius: 14px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: catalogSlideUp 0.25s ease;
+}
+
+@keyframes catalogSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.catalog-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.catalog-modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.catalog-modal-body {
+  padding: 1.5rem;
+}
+
+.catalog-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+/* ─── Form ─── */
+.catalog-form-group {
+  margin-bottom: 1rem;
+}
+
+.catalog-form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  margin-bottom: 0.3rem;
+}
+
+.catalog-form-group input,
+.catalog-form-group select,
+.catalog-form-group textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, #1e293b);
+  box-sizing: border-box;
+}
+
+.catalog-form-group input:focus,
+.catalog-form-group select:focus,
+.catalog-form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary, #6366f1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.catalog-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.catalog-form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ─── Dimensions viewer ─── */
+.dimensions-viewer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary, #f8fafc);
+  border-radius: 10px;
+  margin-top: 0.5rem;
+}
+
+.dimensions-viewer .dim-box {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--primary, #6366f1), #818cf8);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  position: relative;
+}
+
+.dimensions-viewer .dim-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.dimensions-viewer .dim-labels span {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* ─── 3D Preview placeholder ─── */
+.preview-3d-placeholder {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #1e293b, #334155);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.preview-3d-placeholder svg {
+  opacity: 0.5;
+}
+
+.preview-3d-placeholder span {
+  font-size: 0.9rem;
+}
+
+/* ─── Empty state ─── */
+.catalog-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.catalog-empty svg {
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+.catalog-empty p {
+  font-size: 1rem;
+  margin: 0.25rem 0;
+}
+
+.catalog-empty .empty-hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* ─── Summary bar (ReservationEquipment) ─── */
+.reservation-equipment-summary {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #ede9fe, #dbeafe);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.reservation-equipment-summary .summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.reservation-equipment-summary .summary-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary, #6366f1);
+}
+
+.reservation-equipment-summary .summary-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Equipment list for reservation ─── */
+.reservation-equipment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reservation-equipment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-primary, white);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.reservation-equipment-item:hover {
+  border-color: var(--primary, #6366f1);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.reservation-equipment-item .eq-info {
+  flex: 1;
+}
+
+.reservation-equipment-item .eq-name {
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  font-size: 0.9rem;
+}
+
+.reservation-equipment-item .eq-ref {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+  font-family: monospace;
+}
+
+.reservation-equipment-item .eq-qty {
+  background: var(--bg-secondary, #f1f5f9);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--primary, #6366f1);
+}
+
+.reservation-equipment-item .eq-fc {
+  font-size: 0.8rem;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .catalog-panel,
+  .flightcase-panel,
+  .truck-model-panel {
+    padding: 1rem;
+  }
+
+  .catalog-toolbar {
+    flex-direction: column;
+  }
+
+  .catalog-toolbar input[type="text"],
+  .catalog-toolbar select {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .catalog-form-row,
+  .catalog-form-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+}

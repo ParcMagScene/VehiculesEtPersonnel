@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X, Trash2, MapPin, Link2, Unlink, Paperclip, Car, Check } from 'lucide-react';
@@ -12,6 +12,8 @@ import DriverSelect from './DriverSelect';
 import api from '../utils/api';
 import { loadFromIndexedDB } from '../utils/indexedDB';
 import './ReservationModal.css';
+
+const ReservationEquipment = lazy(() => import('./ReservationEquipment'));
 
 const ReservationModal = ({
   slot,
@@ -1800,6 +1802,19 @@ const ReservationModal = ({
               rows="3"
             />
           </div>
+
+          {/* SECTION MATÉRIEL (uniquement en édition) */}
+          {isEdit && reservation?.id && (
+            <>
+              <div className="form-divider" />
+              <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center', color: '#6b7280' }}>Chargement matériel...</div>}>
+                <ReservationEquipment
+                  reservationId={reservation.id}
+                  currentUser={currentUser}
+                />
+              </Suspense>
+            </>
+          )}
 
           </fieldset>
         </form>

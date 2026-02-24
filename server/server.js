@@ -38,6 +38,8 @@ import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setup
 import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAssignmentsRoutes, setupSavTicketsRoutes, setupEquipmentListsRoutes } from './equipmentRoutes.js';
 import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes } from './ordersRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
+import { setupLeaveRoutes } from './leaveRoutes.js';
+import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, setupReservationEquipmentRoutes } from './catalogRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -163,6 +165,38 @@ function requireEquipmentMaintenanceAccess(req, res, next) {
     next();
   } else {
     return res.status(403).json({ error: 'Accès réservé — permission maintenance matériel requise' });
+  }
+}
+
+// Middleware pour vérifier les droits CATALOGUE (admin OU permission spécifique)
+function requireCatalogAccess(req, res, next) {
+  const user = db.prepare('SELECT is_admin, permissions FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
+  let perms = {};
+  try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
+  if (user.is_admin || perms.can_manage_catalog) {
+    req.user.isAdmin = !!user.is_admin;
+    req.user.canManageCatalog = true;
+    req.user.permissions = perms;
+    next();
+  } else {
+    return res.status(403).json({ error: 'Accès réservé — permission catalogue requise' });
+  }
+}
+
+// Middleware pour vérifier les droits CAMIONS/MODÈLES (admin OU permission spécifique)
+function requireTruckAccess(req, res, next) {
+  const user = db.prepare('SELECT is_admin, permissions FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
+  let perms = {};
+  try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
+  if (user.is_admin || perms.can_manage_trucks) {
+    req.user.isAdmin = !!user.is_admin;
+    req.user.canManageTrucks = true;
+    req.user.permissions = perms;
+    next();
+  } else {
+    return res.status(403).json({ error: 'Accès réservé — permission modèles camions requise' });
   }
 }
 
@@ -2306,6 +2340,9 @@ setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin);
 setupMissionsRoutes(app, authenticateToken, requireAdmin);
 setupAssignmentsRoutes(app, authenticateToken);
 
+// Routes Module Congés — Code du travail / IDCC 3252
+setupLeaveRoutes(app, authenticateToken, requireAdmin);
+
 // Routes Parc Matériel + SAV
 setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentRoutes(app, authenticateToken, requireAdmin);
@@ -2317,6 +2354,12 @@ setupEquipmentListsRoutes(app, authenticateToken);
 setupSuppliersRoutes(app, authenticateToken);
 setupOrdersRoutes(app, authenticateToken);
 setupQuotesRoutes(app, authenticateToken);
+
+// Routes Catalogue Matériel + Flight-Cases + Modèles Camions + Deep Linking
+setupCatalogRoutes(app, authenticateToken, requireCatalogAccess);
+setupFlightcasesRoutes(app, authenticateToken, requireCatalogAccess);
+setupTruckModelsRoutes(app, authenticateToken, requireTruckAccess);
+setupReservationEquipmentRoutes(app, authenticateToken);
 
 // ============ PROFIL UTILISATEUR ============
 

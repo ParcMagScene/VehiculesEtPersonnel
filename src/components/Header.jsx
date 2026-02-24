@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package, ShoppingCart } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, Search, Filter, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -268,6 +268,24 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             >
               <ShoppingCart size={18} />
               <span>Commandes</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'catalog' ? 'active' : ''}`}
+              onClick={() => setActiveModule('catalog')}
+              role="tab"
+              aria-selected={activeModule === 'catalog'}
+            >
+              <BookOpen size={18} />
+              <span>Catalogue</span>
+            </button>
+            <button
+              className={`module-tab ${activeModule === 'trucks' ? 'active' : ''}`}
+              onClick={() => setActiveModule('trucks')}
+              role="tab"
+              aria-selected={activeModule === 'trucks'}
+            >
+              <Container size={18} />
+              <span>Camions</span>
             </button>
           </div>
         </div>

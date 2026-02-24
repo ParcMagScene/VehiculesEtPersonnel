@@ -643,27 +643,124 @@ class ApiClient {
     });
   }
 
-  async getPendingLeaveCount() {
-    return this.request('/leave-requests/pending/count');
-  }
+  // — Module Congés (Code du travail / IDCC 3252) —
 
   async getLeaveTypes() {
-    return this.request('/leave-types');
+    return this.request('/leaves/types');
+  }
+
+  async getPublicHolidays(year) {
+    const qs = year ? `?year=${year}` : '';
+    return this.request(`/leaves/holidays${qs}`);
+  }
+
+  async addPublicHoliday(date, name) {
+    return this.request('/leaves/holidays', {
+      method: 'POST',
+      body: JSON.stringify({ date, name }),
+    });
+  }
+
+  async deletePublicHoliday(id) {
+    return this.request(`/leaves/holidays/${id}`, { method: 'DELETE' });
+  }
+
+  async calculateLeaveWorkingDays(data) {
+    return this.request('/leaves/calculate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createLeaveRequest(data) {
+    return this.request('/leaves', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyLeaves() {
+    return this.request('/leaves/mine');
+  }
+
+  async getAllLeaves(params = {}) {
+    const query = new URLSearchParams();
+    if (params.status) query.set('status', params.status);
+    if (params.personId) query.set('personId', params.personId);
+    if (params.leaveType) query.set('leaveType', params.leaveType);
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    const qs = query.toString();
+    return this.request(`/leaves${qs ? '?' + qs : ''}`);
+  }
+
+  async getPendingLeaves() {
+    return this.request('/leaves/pending');
+  }
+
+  async getPendingLeavesCount() {
+    return this.request('/leaves/pending/count');
+  }
+
+  async getLeaveDetail(id) {
+    return this.request(`/leaves/${id}`);
+  }
+
+  async makeLeaveDecision(id, data) {
+    return this.request(`/leaves/${id}/decision`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async signLeave(id, signature, role) {
+    return this.request(`/leaves/${id}/sign`, {
+      method: 'PUT',
+      body: JSON.stringify({ signature, role }),
+    });
+  }
+
+  async cancelLeave(id) {
+    return this.request(`/leaves/${id}/cancel`, { method: 'PUT' });
+  }
+
+  async uploadLeaveJustification(id, filename, data) {
+    return this.request(`/leaves/${id}/justification`, {
+      method: 'POST',
+      body: JSON.stringify({ filename, data }),
+    });
   }
 
   async getLeaveBalances(params = {}) {
     const query = new URLSearchParams();
-    if (params.personId) query.set('person_id', params.personId);
+    if (params.personId) query.set('personId', params.personId);
     if (params.year) query.set('year', params.year);
     const qs = query.toString();
-    return this.request(`/leave-balances${qs ? '?' + qs : ''}`);
+    return this.request(`/leaves/balances${qs ? '?' + qs : ''}`);
   }
 
   async updateLeaveBalance(data) {
-    return this.request('/leave-balances', {
+    return this.request('/leaves/balances', {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+  }
+
+  async getLeavePdf(id) {
+    return this.request(`/leaves/${id}/pdf`);
+  }
+
+  async getLeaveStats(year) {
+    const qs = year ? `?year=${year}` : '';
+    return this.request(`/leaves/stats${qs}`);
+  }
+
+  async getLeaveConflicts() {
+    return this.request('/leaves/conflicts');
+  }
+
+  async getLeaveHistory(id) {
+    return this.request(`/leaves/${id}/history`);
   }
 
   // — Missions —
@@ -1007,6 +1104,84 @@ class ApiClient {
   }
   async deleteQuote(id) {
     return this.request(`/quotes/${id}`, { method: 'DELETE' });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Catalogue Matériel + Flight-Cases + Modèles Camions
+  // ═══════════════════════════════════════════════════════════
+
+  // Catalogue d'équipements
+  async getCatalogEquipment(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/catalog/equipment${qs ? '?' + qs : ''}`);
+  }
+  async getCatalogEquipmentById(id) {
+    return this.request(`/catalog/equipment/${id}`);
+  }
+  async getCatalogFamilies() {
+    return this.request('/catalog/equipment/families');
+  }
+  async getCatalogCategories() {
+    return this.request('/catalog/equipment/categories');
+  }
+  async createCatalogEquipment(data) {
+    return this.request('/catalog/equipment', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateCatalogEquipment(id, data) {
+    return this.request(`/catalog/equipment/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteCatalogEquipment(id) {
+    return this.request(`/catalog/equipment/${id}`, { method: 'DELETE' });
+  }
+
+  // Flight-cases
+  async getFlightcases(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/flightcases${qs ? '?' + qs : ''}`);
+  }
+  async getFlightcaseById(id) {
+    return this.request(`/flightcases/${id}`);
+  }
+  async createFlightcase(data) {
+    return this.request('/flightcases', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateFlightcase(id, data) {
+    return this.request(`/flightcases/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteFlightcase(id) {
+    return this.request(`/flightcases/${id}`, { method: 'DELETE' });
+  }
+
+  // Modèles de camions
+  async getTruckModels(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/trucks/models${qs ? '?' + qs : ''}`);
+  }
+  async getTruckModelById(id) {
+    return this.request(`/trucks/models/${id}`);
+  }
+  async createTruckModel(data) {
+    return this.request('/trucks/models', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateTruckModel(id, data) {
+    return this.request(`/trucks/models/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteTruckModel(id) {
+    return this.request(`/trucks/models/${id}`, { method: 'DELETE' });
+  }
+
+  // Équipements liés aux réservations
+  async getReservationEquipment(reservationId) {
+    return this.request(`/reservations/${reservationId}/equipment`);
+  }
+  async assignEquipmentToReservation(reservationId, data) {
+    return this.request(`/reservations/${reservationId}/equipment`, { method: 'POST', body: JSON.stringify(data) });
+  }
+  async removeEquipmentFromReservation(reservationId, linkId) {
+    return this.request(`/reservations/${reservationId}/equipment/${linkId}`, { method: 'DELETE' });
+  }
+  async getChargementExport(reservationId) {
+    return this.request(`/reservations/${reservationId}/chargement-export`);
   }
 }
 

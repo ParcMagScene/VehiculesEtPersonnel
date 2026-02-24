@@ -18,7 +18,9 @@ import { fr } from 'date-fns/locale';
 import api from '../utils/api';
 import AssignmentDialog from './AssignmentDialog';
 import { PersonnelSlidePanel } from './PersonnelDetailPanel';
-import { LeaveRequestModal, LeaveApprovalPanel } from './LeaveRequestModal';
+import LeaveRequestForm from './LeaveRequestForm';
+import LeaveRequestsPanel from './LeaveRequestsPanel';
+import LeaveValidationPanel from './LeaveValidationPanel';
 import PersonnelContextMenu from './PersonnelContextMenu';
 import PeriodCalendarModal from './PeriodCalendarModal';
 import PersonnelImportModal from './PersonnelImportModal';
@@ -1303,6 +1305,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   // Leave management state
   const [showLeaveModal, setShowLeaveModal] = useState(null); // { person } or { personId }
   const [showLeaveApproval, setShowLeaveApproval] = useState(false);
+  const [showLeaveHistory, setShowLeaveHistory] = useState(null); // { personId }
   const [pendingLeaveCount, setPendingLeaveCount] = useState(0);
 
   // Context menu state
@@ -1366,9 +1369,9 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
     loadPlanning();
   }, [loadPlanning]);
 
-  // Charger le nombre de demandes en attente
+  // Charger le nombre de demandes en attente (module congés)
   useEffect(() => {
-    api.getPendingLeaveCount()
+    api.getPendingLeavesCount()
       .then(r => setPendingLeaveCount(r?.count || 0))
       .catch(() => {});
   }, [planningData]);
@@ -2295,22 +2298,38 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         />
       )}
 
-      {/* Modal de demande de congé / absence */}
+      {/* Modal de demande de congé — Module Code du travail / IDCC 3252 */}
       {showLeaveModal && (
-        <LeaveRequestModal
+        <LeaveRequestForm
           person={showLeaveModal.person || null}
           persons={activePersons}
           isAdmin={true}
+          currentUser={currentUser}
           onClose={() => setShowLeaveModal(null)}
-          onCreated={() => loadPlanning()}
+          onCreated={() => { loadPlanning(); }}
         />
       )}
 
-      {/* Panneau d'approbation des congés */}
+      {/* Panneau de validation admin des congés */}
       {showLeaveApproval && (
-        <LeaveApprovalPanel
+        <LeaveValidationPanel
           onClose={() => setShowLeaveApproval(false)}
           onUpdated={() => loadPlanning()}
+        />
+      )}
+
+      {/* Panneau historique des congés d'un employé */}
+      {showLeaveHistory && (
+        <LeaveRequestsPanel
+          personId={showLeaveHistory.personId}
+          isAdmin={true}
+          onClose={() => setShowLeaveHistory(null)}
+          onNewRequest={() => {
+            const p = persons.find(pp => pp.id === showLeaveHistory.personId);
+            setShowLeaveHistory(null);
+            setShowLeaveModal({ person: p || null });
+          }}
+          onRefresh={() => loadPlanning()}
         />
       )}
 

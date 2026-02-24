@@ -3,6 +3,7 @@ import { X, Save, AlertTriangle, Calendar, CheckCircle, Clock } from 'lucide-rea
 import ConfirmDialog from './ConfirmDialog';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './InterventionModal.css';
+import { useToast } from '../hooks/useToast';
 
 const InterventionModal = ({ 
   intervention, 
@@ -13,6 +14,7 @@ const InterventionModal = ({
   currentUser
 }) => {
   const isAdmin = currentUser?.isAdmin === true;
+  const toast = useToast();
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [formData, setFormData] = useState({
@@ -186,7 +188,7 @@ const InterventionModal = ({
         } catch (error) {
           console.error('❌ Erreur lors de la validation:', error);
           if (!error.message?.includes('Session expirée')) {
-            alert(`Erreur: ${error.message}`);
+            toast.error(`Erreur: ${error.message}`);
           }
         }
       }

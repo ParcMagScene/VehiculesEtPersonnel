@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Check, X, Clock, User } from 'lucide-react';
 import api from '../utils/api';
 import './ReservationRequestsPanel.css';
+import { useToast } from '../hooks/useToast';
 
 const ReservationRequestsPanel = ({ onRequestProcessed }) => {
+  const toast = useToast();
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending'); // 'pending', 'approved', 'rejected', 'all'
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -21,7 +23,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       setRequests(data);
     } catch (error) {
       console.error('Erreur lors du chargement des demandes:', error);
-      alert('Erreur lors du chargement des demandes de réservation');
+      toast.error('Erreur lors du chargement des demandes de réservation');
     }
   };
 
@@ -33,14 +35,14 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
     setLoading(true);
     try {
       await api.approveReservationRequest(requestId);
-      alert('Demande approuvée ! La réservation a été créée.');
+      toast.success('Demande approuvée ! La réservation a été créée.');
       await loadRequests();
       if (onRequestProcessed) {
         onRequestProcessed();
       }
     } catch (error) {
       console.error('Erreur lors de l\'approbation:', error);
-      alert('Erreur lors de l\'approbation de la demande: ' + (error.message || 'Erreur inconnue'));
+      toast.error('Erreur lors de l\'approbation de la demande: ' + (error.message || 'Erreur inconnue'));
     } finally {
       setLoading(false);
     }
@@ -54,14 +56,14 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
   const handleRejectConfirm = async () => {
     if (!rejectionReason.trim()) {
-      alert('Veuillez indiquer un motif de rejet');
+      toast.warning('Veuillez indiquer un motif de rejet');
       return;
     }
 
     setLoading(true);
     try {
       await api.rejectReservationRequest(selectedRequest.id, rejectionReason);
-      alert('Demande rejetée');
+      toast.success('Demande rejetée');
       setRejectDialogOpen(false);
       setSelectedRequest(null);
       setRejectionReason('');
@@ -71,7 +73,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       }
     } catch (error) {
       console.error('Erreur lors du rejet:', error);
-      alert('Erreur lors du rejet de la demande: ' + (error.message || 'Erreur inconnue'));
+      toast.error('Erreur lors du rejet de la demande: ' + (error.message || 'Erreur inconnue'));
     } finally {
       setLoading(false);
     }

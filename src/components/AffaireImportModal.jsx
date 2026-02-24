@@ -6,6 +6,7 @@ import { extractTextFromPDF, parseBonLivraison, parseDate } from '../utils/pdfPa
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../utils/indexedDB';
 import PhoneInput from './PhoneInput';
 import AddressAutocomplete from './AddressAutocomplete';
+import { useToast } from '../hooks/useToast';
 
 const AffaireImportModal = ({ 
   isOpen, 
@@ -15,6 +16,7 @@ const AffaireImportModal = ({
   onEventUpdated,
   onRequestEditReservation
 }) => {
+  const toast = useToast();
   const [step, setStep] = useState('upload'); // 'choice', 'upload', 'form', 'edit-event', 'upload-additional'
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -214,7 +216,7 @@ const AffaireImportModal = ({
 
   const handleAdditionalBLUpload = async (file) => {
     if (!file || file.type !== 'application/pdf') {
-      alert('Veuillez sélectionner un fichier PDF');
+      toast.warning('Veuillez sélectionner un fichier PDF');
       return;
     }
 
@@ -236,7 +238,7 @@ const AffaireImportModal = ({
       setStep('form');
     } catch (error) {
       console.error('Erreur upload BL additionnel:', error);
-      alert('Erreur lors de l\'upload du BL');
+      toast.error('Erreur lors de l\'upload du BL');
     }
   };
 
@@ -279,7 +281,7 @@ const AffaireImportModal = ({
 
   const handleFileSelection = async (file) => {
     if (file.type !== 'application/pdf') {
-      alert('Veuillez sélectionner un fichier PDF');
+      toast.warning('Veuillez sélectionner un fichier PDF');
       return;
     }
 
@@ -348,7 +350,7 @@ const AffaireImportModal = ({
       setStep('form');
     } catch (error) {
       console.error('❌ Erreur traitement PDF:', error);
-      alert(`Erreur lors de l'analyse du PDF: ${error.message}\n\nVeuillez remplir le formulaire manuellement.`);
+      toast.warning(`Erreur lors de l'analyse du PDF: ${error.message} Veuillez remplir le formulaire manuellement.`);
       setStep('form');
     } finally {
       setIsProcessing(false);
@@ -432,7 +434,7 @@ const AffaireImportModal = ({
 
   const handleSubmit = async () => {
     if (!formData.numeroAffaire || !formData.client) {
-      alert('Veuillez renseigner au moins le numéro d\'affaire et le client');
+      toast.warning('Veuillez renseigner au moins le numéro d\'affaire et le client');
       return;
     }
 
@@ -530,7 +532,7 @@ const AffaireImportModal = ({
       resetForm();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde de l\'affaire');
+      toast.error('Erreur lors de la sauvegarde de l\'affaire');
     } finally {
       setIsProcessing(false);
     }

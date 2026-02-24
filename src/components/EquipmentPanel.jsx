@@ -9,6 +9,7 @@ import EquipmentBatchLabels from './EquipmentBatchLabels';
 import { printEquipmentSheet } from './EquipmentSheetPrint';
 import MaintenanceReportModal from './MaintenanceReportModal';
 import './EquipmentPanel.css';
+import { useToast } from '../hooks/useToast';
 
 // ═══ CONSTANTES ═══
 const safeDate = (d) => {
@@ -144,6 +145,7 @@ const getCategoryHierarchy = (eq, categories) => {
 
 // ═══ FILTRE CATÉGORIES EN CASCADE (hover) ═══
 const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, onChange }) => {
+  const toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
   const [hoveredSub, setHoveredSub] = useState(null);
@@ -480,7 +482,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       setEditingEquipment(null);
       loadData();
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
@@ -491,22 +493,22 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       setSelectedEquipment(null);
       loadData();
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
   const handleSerializeEquipment = async (eq) => {
     const qty = eq.stockQuantity || eq.stock_quantity || 1;
-    if (qty <= 1) return alert('Cet équipement a déjà une quantité de 1.');
+    if (qty <= 1) return toast.warning('Cet équipement a déjà une quantité de 1.');
     if (!confirm(`Sérialiser "${eq.name}" en ${qty} entités individuelles ?\n\nChaque exemplaire recevra son propre UID (EMAG-XXXXX).\nL'article original sera remplacé par ${qty} fiches individuelles.`)) return;
     try {
       const result = await api.serializeEquipment(eq.id);
-      alert(`✅ ${result.message}\n\nUID créés : ${result.created.map(c => c.uid).join(', ')}`);
+      toast.success(`${result.message} UID créés : ${result.created.map(c => c.uid).join(', ')}`);
       setSelectedEquipment(null);
       setDialogEquipment(null);
       loadData();
     } catch (err) {
-      alert('Erreur sérialisation: ' + err.message);
+      toast.error('Erreur sérialisation: ' + err.message);
     }
   };
 
@@ -521,7 +523,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       setEditingSavTicket(null);
       loadData();
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
@@ -532,7 +534,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       setAssignEquipment(null);
       loadData();
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
@@ -541,7 +543,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       await api.returnEquipmentAssignment(assignmentId);
       loadData();
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
@@ -1563,7 +1565,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, onSave, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return alert('Nom requis');
+    if (!form.name.trim()) return toast.warning('Nom requis');
     onSave({
       ...form,
       category_id: resolvedCategoryId ? parseInt(resolvedCategoryId) : null,
@@ -1675,7 +1677,7 @@ const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.equipment_id || !form.title.trim()) return alert('Équipement et titre requis');
+    if (!form.equipment_id || !form.title.trim()) return toast.warning('Équipement et titre requis');
     onSave({
       ...form,
       equipment_id: parseInt(form.equipment_id),
@@ -1771,7 +1773,7 @@ const AssignModal = ({ equipment: eq, persons, onSave, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.assigned_to) return alert('Veuillez sélectionner une personne');
+    if (!form.assigned_to) return toast.warning('Veuillez sélectionner une personne');
     onSave({
       ...form,
       assigned_to: parseInt(form.assigned_to),

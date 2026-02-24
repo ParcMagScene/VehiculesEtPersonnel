@@ -3,8 +3,10 @@ import { Calendar, Save, AlertCircle, LogOut, RefreshCw } from 'lucide-react';
 import api from '../utils/api';
 import { saveToIndexedDB, loadFromIndexedDB } from '../utils/indexedDB';
 import './GoogleCalendarConfig.css';
+import { useToast } from '../hooks/useToast';
 
 const GoogleCalendarConfig = () => {
+  const toast = useToast();
   const [clientId, setClientId] = useState('');
   const [calendarId, setCalendarId] = useState('');
   const [mapsApiKey, setMapsApiKey] = useState('');
@@ -28,7 +30,7 @@ const GoogleCalendarConfig = () => {
       setMapsApiKey(mapsApiKeyData.value || '');
     } catch (error) {
       console.error('Erreur chargement config:', error);
-      alert('Erreur lors du chargement de la configuration');
+      toast.error('Erreur lors du chargement de la configuration');
     } finally {
       setIsLoading(false);
     }
@@ -38,7 +40,7 @@ const GoogleCalendarConfig = () => {
     e.preventDefault();
     
     if (!clientId || !calendarId) {
-      alert('Veuillez remplir au moins le Client ID et l\'ID du calendrier');
+      toast.warning('Veuillez remplir au moins le Client ID et l\'ID du calendrier');
       return;
     }
 
@@ -55,9 +57,9 @@ const GoogleCalendarConfig = () => {
       config.googleMapsApiKey = mapsApiKey;
       await saveToIndexedDB('calendarConfig', config);
       
-      alert('✅ Configuration enregistrée avec succès\n\nSi vous avez changé le Client ID, cliquez sur "Déconnecter OAuth" puis reconnectez-vous.');
+      toast.success('Configuration enregistrée avec succès Si vous avez changé le Client ID, cliquez sur "Déconnecter OAuth" puis reconnectez-vous.');
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -74,7 +76,7 @@ const GoogleCalendarConfig = () => {
     localStorage.removeItem('google_token_client');
     
     // Révoquer l'accès sur le compte Google
-    alert('✅ Déconnexion effectuée\n\nVeuillez :\n1. Recharger la page (F5)\n2. Aller sur https://myaccount.google.com/permissions\n3. Révoquer l\'accès à cette application\n4. Revenir et vous reconnecter avec le nouveau Client ID');
+    toast.success('Déconnexion effectuée Veuillez : 1. Recharger la page (F5)\n2. Aller sur https://myaccount.google.com/permissions\n3. Révoquer l\'accès à cette application\n4. Revenir et vous reconnecter avec le nouveau Client ID');
     
     // Recharger après 2 secondes
     setTimeout(() => {
@@ -138,7 +140,7 @@ const GoogleCalendarConfig = () => {
                   className="btn-copy-small"
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.origin);
-                    alert('✅ URL copiée dans le presse-papiers');
+                    toast.success('URL copiée dans le presse-papiers');
                   }}
                 >
                   📋 Copier
@@ -152,7 +154,7 @@ const GoogleCalendarConfig = () => {
                   className="btn-copy-small"
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.origin);
-                    alert('✅ URL copiée dans le presse-papiers');
+                    toast.success('URL copiée dans le presse-papiers');
                   }}
                 >
                   📋 Copier

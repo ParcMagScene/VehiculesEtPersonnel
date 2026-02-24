@@ -7,6 +7,7 @@ import ConfirmDialog from './ConfirmDialog';
 import PhoneInput, { formatPhoneDisplay } from './PhoneInput';
 import AddressAutocomplete from './AddressAutocomplete';
 import './OrdersPanel.css';
+import { useToast } from '../hooks/useToast';
 
 // ═══ Constantes ═══
 const ORDER_STATUS = {
@@ -41,6 +42,7 @@ const formatDate = (dateStr) => {
 
 // ═══ Composant Principal ═══
 function OrdersPanel({ currentUser }) {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [quotes, setQuotes] = useState([]);
@@ -100,7 +102,7 @@ function OrdersPanel({ currentUser }) {
       setEditingOrder(null);
       loadData();
     } catch (error) {
-      alert('Erreur: ' + error.message);
+      toast.error('Erreur: ' + error.message);
     }
   };
 
@@ -113,7 +115,7 @@ function OrdersPanel({ currentUser }) {
           await api.deleteOrder(order.id);
           setSelectedOrder(null);
           loadData();
-        } catch (error) { alert('Erreur: ' + error.message); }
+        } catch (error) { toast.error('Erreur: ' + error.message); }
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null)
@@ -125,14 +127,14 @@ function OrdersPanel({ currentUser }) {
       const full = await api.getOrderById(order.id);
       setEditingOrder(full);
       setShowOrderForm(true);
-    } catch (error) { alert('Erreur: ' + error.message); }
+    } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
   const handleViewOrder = async (order) => {
     try {
       const full = await api.getOrderById(order.id);
       setSelectedOrder(full);
-    } catch (error) { alert('Erreur: ' + error.message); }
+    } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
   // ═══ Handlers Devis ═══
@@ -147,7 +149,7 @@ function OrdersPanel({ currentUser }) {
       setEditingQuote(null);
       loadData();
     } catch (error) {
-      alert('Erreur: ' + error.message);
+      toast.error('Erreur: ' + error.message);
     }
   };
 
@@ -160,7 +162,7 @@ function OrdersPanel({ currentUser }) {
           await api.deleteQuote(quote.id);
           setSelectedQuote(null);
           loadData();
-        } catch (error) { alert('Erreur: ' + error.message); }
+        } catch (error) { toast.error('Erreur: ' + error.message); }
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null)
@@ -172,14 +174,14 @@ function OrdersPanel({ currentUser }) {
       const full = await api.getQuoteById(quote.id);
       setEditingQuote(full);
       setShowQuoteForm(true);
-    } catch (error) { alert('Erreur: ' + error.message); }
+    } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
   const handleViewQuote = async (quote) => {
     try {
       const full = await api.getQuoteById(quote.id);
       setSelectedQuote(full);
-    } catch (error) { alert('Erreur: ' + error.message); }
+    } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
   const handleConvertQuote = (quote) => {
@@ -191,7 +193,7 @@ function OrdersPanel({ currentUser }) {
           await api.convertQuoteToOrder(quote.id);
           setSelectedQuote(null);
           loadData();
-        } catch (error) { alert('Erreur: ' + error.message); }
+        } catch (error) { toast.error('Erreur: ' + error.message); }
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null)
@@ -210,7 +212,7 @@ function OrdersPanel({ currentUser }) {
       setEditingSupplier(null);
       loadData();
     } catch (error) {
-      alert('Erreur: ' + error.message);
+      toast.error('Erreur: ' + error.message);
     }
   };
 
@@ -222,7 +224,7 @@ function OrdersPanel({ currentUser }) {
         try {
           await api.deleteSupplier(supplier.id);
           loadData();
-        } catch (error) { alert('Erreur: ' + error.message); }
+        } catch (error) { toast.error('Erreur: ' + error.message); }
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null)
@@ -244,7 +246,7 @@ function OrdersPanel({ currentUser }) {
               const full = await api.getOrderById(selectedOrder.id);
               setSelectedOrder(full);
               loadData();
-            } catch (error) { alert('Erreur: ' + error.message); }
+            } catch (error) { toast.error('Erreur: ' + error.message); }
           }}
         />
         {confirmDialog && <ConfirmDialog {...confirmDialog} />}
@@ -268,7 +270,7 @@ function OrdersPanel({ currentUser }) {
               const full = await api.getQuoteById(selectedQuote.id);
               setSelectedQuote(full);
               loadData();
-            } catch (error) { alert('Erreur: ' + error.message); }
+            } catch (error) { toast.error('Erreur: ' + error.message); }
           }}
         />
         {confirmDialog && <ConfirmDialog {...confirmDialog} />}

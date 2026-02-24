@@ -7,6 +7,7 @@ import { getPeriodTimestamp } from '../utils/dateUtils';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
 import './MaintenanceDialog.css';
+import { useToast } from '../hooks/useToast';
 
 function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garages = [], reservations = [], maintenanceToEdit = null, actionType = null, currentUser = null }) {
   // Trouver la maintenance à éditer dès le départ
@@ -43,6 +44,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     if (maintenanceToEditData) return maintenanceToEditData.isQuickReport || false;
     return actionType === 'breakdown' || actionType === 'request';
   };
+  
+  const toast = useToast();
   
   const [activeTab, setActiveTab] = useState('new'); // 'new' ou 'history'
   const [mileageHistory, setMileageHistory] = useState([]);
@@ -288,7 +291,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     
     // RESTRICTION : Les non-admins ne peuvent créer que des signalements
     if (canOnlyReport && formData.status !== 'reported') {
-      alert('❌ Accès refusé\n\nVous ne pouvez que signaler des pannes.\nPour programmer une intervention, contactez un administrateur.');
+      toast.warning('Accès refusé Vous ne pouvez que signaler des pannes. Pour programmer une intervention, contactez un administrateur.');
       return;
     }
     

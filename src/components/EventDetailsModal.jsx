@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil } from 'lucide-react';
 import { getApiUrl } from '../utils/api';
 import './EventDetailsModal.css';
+import { useToast } from '../hooks/useToast';
 
 const API_BASE_URL = getApiUrl();
 
@@ -21,6 +22,7 @@ function EventDetailsModal({
   onReservationsRefresh,
   currentUser
 }) {
+  const toast = useToast();
   const [linkedReservations, setLinkedReservations] = useState([]);
   const [attachmentFiles, setAttachmentFiles] = useState([]);
   const [showActions, setShowActions] = useState(true);
@@ -126,10 +128,10 @@ function EventDetailsModal({
       
       // Recharger la liste des fichiers
       await scanAttachmentFolder(event.affaire);
-      alert(`${files.length} fichier(s) uploadé(s) avec succès`);
+      toast.info(`${files.length} fichier(s) uploadé(s) avec succès`);
     } catch (error) {
       console.error('Erreur upload:', error);
-      alert('Erreur lors de l\'upload des fichiers');
+      toast.error('Erreur lors de l\'upload des fichiers');
     } finally {
       setUploading(false);
       e.target.value = ''; // Reset input
@@ -149,11 +151,11 @@ function EventDetailsModal({
       if (response.ok) {
         await scanAttachmentFolder(event.affaire);
       } else {
-        alert('Erreur lors de la suppression');
+        toast.error('Erreur lors de la suppression');
       }
     } catch (error) {
       console.error('Erreur suppression pièce jointe:', error);
-      alert('Erreur lors de la suppression');
+      toast.error('Erreur lors de la suppression');
     }
   };
 
@@ -208,7 +210,7 @@ function EventDetailsModal({
     if (!editingDriveLink) return;
     const { reservationId, index, url, label } = editingDriveLink;
     if (!url.trim()) {
-      alert('Veuillez saisir une URL');
+      toast.warning('Veuillez saisir une URL');
       return;
     }
     setSavingDriveLink(true);
@@ -243,11 +245,11 @@ function EventDetailsModal({
         if (onReservationsRefresh) onReservationsRefresh();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(`Erreur lors de la sauvegarde: ${errorData.error || response.statusText || 'Erreur inconnue'}`);
+        toast.error(`Erreur lors de la sauvegarde: ${errorData.error || response.statusText || 'Erreur inconnue'}`);
       }
     } catch (error) {
       console.error('Erreur sauvegarde lien Drive:', error);
-      alert('Erreur lors de la sauvegarde');
+      toast.error('Erreur lors de la sauvegarde');
     } finally {
       setSavingDriveLink(false);
     }
@@ -278,11 +280,11 @@ function EventDetailsModal({
         if (onReservationsRefresh) onReservationsRefresh();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(`Erreur: ${errorData.error || response.statusText || 'Erreur inconnue'}`);
+        toast.error(`Erreur: ${errorData.error || response.statusText || 'Erreur inconnue'}`);
       }
     } catch (error) {
       console.error('Erreur suppression lien Drive:', error);
-      alert('Erreur lors de la suppression');
+      toast.error('Erreur lors de la suppression');
     } finally {
       setSavingDriveLink(false);
     }

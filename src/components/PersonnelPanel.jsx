@@ -30,6 +30,7 @@ import YearSelector from './YearSelector';
 import './PersonnelPanel.css';
 import './EquipmentPanel.css';
 import './Calendar.css';
+import { useToast } from '../hooks/useToast';
 
 // ═══════════════════════════════════════
 // Constantes
@@ -94,6 +95,7 @@ const getCategoryColor = (category) => {
 // ═══════════════════════════════════════
 
 const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, currentDate, setCurrentDate, googleEvents = [], navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
+  const toast = useToast();
   const [subTab, setSubTab] = useState(mode === 'planning' ? 'planning' : 'persons');
   const [persons, setPersons] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -193,7 +195,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
       }
       resetEditForm();
     } catch (err) {
-      alert('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
+      toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
     }
   };
 
@@ -537,7 +539,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
       setShowFormModal(false);
       setEditingPerson(null);
     } catch (err) {
-      alert('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
+      toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
     }
   };
 
@@ -548,7 +550,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
       setPersons(prev => prev.filter(p => p.id !== id));
       if (selectedPerson?.id === id) setSelectedPerson(null);
     } catch (err) {
-      alert('Erreur : ' + (err.message || 'Impossible de supprimer'));
+      toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
     }
   };
 
@@ -786,7 +788,7 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.firstName.trim() || !form.lastName.trim()) return alert('Prénom et nom requis');
+    if (!form.firstName.trim() || !form.lastName.trim()) return toast.warning('Prénom et nom requis');
     onSave({
       first_name: form.firstName,
       last_name: form.lastName,
@@ -963,7 +965,7 @@ const SkillsTab = ({ skills, setSkills, currentUser }) => {
       }
       resetForm();
     } catch (err) {
-      alert('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
+      toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
     }
   };
 
@@ -973,7 +975,7 @@ const SkillsTab = ({ skills, setSkills, currentUser }) => {
       await api.deleteSkill(id);
       setSkills(prev => prev.filter(s => s.id !== id));
     } catch (err) {
-      alert('Erreur : ' + (err.message || 'Impossible de supprimer'));
+      toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
     }
   };
 
@@ -1091,7 +1093,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
       }
       resetForm();
     } catch (err) {
-      alert('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
+      toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
     }
   };
 
@@ -1101,7 +1103,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
       await api.deletePosition(id);
       setPositions(prev => prev.filter(p => p.id !== id));
     } catch (err) {
-      alert('Erreur : ' + (err.message || 'Impossible de supprimer'));
+      toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
     }
   };
 

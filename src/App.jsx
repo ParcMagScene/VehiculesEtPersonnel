@@ -15,6 +15,7 @@ import { playNotificationSound, requestNotificationPermission, showBrowserNotifi
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFeedback } from './hooks/useFeedback';
 import { useTheme } from './hooks/useTheme';
+import { ToastProvider } from './hooks/useToast';
 import './App.css';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
@@ -451,7 +452,7 @@ function App() {
       if (conflicts.length > 0) {
         const vehicle = vehicles.find(v => v.id === vehicleId);
         const conflictInfo = conflicts[0];
-        alert(`⚠️ Chevauchement détecté !\n\nLe véhicule "${vehicle?.name}" est déjà réservé pour :\n- ${conflictInfo.reservation.clientName || conflictInfo.reservation.prestationName}\n- Le ${format(new Date(conflictInfo.date), 'd MMMM yyyy', { locale: fr })} (${conflictInfo.period})\n\nVeuillez modifier les dates ou choisir un autre véhicule.`);
+        toast.warning(`Chevauchement : "${vehicle?.name}" déjà réservé le ${format(new Date(conflictInfo.date), 'd MMMM yyyy', { locale: fr })} (${conflictInfo.period})`);
         return false;
       }
       
@@ -468,11 +469,11 @@ function App() {
             ...otherData
           });
           
-          alert(`✅ Demande de réservation envoyée !\n\nVotre demande a été transmise aux administrateurs pour validation.\nVous serez notifié une fois qu'elle sera traitée.`);
+          toast.success('Demande de réservation envoyée aux administrateurs pour validation.');
           return true;
         } catch (error) {
           console.error('❌ Erreur création demande:', error);
-          alert(`Erreur lors de la création de la demande: ${error.message}`);
+          toast.error(`Erreur création demande: ${error.message}`);
           return false;
         }
       }
@@ -491,7 +492,7 @@ function App() {
         newReservations.push(createdReservation);
       } catch (error) {
         console.error('❌ Erreur création réservation:', error);
-        alert(`Erreur lors de la création de la réservation: ${error.message}`);
+        toast.error(`Erreur création réservation: ${error.message}`);
         return false;
       }
     }
@@ -505,7 +506,7 @@ function App() {
     
     // Seuls les admins peuvent modifier des réservations
     if (!currentUser?.isAdmin) {
-      alert('⛔ Seuls les administrateurs peuvent modifier des réservations.');
+      toast.warning('Seuls les administrateurs peuvent modifier des réservations.');
       return false;
     }
     
@@ -538,7 +539,7 @@ function App() {
         `  • ${c.reservation.clientName || c.reservation.prestationName} - ${format(new Date(c.date), 'd MMM', { locale: fr })} (${c.period})`
       ).join('\n');
       
-      alert(`⚠️ Chevauchement détecté !\n\nLe véhicule "${vehicle?.name}" a déjà ${conflicts.length} réservation(s) sur cette période :\n\n${conflictList}\n\nVeuillez choisir d'autres dates ou un autre véhicule.`);
+      toast.warning(`Chevauchement : "${vehicle?.name}" a ${conflicts.length} réservation(s) sur cette période`);
       return false;
     }
 
@@ -558,7 +559,7 @@ function App() {
       return true;
     } catch (error) {
       console.error('❌ Erreur mise à jour réservation:', error);
-      alert(`Erreur lors de la mise à jour: ${error.message}`);
+      toast.error(`Erreur mise à jour: ${error.message}`);
       return false;
     }
   };
@@ -568,7 +569,7 @@ function App() {
     
     // Seuls les admins peuvent supprimer des réservations
     if (!currentUser?.isAdmin) {
-      alert('⛔ Seuls les administrateurs peuvent supprimer des réservations.');
+      toast.warning('Seuls les administrateurs peuvent supprimer des réservations.');
       return false;
     }
     
@@ -579,7 +580,7 @@ function App() {
       logger.log('✅ État local mis à jour');
     } catch (error) {
       console.error('❌ Erreur suppression réservation:', error);
-      alert(`Erreur lors de la suppression: ${error.message}`);
+      toast.error(`Erreur suppression: ${error.message}`);
     }
   };
 
@@ -612,7 +613,7 @@ function App() {
       return true;
     } catch (error) {
       console.error('❌ Erreur mise à jour maintenance:', error);
-      alert(`Erreur lors de la mise à jour: ${error.message}`);
+      toast.error(`Erreur mise à jour maintenance: ${error.message}`);
       return false;
     }
   };
@@ -642,7 +643,7 @@ function App() {
       }
     } catch (error) {
       console.error('❌ Erreur gestion maintenance:', error);
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -658,7 +659,7 @@ function App() {
       setMaintenances(maintenancesData);
     } catch (error) {
       console.error('❌ Erreur mise à jour intervention:', error);
-      alert(`Erreur lors de la mise à jour: ${error.message}`);
+      toast.error(`Erreur mise à jour intervention: ${error.message}`);
     }
   };
 
@@ -669,7 +670,7 @@ function App() {
       setMaintenances(maintenances.filter(m => m.id !== interventionId));
     } catch (error) {
       console.error('❌ Erreur suppression intervention:', error);
-      alert(`Erreur lors de la suppression: ${error.message}`);
+      toast.error(`Erreur suppression intervention: ${error.message}`);
     }
   };
 
@@ -796,11 +797,13 @@ function App() {
   if (isMobile) {
     return (
       <ErrorBoundary>
-        <MobileApp onSwitchToDesktop={() => {
-          sessionStorage.setItem('forceDesktop', 'true');
-          window.location.hash = '';
-          setIsMobile(false);
-        }} />
+        <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div><p>Chargement...</p></div>}>
+          <MobileApp onSwitchToDesktop={() => {
+            sessionStorage.setItem('forceDesktop', 'true');
+            window.location.hash = '';
+            setIsMobile(false);
+          }} />
+        </Suspense>
       </ErrorBoundary>
     );
   }
@@ -863,6 +866,7 @@ function App() {
 
   return (
     <ErrorBoundary>
+    <ToastProvider toast={toast}>
     <div className="app">
       <Header
         view={view}
@@ -1004,6 +1008,7 @@ function App() {
             />
           ) : (
             <div className="calendar-with-vehicle-panel">
+              <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div><p>Chargement du calendrier...</p></div>}>
               <Calendar
                 view={view}
                 setView={setView}
@@ -1039,6 +1044,7 @@ function App() {
                 quickReservationSlot={quickReservationSlot}
                 onQuickReservationHandled={() => setQuickReservationSlot(null)}
               />
+              </Suspense>
               <VehicleSlidePanel
                 vehicle={selectedVehicleForDetails}
                 maintenances={maintenances}
@@ -1299,7 +1305,7 @@ function App() {
                 setSelectedVehicleForKilometrageControl(response);
               } catch (error) {
                 console.error('Erreur lors de la mise à jour du véhicule:', error);
-                alert('Erreur lors de la mise à jour du véhicule');
+                toast.error('Erreur lors de la mise à jour du véhicule');
                 throw error;
               }
             }}
@@ -1364,6 +1370,7 @@ function App() {
         <ToastContainer ref={toastRef} />
       </Suspense>
     </div>
+    </ToastProvider>
     </ErrorBoundary>
   );
 }

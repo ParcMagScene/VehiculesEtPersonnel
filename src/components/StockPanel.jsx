@@ -6,6 +6,7 @@ import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, Filter,
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
 import './StockPanel.css';
+import { useToast } from '../hooks/useToast';
 
 // ═══ Constantes ═══
 const MOVEMENT_TYPES = {
@@ -41,6 +42,7 @@ const formatDateShort = (dateStr) => {
 
 // ═══ Composant Principal ═══
 function StockPanel({ currentUser }) {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -117,7 +119,7 @@ function StockPanel({ currentUser }) {
       setEditingItem(null);
       loadData();
     } catch (error) {
-      alert('Erreur: ' + error.message);
+      toast.error('Erreur: ' + error.message);
     }
   };
 
@@ -130,7 +132,7 @@ function StockPanel({ currentUser }) {
           await api.deleteStockItem(item.id);
           setSelectedItem(null);
           loadData();
-        } catch (error) { alert('Erreur: ' + error.message); }
+        } catch (error) { toast.error('Erreur: ' + error.message); }
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null)
@@ -149,7 +151,7 @@ function StockPanel({ currentUser }) {
       setEditingCategory(null);
       loadData();
     } catch (error) {
-      alert('Erreur: ' + error.message);
+      toast.error('Erreur: ' + error.message);
     }
   };
 
@@ -161,7 +163,7 @@ function StockPanel({ currentUser }) {
         try {
           await api.deleteStockCategory(cat.id);
           loadData();
-        } catch (error) { alert('Erreur: ' + error.message); }
+        } catch (error) { toast.error('Erreur: ' + error.message); }
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null)
@@ -181,7 +183,7 @@ function StockPanel({ currentUser }) {
         loadMovements(selectedItem.id);
       }
     } catch (error) {
-      alert('Erreur: ' + error.message);
+      toast.error('Erreur: ' + error.message);
     }
   };
 
@@ -816,7 +818,7 @@ function ItemFormModal({ item, categories, suppliers, onSave, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return alert('Le nom est requis');
+    if (!form.name.trim()) return toast.warning('Le nom est requis');
     onSave({
       ...form,
       unit_price: Number(form.unit_price) || 0,
@@ -924,7 +926,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return alert('Le nom est requis');
+    if (!form.name.trim()) return toast.warning('Le nom est requis');
     onSave({ ...form, parent_id: form.parent_id || null });
   };
 
@@ -1004,7 +1006,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.stock_item_id || !form.quantity) return alert('Article et quantité sont requis');
+    if (!form.stock_item_id || !form.quantity) return toast.warning('Article et quantité sont requis');
     onSave({
       ...form,
       stock_item_id: Number(form.stock_item_id),

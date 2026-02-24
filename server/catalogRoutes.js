@@ -6,6 +6,12 @@
 
 import db, { addToHistory } from './database.js';
 import crypto from 'crypto';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const generateId = () => crypto.randomUUID();
 
@@ -16,7 +22,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   // GET /api/catalog/equipment — Liste avec filtres
   app.get('/api/catalog/equipment', authenticateToken, (req, res) => {
     try {
-      const { family, subfamily, category, search, limit, offset } = req.query;
+      const { family, subfamily, category, search, location_zone, location_code, location_floor, limit, offset } = req.query;
       let query = 'SELECT * FROM equipment_catalog WHERE 1=1';
       const params = [];
 
@@ -32,10 +38,22 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
         query += ' AND category = ?';
         params.push(category);
       }
+      if (location_zone) {
+        query += ' AND location_zone = ?';
+        params.push(location_zone);
+      }
+      if (location_code) {
+        query += ' AND location_code = ?';
+        params.push(location_code);
+      }
+      if (location_floor) {
+        query += ' AND location_floor = ?';
+        params.push(location_floor);
+      }
       if (search) {
-        query += ' AND (name LIKE ? OR reference LIKE ? OR family LIKE ?)';
+        query += ' AND (name LIKE ? OR reference LIKE ? OR family LIKE ? OR location_zone LIKE ?)';
         const s = `%${search}%`;
-        params.push(s, s, s);
+        params.push(s, s, s, s);
       }
 
       query += ' ORDER BY family, subfamily, name';
@@ -57,10 +75,13 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       if (family) { countQuery += ' AND family = ?'; countParams.push(family); }
       if (subfamily) { countQuery += ' AND subfamily = ?'; countParams.push(subfamily); }
       if (category) { countQuery += ' AND category = ?'; countParams.push(category); }
+      if (location_zone) { countQuery += ' AND location_zone = ?'; countParams.push(location_zone); }
+      if (location_code) { countQuery += ' AND location_code = ?'; countParams.push(location_code); }
+      if (location_floor) { countQuery += ' AND location_floor = ?'; countParams.push(location_floor); }
       if (search) {
-        countQuery += ' AND (name LIKE ? OR reference LIKE ? OR family LIKE ?)';
+        countQuery += ' AND (name LIKE ? OR reference LIKE ? OR family LIKE ? OR location_zone LIKE ?)';
         const s = `%${search}%`;
-        countParams.push(s, s, s);
+        countParams.push(s, s, s, s);
       }
       const { total } = db.prepare(countQuery).get(...countParams);
 
@@ -68,6 +89,40 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
     } catch (error) {
       console.error('GET /api/catalog/equipment error:', error);
       console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // GET /api/catalog/equipment/zones — Données des zones de dépôt depuis depot-zones.json
+  app.get('/api/catalog/equipment/zones', authenticateToken, (req, res) => {
+    try {
+      const zonesPath = join(__dirname, '..', 'public', 'depot-zones.json');
+      const data = JSON.parse(readFileSync(zonesPath, 'utf-8'));
+      res.json(data);
+    } catch (error) {
+      console.error('GET /api/catalog/equipment/zones error:', error);
+      res.status(500).json({ error: 'Erreur chargement zones dépôt' });
+    }
+  });
+
+  // GET /api/catalog/equipment/location-stats — Stats par zone
+  app.get('/api/catalog/equipment/location-stats', authenticateToken, (req, res) => {
+    try {
+      const stats = db.prepare(`
+        SELECT location_zone, location_floor, COUNT(*) as count
+        FROM equipment_catalog
+        WHERE location_zone IS NOT NULL
+        GROUP BY location_zone, location_floor
+        ORDER BY location_zone
+      `).all();
+
+      const unlocated = db.prepare(
+        'SELECT COUNT(*) as count FROM equipment_catalog WHERE location_zone IS NULL'
+      ).get();
+
+      res.json({ stats, unlocated: unlocated.count });
+    } catch (error) {
+      console.error('GET /api/catalog/equipment/location-stats error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -119,20 +174,21 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   // POST /api/catalog/equipment (admin)
   app.post('/api/catalog/equipment', authenticateToken, requireWriteAccess, (req, res) => {
     try {
-      const { reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata } = req.body;
+      const { reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata, location_zone, location_code, location_floor } = req.body;
       if (!name) return res.status(400).json({ error: 'Nom requis' });
 
       const id = generateId();
       const now = new Date().toISOString();
 
       db.prepare(`
-        INSERT INTO equipment_catalog (id, reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO equipment_catalog (id, reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata, location_zone, location_code, location_floor, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         id, reference || null, name, family || null, subfamily || null, category || null,
         dimensions ? JSON.stringify(dimensions) : null,
         weight || null, default_flightcase_id || null,
         metadata ? JSON.stringify(metadata) : null,
+        location_zone || null, location_code || null, location_floor || null,
         now, now
       );
 
@@ -153,7 +209,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   // PUT /api/catalog/equipment/:id
   app.put('/api/catalog/equipment/:id', authenticateToken, requireWriteAccess, (req, res) => {
     try {
-      const { reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata } = req.body;
+      const { reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata, location_zone, location_code, location_floor } = req.body;
       const existing = db.prepare('SELECT * FROM equipment_catalog WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Équipement catalogue non trouvé' });
 
@@ -162,7 +218,9 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       db.prepare(`
         UPDATE equipment_catalog SET
           reference = ?, name = ?, family = ?, subfamily = ?, category = ?,
-          dimensions = ?, weight = ?, default_flightcase_id = ?, metadata = ?, updated_at = ?
+          dimensions = ?, weight = ?, default_flightcase_id = ?, metadata = ?,
+          location_zone = ?, location_code = ?, location_floor = ?,
+          updated_at = ?
         WHERE id = ?
       `).run(
         reference ?? existing.reference,
@@ -174,6 +232,9 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
         weight ?? existing.weight,
         default_flightcase_id ?? existing.default_flightcase_id,
         metadata ? JSON.stringify(metadata) : existing.metadata,
+        location_zone !== undefined ? (location_zone || null) : existing.location_zone,
+        location_code !== undefined ? (location_code || null) : existing.location_code,
+        location_floor !== undefined ? (location_floor || null) : existing.location_floor,
         now,
         req.params.id
       );
@@ -616,6 +677,7 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
       const equipments = db.prepare(`
         SELECT etv.*, 
           ec.name, ec.reference, ec.dimensions as equipment_dimensions, ec.weight,
+          ec.location_zone, ec.location_code, ec.location_floor,
           fc.name as flightcase_name, fc.dimensions as flightcase_dimensions, fc.internal_code as flightcase_code
         FROM equipment_to_vehicle etv
         LEFT JOIN equipment_catalog ec ON etv.equipment_id = ec.id
@@ -658,6 +720,11 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
           quantity: eq.quantity,
           dimensions: eq.equipment_dimensions ? JSON.parse(eq.equipment_dimensions) : null,
           weight: eq.weight,
+          location: eq.location_zone ? {
+            zone: eq.location_zone,
+            code: eq.location_code,
+            floor: eq.location_floor,
+          } : null,
           flightcase: eq.flightcase_id ? {
             id: eq.flightcase_id,
             name: eq.flightcase_name,

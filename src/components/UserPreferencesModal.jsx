@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Container } from 'lucide-react';
+import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Container, Boxes } from 'lucide-react';
 import api from '../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, getVolume, SOUND_TYPES } from '../utils/notificationSound';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
@@ -13,6 +13,7 @@ const ALL_MODULES = [
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
   { id: 'catalog', label: 'Catalogue', icon: BookOpen },
   { id: 'trucks', label: 'Camions', icon: Container },
+  { id: 'stock', label: 'Stock', icon: Boxes },
 ];
 
 const DEFAULT_TAB_ORDER = ALL_MODULES.map(m => m.id);

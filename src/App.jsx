@@ -31,6 +31,7 @@ const EquipmentPanel = lazy(() => import('./components/EquipmentPanel'));
 const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
 const CataloguePanel = lazy(() => import('./components/CataloguePanel'));
 const TruckModelPanel = lazy(() => import('./components/TruckModelPanel'));
+const StockPanel = lazy(() => import('./components/StockPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/MailingPanel'));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
@@ -1140,6 +1141,19 @@ function App() {
           </div>
         }>
           <TruckModelPanel
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {activeModule === 'stock' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement du stock...</p>
+          </div>
+        }>
+          <StockPanel
             currentUser={currentUser}
           />
         </Suspense>

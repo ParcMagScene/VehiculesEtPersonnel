@@ -32,6 +32,7 @@ const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
 const CataloguePanel = lazy(() => import('./components/CataloguePanel'));
 const TruckModelPanel = lazy(() => import('./components/TruckModelPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
+const MailingPanel = lazy(() => import('./components/MailingPanel'));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
 
@@ -99,6 +100,7 @@ function App() {
   const [quickReservationSlot, setQuickReservationSlot] = useState(null);
   const [quickAssignmentSlot, setQuickAssignmentSlot] = useState(null);
   const [showMessaging, setShowMessaging] = useState(false);
+  const [showMailing, setShowMailing] = useState(false);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -893,6 +895,7 @@ function App() {
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
         }}
         onToggleMessaging={() => setShowMessaging(v => !v)}
+        onToggleMailing={() => setShowMailing(v => !v)}
         unreadMsgCount={unreadMsgCount}
         onOpenPreferences={() => setShowPreferences(true)}
         onOpenHelp={() => setShowHelp(true)}
@@ -1292,6 +1295,14 @@ function App() {
           isOpen={showMessaging}
           onClose={() => setShowMessaging(false)}
           currentUser={currentUser}
+        />
+      </Suspense>
+
+      {/* Mailing avancé */}
+      <Suspense fallback={null}>
+        <MailingPanel
+          isOpen={showMailing}
+          onClose={() => setShowMailing(false)}
         />
       </Suspense>
 

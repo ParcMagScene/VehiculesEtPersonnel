@@ -11,9 +11,12 @@ import api from './utils/api';
 import { saveToIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
 import logger from './utils/logger';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from './utils/notificationSound';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification, setVolume } from './utils/notificationSound';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useFeedback } from './hooks/useFeedback';
 import './App.css';
+
+const ToastContainer = lazy(() => import('./components/ToastContainer'));
 
 // Code splitting - Lazy loading des composants lourds
 const Calendar = lazy(() => import('./components/Calendar'));
@@ -138,8 +141,7 @@ function App() {
   const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: true }); // Préférences notification
   const [tabPrefs, setTabPrefs] = useState({ tabOrder: null, hiddenTabs: [] }); // Préférences onglets
   const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
-  const [msgToast, setMsgToast] = useState(null); // Toast notification in-app
-  const msgToastTimerRef = useRef(null);
+  const { toastRef, toast } = useFeedback();
 
   // Raccourcis clavier globaux avec détection OS
   useKeyboardShortcuts({
@@ -681,6 +683,8 @@ function App() {
           notificationsEnabled: prefs.notificationsEnabled !== false,
           soundEnabled: prefs.soundEnabled !== false,
         };
+        // Appliquer le volume
+        setVolume((prefs.soundVolume ?? 70) / 100);
         // Charger les préférences d'onglets
         setTabPrefs({
           tabOrder: prefs.tabOrder || null,
@@ -755,16 +759,13 @@ function App() {
           const prefs = userPrefsRef.current;
           const diff = newCount - prevCount;
 
-          // Son de notification
-          if (prefs.soundEnabled) {
-            playNotificationSound();
-          }
-
-          // Toast notification in-app (sauf si notifications désactivées)
+          // Toast in-app + son (sauf si panneau messagerie ouvert)
           if (prefs.notificationsEnabled !== false && !showMessagingRef.current) {
-            if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
-            setMsgToast(`${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`);
-            msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
+            toast.info(`💬 ${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`, {
+              sound: prefs.soundEnabled !== false,
+            });
+          } else if (prefs.soundEnabled) {
+            playNotificationSound();
           }
 
           // Notification navigateur (si le panneau messagerie n'est pas ouvert)
@@ -1305,6 +1306,8 @@ function App() {
               notificationsEnabled: prefs.notificationsEnabled !== false,
               soundEnabled: prefs.soundEnabled !== false,
             };
+            // Volume
+            setVolume((prefs.soundVolume ?? 70) / 100);
             // Mettre à jour les préférences d'onglets
             setTabPrefs({
               tabOrder: prefs.tabOrder || null,
@@ -1326,14 +1329,10 @@ function App() {
         />
       </Suspense>
 
-      {/* Toast notification messages */}
-      {msgToast && (
-        <div className="msg-toast" onClick={() => { setMsgToast(null); setShowMessaging(true); }}>
-          <span className="msg-toast-icon">💬</span>
-          <span className="msg-toast-text">{msgToast}</span>
-          <button className="msg-toast-close" onClick={(e) => { e.stopPropagation(); setMsgToast(null); }}>×</button>
-        </div>
-      )}
+      {/* Toast notification global */}
+      <Suspense fallback={null}>
+        <ToastContainer ref={toastRef} />
+      </Suspense>
     </div>
   );
 }

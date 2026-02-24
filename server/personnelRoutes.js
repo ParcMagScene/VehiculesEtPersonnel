@@ -596,8 +596,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
     try {
       const { person_id, start_date, end_date, status } = req.query;
       let sql = `SELECT a.*, p.first_name, p.last_name,
-                   u1.username AS created_by_name,
-                   u2.username AS approved_by_name
+                   u1.name AS created_by_name,
+                   u2.name AS approved_by_name
                  FROM availabilities a
                  JOIN persons p ON p.id = a.person_id
                  LEFT JOIN users u1 ON u1.id = a.created_by
@@ -768,7 +768,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       }
 
       const updated = db.prepare(`
-        SELECT a.*, p.first_name, p.last_name, u.username AS approved_by_name
+        SELECT a.*, p.first_name, p.last_name, u.name AS approved_by_name
         FROM availabilities a
         JOIN persons p ON p.id = a.person_id
         LEFT JOIN users u ON u.id = a.approved_by
@@ -797,7 +797,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       `).run(req.user.id, reason || null, req.params.id);
 
       const updated = db.prepare(`
-        SELECT a.*, p.first_name, p.last_name, u.username AS approved_by_name
+        SELECT a.*, p.first_name, p.last_name, u.name AS approved_by_name
         FROM availabilities a
         JOIN persons p ON p.id = a.person_id
         LEFT JOIN users u ON u.id = a.approved_by

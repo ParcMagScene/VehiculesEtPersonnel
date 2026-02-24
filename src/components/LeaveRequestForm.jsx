@@ -173,9 +173,9 @@ const LeaveRequestForm = ({
     loadTypes();
   }, []);
 
-  // Charger le solde quand la personne change
+  // Charger le solde quand la personne change (admin uniquement)
   useEffect(() => {
-    if (!selectedPersonId) return;
+    if (!selectedPersonId || !isAdmin) return;
     const loadBalance = async () => {
       try {
         const data = await api.getLeaveBalances({ personId: selectedPersonId, year: new Date().getFullYear() });
@@ -185,7 +185,7 @@ const LeaveRequestForm = ({
       }
     };
     loadBalance();
-  }, [selectedPersonId]);
+  }, [selectedPersonId, isAdmin]);
 
   // Charger les jours fériés
   useEffect(() => {

@@ -439,8 +439,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
         <div 
           className="maintenance-dialog-header"
           style={editingId ? {
-            borderBottom: `3px solid ${getStatusColor(formData.status)}`,
-            background: `linear-gradient(135deg, ${getStatusColor(formData.status)}08 0%, ${getStatusColor(formData.status)}15 100%)`
+            borderBottom: `3px solid ${getStatusColor(formData.status)}`
           } : {}}
         >
           <div className="maintenance-dialog-title">

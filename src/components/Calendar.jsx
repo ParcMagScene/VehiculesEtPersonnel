@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, startTransition } from 'react';
 import useWindowWidth from '../hooks/useWindowWidth';
 import {
   startOfWeek,
@@ -623,22 +623,22 @@ const Calendar = ({
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
 
-  // Fonctions de navigation
-  const goToPrevious = () => {
+  // Fonctions de navigation (startTransition pour ne pas bloquer l'UI)
+  const goToPrevious = useCallback(() => {
     const newDate = new Date(currentDate);
     if (view === 'week') newDate.setDate(newDate.getDate() - 7);
     else if (view === 'month') newDate.setMonth(newDate.getMonth() - 1);
     else newDate.setFullYear(newDate.getFullYear() - 1);
-    setCurrentDate(newDate);
-  };
-  const goToNext = () => {
+    startTransition(() => setCurrentDate(newDate));
+  }, [currentDate, view, setCurrentDate]);
+  const goToNext = useCallback(() => {
     const newDate = new Date(currentDate);
     if (view === 'week') newDate.setDate(newDate.getDate() + 7);
     else if (view === 'month') newDate.setMonth(newDate.getMonth() + 1);
     else newDate.setFullYear(newDate.getFullYear() + 1);
-    setCurrentDate(newDate);
-  };
-  const goToToday = () => setCurrentDate(new Date());
+    startTransition(() => setCurrentDate(newDate));
+  }, [currentDate, view, setCurrentDate]);
+  const goToToday = useCallback(() => startTransition(() => setCurrentDate(new Date())), [setCurrentDate]);
   const getDateLabel = () => {
     let label = '';
     if (view === 'week') label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
@@ -1085,6 +1085,67 @@ const Calendar = ({
     return [...reservations, ...maintenancesAsReservations];
   }, [reservations, maintenancesAsReservations]);
 
+  // days et periods doivent être définis AVANT reservationLookup qui en dépend
+  const days = useMemo(() => {
+    if (view === 'week') {
+      return eachDayOfInterval({
+        start: startOfWeek(currentDate, { weekStartsOn: 1 }),
+        end: endOfWeek(currentDate, { weekStartsOn: 1 }),
+      });
+    } else if (view === 'month') {
+      return eachDayOfInterval({
+        start: startOfMonth(currentDate),
+        end: endOfMonth(currentDate),
+      });
+    } else {
+      // Vue année - afficher les 12 mois
+      return eachMonthOfInterval({
+        start: startOfYear(currentDate),
+        end: endOfYear(currentDate),
+      });
+    }
+  }, [view, currentDate]);
+
+  const periods = view === 'year' ? ['M'] : ['AM', 'PM'];
+
+  // Index pré-calculé : clé "vehicleId-YYYY-MM-DD-period" → reservation (O(1) lookup)
+  // Élimine le filtrage O(n) par cellule qui était le goulot de performance
+  const reservationLookup = useMemo(() => {
+    const lookup = new Map();
+    // Pré-calculer l'intervalle visible pour ne traiter que les réservations pertinentes
+    const viewStart = days.length > 0 ? days[0] : null;
+    const viewEnd = days.length > 0 ? days[days.length - 1] : null;
+    if (!viewStart || !viewEnd) return lookup;
+
+    const viewStartTs = getPeriodTimestamp(viewStart, 'AM');
+    const viewEndTs = getPeriodTimestamp(viewEnd, 'PM');
+    const currentPeriods = view === 'year' ? ['M'] : ['AM', 'PM'];
+
+    for (const r of allReservations) {
+      const resStart = getPeriodTimestamp(r.date, r.period);
+      const resEnd = getPeriodTimestamp(r.endDate || r.date, r.endPeriod || r.period);
+
+      // Skip si la réservation est entièrement hors de la vue
+      if (resEnd < viewStartTs || resStart > viewEndTs) continue;
+
+      for (const day of days) {
+        for (const period of currentPeriods) {
+          const cellTs = getPeriodTimestamp(day, period);
+          if (cellTs >= resStart && cellTs <= resEnd) {
+            const key = `${r.vehicleId}-${formatLocalDate(day)}-${period}`;
+            const existing = lookup.get(key);
+            // Priorité aux maintenances
+            if (!existing || (r.isMaintenance && !existing.isMaintenance)) {
+              lookup.set(key, r);
+            }
+          }
+        }
+      }
+    }
+
+    return lookup;
+  }, [allReservations, days, view]);
+
   // Fonction pour détecter les conflits entre une maintenance et les réservations
   const getMaintenanceConflicts = useCallback((maintenanceBlock) => {
     if (!maintenanceBlock.isMaintenance || !maintenanceBlock.date) return [];
@@ -1147,27 +1208,61 @@ const Calendar = ({
     };
   }, [vehicleGroups, reservations, maintenances]);
 
-  const days = useMemo(() => {
-    if (view === 'week') {
-      return eachDayOfInterval({
-        start: startOfWeek(currentDate, { weekStartsOn: 1 }),
-        end: endOfWeek(currentDate, { weekStartsOn: 1 }),
-      });
-    } else if (view === 'month') {
-      return eachDayOfInterval({
-        start: startOfMonth(currentDate),
-        end: endOfMonth(currentDate),
-      });
-    } else {
-      // Vue année - afficher les 12 mois
-      return eachMonthOfInterval({
-        start: startOfYear(currentDate),
-        end: endOfYear(currentDate),
-      });
-    }
-  }, [view, currentDate]);
+  // Pré-calcul de tous les blocs pour chaque véhicule (élimine le calcul inline dans le render)
+  const allVehicleBlocks = useMemo(() => {
+    const result = new Map();
+    const allVehicles = [...vehicleGroups.magSceneVehicles, ...vehicleGroups.locationVehicles];
 
-  const periods = view === 'year' ? ['M'] : ['AM', 'PM'];
+    // Construire les timeSlots une seule fois
+    const timeSlots = [];
+    if (view === 'year') {
+      days.forEach(monthDate => timeSlots.push({ day: monthDate, period: 'M' }));
+    } else {
+      days.forEach(day => periods.forEach(period => timeSlots.push({ day, period })));
+    }
+
+    for (const vehicle of allVehicles) {
+      const blocks = [];
+      let currentBlock = null;
+
+      if (view === 'year') {
+        timeSlots.forEach((slot, index) => {
+          const monthStart = startOfMonth(slot.day);
+          const monthEnd = endOfMonth(slot.day);
+          const hasReservation = reservations.some(r => {
+            const rDate = new Date(r.date);
+            return r.vehicleId === vehicle.id && rDate >= monthStart && rDate <= monthEnd;
+          });
+          if (hasReservation) {
+            if (!currentBlock) {
+              currentBlock = { clientName: 'Occupé', startIndex: index, span: 1 };
+            } else { currentBlock.span++; }
+          } else {
+            if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
+          }
+        });
+      } else {
+        timeSlots.forEach((slot, index) => {
+          const key = `${vehicle.id}-${formatLocalDate(slot.day)}-${slot.period}`;
+          const reservation = reservationLookup.get(key) || null;
+          if (reservation) {
+            const currentName = currentBlock ? (currentBlock.isMaintenance ? currentBlock.prestationName : currentBlock.clientName) : null;
+            const newName = reservation.isMaintenance ? reservation.prestationName : reservation.clientName;
+            if (!currentBlock || currentBlock.id !== reservation.id || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
+              if (currentBlock) blocks.push(currentBlock);
+              currentBlock = { ...reservation, startIndex: index, span: 1 };
+            } else { currentBlock.span++; }
+          } else {
+            if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
+          }
+        });
+      }
+      if (currentBlock) blocks.push(currentBlock);
+      result.set(vehicle.id, { blocks, timeSlots });
+    }
+
+    return result;
+  }, [vehicleGroups, days, view, reservationLookup, reservations]);
 
   // Handlers pour la navigation depuis la vue année
   const handleMonthClick = useCallback((monthIndex) => {
@@ -1667,32 +1762,10 @@ const Calendar = ({
     return currentIndex >= minIndex && currentIndex <= maxIndex;
   }, [dragState, days, view]);
 
-  const getReservation = (vehicleId, date, period) => {
-    // Filtrer toutes les réservations correspondantes
-    const matches = allReservations.filter((r) => {
-      if (r.vehicleId !== vehicleId) return false;
-      
-      // Calculer les timestamps de début et fin de la réservation
-      const resStart = getPeriodTimestamp(r.date, r.period);
-      const resEnd = getPeriodTimestamp(
-        r.endDate || r.date, 
-        r.endPeriod || r.period
-      );
-      
-      // Calculer le timestamp de la cellule actuelle
-      const cellTimestamp = getPeriodTimestamp(date, period);
-      
-      // La cellule fait partie de la réservation si son timestamp est dans l'intervalle [resStart, resEnd]
-      return cellTimestamp >= resStart && cellTimestamp <= resEnd;
-    });
-    
-    // Priorité aux maintenances : si une maintenance existe, elle prend le dessus
-    const maintenance = matches.find(r => r.isMaintenance);
-    if (maintenance) return maintenance;
-    
-    // Sinon retourner la première réservation normale
-    return matches[0];
-  };
+  const getReservation = useCallback((vehicleId, date, period) => {
+    const key = `${vehicleId}-${formatLocalDate(date)}-${period}`;
+    return reservationLookup.get(key) || null;
+  }, [reservationLookup]);
 
   // Grouper les réservations consécutives pour affichage continu
   const getReservationBlocks = (vehicleId, days, period) => {
@@ -2118,85 +2191,9 @@ const Calendar = ({
             <div className={`calendar-grid ${view}-view`} style={{ gridTemplateColumns: gridColumns, position: 'relative' }}>
               {/* Lignes véhicules - Section Mag Scène */}
               {!collapsedSections.magScene && vehicleGroups.magSceneVehicles.map((vehicle) => {
-            // Créer un tableau de toutes les demi-journées (ou mois pour vue année)
-            const timeSlots = [];
-            if (view === 'year') {
-              // Vue année : une slot par mois
-              days.forEach(monthDate => {
-                timeSlots.push({ day: monthDate, period: 'M' });
-              });
-            } else {
-              // Vue semaine/mois : AM/PM par jour
-              days.forEach(day => {
-                periods.forEach(period => {
-                  timeSlots.push({ day, period });
-                });
-              });
-            }
-
-            // Trouver les blocs de réservations consécutives
-            const blocks = [];
-            let currentBlock = null;
-
-            if (view === 'year') {
-              // Vue année : afficher les mois occupés
-              timeSlots.forEach((slot, index) => {
-                const monthStart = startOfMonth(slot.day);
-                const monthEnd = endOfMonth(slot.day);
-                
-                // Vérifier s'il y a des réservations dans ce mois
-                const hasReservation = reservations.some(r => {
-                  const rDate = new Date(r.date);
-                  return r.vehicleId === vehicle.id && rDate >= monthStart && rDate <= monthEnd;
-                });
-
-                if (hasReservation) {
-                  if (!currentBlock) {
-                    currentBlock = {
-                      clientName: 'Occupé',
-                      startIndex: index,
-                      span: 1
-                    };
-                  } else {
-                    currentBlock.span++;
-                  }
-                } else {
-                  if (currentBlock) {
-                    blocks.push(currentBlock);
-                    currentBlock = null;
-                  }
-                }
-              });
-              if (currentBlock) blocks.push(currentBlock);
-            } else {
-              // Vue semaine/mois : logique AM/PM habituelle
-              timeSlots.forEach((slot, index) => {
-                const reservation = getReservation(vehicle.id, slot.day, slot.period);
-                
-                if (reservation) {
-                  // Pour les maintenances, utiliser prestationName au lieu de clientName pour la comparaison
-                  const currentName = currentBlock ? (currentBlock.isMaintenance ? currentBlock.prestationName : currentBlock.clientName) : null;
-                  const newName = reservation.isMaintenance ? reservation.prestationName : reservation.clientName;
-                  
-                  if (!currentBlock || currentBlock.id !== reservation.id || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
-                    if (currentBlock) blocks.push(currentBlock);
-                    currentBlock = {
-                      ...reservation,
-                      startIndex: index,
-                      span: 1
-                    };
-                  } else {
-                    currentBlock.span++;
-                  }
-                } else {
-                  if (currentBlock) {
-                    blocks.push(currentBlock);
-                    currentBlock = null;
-                  }
-                }
-              });
-              if (currentBlock) blocks.push(currentBlock);
-            }
+            // Utiliser les blocs pré-calculés au lieu de recalculer à chaque render
+            const precomputed = allVehicleBlocks.get(vehicle.id) || { blocks: [], timeSlots: [] };
+            const { blocks, timeSlots } = precomputed;
 
             return (
               <div key={vehicle.id} className="vehicle-row">
@@ -2387,85 +2384,9 @@ const Calendar = ({
               
               {/* Lignes véhicules - Section Location */}
               {!collapsedSections.location && vehicleGroups.locationVehicles.map((vehicle) => {
-            // Créer un tableau de toutes les demi-journées (ou mois pour vue année)
-            const timeSlots = [];
-            if (view === 'year') {
-              // Vue année : une slot par mois
-              days.forEach(monthDate => {
-                timeSlots.push({ day: monthDate, period: 'M' });
-              });
-            } else {
-              // Vue semaine/mois : AM/PM par jour
-              days.forEach(day => {
-                periods.forEach(period => {
-                  timeSlots.push({ day, period });
-                });
-              });
-            }
-
-            // Trouver les blocs de réservations consécutives
-            const blocks = [];
-            let currentBlock = null;
-
-            if (view === 'year') {
-              // Vue année : afficher les mois occupés
-              timeSlots.forEach((slot, index) => {
-                const monthStart = startOfMonth(slot.day);
-                const monthEnd = endOfMonth(slot.day);
-                
-                // Vérifier s'il y a des réservations dans ce mois
-                const hasReservation = reservations.some(r => {
-                  const rDate = new Date(r.date);
-                  return r.vehicleId === vehicle.id && rDate >= monthStart && rDate <= monthEnd;
-                });
-
-                if (hasReservation) {
-                  if (!currentBlock) {
-                    currentBlock = {
-                      clientName: 'Occupé',
-                      startIndex: index,
-                      span: 1
-                    };
-                  } else {
-                    currentBlock.span++;
-                  }
-                } else {
-                  if (currentBlock) {
-                    blocks.push(currentBlock);
-                    currentBlock = null;
-                  }
-                }
-              });
-              if (currentBlock) blocks.push(currentBlock);
-            } else {
-              // Vue semaine/mois : logique AM/PM habituelle
-              timeSlots.forEach((slot, index) => {
-                const reservation = getReservation(vehicle.id, slot.day, slot.period);
-                
-                if (reservation) {
-                  // Pour les maintenances, utiliser prestationName au lieu de clientName pour la comparaison
-                  const currentName = currentBlock ? (currentBlock.isMaintenance ? currentBlock.prestationName : currentBlock.clientName) : null;
-                  const newName = reservation.isMaintenance ? reservation.prestationName : reservation.clientName;
-                  
-                  if (!currentBlock || currentBlock.id !== reservation.id || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
-                    if (currentBlock) blocks.push(currentBlock);
-                    currentBlock = {
-                      ...reservation,
-                      startIndex: index,
-                      span: 1
-                    };
-                  } else {
-                    currentBlock.span++;
-                  }
-                } else {
-                  if (currentBlock) {
-                    blocks.push(currentBlock);
-                    currentBlock = null;
-                  }
-                }
-              });
-              if (currentBlock) blocks.push(currentBlock);
-            }
+            // Utiliser les blocs pré-calculés au lieu de recalculer à chaque render
+            const precomputed = allVehicleBlocks.get(vehicle.id) || { blocks: [], timeSlots: [] };
+            const { blocks, timeSlots } = precomputed;
 
             return (
               <div key={vehicle.id} className="vehicle-row">

@@ -495,6 +495,21 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
     }
   };
 
+  const handleSerializeEquipment = async (eq) => {
+    const qty = eq.stockQuantity || eq.stock_quantity || 1;
+    if (qty <= 1) return alert('Cet équipement a déjà une quantité de 1.');
+    if (!confirm(`Sérialiser "${eq.name}" en ${qty} entités individuelles ?\n\nChaque exemplaire recevra son propre UID (EMAG-XXXXX).\nL'article original sera remplacé par ${qty} fiches individuelles.`)) return;
+    try {
+      const result = await api.serializeEquipment(eq.id);
+      alert(`✅ ${result.message}\n\nUID créés : ${result.created.map(c => c.uid).join(', ')}`);
+      setSelectedEquipment(null);
+      setDialogEquipment(null);
+      loadData();
+    } catch (err) {
+      alert('Erreur sérialisation: ' + err.message);
+    }
+  };
+
   const handleSaveSavTicket = async (data) => {
     try {
       if (editingSavTicket) {
@@ -770,6 +785,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         onOpenTicketDialog={(t) => { setDialogEquipment(null); setDialogTicket(t); }}
         onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
         onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
+        onSerialize={handleSerializeEquipment}
       />
 
       {/* Dialog SAV (double-clic) */}
@@ -1072,7 +1088,7 @@ const EquipmentGrid = ({ equipment, selectedId, photosList, logosList, favoriteI
 };
 
 // ═══ CONTENU DÉTAIL PARTAGÉ ═══
-const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, categories: catList }) => {
+const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, onSerialize, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, categories: catList }) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
@@ -1192,6 +1208,11 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
           {onPrintSheet && (
             <button className="eq-btn-secondary" onClick={() => onPrintSheet(eq)}>
               <FileText size={14} /> Imprimer fiche
+            </button>
+          )}
+          {isAdmin && onSerialize && (eq.stockQuantity || eq.stock_quantity || 1) > 1 && (
+            <button className="eq-btn-secondary" onClick={() => onSerialize(eq)} title={`Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`}>
+              <Package size={14} /> Sérialiser ({eq.stockQuantity || eq.stock_quantity})
             </button>
           )}
           {isAdmin && onDelete && (
@@ -1369,7 +1390,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
 };
 
 // ═══ MODAL DÉTAIL COMPLET (double-clic) ═══
-const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet }) => {
+const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet, onSerialize }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -1422,6 +1443,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             onOpenTicketDialog={onOpenTicketDialog}
             onPrintLabel={onPrintLabel}
             onPrintSheet={onPrintSheet}
+            onSerialize={onSerialize}
             categories={categories}
           />
         </div>

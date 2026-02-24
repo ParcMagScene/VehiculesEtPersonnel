@@ -192,6 +192,16 @@
   flex-shrink: 0;
 }
 
+.banner-new-event-btn {
+  background: rgba(102, 126, 234, 0.35) !important;
+  border-color: rgba(102, 126, 234, 0.6) !important;
+}
+
+.banner-new-event-btn:hover {
+  background: rgba(102, 126, 234, 0.55) !important;
+  border-color: rgba(102, 126, 234, 0.8) !important;
+}
+
 .banner-search-toggle {
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);

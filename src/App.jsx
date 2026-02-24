@@ -860,6 +860,7 @@ function App() {
   };
 
   return (
+    <ErrorBoundary>
     <div className="app">
       <Header
         view={view}
@@ -912,7 +913,7 @@ function App() {
         </div>
       )}
       
-      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'trucks' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'trucks' && activeModule !== 'stock' && (
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}
@@ -1359,6 +1360,7 @@ function App() {
         <ToastContainer ref={toastRef} />
       </Suspense>
     </div>
+    </ErrorBoundary>
   );
 }
 

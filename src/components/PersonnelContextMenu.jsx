@@ -14,6 +14,12 @@ export const PERIOD_MENU_ITEMS = [
 
 const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
   const menuRef = useRef(null);
+  
+  // Filtrer les items : congés uniquement pour les permanents
+  const isPermanent = person?.type === 'permanent';
+  const menuItems = isPermanent
+    ? PERIOD_MENU_ITEMS
+    : PERIOD_MENU_ITEMS.filter(item => !item.requiresApproval);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -53,7 +59,7 @@ const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
         <span className="pp-context-menu-subtitle">Ajouter une période</span>
       </div>
       <div className="pp-context-menu-divider" />
-      {PERIOD_MENU_ITEMS.map(item => {
+      {menuItems.map(item => {
         const Icon = item.icon;
         return (
           <button

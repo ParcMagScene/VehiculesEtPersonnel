@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react';
 import useWindowWidth from '../hooks/useWindowWidth';
 import {
   startOfWeek,
@@ -898,7 +898,8 @@ const Calendar = ({
     
     document.addEventListener('mouseup', handleGlobalMouseUp);
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [isDragging, dragState, resizeState, blockDragState, handleBlockDragEnd, handleSlotMouseUp, handleResizeEnd]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging, dragState, resizeState, blockDragState]);
 
   // Fonctions de gestion du tooltip
   const handleTooltipShow = useCallback((event, block) => {

@@ -1481,6 +1481,28 @@ function initializeDatabase() {
   db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_reservation ON equipment_to_vehicle(reservation_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_equipment ON equipment_to_vehicle(equipment_id)');
 
+  // ═══ Migration: Localisation dépôt pour equipment_catalog ═══
+  try {
+    const catalogCols = db.prepare("PRAGMA table_info(equipment_catalog)").all();
+    const colNames = catalogCols.map(c => c.name);
+    if (!colNames.includes('location_zone')) {
+      db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_zone TEXT").run();
+      console.log('✅ Migration: ajout colonne location_zone à equipment_catalog');
+    }
+    if (!colNames.includes('location_code')) {
+      db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_code TEXT").run();
+      console.log('✅ Migration: ajout colonne location_code à equipment_catalog');
+    }
+    if (!colNames.includes('location_floor')) {
+      db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_floor TEXT").run();
+      console.log('✅ Migration: ajout colonne location_floor à equipment_catalog');
+    }
+    db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_location_zone ON equipment_catalog(location_zone)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_location_floor ON equipment_catalog(location_floor)');
+  } catch (error) {
+    console.warn('⚠️ Migration location_zone/code/floor:', error.message);
+  }
+
   // ═══ Module Mailing Avancé ═══
   try {
     db.exec(`

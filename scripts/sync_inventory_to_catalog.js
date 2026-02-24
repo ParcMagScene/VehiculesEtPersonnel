@@ -74,6 +74,11 @@ function mapRow(row) {
   const category = row['Catégorie'] || row['Category'] || row['categorie'] || '';
   const weight = parseFloat(row['Poids'] || row['Weight'] || row['poids'] || '0') || null;
 
+  // Localisation dépôt
+  const location_zone = row['Zone'] || row['zone'] || row['Location Zone'] || '';
+  const location_code = row['Code'] || row['code'] || row['Location Code'] || row['Emplacement'] || '';
+  const location_floor = row['Étage'] || row['Etage'] || row['Floor'] || row['etage'] || '';
+
   // Dimensions
   let dimensions = null;
   const w = parseFloat(row['Largeur'] || row['Width'] || row['L'] || '0');
@@ -91,6 +96,9 @@ function mapRow(row) {
     category: category.trim() || null,
     weight,
     dimensions,
+    location_zone: location_zone.trim() || null,
+    location_code: location_code.trim() || null,
+    location_floor: location_floor.trim() || null,
   };
 }
 
@@ -147,12 +155,12 @@ function syncInventoryToCatalog(filePath) {
   const stats = { created: 0, updated: 0, skipped: 0, errors: 0, fcLinked: 0 };
 
   const insertStmt = db.prepare(`
-    INSERT INTO equipment_catalog (id, reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO equipment_catalog (id, reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, location_zone, location_code, location_floor, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const updateStmt = db.prepare(`
-    UPDATE equipment_catalog SET name = ?, family = ?, subfamily = ?, category = ?, dimensions = ?, weight = ?, default_flightcase_id = COALESCE(?, default_flightcase_id), updated_at = ?
+    UPDATE equipment_catalog SET name = ?, family = ?, subfamily = ?, category = ?, dimensions = ?, weight = ?, default_flightcase_id = COALESCE(?, default_flightcase_id), location_zone = COALESCE(?, location_zone), location_code = COALESCE(?, location_code), location_floor = COALESCE(?, location_floor), updated_at = ?
     WHERE reference = ?
   `);
 
@@ -189,7 +197,9 @@ function syncInventoryToCatalog(filePath) {
           // Update
           updateStmt.run(
             mapped.name, mapped.family, mapped.subfamily, mapped.category,
-            dims, mapped.weight, fcId, now, mapped.reference
+            dims, mapped.weight, fcId,
+            mapped.location_zone, mapped.location_code, mapped.location_floor,
+            now, mapped.reference
           );
           stats.updated++;
         } else {
@@ -198,7 +208,9 @@ function syncInventoryToCatalog(filePath) {
           const ref = mapped.reference || `AUTO-${id.slice(0, 8).toUpperCase()}`;
           insertStmt.run(
             id, ref, mapped.name, mapped.family, mapped.subfamily, mapped.category,
-            dims, mapped.weight, fcId, now, now
+            dims, mapped.weight, fcId,
+            mapped.location_zone, mapped.location_code, mapped.location_floor,
+            now, now
           );
           stats.created++;
         }

@@ -1,0 +1,190 @@
+{
+  "version": "1.0",
+  "name": "Dépôt Locmat / MagScene",
+  "floors": [
+    { "id": "RDC", "label": "Rez-de-chaussée", "order": 0 },
+    { "id": "MEZZ", "label": "Mezzanine", "order": 1 }
+  ],
+  "zones": [
+    {
+      "id": "DIST",
+      "label": "Distribution",
+      "color": "#ef4444",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["DIST-A", "DIST-B", "DIST-C"],
+      "svgId": "zone-dist",
+      "bbox": { "x": 10, "y": 200, "width": 180, "height": 140 }
+    },
+    {
+      "id": "SONO",
+      "label": "Sonorisation",
+      "color": "#3b82f6",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["SONO-A", "SONO-B", "SONO-C", "SONO-D"],
+      "svgId": "zone-sono",
+      "bbox": { "x": 200, "y": 200, "width": 200, "height": 140 }
+    },
+    {
+      "id": "ECLR",
+      "label": "Éclairage",
+      "color": "#eab308",
+      "textColor": "#000000",
+      "floor": "RDC",
+      "codes": ["ECLR-A", "ECLR-B", "ECLR-C"],
+      "svgId": "zone-eclr",
+      "bbox": { "x": 410, "y": 200, "width": 180, "height": 140 }
+    },
+    {
+      "id": "VIDEO",
+      "label": "Vidéo",
+      "color": "#ec4899",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["VIDEO-A", "VIDEO-B"],
+      "svgId": "zone-video",
+      "bbox": { "x": 600, "y": 200, "width": 160, "height": 140 }
+    },
+    {
+      "id": "SCENE",
+      "label": "Scène / Structure",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["SCENE-A", "SCENE-B", "SCENE-C"],
+      "svgId": "zone-scene",
+      "bbox": { "x": 10, "y": 360, "width": 250, "height": 140 }
+    },
+    {
+      "id": "LIVR",
+      "label": "Livraisons / Départ",
+      "color": "#f97316",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["LIVR-A", "LIVR-B"],
+      "svgId": "zone-livr",
+      "bbox": { "x": 270, "y": 360, "width": 180, "height": 140 }
+    },
+    {
+      "id": "QUAI",
+      "label": "Quais de chargement",
+      "color": "#a1a1aa",
+      "textColor": "#000000",
+      "floor": "RDC",
+      "codes": ["QUAI-1", "QUAI-2", "QUAI-3"],
+      "svgId": "zone-quai",
+      "bbox": { "x": 460, "y": 360, "width": 300, "height": 140 }
+    },
+    {
+      "id": "ATEL",
+      "label": "Atelier / SAV",
+      "color": "#525252",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["ATEL-1", "ATEL-2"],
+      "svgId": "zone-atel",
+      "bbox": { "x": 600, "y": 10, "width": 160, "height": 180 }
+    },
+    {
+      "id": "BURE",
+      "label": "Bureaux",
+      "color": "#f8fafc",
+      "textColor": "#334155",
+      "floor": "RDC",
+      "codes": ["BURE-1"],
+      "svgId": "zone-bure",
+      "bbox": { "x": 10, "y": 10, "width": 180, "height": 180 }
+    },
+    {
+      "id": "STCK",
+      "label": "Stock général",
+      "color": "#71717a",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["STCK-A", "STCK-B", "STCK-C"],
+      "svgId": "zone-stck",
+      "bbox": { "x": 200, "y": 10, "width": 200, "height": 180 }
+    },
+    {
+      "id": "CABL",
+      "label": "Câblerie",
+      "color": "#0ea5e9",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["CABL-A", "CABL-B"],
+      "svgId": "zone-cabl",
+      "bbox": { "x": 410, "y": 10, "width": 180, "height": 180 }
+    },
+    {
+      "id": "M-SONO",
+      "label": "Sono (Mezzanine)",
+      "color": "#3b82f6",
+      "textColor": "#ffffff",
+      "floor": "MEZZ",
+      "codes": ["M-SONO-A", "M-SONO-B"],
+      "svgId": "zone-m-sono",
+      "bbox": { "x": 10, "y": 200, "width": 250, "height": 140 }
+    },
+    {
+      "id": "M-ECLR",
+      "label": "Éclairage (Mezzanine)",
+      "color": "#eab308",
+      "textColor": "#000000",
+      "floor": "MEZZ",
+      "codes": ["M-ECLR-A", "M-ECLR-B"],
+      "svgId": "zone-m-eclr",
+      "bbox": { "x": 270, "y": 200, "width": 240, "height": 140 }
+    },
+    {
+      "id": "M-VIDEO",
+      "label": "Vidéo (Mezzanine)",
+      "color": "#ec4899",
+      "textColor": "#ffffff",
+      "floor": "MEZZ",
+      "codes": ["M-VIDEO-A"],
+      "svgId": "zone-m-video",
+      "bbox": { "x": 520, "y": 200, "width": 240, "height": 140 }
+    },
+    {
+      "id": "M-STCK",
+      "label": "Stock Mezzanine",
+      "color": "#71717a",
+      "textColor": "#ffffff",
+      "floor": "MEZZ",
+      "codes": ["M-STCK-A", "M-STCK-B"],
+      "svgId": "zone-m-stck",
+      "bbox": { "x": 10, "y": 10, "width": 350, "height": 180 }
+    },
+    {
+      "id": "M-CONS",
+      "label": "Consommables (Mezzanine)",
+      "color": "#a855f7",
+      "textColor": "#ffffff",
+      "floor": "MEZZ",
+      "codes": ["M-CONS-A"],
+      "svgId": "zone-m-cons",
+      "bbox": { "x": 370, "y": 10, "width": 190, "height": 180 }
+    },
+    {
+      "id": "M-ARCH",
+      "label": "Archives (Mezzanine)",
+      "color": "#78716c",
+      "textColor": "#ffffff",
+      "floor": "MEZZ",
+      "codes": ["M-ARCH-A"],
+      "svgId": "zone-m-arch",
+      "bbox": { "x": 570, "y": 10, "width": 190, "height": 180 }
+    },
+    {
+      "id": "M-SCENE",
+      "label": "Scène (Mezzanine)",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "MEZZ",
+      "codes": ["M-SCENE-A"],
+      "svgId": "zone-m-scene",
+      "bbox": { "x": 10, "y": 360, "width": 750, "height": 140 }
+    }
+  ]
+}

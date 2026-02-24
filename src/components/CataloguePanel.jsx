@@ -4,9 +4,11 @@
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Search, Plus, Edit2, Trash2, Box, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, Search, Plus, Edit2, Trash2, Box, X, ChevronLeft, ChevronRight, MapPin, Map } from 'lucide-react';
 import api from '../utils/api';
 import { formatDimensions, buildChargementUrlForEquipment, openInChargement } from '../utils/deepLinking';
+import DepotMap from './DepotMap';
+import LocationSelector from './LocationSelector';
 import './CataloguePanel.css';
 
 const PAGE_SIZE = 50;
@@ -24,6 +26,11 @@ export default function CataloguePanel({ currentUser }) {
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [flightcases, setFlightcases] = useState([]);
+  const [zoneFilter, setZoneFilter] = useState('');
+  const [showMap, setShowMap] = useState(false);
+  const [depotZones, setDepotZones] = useState(null);
+  const [locationStats, setLocationStats] = useState(null);
+  const [selectedMapZone, setSelectedMapZone] = useState(null);
 
   const isAdmin = currentUser?.isAdmin;
   const canWrite = isAdmin || currentUser?.permissions?.can_manage_catalog === true;
@@ -32,14 +39,18 @@ export default function CataloguePanel({ currentUser }) {
   useEffect(() => {
     const loadFilters = async () => {
       try {
-        const [fam, cat, fc] = await Promise.all([
+        const [fam, cat, fc, zones, locStats] = await Promise.all([
           api.getCatalogFamilies(),
           api.getCatalogCategories(),
           api.getFlightcases(),
+          api.getDepotZones(),
+          api.getLocationStats(),
         ]);
         setFamilies(fam || []);
         setCategories(cat || []);
         setFlightcases(fc || []);
+        setDepotZones(zones || null);
+        setLocationStats(locStats || null);
       } catch (e) {
         console.error('Erreur chargement filtres catalogue:', e);
       }
@@ -55,6 +66,7 @@ export default function CataloguePanel({ currentUser }) {
       if (search) params.search = search;
       if (familyFilter) params.family = familyFilter;
       if (categoryFilter) params.category = categoryFilter;
+      if (zoneFilter) params.location_zone = zoneFilter;
 
       const data = await api.getCatalogEquipment(params);
       setItems(data.items || []);
@@ -64,7 +76,7 @@ export default function CataloguePanel({ currentUser }) {
     } finally {
       setLoading(false);
     }
-  }, [page, search, familyFilter, categoryFilter]);
+  }, [page, search, familyFilter, categoryFilter, zoneFilter]);
 
   useEffect(() => { loadItems(); }, [loadItems]);
 
@@ -91,10 +103,15 @@ export default function CataloguePanel({ currentUser }) {
       setShowForm(false);
       setEditItem(null);
       loadItems();
-      // Recharger filtres
-      const [fam, cat] = await Promise.all([api.getCatalogFamilies(), api.getCatalogCategories()]);
+      // Recharger filtres + stats
+      const [fam, cat, locStats] = await Promise.all([
+        api.getCatalogFamilies(),
+        api.getCatalogCategories(),
+        api.getLocationStats(),
+      ]);
       setFamilies(fam || []);
       setCategories(cat || []);
+      setLocationStats(locStats || null);
     } catch (e) {
       alert(e.message || 'Erreur lors de la sauvegarde');
     }
@@ -128,6 +145,13 @@ export default function CataloguePanel({ currentUser }) {
       <div className="panel-header">
         <h2><Package size={24} /> Catalogue Matériel</h2>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            className={`catalog-btn ${showMap ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+            onClick={() => setShowMap(v => !v)}
+            title="Afficher/masquer le plan du dépôt"
+          >
+            <Map size={16} /> Plan
+          </button>
           {canWrite && (
             <button className="catalog-btn catalog-btn-primary" onClick={() => { setEditItem(null); setShowForm(true); }}>
               <Plus size={16} /> Ajouter
@@ -135,6 +159,17 @@ export default function CataloguePanel({ currentUser }) {
           )}
         </div>
       </div>
+
+      {/* Depot Map */}
+      {showMap && depotZones && (
+        <DepotMap
+          zones={depotZones}
+          stats={locationStats}
+          selectedZone={selectedMapZone}
+          onZoneSelect={setSelectedMapZone}
+          onZoneFilter={(z) => { setZoneFilter(z); setPage(0); }}
+        />
+      )}
 
       {/* Toolbar */}
       <div className="catalog-toolbar">
@@ -167,6 +202,13 @@ export default function CataloguePanel({ currentUser }) {
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
 
+        {depotZones && (
+          <select value={zoneFilter} onChange={(e) => { setZoneFilter(e.target.value); setSelectedMapZone(e.target.value || null); setPage(0); }}>
+            <option value="">Toutes les zones</option>
+            {depotZones.zones.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
+          </select>
+        )}
+
         <span className="filter-count">{total} résultat{total !== 1 ? 's' : ''}</span>
       </div>
 
@@ -191,6 +233,7 @@ export default function CataloguePanel({ currentUser }) {
                   <th>Catégorie</th>
                   <th>Dimensions</th>
                   <th>Poids (kg)</th>
+                  <th>Zone</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -207,6 +250,17 @@ export default function CataloguePanel({ currentUser }) {
                     </td>
                     <td className="td-dim">{formatDimensions(item.dimensions)}</td>
                     <td className="td-weight">{item.weight ? `${item.weight} kg` : '—'}</td>
+                    <td className="td-zone">
+                      {item.location_zone ? (
+                        <span className="catalog-badge catalog-badge-zone" title={`${item.location_zone} ${item.location_code || ''} (${item.location_floor || ''})`}>
+                          <MapPin size={12} />
+                          {item.location_zone}
+                          {item.location_code && <span className="zone-code-sm">{item.location_code}</span>}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#64748b', fontSize: '0.8rem' }}>—</span>
+                      )}
+                    </td>
                     <td className="td-actions">
                       <button className="catalog-btn catalog-btn-3d catalog-btn-sm" onClick={() => handleOpenIn3D(item)} title="Voir dans Chargement 3D">
                         <Box size={14} /> 3D
@@ -250,6 +304,7 @@ export default function CataloguePanel({ currentUser }) {
         <CatalogFormModal
           item={editItem}
           flightcases={flightcases}
+          depotZones={depotZones}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditItem(null); }}
         />
@@ -259,7 +314,7 @@ export default function CataloguePanel({ currentUser }) {
 }
 
 // ─── Modal de création / édition ───
-function CatalogFormModal({ item, flightcases, onSave, onClose }) {
+function CatalogFormModal({ item, flightcases, depotZones, onSave, onClose }) {
   const [form, setForm] = useState({
     reference: item?.reference || '',
     name: item?.name || '',
@@ -271,6 +326,9 @@ function CatalogFormModal({ item, flightcases, onSave, onClose }) {
     dimW: '',
     dimH: '',
     dimD: '',
+    location_zone: item?.location_zone || '',
+    location_code: item?.location_code || '',
+    location_floor: item?.location_floor || '',
   });
 
   // Parse dimensions existantes
@@ -296,6 +354,9 @@ function CatalogFormModal({ item, flightcases, onSave, onClose }) {
       dimensions: (form.dimW && form.dimH && form.dimD)
         ? { w: parseFloat(form.dimW), h: parseFloat(form.dimH), d: parseFloat(form.dimD) }
         : null,
+      location_zone: form.location_zone || null,
+      location_code: form.location_code || null,
+      location_floor: form.location_floor || null,
     };
     onSave(data);
   };
@@ -367,6 +428,24 @@ function CatalogFormModal({ item, flightcases, onSave, onClose }) {
                 </select>
               </div>
             </div>
+
+            {/* Localisation dépôt */}
+            {depotZones && (
+              <LocationSelector
+                zones={depotZones}
+                value={{
+                  location_zone: form.location_zone,
+                  location_code: form.location_code,
+                  location_floor: form.location_floor,
+                }}
+                onChange={(loc) => setForm(f => ({
+                  ...f,
+                  location_zone: loc.location_zone || '',
+                  location_code: loc.location_code || '',
+                  location_floor: loc.location_floor || '',
+                }))}
+              />
+            )}
           </div>
 
           <div className="catalog-modal-footer">

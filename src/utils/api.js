@@ -1162,6 +1162,14 @@ class ApiClient {
     return this.request(`/catalog/equipment/${id}`, { method: 'DELETE' });
   }
 
+  // Zones de dépôt (localisation)
+  async getDepotZones() {
+    return this.request('/catalog/equipment/zones');
+  }
+  async getLocationStats() {
+    return this.request('/catalog/equipment/location-stats');
+  }
+
   // Flight-cases
   async getFlightcases(params = {}) {
     const qs = new URLSearchParams(params).toString();

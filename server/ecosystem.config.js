@@ -3,7 +3,7 @@ export default {
     {
       name: "vehicules-backend",
       script: "server.js",
-      cwd: "/Users/reunion/Resevation Véhicules/server",
+      cwd: "/Users/reunion/eM@g/server",
       instances: 1,
       autorestart: true,
       watch: false,
@@ -23,7 +23,7 @@ export default {
       name: "vehicules",
       script: "npx",
       args: "vite preview",
-      cwd: "/Users/reunion/Resevation Véhicules",
+      cwd: "/Users/reunion/eM@g",
       instances: 1,
       autorestart: true,
       watch: false,

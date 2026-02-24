@@ -76,7 +76,7 @@ Application web de **gestion de flotte de véhicules et de planning du personnel
 ```bash
 # Cloner le dépôt
 git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
-cd "Resevation Véhicules"
+cd "eM@g"
 
 # Installer les dépendances frontend
 npm install
@@ -123,7 +123,7 @@ Le script `scripts/safe-deploy.sh` effectue :
 ## 🏗️ Structure du projet
 
 ```
-Resevation Véhicules/
+eM@g/
 ├── index.html              # Point d'entrée HTML (SPA)
 ├── package.json            # Dépendances frontend
 ├── vite.config.js          # Configuration Vite (proxy /api → :3002)

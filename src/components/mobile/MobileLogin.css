@@ -1,5 +1,6 @@
 .mobile-login {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--theme-gradient);
   display: flex;
   align-items: center;

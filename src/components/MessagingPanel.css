@@ -8,6 +8,7 @@
   right: -400px;
   width: 400px;
   height: 100vh;
+  height: 100dvh;
   background: white;
   box-shadow: -4px 0 24px rgba(0,0,0,0.12);
   z-index: 2000;
@@ -591,6 +592,37 @@
 }
 
 /* ═══ Responsive ═══ */
+@media (max-width: 768px) {
+  .messaging-panel {
+    width: 100vw;
+    right: -100vw;
+  }
+
+  .msg-header-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .msg-send-btn,
+  .msg-attach-btn,
+  .msg-emoji-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .msg-emoji-item {
+    width: 40px;
+    height: 40px;
+    font-size: 1.3rem;
+  }
+
+  .msg-emoji-picker {
+    width: 100%;
+    max-width: 320px;
+    right: 0;
+  }
+}
+
 @media (max-width: 480px) {
   .messaging-panel {
     width: 100vw;

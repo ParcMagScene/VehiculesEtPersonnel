@@ -21,7 +21,7 @@ import {
   isSameYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Truck, Link, Link2, MapPin, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, Link2, MapPin, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../utils/dateUtils';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../utils/vehicleUtils';
 import { loadFromIndexedDB } from '../utils/indexedDB';

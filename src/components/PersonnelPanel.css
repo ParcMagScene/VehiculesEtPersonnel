@@ -2092,6 +2092,39 @@
     align-items: flex-start;
     gap: 6px;
   }
+
+  /* Planning : colonnes réduites sur tablette */
+  .pp-column-header,
+  .pp-person-column {
+    width: 160px;
+  }
+
+  /* Touch targets minimum 44px */
+  .pp-section-toggle,
+  .pp-leave-add-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .pp-assignment-delete {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .personnel-panel { padding: 0.5rem; }
+
+  .pp-column-header,
+  .pp-person-column {
+    width: 120px;
+  }
+
+  .pp-column-header {
+    font-size: 0.75rem;
+    padding: 0 0.5rem;
+  }
 }
 
 /* ===== Drag-to-create selection ===== */

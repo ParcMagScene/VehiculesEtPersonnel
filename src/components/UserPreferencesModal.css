@@ -3,7 +3,7 @@
   position: fixed;
   inset: 0;
   background: var(--theme-overlay-dark);
-  z-index: 10000;
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,8 +15,10 @@
   border-radius: 16px;
   width: 90%;
   max-width: 460px;
-  max-height: 85vh;
-  overflow-y: auto;
+  max-height: 85dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   animation: slideUp 0.25s ease;
 }
@@ -68,6 +70,9 @@
 
 .prefs-body {
   padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .prefs-section {

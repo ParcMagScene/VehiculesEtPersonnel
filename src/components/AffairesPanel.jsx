@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Users, Truck, FileText, MapPin, Briefcase, ChevronDown, ChevronUp, Hash, Clock, AlertCircle, RefreshCw, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';

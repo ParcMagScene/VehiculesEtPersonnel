@@ -3,8 +3,8 @@
 // Table de tous les équipements avec filtres, recherche, CRUD, deep link 3D
 // ============================================================
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Package, Search, Plus, Edit2, Trash2, Box, ExternalLink, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Package, Search, Plus, Edit2, Trash2, Box, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 import { formatDimensions, buildChargementUrlForEquipment, openInChargement } from '../utils/deepLinking';
 import './CataloguePanel.css';

@@ -254,8 +254,10 @@
   border-radius: 14px;
   width: 90%;
   max-width: 600px;
-  max-height: 85vh;
-  overflow-y: auto;
+  max-height: 85dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: catalogSlideUp 0.25s ease;
 }
@@ -284,6 +286,9 @@
 
 .catalog-modal-body {
   padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .catalog-modal-footer {

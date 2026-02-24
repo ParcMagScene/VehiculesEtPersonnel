@@ -7,7 +7,7 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 70px);
+  height: calc(100dvh - 70px);
   overflow: hidden;
 }
 
@@ -926,6 +926,31 @@
   .affaire-counters {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .affaire-fab-create {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    right: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .affaires-panel {
+    padding: 0.5rem;
+  }
+
+  .affaires-tb-search {
+    min-width: 80px;
+    max-width: 100%;
+  }
+
+  .affaires-stat-card {
+    min-width: 60px;
+    padding: 6px 8px;
+  }
+
+  .stat-value {
+    font-size: 13px;
   }
 }
 

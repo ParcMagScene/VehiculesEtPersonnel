@@ -633,10 +633,33 @@
 }
 
 /* Responsive */
+@media (max-width: 768px) {
+  .maintenance-dialog {
+    max-width: 100%;
+    margin: 0.5rem;
+    max-height: 95dvh;
+  }
+
+  .form-mode-selector {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .maintenance-card-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .maintenance-card-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 @media (max-width: 640px) {
   .maintenance-dialog {
     max-width: 100%;
-    max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
   }
 

@@ -678,7 +678,7 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
   }
 });
 
-app.delete('/api/vehicles/:id', authenticateToken, (req, res) => {
+app.delete('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare('DELETE FROM vehicles WHERE id = ?');
     stmt.run(req.params.id);
@@ -740,12 +740,8 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
   }
 });
 
-app.post('/api/reservations', authenticateToken, (req, res) => {
+app.post('/api/reservations', authenticateToken, requireAdmin, (req, res) => {
   try {
-    // Seuls les admins peuvent créer directement des réservations
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: 'Seuls les administrateurs peuvent créer des réservations directement. Utilisez les demandes de réservation.' });
-    }
     const reservation = req.body;
     
     // Générer un ID côté serveur si non fourni ou invalide
@@ -828,12 +824,8 @@ app.post('/api/reservations', authenticateToken, (req, res) => {
   }
 });
 
-app.put('/api/reservations/:id', authenticateToken, (req, res) => {
+app.put('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
-    // Seuls les admins peuvent modifier des réservations
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: 'Seuls les administrateurs peuvent modifier des réservations.' });
-    }
     const reservation = req.body;
 
     // Préserver les liens Google Drive existants (gérés uniquement via PATCH depuis EventDetailsModal)
@@ -878,11 +870,8 @@ app.put('/api/reservations/:id', authenticateToken, (req, res) => {
 });
 
 // Mise à jour partielle d'une réservation (liens Google Drive)
-app.patch('/api/reservations/:id', authenticateToken, (req, res) => {
+app.patch('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: 'Seuls les administrateurs peuvent modifier des réservations.' });
-    }
     const { google_drive_links, google_drive_link } = req.body;
     
     // Support nouveau format (tableau) ou ancien format (string)
@@ -913,12 +902,8 @@ app.patch('/api/reservations/:id', authenticateToken, (req, res) => {
   }
 });
 
-app.delete('/api/reservations/:id', authenticateToken, (req, res) => {
+app.delete('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
-    // Seuls les admins peuvent supprimer des réservations
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: 'Seuls les administrateurs peuvent supprimer des réservations.' });
-    }
     const stmt = db.prepare('DELETE FROM reservations WHERE id = ?');
     const result = stmt.run(req.params.id);
     
@@ -1377,56 +1362,6 @@ app.get('/api/history/:entityType/:entityId', authenticateToken, (req, res) => {
 
 // ============ GESTION DES UTILISATEURS (ADMIN) ============
 
-// Lister les emails autorisés
-app.get('/api/admin/authorized-emails', authenticateToken, requireAdmin, (req, res) => {
-  try {
-    const stmt = db.prepare(`
-      SELECT ae.*, u.name as user_name 
-      FROM authorized_emails ae
-      LEFT JOIN users u ON ae.email = u.email
-      ORDER BY ae.added_at DESC
-    `);
-    const emails = stmt.all();
-    res.json(emails);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Ajouter un email autorisé
-app.post('/api/admin/authorized-emails', authenticateToken, requireAdmin, (req, res) => {
-  try {
-    const { email } = req.body;
-    const stmt = db.prepare('INSERT INTO authorized_emails (email, added_by) VALUES (?, ?)');
-    const result = stmt.run(email, req.user.id);
-    res.json({ id: result.lastInsertRowid, email, status: 'pending' });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Supprimer un email autorisé
-app.delete('/api/admin/authorized-emails/:id', authenticateToken, requireAdmin, (req, res) => {
-  try {
-    const stmt = db.prepare('DELETE FROM authorized_emails WHERE id = ?');
-    stmt.run(req.params.id);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Lister tous les utilisateurs
-app.get('/api/admin/users', authenticateToken, requireAdmin, (req, res) => {
-  try {
-    const stmt = db.prepare('SELECT id, email, name, is_admin, created_at FROM users ORDER BY created_at DESC');
-    const users = stmt.all();
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Réinitialiser le mot de passe d'un utilisateur
 app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -1560,7 +1495,7 @@ app.post('/api/access-requests/check-email', async (req, res) => {
 });
 
 // Lister les demandes d'accès (admin seulement)
-app.get('/api/access-requests', authenticateToken, (req, res) => {
+app.get('/api/access-requests', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare(`
       SELECT ar.*, u.name as reviewed_by_name
@@ -1656,7 +1591,7 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
 });
 
 // Compter les demandes en attente (admin)
-app.get('/api/access-requests/count/pending', authenticateToken, (req, res) => {
+app.get('/api/access-requests/count/pending', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare('SELECT COUNT(*) as count FROM access_requests WHERE status = ?');
     const result = stmt.get('pending');
@@ -1668,7 +1603,7 @@ app.get('/api/access-requests/count/pending', authenticateToken, (req, res) => {
 });
 
 // Compter les demandes en attente (interventions + réservations) pour badge admin
-app.get('/api/pending-requests-count', authenticateToken, (req, res) => {
+app.get('/api/pending-requests-count', authenticateToken, requireAdmin, (req, res) => {
   try {
     const interventionStmt = db.prepare("SELECT COUNT(*) as count FROM maintenances WHERE status IN ('pending', 'reported')");
     const interventionResult = interventionStmt.get();
@@ -1688,7 +1623,7 @@ app.get('/api/pending-requests-count', authenticateToken, (req, res) => {
 });
 
 // Récupérer les demandes de réservation en attente (pour le popup)
-app.get('/api/reservation-requests/pending', authenticateToken, (req, res) => {
+app.get('/api/reservation-requests/pending', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare(`
       SELECT rr.*, u.name as requester_name, v.name as vehicle_name, v.registration
@@ -2015,10 +1950,10 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
 });
 
 // Routes pour clients, drivers, locations, garages, config
-setupClientsRoutes(app, authenticateToken);
-setupDriversRoutes(app, authenticateToken);
-setupLocationsRoutes(app, authenticateToken);
-setupGaragesRoutes(app, authenticateToken);
+setupClientsRoutes(app, authenticateToken, requireAdmin);
+setupDriversRoutes(app, authenticateToken, requireAdmin);
+setupLocationsRoutes(app, authenticateToken, requireAdmin);
+setupGaragesRoutes(app, authenticateToken, requireAdmin);
 setupConfigRoutes(app, authenticateToken, requireAdmin);
 setupMessagingRoutes(app, authenticateToken);
 
@@ -2351,9 +2286,9 @@ setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMain
 setupEquipmentListsRoutes(app, authenticateToken);
 
 // Routes Commandes & Ventes
-setupSuppliersRoutes(app, authenticateToken);
-setupOrdersRoutes(app, authenticateToken);
-setupQuotesRoutes(app, authenticateToken);
+setupSuppliersRoutes(app, authenticateToken, requireAdmin);
+setupOrdersRoutes(app, authenticateToken, requireAdmin);
+setupQuotesRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Catalogue Matériel + Flight-Cases + Modèles Camions + Deep Linking
 setupCatalogRoutes(app, authenticateToken, requireCatalogAccess);
@@ -2786,7 +2721,7 @@ app.get('/api/attachments-index', authenticateToken, (req, res) => {
 });
 
 // Endpoint pour supprimer une pièce jointe (sécurisé)
-app.delete('/api/attachments/:affaireId/:filename', authenticateToken, (req, res) => {
+app.delete('/api/attachments/:affaireId/:filename', authenticateToken, requireAdmin, (req, res) => {
   try {
     const { affaireId, filename } = req.params;
     

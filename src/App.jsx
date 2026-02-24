@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import Calendar from './components/Calendar';
 import Header from './components/Header';
 import GoogleCalendarBanner from './components/GoogleCalendarBanner';
-import VehicleDetailsModal from './components/VehicleDetailsModal';
 import { VehicleSlidePanel } from './components/VehicleDetailPanel';
 import LoginForm from './components/LoginForm';
-import MobileApp from './components/mobile/MobileApp';
 import PlanningView from './components/PlanningView';
 import ErrorBoundary from './components/ErrorBoundary';
 import api from './utils/api';
-import { saveToIndexedDB, loadFromIndexedDB, STORES } from './utils/indexedDB';
+import { saveToIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
-import logger, { dataLogger } from './utils/logger';
+import logger from './utils/logger';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from './utils/notificationSound';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import './App.css';
 
 // Code splitting - Lazy loading des composants lourds
+const Calendar = lazy(() => import('./components/Calendar'));
+const VehicleDetailsModal = lazy(() => import('./components/VehicleDetailsModal'));
+const MobileApp = lazy(() => import('./components/mobile/MobileApp'));
 const ManagementPanel = lazy(() => import('./components/ManagementPanel'));
 const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
 const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenanceModal'));

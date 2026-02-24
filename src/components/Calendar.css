@@ -391,6 +391,7 @@
   scrollbar-width: thin;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .calendar-scroll-area::-webkit-scrollbar {
@@ -1370,6 +1371,21 @@
 
   .month-view {
     grid-template-columns: repeat(62, minmax(26px, 1fr));
+  }
+
+  .section-toggle-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+
+  .tournee-link-btn,
+  .tournee-trip-btn,
+  .reservation-trip-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 8px;
   }
 }
 

@@ -707,7 +707,7 @@ section h3 {
   
   .event-details-modal {
     max-width: 100%;
-    max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
   }
   

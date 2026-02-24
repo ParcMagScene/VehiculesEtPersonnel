@@ -1516,6 +1516,75 @@ function initializeDatabase() {
     console.warn('⚠️ Migration mailing:', error.message);
   }
 
+  // ═══ Tables Stock & Pièces ═══
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS stock_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        parent_id INTEGER,
+        color TEXT DEFAULT '#6366f1',
+        icon TEXT DEFAULT '📦',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (parent_id) REFERENCES stock_categories(id) ON DELETE SET NULL
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS stock_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reference TEXT UNIQUE,
+        name TEXT NOT NULL,
+        description TEXT,
+        category_id INTEGER,
+        unit TEXT DEFAULT 'u',
+        unit_price REAL DEFAULT 0,
+        sell_price REAL DEFAULT 0,
+        quantity REAL DEFAULT 0,
+        min_quantity REAL DEFAULT 0,
+        location TEXT,
+        supplier_id INTEGER,
+        notes TEXT,
+        photo TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES stock_categories(id) ON DELETE SET NULL,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS stock_movements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        stock_item_id INTEGER NOT NULL,
+        type TEXT NOT NULL CHECK(type IN ('in', 'out', 'adjustment', 'return')),
+        quantity REAL NOT NULL,
+        previous_quantity REAL NOT NULL,
+        new_quantity REAL NOT NULL,
+        reason TEXT,
+        reference TEXT,
+        linked_entity_type TEXT,
+        linked_entity_id INTEGER,
+        user_id INTEGER,
+        user_name TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (stock_item_id) REFERENCES stock_items(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_category ON stock_items(category_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_reference ON stock_items(reference)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_item ON stock_movements(stock_item_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_date ON stock_movements(created_at)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON stock_movements(type)');
+  } catch (error) {
+    console.warn('⚠️ Migration stock:', error.message);
+  }
+
   console.log('✅ Base de données initialisée');
 }
 

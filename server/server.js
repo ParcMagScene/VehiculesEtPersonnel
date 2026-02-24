@@ -41,6 +41,7 @@ import { setupMessagingRoutes } from './messagingRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, setupReservationEquipmentRoutes } from './catalogRoutes.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
+import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockStatsRoutes } from './stockRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -2328,6 +2329,12 @@ setupCatalogRoutes(app, authenticateToken, requireCatalogAccess);
 setupFlightcasesRoutes(app, authenticateToken, requireCatalogAccess);
 setupTruckModelsRoutes(app, authenticateToken, requireTruckAccess);
 setupReservationEquipmentRoutes(app, authenticateToken);
+
+// Routes Module Stock & Pièces
+setupStockCategoriesRoutes(app, authenticateToken, requireAdmin);
+setupStockItemsRoutes(app, authenticateToken, requireAdmin);
+setupStockMovementsRoutes(app, authenticateToken);
+setupStockStatsRoutes(app, authenticateToken);
 
 // ============ PROFIL UTILISATEUR ============
 

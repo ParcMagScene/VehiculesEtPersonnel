@@ -196,8 +196,6 @@ const SKILL_CATEGORIES = [
  *   onDelete    — callback to delete the mission
  */
 const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [], editMission, googleEvents = [], onClose, onCreated, onDelete }) => {
-  // Debug (visible uniquement en dev, supprimé en prod)
-  
   // Sécuriser le jour pour éviter les erreurs
   const safeDay = day instanceof Date && !isNaN(day) ? day : new Date();
   
@@ -637,8 +635,6 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
     });
     return groups;
   }, [skills]);
-
-  // DEBUG: Vérifier que le rendu arrive jusque là
 
   const dialogContent = (
     <div className="assignment-dialog-overlay" onClick={handleSafeClose}>

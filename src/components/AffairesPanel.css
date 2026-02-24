@@ -158,24 +158,49 @@
   background: #e2e8f0;
 }
 
-.affaires-tb-filter {
-  background: white;
-  border: 1px solid #e2e8f0;
+.affaires-type-selector {
+  display: flex;
+  gap: 3px;
+  background: #f1f5f9;
   border-radius: 8px;
-  color: #334155;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 0 8px;
-  height: 32px;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s;
+  padding: 3px;
   flex-shrink: 0;
 }
 
-.affaires-tb-filter:hover,
-.affaires-tb-filter:focus {
-  border-color: #94a3b8;
+.affaires-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.affaires-type-btn:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.affaires-type-btn.active {
+  background: var(--type-color, #3b82f6);
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.affaires-type-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.affaires-type-label {
+  line-height: 1;
 }
 
 .affaires-tb-divider {
@@ -942,6 +967,14 @@
   .affaires-tb-search {
     min-width: 80px;
     max-width: 100%;
+  }
+
+  .affaires-type-label {
+    display: none;
+  }
+
+  .affaires-type-btn {
+    padding: 4px 8px;
   }
 
   .affaires-stat-card {

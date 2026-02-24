@@ -10,10 +10,10 @@ import WeekSelector from './WeekSelector';
 import './AffairesPanel.css';
 
 const AFFAIRE_TYPES = [
-  { value: 'Prestation', label: 'Prestation', color: '#3b82f6' },
-  { value: 'Location', label: 'Location', color: '#f59e0b' },
-  { value: 'Installation', label: 'Installation', color: '#10b981' },
-  { value: 'Vente', label: 'Vente', color: '#8b5cf6' },
+  { value: 'Prestation', label: 'Prestation', color: '#3b82f6', icon: '🎭' },
+  { value: 'Location', label: 'Location', color: '#f59e0b', icon: '🏗️' },
+  { value: 'Installation', label: 'Installation', color: '#10b981', icon: '⚙️' },
+  { value: 'Vente', label: 'Vente', color: '#8b5cf6', icon: '💰' },
 ];
 
 const getTypeInfo = (type) => AFFAIRE_TYPES.find(t => t.value === type) || AFFAIRE_TYPES[0];
@@ -801,14 +801,28 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             {searchTerm && <button className="affaires-tb-search-clear" onClick={() => setSearchTerm('')}><X size={12} /></button>}
           </div>
 
-          {/* Type */}
-          <select className="affaires-tb-filter" value={filterType} onChange={e => setFilterType(e.target.value)}>
-            <option value="">Tous types</option>
-            <option value="Prestation">Prestation</option>
-            <option value="Location">Location</option>
-            <option value="Vente">Vente</option>
-            <option value="Installation">Installation</option>
-          </select>
+          {/* Type — sélecteur horizontal */}
+          <div className="affaires-type-selector">
+            <button
+              className={`affaires-type-btn${!filterType ? ' active' : ''}`}
+              onClick={() => setFilterType('')}
+              title="Tous les types"
+            >
+              Tous
+            </button>
+            {AFFAIRE_TYPES.map(t => (
+              <button
+                key={t.value}
+                className={`affaires-type-btn${filterType === t.value ? ' active' : ''}`}
+                style={filterType === t.value ? { '--type-color': t.color } : {}}
+                onClick={() => setFilterType(filterType === t.value ? '' : t.value)}
+                title={t.label}
+              >
+                <span className="affaires-type-icon">{t.icon}</span>
+                <span className="affaires-type-label">{t.label}</span>
+              </button>
+            ))}
+          </div>
 
           <div className="affaires-tb-divider" />
 

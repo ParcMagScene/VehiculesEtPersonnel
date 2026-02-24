@@ -224,6 +224,14 @@ function App() {
       navigator.serviceWorker.register('/sw.js').then((registration) => {
         // Forcer la vérification de mise à jour
         registration.update();
+        // Auto-reload quand un nouveau SW prend le contrôle
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
       }).catch(() => {});
     }
     // Capturer l'événement beforeinstallprompt

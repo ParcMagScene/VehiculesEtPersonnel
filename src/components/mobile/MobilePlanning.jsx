@@ -16,8 +16,7 @@ function MobilePlanning({
   const [selectedMonth, setSelectedMonth] = useState(currentDate);
   const scrollWrapperRef = useRef(null);
 
-  if (reservations?.length > 0) {
-  }
+
 
   // Filtrer les véhicules propres (pas de location)
   const ownVehicles = vehicles.filter(v => v.type !== 'location');

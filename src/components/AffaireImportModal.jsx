@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import logger from "../utils/logger";
 import api, { getApiUrl } from '../utils/api';
 import './AffaireImportModal.css';
-import { extractTextFromPDF, parseBonLivraison, parseDate } from '../utils/pdfParser';
+import { extractTextFromPDF, parseBonLivraison, parseDate, smartParse, batchParsePDFs, getDocTypeLabel, DOC_TYPES } from '../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../utils/indexedDB';
 import PhoneInput from './PhoneInput';
 import AddressAutocomplete from './AddressAutocomplete';
@@ -46,9 +46,26 @@ const AffaireImportModal = ({
   const [initialFormData, setInitialFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
   
+  // ═══ Nouveaux états : aperçu PDF, détection type, batch ═══
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [detectedDocType, setDetectedDocType] = useState(null); // { docType, docTypeLabel, confidence }
+  const [extractedText, setExtractedText] = useState('');
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchResults, setBatchResults] = useState([]); // [{ file, docType, confidence, info, error }]
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [selectedBatchIndex, setSelectedBatchIndex] = useState(-1);
+  
   const fileInputRef = useRef(null);
   const additionalFileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    };
+  }, [pdfPreviewUrl]);
 
   // Convertir les dates en format string
   const getDateString = (date) => {

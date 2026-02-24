@@ -348,53 +348,50 @@ function App() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      let hasChanges = false;
-      const updatedMaintenances = maintenances.map(maintenance => {
-        // Ne pas modifier les interventions signalées ou complétées
-        if (maintenance.status === 'reported' || maintenance.status === 'completed' || !maintenance.startDate) {
+      setMaintenances(prev => {
+        let hasChanges = false;
+        const updatedMaintenances = prev.map(maintenance => {
+          // Ne pas modifier les interventions signalées ou complétées
+          if (maintenance.status === 'reported' || maintenance.status === 'completed' || !maintenance.startDate) {
+            return maintenance;
+          }
+
+          const startDate = new Date(maintenance.startDate);
+          startDate.setHours(0, 0, 0, 0);
+          
+          const endDate = new Date(maintenance.endDate || maintenance.startDate);
+          endDate.setHours(0, 0, 0, 0);
+
+          let newStatus = maintenance.status;
+
+          // Logique de mise à jour du statut
+          if (today < startDate) {
+            newStatus = 'scheduled';
+          } else if (today >= startDate && today <= endDate) {
+            newStatus = 'in_progress';
+          } else if (today > endDate) {
+            newStatus = 'completed';
+          }
+
+          if (newStatus !== maintenance.status) {
+            hasChanges = true;
+            return { ...maintenance, status: newStatus };
+          }
+
           return maintenance;
-        }
+        });
 
-        const startDate = new Date(maintenance.startDate);
-        startDate.setHours(0, 0, 0, 0);
-        
-        const endDate = new Date(maintenance.endDate || maintenance.startDate);
-        endDate.setHours(0, 0, 0, 0);
-
-        let newStatus = maintenance.status;
-
-        // Logique de mise à jour du statut
-        if (today < startDate) {
-          // Avant la date de début -> Programmée
-          newStatus = 'scheduled';
-        } else if (today >= startDate && today <= endDate) {
-          // Entre début et fin -> En cours
-          newStatus = 'in_progress';
-        } else if (today > endDate) {
-          // Après la date de fin -> Effectuée
-          newStatus = 'completed';
-        }
-
-        if (newStatus !== maintenance.status) {
-          hasChanges = true;
-          return { ...maintenance, status: newStatus };
-        }
-
-        return maintenance;
+        return hasChanges ? updatedMaintenances : prev;
       });
-
-      if (hasChanges) {
-        setMaintenances(updatedMaintenances);
-      }
     };
 
     // Vérifier au chargement et toutes les heures
-    if (!isLoading && maintenances.length > 0) {
+    if (!isLoading) {
       updateMaintenanceStatuses();
       const interval = setInterval(updateMaintenanceStatuses, 3600000); // 1 heure
       return () => clearInterval(interval);
     }
-  }, [maintenances, isLoading]);
+  }, [isLoading]);
 
   const checkOverlap = (vehicleId, startDate, startPeriod, endDate, endPeriod, excludeId = null) => {
     // Calculer les timestamps de début et fin de la nouvelle réservation

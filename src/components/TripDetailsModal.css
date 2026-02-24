@@ -1,3 +1,22 @@
+.td-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+  isolation: isolate;
+  animation: tdOverlayFadeIn 0.2s ease-out;
+}
+
+@keyframes tdOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .trip-details-modal {
   background: #f8fafc;
   border-radius: 16px;

@@ -695,7 +695,7 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
   const totalTTC = totalHT * (1 + (form.tva_rate || 0) / 100);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="orders-overlay" onClick={onClose}>
       <div className="order-form-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{order ? `Modifier ${order.reference}` : 'Nouvelle commande'}</h2>
@@ -807,7 +807,7 @@ const QuoteFormModal = React.memo(({ quote, onSave, onClose }) => {
   const totalTTC = totalHT * (1 + (form.tva_rate || 0) / 100);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="orders-overlay" onClick={onClose}>
       <div className="order-form-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{quote ? `Modifier ${quote.reference}` : 'Nouveau devis'}</h2>
@@ -907,7 +907,7 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
   });
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="orders-overlay" onClick={onClose}>
       <div className="supplier-form-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{supplier ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</h2>

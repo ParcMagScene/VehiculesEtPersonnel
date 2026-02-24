@@ -219,24 +219,7 @@ function App() {
 
   // Enregistrement Service Worker + PWA install prompt
   useEffect(() => {
-    // Enregistrer le Service Worker avec mise à jour forcée
-    if ('serviceWorker' in navigator) {
-      // Purger tous les caches SW existants (force un état propre)
-      caches.keys().then((names) => names.forEach((name) => caches.delete(name)));
-
-      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
-        // Forcer la vérification de mise à jour
-        registration.update();
-        // Auto-reload quand un nouveau SW prend le contrôle
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            refreshing = true;
-            window.location.reload();
-          }
-        });
-      }).catch(() => {});
-    }
+    // Service Worker désactivé temporairement (purge en cours via index.html)
     // Capturer l'événement beforeinstallprompt
     const handler = (e) => {
       e.preventDefault();

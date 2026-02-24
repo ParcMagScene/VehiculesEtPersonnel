@@ -6,6 +6,24 @@
   width: 100%;
 }
 
+/* Mode management (dans ManagementPanel) */
+.management-panel > .personnel-panel {
+  padding: 16px 24px;
+}
+
+.management-panel > .personnel-panel .personnel-subtabs {
+  position: sticky;
+  top: 72px;
+  z-index: 5;
+  margin-left: -8px;
+  margin-right: -8px;
+  padding: 6px;
+}
+
+.management-panel > .personnel-panel .personnel-content {
+  padding-top: 8px;
+}
+
 .personnel-loading {
   display: flex;
   flex-direction: column;

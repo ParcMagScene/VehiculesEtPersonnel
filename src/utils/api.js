@@ -85,6 +85,10 @@ class ApiClient {
   }
 
   async request(endpoint, options = {}) {
+    // Option pour désactiver la conversion camelCase (utile pour les clés-identifiants)
+    const skipCamelCase = options.skipCamelCase;
+    if (skipCamelCase) delete options.skipCamelCase;
+
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -102,10 +106,19 @@ class ApiClient {
     // Ne pas traiter les erreurs 401/403 comme "session expirée" pour les endpoints de connexion
     const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/force-login';
     
-    if ((response.status === 401 || response.status === 403) && !isAuthEndpoint) {
+    // 401 = Token invalide/expiré → déconnexion
+    if (response.status === 401 && !isAuthEndpoint) {
       this.clearAuth();
       window.location.reload();
       throw new Error('Session expirée');
+    }
+
+    // 403 = Permission insuffisante (pas admin, etc.) → NE PAS déconnecter
+    if (response.status === 403 && !isAuthEndpoint) {
+      const data = await response.json().catch(() => ({}));
+      const error = new Error(data.error || 'Accès refusé');
+      error.response = { status: 403, data };
+      throw error;
     }
 
     const data = await response.json();
@@ -117,8 +130,8 @@ class ApiClient {
       throw error;
     }
 
-    // Convertir les données de snake_case en camelCase
-    return toCamelCase(data);
+    // Convertir les données de snake_case en camelCase (sauf si skipCamelCase)
+    return skipCamelCase ? data : toCamelCase(data);
   }
 
   // Authentification
@@ -645,7 +658,9 @@ class ApiClient {
   // — Module Congés (Code du travail / IDCC 3252) —
 
   async getLeaveTypes() {
-    return this.request('/leaves/types');
+    // Les clés (conge_paye, mariage_salarie, etc.) sont des identifiants métier, pas des propriétés
+    // Ne pas les convertir en camelCase sinon le formulaire et le backend ne les reconnaissent plus
+    return this.request('/leaves/types', { skipCamelCase: true });
   }
 
   async getPublicHolidays(year) {
@@ -1000,6 +1015,10 @@ class ApiClient {
   }
   async deleteEquipment(id) {
     return this.request(`/equipment/${id}`, { method: 'DELETE' });
+  }
+
+  async serializeEquipment(id) {
+    return this.request(`/equipment/${id}/serialize`, { method: 'POST' });
   }
 
   async importEquipmentCsv(data, mode = 'import') {

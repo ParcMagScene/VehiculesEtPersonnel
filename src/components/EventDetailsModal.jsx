@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive } from 'lucide-react';
+import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil } from 'lucide-react';
 import { getApiUrl } from '../utils/api';
 import './EventDetailsModal.css';
 
@@ -16,6 +16,8 @@ function EventDetailsModal({
   onRequestCreateReservation,
   onEventCreated,
   onEventUpdated,
+  onRequestEditEvent,
+  onRequestDeleteEvent,
   onReservationsRefresh,
   currentUser
 }) {
@@ -625,6 +627,30 @@ function EventDetailsModal({
             Fermer
           </button>
           <div className="footer-actions">
+            {currentUser?.isAdmin && onRequestDeleteEvent && (
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  if (confirm('Supprimer cet événement du Google Calendar ?')) {
+                    onRequestDeleteEvent(event.id);
+                  }
+                }}
+                title="Supprimer l'événement"
+              >
+                <Trash2 size={16} />
+                Supprimer
+              </button>
+            )}
+            {currentUser?.isAdmin && onRequestEditEvent && (
+              <button
+                className="btn-edit-event"
+                onClick={() => onRequestEditEvent(event)}
+                title="Modifier l'événement"
+              >
+                <Pencil size={16} />
+                Modifier
+              </button>
+            )}
             {event.htmlLink && (
               <a 
                 href={event.htmlLink} 

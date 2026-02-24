@@ -699,6 +699,48 @@ section h3 {
   box-shadow: var(--btn-primary-hover-shadow);
 }
 
+.event-details-modal .btn-edit-event {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--btn-padding);
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+}
+
+.event-details-modal .btn-edit-event:hover {
+  background: #5a6fd6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
+}
+
+.event-details-modal .btn-danger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--btn-padding);
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+}
+
+.event-details-modal .btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .event-details-modal .event-info-grid {

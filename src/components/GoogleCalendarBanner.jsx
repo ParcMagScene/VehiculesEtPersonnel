@@ -6,10 +6,11 @@ import EventDetailsModal from './EventDetailsModal';
 import api from '../utils/api';
 import logger, { oauthLogger } from '../utils/logger';
 import { capitalizeText } from '../utils/dateUtils';
-import { Search, X, RefreshCw, Plus, Truck, Users } from 'lucide-react';
+import { Search, X, RefreshCw, Plus, Truck, Users, CalendarPlus } from 'lucide-react';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
+const GoogleEventFormModal = lazy(() => import('./GoogleEventFormModal'));
 
 function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire }) {
   const [events, setEvents] = useState([]);
@@ -32,6 +33,9 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const [attachmentCounts, setAttachmentCounts] = useState({});
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
+  const [eventFormOpen, setEventFormOpen] = useState(false);
+  const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
+  const [eventFormEvent, setEventFormEvent] = useState(null);
   const searchInputRef = useRef(null);
 
   // Cache pour éviter de recharger les mêmes données
@@ -258,6 +262,54 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     setModalOpen(false);
     setSelectedEvent(null);
     setClickedCell(null);
+  };
+
+  // --- Event form (create / edit / delete) ---
+  const handleOpenNewEvent = () => {
+    setEventFormMode('create');
+    setEventFormEvent(null);
+    setEventFormOpen(true);
+  };
+
+  const handleRequestEditEvent = (event) => {
+    setEventDetailsOpen(false);
+    setEventFormMode('edit');
+    setEventFormEvent(event);
+    setEventFormOpen(true);
+  };
+
+  const handleSaveEventForm = async (eventData) => {
+    if (eventFormMode === 'edit' && eventFormEvent?.id) {
+      await handleEventUpdated(eventFormEvent.id, eventData);
+    } else {
+      await handleEventCreated(eventData);
+    }
+    setEventFormOpen(false);
+    setEventFormEvent(null);
+  };
+
+  const handleCloseEventForm = () => {
+    setEventFormOpen(false);
+    setEventFormEvent(null);
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    try {
+      const response = await googleApiCall(
+        `https://www.googleapis.com/calendar/v3/calendars/${googleCalendarId || 'primary'}/events/${eventId}`,
+        { method: 'DELETE' }
+      );
+      // DELETE returns 204 No Content on success
+      if (!response.ok && response.status !== 204) {
+        throw new Error('Erreur lors de la suppression');
+      }
+      await fetchEvents(accessToken);
+      setEventDetailsOpen(false);
+      setSelectedEvent(null);
+    } catch (error) {
+      console.error('Erreur suppression événement:', error);
+      alert('Erreur lors de la suppression de l\'événement: ' + error.message);
+    }
   };
 
   // Fonction helper pour les appels API Google avec gestion du retry en cas d'erreur 401
@@ -1193,6 +1245,17 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
               <Plus size={14} />
               <span>{activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}</span>
             </button>
+            {/* Bouton Nouvel événement Google Calendar */}
+            {isSignedIn && currentUser?.isAdmin && (
+              <button
+                className="banner-new-action-btn banner-new-event-btn"
+                onClick={handleOpenNewEvent}
+                title="Créer un événement Google Calendar"
+              >
+                <CalendarPlus size={14} />
+                <span>Nouvel événement</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1338,9 +1401,25 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       onRequestCreateReservation={handleCreateReservationFromEvent}
       onEventCreated={handleOpenAffaireImport}
       onEventUpdated={handleEventUpdated}
+      onRequestEditEvent={isSignedIn ? handleRequestEditEvent : undefined}
+      onRequestDeleteEvent={isSignedIn ? handleDeleteEvent : undefined}
       onReservationsRefresh={onReservationsRefresh}
       currentUser={currentUser}
     />
+
+    {/* Modal de création / édition d'événement Google */}
+    {eventFormOpen && (
+      <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div></div>}>
+        <GoogleEventFormModal
+          isOpen={eventFormOpen}
+          onClose={handleCloseEventForm}
+          mode={eventFormMode}
+          event={eventFormEvent}
+          onSave={handleSaveEventForm}
+          currentDate={currentDate}
+        />
+      </Suspense>
+    )}
     
     {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}
     {modalOpen && (

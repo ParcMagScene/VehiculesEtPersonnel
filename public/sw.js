@@ -1,7 +1,7 @@
-// Service Worker eM@g — v44 (minimal, no asset caching)
+// Service Worker eM@g — v45 (minimal, no asset caching)
 // Les assets JS/CSS ont des hashes Vite → le cache HTTP navigateur suffit.
 // Le SW ne sert qu'au mode offline pour la page d'accueil et le manifest.
-const CACHE_NAME = 'emag-cache-v44';
+const CACHE_NAME = 'emag-cache-v45';
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',

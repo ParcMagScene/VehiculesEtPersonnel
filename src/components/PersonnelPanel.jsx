@@ -28,6 +28,7 @@ import MonthSelector from './MonthSelector';
 import WeekSelector from './WeekSelector';
 import YearSelector from './YearSelector';
 import './PersonnelPanel.css';
+import './EquipmentPanel.css';
 import './Calendar.css';
 
 // ═══════════════════════════════════════
@@ -272,7 +273,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
             <button onClick={loadData}>Réessayer</button>
           </div>
         )}
-        <PlanningTab persons={persons} skills={skills} positions={positions} view={view} setView={setView} currentDate={currentDate} setCurrentDate={setCurrentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} />
+        <PlanningTab persons={persons} skills={skills} positions={positions} view={view} setView={setView} currentDate={currentDate} setCurrentDate={setCurrentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} currentUser={currentUser} />
         {editFormVisible && (
           <div className="modal-overlay" onClick={resetEditForm}>
             <div className="personnel-edit-modal" onClick={(e) => e.stopPropagation()}>
@@ -461,6 +462,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
             onNavigateToPersonHandled={onNavigateToPersonHandled}
             quickAssignmentSlot={quickAssignmentSlot}
             onQuickAssignmentHandled={onQuickAssignmentHandled}
+            currentUser={currentUser}
           />
         )}
       </div>
@@ -1203,7 +1205,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
 
 // NON_PERMANENT_TYPES défini en haut du fichier avec PERMANENT_TYPES
 
-const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, currentDate = new Date(), setCurrentDate, googleEvents = [], onPersonEdit, onPersonCreate, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled }) => {
+const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, currentDate = new Date(), setCurrentDate, googleEvents = [], onPersonEdit, onPersonCreate, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled, currentUser }) => {
   const scrollAreaRef = useRef(null);
   const headerScrollRef = useRef(null);
   const personColumnRef = useRef(null);
@@ -2081,15 +2083,6 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
             <div className="pp-column-header">
               <span>Permanents</span>
               <div className="pp-column-header-actions">
-                {onPersonCreate && (
-                  <button
-                    className="pp-person-add-btn"
-                    onClick={onPersonCreate}
-                    title="Ajouter une personne"
-                  >
-                    <Plus size={12} /> <User size={12} />
-                  </button>
-                )}
                 {pendingLeaveCount > 0 && (
                   <button
                     className="pp-leave-badge-btn"
@@ -2100,13 +2093,6 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                     <span className="pp-leave-badge-count">{pendingLeaveCount}</span>
                   </button>
                 )}
-                <button
-                  className="pp-leave-add-btn"
-                  onClick={() => setShowLeaveModal({ person: null })}
-                  title="Ajouter une absence"
-                >
-                  <Plus size={12} />
-                </button>
                 <button
                   className="pp-section-toggle"
                   onClick={() => setCollapsedSections(prev => ({ ...prev, permanents: !prev.permanents }))}
@@ -2298,7 +2284,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         <LeaveRequestForm
           person={showLeaveModal.person || null}
           persons={activePersons}
-          isAdmin={true}
+          isAdmin={!!currentUser?.isAdmin}
           currentUser={currentUser}
           onClose={() => setShowLeaveModal(null)}
           onCreated={() => { loadPlanning(); }}
@@ -2317,7 +2303,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       {showLeaveHistory && (
         <LeaveRequestsPanel
           personId={showLeaveHistory.personId}
-          isAdmin={true}
+          isAdmin={!!currentUser?.isAdmin}
           onClose={() => setShowLeaveHistory(null)}
           onNewRequest={() => {
             const p = persons.find(pp => pp.id === showLeaveHistory.personId);
@@ -2336,7 +2322,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           person={contextMenu.person}
           onSelect={(type, person) => {
             setContextMenu(null);
-            setPeriodCalendar({ person, type });
+            if (type === 'conge_paye') {
+              setShowLeaveModal({ person });
+            } else {
+              setPeriodCalendar({ person, type });
+            }
           }}
           onClose={() => setContextMenu(null)}
         />

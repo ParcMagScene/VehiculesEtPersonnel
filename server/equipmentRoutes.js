@@ -246,6 +246,76 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ═══ POST /api/equipment/:id/serialize — Sérialisation : scinder qty > 1 en entités individuelles UID ═══
+  app.post('/api/equipment/:id/serialize', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const original = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
+      if (!original) return res.status(404).json({ error: 'Équipement introuvable' });
+
+      const qty = original.stock_quantity || 1;
+      if (qty <= 1) return res.status(400).json({ error: 'Quantité déjà égale à 1, sérialisation inutile' });
+
+      const insertStmt = db.prepare(`
+        INSERT INTO equipment (name, reference, serial_number, category_id, brand, status, location, purchase_date, purchase_price, warranty_end, notes, photo, stock_quantity, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+      `);
+      const updateUidStmt = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
+
+      const created = [];
+
+      const run = db.transaction(() => {
+        for (let i = 1; i <= qty; i++) {
+          const suffix = ` #${i}`;
+          const name = original.name + suffix;
+          const serial = original.serial_number ? `${original.serial_number}-${String(i).padStart(3, '0')}` : null;
+
+          const result = insertStmt.run(
+            name,
+            original.reference,
+            serial,
+            original.category_id,
+            original.brand,
+            original.status || 'available',
+            original.location,
+            original.purchase_date,
+            original.purchase_price ? (original.purchase_price / qty).toFixed(2) : null,
+            original.warranty_end,
+            original.notes,
+            original.photo,
+            req.user.id
+          );
+
+          const newId = result.lastInsertRowid;
+          const uid = 'EMAG-' + String(newId).padStart(5, '0');
+          updateUidStmt.run(uid, newId);
+
+          created.push({ id: newId, uid, name });
+        }
+
+        // Supprimer l'article original après la création des exemplaires
+        db.prepare('DELETE FROM equipment_assignments WHERE equipment_id = ?').run(original.id);
+        db.prepare('DELETE FROM equipment WHERE id = ?').run(original.id);
+      });
+
+      run();
+
+      addToHistory('equipment', original.id, 'serialize', {
+        originalName: original.name,
+        originalQty: qty,
+        createdItems: created.map(c => c.uid)
+      }, req.user.id, req.user.name);
+
+      res.json({
+        success: true,
+        message: `${original.name} sérialisé en ${qty} entités individuelles`,
+        created
+      });
+    } catch (error) {
+      console.error('Erreur sérialisation:', error);
+      res.status(500).json({ error: 'Erreur serveur lors de la sérialisation' });
+    }
+  });
+
   // POST /api/equipment/import-csv — Import CSV Locmat
   app.post('/api/equipment/import-csv', authenticateToken, requireAdmin, (req, res) => {
     try {

@@ -35,7 +35,7 @@ import './Calendar.css';
 
 // Fonction pour obtenir les initiales d'un utilisateur
 const getUserInitials = (userId, currentUser, users = []) => {
-  if (currentUser && userId === currentUser.id) {
+  if (currentUser && userId === currentUser.id && currentUser.name) {
     return currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
   
@@ -820,6 +820,7 @@ const Calendar = ({
     if (!reservations || !Array.isArray(reservations)) return;
     const token = localStorage.getItem('auth_token');
     if (!token) return;
+    const controller = new AbortController();
     const headers = { 'Authorization': `Bearer ${token}` };
     const tourneeIds = reservations
       .filter(r => (r.isTournee || r.is_tournee) && r.id && !calendarTripCache[r.id])
@@ -833,11 +834,13 @@ const Calendar = ({
     const loadBatch = async (ids) => {
       const BATCH_SIZE = 5;
       for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        if (controller.signal.aborted) return;
         const batch = ids.slice(i, i + BATCH_SIZE);
         await Promise.allSettled(batch.map(id =>
-          fetch(`/api/trip-details/${id}`, { headers })
+          fetch(`/api/trip-details/${id}`, { headers, signal: controller.signal })
             .then(r => r.ok ? r.json() : [])
             .then(data => {
+              if (controller.signal.aborted) return;
               const trips = Array.isArray(data) ? data : (data.tripDetails || []);
               setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
             })
@@ -847,6 +850,7 @@ const Calendar = ({
       }
     };
     if (allIds.length > 0) loadBatch(allIds);
+    return () => controller.abort();
   }, [reservations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ouvrir le modal automatiquement quand une réservation doit être éditée depuis l'extérieur
@@ -862,6 +866,10 @@ const Calendar = ({
     }
   };
 
+  // Ref pour les données volatiles utilisées dans le mouseup global
+  const reservationsRef = useRef(reservations);
+  useEffect(() => { reservationsRef.current = reservations; }, [reservations]);
+
   // Gérer le mouseup global pour le drag-and-drop, resize et block-drag
   useEffect(() => {
     const handleGlobalMouseUp = () => {
@@ -870,7 +878,7 @@ const Calendar = ({
         const { block } = pendingBlockDragRef.current;
         pendingBlockDragRef.current = null;
         if (!block.isMaintenance) {
-          const existing = reservations.find(r => r.id === block.id);
+          const existing = reservationsRef.current.find(r => r.id === block.id);
           if (existing) setSelectedReservation(existing);
         }
         return;
@@ -890,7 +898,7 @@ const Calendar = ({
     
     document.addEventListener('mouseup', handleGlobalMouseUp);
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [isDragging, dragState, resizeState, blockDragState]);
+  }, [isDragging, dragState, resizeState, blockDragState, handleBlockDragEnd, handleSlotMouseUp, handleResizeEnd]);
 
   // Fonctions de gestion du tooltip
   const handleTooltipShow = useCallback((event, block) => {
@@ -2294,7 +2302,7 @@ const Calendar = ({
                         >
                           {/* Pastille utilisateur créateur */}
                           {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : users.find(u => u.id === block.createdBy)?. name || "Utilisateur " + block.createdBy}`}>
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : (users.find(u => u.id === block.createdBy)?.name || `Utilisateur ${block.createdBy}`)}`}>
                               {getUserInitials(block.createdBy, currentUser, users)}
                             </div>
                           )}
@@ -2487,7 +2495,7 @@ const Calendar = ({
                         >
                           {/* Pastille utilisateur créateur */}
                           {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : users.find(u => u.id === block.createdBy)?. name || "Utilisateur " + block.createdBy}`}>
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : (users.find(u => u.id === block.createdBy)?.name || `Utilisateur ${block.createdBy}`)}`}>
                               {getUserInitials(block.createdBy, currentUser, users)}
                             </div>
                           )}

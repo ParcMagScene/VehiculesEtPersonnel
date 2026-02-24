@@ -1651,6 +1651,7 @@ export function checkpointDatabase() {
 // Fonction pour fermer proprement la base de données
 export function closeDatabase() {
   try {
+    clearInterval(checkpointTimer);
     // Faire un checkpoint final avant de fermer
     checkpointDatabase();
     db.close();
@@ -1661,7 +1662,7 @@ export function closeDatabase() {
 }
 
 // Checkpoint automatique toutes les 5 minutes
-setInterval(() => {
+const checkpointTimer = setInterval(() => {
   checkpointDatabase();
 }, 5 * 60 * 1000);
 

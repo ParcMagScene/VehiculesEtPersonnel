@@ -195,7 +195,11 @@ const SKILL_CATEGORIES = [
  *   onCreated   — callback after successful creation/update
  *   onDelete    — callback to delete the mission
  */
-const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [], editMission, googleEvents = [], onClose, onCreated, onDelete }) => {
+const EMPTY_GOOGLE_EVENTS = [];
+
+const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [], editMission, googleEvents, onClose, onCreated, onDelete }) => {
+  // Référence stable pour le tableau vide par défaut
+  const stableGoogleEvents = googleEvents || EMPTY_GOOGLE_EVENTS;
   // Sécuriser le jour pour éviter les erreurs
   const safeDay = day instanceof Date && !isNaN(day) ? day : new Date();
   
@@ -339,8 +343,8 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
   // Convertir les événements Google Calendar en format affaire
   const googleAffaires = useMemo(() => {
-    if (!googleEvents || googleEvents.length === 0) return [];
-    return googleEvents.map(ev => {
+    if (!stableGoogleEvents || stableGoogleEvents.length === 0) return [];
+    return stableGoogleEvents.map(ev => {
       const startRaw = ev.start?.dateTime || ev.start?.date || '';
       const endRaw = ev.end?.dateTime || ev.end?.date || '';
       const dateDebut = startRaw ? startRaw.split('T')[0] : null;
@@ -357,7 +361,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         source: 'google',
       };
     });
-  }, [googleEvents]);
+  }, [stableGoogleEvents]);
 
   // Charger la liste du personnel (pour réaffectation)
   useEffect(() => {

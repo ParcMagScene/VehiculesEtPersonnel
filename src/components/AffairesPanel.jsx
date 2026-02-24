@@ -489,16 +489,19 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     }
 
     // Filtre par période (personnalisé)
+    // Les affaires sans dates sont toujours incluses (elles ne doivent pas disparaître)
     if (filterDateStart) {
       result = result.filter(a => {
         const d = a.dateFin || a.dateDebut;
-        return d && d >= filterDateStart;
+        if (!d) return true; // Pas de date → ne pas filtrer
+        return d >= filterDateStart;
       });
     }
     if (filterDateEnd) {
       result = result.filter(a => {
         const d = a.dateDebut;
-        return d && d <= filterDateEnd;
+        if (!d) return true; // Pas de date → ne pas filtrer
+        return d <= filterDateEnd;
       });
     }
 

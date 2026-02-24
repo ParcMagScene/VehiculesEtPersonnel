@@ -213,19 +213,23 @@ const LeaveRequestForm = ({
       return;
     }
 
+    let cancelled = false;
     const calculate = async () => {
       try {
         const result = await api.calculateLeaveWorkingDays({
           startDate, endDate, startPeriod, endPeriod,
           leaveType, exceptionalType: leaveType === 'exceptionnel' ? exceptionalType : undefined,
         });
-        setCalculation(result);
-        setWarnings(result.warnings || []);
+        if (!cancelled) {
+          setCalculation(result);
+          setWarnings(result.warnings || []);
+        }
       } catch (err) {
         console.error('Erreur calcul:', err);
       }
     };
     calculate();
+    return () => { cancelled = true; };
   }, [startDate, endDate, startPeriod, endPeriod, leaveType, exceptionalType]);
 
   // Auto-calculer la date de fin pour les congés exceptionnels

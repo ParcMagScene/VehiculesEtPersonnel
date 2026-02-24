@@ -1,9 +1,22 @@
-import { useState, useEffect } from 'react';
-import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Container } from 'lucide-react';
 import api from '../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../utils/notificationSound';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './UserPreferencesModal.css';
+
+const ALL_MODULES = [
+  { id: 'vehicles', label: 'Parc', icon: Truck, locked: true },
+  { id: 'personnel', label: 'Personnel', icon: Users },
+  { id: 'affaires', label: 'Affaires', icon: Briefcase },
+  { id: 'equipment', label: 'Matériel', icon: Package },
+  { id: 'orders', label: 'Commandes', icon: ShoppingCart },
+  { id: 'catalog', label: 'Catalogue', icon: BookOpen },
+  { id: 'trucks', label: 'Camions', icon: Container },
+];
+
+const DEFAULT_TAB_ORDER = ALL_MODULES.map(m => m.id);
+const DEFAULT_HIDDEN_TABS = [];
 
 const DEFAULT_PREFS = {
   defaultModule: 'vehicles',
@@ -12,6 +25,8 @@ const DEFAULT_PREFS = {
   notificationsEnabled: true,
   soundEnabled: true,
   colorTheme: 'default',
+  tabOrder: DEFAULT_TAB_ORDER,
+  hiddenTabs: DEFAULT_HIDDEN_TABS,
 };
 
 const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
@@ -53,6 +68,39 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
     setHasChanges(JSON.stringify(newPrefs) !== JSON.stringify(originalPrefs));
     setSaved(false);
   };
+
+  const moveTab = useCallback((tabId, direction) => {
+    setPrefs(prev => {
+      const order = [...(prev.tabOrder || DEFAULT_TAB_ORDER)];
+      const idx = order.indexOf(tabId);
+      if (idx < 0) return prev;
+      const newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= order.length) return prev;
+      [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
+      const newPrefs = { ...prev, tabOrder: order };
+      setHasChanges(JSON.stringify(newPrefs) !== JSON.stringify(originalPrefs));
+      setSaved(false);
+      return newPrefs;
+    });
+  }, [originalPrefs]);
+
+  const toggleTabVisibility = useCallback((tabId) => {
+    setPrefs(prev => {
+      const hidden = [...(prev.hiddenTabs || [])];
+      const idx = hidden.indexOf(tabId);
+      if (idx >= 0) {
+        hidden.splice(idx, 1);
+      } else {
+        hidden.push(tabId);
+      }
+      const newPrefs = { ...prev, hiddenTabs: hidden };
+      setHasChanges(JSON.stringify(newPrefs) !== JSON.stringify(originalPrefs));
+      setSaved(false);
+      return newPrefs;
+    });
+  }, [originalPrefs]);
+
+  const orderedModules = (prefs.tabOrder || DEFAULT_TAB_ORDER).map(id => ALL_MODULES.find(m => m.id === id)).filter(Boolean);
 
   const handleSave = async () => {
     setSaving(true);
@@ -129,6 +177,53 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
                 />
                 <span className="prefs-toggle-slider" />
               </label>
+            </div>
+          </div>
+
+          {/* Section Onglets */}
+          <div className="prefs-section">
+            <div className="prefs-section-title">Onglets &amp; Ordre</div>
+            <div className="prefs-tabs-list">
+              {orderedModules.map((mod, idx) => {
+                const Icon = mod.icon;
+                const isHidden = (prefs.hiddenTabs || []).includes(mod.id);
+                return (
+                  <div key={mod.id} className={`prefs-tab-row${isHidden ? ' hidden-tab' : ''}${mod.locked ? ' locked' : ''}`}>
+                    <div className="prefs-tab-info">
+                      <GripVertical size={14} className="prefs-tab-grip" />
+                      <Icon size={16} />
+                      <span>{mod.label}</span>
+                    </div>
+                    <div className="prefs-tab-actions">
+                      {!mod.locked && (
+                        <button
+                          className="prefs-tab-vis-btn"
+                          onClick={() => toggleTabVisibility(mod.id)}
+                          title={isHidden ? 'Afficher' : 'Masquer'}
+                        >
+                          {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      )}
+                      <button
+                        className="prefs-tab-move-btn"
+                        onClick={() => moveTab(mod.id, -1)}
+                        disabled={idx === 0}
+                        title="Monter"
+                      >
+                        <ChevronUp size={14} />
+                      </button>
+                      <button
+                        className="prefs-tab-move-btn"
+                        onClick={() => moveTab(mod.id, 1)}
+                        disabled={idx === orderedModules.length - 1}
+                        title="Descendre"
+                      >
+                        <ChevronDown size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

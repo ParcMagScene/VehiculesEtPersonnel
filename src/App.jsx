@@ -136,6 +136,7 @@ function App() {
   const [showPwaInstall, setShowPwaInstall] = useState(false);
   const prevUnreadRef = useRef(0); // Compteur précédent pour détecter les nouveaux messages
   const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: true }); // Préférences notification
+  const [tabPrefs, setTabPrefs] = useState({ tabOrder: null, hiddenTabs: [] }); // Préférences onglets
   const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
   const [msgToast, setMsgToast] = useState(null); // Toast notification in-app
   const msgToastTimerRef = useRef(null);
@@ -680,6 +681,11 @@ function App() {
           notificationsEnabled: prefs.notificationsEnabled !== false,
           soundEnabled: prefs.soundEnabled !== false,
         };
+        // Charger les préférences d'onglets
+        setTabPrefs({
+          tabOrder: prefs.tabOrder || null,
+          hiddenTabs: prefs.hiddenTabs || [],
+        });
         // Demander la permission navigateur si notifications activées
         if (prefs.notificationsEnabled !== false) {
           requestNotificationPermission();
@@ -889,6 +895,7 @@ function App() {
         unreadMsgCount={unreadMsgCount}
         onOpenPreferences={() => setShowPreferences(true)}
         onOpenHelp={() => setShowHelp(true)}
+        tabPrefs={tabPrefs}
       />
 
       {/* Bannière installation PWA */}
@@ -1298,6 +1305,11 @@ function App() {
               notificationsEnabled: prefs.notificationsEnabled !== false,
               soundEnabled: prefs.soundEnabled !== false,
             };
+            // Mettre à jour les préférences d'onglets
+            setTabPrefs({
+              tabOrder: prefs.tabOrder || null,
+              hiddenTabs: prefs.hiddenTabs || [],
+            });
             // Demander la permission si notifications activées
             if (prefs.notificationsEnabled !== false) {
               requestNotificationPermission();

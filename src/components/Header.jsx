@@ -9,7 +9,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, unreadMsgCount = 0, onOpenPreferences, onOpenHelp }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {} }) => {
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -224,69 +224,43 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             </button>
           </div>
           <div className="module-tabs" role="tablist" aria-label="Module principal">
-            <button
-              className={`module-tab ${activeModule === 'vehicles' ? 'active' : ''}`}
-              onClick={() => setActiveModule('vehicles')}
-              role="tab"
-              aria-selected={activeModule === 'vehicles'}
-            >
-              <Truck size={18} />
-              <span>Parc</span>
-            </button>
-            <button
-              className={`module-tab ${activeModule === 'personnel' ? 'active' : ''}`}
-              onClick={() => setActiveModule('personnel')}
-              role="tab"
-              aria-selected={activeModule === 'personnel'}
-            >
-              <Users size={18} />
-              <span>Personnel</span>
-            </button>
-            <button
-              className={`module-tab ${activeModule === 'affaires' ? 'active' : ''}`}
-              onClick={() => setActiveModule('affaires')}
-              role="tab"
-              aria-selected={activeModule === 'affaires'}
-            >
-              <Briefcase size={18} />
-              <span>Affaires</span>
-            </button>
-            <button
-              className={`module-tab ${activeModule === 'equipment' ? 'active' : ''}`}
-              onClick={() => setActiveModule('equipment')}
-              role="tab"
-              aria-selected={activeModule === 'equipment'}
-            >
-              <Package size={18} />
-              <span>Matériel</span>
-            </button>
-            <button
-              className={`module-tab ${activeModule === 'orders' ? 'active' : ''}`}
-              onClick={() => setActiveModule('orders')}
-              role="tab"
-              aria-selected={activeModule === 'orders'}
-            >
-              <ShoppingCart size={18} />
-              <span>Commandes</span>
-            </button>
-            <button
-              className={`module-tab ${activeModule === 'catalog' ? 'active' : ''}`}
-              onClick={() => setActiveModule('catalog')}
-              role="tab"
-              aria-selected={activeModule === 'catalog'}
-            >
-              <BookOpen size={18} />
-              <span>Catalogue</span>
-            </button>
-            <button
-              className={`module-tab ${activeModule === 'trucks' ? 'active' : ''}`}
-              onClick={() => setActiveModule('trucks')}
-              role="tab"
-              aria-selected={activeModule === 'trucks'}
-            >
-              <Container size={18} />
-              <span>Camions</span>
-            </button>
+            {(() => {
+              const allTabs = [
+                { id: 'vehicles', label: 'Parc', icon: Truck },
+                { id: 'personnel', label: 'Personnel', icon: Users },
+                { id: 'affaires', label: 'Affaires', icon: Briefcase },
+                { id: 'equipment', label: 'Matériel', icon: Package },
+                { id: 'orders', label: 'Commandes', icon: ShoppingCart },
+                { id: 'catalog', label: 'Catalogue', icon: BookOpen },
+                { id: 'trucks', label: 'Camions', icon: Container },
+              ];
+              const hiddenTabs = tabPrefs.hiddenTabs || [];
+              const tabOrder = tabPrefs.tabOrder || allTabs.map(t => t.id);
+              const orderedTabs = tabOrder
+                .map(id => allTabs.find(t => t.id === id))
+                .filter(t => t && !hiddenTabs.includes(t.id));
+              // S'assurer que les onglets non ordonnés sont ajoutés à la fin
+              allTabs.forEach(t => {
+                if (!orderedTabs.find(ot => ot.id === t.id) && !hiddenTabs.includes(t.id)) {
+                  orderedTabs.push(t);
+                }
+              });
+              return orderedTabs.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    className={`module-tab ${activeModule === tab.id ? 'active' : ''}`}
+                    onClick={() => setActiveModule(tab.id)}
+                    role="tab"
+                    aria-selected={activeModule === tab.id}
+                  >
+                    <Icon size={18} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              });
+            })()}
           </div>
         </div>
         

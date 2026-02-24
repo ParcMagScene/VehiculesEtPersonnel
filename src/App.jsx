@@ -221,6 +221,9 @@ function App() {
   useEffect(() => {
     // Enregistrer le Service Worker avec mise à jour forcée
     if ('serviceWorker' in navigator) {
+      // Purger tous les caches SW existants (force un état propre)
+      caches.keys().then((names) => names.forEach((name) => caches.delete(name)));
+
       navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
         // Forcer la vérification de mise à jour
         registration.update();

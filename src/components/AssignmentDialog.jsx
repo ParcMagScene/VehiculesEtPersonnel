@@ -195,8 +195,6 @@ const SKILL_CATEGORIES = [
  *   onCreated   — callback after successful creation/update
  *   onDelete    — callback to delete the mission
  */
-const BUILD_VERSION = 'v43-' + '20260224';
-
 const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [], editMission, googleEvents = [], onClose, onCreated, onDelete }) => {
   // Sécuriser le jour pour éviter les erreurs
   const safeDay = day instanceof Date && !isNaN(day) ? day : new Date();
@@ -638,12 +636,9 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
     return groups;
   }, [skills]);
 
-  // Diagnostic pour debug production
-  console.warn('[AssignmentDialog]', BUILD_VERSION, 'person:', person?.id, person?.firstName, 'skills:', skills?.length, 'positions:', positions?.length, 'affaires:', affaires?.length, 'loading:', loading);
-
   const dialogContent = (
-    <div className="assignment-dialog-overlay" onClick={handleSafeClose} style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="assignment-dialog" onClick={e => e.stopPropagation()} style={{ background: '#f8fafc', color: '#1e293b', borderRadius: '16px', width: '100%', maxWidth: '600px', height: '85vh', display: 'grid', gridTemplateRows: 'auto 1fr auto', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+    <div className="assignment-dialog-overlay" onClick={handleSafeClose}>
+      <div className="assignment-dialog" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="assignment-dialog-header">
           <div className="assignment-dialog-title">
@@ -667,7 +662,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         </div>
 
         {/* Body */}
-        <div className="assignment-dialog-body" style={{ overflowY: 'auto', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 0, color: '#1e293b' }}>
+        <div className="assignment-dialog-body">
           {/* Personne */}
           <div className="ad-section ad-person-section">
             <div className="ad-section-label">
@@ -1002,7 +997,6 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           <button className="ad-btn ad-btn-cancel" onClick={handleSafeClose} disabled={saving}>
             Annuler
           </button>
-          <span style={{ fontSize: '10px', color: '#94a3b8', alignSelf: 'center' }}>{BUILD_VERSION}</span>
           <button
             className="ad-btn ad-btn-save"
             onClick={handleSave}

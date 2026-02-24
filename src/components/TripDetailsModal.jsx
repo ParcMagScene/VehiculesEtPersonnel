@@ -7,6 +7,7 @@ import UnsavedChangesDialog from './UnsavedChangesDialog';
 import DriverSelect from './DriverSelect';
 import api from '../utils/api';
 import AddressAutocomplete from './AddressAutocomplete';
+import { useToast } from '../hooks/useToast';
 
 const TripDetailsModal = ({
   event,
@@ -23,6 +24,7 @@ const TripDetailsModal = ({
   combinedEvents = null // [{event, tripDetail}, ...] pour le mode combiné
 }) => {
   const isCombinedMode = combinedEvents && combinedEvents.length > 1;
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState(0); // Onglet actif en mode combiné
   
   // En mode combiné, utiliser l'événement/trip du tab actif
@@ -406,9 +408,9 @@ const TripDetailsModal = ({
   const calculateDuration = async (origin, destination, type) => {
     if (!origin || !destination || !googleMapsApiKey || !isGoogleMapsLoaded) {
       if (!googleMapsApiKey) {
-        alert('Clé API Google Maps non configurée');
+        toast.info('Clé API Google Maps non configurée');
       } else if (!isGoogleMapsLoaded) {
-        alert('Google Maps est en cours de chargement, veuillez réessayer dans quelques instants');
+        toast.warning('Google Maps est en cours de chargement, veuillez réessayer dans quelques instants');
       }
       return;
     }
@@ -462,7 +464,7 @@ const TripDetailsModal = ({
             [type === 'outbound' ? 'outboundDuration' : 'returnDuration']: durationMinutes
           }));
         } else {
-          alert('Impossible de calculer la durée du trajet. Vérifiez les adresses.');
+          toast.info('Impossible de calculer la durée du trajet. Vérifiez les adresses.');
         }
         setIsCalculating(false);
       });

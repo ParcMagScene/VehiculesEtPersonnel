@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar, MapPin, Save, Clock, Type, AlignLeft } from 'lucide-react';
 import './GoogleEventFormModal.css';
+import { useToast } from '../hooks/useToast';
 
 function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDate }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     summary: '',
     startDateTime: '',
@@ -71,7 +73,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.summary.trim()) {
-      alert('Le titre est requis');
+      toast.warning('Le titre est requis');
       return;
     }
 
@@ -101,7 +103,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         eventData.end = { date: endDate };
       } else {
         if (!formData.startDateTime || !formData.endDateTime) {
-          alert('Les dates de début et fin sont requises');
+          toast.warning('Les dates de début et fin sont requises');
           setSaving(false);
           return;
         }

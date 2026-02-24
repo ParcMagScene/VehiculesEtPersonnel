@@ -98,10 +98,18 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    let response;
+    try {
+      response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    } catch (networkError) {
+      // Erreur réseau (pas de connexion, DNS, CORS, etc.)
+      const error = new Error('Erreur réseau — vérifiez votre connexion');
+      error.isNetworkError = true;
+      throw error;
+    }
 
     // Ne pas traiter les erreurs 401/403 comme "session expirée" pour les endpoints de connexion
     const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/force-login';
@@ -121,7 +129,19 @@ class ApiClient {
       throw error;
     }
 
-    const data = await response.json();
+    // Parser la réponse JSON avec gestion des réponses non-JSON (502, 503, HTML)
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      if (!response.ok) {
+        const error = new Error(`Erreur serveur (${response.status})`);
+        error.response = { status: response.status, data: null };
+        throw error;
+      }
+      // Réponse OK mais pas de body JSON (204 No Content, etc.)
+      return null;
+    }
     
     if (!response.ok) {
       // Créer une erreur avec la réponse complète pour les erreurs spécifiques

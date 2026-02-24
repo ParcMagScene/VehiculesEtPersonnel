@@ -8,8 +8,10 @@ import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
+import { useToast } from '../hooks/useToast';
 
 const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
+  const toast = useToast();
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -157,7 +159,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      alert('Erreur lors de la mise à jour de l\'intervention');
+      toast.error('Erreur lors de la mise à jour de l\'intervention');
     }
   };
 
@@ -173,7 +175,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      alert('Erreur lors de la mise à jour de l\'intervention');
+      toast.error('Erreur lors de la mise à jour de l\'intervention');
     }
   };
 
@@ -189,7 +191,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     } catch (error) {
       console.error('Erreur lors de la mise en attente:', error);
-      alert('Erreur lors de la mise en attente de l\'intervention');
+      toast.error('Erreur lors de la mise en attente de l\'intervention');
     }
   };
 
@@ -206,7 +208,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     } catch (error) {
       console.error('Erreur lors du report:', error);
-      alert('Erreur lors du report de l\'intervention');
+      toast.error('Erreur lors du report de l\'intervention');
     }
     setSelectedOverdueIntervention(null);
   };
@@ -633,7 +635,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                           setRejectionReason('');
                                         } catch (error) {
                                           console.error('Erreur refus:', error);
-                                          alert('Erreur lors du refus de la demande');
+                                          toast.error('Erreur lors du refus de la demande');
                                         }
                                       }}
                                     >
@@ -662,7 +664,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                         if (onReservationUpdate) onReservationUpdate();
                                       } catch (error) {
                                         console.error('Erreur approbation:', error);
-                                        alert('Erreur lors de l\'approbation');
+                                        toast.error('Erreur lors de l\'approbation');
                                       }
                                     }}
                                   >
@@ -810,7 +812,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                           setRejectingRequestId(null);
                                           setRejectionReason('');
                                         } catch (error) {
-                                          alert('Erreur lors du refus');
+                                          toast.error('Erreur lors du refus');
                                         }
                                       }}
                                     >
@@ -834,9 +836,9 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                         await api.approveReservationRequest(request.id);
                                         setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
                                         setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                        alert('Demande approuvée ! La réservation a été créée.');
+                                        toast.success('Demande approuvée ! La réservation a été créée.');
                                       } catch (error) {
-                                        alert('Erreur lors de la validation');
+                                        toast.error('Erreur lors de la validation');
                                       }
                                     }}
                                   >

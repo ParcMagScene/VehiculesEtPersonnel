@@ -7,12 +7,14 @@ import api from '../utils/api';
 import logger, { oauthLogger } from '../utils/logger';
 import { capitalizeText } from '../utils/dateUtils';
 import { Search, X, RefreshCw, Plus, Truck, Users, CalendarPlus } from 'lucide-react';
+import { useToast } from '../hooks/useToast';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
 const GoogleEventFormModal = lazy(() => import('./GoogleEventFormModal'));
 
 function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire }) {
+  const toast = useToast();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -312,7 +314,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       setSelectedEvent(null);
     } catch (error) {
       console.error('Erreur suppression événement:', error);
-      alert('Erreur lors de la suppression de l\'événement: ' + error.message);
+      toast.error('Erreur lors de la suppression de l\'événement: ' + error.message);
     }
   };
 
@@ -386,7 +388,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       return createdEvent;
     } catch (error) {
       console.error('Erreur création événement:', error);
-      alert('Erreur lors de la création de l\'événement: ' + error.message);
+      toast.error('Erreur lors de la création de l\'événement: ' + error.message);
       throw error;
     }
   };
@@ -416,7 +418,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       await fetchEvents(accessTokenRef.current);
     } catch (error) {
       console.error('Erreur mise à jour événement:', error);
-      alert('Erreur lors de la mise à jour de l\'événement: ' + error.message);
+      toast.error('Erreur lors de la mise à jour de l\'événement: ' + error.message);
       throw error;
     }
   };

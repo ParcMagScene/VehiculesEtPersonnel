@@ -7,6 +7,7 @@ import { Truck, Plus, Edit2, Trash2, X, Search, Box, ExternalLink } from 'lucide
 import api from '../utils/api';
 import { formatDimensions, buildChargementUrlForTruck, openInChargement } from '../utils/deepLinking';
 import './CataloguePanel.css';
+import { useToast } from '../hooks/useToast';
 
 const TYPE_LABELS = {
   semi: 'Semi-remorque',
@@ -21,6 +22,7 @@ const TYPE_BADGE_CLASS = {
 };
 
 export default function TruckModelPanel({ currentUser }) {
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
@@ -65,7 +67,7 @@ export default function TruckModelPanel({ currentUser }) {
       setEditItem(null);
       loadItems();
     } catch (e) {
-      alert(e.message || 'Erreur lors de la sauvegarde');
+      toast.error(e.message || 'Erreur lors de la sauvegarde');
     }
   };
 
@@ -75,7 +77,7 @@ export default function TruckModelPanel({ currentUser }) {
       await api.deleteTruckModel(item.id);
       loadItems();
     } catch (e) {
-      alert(e.message || 'Erreur lors de la suppression');
+      toast.error(e.message || 'Erreur lors de la suppression');
     }
   };
 

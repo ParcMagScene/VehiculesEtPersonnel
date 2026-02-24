@@ -12,6 +12,7 @@ import DriverSelect from './DriverSelect';
 import api from '../utils/api';
 import { loadFromIndexedDB } from '../utils/indexedDB';
 import './ReservationModal.css';
+import { useToast } from '../hooks/useToast';
 
 const ReservationEquipment = lazy(() => import('./ReservationEquipment'));
 
@@ -70,6 +71,8 @@ const ReservationModal = ({
     }
     return [];
   };
+
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     vehicleId: reservation?.vehicleId || slot?.vehicle?.id || '',
@@ -478,12 +481,12 @@ const ReservationModal = ({
       const token = localStorage.getItem('auth_token');
       
       if (!token) {
-        alert('Vous devez être connecté pour enregistrer les détails du trajet');
+        toast.warning('Vous devez être connecté pour enregistrer les détails du trajet');
         return null;
       }
       
       if (!reservation?.id) {
-        alert('Vous devez d\'abord enregistrer la réservation avant d\'ajouter des détails de trajet');
+        toast.warning('Vous devez d\'abord enregistrer la réservation avant d\'ajouter des détails de trajet');
         return null;
       }
       
@@ -504,7 +507,7 @@ const ReservationModal = ({
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Erreur serveur:', response.status, errorText);
-        alert(`Erreur lors de l'enregistrement: ${response.status} - ${errorText}`);
+        toast.error(`Erreur lors de l'enregistrement: ${response.status} - ${errorText}`);
         return null;
       }
       
@@ -542,14 +545,14 @@ const ReservationModal = ({
         return updated;
       });
       
-      alert('Détails du trajet enregistrés avec succès !');
+      toast.success('Détails du trajet enregistrés avec succès !');
       
       // Retourner les données sauvegardées (déjà en snake_case pour TripDetailsModal)
       return savedData;
       
     } catch (error) {
       console.error('Erreur sauvegarde trip details:', error);
-      alert(`Erreur technique: ${error.message}`);
+      toast.error(`Erreur technique: ${error.message}`);
       return null;
     }
   };
@@ -580,7 +583,7 @@ const ReservationModal = ({
   // Lier deux événements (leurs trajets partagent le même groupe)
   const handleLinkTrips = async (eventId1, eventId2) => {
     if (!reservation?.id) {
-      alert('Vous devez d\'abord enregistrer la réservation');
+      toast.warning('Vous devez d\'abord enregistrer la réservation');
       return;
     }
     
@@ -610,7 +613,7 @@ const ReservationModal = ({
         });
         setTripDetails(detailsMap);
       } else {
-        alert('Erreur lors de la liaison des trajets');
+        toast.error('Erreur lors de la liaison des trajets');
       }
     } catch (error) {
       console.error('Erreur liaison trajets:', error);
@@ -739,7 +742,7 @@ const ReservationModal = ({
     if (isMultiVehicle) {
       // Mode multi-véhicules : créer une réservation par véhicule sélectionné
       if (selectedVehicleIds.length === 0) {
-        alert('Veuillez sélectionner au moins un véhicule');
+        toast.warning('Veuillez sélectionner au moins un véhicule');
         return;
       }
       

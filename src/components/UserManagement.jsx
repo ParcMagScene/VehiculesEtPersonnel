@@ -4,8 +4,10 @@ import api from '../utils/api';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 import './UserManagement.css';
+import { useToast } from '../hooks/useToast';
 
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
+  const toast = useToast();
   const [authorizedEmails, setAuthorizedEmails] = useState([]);
   const [users, setUsers] = useState([]);
   const [accessRequests, setAccessRequests] = useState([]);
@@ -49,7 +51,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       setPersonsMap(pMap);
     } catch (error) {
       console.error('Erreur chargement données:', error);
-      alert('Erreur lors du chargement des données');
+      toast.error('Erreur lors du chargement des données');
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +66,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       setNewEmail('');
       loadData();
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -75,7 +77,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       await api.removeAuthorizedEmail(id);
       loadData();
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -85,10 +87,10 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
     try {
       await api.updateUser(userId, { isAdmin: !currentIsAdmin });
-      alert('Droits modifiés avec succès');
+      toast.success('Droits modifiés avec succès');
       loadData();
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -101,7 +103,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       await api.updateUser(userId, { permissions: updatedPerms });
       loadData();
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -110,10 +112,10 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
     try {
       await api.deleteUser(userId);
-      alert('Utilisateur supprimé avec succès');
+      toast.success('Utilisateur supprimé avec succès');
       loadData();
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -137,10 +139,10 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       }
 
       const data = await response.json();
-      alert(`✅ Réinitialisation demandée\n\nL'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`);
+      toast.success(`Réinitialisation demandée L'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`);
       loadData();
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -182,7 +184,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       loadData();
       onAccessRequestChange?.();
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -191,11 +193,11 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
     try {
       await api.updateAccessRequest(requestId, 'rejected');
-      alert('Demande rejetée');
+      toast.success('Demande rejetée');
       loadData();
       onAccessRequestChange?.();
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -536,7 +538,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
               setPersonModal(null);
               loadData();
             } catch (err) {
-              alert('Erreur lors de la création : ' + (err.message || err));
+              toast.error('Erreur lors de la création : ' + (err.message || err));
             }
           }}
           onCancel={() => setPersonModal(null)}
@@ -658,7 +660,7 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
 
   const handleSubmit = async () => {
     if (!firstName.trim() || !lastName.trim()) {
-      alert('Le prénom et le nom sont obligatoires.');
+      toast.warning('Le prénom et le nom sont obligatoires.');
       return;
     }
     setLoading(true);

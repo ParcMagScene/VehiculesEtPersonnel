@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './VehicleMaintenanceModal.css';
+import { useToast } from '../hooks/useToast';
 
 const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
+  const toast = useToast();
   const [kilometrage, setKilometrage] = useState(vehicle?.kilometrage || 0);
   const [saveSuccess, setSaveSuccess] = useState(false);
   
@@ -142,7 +144,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
       // Vérifier si ce type existe déjà
       const exists = controles.some(c => c.type === newControle.type);
       if (exists) {
-        alert('Un contrôle de ce type existe déjà. Supprimez-le d\'abord si vous voulez le remplacer.');
+        toast.warning('Un contrôle de ce type existe déjà. Supprimez-le d\'abord si vous voulez le remplacer.');
         return;
       }
       
@@ -172,7 +174,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde des données');
+      toast.error('Erreur lors de la sauvegarde des données');
     }
   };
 

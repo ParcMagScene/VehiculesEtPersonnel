@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Lock, Save, Eye, EyeOff, Shield, KeyRound } from 'lucide-react';
 import api from '../utils/api';
 import './ChangePassword.css';
+import { useToast } from '../hooks/useToast';
 
 const ChangePassword = ({ currentUser }) => {
+  const toast = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,24 +24,24 @@ const ChangePassword = ({ currentUser }) => {
     e.preventDefault();
 
     if (newPassword.length < 4) {
-      alert('Le nouveau mot de passe doit contenir au moins 4 caractères');
+      toast.info('Le nouveau mot de passe doit contenir au moins 4 caractères');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
+      toast.info('Les mots de passe ne correspondent pas');
       return;
     }
 
     try {
       setIsSaving(true);
       await api.changePassword(currentPassword, newPassword);
-      alert('Mot de passe modifié avec succès');
+      toast.success('Mot de passe modifié avec succès');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -47,7 +49,7 @@ const ChangePassword = ({ currentUser }) => {
 
   const handleAdminSetPassword = async () => {
     if (adminNewPassword.length < 4) {
-      alert('Le mot de passe doit contenir au moins 4 caractères');
+      toast.info('Le mot de passe doit contenir au moins 4 caractères');
       return;
     }
     try {
@@ -56,11 +58,11 @@ const ChangePassword = ({ currentUser }) => {
         method: 'POST',
         body: JSON.stringify({ userId: currentUser.id, newPassword: adminNewPassword }),
       });
-      alert('Mot de passe défini avec succès');
+      toast.success('Mot de passe défini avec succès');
       setAdminNewPassword('');
       setShowAdminPassword(false);
     } catch (error) {
-      alert(`Erreur: ${error.message}`);
+      toast.error(`Erreur: ${error.message}`);
     } finally {
       setIsSavingAdmin(false);
     }

@@ -221,7 +221,7 @@ function App() {
   useEffect(() => {
     // Enregistrer le Service Worker avec mise à jour forcée
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then((registration) => {
+      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
         // Forcer la vérification de mise à jour
         registration.update();
         // Auto-reload quand un nouveau SW prend le contrôle

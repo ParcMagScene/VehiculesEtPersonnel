@@ -39,8 +39,6 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
 
   // Synchroniser les états quand le véhicule change
   useEffect(() => {
-    console.log('🔄 useEffect déclenché - vehicle.id:', vehicle?.id);
-    console.log('🔄 controlesTechniques:', vehicle?.controlesTechniques);
     
     if (vehicle) {
       setKilometrage(vehicle.kilometrage || 0);
@@ -51,7 +49,6 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
             : vehicle.controlesTechniques)
         : [];
       
-      console.log('🔄 Contrôles parsés:', updatedControles);
       setControles(updatedControles);
     }
   }, [vehicle?.id, vehicle?.controlesTechniques]);
@@ -167,8 +164,6 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
       controlesTechniques: JSON.stringify(controles)
     };
     
-    console.log('💾 Sauvegarde CT:', controles);
-    console.log('💾 JSON stringifié:', updatedVehicle.controlesTechniques);
     
     try {
       await onSave(updatedVehicle);

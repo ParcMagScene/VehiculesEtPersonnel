@@ -229,7 +229,6 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
       }
       
       if (!eventStart || !eventEnd) {
-        console.log('Invalid event dates');
         return;
       }
       
@@ -291,7 +290,6 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
           }
           
           const touches = eventStart <= periodEnd && eventEnd >= periodStart;
-          console.log(`  Timed check (${slot.period}): ${touches}`);
           if (touches) {
             if (firstSlotIdx === -1) firstSlotIdx = i;
             lastSlotIdx = i;

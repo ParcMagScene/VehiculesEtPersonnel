@@ -16,12 +16,7 @@ function MobilePlanning({
   const [selectedMonth, setSelectedMonth] = useState(currentDate);
   const scrollWrapperRef = useRef(null);
 
-  console.log('MobilePlanning - Données reçues:');
-  console.log('  Vehicles:', vehicles?.length);
-  console.log('  Reservations:', reservations?.length);
-  console.log('  Maintenances:', maintenances?.length);
   if (reservations?.length > 0) {
-    console.log('  Première réservation:', reservations[0]);
   }
 
   // Filtrer les véhicules propres (pas de location)
@@ -116,12 +111,10 @@ function MobilePlanning({
   const calculateRows = (vehicleId, days) => {
     const allElements = [];
     
-    console.log(`Planning pour véhicule ${vehicleId}, mois:`, format(selectedMonth, 'MMMM yyyy', { locale: fr }));
     
     // Collecter toutes les réservations
     days.forEach((day, dayIndex) => {
       const dayReservations = getReservationsForDay(vehicleId, day);
-      console.log(`  Jour ${format(day, 'dd MMM')} - ${dayReservations.length} réservations trouvées`);
       dayReservations.forEach(res => {
         allElements.push({
           ...res,

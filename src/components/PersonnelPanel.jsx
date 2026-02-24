@@ -228,17 +228,12 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('[Personnel] loadData — début du chargement...');
       const [personsData, skillsData, positionsData, usersData] = await Promise.all([
         api.getPersons(),
         api.getSkills(),
         api.getPositions(),
         api.getUsers().catch(() => []),
       ]);
-      console.log('[Personnel] personsData:', personsData?.length, 'personnes reçues', personsData);
-      console.log('[Personnel] skillsData:', skillsData?.length, 'skills');
-      console.log('[Personnel] positionsData:', positionsData?.length, 'positions');
-      console.log('[Personnel] usersData:', usersData?.length, 'users');
       setPersons(personsData || []);
       setSkills(skillsData || []);
       setPositions(positionsData || []);

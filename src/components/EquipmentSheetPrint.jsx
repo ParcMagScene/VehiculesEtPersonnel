@@ -2,6 +2,9 @@ import React from 'react';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
+// Échappement HTML anti-XSS
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 // URL de base pour les QR codes
 const APP_BASE_URL = (() => {
   const origin = window.location.origin;
@@ -95,7 +98,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Fiche - ${cleanName(eq.name)}</title>
+  <title>Fiche - ${esc(cleanName(eq.name))}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; padding: 20px; max-width: 210mm; margin: 0 auto; }
@@ -148,36 +151,36 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
 </head>
 <body>
   <div class="sheet-header">
-    ${photoPath ? `<img src="${photoPath}" class="sheet-photo" />` : ''}
+    ${photoPath ? `<img src="${esc(photoPath)}" class="sheet-photo" alt="Photo équipement" />` : ''}
     <div class="sheet-header-info">
-      <h1>${eq.categoryIcon || eq.category_icon || '📦'} ${cleanName(eq.name)}</h1>
-      <div class="sheet-category">${eq.categoryName || eq.category_name || 'Non catégorisé'}</div>
+      <h1>${esc(eq.categoryIcon || eq.category_icon || '📦')} ${esc(cleanName(eq.name))}</h1>
+      <div class="sheet-category">${esc(eq.categoryName || eq.category_name || 'Non catégorisé')}</div>
       <div style="margin-top: 6px;">
         <span class="sheet-status" style="background: ${st.color}">${st.icon} ${st.label}</span>
       </div>
-      ${logoPath ? `<img src="${logoPath}" class="sheet-logo" style="margin-top: 8px;" />` : ''}
+      ${logoPath ? `<img src="${esc(logoPath)}" class="sheet-logo" style="margin-top: 8px;" alt="Logo marque" />` : ''}
     </div>
     ${qrUrl ? `
     <div class="sheet-qr">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrUrl)}" width="120" height="120" />
-      <span>${eq.uid || ''}</span>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrUrl)}" width="120" height="120" alt="QR Code" />
+      <span>${esc(eq.uid || '')}</span>
     </div>` : ''}
   </div>
 
   <div class="sheet-section">
     <h2>📋 Informations générales</h2>
     <div class="sheet-fields">
-      ${eq.reference ? `<div class="sheet-field"><span class="label">Référence</span><span class="value">${eq.reference}</span></div>` : ''}
-      ${eq.uid ? `<div class="sheet-field"><span class="label">UID</span><span class="value" style="font-family: monospace">${eq.uid}</span></div>` : ''}
-      ${(eq.serialNumber || eq.serial_number) ? `<div class="sheet-field"><span class="label">N° de série</span><span class="value">${eq.serialNumber || eq.serial_number}</span></div>` : ''}
-      ${eq.brand ? `<div class="sheet-field"><span class="label">Marque</span><span class="value">${eq.brand}</span></div>` : ''}
-      ${eq.location ? `<div class="sheet-field"><span class="label">Localisation</span><span class="value">${eq.location}</span></div>` : ''}
+      ${eq.reference ? `<div class="sheet-field"><span class="label">Référence</span><span class="value">${esc(eq.reference)}</span></div>` : ''}
+      ${eq.uid ? `<div class="sheet-field"><span class="label">UID</span><span class="value" style="font-family: monospace">${esc(eq.uid)}</span></div>` : ''}
+      ${(eq.serialNumber || eq.serial_number) ? `<div class="sheet-field"><span class="label">N° de série</span><span class="value">${esc(eq.serialNumber || eq.serial_number)}</span></div>` : ''}
+      ${eq.brand ? `<div class="sheet-field"><span class="label">Marque</span><span class="value">${esc(eq.brand)}</span></div>` : ''}
+      ${eq.location ? `<div class="sheet-field"><span class="label">Localisation</span><span class="value">${esc(eq.location)}</span></div>` : ''}
       ${(eq.stockQuantity || eq.stock_quantity) > 1 ? `<div class="sheet-field"><span class="label">Quantité</span><span class="value">${eq.stockQuantity || eq.stock_quantity}</span></div>` : ''}
       ${(eq.purchaseDate || eq.purchase_date) ? `<div class="sheet-field"><span class="label">Date d'achat</span><span class="value">${safeDate(eq.purchaseDate || eq.purchase_date)}</span></div>` : ''}
       ${(eq.purchasePrice || eq.purchase_price) ? `<div class="sheet-field"><span class="label">Prix d'achat</span><span class="value">${parseFloat(eq.purchasePrice || eq.purchase_price).toFixed(2)} €</span></div>` : ''}
       ${(eq.warrantyEnd || eq.warranty_end) ? `<div class="sheet-field"><span class="label">Fin de garantie</span><span class="value">${safeDate(eq.warrantyEnd || eq.warranty_end)}</span></div>` : ''}
     </div>
-    ${eq.notes ? `<div class="sheet-notes">${eq.notes}</div>` : ''}
+    ${eq.notes ? `<div class="sheet-notes">${esc(eq.notes)}</div>` : ''}
   </div>
 
   <div class="sheet-section">
@@ -196,11 +199,11 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
       <tbody>
         ${assignments.map(a => `
         <tr>
-          <td>${a.firstName || a.first_name || ''} ${a.lastName || a.last_name || ''}</td>
+          <td>${esc(a.firstName || a.first_name || '')} ${esc(a.lastName || a.last_name || '')}</td>
           <td>${safeDate(a.startDate || a.start_date)}</td>
           <td>${(a.endDate || a.end_date) ? safeDate(a.endDate || a.end_date) : 'En cours'}</td>
           <td><span class="sheet-badge ${a.status}">${a.status === 'active' ? 'Actif' : 'Retourné'}</span></td>
-          <td>${a.notes || '—'}</td>
+          <td>${esc(a.notes || '—')}</td>
         </tr>`).join('')}
       </tbody>
     </table>`}
@@ -227,7 +230,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
           const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
           return `
         <tr>
-          <td><strong>${t.title}</strong>${t.description ? `<br><small style="color:#64748b">${t.description.substring(0, 80)}${t.description.length > 80 ? '...' : ''}</small>` : ''}</td>
+          <td><strong>${esc(t.title)}</strong>${t.description ? `<br><small style="color:#64748b">${esc(t.description.substring(0, 80))}${t.description.length > 80 ? '...' : ''}</small>` : ''}</td>
           <td>${SAV_TYPES[t.type] || t.type}</td>
           <td style="color: ${pri.color}; font-weight: 600">${pri.label}</td>
           <td><span class="sheet-badge ${t.status}">${tst.label}</span></td>
@@ -241,7 +244,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
   </div>
 
   <div class="sheet-footer">
-    <span>Fiche matériel — ${cleanName(eq.name)}</span>
+    <span>Fiche matériel — ${esc(cleanName(eq.name))}</span>
     <span>Imprimée le ${today}</span>
   </div>
 

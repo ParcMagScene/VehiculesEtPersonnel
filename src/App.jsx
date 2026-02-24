@@ -1270,9 +1270,7 @@ function App() {
             vehicle={selectedVehicleForKilometrageControl}
             onSave={async (updatedVehicle) => {
               try {
-                console.log('📤 Envoi mise à jour:', updatedVehicle.controlesTechniques);
                 const response = await api.updateVehicle(updatedVehicle.id, updatedVehicle);
-                console.log('📥 Réponse serveur:', response.controlesTechniques);
                 setVehicles(prevVehicles => 
                   prevVehicles.map(v => v.id === response.id ? response : v)
                 );

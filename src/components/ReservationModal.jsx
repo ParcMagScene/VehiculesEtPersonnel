@@ -220,13 +220,11 @@ const ReservationModal = ({
   useEffect(() => {
     const fetchCompanyAddress = async () => {
       try {
-        console.log('📝 ReservationModal: Chargement adresse depuis IndexedDB...');
         
         // Charger depuis IndexedDB au lieu de l'API
         const config = await loadFromIndexedDB('calendarConfig', {});
         const address = config.companyAddress || '';
         
-        console.log('📝 ReservationModal: Adresse IndexedDB:', address);
         setCompanyAddress(address);
         
         // Créer un lieu virtuel pour Mag Scène si une adresse existe
@@ -241,14 +239,11 @@ const ReservationModal = ({
               address: address,
               type: 'Dépôt'
             };
-            console.log('📝 ReservationModal: Mag Scène ajouté, total lieux:', [magSceneLocation, ...locations].length);
             setAllLocations([magSceneLocation, ...locations]);
           } else {
-            console.log('📝 ReservationModal: Mag Scène déjà présent');
             setAllLocations(locations);
           }
         } else {
-          console.log('📝 ReservationModal: Pas d\'adresse Mag Scène');
           setAllLocations(locations);
         }
       } catch (error) {
@@ -264,10 +259,8 @@ const ReservationModal = ({
   useEffect(() => {
     const fetchGoogleMapsApiKey = async () => {
       try {
-        console.log('📝 ReservationModal: Chargement clé Google Maps depuis IndexedDB...');
         const config = await loadFromIndexedDB('calendarConfig', {});
         const apiKey = config.googleMapsApiKey || '';
-        console.log('📝 ReservationModal: Clé API chargée:', apiKey ? 'Oui' : 'Non');
         setGoogleMapsApiKey(apiKey);
       } catch (error) {
         console.error('Erreur lors du chargement de la clé API Google Maps:', error);
@@ -354,9 +347,6 @@ const ReservationModal = ({
   // Initialiser initialFormData au montage pour la réservation en édition
   useEffect(() => {
     if (isEdit && reservation && !initialFormData) {
-      console.log('🔵 Initialisation initialFormData:', formData);
-      console.log('🔵 reservation.linkedEventIds:', reservation.linkedEventIds);
-      console.log('🔵 reservation.isTournee:', reservation.isTournee);
       setInitialFormData({...formData});
     }
   }, [isEdit, reservation]);
@@ -365,11 +355,6 @@ const ReservationModal = ({
   useEffect(() => {
     if (isEdit && initialFormData) {
       const changed = JSON.stringify(formData) !== JSON.stringify(initialFormData);
-      console.log('🟢 Détection changements:', {
-        changed,
-        formDataLinkedEventIds: formData.linkedEventIds,
-        initialLinkedEventIds: initialFormData.linkedEventIds
-      });
       setHasChanges(changed);
     }
   }, [formData, initialFormData, isEdit]);
@@ -419,13 +404,6 @@ const ReservationModal = ({
           const newLinkedEventIds = [...prev.linkedEventIds];
           const eventIndex = newLinkedEventIds.indexOf(event.id);
           
-          console.log('🟡 selectGoogleEvent (tournée):', {
-            eventId: event.id,
-            currentLinkedEventIds: prev.linkedEventIds,
-            eventIndex,
-            action: eventIndex > -1 ? 'retirer' : 'ajouter'
-          });
-          
           if (eventIndex > -1) {
             // L'événement est déjà sélectionné, le retirer
             newLinkedEventIds.splice(eventIndex, 1);
@@ -443,7 +421,6 @@ const ReservationModal = ({
             }
           });
           
-          console.log('🟡 Nouveaux linkedEventIds:', newLinkedEventIds);
           
           return {
             ...prev,
@@ -562,9 +539,6 @@ const ReservationModal = ({
           ...prev,
           [selectedEventForTrip.event.id]: transformedData
         };
-        console.log('✅ Trip details mis à jour pour event:', selectedEventForTrip.event.id);
-        console.log('✅ Données sauvegardées:', transformedData);
-        console.log('✅ État complet tripDetails:', updated);
         return updated;
       });
       
@@ -1847,8 +1821,6 @@ const ReservationModal = ({
       </div>
 
       {selectedEventForTrip && (() => {
-        console.log('📝 ReservationModal: Ouverture TripDetails, companyAddress:', companyAddress);
-        console.log('📝 ReservationModal: allLocations à transmettre:', allLocations.length, allLocations.map(l => l.name));
         const selectedVehicle = vehicles.find(v => v.id === formData.vehicleId);
         return (
           <TripDetailsModal

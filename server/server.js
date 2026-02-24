@@ -267,11 +267,12 @@ app.post('/api/auth/register', async (req, res) => {
     const updateStmt = db.prepare('UPDATE authorized_emails SET status = ?, activated_at = CURRENT_TIMESTAMP WHERE email = ?');
     updateStmt.run('activated', email);
     
-    console.log(`✅ Nouvel utilisateur enregistré: ${email} (admin: ${isAdmin ? 'oui' : 'non'})`);
+    console.log('✅ Nouvel utilisateur enregistré');
     
     res.json({ id: result.lastInsertRowid, email, name, isAdmin: isAdmin === 1 });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(400).json({ error: 'Erreur lors de l\'inscription' });
   }
 });
 
@@ -288,7 +289,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       // Marquer le compte pour réinitialisation et fermer les sessions
       db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?').run(user.id);
       db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
-      console.log(`🔑 Mot de passe oublié demandé pour: ${email}`);
+      console.log('🔑 Mot de passe oublié demandé');
     }
 
     // Toujours retourner le même message (ne pas révéler si l'email existe)
@@ -296,7 +297,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       message: 'Si cette adresse correspond à un compte, il a été préparé pour une réinitialisation. Reconnectez-vous pour définir un nouveau mot de passe.'
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -347,7 +349,7 @@ app.post('/api/auth/self-reset-password', async (req, res) => {
     const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     db.prepare('INSERT INTO active_sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)').run(user.id, tokenHash, expiresAt);
 
-    console.log(`🔑 Mot de passe réinitialisé (self-service) pour: ${email}`);
+    console.log('🔑 Mot de passe réinitialisé (self-service)');
 
     res.json({
       token,
@@ -387,7 +389,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
     
-    console.log(`✅ Authentification réussie pour: ${email}`);
+    console.log('✅ Authentification réussie');
     
     // Vérifier que l'email est autorisé
     const authorizedEmailStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = \'activated\'');
@@ -425,7 +427,8 @@ app.post('/api/auth/login', async (req, res) => {
     
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms } });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -483,7 +486,8 @@ app.post('/api/auth/force-login', async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur force-login:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -497,12 +501,13 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
     const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
     const result = deleteSessionsStmt.run(userId);
     
-    console.log(`🚪 Déconnexion: ${userEmail} - ${result.changes} session(s) fermée(s)`);
+    console.log(`🚪 Déconnexion: ${result.changes} session(s) fermée(s)`);
     
     res.json({ message: 'Déconnexion réussie', sessionsClosed: result.changes });
   } catch (error) {
     console.error('Erreur logout:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -519,7 +524,8 @@ app.get('/api/auth/users', (req, res) => {
       avatar: u.avatar || null
     })));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -555,7 +561,8 @@ app.get('/api/vehicles', authenticateToken, (req, res) => {
     
     res.json(mappedVehicles);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -605,7 +612,8 @@ app.post('/api/vehicles', authenticateToken, (req, res) => {
     
     res.json(mappedVehicle);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -674,7 +682,8 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
     
     res.json(mappedVehicle);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -687,7 +696,8 @@ app.delete('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -736,7 +746,8 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
     
     res.json(mappedReservations);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -820,7 +831,8 @@ app.post('/api/reservations', authenticateToken, requireAdmin, (req, res) => {
     
     res.json(mappedReservation);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -865,7 +877,8 @@ app.put('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) => 
     
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -898,7 +911,8 @@ app.patch('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) =
     const updatedLinks = parseDriveLinks(linksToStore);
     res.json({ success: true, googleDriveLinks: updatedLinks, googleDriveLink: linksToStore });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -911,7 +925,8 @@ app.delete('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) 
     
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -928,7 +943,8 @@ app.get('/api/reservation-requests', authenticateToken, (req, res) => {
     const requests = stmt.all();
     res.json(requests);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -958,7 +974,8 @@ app.post('/api/reservation-requests', authenticateToken, (req, res) => {
     
     res.json({ success: true, id: request.id });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1016,7 +1033,8 @@ app.put('/api/reservation-requests/:id/approve', authenticateToken, (req, res) =
     
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1041,7 +1059,8 @@ app.put('/api/reservation-requests/:id/reject', authenticateToken, (req, res) =>
     
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1085,7 +1104,8 @@ app.get('/api/maintenances', authenticateToken, (req, res) => {
     
     res.json(mappedMaintenances);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1171,7 +1191,8 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
     
     res.json({ success: true, id: maintenance.id });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1332,7 +1353,8 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1345,7 +1367,8 @@ app.delete('/api/maintenances/:id', authenticateToken, requireMaintenanceAccess,
     
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1356,7 +1379,8 @@ app.get('/api/history/:entityType/:entityId', authenticateToken, (req, res) => {
     const history = getHistory(req.params.entityType, req.params.entityId);
     res.json(history);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1371,7 +1395,8 @@ app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (re
     stmt.run(passwordHash, userId);
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1393,7 +1418,8 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -1570,7 +1596,7 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
       
       try {
         authStmt.run(request.email, is_admin ? 1 : 0);
-        console.log(`✅ Email autorisé: ${request.email} (admin: ${is_admin ? 'oui' : 'non'})`);
+        console.log('✅ Email autorisé');
       } catch (error) {
         console.error('Erreur ajout email autorisé:', error);
       }
@@ -1788,7 +1814,7 @@ app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req,
     const userStmt = db.prepare('SELECT email FROM users WHERE id = ?');
     const user = userStmt.get(id);
     
-    console.log(`🔄 Réinitialisation demandée pour user ${id} (${user?.email}) - ${result.changes} session(s) fermée(s)`);
+    console.log(`🔄 Réinitialisation demandée pour user ${id}`);
     
     res.json({ 
       success: true, 
@@ -1872,7 +1898,7 @@ app.post('/api/auth/set-new-password', async (req, res) => {
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
     
-    console.log(`✅ Nouveau mot de passe défini pour ${user.email}`);
+    console.log('✅ Nouveau mot de passe défini');
     
     res.json({ 
       success: true,
@@ -1945,7 +1971,7 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Erreur suppression utilisateur:', error);
-    res.status(500).json({ error: error.message || 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2034,7 +2060,7 @@ app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, 
     res.json({ success: true, message: `Email de test envoyé à ${req.user.email}` });
   } catch (error) {
     console.error('Erreur test email:', error);
-    res.status(500).json({ error: `Erreur SMTP : ${error.message}` });
+    res.status(500).json({ error: 'Erreur lors du test SMTP' });
   }
 });
 
@@ -2151,7 +2177,8 @@ app.get('/api/affaires', authenticateToken, (req, res) => {
     res.json(enriched);
   } catch (error) {
     console.error('Erreur GET /api/affaires:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2172,7 +2199,8 @@ app.get('/api/affaires/personnel-counts', authenticateToken, (req, res) => {
     res.json(counts);
   } catch (error) {
     console.error('Erreur GET /api/affaires/personnel-counts:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2222,7 +2250,8 @@ app.post('/api/affaires', authenticateToken, (req, res) => {
     }
   } catch (error) {
     console.error('Erreur POST /api/affaires:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2250,7 +2279,8 @@ app.put('/api/affaires/:id', authenticateToken, (req, res) => {
     res.json(updated);
   } catch (error) {
     console.error('Erreur PUT /api/affaires:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2264,7 +2294,8 @@ app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Erreur DELETE /api/affaires:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2484,7 +2515,8 @@ app.post('/api/create-folder', authenticateToken, (req, res) => {
     
     res.json({ success: true, path: safePath });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2588,7 +2620,8 @@ app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), (req, res) =
     });
   } catch (error) {
     console.error('❌ Erreur upload BL:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2639,7 +2672,8 @@ app.post('/api/upload-attachment', authenticateToken, (req, res) => {
         url: `/attachments/${req.body.affaireId}/${originalName}`
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 });
@@ -2690,7 +2724,8 @@ app.get('/api/attachments/:affaireId', authenticateToken, (req, res) => {
     res.json({ files });
   } catch (error) {
     console.error('Erreur liste fichiers:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2716,7 +2751,8 @@ app.get('/api/attachments-index', authenticateToken, (req, res) => {
     res.json({ affaires, counts });
   } catch (error) {
     console.error('Erreur attachments-index:', error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
@@ -2743,7 +2779,8 @@ app.delete('/api/attachments/:affaireId/:filename', authenticateToken, requireAd
     
     res.json({ success: true, message: `${filename} supprimé` });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 

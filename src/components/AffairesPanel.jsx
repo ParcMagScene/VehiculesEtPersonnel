@@ -117,7 +117,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       const tokenExpiry = localStorage.getItem('google_token_expiry');
       
       if (!token || !tokenExpiry || Date.now() > parseInt(tokenExpiry, 10)) {
-        console.log('📅 AffairesPanel: Pas de token Google valide, affaires Google non chargées');
         setGoogleAffaires([]);
         return;
       }
@@ -149,7 +148,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('📅 AffairesPanel: Token Google expiré (401)');
           setGoogleError('Token Google expiré — reconnectez-vous depuis le bandeau calendrier');
         } else {
           console.error('📅 AffairesPanel: Erreur Google API', response.status);
@@ -222,7 +220,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
       setGoogleAffaires(Array.from(affaireMap.values()));
       setGoogleEventIdsMap(eventIdsMap);
-      console.log(`📅 AffairesPanel: ${affaireMap.size} affaires détectées depuis ${events.length} événements Google`);
     } catch (err) {
       console.error('Erreur chargement affaires Google:', err);
       setGoogleError('Impossible de charger les événements Google Calendar');

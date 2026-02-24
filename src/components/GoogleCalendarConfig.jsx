@@ -54,7 +54,6 @@ const GoogleCalendarConfig = () => {
       const config = await loadFromIndexedDB('calendarConfig', {});
       config.googleMapsApiKey = mapsApiKey;
       await saveToIndexedDB('calendarConfig', config);
-      console.log('📝 GoogleCalendarConfig: Clé API sauvegardée dans IndexedDB');
       
       alert('✅ Configuration enregistrée avec succès\n\nSi vous avez changé le Client ID, cliquez sur "Déconnecter OAuth" puis reconnectez-vous.');
     } catch (error) {

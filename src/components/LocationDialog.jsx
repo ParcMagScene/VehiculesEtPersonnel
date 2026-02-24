@@ -146,7 +146,6 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
       }
       
       try {
-        console.log('🔧 Initialisation de l\'autocomplétion...');
         
         // Vérifier si un input existe déjà
         let input = addressAutocompleteContainerRef.current.querySelector('#address-autocomplete-input');
@@ -160,8 +159,6 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           input.id = 'address-autocomplete-input';
           input.style.cssText = 'width: 100%; padding: 0.75rem; border: 2px solid #3b82f6; border-radius: 8px; font-size: 1rem; display: block; box-sizing: border-box; margin-bottom: 0.5rem; background: white; color: black; font-family: inherit;';
           addressAutocompleteContainerRef.current.appendChild(input);
-          console.log('✅ Input créé:', input);
-          console.log('✅ Input visible:', input.offsetWidth, 'x', input.offsetHeight);
         }
         
         const autocomplete = new window.google.maps.places.Autocomplete(input, {
@@ -169,7 +166,6 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           fields: ['name', 'formatted_address', 'geometry', 'place_id']
         });
         
-        console.log('✅ Autocomplete créé');
         
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace();
@@ -182,7 +178,6 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           const lat = place.geometry.location.lat();
           const lng = place.geometry.location.lng();
 
-          console.log('📍 Lieu sélectionné:', place.formatted_address);
 
           setFormData(prev => ({
             ...prev,
@@ -340,8 +335,6 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log('🟢 handleSubmit appelé');
-    console.log('📍 formData:', formData);
     
     if (!formData.name.trim()) {
       alert('Le nom du lieu est obligatoire');
@@ -363,7 +356,6 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         type: formData.type
       };
       
-      console.log('📤 Envoi des données:', locationData);
       
       let savedLocation;
       if (location?.id) {
@@ -378,7 +370,6 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           ...response,
           placeId: response.place_id
         };
-        console.log('✅ Lieu créé:', savedLocation);
         setSuccessMessage('✅ Lieu créé avec succès !');
       }
       

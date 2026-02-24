@@ -12,31 +12,24 @@ if (typeof window !== 'undefined') {
  * @returns {Promise<string>} Le texte extrait
  */
 export const extractTextFromPDF = async (file) => {
-  console.log('🔍 Début extraction PDF:', file.name, 'Taille:', file.size);
   
   try {
     const arrayBuffer = await file.arrayBuffer();
-    console.log('✅ ArrayBuffer créé:', arrayBuffer.byteLength, 'bytes');
     
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    console.log('📄 Chargement du document PDF...');
     
     const pdf = await loadingTask.promise;
-    console.log('✅ PDF chargé:', pdf.numPages, 'pages');
     
     let fullText = '';
     
     // Parcourir toutes les pages
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      console.log(`📖 Lecture page ${pageNum}/${pdf.numPages}...`);
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       const pageText = textContent.items.map(item => item.str).join(' ');
       fullText += pageText + '\n';
-      console.log(`✅ Page ${pageNum} extraite (${pageText.length} caractères)`);
     }
     
-    console.log('✅ Extraction complète:', fullText.length, 'caractères au total');
     return fullText;
   } catch (error) {
     console.error('❌ Erreur lors de l\'extraction du texte PDF:', error);
@@ -67,13 +60,11 @@ export const parseBonLivraison = (text) => {
   };
 
   try {
-    console.log('🔍 Parsing du texte BL...');
     
     // Extraction du numéro d'affaire (AF32770)
     const affaireMatch = text.match(/\b(AF\d+)\b/i);
     if (affaireMatch) {
       info.numeroAffaire = affaireMatch[1].toUpperCase();
-      console.log('✅ Numéro affaire trouvé:', info.numeroAffaire);
     }
 
     // Extraction du type et date - deux formats possibles
@@ -87,17 +78,11 @@ export const parseBonLivraison = (text) => {
       info.type = type;
       info.dateLocation = `${annee}-${mois}-${jour}`;
       info.nomAffaire = nom.trim();
-      console.log('✅ Type trouvé:', info.type);
-      console.log('✅ Date trouvée:', info.dateLocation);
-      console.log('✅ Nom affaire trouvé:', info.nomAffaire);
     } else if (prestationMatch2) {
       const [, type, nom, jour, mois, annee] = prestationMatch2;
       info.type = type;
       info.dateLocation = `${annee}-${mois}-${jour}`;
       info.nomAffaire = nom.trim();
-      console.log('✅ Type trouvé:', info.type);
-      console.log('✅ Date trouvée:', info.dateLocation);
-      console.log('✅ Nom affaire trouvé:', info.nomAffaire);
     }
 
     // Extraction de l'interlocuteur (Monsieur Guillaume RIBOUAT)
@@ -105,7 +90,6 @@ export const parseBonLivraison = (text) => {
     const interlocuteurMatch = text.match(/(Monsieur|Madame)\s+([A-Z][a-z]+(?:\s+[A-Z][A-Z]+)?)\s+/i);
     if (interlocuteurMatch) {
       info.interlocuteur = `${interlocuteurMatch[1]} ${interlocuteurMatch[2].trim()}`;
-      console.log('✅ Interlocuteur trouvé:', info.interlocuteur);
     }
 
     // Extraction du client - mots en MAJUSCULES entre l'interlocuteur et l'adresse
@@ -117,34 +101,28 @@ export const parseBonLivraison = (text) => {
     
     if (clientMatch0) {
       info.client = clientMatch0[1].trim();
-      console.log('✅ Client trouvé (après "Client"):', info.client);
     } else if (clientMatch1) {
       info.client = clientMatch1[1].trim();
-      console.log('✅ Client trouvé:', info.client);
     } else if (clientMatch2) {
       info.client = clientMatch2[1].trim();
-      console.log('✅ Client trouvé:', info.client);
     }
 
     // Extraction du téléphone
     const telMatch = text.match(/Tél\s*:\s*([0-9\s.]+)/i);
     if (telMatch) {
       info.tel = telMatch[1].trim();
-      console.log('✅ Tél trouvé:', info.tel);
     }
 
     // Extraction du fax
     const faxMatch = text.match(/Fax\s*:\s*([0-9\s.]+)/i);
     if (faxMatch) {
       info.fax = faxMatch[1].trim();
-      console.log('✅ Fax trouvé:', info.fax);
     }
 
     // Extraction du devis (1001 du 20/01/2026)
     const devisMatch = text.match(/(\d+)\s+Devis\s+(\d{2}\/\d{2}\/\d{4})/i);
     if (devisMatch) {
       info.devis = `${devisMatch[1]} du ${devisMatch[2]}`;
-      console.log('✅ Devis trouvé:', info.devis);
     }
 
     // Extraction de l'adresse de livraison - plusieurs formats possibles
@@ -157,21 +135,17 @@ export const parseBonLivraison = (text) => {
       const rue = adresseMatch1[1].trim();
       const ville = adresseMatch1[2].trim();
       info.adresseLivraison = `${rue}\n${ville}`;
-      console.log('✅ Adresse trouvée:', info.adresseLivraison);
     } else if (adresseMatch2) {
       const rue = adresseMatch2[1].trim();
       const ville = adresseMatch2[2].trim();
       info.adresseLivraison = `${rue}\n${ville}`;
-      console.log('✅ Adresse trouvée:', info.adresseLivraison);
     }
 
     // Si le client n'est pas trouvé, utiliser le nom de l'affaire comme client
     if (!info.client && info.nomAffaire) {
       info.client = info.nomAffaire;
-      console.log('ℹ️ Client non trouvé, utilisation du nom d\'affaire:', info.client);
     }
 
-    console.log('📊 Résultat final du parsing:', info);
 
   } catch (error) {
     console.error('❌ Erreur lors du parsing du BL:', error);

@@ -31,6 +31,7 @@ import './PersonnelPanel.css';
 import './EquipmentPanel.css';
 import './Calendar.css';
 import { useToast } from '../hooks/useToast';
+import PersonnelAgenda from './PersonnelAgenda';
 
 // ═══════════════════════════════════════
 // Constantes
@@ -220,6 +221,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     { id: 'skills', label: 'Compétences', icon: Award, color: '#8b5cf6' },
     { id: 'positions', label: 'Postes', icon: Briefcase, color: '#f97316' },
     { id: 'planning', label: 'Planning', icon: CalendarDays, color: '#10b981' },
+    { id: 'agenda', label: 'Agenda', icon: Clock, color: '#06b6d4' },
   ];
   const subTabs = mode === 'management'
     ? allSubTabs.filter(t => t.id !== 'planning')
@@ -465,6 +467,13 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
             quickAssignmentSlot={quickAssignmentSlot}
             onQuickAssignmentHandled={onQuickAssignmentHandled}
             currentUser={currentUser}
+          />
+        )}
+        {subTab === 'agenda' && (
+          <PersonnelAgenda
+            persons={persons}
+            currentUser={currentUser}
+            googleEvents={googleEvents}
           />
         )}
       </div>

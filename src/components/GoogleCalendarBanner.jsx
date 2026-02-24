@@ -38,6 +38,10 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const [eventFormEvent, setEventFormEvent] = useState(null);
   const searchInputRef = useRef(null);
 
+  // Ref miroir pour toujours accéder au token le plus récent (évite les closures périmées)
+  const accessTokenRef = useRef(accessToken);
+  useEffect(() => { accessTokenRef.current = accessToken; }, [accessToken]);
+
   // Cache pour éviter de recharger les mêmes données
   const eventsCache = useRef({});
   const fetchTimeoutRef = useRef(null);
@@ -303,7 +307,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       if (!response.ok && response.status !== 204) {
         throw new Error('Erreur lors de la suppression');
       }
-      await fetchEvents(accessToken);
+      await fetchEvents(accessTokenRef.current);
       setEventDetailsOpen(false);
       setSelectedEvent(null);
     } catch (error) {
@@ -314,11 +318,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
 
   // Fonction helper pour les appels API Google avec gestion du retry en cas d'erreur 401
   const googleApiCall = async (url, options = {}, retryCount = 0) => {
+    const currentToken = accessTokenRef.current;
     const response = await fetch(url, {
       ...options,
       headers: {
         ...options.headers,
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${currentToken}`,
       },
     });
 
@@ -376,7 +381,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       const createdEvent = await response.json();
       
       // Recharger les événements
-      await fetchEvents(accessToken);
+      await fetchEvents(accessTokenRef.current);
       
       return createdEvent;
     } catch (error) {
@@ -408,7 +413,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       }
 
       // Recharger les événements
-      await fetchEvents(accessToken);
+      await fetchEvents(accessTokenRef.current);
     } catch (error) {
       console.error('Erreur mise à jour événement:', error);
       alert('Erreur lors de la mise à jour de l\'événement: ' + error.message);
@@ -709,7 +714,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         return;
       }
       
-      fetchEvents(accessToken);
+      fetchEvents(accessTokenRef.current);
     }, 300);
     
     return () => {

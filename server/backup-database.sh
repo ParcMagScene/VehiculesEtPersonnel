@@ -4,8 +4,8 @@
 # Usage: ./backup-database.sh
 
 # Configuration
-DB_FILE="/Users/reunion/Resevation Véhicules/server/vehicules.db"
-BACKUP_DIR="/Users/reunion/Resevation Véhicules/server/backups"
+DB_FILE="/Users/reunion/eM@g/server/vehicules.db"
+BACKUP_DIR="/Users/reunion/eM@g/server/backups"
 DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 BACKUP_FILE="$BACKUP_DIR/vehicules_backup_$DATE.db"
 

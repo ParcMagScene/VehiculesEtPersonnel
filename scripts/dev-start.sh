@@ -14,7 +14,7 @@
 
 set -e
 
-PROJ_DIR="/Users/reunion/Resevation Véhicules"
+PROJ_DIR="/Users/reunion/eM@g"
 SERVER_DIR="$PROJ_DIR/server"
 DEV_DB="$SERVER_DIR/vehicules-dev.db"
 PROD_DB="$SERVER_DIR/vehicules.db"

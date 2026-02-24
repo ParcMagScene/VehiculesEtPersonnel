@@ -90,7 +90,7 @@ Application web de **gestion de flotte de véhicules et de planning du personnel
 ## 3. Structure des dossiers
 
 ```
-Resevation Véhicules/
+eM@g/
 ├── index.html                      # Point d'entrée HTML (SPA)
 ├── package.json                    # Dépendances frontend
 ├── vite.config.js                  # Config Vite (proxy, build, etc.)
@@ -1038,7 +1038,7 @@ Classe `ApiClient` avec ~102 méthodes. Fonctionnalités :
 | **Domaine** | `magsav.duckdns.org` (DynDNS) |
 | **Frontend** | `vite preview` sur port **4173** (PM2 : `vehicules`) |
 | **Backend** | `node server.js` sur port **3002** (PM2 : `vehicules-backend`) |
-| **Base de données** | `/Users/reunion/Resevation Véhicules/server/vehicules.db` |
+| **Base de données** | `/Users/reunion/eM@g/server/vehicules.db` |
 
 ### PM2 — Process Manager
 

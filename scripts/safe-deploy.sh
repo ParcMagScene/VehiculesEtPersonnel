@@ -6,7 +6,7 @@
 
 set -e
 
-PROJ_DIR="/Users/reunion/Resevation Véhicules"
+PROJ_DIR="/Users/reunion/eM@g"
 DIST_DIR="$PROJ_DIR/dist"
 BACKUP_DIR="$PROJ_DIR/dist-backup"
 

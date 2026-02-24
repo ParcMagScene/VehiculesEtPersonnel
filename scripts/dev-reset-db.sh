@@ -9,7 +9,7 @@
 
 set -e
 
-SERVER_DIR="/Users/reunion/Resevation Véhicules/server"
+SERVER_DIR="/Users/reunion/eM@g/server"
 DEV_DB="$SERVER_DIR/vehicules-dev.db"
 PROD_DB="$SERVER_DIR/vehicules.db"
 

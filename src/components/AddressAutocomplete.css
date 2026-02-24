@@ -14,7 +14,7 @@
   z-index: 3001 !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid #e5e7eb !important;
+  border: 1px solid var(--theme-border-medium) !important;
   margin-top: 4px !important;
   font-family: inherit !important;
 }
@@ -23,7 +23,7 @@
   padding: 8px 12px !important;
   font-size: 13px !important;
   cursor: pointer !important;
-  border-top: 1px solid #f3f4f6 !important;
+  border-top: 1px solid var(--theme-bg-tertiary) !important;
 }
 
 .pac-item:first-child {
@@ -36,7 +36,7 @@
 
 .pac-item-query {
   font-size: 13px !important;
-  color: #1f2937 !important;
+  color: var(--theme-bg-dark) !important;
 }
 
 .pac-matched {
@@ -45,22 +45,22 @@
 
 /* Dark mode for Google Maps dropdown */
 [data-theme="dark"] .pac-container {
-  background: #1e293b !important;
-  border-color: #475569 !important;
+  background: var(--theme-text-primary) !important;
+  border-color: var(--theme-text-subtle) !important;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
 }
 
 [data-theme="dark"] .pac-item {
-  border-top-color: #334155 !important;
-  color: #e2e8f0 !important;
+  border-top-color: var(--theme-text-dark) !important;
+  color: var(--theme-border) !important;
 }
 
 [data-theme="dark"] .pac-item:hover {
-  background: #334155 !important;
+  background: var(--theme-text-dark) !important;
 }
 
 [data-theme="dark"] .pac-item-query {
-  color: #e2e8f0 !important;
+  color: var(--theme-border) !important;
 }
 
 [data-theme="dark"] .pac-icon {

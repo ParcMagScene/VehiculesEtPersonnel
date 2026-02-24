@@ -43,6 +43,44 @@
   --theme-text-secondary: #64748b;
   --theme-text-muted: #94a3b8;
   
+  /* ─── Texte — étendus ─── */
+  --theme-text-heading: #111827;
+  --theme-text-dark: #334155;
+  --theme-text-body: #374151;
+  --theme-text-subtle: #475569;
+  --theme-text-gray: #6b7280;
+  --theme-text-inverse: #ffffff;
+  
+  /* ─── Fonds — étendus ─── */
+  --theme-bg-secondary: #f9fafb;
+  --theme-bg-tertiary: #f3f4f6;
+  --theme-bg-dark: #1f2937;
+  --theme-bg-darker: #111827;
+  
+  /* ─── Bordures — étendues ─── */
+  --theme-border-medium: #e5e7eb;
+  --theme-border-muted: #d1d5db;
+  
+  /* ─── Info / Bleu ─── */
+  --theme-info: #3b82f6;
+  --theme-info-dark: #2563eb;
+  --theme-info-bg: #eff6ff;
+  --theme-info-border: #bfdbfe;
+  
+  /* ─── Warning / Orange ─── */
+  --theme-warning: #f59e0b;
+  --theme-warning-dark: #d97706;
+  --theme-warning-bg: #fffbeb;
+  
+  /* ─── Succès — étendus ─── */
+  --theme-success-alt: #10b981;
+  --theme-success-bg: #f0fdf4;
+  --theme-success-border: #86efac;
+  
+  /* ─── Danger — étendus ─── */
+  --theme-danger-bg: #fef2f2;
+  --theme-danger-border: #fca5a5;
+  
   /* ─── Bordures ─── */
   --theme-border: #e2e8f0;
   --theme-border-light: #f1f5f9;
@@ -128,6 +166,119 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.2s ease;
   --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   THÈME SOMBRE (Dark Mode)
+   Activé via data-theme="dark" sur <html>
+   ═══════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* ─── Couleurs principales ─── */
+  --theme-primary: #818cf8;
+  --theme-secondary: #a78bfa;
+  --theme-primary-dark: #7c3aed;
+  --theme-primary-hover: #a78bfa;
+  --theme-primary-light: #c4b5fd;
+  --theme-accent: #c084fc;
+  --theme-indigo: #818cf8;
+  
+  /* ─── Dégradés ─── */
+  --theme-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --theme-gradient-reverse: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  --theme-gradient-subtle: linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%);
+  --theme-gradient-alt: linear-gradient(135deg, #818cf8, #a78bfa);
+  
+  /* ─── Danger ─── */
+  --theme-danger: #f87171;
+  --theme-danger-dark: #ef4444;
+  --theme-danger-bg: #451a1a;
+  --theme-danger-border: #991b1b;
+  
+  /* ─── Succès ─── */
+  --theme-success: #4ade80;
+  --theme-success-dark: #22c55e;
+  --theme-success-alt: #34d399;
+  --theme-success-bg: #14261a;
+  --theme-success-border: #166534;
+  
+  /* ─── Texte ─── */
+  --theme-text-primary: #f1f5f9;
+  --theme-text-secondary: #94a3b8;
+  --theme-text-muted: #64748b;
+  --theme-text-heading: #f8fafc;
+  --theme-text-dark: #e2e8f0;
+  --theme-text-body: #cbd5e1;
+  --theme-text-subtle: #94a3b8;
+  --theme-text-gray: #9ca3af;
+  --theme-text-inverse: #0f172a;
+  
+  /* ─── Bordures ─── */
+  --theme-border: #334155;
+  --theme-border-light: #1e293b;
+  --theme-border-medium: #374151;
+  --theme-border-muted: #4b5563;
+  --theme-border-focus: #a78bfa;
+  
+  /* ─── Fonds ─── */
+  --theme-bg-page: #0f172a;
+  --theme-bg-card: #1e293b;
+  --theme-bg-secondary: #1e293b;
+  --theme-bg-tertiary: #334155;
+  --theme-bg-hover: #2d3554;
+  --theme-bg-dark: #0f172a;
+  --theme-bg-darker: #020617;
+  --theme-bg-indigo-light: #1e1b4b;
+  --theme-bg-indigo-lighter: #312e81;
+  
+  /* ─── Info / Bleu ─── */
+  --theme-info: #60a5fa;
+  --theme-info-dark: #3b82f6;
+  --theme-info-bg: #172554;
+  --theme-info-border: #1e40af;
+  
+  /* ─── Warning / Orange ─── */
+  --theme-warning: #fbbf24;
+  --theme-warning-dark: #f59e0b;
+  --theme-warning-bg: #451a03;
+  
+  /* ─── Overlay ─── */
+  --theme-overlay: rgba(0, 0, 0, 0.7);
+  --theme-overlay-dark: rgba(0, 0, 0, 0.8);
+  
+  /* ─── Boutons secondaire en dark ─── */
+  --btn-secondary-bg: #334155;
+  --btn-secondary-color: #e2e8f0;
+  --btn-secondary-border: 1px solid #475569;
+  --btn-secondary-hover-bg: #475569;
+  --btn-secondary-hover-border-color: #64748b;
+  
+  /* ─── Boutons danger en dark ─── */
+  --btn-danger-bg: #451a1a;
+  --btn-danger-color: #f87171;
+  --btn-danger-border: 2px solid #991b1b;
+  --btn-danger-hover-bg: #7f1d1d;
+  
+  /* ─── Boutons succès en dark ─── */
+  --btn-success-bg: #14261a;
+  --btn-success-color: #4ade80;
+  --btn-success-border: 2px solid #166534;
+  --btn-success-hover-bg: #166534;
+  
+  /* ─── Boutons warning en dark ─── */
+  --btn-warning-bg: #451a03;
+  --btn-warning-color: #fbbf24;
+  --btn-warning-border: 2px solid #92400e;
+  --btn-warning-hover-bg: #78350f;
+  
+  /* ─── Ombres ─── */
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 4px 16px rgba(99, 102, 241, 0.3);
+  
+  /* ─── Focus ─── */
+  --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.25);
+  
+  color-scheme: dark;
 }
 
 /* ═══════════════════════════════════════════════════════

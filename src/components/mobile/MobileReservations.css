@@ -21,7 +21,7 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  color: #374151;
+  color: var(--theme-text-body);
   transition: transform 0.15s;
 }
 
@@ -35,11 +35,11 @@
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--theme-text-primary);
 }
 
 .mobile-reservations .add-button {
-  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
@@ -50,7 +50,7 @@
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
 }
 
 .mobile-reservations .form-group {
@@ -62,7 +62,7 @@
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  color: #374151;
+  color: var(--theme-text-body);
   font-size: 0.875rem;
   margin-bottom: 8px;
 }
@@ -72,13 +72,13 @@
 .mobile-reservations .form-group textarea {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--theme-border);
   border-radius: 14px;
   font-size: 1rem;
   font-family: inherit;
   box-shadow: none;
   background: white;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
 }
@@ -87,7 +87,7 @@
 .mobile-reservations .form-group select:focus,
 .mobile-reservations .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
@@ -99,8 +99,8 @@
 
 .mobile-reservations .form-error {
   padding: 12px 16px;
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-dark);
   border-radius: 12px;
   font-size: 0.875rem;
   margin-bottom: 16px;
@@ -127,12 +127,12 @@
 }
 
 .mobile-reservations .btn-cancel {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--theme-border-light);
+  color: var(--theme-text-subtle);
 }
 
 .mobile-reservations .btn-submit {
-  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
@@ -154,30 +154,30 @@
   gap: 14px;
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--theme-border);
   border-radius: 14px;
   background: white;
   cursor: pointer;
   font-family: inherit;
   font-size: 15px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   text-align: left;
   transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
 }
 
 .vehicle-picker-btn:active {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
 .vehicle-picker-btn.selected {
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   background: #fafaff;
 }
 
 .vehicle-picker-placeholder {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   flex: 1;
 }
 
@@ -187,7 +187,7 @@
   border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .vehicle-picker-thumb img {
@@ -207,17 +207,17 @@
 .vehicle-picker-name {
   font-weight: 700;
   font-size: 14px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
 }
 
 .vehicle-picker-reg {
   font-size: 12px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
 .vehicle-picker-chevron {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   flex-shrink: 0;
 }
 
@@ -261,18 +261,18 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 20px 14px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .vehicle-picker-modal-header h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--theme-text-primary);
 }
 
 .vehicle-picker-modal-header button {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border: none;
   width: 32px;
   height: 32px;
@@ -282,7 +282,7 @@
   justify-content: center;
   cursor: pointer;
   font-size: 16px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
 }
 
 .vehicle-picker-list {
@@ -308,12 +308,12 @@
 }
 
 .vehicle-picker-item:active {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
 }
 
 .vehicle-picker-item.active {
-  background: #eef2ff;
-  box-shadow: inset 0 0 0 2px #667eea;
+  background: var(--theme-bg-hover);
+  box-shadow: inset 0 0 0 2px var(--theme-primary);
 }
 
 .vehicle-picker-item-photo {
@@ -322,7 +322,7 @@
   border-radius: 12px;
   overflow: hidden;
   flex-shrink: 0;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
@@ -343,7 +343,7 @@
 .vehicle-picker-item-name {
   font-weight: 700;
   font-size: 15px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
 }
 
 .vehicle-picker-item-meta {
@@ -356,7 +356,7 @@
   font-size: 11px;
   font-weight: 600;
   color: #6366f1;
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
   padding: 1px 8px;
   border-radius: 6px;
 }
@@ -372,19 +372,19 @@
 
 .vehicle-picker-item-reg {
   font-size: 12px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
 .vehicle-picker-check {
-  color: #667eea;
+  color: var(--theme-primary);
   flex-shrink: 0;
 }
 
 .vehicle-picker-empty {
   text-align: center;
   padding: 48px 20px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 
 .vehicle-picker-empty svg {
@@ -409,7 +409,7 @@
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
 }
 
 .mobile-reservations .reservation-header {
@@ -425,7 +425,7 @@
   border-radius: 12px;
   overflow: hidden;
   flex-shrink: 0;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
@@ -444,13 +444,13 @@
 
 .mobile-reservations .vehicle-name {
   font-weight: 700;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   font-size: 1rem;
 }
 
 .mobile-reservations .vehicle-plate {
-  background: #eef2ff;
-  color: #667eea;
+  background: var(--theme-bg-hover);
+  color: var(--theme-primary);
   padding: 2px 10px;
   border-radius: 8px;
   font-size: 12px;
@@ -463,7 +463,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #475569;
+  color: var(--theme-text-subtle);
   font-size: 0.875rem;
   margin-bottom: 10px;
   font-weight: 500;
@@ -479,24 +479,24 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-size: 0.875rem;
 }
 
 .mobile-reservations .detail-item svg {
   flex-shrink: 0;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 
 .mobile-reservations .reservation-notes {
   margin-top: 10px;
   padding: 10px 14px;
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   border-radius: 12px;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-style: italic;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
 }
 
 /* ═══ ÉTAT VIDE ═══ */
@@ -506,22 +506,22 @@
   background: white;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
 }
 
 .mobile-reservations .empty-state svg {
-  color: #d1d5db;
+  color: var(--theme-border-muted);
   margin-bottom: 12px;
 }
 
 .mobile-reservations .empty-state p {
-  color: #64748b;
+  color: var(--theme-text-secondary);
   margin-bottom: 20px;
   font-size: 15px;
 }
 
 .mobile-reservations .btn-primary {
-  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: white;
   border: none;
   padding: 14px 24px;

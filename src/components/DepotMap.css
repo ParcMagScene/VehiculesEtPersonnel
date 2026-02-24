@@ -3,8 +3,8 @@
    ============================================================ */
 
 .depot-map-container {
-  background: var(--card-bg, #1e293b);
-  border: 1px solid var(--border-color, #334155);
+  background: var(--card-bg, var(--theme-text-primary));
+  border: 1px solid var(--border-color, var(--theme-text-dark));
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -15,7 +15,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-color, #334155);
+  border-bottom: 1px solid var(--border-color, var(--theme-text-dark));
   gap: 0.75rem;
   flex-wrap: wrap;
 }
@@ -26,13 +26,13 @@
   gap: 0.5rem;
   font-weight: 600;
   font-size: 0.95rem;
-  color: var(--text-primary, #e2e8f0);
+  color: var(--text-primary, var(--theme-border));
 }
 
 .depot-map-count {
   font-size: 0.75rem;
   font-weight: 500;
-  background: #3b82f620;
+  background: var(--theme-info)20;
   color: #60a5fa;
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
@@ -58,23 +58,23 @@
   gap: 0.35rem;
   padding: 0.35rem 0.75rem;
   font-size: 0.8rem;
-  border: 1px solid var(--border-color, #475569);
+  border: 1px solid var(--border-color, var(--theme-text-subtle));
   border-radius: 6px;
   background: transparent;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary, var(--theme-text-muted));
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .depot-floor-btn:hover {
-  background: var(--hover-bg, #334155);
-  color: var(--text-primary, #e2e8f0);
+  background: var(--hover-bg, var(--theme-text-dark));
+  color: var(--text-primary, var(--theme-border));
 }
 
 .depot-floor-btn.active {
-  background: #3b82f6;
+  background: var(--theme-info);
   color: #ffffff;
-  border-color: #3b82f6;
+  border-color: var(--theme-info);
 }
 
 /* SVG wrapper */
@@ -110,9 +110,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1rem;
-  border-top: 1px solid var(--border-color, #334155);
+  border-top: 1px solid var(--border-color, var(--theme-text-dark));
   flex-wrap: wrap;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary, var(--theme-text-muted));
   font-size: 0.8rem;
 }
 
@@ -129,10 +129,10 @@
   gap: 0.3rem;
   padding: 0.2rem 0.5rem;
   font-size: 0.72rem;
-  border: 1px solid var(--border-color, #334155);
+  border: 1px solid var(--border-color, var(--theme-text-dark));
   border-radius: 12px;
   background: transparent;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-secondary, var(--theme-text-muted));
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -141,7 +141,7 @@
 .legend-chip.active {
   background: color-mix(in srgb, var(--chip-color) 20%, transparent);
   border-color: var(--chip-color);
-  color: var(--text-primary, #e2e8f0);
+  color: var(--text-primary, var(--theme-border));
 }
 
 .legend-dot {

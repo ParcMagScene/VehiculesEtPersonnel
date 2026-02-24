@@ -10,12 +10,12 @@
 .home-greeting h2 {
   margin: 0 0 4px;
   font-size: 1.5rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .home-greeting p {
   margin: 0;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-size: 0.9rem;
 }
 
@@ -46,11 +46,11 @@
 }
 
 .module-card.parc {
-  border-left-color: #10b981;
+  border-left-color: var(--theme-success-alt);
 }
 
 .module-card.personnel {
-  border-left-color: #3b82f6;
+  border-left-color: var(--theme-info);
 }
 
 .module-card.messaging {
@@ -58,7 +58,7 @@
 }
 
 .module-card.equipment {
-  border-left-color: #f59e0b;
+  border-left-color: var(--theme-warning);
 }
 
 .module-card.orders {
@@ -82,8 +82,8 @@
 }
 
 .module-card.personnel .module-icon {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  color: #2563eb;
+  background: linear-gradient(135deg, #dbeafe, var(--theme-info-border));
+  color: var(--theme-info-dark);
 }
 
 .module-card.messaging .module-icon {
@@ -93,7 +93,7 @@
 
 .module-card.equipment .module-icon {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #d97706;
+  color: var(--theme-warning-dark);
 }
 
 .module-card.orders .module-icon {
@@ -105,7 +105,7 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #ef4444;
+  background: var(--theme-danger);
   color: white;
   font-size: 0.65rem;
   font-weight: 700;
@@ -133,18 +133,18 @@
 .module-info h3 {
   margin: 0 0 4px;
   font-size: 1.1rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   font-weight: 700;
 }
 
 .module-info p {
   margin: 0;
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--theme-text-secondary);
 }
 
 .module-chevron {
-  color: #d1d5db;
+  color: var(--theme-border-muted);
   flex-shrink: 0;
   align-self: center;
 }
@@ -155,7 +155,7 @@
   flex-wrap: wrap;
   gap: 8px;
   padding-top: 8px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--theme-bg-tertiary);
 }
 
 .module-stat-item {
@@ -163,15 +163,15 @@
   align-items: center;
   gap: 4px;
   font-size: 0.78rem;
-  color: #64748b;
-  background: #f9fafb;
+  color: var(--theme-text-secondary);
+  background: var(--theme-bg-secondary);
   padding: 4px 10px;
   border-radius: 12px;
   font-weight: 500;
 }
 
 .module-stat-item.warning {
-  color: #f59e0b;
+  color: var(--theme-warning);
   background: #fef3c7;
 }
 

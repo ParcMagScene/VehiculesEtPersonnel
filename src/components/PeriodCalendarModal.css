@@ -106,7 +106,7 @@
 .pcm-cal-month {
   font-weight: 700;
   font-size: 15px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   text-transform: capitalize;
 }
 
@@ -116,16 +116,16 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   background: white;
   border-radius: 8px;
   cursor: pointer;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   transition: all 0.15s;
 }
 
 .pcm-nav-btn:hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-color: #cbd5e1;
 }
 
@@ -139,7 +139,7 @@
   text-align: center;
   font-size: 11px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   padding: 4px 0;
   text-transform: uppercase;
 }
@@ -156,13 +156,13 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #334155;
+  color: var(--theme-text-dark);
   transition: all 0.12s;
   position: relative;
 }
 
 .pcm-cal-day:hover:not(.other-month) {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .pcm-cal-day.other-month {
@@ -170,28 +170,28 @@
 }
 
 .pcm-cal-day.weekend {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 
 .pcm-cal-day.today {
   font-weight: 800;
-  box-shadow: inset 0 0 0 2px #3b82f6;
+  box-shadow: inset 0 0 0 2px var(--theme-info);
 }
 
 .pcm-cal-day.in-range {
-  background: color-mix(in srgb, var(--range-color, #3b82f6) 12%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 12%, transparent);
   border-radius: 0;
 }
 
 .pcm-cal-day.range-start {
-  background: var(--range-color, #3b82f6);
+  background: var(--range-color, var(--theme-info));
   color: white;
   font-weight: 700;
   border-radius: 8px 0 0 8px;
 }
 
 .pcm-cal-day.range-end {
-  background: var(--range-color, #3b82f6);
+  background: var(--range-color, var(--theme-info));
   color: white;
   font-weight: 700;
   border-radius: 0 8px 8px 0;
@@ -203,7 +203,7 @@
 
 /* Périodes déjà enregistrées */
 .pcm-cal-day.saved {
-  background: color-mix(in srgb, var(--range-color, #3b82f6) 22%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 22%, transparent);
   border-radius: 0;
   position: relative;
 }
@@ -217,18 +217,18 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--range-color, #3b82f6);
+  background: var(--range-color, var(--theme-info));
   opacity: 0.7;
 }
 
 /* Quand saved + in-range, la sélection active prime */
 .pcm-cal-day.saved.in-range {
-  background: color-mix(in srgb, var(--range-color, #3b82f6) 12%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 12%, transparent);
 }
 
 .pcm-cal-day.saved.range-start,
 .pcm-cal-day.saved.range-end {
-  background: var(--range-color, #3b82f6);
+  background: var(--range-color, var(--theme-info));
   color: white;
 }
 
@@ -238,7 +238,7 @@
   flex-direction: column;
   gap: 10px;
   padding-top: 12px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--theme-border);
 }
 
 .pcm-option-row {
@@ -250,16 +250,16 @@
 .pcm-option-row > label {
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   min-width: 44px;
 }
 
 .pcm-period-toggle {
   display: flex;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-radius: 6px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
 }
 
 .pcm-period-toggle button {
@@ -268,19 +268,19 @@
   background: none;
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .pcm-period-toggle button.active {
-  background: #3b82f6;
+  background: var(--theme-info);
   color: white;
 }
 
 .pcm-date-display {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   margin-left: auto;
 }
 
@@ -300,12 +300,12 @@
 .pcm-reason label {
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
 }
 
 .pcm-reason input {
   padding: 8px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   font-size: 13px;
   outline: none;
@@ -313,7 +313,7 @@
 }
 
 .pcm-reason input:focus {
-  border-color: #3b82f6;
+  border-color: var(--theme-info);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -335,8 +335,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: var(--theme-info-bg);
+  border: 1px solid var(--theme-info-border);
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
@@ -348,12 +348,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #fef2f2;
+  background: var(--theme-danger-bg);
   border: 1px solid #fecaca;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
-  color: #dc2626;
+  color: var(--theme-danger-dark);
 }
 
 .pcm-success-banner {
@@ -362,7 +362,7 @@
   gap: 8px;
   padding: 10px 14px;
   margin: 0 20px 12px;
-  background: #f0fdf4;
+  background: var(--theme-success-bg);
   border: 1px solid #bbf7d0;
   border-radius: 8px;
   font-size: 12px;
@@ -378,23 +378,23 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--theme-border);
 }
 
 .pcm-btn-cancel {
   padding: 8px 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   background: white;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .pcm-btn-cancel:hover {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   border-color: #cbd5e1;
 }
 

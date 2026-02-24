@@ -27,7 +27,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--theme-border);
   background: var(--theme-gradient-alt);
   color: white;
   flex-shrink: 0;
@@ -84,11 +84,11 @@
 }
 
 .msg-conv-item:hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .msg-conv-item.active {
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
 }
 
 .msg-conv-avatar {
@@ -113,7 +113,7 @@
 .msg-conv-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -121,7 +121,7 @@
 
 .msg-conv-last {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -138,7 +138,7 @@
 
 .msg-conv-time {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 
 .msg-unread-badge {
@@ -157,7 +157,7 @@
 .msg-empty {
   text-align: center;
   padding: 40px 20px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   font-size: 13px;
 }
 
@@ -179,14 +179,14 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--theme-border);
   flex-shrink: 0;
 }
 
 .msg-back-btn {
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   padding: 4px;
   border-radius: 6px;
@@ -195,14 +195,14 @@
 }
 
 .msg-back-btn:hover {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--theme-border-light);
+  color: var(--theme-text-dark);
 }
 
 .msg-chat-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   flex: 1;
 }
 
@@ -234,7 +234,7 @@
 
 .msg-sender-name {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   margin-bottom: 2px;
   padding: 0 8px;
 }
@@ -254,14 +254,14 @@
 }
 
 .msg-bubble-wrapper.received .msg-bubble {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--theme-border-light);
+  color: var(--theme-text-dark);
   border-bottom-left-radius: 4px;
 }
 
 .msg-bubble-time {
   font-size: 9px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   margin-top: 2px;
   padding: 0 8px;
 }
@@ -311,7 +311,7 @@
   align-items: flex-end;
   gap: 8px;
   padding: 10px 14px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--theme-border);
   background: #fafbfc;
   flex-shrink: 0;
   position: relative;
@@ -319,7 +319,7 @@
 
 .msg-input-area textarea {
   flex: 1;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 13px;
@@ -365,7 +365,7 @@
   height: 36px;
   border: none;
   background: none;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -377,7 +377,7 @@
 
 .msg-attach-btn:hover {
   color: var(--theme-indigo);
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
 }
 
 /* ═══ Bouton Emoji ═══ */
@@ -386,7 +386,7 @@
   height: 36px;
   border: none;
   background: none;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -398,7 +398,7 @@
 
 .msg-emoji-btn:hover,
 .msg-emoji-btn.active {
-  color: #f59e0b;
+  color: var(--theme-warning);
   background: #fef3c7;
 }
 
@@ -411,7 +411,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   z-index: 100;
   overflow: hidden;
   animation: tooltipFadeIn 0.15s ease-out;
@@ -421,7 +421,7 @@
   display: flex;
   gap: 2px;
   padding: 6px 8px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--theme-border-light);
   background: #fafbfc;
 }
 
@@ -437,11 +437,11 @@
 }
 
 .msg-emoji-tab:hover {
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
 }
 
 .msg-emoji-tab.active {
-  background: #e0e7ff;
+  background: var(--theme-bg-indigo-light);
 }
 
 .msg-emoji-grid {
@@ -468,7 +468,7 @@
 }
 
 .msg-emoji-item:hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   transform: scale(1.2);
 }
 
@@ -495,7 +495,7 @@
 .msg-new-modal h4 {
   margin: 0 0 16px;
   font-size: 15px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
 }
 
 .msg-user-list {
@@ -515,29 +515,29 @@
 }
 
 .msg-user-option:hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .msg-user-option.selected {
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
 }
 
 .msg-user-option-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #e2e8f0;
+  background: var(--theme-border);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
 }
 
 .msg-user-option-name {
   font-size: 13px;
-  color: #334155;
+  color: var(--theme-text-dark);
 }
 
 .msg-new-actions {
@@ -555,8 +555,8 @@
 }
 
 .msg-new-actions .msg-btn-cancel {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--theme-border-light);
+  color: var(--theme-text-secondary);
 }
 
 .msg-new-actions .msg-btn-start {
@@ -581,12 +581,12 @@
 .msg-date-separator {
   text-align: center;
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   padding: 8px 0;
 }
 
 .msg-date-separator span {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   padding: 3px 10px;
   border-radius: 10px;
 }

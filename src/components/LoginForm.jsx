@@ -315,8 +315,8 @@ const LoginForm = ({ onLogin }) => {
         )}
 
         {showSessionConflict && (
-          <div className="modal-overlay" onClick={() => setShowSessionConflict(false)}>
-            <div className="modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="login-overlay" onClick={() => setShowSessionConflict(false)}>
+            <div className="login-modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>⚠️ Session déjà active</h3>
               </div>
@@ -364,8 +364,8 @@ const LoginForm = ({ onLogin }) => {
         )}
 
         {showResetPassword && (
-          <div className="modal-overlay" onClick={() => setShowResetPassword(false)}>
-            <div className="modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="login-overlay" onClick={() => setShowResetPassword(false)}>
+            <div className="login-modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
                 <h3>🔑 Réinitialiser le mot de passe</h3>
               </div>

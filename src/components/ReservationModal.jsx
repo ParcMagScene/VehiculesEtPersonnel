@@ -876,7 +876,7 @@ const ReservationModal = ({
     : '';
 
   return (
-    <div className="modal-overlay" onClick={handleSafeClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div className="reservation-overlay" onClick={handleSafeClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div className="modal-content reservation-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-content">

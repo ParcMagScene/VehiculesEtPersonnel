@@ -1,4 +1,4 @@
-.modal-overlay {
+.vm-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -370,4 +370,35 @@
 .vehicle-maintenance-modal .form-group select option:disabled {
   color: #9ca3af;
   font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .vehicle-maintenance-modal {
+    width: 95%;
+    max-height: 95vh;
+    border-radius: 12px;
+  }
+
+  .vehicle-maintenance-modal .modal-header {
+    padding: 14px 16px;
+  }
+
+  .vehicle-maintenance-modal .modal-header h2 {
+    font-size: 1rem;
+  }
+
+  .vehicle-maintenance-modal .modal-body {
+    padding: 16px;
+  }
+
+  .vehicle-maintenance-modal .form-group label {
+    font-size: 0.85rem;
+  }
+
+  .vehicle-maintenance-modal .form-group input,
+  .vehicle-maintenance-modal .form-group select,
+  .vehicle-maintenance-modal .form-group textarea {
+    font-size: 0.85rem;
+  }
 }

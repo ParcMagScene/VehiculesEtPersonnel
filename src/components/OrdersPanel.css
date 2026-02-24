@@ -374,7 +374,7 @@
 .no-items { color: var(--text-secondary, #64748b); font-style: italic; font-size: 0.85rem; }
 
 /* ═══ Modal ═══ */
-.modal-overlay {
+.orders-overlay {
   position: fixed;
   inset: 0;
   background: var(--theme-overlay-dark);

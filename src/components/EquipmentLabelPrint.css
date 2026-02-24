@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 15000;
+  z-index: 3000;
   animation: elpFadeIn 0.2s ease;
 }
 
@@ -342,4 +342,36 @@
 
 .elp-btn-export:hover {
   background: #eef2ff;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .elp-modal {
+    width: 95vw;
+    max-height: 95vh;
+    border-radius: 12px;
+  }
+
+  .elp-header {
+    padding: 12px 16px;
+  }
+
+  .elp-body {
+    padding: 16px;
+  }
+
+  .elp-custom-size {
+    flex-direction: column;
+  }
+
+  .elp-footer {
+    padding: 10px 16px;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .elp-footer button {
+    width: 100%;
+    justify-content: center;
+  }
 }

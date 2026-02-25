@@ -8,6 +8,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import PDFDocument from 'pdfkit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -528,6 +529,219 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     } catch (error) {
       console.error('GET /api/communication/stats error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+
+  // ═══════════════════════════════════════════════
+  // EXPORT PDF — Fiche de tâches journalière
+  // ═══════════════════════════════════════════════
+
+  app.get('/api/communication/tasks/export-pdf', authenticateToken, (req, res) => {
+    try {
+      const { date } = req.query;
+      if (!date) {
+        return res.status(400).json({ error: 'Le paramètre date est requis' });
+      }
+
+      // Charger les tâches du jour avec joints
+      const tasks = db.prepare(`
+        SELECT ta.*, 
+               dde.affaire_id AS event_affaire_id,
+               dde.type AS event_type,
+               dde.category AS event_category,
+               dde.client AS event_client,
+               dde.location AS event_location,
+               p.first_name AS person_first_name,
+               p.last_name AS person_last_name
+        FROM task_assignments ta
+        LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
+        LEFT JOIN persons p ON ta.person_id = p.id
+        WHERE ta.date = ?
+        ORDER BY ta.section ASC, ta.period ASC, ta.time ASC
+      `).all(date);
+
+      // Regrouper par section
+      const SECTIONS = {
+        prep_locations:     { label: 'Prépa Locations',    emoji: '📦' },
+        prep_prestations:   { label: 'Prépa Prestations',  emoji: '🎤' },
+        prep_ventes:        { label: 'Prépa Ventes',       emoji: '🏷' },
+        taches_prioritaires:{ label: 'Tâches Prioritaires', emoji: '🔴' },
+        taches_secondaires: { label: 'Tâches Secondaires', emoji: '🟡' },
+        courses:            { label: 'Courses',             emoji: '🚗' },
+        manual:             { label: 'Autres',              emoji: '📋' },
+      };
+
+      const grouped = {};
+      Object.keys(SECTIONS).forEach(k => { grouped[k] = []; });
+      tasks.forEach(t => {
+        const sec = t.section || 'manual';
+        if (!grouped[sec]) grouped[sec] = [];
+        grouped[sec].push(t);
+      });
+
+      // Formater la date en français
+      const dateObj = new Date(date + 'T00:00:00');
+      const dateFr = dateObj.toLocaleDateString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      });
+
+      // Couleurs par section
+      const SECTION_COLORS = {
+        prep_locations:      [59, 130, 246],
+        prep_prestations:    [245, 158, 11],
+        prep_ventes:         [16, 185, 129],
+        taches_prioritaires: [239, 68, 68],
+        taches_secondaires:  [245, 158, 11],
+        courses:             [139, 92, 246],
+        manual:              [100, 116, 139],
+      };
+
+      const STATUS_LABELS = {
+        pending: '○ À faire',
+        in_progress: '◐ En cours',
+        done: '● Fait',
+        cancelled: '✕ Annulé',
+      };
+
+      // ── Générer le PDF ──
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        info: {
+          Title: `Fiche de tâches — ${dateFr}`,
+          Author: 'eM@g — Mag Scène',
+          Subject: 'Planification des tâches',
+        }
+      });
+
+      // Envoyer comme stream
+      const filename = `taches-${date}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      doc.pipe(res);
+
+      // ── EN-TÊTE ──
+      doc.fontSize(20).font('Helvetica-Bold').text('Fiche de tâches', { align: 'center' });
+      doc.moveDown(0.3);
+      doc.fontSize(13).font('Helvetica').text(dateFr.charAt(0).toUpperCase() + dateFr.slice(1), { align: 'center' });
+      doc.moveDown(0.2);
+
+      const totalTasks = tasks.length;
+      const doneTasks = tasks.filter(t => t.status === 'done').length;
+      doc.fontSize(9).fillColor('#888888')
+        .text(`${totalTasks} tâche${totalTasks > 1 ? 's' : ''} — ${doneTasks} terminée${doneTasks > 1 ? 's' : ''}`, { align: 'center' });
+      doc.fillColor('#000000');
+
+      doc.moveDown(0.8);
+
+      // Ligne de séparation
+      const pageW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      doc.moveTo(doc.page.margins.left, doc.y)
+        .lineTo(doc.page.margins.left + pageW, doc.y)
+        .strokeColor('#cccccc').lineWidth(0.5).stroke();
+      doc.moveDown(0.6);
+
+      // ── SECTIONS ──
+      Object.entries(SECTIONS).forEach(([key, info]) => {
+        const sectionTasks = grouped[key] || [];
+        if (sectionTasks.length === 0) return;
+
+        // Vérifier espace restant
+        if (doc.y > doc.page.height - 120) {
+          doc.addPage();
+        }
+
+        const color = SECTION_COLORS[key] || [100, 100, 100];
+        const hexColor = `#${color.map(c => c.toString(16).padStart(2, '0')).join('')}`;
+
+        // Bandeau de section
+        const bannerY = doc.y;
+        doc.rect(doc.page.margins.left, bannerY, pageW, 22)
+          .fillColor(hexColor).fill();
+        doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff')
+          .text(`${info.label} (${sectionTasks.length})`, doc.page.margins.left + 10, bannerY + 5, { width: pageW - 20 });
+        doc.fillColor('#000000');
+        doc.y = bannerY + 28;
+
+        // Lignes de tâches
+        sectionTasks.forEach((task, i) => {
+          if (doc.y > doc.page.height - 60) {
+            doc.addPage();
+          }
+
+          const rowY = doc.y;
+          const leftX = doc.page.margins.left;
+
+          // Fond alternée
+          if (i % 2 === 0) {
+            doc.rect(leftX, rowY, pageW, 18).fillColor('#f8f9fa').fill();
+          }
+
+          // Checkbox statut
+          const statusLabel = STATUS_LABELS[task.status] || '○';
+          doc.font('Helvetica').fontSize(9).fillColor('#333333')
+            .text(statusLabel, leftX + 4, rowY + 4, { width: 70 });
+
+          // Titre (barré si done)
+          const titleX = leftX + 74;
+          const titleW = pageW - 240;
+          if (task.status === 'done') {
+            doc.font('Helvetica-Oblique').fillColor('#999999');
+          } else {
+            doc.font('Helvetica').fillColor('#111111');
+          }
+          doc.text(task.title || '—', titleX, rowY + 4, { width: titleW, lineBreak: false });
+          if (task.status === 'done') {
+            // Ligne barrée
+            const textWidth = doc.widthOfString(task.title || '—', { width: titleW });
+            doc.moveTo(titleX, rowY + 10)
+              .lineTo(titleX + Math.min(textWidth, titleW), rowY + 10)
+              .strokeColor('#999999').lineWidth(0.5).stroke();
+          }
+
+          // Personne assignée
+          const personX = leftX + pageW - 160;
+          if (task.person_first_name || task.person_last_name) {
+            const personStr = `${task.person_first_name || ''} ${task.person_last_name ? task.person_last_name.charAt(0) + '.' : ''}`.trim();
+            doc.font('Helvetica').fontSize(8).fillColor('#555555')
+              .text(personStr, personX, rowY + 5, { width: 90, lineBreak: false });
+          }
+
+          // Détails événement (client, lieu)
+          const extraX = leftX + pageW - 60;
+          if (task.event_client) {
+            doc.font('Helvetica').fontSize(7).fillColor('#888888')
+              .text(task.event_client.slice(0, 12), extraX, rowY + 3, { width: 55, lineBreak: false });
+          }
+          if (task.event_location) {
+            doc.font('Helvetica').fontSize(7).fillColor('#888888')
+              .text(task.event_location.slice(0, 12), extraX, rowY + 11, { width: 55, lineBreak: false });
+          }
+
+          doc.fillColor('#000000');
+          doc.y = rowY + 20;
+        });
+
+        doc.moveDown(0.5);
+      });
+
+      // ── PIED DE PAGE ──
+      doc.moveDown(1);
+      doc.moveTo(doc.page.margins.left, doc.y)
+        .lineTo(doc.page.margins.left + pageW, doc.y)
+        .strokeColor('#cccccc').lineWidth(0.5).stroke();
+      doc.moveDown(0.4);
+      doc.fontSize(7).font('Helvetica').fillColor('#aaaaaa')
+        .text(`Généré par eM@g — ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+
+      doc.end();
+
+    } catch (error) {
+      console.error('GET /api/communication/tasks/export-pdf error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Erreur génération PDF' });
+      }
     }
   });
 

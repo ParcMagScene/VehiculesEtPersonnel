@@ -418,3 +418,225 @@
     padding: 40px 20px;
   }
 }
+
+/* ═══════════════════════════════════════════
+   Point 2 — Batch mode, doc type, preview
+   ═══════════════════════════════════════════ */
+
+/* Doc type badge + confidence */
+.detected-doc-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--theme-bg-card, #f8fafc);
+  border: 1px solid var(--theme-border, #e2e8f0);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.doc-type-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.doc-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.doc-confidence {
+  font-size: 13px;
+  color: var(--theme-text-secondary, #64748b);
+}
+
+.confidence-label {
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+/* Batch browse button */
+.batch-browse {
+  background: var(--theme-bg-card, #f1f5f9) !important;
+  color: var(--theme-text-primary, #334155) !important;
+  border: 1px solid var(--theme-border, #cbd5e1) !important;
+}
+
+.batch-browse:hover {
+  background: var(--theme-bg-hover, #e2e8f0) !important;
+}
+
+/* Batch progress bar */
+.batch-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--theme-bg-card, #e2e8f0);
+  border-radius: 3px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.batch-progress-fill {
+  height: 100%;
+  background: var(--btn-primary-bg, #3b82f6);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Batch results panel */
+.batch-results-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.batch-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-results-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--theme-text-primary, #1e293b);
+}
+
+.btn-reset-batch {
+  background: none;
+  border: 1px solid var(--theme-border, #cbd5e1);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--theme-text-secondary, #64748b);
+  transition: all 0.15s;
+}
+
+.btn-reset-batch:hover {
+  background: var(--theme-bg-hover, #f1f5f9);
+  color: var(--theme-text-primary, #334155);
+}
+
+.batch-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.batch-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-border, #e2e8f0);
+  background: var(--theme-bg-card, #fff);
+  cursor: pointer;
+  transition: all 0.15s;
+  gap: 10px;
+}
+
+.batch-result-item:hover:not(.error) {
+  border-color: var(--btn-primary-bg, #3b82f6);
+  background: var(--theme-bg-hover, #f0f9ff);
+}
+
+.batch-result-item.selected {
+  border-color: var(--btn-primary-bg, #3b82f6);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.batch-result-item.error {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  cursor: default;
+  opacity: 0.7;
+}
+
+.batch-result-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.batch-result-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.batch-result-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theme-text-primary, #1e293b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.batch-result-fields {
+  font-size: 11px;
+  color: var(--theme-text-secondary, #94a3b8);
+}
+
+.batch-result-affaire {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--btn-primary-bg, #3b82f6);
+  background: rgba(59, 130, 246, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.batch-result-error {
+  font-size: 12px;
+  color: #ef4444;
+}
+
+/* PDF preview inline */
+.pdf-preview-container {
+  width: 100%;
+  height: 350px;
+  border: 1px solid var(--theme-border, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  animation: aiFadeIn 0.2s ease-out;
+}
+
+.pdf-preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+@media (max-width: 640px) {
+  .batch-result-meta {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .pdf-preview-container {
+    height: 250px;
+  }
+}

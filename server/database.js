@@ -1745,6 +1745,29 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+
+    // Migration : colonnes enrichies pour bl_imports (Phase 5)
+    const blCols = db.prepare("PRAGMA table_info(bl_imports)").all().map(c => c.name);
+    if (!blCols.includes('affaire_type')) {
+      db.prepare("ALTER TABLE bl_imports ADD COLUMN affaire_type TEXT").run();
+      console.log('  + bl_imports.affaire_type');
+    }
+    if (!blCols.includes('doc_type')) {
+      db.prepare("ALTER TABLE bl_imports ADD COLUMN doc_type TEXT").run();
+      console.log('  + bl_imports.doc_type');
+    }
+    if (!blCols.includes('confidence_score')) {
+      db.prepare("ALTER TABLE bl_imports ADD COLUMN confidence_score REAL").run();
+      console.log('  + bl_imports.confidence_score');
+    }
+    if (!blCols.includes('sections_data')) {
+      db.prepare("ALTER TABLE bl_imports ADD COLUMN sections_data TEXT").run();
+      console.log('  + bl_imports.sections_data');
+    }
+    if (!blCols.includes('field_confidence')) {
+      db.prepare("ALTER TABLE bl_imports ADD COLUMN field_confidence TEXT").run();
+      console.log('  + bl_imports.field_confidence');
+    }
   } catch (error) {
     console.warn('⚠️ Migration communication:', error.message);
   }

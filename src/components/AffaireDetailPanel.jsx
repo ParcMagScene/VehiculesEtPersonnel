@@ -879,6 +879,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
             onClose={() => setShowBLImport(false)}
             onImported={() => setShowBLImport(false)}
             defaultAffaireId={currentAffaire.numeroAffaire}
+            defaultAffaireType={currentAffaire.type}
           />
         </Suspense>
       )}
@@ -974,6 +975,7 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
             onClose={() => setShowBLImport(false)}
             onImported={() => { setShowBLImport(false); handleDataChanged(); }}
             defaultAffaireId={affaire.numeroAffaire}
+            defaultAffaireType={affaire.type}
           />
         </Suspense>
       )}

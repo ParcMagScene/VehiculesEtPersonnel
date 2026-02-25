@@ -12,6 +12,8 @@ if (typeof window !== 'undefined') {
 // ─── Types de documents détectables ───
 export const DOC_TYPES = {
   BON_LIVRAISON: 'bon_livraison',
+  BL_VENTE: 'bl_vente',
+  BON_PREPARATION: 'bon_preparation',
   DEVIS: 'devis',
   FACTURE: 'facture',
   CONTRAT: 'contrat',
@@ -20,6 +22,8 @@ export const DOC_TYPES = {
 
 const DOC_TYPE_LABELS = {
   [DOC_TYPES.BON_LIVRAISON]: 'Bon de Livraison',
+  [DOC_TYPES.BL_VENTE]: 'BL Vente / Installation',
+  [DOC_TYPES.BON_PREPARATION]: 'Bon de Préparation',
   [DOC_TYPES.DEVIS]: 'Devis',
   [DOC_TYPES.FACTURE]: 'Facture',
   [DOC_TYPES.CONTRAT]: 'Contrat',
@@ -43,8 +47,28 @@ export const extractTextFromPDF = async (file) => {
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ');
-      fullText += pageText + '\n';
+
+      // Extraction intelligente : détection de sauts de ligne via coordonnées Y
+      let lastY = null;
+      let currentLine = '';
+      const lines = [];
+
+      for (const item of textContent.items) {
+        const str = item.str;
+        if (!str && !item.hasEOL) continue;
+        const y = Math.round((item.transform?.[5] || 0) * 10) / 10;
+
+        if (lastY !== null && Math.abs(y - lastY) > 2) {
+          if (currentLine.trim()) lines.push(currentLine.trim());
+          currentLine = str;
+        } else {
+          currentLine += (currentLine ? ' ' : '') + str;
+        }
+        lastY = y;
+      }
+      if (currentLine.trim()) lines.push(currentLine.trim());
+
+      fullText += lines.join('\n') + '\n';
     }
 
     return fullText;
@@ -61,19 +85,11 @@ export const extractTextFromPDF = async (file) => {
  */
 export const extractPDFMeta = async (file) => {
   try {
+    const text = await extractTextFromPDF(file);
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
-
-    let fullText = '';
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ');
-      fullText += pageText + '\n';
-    }
-
-    return { text: fullText, pageCount: pdf.numPages, fileSize: file.size };
+    return { text, pageCount: pdf.numPages, fileSize: file.size };
   } catch (error) {
     console.error('❌ Erreur extraction meta PDF:', error);
     throw new Error(`Impossible d'analyser le PDF: ${error.message}`);
@@ -142,26 +158,42 @@ export const detectDocumentType = (text) => {
   const t = text.toLowerCase();
   const scores = {
     [DOC_TYPES.BON_LIVRAISON]: 0,
+    [DOC_TYPES.BL_VENTE]: 0,
+    [DOC_TYPES.BON_PREPARATION]: 0,
     [DOC_TYPES.DEVIS]: 0,
     [DOC_TYPES.FACTURE]: 0,
     [DOC_TYPES.CONTRAT]: 0,
   };
 
-  // Bon de Livraison
+  // ─── BL Vente / Installation (Format A — "BON DE LIVRAISON VENTE") ───
+  if (/bon\s+de\s+livraison\s+vente/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 60;
+  if (/notre\s+r[eé]f\s*:/i.test(t) && /objet\s*:/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 20;
+  if (/conditions\s+g[eé]n[eé]rales/i.test(t) && /bon\s+de\s+livraison/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 15;
+  if (/votre\s+interlocuteur/i.test(t) && /mag-scene/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 10;
+  if (/\bVTE\b/.test(text)) scores[DOC_TYPES.BL_VENTE] += 10;
+
+  // ─── Bon de Préparation (Format B — "Bon de préparation") ───
+  if (/bon\s+de\s+pr[eé]paration/i.test(t)) scores[DOC_TYPES.BON_PREPARATION] += 60;
+  if (/r[eé]f[eé]rence\s+nom\s+qt[eé]\s+poids\s+volume/i.test(t)) scores[DOC_TYPES.BON_PREPARATION] += 20;
+  if (/\bsonorisation\b/i.test(t) && /\blumi[eè]re\b/i.test(t)) scores[DOC_TYPES.BON_PREPARATION] += 15;
+  if (/adresse\s+de\s+livraison/i.test(t) && /\bdevis\b/i.test(t)) scores[DOC_TYPES.BON_PREPARATION] += 10;
+  if (/\b\d{2}\/\d{2}\/\d{4}\s+(AM|PM)\b/.test(text)) scores[DOC_TYPES.BON_PREPARATION] += 15;
+
+  // ─── Bon de Livraison générique ───
   if (/bon\s+de\s+livraison/i.test(t)) scores[DOC_TYPES.BON_LIVRAISON] += 40;
   if (/\bbl\b/i.test(t) && /livraison/i.test(t)) scores[DOC_TYPES.BON_LIVRAISON] += 20;
   if (/prestation\s+(du|le)/i.test(t)) scores[DOC_TYPES.BON_LIVRAISON] += 15;
   if (/location\s+(du|le)/i.test(t)) scores[DOC_TYPES.BON_LIVRAISON] += 15;
   if (/adresse\s+de\s+livraison/i.test(t)) scores[DOC_TYPES.BON_LIVRAISON] += 10;
 
-  // Devis
+  // ─── Devis ───
   if (/\bdevis\b/i.test(t)) scores[DOC_TYPES.DEVIS] += 35;
   if (/devis\s+n[°o]?\s*[:\s]*\d/i.test(t)) scores[DOC_TYPES.DEVIS] += 20;
   if (/validité\s+du\s+devis/i.test(t)) scores[DOC_TYPES.DEVIS] += 15;
   if (/montant\s+ht/i.test(t)) scores[DOC_TYPES.DEVIS] += 10;
   if (/total\s+ttc/i.test(t)) scores[DOC_TYPES.DEVIS] += 5;
 
-  // Facture
+  // ─── Facture ───
   if (/\bfacture\b/i.test(t)) scores[DOC_TYPES.FACTURE] += 35;
   if (/facture\s+n[°o]?\s*[:\s]*\d/i.test(t)) scores[DOC_TYPES.FACTURE] += 20;
   if (/échéance|echeance/i.test(t)) scores[DOC_TYPES.FACTURE] += 10;
@@ -169,15 +201,17 @@ export const detectDocumentType = (text) => {
   if (/tva/i.test(t)) scores[DOC_TYPES.FACTURE] += 5;
   if (/net\s+[àa]\s+payer/i.test(t)) scores[DOC_TYPES.FACTURE] += 15;
 
-  // Contrat
+  // ─── Contrat ───
   if (/\bcontrat\b/i.test(t)) scores[DOC_TYPES.CONTRAT] += 35;
   if (/convention/i.test(t)) scores[DOC_TYPES.CONTRAT] += 20;
   if (/durée\s+du\s+contrat|duree\s+du\s+contrat/i.test(t)) scores[DOC_TYPES.CONTRAT] += 15;
   if (/clause|article\s+\d/i.test(t)) scores[DOC_TYPES.CONTRAT] += 10;
   if (/signataire|signature/i.test(t)) scores[DOC_TYPES.CONTRAT] += 5;
 
-  // Bonus communs (affaire number boosts BL/Devis)
+  // Bonus communs (affaire number boosts BL types)
   if (extractNumeroAffaire(text)) {
+    scores[DOC_TYPES.BL_VENTE] += 5;
+    scores[DOC_TYPES.BON_PREPARATION] += 5;
     scores[DOC_TYPES.BON_LIVRAISON] += 10;
     scores[DOC_TYPES.DEVIS] += 5;
   }
@@ -292,6 +326,399 @@ export const parseBonLivraison = (text) => {
     }
   } catch (error) {
     console.error('❌ Erreur parsing BL:', error);
+  }
+
+  return info;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// PARSEUR FORMAT A — "BON DE LIVRAISON VENTE" (BL Ventes et installations)
+// Structure : interlocuteur, client, Notre Réf AF, Objet, articles simples
+// ═══════════════════════════════════════════════════════════════
+export const parseBLVente = (text) => {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const info = {
+    numeroAffaire: null,
+    variante: null,
+    type: 'Vente',
+    client: null,
+    adresseLivraison: null,
+    interlocuteur: null,
+    tel: null,
+    fax: null,
+    objet: null,
+    dateDocument: null,
+    dateLocation: null,
+    dateDebut: null,
+    dateFin: null,
+    nomAffaire: null,
+    items: [],
+    fieldsFound: 0,
+    fieldsTotal: 12,
+  };
+
+  try {
+    // Interlocuteur : "Votre interlocuteur : Richard FOUVET"
+    const interMatch = text.match(/Votre\s+interlocuteur\s*:\s*(.+)/i);
+    if (interMatch) { info.interlocuteur = interMatch[1].trim(); info.fieldsFound++; }
+
+    // Notre Réf : AF30883 / 3
+    const refMatch = text.match(/Notre\s+R[eé]f\s*:?\s*\n?\s*(AF\d{4,6})\s*\/?\s*(\d*)/i);
+    if (refMatch) {
+      info.numeroAffaire = refMatch[1];
+      info.variante = refMatch[2] || null;
+      info.fieldsFound++;
+    } else {
+      info.numeroAffaire = extractNumeroAffaire(text);
+      if (info.numeroAffaire) info.fieldsFound++;
+    }
+
+    // Client : bloc entre "contact@mag-scene.com" et "Votre Réf."
+    const clientBlockMatch = text.match(/contact@mag-scene\.com\s*\n([\s\S]*?)(?=Votre\s+R[eé]f)/i);
+    if (clientBlockMatch) {
+      const clientLines = clientBlockMatch[1].split('\n').map(l => l.trim()).filter(l => l && !/^p\.\d+$/.test(l));
+      if (clientLines.length > 0) {
+        info.client = clientLines[0];
+        info.fieldsFound++;
+        if (clientLines.length > 1) {
+          info.adresseLivraison = clientLines.slice(1).join('\n');
+          info.fieldsFound++;
+        }
+      }
+    }
+
+    // Téléphone & Fax client
+    const telMatch = text.match(/V\.\s*T[eé]l\s*:\s*\n?\s*(\d[\d\s.]+)/i);
+    if (telMatch) { info.tel = telMatch[1].trim(); info.fieldsFound++; }
+    const faxMatch = text.match(/V\.\s*Fax\s*:\s*\n?\s*(\d[\d\s.]+)/i);
+    if (faxMatch) { info.fax = faxMatch[1].trim(); info.fieldsFound++; }
+
+    // Objet : "VTE MICROS HF/SIMPLES-DOUBLES du 30/10/24 au 30/10/24"
+    const objetMatch = text.match(/Objet\s*:\s*\n?\s*(.+)/i);
+    if (objetMatch) {
+      info.objet = objetMatch[1].trim();
+      info.nomAffaire = info.objet;
+      info.fieldsFound++;
+
+      // Type depuis l'objet
+      if (/\bVTE\b|\bvente\b/i.test(info.objet)) info.type = 'Vente';
+      else if (/\bINSTALL/i.test(info.objet)) info.type = 'Installation';
+      else if (/\bLOC\b/i.test(info.objet)) info.type = 'Location';
+      else if (/\bPREST/i.test(info.objet)) info.type = 'Prestation';
+
+      // Dates du/au dans l'objet
+      const datesMatch = info.objet.match(/du\s+(\d{2})\/(\d{2})\/(\d{2,4})\s+au\s+(\d{2})\/(\d{2})\/(\d{2,4})/i);
+      if (datesMatch) {
+        const [, j1, m1, a1, j2, m2, a2] = datesMatch;
+        const y1 = a1.length === 2 ? '20' + a1 : a1;
+        const y2 = a2.length === 2 ? '20' + a2 : a2;
+        info.dateDebut = `${y1}-${m1}-${j1}`;
+        info.dateFin = `${y2}-${m2}-${j2}`;
+        info.dateLocation = info.dateDebut;
+        info.fieldsFound++;
+      }
+    }
+
+    // Date document : "A Saint-Etienne le DD/MM/YYYY"
+    const dateDocMatch = text.match(/A\s+Saint-[EÉe]tienne\s+le\s+(\d{2})\/(\d{2})\/(\d{4})/i);
+    if (dateDocMatch) {
+      info.dateDocument = `${dateDocMatch[3]}-${dateDocMatch[2]}-${dateDocMatch[1]}`;
+      info.fieldsFound++;
+    }
+
+    // ─── Extraction des articles ───
+    // Bloc entre "Qté" (ou header contenant Qté) et "Conditions générales"
+    const qteIdx = lines.findIndex(l => /\bQt[eé](?:\b|\s|$)/i.test(l));
+    const condIdx = lines.findIndex((l, i) => i > qteIdx && /conditions\s+g[eé]n[eé]rales/i.test(l));
+    if (qteIdx >= 0) {
+      const isJoinedHeader = !/^Qt[eé]$/i.test(lines[qteIdx]); // header = "Code Nom Qté"
+      const endIdx = condIdx >= 0 ? condIdx : lines.length;
+
+      if (isJoinedHeader) {
+        // ─── Mode lignes jointes (pdfjs-dist) : "description qty" ou "code description qty" ───
+        for (let i = qteIdx + 1; i < endIdx; i++) {
+          const line = lines[i];
+          // Skip lignes vides, headers, infos supplémentaires courtes type "CMU 200KG"
+          if (!line || /^(Code|Nom|Qt[eé])$/i.test(line)) continue;
+          // Chercher un nombre en fin de ligne (quantité)
+          const rowMatch = line.match(/^(.+?)\s+(\d{1,5})\s*$/);
+          if (rowMatch) {
+            const fullDesc = rowMatch[1].trim();
+            const qty = parseInt(rowMatch[2]);
+            let code = '';
+            let description = fullDesc;
+            // Si le début est un code court tout en majuscules suivi d'un espace + description plus longue
+            const codeSplit = fullDesc.match(/^([A-Z0-9][A-Z0-9._-]{1,15})\s+(.{10,})$/);
+            if (codeSplit) {
+              code = codeSplit[1];
+              description = codeSplit[2];
+            }
+            if (description && description.length > 3) {
+              info.items.push({ code, description, quantity: qty });
+            }
+          }
+        }
+      } else {
+        // ─── Mode lignes séparées (PyMuPDF-like) : qty sur sa propre ligne ───
+        for (let i = qteIdx + 1; i < endIdx; i++) {
+          if (/^\d{1,5}$/.test(lines[i])) {
+            const qty = parseInt(lines[i]);
+            let description = '';
+            let code = '';
+            if (i >= 1 && !/^\d{1,5}$/.test(lines[i - 1]) && !/^Qt[eé]$/i.test(lines[i - 1])) {
+              description = lines[i - 1];
+              if (description.length < 15 && /^[A-Z0-9\s._-]+$/i.test(description) && i >= 2) {
+                code = description;
+                description = lines[i - 2] || '';
+              }
+            }
+            if (description && !/^(Code|Nom|Qt[eé])$/i.test(description)) {
+              info.items.push({ code, description, quantity: qty });
+            }
+          }
+        }
+      }
+      if (info.items.length > 0) info.fieldsFound++;
+    }
+
+    // Fallback client
+    if (!info.client && info.nomAffaire) info.client = info.nomAffaire;
+  } catch (error) {
+    console.error('❌ Erreur parsing BL Vente:', error);
+  }
+
+  return info;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// PARSEUR FORMAT B — "BON DE PRÉPARATION" (BL Affaires Location/Presta)
+// Structure : AF, nom affaire, client, adresse, devis, sections catégorisées
+// ═══════════════════════════════════════════════════════════════
+const SECTION_NAMES = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'REGIE', 'RÉGIE', 'REGIE/PLATEAU', 'RÉGIE/PLATEAU', 'VIDEO', 'VIDÉO', 'STRUCTURE', 'MOBILIER', 'DIVERS', 'ACCROCHE', 'MOTORISATION', 'PRATICABLE', 'PRATICABLES', 'ELECTRICITE', 'ÉLECTRICITÉ', 'CÂBLAGE', 'CABLAGE', 'AUDIOVISUEL', 'DIFFUSION'];
+const SECTION_PATTERN = /^(SONORISATION|LUMIERE|LUMIÈRE|REGIE|RÉGIE|REGIE\/PLATEAU|RÉGIE\/PLATEAU|VIDEO|VIDÉO|STRUCTURE|MOBILIER|DIVERS|ACCROCHE|MOTORISATION|PRATICABLES?|ELECTRICITE|ÉLECTRICITÉ|CÂBLAGE|CABLAGE|AUDIOVISUEL|DIFFUSION)(\s|$)/i;
+
+export const parseBonPreparation = (text) => {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const info = {
+    numeroAffaire: null,
+    type: null,
+    client: null,
+    nomAffaire: null,
+    adresseLivraison: null,
+    devis: null,
+    devisDate: null,
+    datePreparation: null,
+    dateLocation: null,
+    interlocuteur: null,
+    tel: null,
+    fax: null,
+    sections: [],
+    items: [],
+    fieldsFound: 0,
+    fieldsTotal: 12,
+  };
+
+  try {
+    // Date de préparation ("DD/MM/YYYY à HH:MM:SS")
+    const datePrepMatch = text.match(/(\d{2})\/(\d{2})\/(\d{4})\s+[àa]\s+\d{2}:\d{2}:\d{2}/);
+    if (datePrepMatch) {
+      info.datePreparation = `${datePrepMatch[3]}-${datePrepMatch[2]}-${datePrepMatch[1]}`;
+      info.fieldsFound++;
+    }
+
+    // AF number (ligne isolée)
+    const afMatch = text.match(/^(AF\d{4,6})$/m);
+    if (afMatch) { info.numeroAffaire = afMatch[1]; info.fieldsFound++; }
+
+    // Trouver l'index AF dans les lignes
+    const afIdx = lines.findIndex(l => /^AF\d{4,6}$/.test(l));
+    if (afIdx >= 0) {
+      // Nom affaire = ligne après AF
+      if (afIdx + 1 < lines.length && lines[afIdx + 1] !== 'Devis') {
+        info.nomAffaire = lines[afIdx + 1];
+        info.fieldsFound++;
+        // Détecter type depuis le nom
+        if (/prestation/i.test(info.nomAffaire)) info.type = 'Prestation';
+        else if (/location/i.test(info.nomAffaire)) info.type = 'Location';
+        else if (/installation/i.test(info.nomAffaire)) info.type = 'Installation';
+        else if (/vente|vte/i.test(info.nomAffaire)) info.type = 'Vente';
+      }
+
+      // Trouver "Devis" keyword
+      const devisIdx = lines.findIndex((l, i) => i > afIdx && l === 'Devis');
+      if (devisIdx >= 0) {
+        // Numéro de devis = ligne avant "Devis"
+        if (devisIdx > 0 && /^\d+$/.test(lines[devisIdx - 1])) {
+          info.devis = lines[devisIdx - 1];
+          info.fieldsFound++;
+        }
+        // Date devis = ligne après "Devis"
+        if (devisIdx + 1 < lines.length) {
+          const dm = lines[devisIdx + 1].match(/(\d{2})\/(\d{2})\/(\d{4})/);
+          if (dm) {
+            info.devisDate = `${dm[3]}-${dm[2]}-${dm[1]}`;
+            info.fieldsFound++;
+          }
+        }
+        // Client + adresse : entre nomAffaire et devis
+        const clientStart = afIdx + 2;
+        const clientEnd = /^\d+$/.test(lines[devisIdx - 1]) ? devisIdx - 1 : devisIdx;
+        const clientLines = lines.slice(clientStart, clientEnd);
+        if (clientLines.length > 0) {
+          info.client = clientLines[0];
+          info.fieldsFound++;
+          if (clientLines.length > 1) {
+            info.adresseLivraison = clientLines.slice(1).join('\n');
+            info.fieldsFound++;
+          }
+        }
+      }
+    }
+
+    // Tél & Fax
+    const telMatch = text.match(/T[eé]l\s*:\s*\n?\s*(\d[\d\s.]{3,})/i);
+    if (telMatch) { info.tel = telMatch[1].trim(); info.fieldsFound++; }
+    const faxMatch = text.match(/Fax\s*:\s*\n?\s*(\d[\d\s.]{3,})/i);
+    if (faxMatch) { info.fax = faxMatch[1].trim(); info.fieldsFound++; }
+
+    // ─── Extraction des sections et articles ───
+    // Scanner après "Fax :" (exact ou contenu dans une ligne) ou header joint "Référence Nom Qté"
+    const faxLineIdx = lines.findIndex(l => /\bFax\s*:/i.test(l));
+    const headerLineIdx = lines.findIndex(l => /\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(l));
+    const scanStart = headerLineIdx >= 0 ? headerLineIdx + 1 : (faxLineIdx >= 0 ? faxLineIdx + 1 : 0);
+    let currentSection = null;
+    let firstSectionDate = null;
+    let lastSectionDate = null;
+
+    let i = scanStart;
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Skip en-têtes de page répétés (contenant "Bon de préparation" ou numéro de page)
+      if (/Bon de pr[eé]paration/i.test(line) || /^-\s*\d+\s*-$/.test(line)) {
+        // Chercher le prochain header / Fax pour reprendre le scan
+        const nextFaxIdx = lines.findIndex((l, j) => j > i && /\bFax\s*:/i.test(l));
+        const nextHeaderIdx = lines.findIndex((l, j) => j > i && /\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(l));
+        const skipTo = [nextFaxIdx, nextHeaderIdx].filter(x => x > i);
+        if (skipTo.length > 0) { i = Math.min(...skipTo) + 1; continue; }
+      }
+
+      // Nouveau header de section (exact ou suivi de chiffres)
+      const sectionMatch = SECTION_PATTERN.exec(line);
+      if (sectionMatch) {
+        const sectionName = sectionMatch[1].toUpperCase();
+        currentSection = { name: sectionName, dateDebut: null, dateFin: null, items: [] };
+        info.sections.push(currentSection);
+        // Chercher dates dans les lignes suivantes (jusqu'à 8 lignes)
+        for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
+          const dm = lines[j].match(/(\d{2}\/\d{2}\/\d{4})\s+(AM|PM)\s+(\d{2}\/\d{2}\/\d{4})\s+(AM|PM)/);
+          if (dm && !currentSection.dateDebut) {
+            currentSection.dateDebut = `${dm[1]} ${dm[2]}`;
+            currentSection.dateFin = `${dm[3]} ${dm[4]}`;
+            const d1 = dm[1].split('/').reverse().join('-');
+            const d2 = dm[3].split('/').reverse().join('-');
+            if (!firstSectionDate || d1 < firstSectionDate) firstSectionDate = d1;
+            if (!lastSectionDate || d2 > lastSectionDate) lastSectionDate = d2;
+          }
+        }
+        i++;
+        continue;
+      }
+
+      // Détection d'article (2 modes : lignes jointes ou séparées)
+      // Mode joint (pdfjs-dist) : "description [ref] qty poids volume" sur une seule ligne
+      // Mode séparé (PyMuPDF) : description, ref, qty, poids, volume sur des lignes distinctes
+      if (currentSection) {
+        // Essai mode joint : ligne se terminant par "nombre nombre nombre" (qty poids volume)
+        const joinedMatch = line.match(/^(.{8,}?)\s+(\d{1,5})\s+([\d,.]+)\s+([\d,.]+)\s*$/);
+        if (joinedMatch) {
+          let fullDesc = joinedMatch[1].trim();
+          const qty = parseInt(joinedMatch[2]);
+          const poids = parseFloat(joinedMatch[3].replace(',', '.')) || 0;
+          const volume = parseFloat(joinedMatch[4].replace(',', '.')) || 0;
+          let reference = '';
+          // Séparer la référence (dernier mot court en majuscules/chiffres)
+          const refSplit = fullDesc.match(/^(.+?)\s+([A-Z][A-Z0-9 ._-]{1,20})\s*$/);
+          if (refSplit && refSplit[1].length > 12) {
+            fullDesc = refSplit[1];
+            reference = refSplit[2];
+          }
+          // Skip si c'est un agrégat de section (fullDesc = nom de section)
+          if (!SECTION_NAMES.some(s => fullDesc.toUpperCase().startsWith(s))) {
+            const item = { reference, description: fullDesc, quantity: qty, poids, volume, section: currentSection.name };
+            currentSection.items.push(item);
+            info.items.push(item);
+          }
+          i++;
+          continue;
+        }
+
+        // Mode séparé : détection de ligne descriptive (avec • ou longue avec lettres)
+        if (!SECTION_PATTERN.test(line)
+          && !/^(du|au)$/i.test(line)
+          && !/^\d{2}\/\d{2}\/\d{4}\s+(AM|PM)/.test(line)
+          && !/\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(line)
+          && !/^(R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|Affaire|Interlocuteur|Client|Adresse|T[eé]l|Fax)\s*:?$/i.test(line)
+          && !/Bon de pr[eé]paration/i.test(line)
+          && !/^-\s*\d+\s*-$/.test(line)
+          && !/^AF\d{4,6}$/.test(line)
+          && (line.includes('•') || line.includes('!') || (line.length > 20 && /[a-zA-ZÀ-ÿ]/.test(line)))
+        ) {
+          const description = line.replace(/^!\s*/, '').trim();
+          let reference = '';
+          let qty = 0, poids = 0, volume = 0;
+
+          let j = i + 1;
+          // Ligne suivante : référence (court, non numérique) ou quantité
+          if (j < lines.length) {
+            const nextLine = lines[j].replace(/\s/g, '');
+            if (/^\d+$/.test(nextLine)) {
+              qty = parseInt(nextLine);
+              j++;
+            } else if (!SECTION_PATTERN.test(lines[j]) && !lines[j].includes('•')
+                       && !/^(du|au)$/i.test(lines[j]) && lines[j].length < 30) {
+              reference = lines[j];
+              j++;
+              if (j < lines.length && /^\d+$/.test(lines[j].replace(/\s/g, ''))) {
+                qty = parseInt(lines[j].replace(/\s/g, ''));
+                j++;
+              }
+            }
+          }
+          // Poids
+          if (j < lines.length && /^[\d,.\s]+$/.test(lines[j])) {
+            poids = parseFloat(lines[j].replace(',', '.').replace(/\s/g, '')) || 0;
+            j++;
+          }
+          // Volume
+          if (j < lines.length && /^[\d,.\s]+$/.test(lines[j])) {
+            volume = parseFloat(lines[j].replace(',', '.').replace(/\s/g, '')) || 0;
+            j++;
+          }
+
+          const item = { reference, description, quantity: qty, poids, volume, section: currentSection.name };
+          currentSection.items.push(item);
+          info.items.push(item);
+          i = j;
+          continue;
+        }
+      }
+
+      i++;
+    }
+
+    // Dates de la prestation/location
+    if (firstSectionDate) {
+      info.dateLocation = firstSectionDate;
+      info.fieldsFound++;
+    }
+    if (info.items.length > 0) info.fieldsFound++;
+    if (info.sections.length > 0) info.fieldsFound++;
+
+    // Type par défaut si non détecté
+    if (!info.type) info.type = 'Prestation';
+  } catch (error) {
+    console.error('❌ Erreur parsing Bon de Préparation:', error);
   }
 
   return info;
@@ -534,22 +961,82 @@ export const parseGeneric = (text) => {
   return info;
 };
 
+// ═══ Calcul de confiance par champ ═══
+const computeFieldConfidence = (result) => {
+  const fc = {};
+  // Numéro affaire
+  if (result.numero) {
+    fc.numero = /^AF\d{4,6}$/.test(result.numero) ? 'high' : 'medium';
+  }
+  // Type
+  if (result.type) {
+    fc.type = ['Prestation', 'Location', 'Installation', 'Vente'].includes(result.type) ? 'high' : 'low';
+  }
+  // Client
+  if (result.client) {
+    fc.client = result.client.length > 5 ? 'high' : 'medium';
+  }
+  // Date
+  if (result.date) {
+    fc.date = /^\d{4}-\d{2}-\d{2}$/.test(result.date) ? 'high' : 'medium';
+  }
+  // Interlocuteur
+  if (result.interlocuteur) {
+    fc.interlocuteur = /^(Monsieur|Madame|M\.|Mme)/i.test(result.interlocuteur) ? 'high' : 'medium';
+  }
+  // Adresse
+  if (result.adresse) {
+    fc.adresse = /\d{5}/.test(result.adresse) ? 'high' : 'medium';
+  }
+  // Nom
+  if (result.nomAffaire) {
+    fc.nomAffaire = result.nomAffaire.length > 3 ? 'high' : 'medium';
+  }
+  // Tél
+  if (result.tel) {
+    fc.tel = result.tel.replace(/\s/g, '').length >= 10 ? 'high' : 'medium';
+  }
+  // Fax
+  if (result.fax) {
+    fc.fax = result.fax.replace(/\s/g, '').length >= 10 ? 'high' : 'medium';
+  }
+  // Devis
+  if (result.devis) {
+    fc.devis = 'medium';
+  }
+  // Items
+  if (result.items && result.items.length > 0) {
+    fc.items = result.items.length > 2 ? 'high' : 'medium';
+  }
+  // Sections
+  if (result.sections && result.sections.length > 0) {
+    fc.sections = 'high';
+  }
+  return fc;
+};
+
 /**
  * Parse intelligent — détecte le type de document puis applique le parseur spécialisé
+ * Retourne un objet APLATI pour usage direct par BLImportModal
  * @param {string} text - Texte extrait du PDF
- * @returns {{ docType: string, docTypeLabel: string, confidence: number, info: Object }}
+ * @returns {Object} Objet aplati avec docType, confidence, et tous les champs extraits
  */
 export const smartParse = (text) => {
-  const { docType, confidence } = detectDocumentType(text);
+  const { docType, confidence, scores } = detectDocumentType(text);
   let info;
 
   switch (docType) {
+    case DOC_TYPES.BL_VENTE:
+      info = parseBLVente(text);
+      break;
+    case DOC_TYPES.BON_PREPARATION:
+      info = parseBonPreparation(text);
+      break;
     case DOC_TYPES.BON_LIVRAISON:
       info = parseBonLivraison(text);
       break;
     case DOC_TYPES.DEVIS:
       info = parseDevis(text);
-      // Mapper dateDevis → dateLocation pour cohérence avec le formulaire
       if (info.dateDevis && !info.dateLocation) info.dateLocation = info.dateDevis;
       if (info.devis == null && info.numeroFacture) info.devis = info.numeroFacture;
       break;
@@ -564,12 +1051,45 @@ export const smartParse = (text) => {
       break;
   }
 
-  return {
+  // Retour APLATI — champs directement accessibles par BLImportModal
+  const result = {
     docType,
     docTypeLabel: getDocTypeLabel(docType),
     confidence,
-    info,
+    scores,
+    // Champs principaux aplatis
+    numero: info.numeroAffaire || null,
+    type: info.type || null,
+    client: info.client || null,
+    destinataire: info.client || null,
+    date: info.dateLocation || info.dateDebut || info.dateDevis || info.dateFacture || null,
+    dateLivraison: info.dateLocation || info.dateDebut || null,
+    dateDebut: info.dateDebut || null,
+    dateFin: info.dateFin || null,
+    datePreparation: info.datePreparation || null,
+    objet: info.objet || null,
+    variante: info.variante || null,
+    nomAffaire: info.nomAffaire || null,
+    interlocuteur: info.interlocuteur || null,
+    tel: info.tel || null,
+    fax: info.fax || null,
+    devis: info.devis || null,
+    adresse: info.adresseLivraison || null,
+    lieu: info.adresseLivraison || null,
+    montantHT: info.montantHT || null,
+    montantTTC: info.montantTTC || null,
+    tva: info.tva || null,
+    items: info.items || [],
+    sections: info.sections || [],
+    fieldsFound: info.fieldsFound || 0,
+    fieldsTotal: info.fieldsTotal || 0,
+    // Info brute originale pour accès détaillé
+    _raw: info,
   };
+
+  // Calculer la confiance par champ
+  result._fieldConfidence = computeFieldConfidence(result);
+  return result;
 };
 
 /**

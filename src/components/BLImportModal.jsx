@@ -138,12 +138,17 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       const formData = new FormData();
       if (file) formData.append('file', file);
       if (affaireId) formData.append('affaire_id', affaireId);
+      if (affaireType) formData.append('affaire_type', affaireType);
       if (rawText) formData.append('raw_text', rawText);
       if (merged) formData.append('parsed_data', JSON.stringify(merged));
       formData.append('status', 'pending');
 
-      await api.uploadBLImport(formData);
-      toast.success('BL importé avec succès');
+      const result = await api.uploadBLImport(formData);
+      if (result.affaireCreated) {
+        toast.success(`BL importé — Affaire ${affaireId} créée automatiquement`);
+      } else {
+        toast.success(`BL importé et lié à l'affaire ${affaireId || '(non spécifiée)'}`);
+      }
       onImported?.();
       onClose();
     } catch (err) {
@@ -171,6 +176,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       const formData = new FormData();
       if (file) formData.append('file', file);
       if (affaireId) formData.append('affaire_id', affaireId);
+      if (affaireType) formData.append('affaire_type', affaireType);
       if (rawText) formData.append('raw_text', rawText);
       formData.append('parsed_data', JSON.stringify(merged));
       formData.append('status', 'validated');
@@ -240,7 +246,11 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
         }
       }
 
-      toast.success(`BL importé + ${created} événement(s) d'affichage créé(s)`);
+      let msg = `BL importé + ${created} événement(s) d'affichage créé(s)`;
+      if (blImport.affaireCreated) {
+        msg += ` — Affaire ${affaireId} créée automatiquement`;
+      }
+      toast.success(msg);
       onImported?.();
       onClose();
     } catch (err) {

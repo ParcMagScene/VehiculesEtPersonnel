@@ -222,9 +222,10 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
   // ─── POST /api/communication/bl-imports ───
   // Multipart : fichier BL + champs parsed_data, affaire_id, etc.
+  // Auto-crée l'affaire si elle n'existe pas, ou lie au BL si elle existe
   app.post('/api/communication/bl-imports', authenticateToken, uploadBL.single('file'), (req, res) => {
     try {
-      const { affaire_id, raw_text, parsed_data, status } = req.body;
+      const { affaire_id, affaire_type, raw_text, parsed_data, status } = req.body;
       const file = req.file;
 
       if (!file && !raw_text) {
@@ -234,16 +235,57 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const id = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('hex');
 
       // Extraire les métadonnées enrichies du parsed_data
-      let affaireType = null, docType = null, confidenceScore = null, sectionsData = null, fieldConfidence = null;
+      let pd = null;
+      let affaireTypeResolved = affaire_type || null;
+      let docType = null, confidenceScore = null, sectionsData = null, fieldConfidence = null;
       if (parsed_data) {
         try {
-          const pd = typeof parsed_data === 'string' ? JSON.parse(parsed_data) : parsed_data;
-          affaireType = pd.type || null;
+          pd = typeof parsed_data === 'string' ? JSON.parse(parsed_data) : parsed_data;
+          if (!affaireTypeResolved) affaireTypeResolved = pd.type || null;
           docType = pd.docType || null;
           confidenceScore = pd.confidence || null;
           sectionsData = pd.sections && pd.sections.length > 0 ? JSON.stringify(pd.sections) : null;
           fieldConfidence = pd._fieldConfidence ? JSON.stringify(pd._fieldConfidence) : null;
         } catch (_) { /* ignore parse errors */ }
+      }
+
+      // ── Auto-création / liaison affaire ──
+      let linkedAffaireId = affaire_id || null;
+      let affaireCreated = false;
+      if (linkedAffaireId) {
+        const existingAffaire = db.prepare('SELECT id, numero_affaire FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
+        if (!existingAffaire) {
+          // Créer l'affaire automatiquement à partir des données parsées
+          try {
+            db.prepare(`
+              INSERT INTO affaires (numero_affaire, type, client, interlocuteur, tel, fax,
+                date_debut, devis, adresse_livraison, titre, description,
+                created_by, modified_by)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+              linkedAffaireId,
+              affaireTypeResolved || 'Prestation',
+              pd?.client || '',
+              pd?.interlocuteur || '',
+              pd?.tel || '',
+              pd?.fax || '',
+              pd?.date || '',
+              pd?.devis || '',
+              pd?.adresse || '',
+              pd?.nomAffaire || pd?.objet || '',
+              `Créée automatiquement depuis l'import BL ${file ? file.originalname : 'text-import'}`,
+              req.user.id,
+              req.user.id
+            );
+            affaireCreated = true;
+            console.log(`✅ Affaire ${linkedAffaireId} créée automatiquement depuis BL import`);
+          } catch (affaireErr) {
+            // Si erreur UNIQUE constraint (race condition), l'affaire a été créée entre-temps → OK
+            if (!affaireErr.message?.includes('UNIQUE')) {
+              console.error('Erreur création auto affaire:', affaireErr.message);
+            }
+          }
+        }
       }
 
       const stmt = db.prepare(`
@@ -253,14 +295,14 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
       stmt.run(
         id,
-        affaire_id || null,
+        linkedAffaireId,
         file ? file.originalname : 'text-import',
         file ? file.filename : null,
         file ? file.mimetype : 'text/plain',
         raw_text || null,
         parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null,
         status || 'validated',
-        affaireType,
+        affaireTypeResolved,
         docType,
         confidenceScore,
         sectionsData,
@@ -269,7 +311,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       );
 
       const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(id);
-      res.status(201).json(created);
+      res.status(201).json({ ...created, affaire_created: affaireCreated });
     } catch (error) {
       console.error('POST /api/communication/bl-imports error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });

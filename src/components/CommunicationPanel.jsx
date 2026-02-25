@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
   Radio, Monitor, ClipboardList, FileText, Plus, Search,
   ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User,
@@ -9,6 +9,8 @@ import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from '../hooks/useToast';
 import './CommunicationPanel.css';
+
+const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {
@@ -56,7 +58,7 @@ const addDays = (dateStr, n) => {
 };
 
 // ═══ Sous-panneau : Affichage Dynamique ═══
-function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent }) {
+function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshKey }) {
   const toast = useToast();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent }) {
     }
   }, [selectedDate, typeFilter, toast]);
 
-  useEffect(() => { loadEvents(); }, [loadEvents]);
+  useEffect(() => { loadEvents(); }, [loadEvents, refreshKey]);
 
   // Filtrer localement par recherche
   const filteredEvents = useMemo(() => {
@@ -319,6 +321,7 @@ function CommunicationPanel({ currentUser }) {
   const [editingEvent, setEditingEvent] = useState(null);
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [eventDialogDate, setEventDialogDate] = useState(null);
+  const [displayRefreshKey, setDisplayRefreshKey] = useState(0);
 
   useEffect(() => {
     api.getCommunicationStats().then(setStats).catch(() => null);
@@ -386,44 +389,32 @@ function CommunicationPanel({ currentUser }) {
             currentUser={currentUser}
             onEditEvent={handleEditEvent}
             onCreateEvent={handleCreateEvent}
+            refreshKey={displayRefreshKey}
           />
         )}
         {activeSubTab === 'tasks' && <TaskPlanningPlaceholder />}
         {activeSubTab === 'bl' && <BLImportPlaceholder />}
       </div>
 
-      {/* Event Dialog (Phase 4 — sera un import lazy) */}
+      {/* Event Dialog */}
       {showEventDialog && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000
-        }}>
-          <div style={{
-            background: 'var(--bg-primary, #fff)', borderRadius: 12, padding: 24,
-            width: '90%', maxWidth: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
-          }}>
-            <h3 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Monitor size={20} />
-              {editingEvent ? 'Modifier l\'événement' : 'Nouvel événement'}
-            </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Le formulaire complet d'événement sera disponible en Phase 4.
-              <br />Date sélectionnée : <strong>{editingEvent?.date || eventDialogDate || '—'}</strong>
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
-              <button
-                onClick={() => setShowEventDialog(false)}
-                style={{
-                  padding: '8px 20px', borderRadius: 8, border: 'none',
-                  background: 'var(--accent-color, #6366f1)', color: 'white',
-                  fontWeight: 600, cursor: 'pointer'
-                }}
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
+        <Suspense fallback={null}>
+          <DynamicDisplayDialog
+            event={editingEvent}
+            defaultDate={eventDialogDate}
+            onSave={() => {
+              setShowEventDialog(false);
+              setEditingEvent(null);
+              setDisplayRefreshKey(k => k + 1);
+              // Refresh stats
+              api.getCommunicationStats().then(setStats).catch(() => null);
+            }}
+            onClose={() => {
+              setShowEventDialog(false);
+              setEditingEvent(null);
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
-  User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle
+  User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
+  CalendarDays, LayoutList
 } from 'lucide-react';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
@@ -38,6 +39,27 @@ const formatDateFr = (dateStr) => {
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 };
 
+const formatDateShort = (dateStr) => {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+};
+
+// Obtenir le lundi de la semaine contenant dateStr
+const getMonday = (dateStr) => {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Obtenir les 7 jours de la semaine (lun→dim)
+const getWeekDays = (dateStr) => {
+  const monday = getMonday(dateStr);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+};
+
 // ═══ Composant Principal ═══
 function TaskPlanningPanel({ currentUser, refreshKey }) {
   const toast = useToast();
@@ -45,6 +67,7 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   const [persons, setPersons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [viewMode, setViewMode] = useState('day'); // 'day' | 'week'
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Inline add form
@@ -52,18 +75,26 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPerson, setNewTaskPerson] = useState('');
 
+  // Semaine : 7 jours à partir du lundi
+  const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
+
   // Load tasks
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.getTasks({ date: selectedDate });
+      let data;
+      if (viewMode === 'week') {
+        data = await api.getTasks({ dateFrom: weekDays[0], dateTo: weekDays[6] });
+      } else {
+        data = await api.getTasks({ date: selectedDate });
+      }
       setTasks(data);
     } catch (err) {
       toast.error('Erreur chargement tâches');
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, toast]);
+  }, [selectedDate, viewMode, weekDays, toast]);
 
   // Load persons for assignment
   const loadPersons = useCallback(async () => {
@@ -276,19 +307,78 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter(t => t.status === 'done').length;
 
+  // ── Groupement par jour (vue semaine) ──
+  const weekGrouped = useMemo(() => {
+    if (viewMode !== 'week') return {};
+    const map = {};
+    weekDays.forEach(d => { map[d] = []; });
+    tasks.forEach(t => {
+      const d = t.date;
+      if (map[d]) map[d].push(t);
+    });
+    return map;
+  }, [tasks, weekDays, viewMode]);
+
+  // ── Vue semaine : mini-carte tâche ──
+  const renderWeekTaskCard = (task) => {
+    const isDone = task.status === 'done';
+    const isProgress = task.status === 'in_progress';
+    const sectionInfo = SECTIONS[task.section] || SECTIONS.manual;
+    return (
+      <div
+        key={task.id}
+        className={`week-task-card ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''}`}
+        style={{ borderLeftColor: sectionInfo.color }}
+        title={`${task.title}${task.personFirstName ? ` — ${task.personFirstName}` : ''}`}
+      >
+        <button
+          className={`task-status-btn mini ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+          onClick={() => cycleStatus(task)}
+        >
+          {isDone && <Check size={10} />}
+          {isProgress && <Clock size={10} />}
+        </button>
+        <span className={`week-task-title ${isDone ? 'done' : ''}`}>{task.title}</span>
+        {(task.personFirstName || task.personLastName) && (
+          <span className="week-task-person">{task.personFirstName?.charAt(0)}{task.personLastName?.charAt(0)}</span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="task-planning-panel">
       {/* Toolbar */}
       <div className="tp-toolbar">
         <div className="tp-toolbar-left">
+          {/* Toggle vue Jour / Semaine */}
+          <div className="tp-view-toggle">
+            <button
+              className={viewMode === 'day' ? 'active' : ''}
+              onClick={() => setViewMode('day')}
+              title="Vue jour"
+            >
+              <LayoutList size={15} /> Jour
+            </button>
+            <button
+              className={viewMode === 'week' ? 'active' : ''}
+              onClick={() => setViewMode('week')}
+              title="Vue semaine"
+            >
+              <CalendarDays size={15} /> Semaine
+            </button>
+          </div>
+
           <div className="tp-date-nav">
-            <button onClick={() => setSelectedDate(d => addDays(d, -1))}>
+            <button onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? -7 : -1))}>
               <ChevronLeft size={16} />
             </button>
             <span className="tp-current-date" onClick={() => setSelectedDate(todayStr())} title="Aujourd'hui">
-              {formatDateFr(selectedDate)}
+              {viewMode === 'week'
+                ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
+                : formatDateFr(selectedDate)}
             </span>
-            <button onClick={() => setSelectedDate(d => addDays(d, 1))}>
+            <button onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? 7 : 1))}>
               <ChevronRight size={16} />
             </button>
           </div>
@@ -305,17 +395,53 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
         </div>
       </div>
 
-      {/* Sections */}
-      <div className="sections-container">
-        {loading ? (
+      {/* Contenu */}
+      {loading ? (
+        <div className="sections-container">
           <div className="empty-state">
             <ClipboardList size={48} />
             <p>Chargement…</p>
           </div>
-        ) : (
-          Object.keys(SECTIONS).map(renderSection)
-        )}
-      </div>
+        </div>
+      ) : viewMode === 'week' ? (
+        /* ═══ VUE SEMAINE ═══ */
+        <div className="week-view-container">
+          <div className="week-grid">
+            {weekDays.map(dayStr => {
+              const dayTasks = weekGrouped[dayStr] || [];
+              const isToday = dayStr === todayStr();
+              const dayDate = new Date(dayStr + 'T00:00:00');
+              const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+              const dayDone = dayTasks.filter(t => t.status === 'done').length;
+
+              return (
+                <div key={dayStr} className={`week-day-column ${isToday ? 'today' : ''}`}>
+                  <div className="week-day-header">
+                    <span className="week-day-label">{dayLabel}</span>
+                    {dayTasks.length > 0 && (
+                      <span className="week-day-count">
+                        {dayDone}/{dayTasks.length}
+                      </span>
+                    )}
+                  </div>
+                  <div className="week-day-tasks">
+                    {dayTasks.length === 0 ? (
+                      <div className="week-empty">—</div>
+                    ) : (
+                      dayTasks.map(renderWeekTaskCard)
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        /* ═══ VUE JOUR ═══ */
+        <div className="sections-container">
+          {Object.keys(SECTIONS).map(renderSection)}
+        </div>
+      )}
 
       {confirmDialog && <ConfirmDialog {...confirmDialog} />}
     </div>

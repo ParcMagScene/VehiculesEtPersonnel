@@ -701,19 +701,20 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 
       {/* Contenu */}
       <div className="eq-content-wrapper">
-        {/* Plan du dépôt */}
-        {showDepotMap && depotZones && subTab === 'inventory' && (
-          <div className="eq-depot-map-wrapper">
-            <DepotMap
-              zones={depotZones}
-              stats={locationStats}
-              selectedZone={filterZone && filterZone !== '_none' ? filterZone : null}
-              onZoneSelect={(zoneId) => setFilterZone(filterZone === zoneId ? '' : zoneId)}
-              onZoneFilter={(zoneId) => setFilterZone(zoneId || '')}
-            />
-          </div>
-        )}
-        <div className="eq-content">
+        <div className="eq-content-inner">
+          {/* Plan du dépôt */}
+          {showDepotMap && depotZones && subTab === 'inventory' && (
+            <div className="eq-depot-map-wrapper">
+              <DepotMap
+                zones={depotZones}
+                stats={locationStats}
+                selectedZone={filterZone && filterZone !== '_none' ? filterZone : null}
+                onZoneSelect={(zoneId) => setFilterZone(filterZone === zoneId ? '' : zoneId)}
+                onZoneFilter={(zoneId) => setFilterZone(zoneId || '')}
+              />
+            </div>
+          )}
+          <div className="eq-content">
           {subTab === 'inventory' && (
             <EquipmentGrid
               equipment={filteredEquipment}
@@ -770,6 +771,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             }}
           />
           )}
+        </div>
         </div>
 
         {/* Volet de détail rapide – Matériel (clic simple) */}

@@ -4,7 +4,7 @@ import {
   Plus, Edit2, Trash2, X, Save, Search,
   ChevronLeft, ChevronRight, AlertTriangle, CheckCircle,
   User, Check, Clock,
-  Link2, Upload, Star, Filter,
+  Link2, Upload, Star, Filter, CalendarOff,
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import PhoneInput, { formatPhoneDisplay } from './PhoneInput';
@@ -32,6 +32,7 @@ import './EquipmentPanel.css';
 import './Calendar.css';
 import { useToast } from '../hooks/useToast';
 import PersonnelAgenda from './PersonnelAgenda';
+import LeavesTab from './LeavesTab';
 
 // ═══════════════════════════════════════
 // Constantes
@@ -222,6 +223,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     { id: 'positions', label: 'Postes', icon: Briefcase, color: '#f97316' },
     { id: 'planning', label: 'Planning', icon: CalendarDays, color: '#10b981' },
     { id: 'agenda', label: 'Agenda', icon: Clock, color: '#06b6d4' },
+    { id: 'leaves', label: 'Congés', icon: CalendarOff, color: '#ef4444' },
   ];
   const subTabs = mode === 'management'
     ? allSubTabs.filter(t => t.id !== 'planning')
@@ -474,6 +476,12 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
             persons={persons}
             currentUser={currentUser}
             googleEvents={googleEvents}
+          />
+        )}
+        {subTab === 'leaves' && (
+          <LeavesTab
+            persons={persons}
+            currentUser={currentUser}
           />
         )}
       </div>

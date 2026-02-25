@@ -5,7 +5,11 @@
 
 import db, { addToHistory } from './database.js';
 import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // ============ CATÉGORIES ============
 
@@ -188,13 +192,13 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/equipment
   app.post('/api/equipment', authenticateToken, (req, res) => {
     try {
-      const { name, reference, serial_number, category_id, status, location, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
+      const { name, reference, serial_number, category_id, status, location, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
       if (!name) return res.status(400).json({ error: 'Nom requis' });
       
       const result = db.prepare(`
-        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(name, reference, serial_number, category_id, status || 'available', location, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity || 1, req.user.id);
+        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(name, reference, serial_number, category_id, status || 'available', location, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity || 1, req.user.id);
       
       // Générer l'UID unique basé sur l'ID
       const uid = 'EMAG-' + String(result.lastInsertRowid).padStart(5, '0');
@@ -213,12 +217,12 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   // PUT /api/equipment/:id
   app.put('/api/equipment/:id', authenticateToken, (req, res) => {
     try {
-      const { name, reference, serial_number, category_id, status, location, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
+      const { name, reference, serial_number, category_id, status, location, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
       
       db.prepare(`
-        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, stock_quantity = ?, updated_at = CURRENT_TIMESTAMP
+        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, stock_quantity = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(name, reference, serial_number, category_id, status, location, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, req.params.id);
+      `).run(name, reference, serial_number, category_id, status, location, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, req.params.id);
       
       addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
       
@@ -1083,6 +1087,40 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       res.json({ photos, logos });
     } catch (error) {
       console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ═══ GET /api/equipment-depot-zones — Zones de dépôt (depot-zones.json) ═══
+  app.get('/api/equipment-depot-zones', authenticateToken, (req, res) => {
+    try {
+      const zonesPath = join(__dirname, '..', 'public', 'depot-zones.json');
+      const data = JSON.parse(readFileSync(zonesPath, 'utf-8'));
+      res.json(data);
+    } catch (error) {
+      console.error('GET /api/equipment-depot-zones error:', error);
+      res.status(500).json({ error: 'Erreur chargement zones dépôt' });
+    }
+  });
+
+  // ═══ GET /api/equipment-location-stats — Stats localisation par zone ═══
+  app.get('/api/equipment-location-stats', authenticateToken, (req, res) => {
+    try {
+      const stats = db.prepare(`
+        SELECT location_zone, location_floor, COUNT(*) as count
+        FROM equipment
+        WHERE location_zone IS NOT NULL AND location_zone != ''
+        GROUP BY location_zone, location_floor
+        ORDER BY location_zone
+      `).all();
+
+      const unlocated = db.prepare(
+        "SELECT COUNT(*) as count FROM equipment WHERE location_zone IS NULL OR location_zone = ''"
+      ).get();
+
+      res.json({ stats, unlocated: unlocated.count });
+    } catch (error) {
+      console.error('GET /api/equipment-location-stats error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });

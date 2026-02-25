@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText } from 'lucide-react';
+import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../utils/api';
 import EquipmentImportModal from './EquipmentImportModal';
@@ -8,6 +8,8 @@ import EquipmentLabelPrint from './EquipmentLabelPrint';
 import EquipmentBatchLabels from './EquipmentBatchLabels';
 import { printEquipmentSheet } from './EquipmentSheetPrint';
 import MaintenanceReportModal from './MaintenanceReportModal';
+import LocationSelector from './LocationSelector';
+import DepotMap from './DepotMap';
 import './EquipmentPanel.css';
 import { useToast } from '../hooks/useToast';
 
@@ -370,6 +372,10 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [logosList, setLogosList] = useState([]);
   const [equipmentLists, setEquipmentLists] = useState([]);
   const [listFilter, setListFilter] = useState(''); // '' | 'favorite' | 'watch'
+  const [depotZones, setDepotZones] = useState(null);
+  const [locationStats, setLocationStats] = useState(null);
+  const [filterZone, setFilterZone] = useState('');
+  const [showDepotMap, setShowDepotMap] = useState(false);
 
   const isAdmin = currentUser?.isAdmin === true;
   const canManageEquipmentMaintenance = isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance === true;
@@ -378,13 +384,15 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [eqData, catData, ticketData, persData, photosData, listsData] = await Promise.all([
+      const [eqData, catData, ticketData, persData, photosData, listsData, zonesData, locStatsData] = await Promise.all([
         api.getEquipment(),
         api.getEquipmentCategories(),
         api.getSavTickets(),
         api.getPersons().catch(() => []),
         api.getEquipmentPhotos().catch(() => ({ photos: [], logos: [] })),
         api.getEquipmentLists().catch(() => []),
+        api.getEquipmentDepotZones().catch(() => null),
+        api.getEquipmentLocationStats().catch(() => null),
       ]);
       setEquipment(eqData);
       setCategories(catData);
@@ -393,6 +401,8 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       setPhotosList(photosData.photos || []);
       setLogosList(photosData.logos || []);
       setEquipmentLists(listsData);
+      setDepotZones(zonesData);
+      setLocationStats(locStatsData);
       setError(null);
     } catch (err) {
       console.error('Erreur chargement matériel:', err);
@@ -423,6 +433,13 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const filteredEquipment = useMemo(() => {
     return equipment.filter(eq => {
       if (filterStatus && eq.status !== filterStatus) return false;
+      if (filterZone) {
+        if (filterZone === '_none') {
+          if (eq.location_zone || eq.locationZone) return false;
+        } else {
+          if ((eq.location_zone || eq.locationZone) !== filterZone) return false;
+        }
+      }
       
       // Filtre liste (favoris / surveillance)
       if (listFilter === 'favorite' && !favoriteIds.has(eq.id)) return false;
@@ -451,7 +468,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       }
       return true;
     });
-  }, [equipment, filterStatus, parsedCatFilter, search, subfamilies, leafCategories, listFilter, favoriteIds, watchIds]);
+  }, [equipment, filterStatus, filterZone, parsedCatFilter, search, subfamilies, leafCategories, listFilter, favoriteIds, watchIds]);
 
   const filteredTickets = useMemo(() => {
     return savTickets.filter(t => {
@@ -640,6 +657,18 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 value={filterCatTree}
                 onChange={setFilterCatTree}
               />
+              {depotZones && (
+                <select className="eq-filter eq-zone-filter" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} title="Filtrer par zone dépôt">
+                  <option value="">Toutes zones</option>
+                  <option value="_none">📍 Sans zone</option>
+                  {depotZones.zones.map(z => <option key={z.id} value={z.id}>📍 {z.label}</option>)}
+                </select>
+              )}
+              {depotZones && (
+                <button className={`eq-btn-secondary${showDepotMap ? ' active' : ''}`} onClick={() => setShowDepotMap(!showDepotMap)} title="Plan du dépôt">
+                  <Map size={14} />
+                </button>
+              )}
               <button className="eq-btn-add" onClick={() => { setEditingEquipment(null); setShowEquipmentModal(true); }}>
                 <Plus size={14} /> Matériel
               </button>
@@ -672,10 +701,23 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 
       {/* Contenu */}
       <div className="eq-content-wrapper">
+        {/* Plan du dépôt */}
+        {showDepotMap && depotZones && subTab === 'inventory' && (
+          <div className="eq-depot-map-wrapper">
+            <DepotMap
+              zones={depotZones}
+              stats={locationStats}
+              selectedZone={filterZone && filterZone !== '_none' ? filterZone : null}
+              onZoneSelect={(zoneId) => setFilterZone(filterZone === zoneId ? '' : zoneId)}
+              onZoneFilter={(zoneId) => setFilterZone(zoneId || '')}
+            />
+          </div>
+        )}
         <div className="eq-content">
           {subTab === 'inventory' && (
             <EquipmentGrid
               equipment={filteredEquipment}
+              depotZones={depotZones}
               selectedId={selectedEquipment?.id}
               photosList={photosList}
               logosList={logosList}
@@ -812,6 +854,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         <EquipmentFormModal
           equipment={editingEquipment}
           categories={categories}
+          depotZones={depotZones}
           onSave={handleSaveEquipment}
           onClose={() => { setShowEquipmentModal(false); setEditingEquipment(null); }}
         />
@@ -1001,7 +1044,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 };
 
 // ═══ LISTE D'ÉQUIPEMENTS (tableau) ═══
-const EquipmentGrid = ({ equipment, selectedId, photosList, logosList, favoriteIds, watchIds, onToggleList, onSelect, onDoubleClick }) => {
+const EquipmentGrid = ({ equipment, depotZones, selectedId, photosList, logosList, favoriteIds, watchIds, onToggleList, onSelect, onDoubleClick }) => {
   if (equipment.length === 0) {
     return (
       <div className="eq-empty">
@@ -1069,7 +1112,20 @@ const EquipmentGrid = ({ equipment, selectedId, photosList, logosList, favoriteI
                 <td>{eq.brand || '—'}</td>
                 <td className="eq-table-serial">{eq.serialNumber || '—'}</td>
                 <td className="eq-table-qty">{eq.stockQuantity || 1}</td>
-                <td>{eq.location || '—'}</td>
+                <td>{(() => {
+                  const zoneId = eq.location_zone || eq.locationZone;
+                  if (zoneId && depotZones) {
+                    const z = depotZones.zones?.find(zn => zn.id === zoneId);
+                    if (z) return (
+                      <span className="eq-zone-badge" style={{ background: z.color, color: z.textColor || '#fff' }}>
+                        {z.label}
+                        {(eq.location_code || eq.locationCode) && <span className="eq-zone-code">{eq.location_code || eq.locationCode}</span>}
+                      </span>
+                    );
+                    return zoneId;
+                  }
+                  return eq.location || '—';
+                })()}</td>
                 <td>
                   <span className="eq-table-status" style={{ color: st.color }}>
                     {st.icon} {st.label}
@@ -1179,6 +1235,9 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
           )}
           {(eq.brand) && <div className="eq-detail-field"><span>🏭</span><span>Marque</span><strong>{eq.brand}</strong></div>}
           {(eq.stockQuantity || eq.stock_quantity) > 1 && <div className="eq-detail-field"><Package size={14} /><span>Quantité</span><strong>{eq.stockQuantity || eq.stock_quantity}</strong></div>}
+          {(eq.location_zone || eq.locationZone) && (
+            <div className="eq-detail-field"><MapPin size={14} /><span>Zone dépôt</span><strong>{eq.location_zone || eq.locationZone}{(eq.location_code || eq.locationCode) ? ` — ${eq.location_code || eq.locationCode}` : ''}{(eq.location_floor || eq.locationFloor) ? ` (${eq.location_floor || eq.locationFloor})` : ''}</strong></div>
+          )}
           {eq.location && <div className="eq-detail-field"><MapPin size={14} /><span>Localisation</span><strong>{eq.location}</strong></div>}
           {(eq.purchaseDate || eq.purchase_date) && <div className="eq-detail-field"><Calendar size={14} /><span>Achat</span><strong>{safeDate(eq.purchaseDate || eq.purchase_date)}</strong></div>}
           {(eq.purchasePrice || eq.purchase_price) && <div className="eq-detail-field"><DollarSign size={14} /><span>Prix</span><strong>{parseFloat(eq.purchasePrice || eq.purchase_price).toFixed(2)} €</strong></div>}
@@ -1514,7 +1573,7 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
 };
 
 // ═══ MODAL FORMULAIRE ÉQUIPEMENT ═══
-const EquipmentFormModal = ({ equipment: eq, categories, onSave, onClose }) => {
+const EquipmentFormModal = ({ equipment: eq, categories, depotZones, onSave, onClose }) => {
   // Hiérarchie des catégories
   const families = useMemo(() => categories.filter(c => c.level === 'family'), [categories]);
   const subfamilies = useMemo(() => categories.filter(c => c.level === 'subfamily'), [categories]);
@@ -1542,6 +1601,9 @@ const EquipmentFormModal = ({ equipment: eq, categories, onSave, onClose }) => {
     category_id: parents.categoryId || (eq?.category_id ? String(eq.category_id) : ''),
     status: eq?.status || 'available',
     location: eq?.location || '',
+    location_zone: eq?.location_zone || eq?.locationZone || '',
+    location_code: eq?.location_code || eq?.locationCode || '',
+    location_floor: eq?.location_floor || eq?.locationFloor || '',
     purchase_date: eq?.purchase_date || '',
     purchase_price: eq?.purchase_price || '',
     warranty_end: eq?.warranty_end || '',
@@ -1571,6 +1633,9 @@ const EquipmentFormModal = ({ equipment: eq, categories, onSave, onClose }) => {
       category_id: resolvedCategoryId ? parseInt(resolvedCategoryId) : null,
       purchase_price: form.purchase_price ? parseFloat(form.purchase_price) : null,
       stock_quantity: form.stock_quantity ? parseInt(form.stock_quantity) : 1,
+      location_zone: form.location_zone || null,
+      location_code: form.location_code || null,
+      location_floor: form.location_floor || null,
     });
   };
 
@@ -1634,6 +1699,24 @@ const EquipmentFormModal = ({ equipment: eq, categories, onSave, onClose }) => {
               <label>Localisation / Zone</label>
               <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ex: Dépôt A, Étagère 3" />
             </div>
+            {depotZones && (
+              <div className="eq-form-field eq-form-full">
+                <LocationSelector
+                  zones={depotZones}
+                  value={{
+                    location_zone: form.location_zone,
+                    location_code: form.location_code,
+                    location_floor: form.location_floor,
+                  }}
+                  onChange={(loc) => setForm(f => ({
+                    ...f,
+                    location_zone: loc.location_zone || '',
+                    location_code: loc.location_code || '',
+                    location_floor: loc.location_floor || '',
+                  }))}
+                />
+              </div>
+            )}
             <div className="eq-form-field">
               <label>Date d'achat</label>
               <input type="date" value={form.purchase_date} onChange={(e) => setForm({ ...form, purchase_date: e.target.value })} />

@@ -545,3 +545,72 @@
   align-items: center;
   justify-content: center;
 }
+
+/* ═══ Display event rows in planning ═══ */
+.task-planning-panel .display-event-row {
+  background: rgba(99, 102, 241, 0.04);
+  border-left: 3px solid var(--accent-color, #6366f1);
+}
+
+.task-planning-panel .display-event-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.08);
+  flex-shrink: 0;
+}
+
+/* Week view: display event mini-card */
+.task-planning-panel .week-event-card {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-left: 3px solid;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.06);
+  font-size: 0.75rem;
+  transition: background 0.1s;
+}
+
+.task-planning-panel .week-event-card:hover {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.task-planning-panel .week-event-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.72rem;
+}
+
+.task-planning-panel .week-event-del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
+}
+
+.task-planning-panel .week-event-card:hover .week-event-del {
+  opacity: 1;
+}
+
+.task-planning-panel .week-event-del:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}

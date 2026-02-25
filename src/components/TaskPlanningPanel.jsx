@@ -152,6 +152,25 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
     }
   };
 
+  // Export PDF
+  const handleExportPdf = async () => {
+    try {
+      toast.info('Génération du PDF…');
+      const blob = await api.exportTasksPdf(selectedDate);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `taches-${selectedDate}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('PDF téléchargé');
+    } catch (err) {
+      toast.error('Erreur export PDF');
+    }
+  };
+
   const renderTaskRow = (task) => {
     const isDone = task.status === 'done';
     const isProgress = task.status === 'in_progress';
@@ -280,7 +299,7 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
           )}
         </div>
         <div className="tp-toolbar-right">
-          <button className="btn-export-pdf" title="Exporter en PDF (Phase 7)">
+          <button className="btn-export-pdf" onClick={handleExportPdf} title="Exporter la fiche de tâches en PDF">
             <FileDown size={16} /> PDF
           </button>
         </div>

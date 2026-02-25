@@ -1383,6 +1383,16 @@ class ApiClient {
   async getCommunicationStats() {
     return this.request('/communication/stats');
   }
+
+  // --- Export PDF tâches ---
+  async exportTasksPdf(date) {
+    const token = localStorage.getItem('auth_token');
+    const resp = await fetch(`${this.baseURL}/communication/tasks/export-pdf?date=${date}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!resp.ok) throw new Error('Erreur export PDF');
+    return resp.blob();
+  }
 }
 
 export const api = new ApiClient();

@@ -429,3 +429,14 @@
     max-height: 95vh;
   }
 }
+
+/* AddressAutocomplete inside BL Import Modal */
+.bl-import-modal .address-autocomplete-wrapper {
+  flex: 1;
+}
+
+.bl-import-modal .bl-address-input {
+  padding: 3px 8px !important;
+  border-radius: 5px !important;
+  font-size: 0.82rem !important;
+}

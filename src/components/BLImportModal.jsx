@@ -1,9 +1,13 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save, Tag } from 'lucide-react';
+import { FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save, Tag, ShieldAlert } from 'lucide-react';
 import api from '../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel } from '../utils/pdfParser';
 import { useToast } from '../hooks/useToast';
+import AddressAutocomplete from './AddressAutocomplete';
 import './BLImportModal.css';
+
+// Types d'affaire incompatibles avec un BL Vente
+const BL_VENTE_FORBIDDEN_TYPES = ['Location', 'Prestation'];
 
 // Formater la taille de fichier
 const formatFileSize = (bytes) => {
@@ -38,6 +42,9 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [editedFields, setEditedFields] = useState({});
+
+  // Vérification incompatibilité BL Vente ↔ type d'affaire
+  const isBLVenteIncompat = docType === 'bl_vente' && BL_VENTE_FORBIDDEN_TYPES.includes(affaireType);
 
   // Gestion du drag & drop
   const handleDragOver = useCallback((e) => {
@@ -120,6 +127,10 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       toast.warning('Aucun fichier à importer');
       return;
     }
+    if (isBLVenteIncompat) {
+      toast.error('Un Bon de Livraison Vente ne peut pas être importé dans une affaire ' + affaireType);
+      return;
+    }
 
     setSaving(true);
     try {
@@ -146,6 +157,10 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
   const handleGenerateEvents = async () => {
     if (!parsedData) {
       toast.warning('Aucune donnée parsée à convertir');
+      return;
+    }
+    if (isBLVenteIncompat) {
+      toast.error('Un Bon de Livraison Vente ne peut pas être importé dans une affaire ' + affaireType);
       return;
     }
 
@@ -327,6 +342,20 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                     </button>
                   ))}
                 </div>
+                {isBLVenteIncompat && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 12px', borderRadius: 8, marginTop: 8,
+                    background: 'rgba(239, 68, 68, 0.10)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#ef4444', fontSize: '0.82rem', lineHeight: 1.4,
+                  }}>
+                    <ShieldAlert size={16} style={{ flexShrink: 0 }} />
+                    <span>
+                      Un <strong>Bon de Livraison Vente</strong> ne peut pas être importé dans une affaire <strong>{affaireType}</strong>.
+                      Sélectionnez <em>Vente</em> ou <em>Installation</em>.
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Résultats du parsing */}
@@ -360,6 +389,12 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                       const val = getVal(field.key);
                       const conf = fc[field.key];
                       const isEdited = editedFields[field.key] !== undefined;
+                      const inputStyle = {
+                        flex: 1, padding: '3px 8px', borderRadius: 5, fontSize: '0.82rem',
+                        border: `1px solid ${!val ? '#ef444440' : isEdited ? '#3b82f680' : 'var(--border-color)'}`,
+                        background: isEdited ? '#3b82f608' : 'var(--bg-secondary, #f8f8f8)',
+                        color: 'var(--text-primary)',
+                      };
                       return (
                         <div key={field.key} className="parsed-field" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span
@@ -368,18 +403,23 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                             style={{ color: conf ? CONF_COLORS[conf] : '#94a3b8', fontSize: '0.7rem', flexShrink: 0 }}
                           >●</span>
                           <span className="field-label" style={{ minWidth: 85, flexShrink: 0 }}>{field.label}</span>
-                          <input
-                            type="text"
-                            value={val}
-                            onChange={e => setEditedFields(p => ({ ...p, [field.key]: e.target.value }))}
-                            placeholder={`${field.label} non détecté`}
-                            style={{
-                              flex: 1, padding: '3px 8px', borderRadius: 5, fontSize: '0.82rem',
-                              border: `1px solid ${!val ? '#ef444440' : isEdited ? '#3b82f680' : 'var(--border-color)'}`,
-                              background: isEdited ? '#3b82f608' : 'var(--bg-secondary, #f8f8f8)',
-                              color: 'var(--text-primary)',
-                            }}
-                          />
+                          {field.key === 'adresse' ? (
+                            <AddressAutocomplete
+                              value={val}
+                              onChange={(v) => setEditedFields(p => ({ ...p, adresse: v }))}
+                              placeholder="Adresse non détectée"
+                              className="bl-address-input"
+                              style={inputStyle}
+                            />
+                          ) : (
+                            <input
+                              type="text"
+                              value={val}
+                              onChange={e => setEditedFields(p => ({ ...p, [field.key]: e.target.value }))}
+                              placeholder={`${field.label} non détecté`}
+                              style={inputStyle}
+                            />
+                          )}
                         </div>
                       );
                     })}
@@ -487,9 +527,14 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
         {/* Footer */}
         <div className="modal-footer">
           <div className="footer-left">
-            {parsedData && (
+            {parsedData && !isBLVenteIncompat && (
               <span className="status-badge success">
                 <CheckCircle size={12} /> Prêt à importer
+              </span>
+            )}
+            {isBLVenteIncompat && (
+              <span className="status-badge" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                <ShieldAlert size={12} /> Import bloqué
               </span>
             )}
           </div>
@@ -499,8 +544,8 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
               <button
                 className="btn-generate"
                 onClick={handleGenerateEvents}
-                disabled={generating || saving}
-                title="Importer le BL et créer les événements d'affichage dynamique"
+                disabled={generating || saving || isBLVenteIncompat}
+                title={isBLVenteIncompat ? 'Type d\'affaire incompatible avec un BL Vente' : 'Importer le BL et créer les événements d\'affichage dynamique'}
               >
                 <Monitor size={15} />
                 {generating ? 'Génération...' : 'Importer + Créer événements'}
@@ -509,7 +554,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
             <button
               className="btn-primary"
               onClick={handleSave}
-              disabled={!file || saving || generating}
+              disabled={!file || saving || generating || isBLVenteIncompat}
             >
               <Save size={15} />
               {saving ? 'Import...' : 'Enregistrer BL'}

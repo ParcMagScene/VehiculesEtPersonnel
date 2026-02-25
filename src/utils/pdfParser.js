@@ -427,57 +427,120 @@ export const parseBLVente = (text) => {
     }
 
     // ─── Extraction des articles ───
+    // Fournisseurs connus (après la qté dans le BL)
+    const KNOWN_FOURNISSEURS = new Set([
+      'ESL', 'LA BS', 'ALGAM', 'STOCK', 'CSI', 'KLOTZ', 'R&S', 'BS',
+      'ADAM HALL', 'ROBE', 'CLAY PAKY', 'PROLIGHTS TRIBE',
+    ]);
+    const isFournisseurLine = (line) => {
+      if (!line || line.length < 2 || line.length > 20) return false;
+      if (KNOWN_FOURNISSEURS.has(line.toUpperCase())) return true;
+      // Heuristic : tout en majuscules, lettres/espaces/& seulement, pas un code article
+      if (!/^[A-Z][A-Z\s&'.]{0,19}$/.test(line)) return false;
+      if (/^(VTE|PORT|MO|CODE|NOM|QT)/i.test(line)) return false;
+      return true;
+    };
+
     // Bloc entre "Qté" (ou header contenant Qté) et "Conditions générales"
     const qteIdx = lines.findIndex(l => /\bQt[eé](?:\b|\s|$)/i.test(l));
     const condIdx = lines.findIndex((l, i) => i > qteIdx && /conditions\s+g[eé]n[eé]rales/i.test(l));
     if (qteIdx >= 0) {
-      const isJoinedHeader = !/^Qt[eé]$/i.test(lines[qteIdx]); // header = "Code Nom Qté"
+      const isJoinedHeader = !/^Qt[eé]$/i.test(lines[qteIdx]);
       const endIdx = condIdx >= 0 ? condIdx : lines.length;
+      const fournisseursSet = new Set();
+
+      // Helper : séparer code / description
+      const splitCodeDesc = (fullDesc) => {
+        let code = '', description = fullDesc;
+        const codeSplit = fullDesc.match(/^([A-Z0-9][A-Z0-9._&-]{1,15})\s+(.{10,})$/);
+        if (codeSplit) { code = codeSplit[1]; description = codeSplit[2]; }
+        return { code, description };
+      };
+
+      // Skip page headers dans BL multi-pages
+      const isPageHeader = (line) => /^(Votre interlocuteur|Sarl au capital|Parc d'activit|Tel\.|p\.\d+$)/i.test(line) || /contact@mag-scene/i.test(line);
 
       if (isJoinedHeader) {
-        // ─── Mode lignes jointes (pdfjs-dist) : "description qty" ou "code description qty" ───
+        // ─── Mode lignes jointes (pdfjs-dist) ───
         for (let i = qteIdx + 1; i < endIdx; i++) {
           const line = lines[i];
-          // Skip lignes vides, headers, infos supplémentaires courtes type "CMU 200KG"
-          if (!line || /^(Code|Nom|Qt[eé])$/i.test(line)) continue;
-          // Chercher un nombre en fin de ligne (quantité)
+          if (!line || isPageHeader(line)) continue;
+
+          // Skip repeated "Code Nom Qté" headers
+          if (/\bCode\b/i.test(line) && /\bQt[eé](?:\b|\s|$)/i.test(line)) continue;
+
+          // 1) "desc QTY FOURNISSEUR" — texte après le chiffre en fin de ligne
+          const rowWithFourn = line.match(/^(.+)\s+(\d{1,5})\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s&'.]{0,19})\s*$/);
+          if (rowWithFourn) {
+            const { code, description } = splitCodeDesc(rowWithFourn[1].trim());
+            const qty = parseInt(rowWithFourn[2]);
+            const fourn = rowWithFourn[3].trim();
+            if (description && description.length > 3) {
+              info.items.push({ code, description, quantity: qty, fournisseur: fourn });
+              fournisseursSet.add(fourn);
+            }
+            continue;
+          }
+
+          // 2) "desc QTY" — pas de fournisseur
           const rowMatch = line.match(/^(.+?)\s+(\d{1,5})\s*$/);
           if (rowMatch) {
-            const fullDesc = rowMatch[1].trim();
+            const { code, description } = splitCodeDesc(rowMatch[1].trim());
             const qty = parseInt(rowMatch[2]);
-            let code = '';
-            let description = fullDesc;
-            // Si le début est un code court tout en majuscules suivi d'un espace + description plus longue
-            const codeSplit = fullDesc.match(/^([A-Z0-9][A-Z0-9._-]{1,15})\s+(.{10,})$/);
-            if (codeSplit) {
-              code = codeSplit[1];
-              description = codeSplit[2];
-            }
             if (description && description.length > 3) {
-              info.items.push({ code, description, quantity: qty });
+              info.items.push({ code, description, quantity: qty, fournisseur: null });
             }
           }
         }
       } else {
         // ─── Mode lignes séparées (PyMuPDF-like) : qty sur sa propre ligne ───
         for (let i = qteIdx + 1; i < endIdx; i++) {
+          // Skip headers + page headers
+          if (/^(Code|Nom)$/i.test(lines[i])) continue;
+          if (/^Qt[eé]$/i.test(lines[i])) continue;
+          if (isPageHeader(lines[i])) continue;
+
+          // Ancrage sur les lignes de quantité (chiffre seul)
           if (/^\d{1,5}$/.test(lines[i])) {
             const qty = parseInt(lines[i]);
             let description = '';
             let code = '';
-            if (i >= 1 && !/^\d{1,5}$/.test(lines[i - 1]) && !/^Qt[eé]$/i.test(lines[i - 1])) {
-              description = lines[i - 1];
-              if (description.length < 15 && /^[A-Z0-9\s._-]+$/i.test(description) && i >= 2) {
-                code = description;
-                description = lines[i - 2] || '';
+            let fournisseur = null;
+
+            // Remonter pour trouver description + code
+            let descIdx = i - 1;
+            while (descIdx > qteIdx && (/^(Code|Nom|Qt[eé])$/i.test(lines[descIdx]) || isPageHeader(lines[descIdx]))) descIdx--;
+
+            if (descIdx > qteIdx && !/^\d{1,5}$/.test(lines[descIdx]) && !isFournisseurLine(lines[descIdx])) {
+              description = lines[descIdx];
+              // Ligne précédente = potentiel code article
+              const codeIdx = descIdx - 1;
+              if (codeIdx > qteIdx && !isPageHeader(lines[codeIdx])) {
+                const maybeCode = lines[codeIdx];
+                if (maybeCode && maybeCode.length <= 20
+                    && /^[A-Z0-9][A-Z0-9._&\s-]{0,19}$/i.test(maybeCode)
+                    && !/^(Code|Nom|Qt[eé])$/i.test(maybeCode)
+                    && !/^\d{1,5}$/.test(maybeCode)
+                    && !isFournisseurLine(maybeCode)) {
+                  code = maybeCode;
+                }
               }
             }
+
+            // Avancer pour trouver le fournisseur
+            if (i + 1 < endIdx && isFournisseurLine(lines[i + 1])) {
+              fournisseur = lines[i + 1];
+              fournisseursSet.add(fournisseur);
+            }
+
             if (description && !/^(Code|Nom|Qt[eé])$/i.test(description)) {
-              info.items.push({ code, description, quantity: qty });
+              info.items.push({ code, description, quantity: qty, fournisseur });
             }
           }
         }
       }
+
+      info.fournisseurs = [...fournisseursSet];
       if (info.items.length > 0) info.fieldsFound++;
     }
 
@@ -1081,6 +1144,7 @@ export const smartParse = (text) => {
     tva: info.tva || null,
     items: info.items || [],
     sections: info.sections || [],
+    fournisseurs: info.fournisseurs || [],
     fieldsFound: info.fieldsFound || 0,
     fieldsTotal: info.fieldsTotal || 0,
     // Info brute originale pour accès détaillé

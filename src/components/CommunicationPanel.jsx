@@ -3,7 +3,7 @@ import {
   Radio, Monitor, ClipboardList, FileText, Plus, Search,
   ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User,
   Edit2, Trash2, Filter, Sun, Moon as MoonIcon, MessageSquare,
-  Briefcase, ArrowUpDown, RefreshCw
+  Briefcase, ArrowUpDown, RefreshCw, CalendarDays, LayoutList
 } from 'lucide-react';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
@@ -65,14 +65,31 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [viewMode, setViewMode] = useState('day');
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [confirmDialog, setConfirmDialog] = useState(null);
 
+  // Week days computation
+  const weekDays = useMemo(() => {
+    const d = new Date(selectedDate + 'T00:00:00');
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    const monday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  }, [selectedDate]);
+
   const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { date: selectedDate };
+      const params = {};
+      if (viewMode === 'week') {
+        params.dateFrom = weekDays[0];
+        params.dateTo = weekDays[6];
+      } else {
+        params.date = selectedDate;
+      }
       if (typeFilter) params.type = typeFilter;
       const data = await api.getDisplayEvents(params);
       setEvents(data);
@@ -81,7 +98,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, typeFilter, toast]);
+  }, [selectedDate, viewMode, weekDays, typeFilter, toast]);
 
   useEffect(() => { loadEvents(); }, [loadEvents, refreshKey]);
 
@@ -104,6 +121,18 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     const other = filteredEvents.filter(e => e.period !== 'AM' && e.period !== 'PM');
     return { am, pm, other };
   }, [filteredEvents]);
+
+  // Grouper par jour (vue semaine)
+  const weekGroupedDisplay = useMemo(() => {
+    if (viewMode !== 'week') return {};
+    const map = {};
+    weekDays.forEach(d => { map[d] = []; });
+    filteredEvents.forEach(ev => {
+      const d = ev.date;
+      if (map[d]) map[d].push(ev);
+    });
+    return map;
+  }, [filteredEvents, weekDays, viewMode]);
 
   const handleDelete = async (id) => {
     setConfirmDialog({
@@ -195,8 +224,16 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
       {/* Toolbar */}
       <div className="toolbar">
         <div className="toolbar-left">
+          <div className="dd-view-toggle">
+            <button className={viewMode === 'day' ? 'active' : ''} onClick={() => setViewMode('day')} title="Vue jour">
+              <LayoutList size={15} /> Jour
+            </button>
+            <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')} title="Vue semaine">
+              <CalendarDays size={15} /> Semaine
+            </button>
+          </div>
           <div className="date-nav">
-            <button onClick={() => setSelectedDate(d => addDays(d, -1))} title="Jour précédent">
+            <button onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? -7 : -1))}>
               <ChevronLeft size={16} />
             </button>
             <span
@@ -204,9 +241,11 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
               onClick={() => setSelectedDate(todayStr())}
               title="Revenir à aujourd'hui"
             >
-              {formatDateFr(selectedDate)}
+              {viewMode === 'week'
+                ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
+                : formatDateFr(selectedDate)}
             </span>
-            <button onClick={() => setSelectedDate(d => addDays(d, 1))} title="Jour suivant">
+            <button onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? 7 : 1))}>
               <ChevronRight size={16} />
             </button>
           </div>
@@ -252,6 +291,47 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
           <div className="events-empty">
             <RefreshCw size={32} className="spin" />
             <p>Chargement…</p>
+          </div>
+        ) : viewMode === 'week' ? (
+          /* ═══ VUE SEMAINE ═══ */
+          <div className="dd-week-container">
+            <div className="dd-week-grid">
+              {weekDays.map(dayStr => {
+                const dayEvents = weekGroupedDisplay[dayStr] || [];
+                const isToday = dayStr === todayStr();
+                const dayDate = new Date(dayStr + 'T00:00:00');
+                const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+
+                return (
+                  <div key={dayStr} className={`dd-week-column ${isToday ? 'today' : ''}`}>
+                    <div className="dd-week-header">
+                      <span className="dd-week-label">{dayLabel}</span>
+                      {dayEvents.length > 0 && <span className="dd-week-count">{dayEvents.length}</span>}
+                    </div>
+                    <div className="dd-week-events">
+                      {dayEvents.length === 0 ? (
+                        <div className="dd-week-empty">—</div>
+                      ) : (
+                        dayEvents.map(ev => {
+                          const typeInfo = EVENT_TYPES[ev.type] || { label: ev.type, emoji: '📌', color: '#64748b' };
+                          return (
+                            <div key={ev.id} className="dd-week-card" style={{ borderLeftColor: typeInfo.color }}>
+                              <div className="dd-week-card-top">
+                                <span className="dd-week-type" style={{ color: typeInfo.color }}>{typeInfo.emoji} {typeInfo.label}</span>
+                                <button className="dd-week-del" onClick={() => handleDelete(ev.id)} title="Supprimer"><Trash2 size={11} /></button>
+                              </div>
+                              {ev.client && <div className="dd-week-client">{ev.client}</div>}
+                              {ev.affaireId && <div className="dd-week-affaire"><Briefcase size={10} /> {ev.affaireId}</div>}
+                              {ev.location && <div className="dd-week-location"><MapPin size={10} /> {ev.location}</div>}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ) : filteredEvents.length === 0 ? (
           <div className="events-empty">

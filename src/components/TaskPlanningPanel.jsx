@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
-  CalendarDays, LayoutList
+  CalendarDays, LayoutList, Monitor
 } from 'lucide-react';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
@@ -20,6 +20,29 @@ const SECTIONS = {
   taches_secondaires: { label: 'Tâches Secondaires', emoji: '🟡', color: '#f59e0b' },
   courses:            { label: 'Courses',             emoji: '🚗', color: '#8b5cf6' },
   manual:             { label: 'Autres',              emoji: '📋', color: '#64748b' },
+};
+
+const EVENT_TYPES = {
+  preparation:  { label: 'Préparation',  emoji: '🔧', color: '#6366f1' },
+  enlevement:   { label: 'Enlèvement',   emoji: '📦', color: '#f59e0b' },
+  livraison:    { label: 'Livraison',     emoji: '🚚', color: '#10b981' },
+  depart:       { label: 'Départ',        emoji: '🚀', color: '#3b82f6' },
+  retour:       { label: 'Retour',        emoji: '↩️', color: '#8b5cf6' },
+  recuperation: { label: 'Récupération',  emoji: '📥', color: '#ef4444' },
+};
+
+const mapEventToSection = (event) => {
+  const type = event.type;
+  const cat = event.category;
+  if (type === 'preparation') {
+    if (cat === 'location') return 'prep_locations';
+    if (cat === 'prestation') return 'prep_prestations';
+    if (cat === 'vente') return 'prep_ventes';
+    return 'prep_locations';
+  }
+  if (['livraison', 'enlevement', 'depart'].includes(type)) return 'taches_prioritaires';
+  if (['retour', 'recuperation'].includes(type)) return 'taches_secondaires';
+  return 'manual';
 };
 
 const STATUS_ORDER = ['pending', 'in_progress', 'done', 'cancelled'];
@@ -77,21 +100,29 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPerson, setNewTaskPerson] = useState('');
   const [showPdfExport, setShowPdfExport] = useState(false);
+  const [displayEvents, setDisplayEvents] = useState([]);
 
   // Semaine : 7 jours à partir du lundi
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
 
-  // Load tasks
+  // Load tasks + display events
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
-      let data;
+      let data, events;
       if (viewMode === 'week') {
-        data = await api.getTasks({ dateFrom: weekDays[0], dateTo: weekDays[6] });
+        [data, events] = await Promise.all([
+          api.getTasks({ dateFrom: weekDays[0], dateTo: weekDays[6] }),
+          api.getDisplayEvents({ dateFrom: weekDays[0], dateTo: weekDays[6] }),
+        ]);
       } else {
-        data = await api.getTasks({ date: selectedDate });
+        [data, events] = await Promise.all([
+          api.getTasks({ date: selectedDate }),
+          api.getDisplayEvents({ date: selectedDate }),
+        ]);
       }
       setTasks(data);
+      setDisplayEvents(Array.isArray(events) ? events : []);
     } catch (err) {
       toast.error('Erreur chargement tâches');
     } finally {
@@ -124,6 +155,28 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
     return groups;
   }, [tasks]);
 
+  // Événements d'affichage non liés à des tâches existantes
+  const linkedEventIds = useMemo(() =>
+    new Set(tasks.filter(t => t.displayEventId).map(t => t.displayEventId)),
+    [tasks]
+  );
+
+  const unlinkedEvents = useMemo(() =>
+    displayEvents.filter(ev => !linkedEventIds.has(ev.id)),
+    [displayEvents, linkedEventIds]
+  );
+
+  const eventsBySection = useMemo(() => {
+    const groups = {};
+    Object.keys(SECTIONS).forEach(k => { groups[k] = []; });
+    unlinkedEvents.forEach(ev => {
+      const sec = mapEventToSection(ev);
+      if (!groups[sec]) groups[sec] = [];
+      groups[sec].push(ev);
+    });
+    return groups;
+  }, [unlinkedEvents]);
+
   // Toggle task status
   const cycleStatus = async (task) => {
     const nextStatus = {
@@ -150,6 +203,25 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
         try {
           await api.deleteTask(id);
           toast.success('Tâche supprimée');
+          loadTasks();
+        } catch (err) {
+          toast.error('Erreur suppression');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
+
+  // Retirer un événement d'affichage de la planification
+  const handleDeleteDisplayEvent = (id) => {
+    setConfirmDialog({
+      title: 'Retirer de la planification',
+      message: 'Supprimer cet événement d\'affichage ?',
+      onConfirm: async () => {
+        try {
+          await api.deleteDisplayEvent(id);
+          toast.success('Événement retiré');
           loadTasks();
         } catch (err) {
           toast.error('Erreur suppression');
@@ -234,9 +306,38 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
     );
   };
 
+  const renderDisplayEventRow = (event) => {
+    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: '#64748b' };
+    return (
+      <div key={`de-${event.id}`} className="task-row display-event-row">
+        <span className="display-event-icon" style={{ color: typeInfo.color }}>
+          <Monitor size={14} />
+        </span>
+        <div className="task-info">
+          <div className="task-title">
+            {typeInfo.emoji} {typeInfo.label}
+            {event.client ? ` — ${event.client}` : ''}
+            {event.affaireId ? ` (${event.affaireId})` : ''}
+          </div>
+          <div className="task-meta">
+            {event.location && <span><MapPin size={11} /> {event.location}</span>}
+            {event.time && <span><Clock size={11} /> {event.time}</span>}
+            {event.comment && <span>📝 {event.comment.slice(0, 40)}{event.comment.length > 40 ? '…' : ''}</span>}
+          </div>
+        </div>
+        <div className="task-actions">
+          <button className="delete" onClick={() => handleDeleteDisplayEvent(event.id)} title="Retirer">
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderSection = (sectionKey) => {
     const info = SECTIONS[sectionKey];
     const sectionTasks = grouped[sectionKey] || [];
+    const sectionEvents = eventsBySection[sectionKey] || [];
 
     return (
       <div key={sectionKey} className="task-section">
@@ -245,9 +346,10 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
             <span>{info.emoji}</span>
             {info.label}
           </h4>
-          <span className="section-count">{sectionTasks.length}</span>
+          <span className="section-count">{sectionTasks.length + sectionEvents.length}</span>
         </div>
 
+        {sectionEvents.map(renderDisplayEventRow)}
         {sectionTasks.map(renderTaskRow)}
 
         {addingSection === sectionKey ? (
@@ -300,13 +402,17 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   const weekGrouped = useMemo(() => {
     if (viewMode !== 'week') return {};
     const map = {};
-    weekDays.forEach(d => { map[d] = []; });
+    weekDays.forEach(d => { map[d] = { tasks: [], events: [] }; });
     tasks.forEach(t => {
       const d = t.date;
-      if (map[d]) map[d].push(t);
+      if (map[d]) map[d].tasks.push(t);
+    });
+    unlinkedEvents.forEach(ev => {
+      const d = ev.date;
+      if (map[d]) map[d].events.push(ev);
     });
     return map;
-  }, [tasks, weekDays, viewMode]);
+  }, [tasks, unlinkedEvents, weekDays, viewMode]);
 
   // ── Vue semaine : mini-carte tâche ──
   const renderWeekTaskCard = (task) => {
@@ -331,6 +437,25 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
         {(task.personFirstName || task.personLastName) && (
           <span className="week-task-person">{task.personFirstName?.charAt(0)}{task.personLastName?.charAt(0)}</span>
         )}
+      </div>
+    );
+  };
+
+  // ── Vue semaine : mini-carte événement d'affichage ──
+  const renderWeekEventCard = (event) => {
+    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: '#64748b' };
+    return (
+      <div
+        key={`de-${event.id}`}
+        className="week-event-card"
+        style={{ borderLeftColor: typeInfo.color }}
+        title={`${typeInfo.label}${event.client ? ` — ${event.client}` : ''}`}
+      >
+        <Monitor size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
+        <span className="week-event-title">{typeInfo.emoji} {event.client || typeInfo.label}</span>
+        <button className="week-event-del" onClick={() => handleDeleteDisplayEvent(event.id)} title="Retirer">
+          <Trash2 size={10} />
+        </button>
       </div>
     );
   };
@@ -397,27 +522,31 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
         <div className="week-view-container">
           <div className="week-grid">
             {weekDays.map(dayStr => {
-              const dayTasks = weekGrouped[dayStr] || [];
+              const dayData = weekGrouped[dayStr] || { tasks: [], events: [] };
               const isToday = dayStr === todayStr();
               const dayDate = new Date(dayStr + 'T00:00:00');
               const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
-              const dayDone = dayTasks.filter(t => t.status === 'done').length;
+              const dayDone = dayData.tasks.filter(t => t.status === 'done').length;
+              const totalItems = dayData.tasks.length + dayData.events.length;
 
               return (
                 <div key={dayStr} className={`week-day-column ${isToday ? 'today' : ''}`}>
                   <div className="week-day-header">
                     <span className="week-day-label">{dayLabel}</span>
-                    {dayTasks.length > 0 && (
+                    {totalItems > 0 && (
                       <span className="week-day-count">
-                        {dayDone}/{dayTasks.length}
+                        {dayDone}/{totalItems}
                       </span>
                     )}
                   </div>
                   <div className="week-day-tasks">
-                    {dayTasks.length === 0 ? (
+                    {totalItems === 0 ? (
                       <div className="week-empty">—</div>
                     ) : (
-                      dayTasks.map(renderWeekTaskCard)
+                      <>
+                        {dayData.events.map(renderWeekEventCard)}
+                        {dayData.tasks.map(renderWeekTaskCard)}
+                      </>
                     )}
                   </div>
                 </div>

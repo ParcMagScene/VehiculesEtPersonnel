@@ -485,3 +485,192 @@
     width: 100%;
   }
 }
+
+/* ═══ Toggle jour/semaine (Affichage dynamique) ═══ */
+.dynamic-display-panel .dd-view-toggle {
+  display: flex;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dynamic-display-panel .dd-view-toggle button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: none;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dynamic-display-panel .dd-view-toggle button.active {
+  background: var(--accent-color, #6366f1);
+  color: white;
+}
+
+.dynamic-display-panel .dd-view-toggle button:not(:last-child) {
+  border-right: 1px solid var(--border-color, #e2e8f0);
+}
+
+/* ═══ Vue semaine affichage dynamique ═══ */
+.dd-week-container {
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.dd-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  min-width: 700px;
+}
+
+.dd-week-column {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 200px;
+}
+
+.dd-week-column.today {
+  border-color: var(--accent-color, #6366f1);
+  box-shadow: 0 0 0 1px var(--accent-color, #6366f1);
+}
+
+.dd-week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--bg-secondary, #f8fafc);
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  text-transform: capitalize;
+}
+
+.dd-week-column.today .dd-week-header {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.dd-week-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dd-week-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent-color, #6366f1);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.dd-week-events {
+  flex: 1;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dd-week-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--text-tertiary, #94a3b8);
+  font-size: 0.8rem;
+}
+
+.dd-week-card {
+  padding: 6px 8px;
+  border-left: 3px solid;
+  border-radius: 4px;
+  background: var(--bg-tertiary, #f8fafc);
+  font-size: 0.75rem;
+  transition: background 0.1s;
+}
+
+.dd-week-card:hover {
+  background: var(--bg-secondary, #f1f5f9);
+}
+
+.dd-week-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.dd-week-type {
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.dd-week-del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
+}
+
+.dd-week-card:hover .dd-week-del {
+  opacity: 1;
+}
+
+.dd-week-del:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.dd-week-client {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dd-week-affaire {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent-color, #6366f1);
+  font-weight: 600;
+  font-size: 0.7rem;
+}
+
+.dd-week-location {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+}
+
+@media (max-width: 768px) {
+  .dd-week-grid {
+    grid-template-columns: repeat(3, 1fr);
+    min-width: 0;
+  }
+
+  .dd-week-column {
+    min-height: 120px;
+  }
+}

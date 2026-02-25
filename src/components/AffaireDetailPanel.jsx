@@ -9,6 +9,7 @@ import './AffaireDetailPanel.css';
 
 const ReservationModal = lazy(() => import('./ReservationModal'));
 const EventDetailsModal = lazy(() => import('./EventDetailsModal'));
+const BLImportModal = lazy(() => import('./BLImportModal'));
 
 const API_BASE_URL = getApiUrl();
 
@@ -794,6 +795,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [showBLImport, setShowBLImport] = useState(false);
   const panelRef = useRef(null);
 
   useEffect(() => {
@@ -859,10 +861,22 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
         <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} onNavigateToEntity={onNavigateToEntity} />
       </div>
       <div className="slide-panel-footer">
+        <button className="slide-panel-bl-btn" onClick={() => setShowBLImport(true)} title="Importer un BL pour cette affaire">
+          <FileText size={14} /> Import BL
+        </button>
         <button className="slide-panel-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentAffaire); }}>
           <ExternalLink size={14} /> Ouvrir la fiche
         </button>
       </div>
+      {showBLImport && (
+        <Suspense fallback={null}>
+          <BLImportModal
+            onClose={() => setShowBLImport(false)}
+            onImported={() => setShowBLImport(false)}
+            defaultAffaireId={currentAffaire.numeroAffaire}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
@@ -874,6 +888,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
 const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClose, onDataChanged, onNavigateToEntity }) => {
   const [missions, setMissions] = useState([]);
   const [isClosing, setIsClosing] = useState(false);
+  const [showBLImport, setShowBLImport] = useState(false);
 
   const refreshMissions = useCallback(() => {
     if (!affaire) return;
@@ -920,14 +935,29 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
             <span className="dialog-type" style={{ background: typeInfo.color }}>{typeInfo.label}</span>
             {affaire.client && <span className="dialog-client">{capitalizeText(affaire.client)}</span>}
           </div>
-          <button className="dialog-close" onClick={handleClose} title="Fermer">
-            <X size={20} />
-          </button>
+          <div className="dialog-header-actions">
+            <button className="dialog-bl-btn" onClick={() => setShowBLImport(true)} title="Importer un BL pour cette affaire">
+              <FileText size={15} /> Import BL
+            </button>
+            <button className="dialog-close" onClick={handleClose} title="Fermer">
+              <X size={20} />
+            </button>
+          </div>
         </div>
         <div className="dialog-body">
           <AffaireDetailContent affaire={affaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={handleDataChanged} onNavigateToEntity={onNavigateToEntity} />
         </div>
       </div>
+
+      {showBLImport && (
+        <Suspense fallback={null}>
+          <BLImportModal
+            onClose={() => setShowBLImport(false)}
+            onImported={() => { setShowBLImport(false); handleDataChanged(); }}
+            defaultAffaireId={affaire.numeroAffaire}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil } from 'lucide-react';
 import { getApiUrl } from '../utils/api';
 import './EventDetailsModal.css';
 import { useToast } from '../hooks/useToast';
+
+const BLImportModal = lazy(() => import('./BLImportModal'));
 
 const API_BASE_URL = getApiUrl();
 
@@ -28,6 +30,7 @@ function EventDetailsModal({
   const [showActions, setShowActions] = useState(true);
   const [previewFile, setPreviewFile] = useState(null);
   const [showFolderView, setShowFolderView] = useState(false);
+  const [showBLImport, setShowBLImport] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editingDriveLink, setEditingDriveLink] = useState(null); // { reservationId, index, url, label } (index = -1 pour nouveau)
   const [savingDriveLink, setSavingDriveLink] = useState(false);
@@ -629,6 +632,14 @@ function EventDetailsModal({
             Fermer
           </button>
           <div className="footer-actions">
+            <button
+              className="btn-bl-import"
+              onClick={() => setShowBLImport(true)}
+              title="Importer un BL pour cet événement"
+            >
+              <FileText size={16} />
+              Import BL
+            </button>
             {currentUser?.isAdmin && onRequestDeleteEvent && (
               <button
                 className="btn-danger"
@@ -668,6 +679,20 @@ function EventDetailsModal({
           </div>
         </div>
       </div>
+
+      {/* BL Import Modal */}
+      {showBLImport && (
+        <Suspense fallback={null}>
+          <BLImportModal
+            onClose={() => setShowBLImport(false)}
+            onImported={() => setShowBLImport(false)}
+            defaultAffaireId={event?.summary ? (() => {
+              const m = event.summary.match(/AF\d{4,}/i);
+              return m ? m[0].toUpperCase() : '';
+            })() : ''}
+          />
+        </Suspense>
+      )}
 
       {/* Modal d'aperçu de fichier */}
       {previewFile && (

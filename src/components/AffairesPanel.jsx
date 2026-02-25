@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -8,6 +8,8 @@ import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
 import MonthSelector from './MonthSelector';
 import WeekSelector from './WeekSelector';
 import './AffairesPanel.css';
+
+const BLImportModal = lazy(() => import('./BLImportModal'));
 
 const AFFAIRE_TYPES = [
   { value: 'Prestation', label: 'Prestation', color: '#3b82f6', icon: '🎭' },
@@ -88,6 +90,10 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const [selectedAffaire, setSelectedAffaire] = useState(null);
   const [dialogAffaire, setDialogAffaire] = useState(null);
   const clickTimerRef = useRef(null);
+
+  // BL Import modal
+  const [showBLImport, setShowBLImport] = useState(false);
+  const [blImportAffaireId, setBlImportAffaireId] = useState(null);
 
   // Timeline / frise chronologique
   const timelineRef = useRef(null);
@@ -866,6 +872,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
             <span>Archivées</span>
           </label>
+
+          <div className="affaires-tb-divider" />
+
+          {/* Import BL */}
+          <button
+            className="affaires-tb-bl-import-btn"
+            onClick={() => { setBlImportAffaireId(null); setShowBLImport(true); }}
+            title="Importer un BL Mag Scène"
+          >
+            <FileText size={14} /> Import BL
+          </button>
         </div>
       </div>
 
@@ -1050,6 +1067,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           onClose={() => setShowWeekSelector(false)}
           reservations={reservations}
         />
+      )}
+
+      {/* BL Import Modal */}
+      {showBLImport && (
+        <Suspense fallback={null}>
+          <BLImportModal
+            onClose={() => { setShowBLImport(false); setBlImportAffaireId(null); }}
+            onImported={() => { setShowBLImport(false); setBlImportAffaireId(null); handleRefresh(); }}
+            defaultAffaireId={blImportAffaireId}
+          />
+        </Suspense>
       )}
     </div>
   );

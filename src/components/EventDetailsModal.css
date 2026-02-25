@@ -720,6 +720,27 @@ section h3 {
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
 }
 
+.event-details-modal .btn-bl-import {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--btn-padding);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--theme-primary);
+  border: 1px solid var(--theme-primary);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+}
+
+.event-details-modal .btn-bl-import:hover {
+  background: var(--theme-primary);
+  color: white;
+  transform: translateY(-1px);
+}
+
 .event-details-modal .btn-danger {
   display: flex;
   align-items: center;

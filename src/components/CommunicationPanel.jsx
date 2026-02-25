@@ -12,6 +12,7 @@ import './CommunicationPanel.css';
 
 const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
 const BLImportModal = lazy(() => import('./BLImportModal'));
+const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {
@@ -278,23 +279,6 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
   );
 }
 
-// ═══ Sous-panneau : Planification des tâches (placeholder Phase 6) ═══
-function TaskPlanningPlaceholder() {
-  return (
-    <div className="task-planning-placeholder">
-      <ClipboardList size={48} />
-      <h3>Planification des tâches</h3>
-      <p>
-        Ce module permettra d'assigner des tâches au personnel en fonction des événements
-        d'affichage dynamique et de générer des fiches de travail en PDF.
-      </p>
-      <p style={{ fontSize: '0.8rem', marginTop: 12, opacity: 0.7 }}>
-        🚧 En cours de développement — Phase 6
-      </p>
-    </div>
-  );
-}
-
 // ═══ Sous-panneau : Import BL ═══
 function BLImportSubPanel({ onRefresh }) {
   const toast = useToast();
@@ -509,7 +493,11 @@ function CommunicationPanel({ currentUser }) {
             refreshKey={displayRefreshKey}
           />
         )}
-        {activeSubTab === 'tasks' && <TaskPlanningPlaceholder />}
+        {activeSubTab === 'tasks' && (
+          <Suspense fallback={null}>
+            <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} />
+          </Suspense>
+        )}
         {activeSubTab === 'bl' && (
           <BLImportSubPanel
             onRefresh={() => {

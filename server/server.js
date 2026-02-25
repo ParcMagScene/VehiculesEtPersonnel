@@ -42,6 +42,7 @@ import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, setupReservationEquipmentRoutes } from './catalogRoutes.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockStatsRoutes } from './stockRoutes.js';
+import { setupCommunicationRoutes } from './communicationRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -2335,6 +2336,9 @@ setupStockCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupStockItemsRoutes(app, authenticateToken, requireAdmin);
 setupStockMovementsRoutes(app, authenticateToken);
 setupStockStatsRoutes(app, authenticateToken);
+
+// Routes Module Communication (Affichage dynamique + Planification + Import BL)
+setupCommunicationRoutes(app, authenticateToken, requireAdmin);
 
 // ============ PROFIL UTILISATEUR ============
 

@@ -1209,6 +1209,14 @@ class ApiClient {
     return this.request('/catalog/equipment/location-stats');
   }
 
+  // Zones dépôt pour matériel inventaire
+  async getEquipmentDepotZones() {
+    return this.request('/equipment-depot-zones');
+  }
+  async getEquipmentLocationStats() {
+    return this.request('/equipment-location-stats');
+  }
+
   // Flight-cases
   async getFlightcases(params = {}) {
     const qs = new URLSearchParams(params).toString();

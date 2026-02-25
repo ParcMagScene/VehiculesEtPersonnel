@@ -10,6 +10,7 @@ import './AffaireDetailPanel.css';
 const ReservationModal = lazy(() => import('./ReservationModal'));
 const EventDetailsModal = lazy(() => import('./EventDetailsModal'));
 const BLImportModal = lazy(() => import('./BLImportModal'));
+const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
 
 const API_BASE_URL = getApiUrl();
 
@@ -796,6 +797,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
+  const [showDisplayDialog, setShowDisplayDialog] = useState(false);
   const panelRef = useRef(null);
 
   useEffect(() => {
@@ -861,6 +863,9 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
         <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} onNavigateToEntity={onNavigateToEntity} />
       </div>
       <div className="slide-panel-footer">
+        <button className="slide-panel-display-btn" onClick={() => setShowDisplayDialog(true)} title="Ajouter cet événement à l'affichage dynamique">
+          📺 Affichage
+        </button>
         <button className="slide-panel-bl-btn" onClick={() => setShowBLImport(true)} title="Importer un BL pour cette affaire">
           <FileText size={14} /> Import BL
         </button>
@@ -877,6 +882,16 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
           />
         </Suspense>
       )}
+      {showDisplayDialog && (
+        <Suspense fallback={null}>
+          <DynamicDisplayDialog
+            defaultDate={null}
+            defaultAffaireId={currentAffaire.numeroAffaire}
+            onSave={() => setShowDisplayDialog(false)}
+            onClose={() => setShowDisplayDialog(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
@@ -889,6 +904,7 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
   const [missions, setMissions] = useState([]);
   const [isClosing, setIsClosing] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
+  const [showDisplayDialog, setShowDisplayDialog] = useState(false);
 
   const refreshMissions = useCallback(() => {
     if (!affaire) return;
@@ -936,6 +952,9 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
             {affaire.client && <span className="dialog-client">{capitalizeText(affaire.client)}</span>}
           </div>
           <div className="dialog-header-actions">
+            <button className="dialog-display-btn" onClick={() => setShowDisplayDialog(true)} title="Ajouter à l'affichage dynamique">
+              📺 Affichage
+            </button>
             <button className="dialog-bl-btn" onClick={() => setShowBLImport(true)} title="Importer un BL pour cette affaire">
               <FileText size={15} /> Import BL
             </button>
@@ -955,6 +974,16 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
             onClose={() => setShowBLImport(false)}
             onImported={() => { setShowBLImport(false); handleDataChanged(); }}
             defaultAffaireId={affaire.numeroAffaire}
+          />
+        </Suspense>
+      )}
+      {showDisplayDialog && (
+        <Suspense fallback={null}>
+          <DynamicDisplayDialog
+            defaultDate={null}
+            defaultAffaireId={affaire.numeroAffaire}
+            onSave={() => { setShowDisplayDialog(false); handleDataChanged(); }}
+            onClose={() => setShowDisplayDialog(false)}
           />
         </Suspense>
       )}

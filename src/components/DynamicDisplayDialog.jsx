@@ -22,10 +22,10 @@ const EVENT_CATEGORIES = {
 };
 
 // ═══ Composant Principal ═══
-function DynamicDisplayDialog({ event, defaultDate, onSave, onClose }) {
+function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, onClose }) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [affaireSearch, setAffaireSearch] = useState('');
+  const [affaireSearch, setAffaireSearch] = useState(defaultAffaireId || '');
   const [affaireSuggestions, setAffaireSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggRef = useRef(null);
@@ -34,7 +34,7 @@ function DynamicDisplayDialog({ event, defaultDate, onSave, onClose }) {
 
   // Form state
   const [form, setForm] = useState({
-    affaireId: '',
+    affaireId: defaultAffaireId || '',
     type: 'preparation',
     category: 'prestation',
     date: defaultDate || new Date().toISOString().slice(0, 10),

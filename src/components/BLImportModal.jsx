@@ -397,20 +397,47 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                       </div>
                     )}
 
+                    {/* Fournisseurs */}
+                    {parsedData.fournisseurs && parsedData.fournisseurs.length > 0 && (
+                      <div style={{ marginTop: 6, padding: '4px 0' }}>
+                        <h5 style={{ fontSize: '0.82rem', marginBottom: 4 }}>🏭 Fournisseurs ({parsedData.fournisseurs.length})</h5>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 8px' }}>
+                          {parsedData.fournisseurs.map((f, idx) => (
+                            <span key={idx} style={{
+                              fontSize: '0.72rem', background: 'var(--bg-tertiary, #1e293b)',
+                              color: 'var(--text-primary, #e2e8f0)', padding: '2px 8px', borderRadius: 4,
+                              border: '1px solid var(--border-color, #334155)'
+                            }}>{f}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Articles */}
                     {parsedData.items && parsedData.items.length > 0 && (
                       <div className="parsed-items">
                         <h5>Articles ({parsedData.items.length})</h5>
-                        {parsedData.items.slice(0, 15).map((item, idx) => (
-                          <div key={idx} className="parsed-item">
+                        {parsedData.items.slice(0, 30).map((item, idx) => (
+                          <div key={idx} className="parsed-item" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span className="item-qty">{item.quantity || item.qte || '1'}</span>
-                            <span className="item-desc">{item.description || item.designation || item.label || JSON.stringify(item)}</span>
-                            {item.reference && <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginLeft: 4 }}>({item.reference})</span>}
+                            <span className="item-desc" style={{ flex: 1 }}>
+                              {item.description || item.designation || item.label || JSON.stringify(item)}
+                              {item.code && <span style={{ fontSize: '0.65rem', color: '#64748b', marginLeft: 4 }}>({item.code})</span>}
+                            </span>
+                            {(item.reference || item.section) && (
+                              <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginLeft: 4 }}>({item.reference || item.section})</span>
+                            )}
+                            {item.fournisseur && (
+                              <span style={{
+                                fontSize: '0.62rem', background: '#164e63', color: '#67e8f9',
+                                borderRadius: 3, padding: '1px 5px', whiteSpace: 'nowrap', marginLeft: 'auto'
+                              }}>{item.fournisseur}</span>
+                            )}
                           </div>
                         ))}
-                        {parsedData.items.length > 15 && (
+                        {parsedData.items.length > 30 && (
                           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '4px 12px' }}>
-                            ... et {parsedData.items.length - 15} autre(s)
+                            ... et {parsedData.items.length - 30} autre(s)
                           </p>
                         )}
                       </div>

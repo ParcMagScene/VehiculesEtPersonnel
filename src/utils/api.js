@@ -1310,6 +1310,79 @@ class ApiClient {
   async getStockStats() {
     return this.request('/stock/stats');
   }
+
+  // ============ COMMUNICATION ============
+
+  // --- Affichage dynamique (display events) ---
+  async getDisplayEvents(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/display-events${qs ? '?' + qs : ''}`);
+  }
+  async getDisplayEvent(id) {
+    return this.request(`/communication/display-events/${id}`);
+  }
+  async createDisplayEvent(data) {
+    return this.request('/communication/display-events', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateDisplayEvent(id, data) {
+    return this.request(`/communication/display-events/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteDisplayEvent(id) {
+    return this.request(`/communication/display-events/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Import BL ---
+  async getBLImports(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/bl-imports${qs ? '?' + qs : ''}`);
+  }
+  async getBLImport(id) {
+    return this.request(`/communication/bl-imports/${id}`);
+  }
+  async uploadBLImport(formData) {
+    // Utilise fetch directement car multipart/form-data (pas JSON)
+    const headers = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    const response = await fetch(`${API_URL}/communication/bl-imports`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Erreur upload BL');
+    }
+    const data = await response.json();
+    return toCamelCase(data);
+  }
+  async deleteBLImport(id) {
+    return this.request(`/communication/bl-imports/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Tâches / Planning ---
+  async getTasks(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/tasks${qs ? '?' + qs : ''}`);
+  }
+  async getTask(id) {
+    return this.request(`/communication/tasks/${id}`);
+  }
+  async createTask(data) {
+    return this.request('/communication/tasks', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateTask(id, data) {
+    return this.request(`/communication/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteTask(id) {
+    return this.request(`/communication/tasks/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Stats Communication ---
+  async getCommunicationStats() {
+    return this.request('/communication/stats');
+  }
 }
 
 export const api = new ApiClient();

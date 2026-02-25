@@ -34,6 +34,7 @@ const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
 const CataloguePanel = lazy(() => import('./components/CataloguePanel'));
 const TruckModelPanel = lazy(() => import('./components/TruckModelPanel'));
 const StockPanel = lazy(() => import('./components/StockPanel'));
+const CommunicationPanel = lazy(() => import('./components/CommunicationPanel'));
 // const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/MailingPanel'));
@@ -1172,6 +1173,19 @@ function App() {
           </div>
         }>
           <StockPanel
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {activeModule === 'communication' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement du module Communication...</p>
+          </div>
+        }>
+          <CommunicationPanel
             currentUser={currentUser}
           />
         </Suspense>

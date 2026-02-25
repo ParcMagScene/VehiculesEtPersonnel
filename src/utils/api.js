@@ -1045,8 +1045,12 @@ class ApiClient {
     return this.request('/equipment/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
   }
 
-  async importSavTicketsCsv(data, mode = 'import', manualLinks = null) {
-    return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks }) });
+  async importSavTicketsCsv(data, mode = 'import', manualLinks = null, skipDuplicates = false) {
+    return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks, skipDuplicates }) });
+  }
+
+  async removeSavDuplicates() {
+    return this.request('/sav-tickets/duplicates', { method: 'DELETE' });
   }
 
   async getUnlinkedSavTickets() {

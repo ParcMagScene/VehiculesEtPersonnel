@@ -80,6 +80,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
   const [manualLinks, setManualLinks] = useState({}); // { rowIndex: equipmentId }
   const [linkSearch, setLinkSearch] = useState('');
   const [linkingIndex, setLinkingIndex] = useState(null); // index de l'intervention en cours de liaison
+  const [skipDuplicates, setSkipDuplicates] = useState(true); // ignorer doublons par défaut
 
   const handleFileSelect = useCallback((e) => {
     const f = e.target.files[0];
@@ -119,7 +120,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
     try {
       setLoading(true);
       setStep('importing');
-      const result = await api.importSavTicketsCsv(csvData.rows, 'import', Object.keys(manualLinks).length > 0 ? manualLinks : null);
+      const result = await api.importSavTicketsCsv(csvData.rows, 'import', Object.keys(manualLinks).length > 0 ? manualLinks : null, skipDuplicates);
       setResult(result);
       setStep('done');
     } catch (err) {
@@ -208,7 +209,27 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                   <span className="eq-import-stat-value">{preview.totalCost?.toFixed(2)} €</span>
                   <span className="eq-import-stat-label">Coût total</span>
                 </div>
+                {preview.duplicatesCount > 0 && (
+                  <div className="eq-import-stat" style={{ borderColor: '#ef4444' }}>
+                    <span className="eq-import-stat-value" style={{ color: '#ef4444' }}>{preview.duplicatesCount}</span>
+                    <span className="eq-import-stat-label">🔁 Doublons</span>
+                  </div>
+                )}
               </div>
+
+              {/* Option doublons */}
+              {preview.duplicatesCount > 0 && (
+                <div className="eq-import-section" style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: 10, border: '1px solid #fecaca' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#991b1b' }}>
+                    <input type="checkbox" checked={skipDuplicates} onChange={(e) => setSkipDuplicates(e.target.checked)} />
+                    Ignorer les {preview.duplicatesCount} doublon(s) déjà présents en base
+                  </label>
+                  <p style={{ fontSize: 11, color: '#7f1d1d', margin: '4px 0 0 26px' }}>
+                    {preview.duplicatesCount} intervention(s) existent déjà avec le même N° d’intervention.
+                    {skipDuplicates ? ' Elles seront ignorées.' : ' Elles seront importées en doublon.'}
+                  </p>
+                </div>
+              )}
 
               {/* Statuts */}
               <div className="eq-import-section">
@@ -247,7 +268,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                       {(preview.sample || []).map((row, i) => (
                         <tr key={i} style={{ background: row.matched ? '' : '#fef3c7' }}>
                           <td>{row.matched ? '✅' : '⚠️'}</td>
-                          <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{row.intervention}</td>
+                          <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{row.intervention} {row.isDuplicate && <span style={{ color: '#ef4444', fontSize: 10, fontWeight: 700 }}>🔁</span>}</td>
                           <td>{row.code_article}</td>
                           <td className="eq-import-name-cell">{row.nom_article}</td>
                           <td style={{ fontSize: 11 }}>{row.serial}</td>
@@ -413,6 +434,12 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                     <span>⚠️ Non liées (à traiter)</span>
                   </div>
                 )}
+                {result.skippedDuplicates > 0 && (
+                  <div className="eq-import-result-stat">
+                    <span className="eq-import-result-value" style={{ color: '#6b7280' }}>{result.skippedDuplicates}</span>
+                    <span>🔁 Doublons ignorés</span>
+                  </div>
+                )}
               </div>
               {result.createdUnlinked > 0 && (
                 <p style={{ fontSize: 12, color: '#64748b', marginTop: 12 }}>
@@ -433,7 +460,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                 ← Retour
               </button>
               <button className="eq-btn-save" onClick={handleImport} disabled={loading}>
-                <Download size={14} /> Importer {preview.totalRows} interventions
+                <Download size={14} /> Importer {skipDuplicates && preview?.duplicatesCount > 0 ? (preview.totalRows - preview.duplicatesCount) : preview?.totalRows} interventions
               </button>
             </>
           )}

@@ -856,6 +856,19 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
         };
       });
 
+      // Détection des doublons — par N° intervention (extrait du title)
+      const existingTitles = new Set(
+        db.prepare('SELECT title FROM sav_tickets').all().map(t => t.title.trim().toLowerCase())
+      );
+      const duplicates = [];
+      for (const row of processed) {
+        const title = `${(row.intervention || '').trim()} — ${(row.nom_article || '').trim()}`;
+        if (existingTitles.has(title.trim().toLowerCase())) {
+          row._isDuplicate = true;
+          duplicates.push({ index: processed.indexOf(row), intervention: row.intervention, nom: row.nom_article });
+        }
+      }
+
       if (mode === 'preview') {
         const statusCounts = {};
         for (const row of processed) {
@@ -871,6 +884,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
           matched,
           unmatched,
           unmatchedItems, // liste complète pour UI
+          duplicatesCount: duplicates.length,
+          duplicates: duplicates.slice(0, 20),
           statusCounts,
           totalCost,
           existingTickets: db.prepare('SELECT COUNT(*) as c FROM sav_tickets').get().c,
@@ -885,20 +900,28 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
             startDate: r._startDate,
             endDate: r._endDate,
             matched: !!r._equipmentId,
+            isDuplicate: !!r._isDuplicate,
           })),
         });
       }
 
       // Mode import réel — importer TOUT (liées et non liées)
+      const { skipDuplicates } = req.body;
       const insertTicket = db.prepare(`
         INSERT INTO sav_tickets (equipment_id, type, priority, status, title, description, cost, import_code, import_serial, import_name, created_at, resolved_at, updated_at)
         VALUES (?, 'reparation', 'medium', ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `);
 
-      let created = 0, createdLinked = 0, createdUnlinked = 0;
+      let created = 0, createdLinked = 0, createdUnlinked = 0, skippedDuplicates = 0;
 
       const importAll = db.transaction(() => {
         for (const row of processed) {
+          // Ignorer les doublons si demandé
+          if (skipDuplicates && row._isDuplicate) {
+            skippedDuplicates++;
+            continue;
+          }
+
           const title = `${(row.intervention || '').trim()} — ${(row.nom_article || '').trim()}`;
           const description = [
             row.code_article ? `Code article: ${row.code_article}` : '',
@@ -935,18 +958,41 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
         refreshEquipmentStatus(eqId);
       }
 
-      addToHistory('sav_tickets', null, 'import_csv', { created, createdLinked, createdUnlinked, total: data.length }, req.user.id, req.user.name);
+      addToHistory('sav_tickets', null, 'import_csv', { created, createdLinked, createdUnlinked, skippedDuplicates, total: data.length }, req.user.id, req.user.name);
 
       res.json({
         success: true,
         created,
         createdLinked,
         createdUnlinked,
+        skippedDuplicates,
         total: data.length,
-        message: `Import terminé : ${createdLinked} intervention(s) liée(s), ${createdUnlinked} non liée(s) à traiter`,
+        message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}`,
       });
     } catch (error) {
       console.error('Erreur import CSV interventions:', error);
+      console.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // DELETE /api/sav-tickets/duplicates — Supprimer les doublons existants (garder le plus ancien)
+  app.delete('/api/sav-tickets/duplicates', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      // Doublons = même title (N° intervention + nom article)
+      const dupes = db.prepare(`
+        SELECT id FROM sav_tickets WHERE id NOT IN (
+          SELECT MIN(id) FROM sav_tickets GROUP BY LOWER(TRIM(title))
+        )
+      `).all();
+      if (dupes.length === 0) {
+        return res.json({ removed: 0, message: 'Aucun doublon trouvé' });
+      }
+      const ids = dupes.map(d => d.id);
+      db.prepare(`DELETE FROM sav_tickets WHERE id IN (${ids.join(',')})`).run();
+      addToHistory('sav_tickets', null, 'remove_duplicates', { removed: ids.length }, req.user.id, req.user.name);
+      res.json({ removed: ids.length, message: `${ids.length} doublon(s) supprimé(s)` });
+    } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }

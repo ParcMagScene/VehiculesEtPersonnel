@@ -11,6 +11,7 @@ import { useToast } from '../hooks/useToast';
 import './CommunicationPanel.css';
 
 const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
+const BLImportModal = lazy(() => import('./BLImportModal'));
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {
@@ -294,19 +295,135 @@ function TaskPlanningPlaceholder() {
   );
 }
 
-// ═══ Sous-panneau : Import BL (placeholder Phase 5) ═══
-function BLImportPlaceholder() {
+// ═══ Sous-panneau : Import BL ═══
+function BLImportSubPanel({ onRefresh }) {
+  const toast = useToast();
+  const [imports, setImports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const loadImports = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.getBLImports();
+      setImports(data);
+    } catch (err) {
+      toast.error('Erreur chargement imports BL');
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => { loadImports(); }, [loadImports]);
+
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      title: 'Supprimer l\'import',
+      message: 'Voulez-vous vraiment supprimer cet import BL ?',
+      onConfirm: async () => {
+        try {
+          await api.deleteBLImport(id);
+          toast.success('Import supprimé');
+          loadImports();
+          onRefresh?.();
+        } catch (err) {
+          toast.error('Erreur suppression');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
+
+  const statusLabels = { pending: '⏳ En attente', validated: '✅ Validé', rejected: '❌ Rejeté' };
+
   return (
-    <div className="bl-import-placeholder">
-      <FileText size={48} />
-      <h3>Import de Bons de Livraison</h3>
-      <p>
-        Ce module permettra d'importer des BL en PDF, de les associer aux affaires,
-        et de générer automatiquement les événements d'affichage dynamique.
-      </p>
-      <p style={{ fontSize: '0.8rem', marginTop: 12, opacity: 0.7 }}>
-        🚧 En cours de développement — Phase 5
-      </p>
+    <div style={{ padding: '16px 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>
+          <FileText size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+          Imports de Bons de Livraison
+        </h3>
+        <button className="btn-add-event" style={{
+          display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+          border: 'none', borderRadius: 8, background: 'var(--accent-color, #6366f1)',
+          color: 'white', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer'
+        }} onClick={() => setShowImportModal(true)}>
+          <Plus size={16} /> Importer un BL
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="events-empty">
+          <RefreshCw size={32} className="spin" />
+          <p>Chargement…</p>
+        </div>
+      ) : imports.length === 0 ? (
+        <div className="bl-import-placeholder">
+          <FileText size={48} />
+          <h3>Aucun import BL</h3>
+          <p>Importez un bon de livraison PDF pour commencer</p>
+          <button
+            className="btn-add-event"
+            style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px', border: 'none', borderRadius: 8,
+              background: 'var(--accent-color, #6366f1)', color: 'white',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+            onClick={() => setShowImportModal(true)}
+          >
+            <Plus size={16} /> Premier import
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {imports.map(bl => (
+            <div key={bl.id} className="event-card" style={{ border: '1px solid var(--border-color, #e2e8f0)', borderRadius: 10, overflow: 'hidden' }}>
+              <div className="type-stripe" style={{ background: bl.status === 'validated' ? '#10b981' : bl.status === 'rejected' ? '#ef4444' : '#f59e0b', width: 5 }} />
+              <div className="card-body" style={{ padding: '12px 16px', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>
+                    {bl.filename || 'Import BL'}
+                  </span>
+                  {bl.affaireId && (
+                    <span style={{ fontSize: '0.8rem', color: 'var(--accent-color)', fontWeight: 600 }}>
+                      <Briefcase size={13} /> {bl.affaireId}
+                    </span>
+                  )}
+                  <span style={{
+                    fontSize: '0.75rem', padding: '2px 8px', borderRadius: 8,
+                    background: 'var(--bg-tertiary)', color: 'var(--text-secondary)'
+                  }}>
+                    {statusLabels[bl.status] || bl.status}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                  Importé le {new Date(bl.createdAt).toLocaleDateString('fr-FR')}
+                </div>
+              </div>
+              <div className="card-actions" style={{ padding: 8 }}>
+                <button className="delete" onClick={() => handleDelete(bl.id)} title="Supprimer"
+                  style={{ width: 30, height: 30, border: 'none', borderRadius: 6, background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showImportModal && (
+        <Suspense fallback={null}>
+          <BLImportModal
+            onClose={() => setShowImportModal(false)}
+            onImported={() => {
+              loadImports();
+              onRefresh?.();
+            }}
+          />
+        </Suspense>
+      )}
+      {confirmDialog && <ConfirmDialog {...confirmDialog} />}
     </div>
   );
 }
@@ -393,7 +510,14 @@ function CommunicationPanel({ currentUser }) {
           />
         )}
         {activeSubTab === 'tasks' && <TaskPlanningPlaceholder />}
-        {activeSubTab === 'bl' && <BLImportPlaceholder />}
+        {activeSubTab === 'bl' && (
+          <BLImportSubPanel
+            onRefresh={() => {
+              setDisplayRefreshKey(k => k + 1);
+              api.getCommunicationStats().then(setStats).catch(() => null);
+            }}
+          />
+        )}
       </div>
 
       {/* Event Dialog */}

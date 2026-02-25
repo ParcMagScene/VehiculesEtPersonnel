@@ -381,9 +381,44 @@
 /* ═══ CONTENT WRAPPER ═══ */
 .eq-content-wrapper {
   display: flex;
+  flex-direction: column;
   flex: 1;
   overflow: hidden;
   position: relative;
+}
+
+/* ═══ DEPOT MAP ═══ */
+.eq-depot-map-wrapper {
+  border-bottom: 1px solid var(--theme-border, #e2e8f0);
+  padding: 12px 16px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--theme-bg-secondary, #f8fafc);
+}
+
+/* ═══ ZONE BADGE ═══ */
+.eq-zone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.eq-zone-code {
+  opacity: 0.8;
+  font-weight: 400;
+  font-size: 0.65rem;
+}
+.eq-zone-filter {
+  max-width: 160px;
+}
+.eq-btn-secondary.active {
+  background: var(--sec-color, #3b82f6);
+  color: white;
+  border-color: var(--sec-color, #3b82f6);
 }
 
 .eq-content {

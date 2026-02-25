@@ -1503,6 +1503,30 @@ function initializeDatabase() {
     console.warn('⚠️ Migration location_zone/code/floor:', error.message);
   }
 
+  // ═══ Migration: Localisation dépôt pour equipment (inventaire matériel) ═══
+  try {
+    const eqCols = db.prepare("PRAGMA table_info(equipment)").all();
+    const eqColNames = eqCols.map(c => c.name);
+    if (!eqColNames.includes('location_zone')) {
+      db.prepare("ALTER TABLE equipment ADD COLUMN location_zone TEXT").run();
+      console.log('✅ Migration: ajout colonne location_zone à equipment');
+    }
+    if (!eqColNames.includes('location_code')) {
+      db.prepare("ALTER TABLE equipment ADD COLUMN location_code TEXT").run();
+      console.log('✅ Migration: ajout colonne location_code à equipment');
+    }
+    if (!eqColNames.includes('location_floor')) {
+      db.prepare("ALTER TABLE equipment ADD COLUMN location_floor TEXT").run();
+      console.log('✅ Migration: ajout colonne location_floor à equipment');
+    }
+    db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_location_zone ON equipment(location_zone)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_location_floor ON equipment(location_floor)');
+    // Migrer les données textuelles 'location' existantes vers location_zone si possible
+    // (les valeurs texte libres ne correspondront pas aux zone IDs, donc on laisse tel quel)
+  } catch (error) {
+    console.warn('⚠️ Migration equipment location_zone/code/floor:', error.message);
+  }
+
   // ═══ Module Mailing Avancé ═══
   try {
     db.exec(`

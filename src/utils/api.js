@@ -1385,9 +1385,13 @@ class ApiClient {
   }
 
   // --- Export PDF tâches ---
-  async exportTasksPdf(date) {
+  async exportTasksPdf(date, taskIds) {
     const token = localStorage.getItem('auth_token');
-    const resp = await fetch(`${this.baseURL}/communication/tasks/export-pdf?date=${date}`, {
+    let url = `${this.baseURL}/communication/tasks/export-pdf?date=${date}`;
+    if (taskIds && taskIds.length > 0) {
+      url += `&taskIds=${taskIds.join(',')}`;
+    }
+    const resp = await fetch(url, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!resp.ok) throw new Error('Erreur export PDF');

@@ -539,13 +539,13 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
   app.get('/api/communication/tasks/export-pdf', authenticateToken, (req, res) => {
     try {
-      const { date } = req.query;
+      const { date, taskIds } = req.query;
       if (!date) {
         return res.status(400).json({ error: 'Le paramètre date est requis' });
       }
 
       // Charger les tâches du jour avec joints
-      const tasks = db.prepare(`
+      let tasks = db.prepare(`
         SELECT ta.*, 
                dde.affaire_id AS event_affaire_id,
                dde.type AS event_type,
@@ -560,6 +560,15 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         WHERE ta.date = ?
         ORDER BY ta.section ASC, ta.period ASC, ta.time ASC
       `).all(date);
+
+      // Filtrage optionnel par IDs
+      if (taskIds) {
+        const ids = taskIds.split(',').map(Number).filter(n => !isNaN(n));
+        if (ids.length > 0) {
+          const idSet = new Set(ids);
+          tasks = tasks.filter(t => idSet.has(t.id));
+        }
+      }
 
       // Regrouper par section
       const SECTIONS = {

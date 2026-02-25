@@ -34,10 +34,10 @@ const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
 const CataloguePanel = lazy(() => import('./components/CataloguePanel'));
 const TruckModelPanel = lazy(() => import('./components/TruckModelPanel'));
 const StockPanel = lazy(() => import('./components/StockPanel'));
-const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
+// const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/MailingPanel'));
-const ReportsPanel = lazy(() => import('./components/ReportsPanel'));
+// const ReportsPanel = lazy(() => import('./components/ReportsPanel'));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
 
@@ -925,7 +925,7 @@ function App() {
         </div>
       )}
       
-      {activeModule !== 'dashboard' && activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'trucks' && activeModule !== 'stock' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'trucks' && activeModule !== 'stock' && (
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}
@@ -992,27 +992,7 @@ function App() {
       />
       )}
 
-      {activeModule === 'dashboard' && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du tableau de bord...</p>
-          </div>
-        }>
-          <DashboardPanel
-            vehicles={vehicles}
-            reservations={reservations}
-            maintenances={maintenances}
-            persons={persons}
-            currentUser={currentUser}
-            onNavigateToModule={(mod) => {
-              setActiveModule(mod);
-              setShowManagement(false);
-              setShowSettings(false);
-            }}
-          />
-        </Suspense>
-      )}
+
 
       {activeModule === 'vehicles' && (
         <>
@@ -1197,18 +1177,7 @@ function App() {
         </Suspense>
       )}
 
-      {activeModule === 'reports' && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement des rapports...</p>
-          </div>
-        }>
-          <ReportsPanel
-            currentUser={currentUser}
-          />
-        </Suspense>
-      )}
+
 
       {showManagement && (
         <Suspense fallback={

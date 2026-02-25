@@ -17,7 +17,7 @@
   gap: 10px;
   padding: 10px 16px;
   background: white;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--theme-border);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -26,7 +26,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-radius: 8px;
   padding: 6px 10px;
   flex: 1;
@@ -40,11 +40,11 @@
   outline: none;
   font-size: 13px;
   width: 100%;
-  color: #334155;
+  color: var(--theme-text-dark);
 }
 
 .ebl-search svg {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   flex-shrink: 0;
 }
 
@@ -52,7 +52,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   display: flex;
   padding: 2px;
 }
@@ -62,19 +62,19 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   background: white;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 }
 
 .ebl-select-all:hover {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   border-color: #cbd5e1;
 }
 
@@ -84,16 +84,16 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
 }
 
 .ebl-toggle-btn {
   padding: 4px 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   background: white;
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -119,11 +119,11 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
   color: #4f46e5;
   font-size: 13px;
   font-weight: 600;
-  border-bottom: 1px solid #c7d2fe;
+  border-bottom: 1px solid var(--theme-bg-indigo-lighter);
   flex-shrink: 0;
 }
 
@@ -144,7 +144,7 @@
 /* Groupe par référence */
 .ebl-group {
   margin-bottom: 4px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 10px;
   overflow: hidden;
   background: white;
@@ -155,21 +155,21 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
 }
 
 .ebl-group-header:hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .ebl-collapse-btn {
   border: none;
   background: none;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   display: flex;
   padding: 0;
 }
@@ -195,22 +195,22 @@
 .ebl-group-ref {
   font-weight: 700;
   font-size: 14px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   flex: 1;
 }
 
 .ebl-group-count {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   font-weight: 500;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   padding: 2px 8px;
   border-radius: 10px;
 }
 
 /* Items du groupe */
 .ebl-group-items {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--theme-border);
 }
 
 .ebl-item {
@@ -218,7 +218,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px 6px 36px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--theme-border-light);
   transition: background 0.1s;
 }
 
@@ -231,7 +231,7 @@
 }
 
 .ebl-item.selected {
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
 }
 
 .ebl-item-info {
@@ -252,12 +252,12 @@
 
 .ebl-sn {
   font-family: monospace;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
 }
 
 .ebl-name {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -274,7 +274,7 @@
   gap: 4px;
   padding: 2px 4px;
   background: #fafafa;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 4px;
 }
 
@@ -287,13 +287,13 @@
 .ebl-mini-ref {
   font-size: 8px;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   white-space: nowrap;
 }
 
 .ebl-mini-uid {
   font-size: 6px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-family: monospace;
   white-space: nowrap;
 }
@@ -322,7 +322,7 @@
 }
 
 .ebl-btn-export:hover {
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
 }
 
 .ebl-btn-print {

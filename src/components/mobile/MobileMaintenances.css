@@ -12,7 +12,7 @@
 .mobile-maintenances .type-card {
   width: 100%;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 16px;
   padding: 1.5rem;
   text-align: center;
@@ -37,7 +37,7 @@
 }
 
 .type-icon.scheduled {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--theme-info) 0%, var(--theme-info-dark) 100%);
 }
 
 .type-icon.request {
@@ -45,19 +45,19 @@
 }
 
 .type-icon.breakdown {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--theme-danger) 0%, var(--theme-danger-dark) 100%);
 }
 
 .type-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   margin-bottom: 0.5rem;
 }
 
 .type-description {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 /* Formulaire */
@@ -66,7 +66,7 @@
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
 }
 
 /* Header et boutons partagés */
@@ -81,7 +81,7 @@
   flex: 1;
   margin: 0;
   font-size: 1.25rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .mobile-maintenances .back-button {
@@ -95,7 +95,7 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  color: #374151;
+  color: var(--theme-text-body);
 }
 
 .mobile-maintenances .form-group {
@@ -107,7 +107,7 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--theme-text-body);
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
 }
@@ -117,12 +117,12 @@
 .mobile-maintenances .form-group textarea {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--theme-border);
   border-radius: 14px;
   font-size: 1rem;
   font-family: inherit;
   box-shadow: none;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   background: white;
   transition: border-color 0.2s;
 }
@@ -131,7 +131,7 @@
 .mobile-maintenances .form-group select:focus,
 .mobile-maintenances .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
@@ -154,8 +154,8 @@
 }
 
 .mobile-maintenances .btn-cancel {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-body);
 }
 
 .mobile-maintenances .btn-submit {
@@ -175,7 +175,7 @@
   border-radius: 16px;
   padding: 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
 }
 
 .mobile-maintenances .maintenance-header {
@@ -207,7 +207,7 @@
 }
 
 .mobile-maintenances .status-badge.in-progress {
-  background: #e0e7ff;
+  background: var(--theme-bg-indigo-light);
   color: #4338ca;
 }
 
@@ -225,7 +225,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
   font-weight: normal;
@@ -235,7 +235,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 0.875rem;
   margin-bottom: 0.75rem;
   margin-top: 0;
@@ -244,7 +244,7 @@
 .mobile-maintenances .maintenance-description {
   margin-top: 0.75rem;
   padding: 0.75rem;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   color: #4b5563;

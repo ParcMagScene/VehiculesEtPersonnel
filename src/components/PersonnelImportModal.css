@@ -50,7 +50,7 @@
 }
 
 .pi-collision-stat.active {
-  border-color: var(--primary, #3b82f6);
+  border-color: var(--primary, var(--theme-info));
   background: rgba(59, 130, 246, 0.08);
 }
 
@@ -64,13 +64,13 @@
   font-weight: 700;
 }
 
-.pi-collision-stat.create .pi-collision-count { color: #10b981; }
-.pi-collision-stat.update .pi-collision-count { color: #f59e0b; }
-.pi-collision-stat.conflict .pi-collision-count { color: #ef4444; }
+.pi-collision-stat.create .pi-collision-count { color: var(--theme-success-alt); }
+.pi-collision-stat.update .pi-collision-count { color: var(--theme-warning); }
+.pi-collision-stat.conflict .pi-collision-count { color: var(--theme-danger); }
 
-.pi-collision-stat.create { border-left: 3px solid #10b981; }
-.pi-collision-stat.update { border-left: 3px solid #f59e0b; }
-.pi-collision-stat.conflict { border-left: 3px solid #ef4444; }
+.pi-collision-stat.create { border-left: 3px solid var(--theme-success-alt); }
+.pi-collision-stat.update { border-left: 3px solid var(--theme-warning); }
+.pi-collision-stat.conflict { border-left: 3px solid var(--theme-danger); }
 
 /* ---------- COLLISION DETAIL ---------- */
 .pi-collision-detail {
@@ -103,9 +103,9 @@
 }
 
 /* ---------- TABLE ROWS PAR ACTION ---------- */
-.pi-row-create td:first-child { border-left: 3px solid #10b981; }
-.pi-row-update td:first-child { border-left: 3px solid #f59e0b; }
-.pi-row-conflict td:first-child { border-left: 3px solid #ef4444; }
+.pi-row-create td:first-child { border-left: 3px solid var(--theme-success-alt); }
+.pi-row-update td:first-child { border-left: 3px solid var(--theme-warning); }
+.pi-row-conflict td:first-child { border-left: 3px solid var(--theme-danger); }
 
 /* ---------- ACTION BADGES ---------- */
 .pi-action-badge {
@@ -128,12 +128,12 @@
 
 .pi-action-badge.update {
   background: rgba(245, 158, 11, 0.12);
-  color: #d97706;
+  color: var(--theme-warning-dark);
 }
 
 .pi-action-badge.conflict {
   background: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
+  color: var(--theme-danger-dark);
 }
 
 /* ---------- TYPE TAGS ---------- */
@@ -148,7 +148,7 @@
 
 .pi-type-salari {
   background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+  color: var(--theme-info-dark);
 }
 
 .pi-type-intermittent {

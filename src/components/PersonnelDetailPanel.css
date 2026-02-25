@@ -7,8 +7,8 @@
   width: 0;
   min-width: 0;
   overflow: hidden;
-  background: #f8fafc;
-  border-left: 0px solid #e2e8f0;
+  background: var(--theme-bg-page);
+  border-left: 0px solid var(--theme-border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -30,7 +30,7 @@
 .personnel-slide-panel.open {
   width: 360px;
   min-width: 360px;
-  border-left: 1px solid #e2e8f0;
+  border-left: 1px solid var(--theme-border);
   opacity: 1;
   box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
 }
@@ -45,7 +45,7 @@
 .personnel-slide-panel.closing {
   width: 0;
   min-width: 0;
-  border-left: 0px solid #e2e8f0;
+  border-left: 0px solid var(--theme-border);
   opacity: 0;
 }
 
@@ -137,7 +137,7 @@
   width: 5px;
 }
 .pdp-slide-body::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 .pdp-slide-body::-webkit-scrollbar-thumb {
   background: #cbd5e1;
@@ -155,10 +155,10 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 700;
-  color: #5b21b6;
+  color: var(--theme-primary-dark);
   margin: 0 0 12px 0;
   padding-bottom: 8px;
-  border-bottom: 2px solid #e0e7ff;
+  border-bottom: 2px solid var(--theme-bg-indigo-light);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -175,7 +175,7 @@
   padding: 12px;
   background: white;
   border-radius: 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
 }
 
 .pdp-avatar-large {
@@ -198,7 +198,7 @@
 .pdp-fullname {
   font-size: 18px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   margin-bottom: 4px;
 }
 
@@ -228,15 +228,15 @@
 }
 
 .pdp-type-badge.type-intermittent { background: #fef3c7; color: #92400e; }
-.pdp-type-badge.type-CDD { background: #e0e7ff; color: #3730a3; }
-.pdp-type-badge.type-freelance { background: #f0fdf4; color: #166534; }
+.pdp-type-badge.type-CDD { background: var(--theme-bg-indigo-light); color: #3730a3; }
+.pdp-type-badge.type-freelance { background: var(--theme-success-bg); color: #166534; }
 .pdp-type-badge.type-prestataire { background: #fce7f3; color: #9d174d; }
 .pdp-type-badge.type-auto-entrepreneur { background: #fff7ed; color: #9a3412; }
-.pdp-type-badge.type-entreprise { background: #f5f3ff; color: #5b21b6; }
+.pdp-type-badge.type-entreprise { background: #f5f3ff; color: var(--theme-primary-dark); }
 
 .pdp-inactive-badge {
-  background: #f3f4f6 !important;
-  color: #6b7280 !important;
+  background: var(--theme-bg-tertiary) !important;
+  color: var(--theme-text-gray) !important;
 }
 
 .pdp-contract-badge {
@@ -256,10 +256,10 @@
   gap: 8px;
   padding: 10px 12px;
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
   font-size: 13px;
-  color: #334155;
+  color: var(--theme-text-dark);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s;
@@ -268,7 +268,7 @@
 .pdp-contact-item:hover {
   border-color: var(--theme-primary);
   background: #f8f7ff;
-  color: #5b21b6;
+  color: var(--theme-primary-dark);
 }
 
 .pdp-contact-item svg {
@@ -291,9 +291,9 @@
   border-radius: 14px;
   font-size: 11px;
   font-weight: 600;
-  background: color-mix(in srgb, var(--chip-color, #6b7280) 12%, white);
-  color: var(--chip-color, #6b7280);
-  border: 1px solid color-mix(in srgb, var(--chip-color, #6b7280) 25%, transparent);
+  background: color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 12%, white);
+  color: var(--chip-color, var(--theme-text-gray));
+  border: 1px solid color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 25%, transparent);
 }
 
 .pdp-chip svg {
@@ -313,7 +313,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: #f0fdf4;
+  background: var(--theme-success-bg);
   border: 1px solid #bbf7d0;
   border-radius: 8px;
   font-size: 12px;
@@ -322,7 +322,7 @@
 }
 
 .pdp-linked-account svg {
-  color: #10b981;
+  color: var(--theme-success-alt);
   flex-shrink: 0;
 }
 
@@ -330,7 +330,7 @@
 .pdp-notes {
   padding: 10px 12px;
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
   font-size: 13px;
   color: #4b5563;
@@ -341,7 +341,7 @@
 /* ═══ Footer ═══ */
 .pdp-slide-footer {
   padding: 12px 16px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--theme-border);
   flex-shrink: 0;
   background: white;
 }
@@ -372,7 +372,7 @@
 .pdp-absence-add-btn {
   margin-left: auto;
   background: none;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 5px;
   width: 22px;
   height: 22px;
@@ -393,7 +393,7 @@
 .pdp-absence-loading,
 .pdp-absence-empty {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   text-align: center;
   padding: 8px;
 }
@@ -406,9 +406,9 @@
 
 .pdp-absence-item {
   padding: 6px 10px;
-  border-left: 3px solid #94a3b8;
+  border-left: 3px solid var(--theme-text-muted);
   border-radius: 0 6px 6px 0;
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   font-size: 12px;
 }
 
@@ -436,12 +436,12 @@
 
 .pdp-absence-dates {
   font-size: 11px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
 }
 
 .pdp-absence-reason {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   font-style: italic;
   margin-top: 2px;
 }

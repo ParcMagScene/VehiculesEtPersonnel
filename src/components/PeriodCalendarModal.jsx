@@ -5,7 +5,7 @@ import {
   isSameMonth, isSameDay, isWeekend, isBefore, isAfter, parseISO
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, X, AlertTriangle, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, AlertTriangle, Check, Clock } from 'lucide-react';
 import api from '../utils/api';
 import { PERIOD_MENU_ITEMS } from './PersonnelContextMenu';
 import './PeriodCalendarModal.css';

@@ -1,6 +1,32 @@
 import db, { addToHistory } from './database.js';
 
 // ═══════════════════════════════════════════════════════════════
+// Transitions de statut autorisées
+// ═══════════════════════════════════════════════════════════════
+const ORDER_TRANSITIONS = {
+  draft:     ['sent', 'cancelled'],
+  sent:      ['confirmed', 'cancelled'],
+  confirmed: ['partial', 'received', 'cancelled'],
+  partial:   ['received'],
+  received:  [],
+  cancelled: ['draft']
+};
+
+const QUOTE_TRANSITIONS = {
+  draft:    ['sent', 'cancelled'],
+  sent:     ['accepted', 'refused', 'cancelled'],
+  accepted: [],
+  refused:  ['draft'],
+  cancelled:['draft']
+};
+
+function validateStatusTransition(transitions, from, to) {
+  if (from === to) return true;
+  const allowed = transitions[from];
+  return allowed && allowed.includes(to);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Fournisseurs
 // ═══════════════════════════════════════════════════════════════
 export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
@@ -172,37 +198,62 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/orders', authenticateToken, (req, res) => {
     try {
       const { type = 'purchase', affaire_id, supplier_id, status = 'draft', order_date, expected_date, notes, items = [] } = req.body;
+
+      // Validation des items
+      for (const item of items) {
+        if (!item.designation || !item.designation.trim()) {
+          return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+        }
+        if (item.quantity !== undefined && (item.quantity <= 0 || isNaN(item.quantity))) {
+          return res.status(400).json({ error: `Quantité invalide pour "${item.designation}"` });
+        }
+        if (item.unit_price_ht !== undefined && (item.unit_price_ht < 0 || isNaN(item.unit_price_ht))) {
+          return res.status(400).json({ error: `Prix invalide pour "${item.designation}"` });
+        }
+      }
+
+      // Vérifier le fournisseur si fourni
+      if (supplier_id) {
+        const supplier = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(supplier_id);
+        if (!supplier) return res.status(400).json({ error: 'Fournisseur introuvable' });
+      }
+
       const prefix = type === 'purchase' ? 'BC' : 'BV';
-      const reference = generateReference(prefix);
-
-      // Calcul totaux
-      let total_ht = 0;
       const tva_rate = req.body.tva_rate || 20;
-      for (const item of items) {
-        total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
-      }
-      const total_ttc = total_ht * (1 + tva_rate / 100);
 
-      const result = db.prepare(`
-        INSERT INTO orders (reference, type, affaire_id, supplier_id, status, order_date, expected_date, total_ht, tva_rate, total_ttc, notes, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(reference, type, affaire_id || null, supplier_id || null, status,
-        order_date || new Date().toISOString().slice(0, 10), expected_date || null,
-        total_ht, tva_rate, total_ttc, notes || null, req.user.id);
+      // Transaction atomique
+      const createOrder = db.transaction(() => {
+        const reference = generateReference(prefix);
 
-      const orderId = result.lastInsertRowid;
+        let total_ht = 0;
+        for (const item of items) {
+          total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
+        }
+        const total_ttc = total_ht * (1 + tva_rate / 100);
 
-      // Insérer les lignes
-      const insertItem = db.prepare(
-        'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      );
-      for (const item of items) {
-        const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
-        insertItem.run(orderId, item.designation, item.quantity || 1, item.unit || 'u',
-          item.unit_price_ht || 0, item.tva_rate || tva_rate, itemTotal, item.notes || null);
-      }
+        const result = db.prepare(`
+          INSERT INTO orders (reference, type, affaire_id, supplier_id, status, order_date, expected_date, total_ht, tva_rate, total_ttc, notes, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(reference, type, affaire_id || null, supplier_id || null, status,
+          order_date || new Date().toISOString().slice(0, 10), expected_date || null,
+          total_ht, tva_rate, total_ttc, notes || null, req.user.id);
 
-      addToHistory('order', orderId, 'create', JSON.stringify({ reference, type, status }), req.user.id, req.user.name);
+        const orderId = result.lastInsertRowid;
+
+        const insertItem = db.prepare(
+          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        for (const item of items) {
+          const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
+          insertItem.run(orderId, item.designation.trim(), item.quantity || 1, item.unit || 'u',
+            item.unit_price_ht || 0, item.tva_rate || tva_rate, itemTotal, item.notes || null);
+        }
+
+        addToHistory('order', orderId, 'create', JSON.stringify({ reference, type, status }), req.user.id, req.user.name);
+        return orderId;
+      });
+
+      const orderId = createOrder();
       const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
       const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderId);
       res.status(201).json({ ...order, items: orderItems });
@@ -219,47 +270,66 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Commande non trouvée' });
 
-      // Recalculer totaux si items fournis
-      let total_ht = existing.total_ht;
-      let finalTvaRate = tva_rate !== undefined ? tva_rate : existing.tva_rate;
-      if (items) {
-        total_ht = 0;
-        for (const item of items) {
-          total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
+      // Validation transition de statut
+      if (status && status !== existing.status) {
+        if (!validateStatusTransition(ORDER_TRANSITIONS, existing.status, status)) {
+          return res.status(400).json({ error: `Transition de statut invalide: ${existing.status} → ${status}` });
         }
       }
-      const total_ttc = total_ht * (1 + finalTvaRate / 100);
 
-      db.prepare(`
-        UPDATE orders SET affaire_id = ?, supplier_id = ?, status = ?, order_date = ?, 
-        expected_date = ?, received_date = ?, total_ht = ?, tva_rate = ?, total_ttc = ?, 
-        notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-      `).run(
-        affaire_id !== undefined ? affaire_id : existing.affaire_id,
-        supplier_id !== undefined ? supplier_id : existing.supplier_id,
-        status || existing.status,
-        order_date || existing.order_date,
-        expected_date !== undefined ? expected_date : existing.expected_date,
-        received_date !== undefined ? received_date : existing.received_date,
-        total_ht, finalTvaRate, total_ttc,
-        notes !== undefined ? notes : existing.notes,
-        req.params.id
-      );
-
-      // Remplacer les lignes si items fournis
+      // Validation des items si fournis
       if (items) {
-        db.prepare('DELETE FROM order_items WHERE order_id = ?').run(req.params.id);
-        const insertItem = db.prepare(
-          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, received_qty, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        for (const item of items) {
+          if (!item.designation || !item.designation.trim()) {
+            return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+          }
+        }
+      }
+
+      // Transaction atomique pour update + remplacement items
+      const updateOrder = db.transaction(() => {
+        let total_ht = existing.total_ht;
+        let finalTvaRate = tva_rate !== undefined ? tva_rate : existing.tva_rate;
+        if (items) {
+          total_ht = 0;
+          for (const item of items) {
+            total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
+          }
+        }
+        const total_ttc = total_ht * (1 + finalTvaRate / 100);
+
+        db.prepare(`
+          UPDATE orders SET affaire_id = ?, supplier_id = ?, status = ?, order_date = ?, 
+          expected_date = ?, received_date = ?, total_ht = ?, tva_rate = ?, total_ttc = ?, 
+          notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+        `).run(
+          affaire_id !== undefined ? affaire_id : existing.affaire_id,
+          supplier_id !== undefined ? supplier_id : existing.supplier_id,
+          status || existing.status,
+          order_date || existing.order_date,
+          expected_date !== undefined ? expected_date : existing.expected_date,
+          received_date !== undefined ? received_date : existing.received_date,
+          total_ht, finalTvaRate, total_ttc,
+          notes !== undefined ? notes : existing.notes,
+          req.params.id
         );
-        for (const item of items) {
-          const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
-          insertItem.run(req.params.id, item.designation, item.quantity || 1, item.unit || 'u',
-            item.unit_price_ht || 0, item.tva_rate || finalTvaRate, itemTotal, item.received_qty || 0, item.notes || null);
-        }
-      }
 
-      addToHistory('order', req.params.id, 'update', JSON.stringify({ status: status || existing.status }), req.user.id, req.user.name);
+        if (items) {
+          db.prepare('DELETE FROM order_items WHERE order_id = ?').run(req.params.id);
+          const insertItem = db.prepare(
+            'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, received_qty, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          );
+          for (const item of items) {
+            const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
+            insertItem.run(req.params.id, item.designation.trim(), item.quantity || 1, item.unit || 'u',
+              item.unit_price_ht || 0, item.tva_rate || finalTvaRate, itemTotal, item.received_qty || 0, item.notes || null);
+          }
+        }
+
+        addToHistory('order', req.params.id, 'update', JSON.stringify({ status: status || existing.status }), req.user.id, req.user.name);
+      });
+
+      updateOrder();
       const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
       const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(req.params.id);
       res.json({ ...order, items: orderItems });
@@ -272,9 +342,21 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
   // Supprimer une commande
   app.delete('/api/orders/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      db.prepare('DELETE FROM order_items WHERE order_id = ?').run(req.params.id);
-      db.prepare('DELETE FROM orders WHERE id = ?').run(req.params.id);
-      addToHistory('order', req.params.id, 'delete', null, req.user.id, req.user.name);
+      const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'Commande non trouvée' });
+
+      // Vérifier qu'aucun devis n'est lié
+      const linkedQuote = db.prepare('SELECT id, reference FROM quotes WHERE converted_to_order_id = ?').get(req.params.id);
+      if (linkedQuote) {
+        return res.status(400).json({ error: `Impossible de supprimer : liée au devis ${linkedQuote.reference}` });
+      }
+
+      const deleteOrder = db.transaction(() => {
+        db.prepare('DELETE FROM order_items WHERE order_id = ?').run(req.params.id);
+        db.prepare('DELETE FROM orders WHERE id = ?').run(req.params.id);
+        addToHistory('order', req.params.id, 'delete', JSON.stringify({ reference: existing.reference }), req.user.id, req.user.name);
+      });
+      deleteOrder();
       res.json({ success: true });
     } catch (error) {
       console.error(error);
@@ -347,34 +429,48 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/quotes', authenticateToken, (req, res) => {
     try {
       const { affaire_id, client_name, client_email, client_address, status = 'draft', quote_date, validity_date, notes, items = [] } = req.body;
-      const reference = generateQuoteReference();
 
-      let total_ht = 0;
+      // Validation des items
+      for (const item of items) {
+        if (!item.designation || !item.designation.trim()) {
+          return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+        }
+      }
+
       const tva_rate = req.body.tva_rate || 20;
-      for (const item of items) {
-        total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
-      }
-      const total_ttc = total_ht * (1 + tva_rate / 100);
 
-      const result = db.prepare(`
-        INSERT INTO quotes (reference, affaire_id, client_name, client_email, client_address, status, quote_date, validity_date, total_ht, tva_rate, total_ttc, notes, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(reference, affaire_id || null, client_name || null, client_email || null, client_address || null,
-        status, quote_date || new Date().toISOString().slice(0, 10), validity_date || null,
-        total_ht, tva_rate, total_ttc, notes || null, req.user.id);
+      // Transaction atomique
+      const createQuote = db.transaction(() => {
+        const reference = generateQuoteReference();
+        let total_ht = 0;
+        for (const item of items) {
+          total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
+        }
+        const total_ttc = total_ht * (1 + tva_rate / 100);
 
-      const quoteId = result.lastInsertRowid;
+        const result = db.prepare(`
+          INSERT INTO quotes (reference, affaire_id, client_name, client_email, client_address, status, quote_date, validity_date, total_ht, tva_rate, total_ttc, notes, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(reference, affaire_id || null, client_name || null, client_email || null, client_address || null,
+          status, quote_date || new Date().toISOString().slice(0, 10), validity_date || null,
+          total_ht, tva_rate, total_ttc, notes || null, req.user.id);
 
-      const insertItem = db.prepare(
-        'INSERT INTO quote_items (quote_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      );
-      for (const item of items) {
-        const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
-        insertItem.run(quoteId, item.designation, item.quantity || 1, item.unit || 'u',
-          item.unit_price_ht || 0, item.tva_rate || tva_rate, itemTotal, item.notes || null);
-      }
+        const quoteId = result.lastInsertRowid;
 
-      addToHistory('quote', quoteId, 'create', JSON.stringify({ reference, status }), req.user.id, req.user.name);
+        const insertItem = db.prepare(
+          'INSERT INTO quote_items (quote_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        for (const item of items) {
+          const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
+          insertItem.run(quoteId, item.designation.trim(), item.quantity || 1, item.unit || 'u',
+            item.unit_price_ht || 0, item.tva_rate || tva_rate, itemTotal, item.notes || null);
+        }
+
+        addToHistory('quote', quoteId, 'create', JSON.stringify({ reference, status }), req.user.id, req.user.name);
+        return quoteId;
+      });
+
+      const quoteId = createQuote();
       const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(quoteId);
       const quoteItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ?').all(quoteId);
       res.status(201).json({ ...quote, items: quoteItems });
@@ -391,46 +487,67 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Devis non trouvé' });
 
-      let total_ht = existing.total_ht;
-      let finalTvaRate = tva_rate !== undefined ? tva_rate : existing.tva_rate;
-      if (items) {
-        total_ht = 0;
-        for (const item of items) {
-          total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
+      // Validation transition de statut
+      if (status && status !== existing.status) {
+        if (!validateStatusTransition(QUOTE_TRANSITIONS, existing.status, status)) {
+          return res.status(400).json({ error: `Transition de statut invalide: ${existing.status} → ${status}` });
         }
       }
-      const total_ttc = total_ht * (1 + finalTvaRate / 100);
 
-      db.prepare(`
-        UPDATE quotes SET affaire_id = ?, client_name = ?, client_email = ?, client_address = ?,
-        status = ?, quote_date = ?, validity_date = ?, total_ht = ?, tva_rate = ?, total_ttc = ?,
-        notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-      `).run(
-        affaire_id !== undefined ? affaire_id : existing.affaire_id,
-        client_name !== undefined ? client_name : existing.client_name,
-        client_email !== undefined ? client_email : existing.client_email,
-        client_address !== undefined ? client_address : existing.client_address,
-        status || existing.status,
-        quote_date || existing.quote_date,
-        validity_date !== undefined ? validity_date : existing.validity_date,
-        total_ht, finalTvaRate, total_ttc,
-        notes !== undefined ? notes : existing.notes,
-        req.params.id
-      );
-
+      // Validation des items si fournis
       if (items) {
-        db.prepare('DELETE FROM quote_items WHERE quote_id = ?').run(req.params.id);
-        const insertItem = db.prepare(
-          'INSERT INTO quote_items (quote_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        for (const item of items) {
+          if (!item.designation || !item.designation.trim()) {
+            return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+          }
+        }
+      }
+
+      // Transaction atomique
+      const updateQuote = db.transaction(() => {
+        let total_ht = existing.total_ht;
+        let finalTvaRate = tva_rate !== undefined ? tva_rate : existing.tva_rate;
+        if (items) {
+          total_ht = 0;
+          for (const item of items) {
+            total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
+          }
+        }
+        const total_ttc = total_ht * (1 + finalTvaRate / 100);
+
+        db.prepare(`
+          UPDATE quotes SET affaire_id = ?, client_name = ?, client_email = ?, client_address = ?,
+          status = ?, quote_date = ?, validity_date = ?, total_ht = ?, tva_rate = ?, total_ttc = ?,
+          notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+        `).run(
+          affaire_id !== undefined ? affaire_id : existing.affaire_id,
+          client_name !== undefined ? client_name : existing.client_name,
+          client_email !== undefined ? client_email : existing.client_email,
+          client_address !== undefined ? client_address : existing.client_address,
+          status || existing.status,
+          quote_date || existing.quote_date,
+          validity_date !== undefined ? validity_date : existing.validity_date,
+          total_ht, finalTvaRate, total_ttc,
+          notes !== undefined ? notes : existing.notes,
+          req.params.id
         );
-        for (const item of items) {
-          const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
-          insertItem.run(req.params.id, item.designation, item.quantity || 1, item.unit || 'u',
-            item.unit_price_ht || 0, item.tva_rate || finalTvaRate, itemTotal, item.notes || null);
-        }
-      }
 
-      addToHistory('quote', req.params.id, 'update', JSON.stringify({ status: status || existing.status }), req.user.id, req.user.name);
+        if (items) {
+          db.prepare('DELETE FROM quote_items WHERE quote_id = ?').run(req.params.id);
+          const insertItem = db.prepare(
+            'INSERT INTO quote_items (quote_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          );
+          for (const item of items) {
+            const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
+            insertItem.run(req.params.id, item.designation.trim(), item.quantity || 1, item.unit || 'u',
+              item.unit_price_ht || 0, item.tva_rate || finalTvaRate, itemTotal, item.notes || null);
+          }
+        }
+
+        addToHistory('quote', req.params.id, 'update', JSON.stringify({ status: status || existing.status }), req.user.id, req.user.name);
+      });
+
+      updateQuote();
       const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
       const quoteItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ?').all(req.params.id);
       res.json({ ...quote, items: quoteItems });
@@ -450,35 +567,40 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
 
       const quoteItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ?').all(req.params.id);
 
-      // Générer référence commande
-      const year = new Date().getFullYear();
-      const last = db.prepare('SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1').get(`BC-${year}-%`);
-      let num = 1;
-      if (last) { num = parseInt(last.reference.split('-')[2] || '0', 10) + 1; }
-      const reference = `BC-${year}-${String(num).padStart(3, '0')}`;
+      // Transaction atomique pour conversion complète
+      const convertQuote = db.transaction(() => {
+        // Générer référence commande dans la transaction (atomique)
+        const year = new Date().getFullYear();
+        const last = db.prepare('SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1').get(`BC-${year}-%`);
+        let num = 1;
+        if (last) { num = parseInt(last.reference.split('-')[2] || '0', 10) + 1; }
+        const reference = `BC-${year}-${String(num).padStart(3, '0')}`;
 
-      const orderResult = db.prepare(`
-        INSERT INTO orders (reference, type, affaire_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by)
-        VALUES (?, 'purchase', ?, 'draft', ?, ?, ?, ?, ?, ?)
-      `).run(reference, quote.affaire_id, new Date().toISOString().slice(0, 10),
-        quote.total_ht, quote.tva_rate, quote.total_ttc,
-        `Converti depuis devis ${quote.reference}`, req.user.id);
+        const orderResult = db.prepare(`
+          INSERT INTO orders (reference, type, affaire_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by)
+          VALUES (?, 'purchase', ?, 'draft', ?, ?, ?, ?, ?, ?)
+        `).run(reference, quote.affaire_id, new Date().toISOString().slice(0, 10),
+          quote.total_ht, quote.tva_rate, quote.total_ttc,
+          `Converti depuis devis ${quote.reference}`, req.user.id);
 
-      const orderId = orderResult.lastInsertRowid;
+        const orderId = orderResult.lastInsertRowid;
 
-      const insertItem = db.prepare(
-        'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      );
-      for (const item of quoteItems) {
-        insertItem.run(orderId, item.designation, item.quantity, item.unit,
-          item.unit_price_ht, item.tva_rate, item.total_ht, item.notes);
-      }
+        const insertItem = db.prepare(
+          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        for (const item of quoteItems) {
+          insertItem.run(orderId, item.designation, item.quantity, item.unit,
+            item.unit_price_ht, item.tva_rate, item.total_ht, item.notes);
+        }
 
-      db.prepare('UPDATE quotes SET converted_to_order_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(orderId, req.params.id);
+        db.prepare('UPDATE quotes SET converted_to_order_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(orderId, req.params.id);
 
-      addToHistory('quote', req.params.id, 'convert_to_order', JSON.stringify({ order_id: orderId, reference }), req.user.id, req.user.name);
+        addToHistory('quote', req.params.id, 'convert_to_order', JSON.stringify({ order_id: orderId, reference }), req.user.id, req.user.name);
+        return orderId;
+      });
 
+      const orderId = convertQuote();
       const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
       const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderId);
       res.status(201).json({ ...order, items: orderItems });
@@ -491,9 +613,20 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   // Supprimer un devis
   app.delete('/api/quotes/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      db.prepare('DELETE FROM quote_items WHERE quote_id = ?').run(req.params.id);
-      db.prepare('DELETE FROM quotes WHERE id = ?').run(req.params.id);
-      addToHistory('quote', req.params.id, 'delete', null, req.user.id, req.user.name);
+      const existing = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
+      if (!existing) return res.status(404).json({ error: 'Devis non trouvé' });
+
+      // Empêcher suppression si déjà converti
+      if (existing.converted_to_order_id) {
+        return res.status(400).json({ error: 'Impossible de supprimer un devis déjà converti en commande' });
+      }
+
+      const deleteQuote = db.transaction(() => {
+        db.prepare('DELETE FROM quote_items WHERE quote_id = ?').run(req.params.id);
+        db.prepare('DELETE FROM quotes WHERE id = ?').run(req.params.id);
+        addToHistory('quote', req.params.id, 'delete', JSON.stringify({ reference: existing.reference }), req.user.id, req.user.name);
+      });
+      deleteQuote();
       res.json({ success: true });
     } catch (error) {
       console.error(error);

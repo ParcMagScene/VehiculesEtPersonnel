@@ -4,6 +4,7 @@ import api from '../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, getVolume, SOUND_TYPES } from '../utils/notificationSound';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './UserPreferencesModal.css';
+import { useToast } from '../hooks/useToast';
 
 const ALL_MODULES = [
   { id: 'vehicles', label: 'Parc', icon: Truck, locked: true },
@@ -32,6 +33,7 @@ const DEFAULT_PREFS = {
 };
 
 const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
+  const toast = useToast();
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -337,7 +339,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
                       body: 'Les notifications eM@g fonctionnent \u2705',
                     });
                   } else {
-                    alert('Les notifications navigateur sont bloqu\u00e9es.\nAutorisez-les dans les param\u00e8tres de votre navigateur.');
+                    toast.info('Les notifications navigateur sont bloqu\u00e9es. Autorisez-les dans les param\u00e8tres de votre navigateur.');
                   }
                 }}
               >

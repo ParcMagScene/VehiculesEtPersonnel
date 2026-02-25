@@ -19,7 +19,7 @@
 }
 
 .vehicle-details-modal {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   border-radius: 16px;
   width: 90%;
   max-width: 800px;
@@ -137,7 +137,7 @@
 }
 
 .vehicle-details-modal .modal-body::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-radius: 3px;
   margin: 8px 0;
 }
@@ -148,7 +148,7 @@
 }
 
 .vehicle-details-modal .modal-body::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--theme-text-muted);
 }
 
 /* Section Informations */
@@ -163,9 +163,9 @@
   margin: 0 0 12px 0;
   font-size: 13px;
   font-weight: 700;
-  color: #5b21b6;
+  color: var(--theme-primary-dark);
   padding-bottom: 8px;
-  border-bottom: 2px solid #e0e7ff;
+  border-bottom: 2px solid var(--theme-bg-indigo-light);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -180,7 +180,7 @@
   background: white;
   padding: 14px 16px;
   border-radius: 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   align-items: flex-start;
 }
 
@@ -189,7 +189,7 @@
   width: 200px;
   border-radius: 8px;
   overflow: hidden;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--theme-border-medium);
   background: white;
 }
 
@@ -222,7 +222,7 @@
 
 .vehicle-details-modal .info-label {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -230,14 +230,14 @@
 
 .vehicle-details-modal .info-value {
   font-size: 13px;
-  color: #334155;
+  color: var(--theme-text-dark);
 }
 
 /* Kilométrage intégré dans la grille */
 .vehicle-details-modal .info-item-km {
   grid-column: 1 / -1;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 60%, #e0e7ff 100%);
-  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #dbeafe 60%, var(--theme-bg-indigo-light) 100%);
+  border: 1px solid var(--theme-info-border);
   border-radius: 10px;
   padding: 14px 18px;
   margin-top: 4px;
@@ -247,7 +247,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #3b82f6;
+  color: var(--theme-info);
   font-weight: 600;
 }
 
@@ -270,7 +270,7 @@
   align-items: center;
   gap: 4px;
   font-size: 12.5px;
-  color: #475569;
+  color: var(--theme-text-subtle);
   font-weight: 500;
 }
 
@@ -293,13 +293,13 @@
 }
 
 .vehicle-details-modal .tag-km {
-  background: #eff6ff;
+  background: var(--theme-info-bg);
   color: #1d4ed8;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--theme-info-border);
 }
 
 .vehicle-details-modal .tag-cost {
-  background: #f0fdf4;
+  background: var(--theme-success-bg);
   color: #15803d;
   border: 1px solid #bbf7d0;
 }
@@ -380,9 +380,9 @@
   margin: 0 0 12px 0;
   font-size: 13px;
   font-weight: 700;
-  color: #5b21b6;
+  color: var(--theme-primary-dark);
   padding-bottom: 8px;
-  border-bottom: 2px solid #e0e7ff;
+  border-bottom: 2px solid var(--theme-bg-indigo-light);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -399,30 +399,30 @@
 
 .vehicle-details-modal .maintenance-item {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border-medium);
   border-radius: 10px;
   padding: 16px;
   transition: all 0.2s;
-  border-left: 4px solid #e5e7eb;
+  border-left: 4px solid var(--theme-border-medium);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* Couleurs de fond selon le statut */
 .vehicle-details-modal .maintenance-item.status-scheduled,
 .vehicle-details-modal .maintenance-item.status-planned {
-  background: linear-gradient(to right, #eff6ff, white);
-  border-left-color: #3b82f6;
+  background: linear-gradient(to right, var(--theme-info-bg), white);
+  border-left-color: var(--theme-info);
 }
 
 .vehicle-details-modal .maintenance-item.status-completed,
 .vehicle-details-modal .maintenance-item.status-COMPLETED {
-  background: linear-gradient(to right, #f0fdf4, white);
-  border-left-color: #10b981;
+  background: linear-gradient(to right, var(--theme-success-bg), white);
+  border-left-color: var(--theme-success-alt);
 }
 
 .vehicle-details-modal .maintenance-item.status-reported {
-  background: linear-gradient(to right, #fef2f2, white);
-  border-left-color: #ef4444;
+  background: linear-gradient(to right, var(--theme-danger-bg), white);
+  border-left-color: var(--theme-danger);
 }
 
 .vehicle-details-modal .maintenance-item.status-pending,
@@ -434,13 +434,13 @@
 .vehicle-details-modal .maintenance-item.status-in-progress,
 .vehicle-details-modal .maintenance-item.status-in_progress,
 .vehicle-details-modal .maintenance-item.status-IN_PROGRESS {
-  background: linear-gradient(to right, #fffbeb, white);
-  border-left-color: #f59e0b;
+  background: linear-gradient(to right, var(--theme-warning-bg), white);
+  border-left-color: var(--theme-warning);
 }
 
 .vehicle-details-modal .maintenance-item.status-cancelled {
-  background: linear-gradient(to right, #f3f4f6, white);
-  border-left-color: #6b7280;
+  background: linear-gradient(to right, var(--theme-bg-tertiary), white);
+  border-left-color: var(--theme-text-gray);
 }
 
 .vehicle-details-modal .maintenance-item.status-rescheduled {
@@ -449,7 +449,7 @@
 }
 
 .vehicle-details-modal .maintenance-item:hover {
-  border-color: #d1d5db;
+  border-color: var(--theme-border-muted);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -482,7 +482,7 @@
 .vehicle-details-modal .maintenance-type {
   font-weight: 600;
   font-size: 15px;
-  color: #111827;
+  color: var(--theme-text-heading);
 }
 
 .vehicle-details-modal .status-badge {
@@ -514,7 +514,7 @@
 
 .vehicle-details-modal .status-pending {
   background: #faf5ff;
-  color: #5b21b6;
+  color: var(--theme-primary-dark);
 }
 
 .vehicle-details-modal .status-reported {
@@ -523,7 +523,7 @@
 }
 
 .vehicle-details-modal .status-cancelled {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   color: #4b5563;
 }
 
@@ -534,7 +534,7 @@
 
 .vehicle-details-modal .maintenance-date {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-weight: 500;
 }
 
@@ -548,19 +548,19 @@
 .vehicle-details-modal .maintenance-garage {
   margin-top: 6px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .vehicle-details-modal .maintenance-cost {
   margin-top: 6px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .vehicle-details-modal .maintenance-mileage {
   margin-top: 6px;
   font-size: 13px;
-  color: #3b82f6;
+  color: var(--theme-info);
   font-weight: 500;
 }
 
@@ -568,9 +568,9 @@
   text-align: center;
   padding: 40px 20px;
   color: #9ca3af;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
   border-radius: 8px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--theme-border-muted);
 }
 
 .vehicle-details-modal .empty-history p {
@@ -590,9 +590,9 @@
   margin: 0 0 12px 0;
   font-size: 13px;
   font-weight: 700;
-  color: #5b21b6;
+  color: var(--theme-primary-dark);
   padding-bottom: 8px;
-  border-bottom: 2px solid #e0e7ff;
+  border-bottom: 2px solid var(--theme-bg-indigo-light);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -609,7 +609,7 @@
 
 .vehicle-details-modal .deadline-item {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border-medium);
   border-radius: 10px;
   padding: 16px;
   transition: all 0.2s;
@@ -617,7 +617,7 @@
 }
 
 .vehicle-details-modal .deadline-item:hover {
-  border-color: #d1d5db;
+  border-color: var(--theme-border-muted);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -633,7 +633,7 @@
 .vehicle-details-modal .deadline-type {
   font-weight: 600;
   font-size: 15px;
-  color: #111827;
+  color: var(--theme-text-heading);
 }
 
 .vehicle-details-modal .deadline-badge {
@@ -663,7 +663,7 @@
 }
 
 .vehicle-details-modal .deadline-pending {
-  background: #e0e7ff;
+  background: var(--theme-bg-indigo-light);
   color: #3730a3;
   font-style: italic;
 }
@@ -692,13 +692,13 @@
 
 .vehicle-details-modal .deadline-date-label {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-weight: 500;
 }
 
 .vehicle-details-modal .deadline-date-value {
   font-size: 14px;
-  color: #111827;
+  color: var(--theme-text-heading);
   font-weight: 600;
 }
 
@@ -708,8 +708,8 @@
   gap: 8px;
   margin-top: 8px;
   padding: 10px 12px;
-  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
-  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #f0f9ff 100%);
+  border: 1px solid var(--theme-info-border);
   border-radius: 8px;
   font-size: 13px;
   line-height: 1.4;
@@ -733,15 +733,15 @@
 .vehicle-details-modal .empty-deadlines {
   text-align: center;
   padding: 32px 20px;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
   border-radius: 8px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--theme-border-muted);
 }
 
 .vehicle-details-modal .empty-deadlines p {
   margin: 0 0 16px 0;
   font-size: 15px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .vehicle-details-modal .add-control-button {

@@ -7,12 +7,14 @@ import api from '../utils/api';
 import logger, { oauthLogger } from '../utils/logger';
 import { capitalizeText } from '../utils/dateUtils';
 import { Search, X, RefreshCw, Plus, Truck, Users, CalendarPlus } from 'lucide-react';
+import { useToast } from '../hooks/useToast';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('./AffaireImportModal'));
 const GoogleEventFormModal = lazy(() => import('./GoogleEventFormModal'));
 
 function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire }) {
+  const toast = useToast();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -37,6 +39,10 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
   const [eventFormEvent, setEventFormEvent] = useState(null);
   const searchInputRef = useRef(null);
+
+  // Ref miroir pour toujours accéder au token le plus récent (évite les closures périmées)
+  const accessTokenRef = useRef(accessToken);
+  useEffect(() => { accessTokenRef.current = accessToken; }, [accessToken]);
 
   // Cache pour éviter de recharger les mêmes données
   const eventsCache = useRef({});
@@ -303,22 +309,23 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       if (!response.ok && response.status !== 204) {
         throw new Error('Erreur lors de la suppression');
       }
-      await fetchEvents(accessToken);
+      await fetchEvents(accessTokenRef.current);
       setEventDetailsOpen(false);
       setSelectedEvent(null);
     } catch (error) {
       console.error('Erreur suppression événement:', error);
-      alert('Erreur lors de la suppression de l\'événement: ' + error.message);
+      toast.error('Erreur lors de la suppression de l\'événement: ' + error.message);
     }
   };
 
   // Fonction helper pour les appels API Google avec gestion du retry en cas d'erreur 401
   const googleApiCall = async (url, options = {}, retryCount = 0) => {
+    const currentToken = accessTokenRef.current;
     const response = await fetch(url, {
       ...options,
       headers: {
         ...options.headers,
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${currentToken}`,
       },
     });
 
@@ -376,12 +383,12 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       const createdEvent = await response.json();
       
       // Recharger les événements
-      await fetchEvents(accessToken);
+      await fetchEvents(accessTokenRef.current);
       
       return createdEvent;
     } catch (error) {
       console.error('Erreur création événement:', error);
-      alert('Erreur lors de la création de l\'événement: ' + error.message);
+      toast.error('Erreur lors de la création de l\'événement: ' + error.message);
       throw error;
     }
   };
@@ -408,10 +415,10 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       }
 
       // Recharger les événements
-      await fetchEvents(accessToken);
+      await fetchEvents(accessTokenRef.current);
     } catch (error) {
       console.error('Erreur mise à jour événement:', error);
-      alert('Erreur lors de la mise à jour de l\'événement: ' + error.message);
+      toast.error('Erreur lors de la mise à jour de l\'événement: ' + error.message);
       throw error;
     }
   };
@@ -709,7 +716,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         return;
       }
       
-      fetchEvents(accessToken);
+      fetchEvents(accessTokenRef.current);
     }, 300);
     
     return () => {

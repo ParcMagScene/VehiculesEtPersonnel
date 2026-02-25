@@ -17,6 +17,7 @@ import api from '../utils/api';
 import PersonnelPanel from './PersonnelPanel';
 import './ManagementPanel.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
+import { useToast } from '../hooks/useToast';
 
 const ManagementPanel = ({
   vehicles,
@@ -41,6 +42,7 @@ const ManagementPanel = ({
   panelType = 'management',
   onNavigateToPersonnel,
 }) => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState(() => {
     if (panelType === 'settings') return 'account';
     return 'vehicles';
@@ -307,7 +309,7 @@ const ManagementPanel = ({
       }
     } catch (error) {
       console.error('❌ Erreur création:', error);
-      alert(`Erreur lors de la création: ${error.message}`);
+      toast.error(`Erreur lors de la création: ${error.message}`);
       return;
     }
     
@@ -368,7 +370,7 @@ const ManagementPanel = ({
       // setLocationToEdit(null);
     } catch (error) {
       console.error('❌ Erreur sauvegarde lieu:', error);
-      alert(`Erreur lors de la sauvegarde: ${error.message}`);
+      toast.error(`Erreur lors de la sauvegarde: ${error.message}`);
     }
   };
 
@@ -394,7 +396,7 @@ const ManagementPanel = ({
       setClientToEdit(null);
     } catch (error) {
       console.error('❌ Erreur sauvegarde client:', error);
-      alert(`Erreur lors de la sauvegarde: ${error.message}`);
+      toast.error(`Erreur lors de la sauvegarde: ${error.message}`);
     }
   };
 
@@ -415,7 +417,7 @@ const ManagementPanel = ({
       setVehicleToMaintain(null);
     } catch (error) {
       console.error('❌ Erreur sauvegarde maintenance:', error);
-      alert(`Erreur lors de la sauvegarde: ${error.message}`);
+      toast.error(`Erreur lors de la sauvegarde: ${error.message}`);
     }
   };
 
@@ -446,7 +448,7 @@ const ManagementPanel = ({
       }
     } catch (error) {
       console.error('❌ Erreur modification:', error);
-      alert(`Erreur lors de la modification: ${error.message}`);
+      toast.error(`Erreur lors de la modification: ${error.message}`);
       return;
     }
     
@@ -479,7 +481,7 @@ const ManagementPanel = ({
         }
       } catch (error) {
         console.error('❌ Erreur suppression:', error);
-        alert(`Erreur lors de la suppression: ${error.message}`);
+        toast.error(`Erreur lors de la suppression: ${error.message}`);
       }
     }
   };
@@ -581,7 +583,7 @@ const ManagementPanel = ({
         );
       } catch (error) {
         console.error('Erreur lors de la sauvegarde de l\'ordre des véhicules:', error);
-        alert('Erreur lors de la sauvegarde de l\'ordre. Veuillez réessayer.');
+        toast.warning('Erreur lors de la sauvegarde de l\'ordre. Veuillez réessayer.');
       }
     }
     

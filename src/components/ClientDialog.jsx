@@ -6,8 +6,10 @@ import UnsavedChangesDialog from './UnsavedChangesDialog';
 import PhoneInput from './PhoneInput';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
+import { useToast } from '../hooks/useToast';
 
 const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: client?.name || '',
     email: client?.email || '',
@@ -262,7 +264,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('Le nom du client est obligatoire');
+      toast.warning('Le nom du client est obligatoire');
       return;
     }
     onSave(formData);
@@ -270,7 +272,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
 
   const handleGeolocalise = () => {
     if (!navigator.geolocation) {
-      alert('La géolocalisation n\'est pas supportée par votre navigateur');
+      toast.warning('La géolocalisation n\'est pas supportée par votre navigateur');
       return;
     }
 
@@ -326,7 +328,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
       },
       (error) => {
         console.error('Erreur géolocalisation:', error);
-        alert('Impossible d\'obtenir votre position');
+        toast.info('Impossible d\'obtenir votre position');
       }
     );
   };

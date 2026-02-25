@@ -19,7 +19,7 @@
 }
 
 .event-details-modal {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   border-radius: 16px;
   max-width: 900px;
   width: 100%;
@@ -106,7 +106,7 @@
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-radius: 3px;
   margin: 8px 0;
 }
@@ -117,7 +117,7 @@
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--theme-text-muted);
 }
 
 /* Sections */
@@ -136,7 +136,7 @@ section h3 {
   margin: 0 0 16px 0;
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .event-details-modal .section-header {
@@ -170,7 +170,7 @@ section h3 {
 .event-details-modal .info-item label {
   font-size: 10px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -181,13 +181,13 @@ section h3 {
 .event-details-modal .info-item span,
 .event-details-modal .info-item p {
   font-size: 13px;
-  color: #334155;
+  color: var(--theme-text-dark);
 }
 
 .event-details-modal .event-description {
   margin: 0;
   padding: 12px;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
   border-left: 3px solid var(--theme-primary);
   border-radius: 4px;
   line-height: 1.5;
@@ -206,8 +206,8 @@ section h3 {
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  background: var(--theme-bg-secondary);
+  border: 2px solid var(--theme-border-medium);
   border-radius: 8px;
   transition: all 0.2s;
 }
@@ -227,12 +227,12 @@ section h3 {
 .event-details-modal .reservation-vehicle {
   font-weight: 700;
   font-size: 15px;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .event-details-modal .reservation-details {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .event-details-modal .reservation-dates {
@@ -300,7 +300,7 @@ section h3 {
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 13px;
-  color: #334155;
+  color: var(--theme-text-dark);
   outline: none;
 }
 
@@ -393,7 +393,7 @@ section h3 {
 
 .event-details-modal .drive-link-item-delete:hover {
   background: #fee2e2;
-  color: #ef4444;
+  color: var(--theme-danger);
 }
 
 .event-details-modal .drive-link-item-delete:disabled {
@@ -409,12 +409,12 @@ section h3 {
 }
 
 .event-details-modal .drive-link-edit-inline .drive-link-input {
-  border: 1px solid #c7d2fe;
+  border: 1px solid var(--theme-bg-indigo-lighter);
   background: white;
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 13px;
-  color: #334155;
+  color: var(--theme-text-dark);
   outline: none;
   min-width: 200px;
   width: 260px;
@@ -426,7 +426,7 @@ section h3 {
 }
 
 .event-details-modal .drive-link-edit-inline .drive-link-input::placeholder {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 
 .event-details-modal .drive-link-btn {
@@ -499,20 +499,20 @@ section h3 {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border-medium);
   border-radius: 6px;
   transition: all 0.2s;
 }
 
 .event-details-modal .attachment-item:hover {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
 }
 
 .event-details-modal .file-name {
   flex: 1;
   font-size: 14px;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .event-details-modal .file-size {
@@ -539,7 +539,7 @@ section h3 {
 
 .event-details-modal .btn-delete-attachment:hover {
   background: #fee2e2;
-  color: #ef4444;
+  color: var(--theme-danger);
 }
 
 /* Empty State */
@@ -547,9 +547,9 @@ section h3 {
   padding: 32px;
   text-align: center;
   color: #9ca3af;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
   border-radius: 8px;
-  border: 2px dashed #e5e7eb;
+  border: 2px dashed var(--theme-border-medium);
 }
 
 .event-details-modal .empty-state p {
@@ -559,11 +559,11 @@ section h3 {
 
 .event-details-modal .empty-state .hint {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .event-details-modal .empty-state code {
-  background: #e5e7eb;
+  background: var(--theme-border-medium);
   padding: 2px 6px;
   border-radius: 3px;
   font-family: 'Monaco', 'Courier New', monospace;
@@ -617,12 +617,12 @@ section h3 {
 }
 
 .event-details-modal .btn-open-folder {
-  background: #f59e0b;
+  background: var(--theme-warning);
   color: white;
 }
 
 .event-details-modal .btn-open-folder:hover:not(:disabled) {
-  background: #d97706;
+  background: var(--theme-warning-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
@@ -650,8 +650,8 @@ section h3 {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-top: 2px solid #e5e7eb;
-  background: #f9fafb;
+  border-top: 2px solid var(--theme-border-medium);
+  background: var(--theme-bg-secondary);
   border-radius: 0 0 16px 16px;
 }
 
@@ -704,7 +704,7 @@ section h3 {
   align-items: center;
   gap: 6px;
   padding: var(--btn-padding);
-  background: #667eea;
+  background: var(--theme-primary);
   color: white;
   border: none;
   border-radius: var(--btn-radius);
@@ -725,7 +725,7 @@ section h3 {
   align-items: center;
   gap: 6px;
   padding: var(--btn-padding);
-  background: #ef4444;
+  background: var(--theme-danger);
   color: white;
   border: none;
   border-radius: var(--btn-radius);
@@ -736,7 +736,7 @@ section h3 {
 }
 
 .event-details-modal .btn-danger:hover {
-  background: #dc2626;
+  background: var(--theme-danger-dark);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
 }
@@ -789,7 +789,7 @@ section h3 {
 
 .event-details-modal .preview-header {
   padding: 16px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--theme-border-medium);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -799,7 +799,7 @@ section h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .event-details-modal .btn-close {
@@ -808,7 +808,7 @@ section h3 {
   font-size: 28px;
   line-height: 1;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   padding: 0;
   width: 32px;
   height: 32px;
@@ -820,14 +820,14 @@ section h3 {
 }
 
 .event-details-modal .btn-close:hover {
-  background: #f3f4f6;
-  color: #1f2937;
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-bg-dark);
 }
 
 .event-details-modal .preview-body {
   flex: 1;
   overflow: auto;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -836,11 +836,11 @@ section h3 {
 .event-details-modal .unsupported-preview {
   text-align: center;
   padding: 48px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .event-details-modal .unsupported-preview svg {
-  color: #d1d5db;
+  color: var(--theme-border-muted);
   margin-bottom: 16px;
 }
 
@@ -850,7 +850,7 @@ section h3 {
 
 .event-details-modal .preview-footer {
   padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--theme-border-medium);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -858,7 +858,7 @@ section h3 {
 }
 
 .event-details-modal .file-info {
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 14px;
 }
 
@@ -876,7 +876,7 @@ section h3 {
 
 .event-details-modal .folder-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--theme-border-medium);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -898,17 +898,17 @@ section h3 {
   flex: 1;
   overflow: auto;
   padding: 24px;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
 }
 
 .event-details-modal .empty-folder {
   text-align: center;
   padding: 64px 24px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .event-details-modal .empty-folder svg {
-  color: #d1d5db;
+  color: var(--theme-border-muted);
   margin-bottom: 16px;
 }
 
@@ -920,7 +920,7 @@ section h3 {
 
 .event-details-modal .folder-file-card {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
   padding: 16px;
   cursor: pointer;
@@ -943,7 +943,7 @@ section h3 {
   top: 6px;
   right: 6px;
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border-medium);
   border-radius: 6px;
   width: 28px;
   height: 28px;
@@ -962,9 +962,9 @@ section h3 {
 }
 
 .event-details-modal .folder-file-delete:hover {
-  background: #fef2f2;
-  border-color: #fca5a5;
-  color: #ef4444;
+  background: var(--theme-danger-bg);
+  border-color: var(--theme-danger-border);
+  color: var(--theme-danger);
 }
 
 .event-details-modal .file-icon {
@@ -974,7 +974,7 @@ section h3 {
   align-items: center;
   justify-content: center;
   color: var(--theme-primary);
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   border-radius: 8px;
 }
 
@@ -993,7 +993,7 @@ section h3 {
 .event-details-modal .folder-file-card .file-name {
   font-size: 13px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   margin: 0 0 4px 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1003,13 +1003,13 @@ section h3 {
 
 .event-details-modal .folder-file-card .file-size {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   margin: 0;
 }
 
 .event-details-modal .folder-footer {
   padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--theme-border-medium);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1018,7 +1018,7 @@ section h3 {
 }
 
 .event-details-modal .folder-footer span {
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 14px;
 }
 
@@ -1029,7 +1029,7 @@ section h3 {
 }
 
 .event-details-modal .attachment-item.clickable:hover {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   border-color: var(--theme-primary);
   transform: translateX(4px);
 }

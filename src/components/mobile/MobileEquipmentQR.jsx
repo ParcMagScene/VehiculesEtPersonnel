@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Package, ArrowLeft, FileText, AlertTriangle, Wrench, Settings, Home, Loader } from 'lucide-react';
 import api from '../../utils/api';
 import './MobileEquipmentQR.css';
+import { useToast } from '../../hooks/useToast';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX
@@ -32,6 +33,7 @@ const safeDate = (d) => {
 };
 
 function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
+  const toast = useToast();
   const [equipment, setEquipment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,7 +62,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
   }, [uid]);
 
   const handleSubmitDefaut = async () => {
-    if (!defautForm.title.trim()) return alert('Titre requis');
+    if (!defautForm.title.trim()) return toast.warning('Titre requis');
     setSubmitting(true);
     try {
       await api.createSavTicket({
@@ -75,14 +77,14 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
       setDefautForm({ title: '', description: '' });
       setTimeout(() => { setSubmitSuccess(null); setScreen('menu'); }, 2000);
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleSubmitSav = async () => {
-    if (!savForm.title.trim()) return alert('Titre requis');
+    if (!savForm.title.trim()) return toast.warning('Titre requis');
     setSubmitting(true);
     try {
       await api.createSavTicket({
@@ -97,14 +99,14 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
       setSavForm({ title: '', description: '', type: 'panne', priority: 'medium' });
       setTimeout(() => { setSubmitSuccess(null); setScreen('menu'); }, 2000);
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleSubmitIntervention = async () => {
-    if (!interventionForm.title.trim()) return alert('Titre requis');
+    if (!interventionForm.title.trim()) return toast.warning('Titre requis');
     setSubmitting(true);
     try {
       await api.createSavTicket({
@@ -121,7 +123,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
       setInterventionForm({ title: '', description: '', type: 'reparation', resolution: '' });
       setTimeout(() => { setSubmitSuccess(null); setScreen('menu'); }, 2000);
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     } finally {
       setSubmitting(false);
     }

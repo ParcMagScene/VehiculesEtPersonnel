@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, CheckCircle, XCircle, Calendar, Clock } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import './OverdueInterventionModal.css';
+import { useToast } from '../hooks/useToast';
 
 const OverdueInterventionModal = ({ 
   intervention, 
@@ -12,6 +13,7 @@ const OverdueInterventionModal = ({
   onMarkPending,
   onReschedule 
 }) => {
+  const toast = useToast();
   const [reason, setReason] = useState('');
   const [showReasonInput, setShowReasonInput] = useState(false);
   const [action, setAction] = useState(null); // 'completed', 'cancelled', 'pending', 'reschedule'
@@ -45,7 +47,7 @@ const OverdueInterventionModal = ({
       }
       onClose();
     } else {
-      alert('Veuillez indiquer un motif');
+      toast.warning('Veuillez indiquer un motif');
     }
   };
 

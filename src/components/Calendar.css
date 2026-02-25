@@ -18,14 +18,14 @@
   gap: 16px;
   padding: 6px 16px;
   background: white;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--theme-border);
   flex-shrink: 0;
 }
 
 .cal-nav-views {
   display: flex;
   gap: 2px;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-radius: 8px;
   padding: 2px;
 }
@@ -37,13 +37,13 @@
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .cal-nav-view-btn:hover {
-  color: #334155;
+  color: var(--theme-text-dark);
 }
 
 .cal-nav-view-btn.active {
@@ -63,18 +63,18 @@
   align-items: center;
   justify-content: center;
   padding: 4px 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   background: white;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
-  color: #475569;
+  color: var(--theme-text-subtle);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .cal-nav-btn:hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-color: #cbd5e1;
 }
 
@@ -91,7 +91,7 @@
 .cal-nav-label {
   font-size: 13px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   margin-left: 8px;
   white-space: nowrap;
 }
@@ -102,39 +102,39 @@
 }
 
 .cal-nav-label.clickable:hover {
-  color: var(--theme-primary, #667eea);
+  color: var(--theme-primary, var(--theme-primary));
 }
 
 /* Dark mode toolbar navigation */
 [data-theme="dark"] .cal-nav-toolbar {
-  background: #1e293b;
-  border-bottom-color: #334155;
+  background: var(--theme-text-primary);
+  border-bottom-color: var(--theme-text-dark);
 }
 
 [data-theme="dark"] .cal-nav-views {
-  background: #334155;
+  background: var(--theme-text-dark);
 }
 
 [data-theme="dark"] .cal-nav-view-btn {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 
 [data-theme="dark"] .cal-nav-view-btn:hover {
-  color: #e2e8f0;
+  color: var(--theme-border);
 }
 
 [data-theme="dark"] .cal-nav-btn {
-  background: #334155;
-  border-color: #475569;
+  background: var(--theme-text-dark);
+  border-color: var(--theme-text-subtle);
   color: #cbd5e1;
 }
 
 [data-theme="dark"] .cal-nav-btn:hover {
-  background: #475569;
+  background: var(--theme-text-subtle);
 }
 
 [data-theme="dark"] .cal-nav-label {
-  color: #f1f5f9;
+  color: var(--theme-border-light);
 }
 
 /* Responsive */
@@ -176,7 +176,7 @@
   display: flex;
   flex-shrink: 0;
   background: white;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--theme-border-medium);
   border-radius: 0;
 }
 
@@ -184,7 +184,7 @@
   position: static;
   flex-shrink: 0;
   width: 250px;
-  border-right: 2px solid #e5e7eb;
+  border-right: 2px solid var(--theme-border-medium);
 }
 
 .calendar-headers-scroll-area {
@@ -235,7 +235,7 @@
   width: 250px;
   overflow-y: auto;
   overflow-x: visible;
-  border-right: 2px solid #e5e7eb;
+  border-right: 2px solid var(--theme-border-medium);
   background: white;
   display: flex;
   flex-direction: column;
@@ -427,8 +427,56 @@
   grid-template-columns: repeat(62, minmax(55px, 1fr));
 }
 
+.day-view {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .year-view {
   grid-template-columns: repeat(12, minmax(150px, 1fr));
+}
+
+/* Vue jour — en-têtes larges */
+.day-view-header {
+  text-align: center;
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem;
+}
+
+.day-view-header .day-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.day-view-header .day-number {
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  opacity: 0.7;
+}
+
+/* Vue jour — cellules de réservation plus grandes */
+.day-view .vehicle-row .time-slot {
+  min-height: 60px;
+}
+
+.day-view .vehicle-row .time-slot.reserved {
+  min-height: 60px;
+}
+
+.day-view .reservation-block {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.day-view .reservation-block .block-client {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.day-view .reservation-block .block-driver,
+.day-view .reservation-block .block-details {
+  font-size: 0.8rem;
+  white-space: normal;
+  overflow: visible;
 }
 
 /* En-tête */
@@ -523,8 +571,8 @@
   height: 3.5rem;
   position: static;
   left: auto;
-  background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%) !important;
-  color: #374151 !important;
+  background: linear-gradient(135deg, var(--theme-bg-indigo-light) 0%, #ddd6fe 100%) !important;
+  color: var(--theme-text-body) !important;
 }
 
 .calendar-header-cell.day-header .day-name {
@@ -561,7 +609,7 @@
 }
 
 .calendar-header-cell.day-header.weekend {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, var(--theme-warning) 0%, var(--theme-warning-dark) 100%);
 }
 
 .calendar-header-cell.period-cell.weekend {
@@ -569,15 +617,15 @@
 }
 
 .calendar-header-cell.day-header.today {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-success-alt) 0%, #059669 100%);
 }
 
 .calendar-header-cell.period-cell.today.today-left {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-success-alt) 0%, #059669 100%);
 }
 
 .calendar-header-cell.period-cell.today.today-right {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-success-alt) 0%, #059669 100%);
 }
 
 /* Corps */
@@ -591,7 +639,7 @@
 
 .vehicle-cell {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--theme-border-medium);
   background: white;
   display: flex;
   gap: 0.5rem;
@@ -604,7 +652,7 @@
 }
 
 .vehicle-cell:hover {
-  background-color: #f9fafb;
+  background-color: var(--theme-bg-secondary);
 }
 
 .vehicle-color {
@@ -630,7 +678,7 @@
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   flex-shrink: 0;
   position: relative;
   margin-right: 0.5rem;
@@ -656,7 +704,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
 }
 
 .breakdown-indicator-photo {
@@ -678,7 +726,7 @@
   display: block;
   font-weight: 700;
   font-size: 0.9rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .breakdown-indicator {
@@ -704,7 +752,7 @@
   position: absolute;
   bottom: -2px;
   right: -2px;
-  background: #dc2626;
+  background: var(--theme-danger-dark);
   color: white;
   font-size: 0.85rem;
   width: 18px;
@@ -736,7 +784,7 @@
   display: block;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   background: none;
   border-radius: 0;
   padding: 0;
@@ -769,8 +817,8 @@
 }
 
 .time-slot {
-  border-right: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid var(--theme-border-medium);
+  border-bottom: 1px solid var(--theme-border-medium);
   padding: 0;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -781,12 +829,12 @@
 }
 
 .time-slot:hover:not(.reserved) {
-  background-color: #f3f4f6 !important;
+  background-color: var(--theme-bg-tertiary) !important;
 }
 
 .time-slot.drag-selected {
   background-color: #dbeafe !important;
-  border: 2px solid #3b82f6 !important;
+  border: 2px solid var(--theme-info) !important;
   z-index: 10;
 }
 
@@ -817,7 +865,7 @@
 }
 
 .reservation.highlighted {
-  box-shadow: 0 0 0 3px #3b82f6, 
+  box-shadow: 0 0 0 3px var(--theme-info), 
               0 4px 12px rgba(59, 130, 246, 0.4),
               inset 0 0 0 1px rgba(0, 0, 0, 0.25);
   transform: scale(1.02);
@@ -841,15 +889,15 @@
 /* Couleurs de statut pour les blocs de maintenance */
 .reservation.maintenance-block.maintenance-status-scheduled {
   background-color: #dbeafe !important;
-  border: 2px dashed #3b82f6 !important;
+  border: 2px dashed var(--theme-info) !important;
 }
 .reservation.maintenance-block.maintenance-status-completed {
   background-color: #d1fae5 !important;
-  border: 2px solid #10b981 !important;
+  border: 2px solid var(--theme-success-alt) !important;
 }
 .reservation.maintenance-block.maintenance-status-reported {
   background-color: #fee2e2 !important;
-  border: 2px solid #ef4444 !important;
+  border: 2px solid var(--theme-danger) !important;
 }
 .reservation.maintenance-block.maintenance-status-pending {
   background-color: #ede9fe !important;
@@ -858,11 +906,11 @@
 .reservation.maintenance-block.maintenance-status-in_progress,
 .reservation.maintenance-block.maintenance-status-IN_PROGRESS {
   background-color: #fef3c7 !important;
-  border: 2px solid #f59e0b !important;
+  border: 2px solid var(--theme-warning) !important;
 }
 .reservation.maintenance-block.maintenance-status-cancelled {
-  background-color: #f3f4f6 !important;
-  border: 2px dashed #6b7280 !important;
+  background-color: var(--theme-bg-tertiary) !important;
+  border: 2px dashed var(--theme-text-gray) !important;
 }
 .reservation.maintenance-block.maintenance-status-rescheduled {
   background-color: #ffedd5 !important;
@@ -870,7 +918,7 @@
 }
 .reservation.maintenance-block.maintenance-conflict:not(.maintenance-status-completed):not(.maintenance-status-cancelled) {
   background-color: #fee2e2 !important;
-  border: 2px solid #dc2626 !important;
+  border: 2px solid var(--theme-danger-dark) !important;
 }
 
 .reservation.maintenance-block .resize-handle {
@@ -915,7 +963,7 @@
 .reservation.resizing {
   pointer-events: none;
   opacity: 0.25;
-  outline: 2px dashed #3b82f6;
+  outline: 2px dashed var(--theme-info);
   outline-offset: -2px;
 }
 
@@ -966,7 +1014,7 @@
   flex-direction: column;
   gap: 0.125rem;
   font-size: 0.85rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   text-align: center;
   align-items: center;
   justify-content: center;
@@ -988,7 +1036,7 @@
 .reservation-location {
   font-weight: 400;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1077,7 +1125,7 @@
 /* Aperçu du redimensionnement */
 .time-slot.resize-preview {
   background: rgba(59, 130, 246, 0.3) !important;
-  border: 2px dashed #3b82f6 !important;
+  border: 2px dashed var(--theme-info) !important;
   position: relative;
   z-index: 20;
 }
@@ -1121,7 +1169,7 @@
   padding: 0 2px;
   font-size: 0.6rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--theme-text-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1166,12 +1214,12 @@
 }
 
 .tournee-link-btn.linking {
-  background: #f59e0b;
+  background: var(--theme-warning);
   animation: pulse-link 0.6s ease-in-out infinite;
 }
 
 .tournee-link-btn.linked {
-  background: #10b981;
+  background: var(--theme-success-alt);
 }
 
 /* Boutons d'accès aux trajets (intégrés dans les chips) */
@@ -1392,20 +1440,20 @@
 /* ===== Block drag-to-move preview ===== */
 .time-slot.block-drag-preview {
   background: rgba(59, 130, 246, 0.2) !important;
-  outline: 2px dashed #3b82f6;
+  outline: 2px dashed var(--theme-info);
   outline-offset: -2px;
   z-index: 10;
 }
 
 .time-slot.block-drag-preview.drag-conflict {
   background: rgba(239, 68, 68, 0.2) !important;
-  outline: 2px dashed #ef4444;
+  outline: 2px dashed var(--theme-danger);
 }
 
 /* Ghost : bloc original pendant le déplacement */
 .reservation.block-drag-ghost {
   opacity: 0.25 !important;
-  outline: 2px dashed #3b82f6;
+  outline: 2px dashed var(--theme-info);
   outline-offset: -2px;
   pointer-events: none;
   filter: grayscale(0.5);

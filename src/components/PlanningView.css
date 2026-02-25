@@ -2,19 +2,24 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
 }
 
 .planning-header {
   padding: 16px 24px;
   background: white;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--theme-border-medium);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .planning-week-title {
   font-size: 20px;
   font-weight: 600;
-  color: #111827;
+  color: var(--theme-text-heading);
   text-transform: capitalize;
 }
 
@@ -29,7 +34,7 @@
   width: 250px;
   flex-shrink: 0;
   background: white;
-  border-right: 2px solid #e5e7eb;
+  border-right: 2px solid var(--theme-border-medium);
   display: flex;
   flex-direction: column;
 }
@@ -41,9 +46,9 @@
   justify-content: center;
   font-weight: 600;
   font-size: 16px;
-  color: #111827;
-  background: #f3f4f6;
-  border-bottom: 2px solid #e5e7eb;
+  color: var(--theme-text-heading);
+  background: var(--theme-bg-tertiary);
+  border-bottom: 2px solid var(--theme-border-medium);
 }
 
 .planning-vehicles-list {
@@ -54,7 +59,7 @@
 .planning-vehicle-row {
   height: 100px;
   padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--theme-border-medium);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -64,18 +69,18 @@
 }
 
 .planning-vehicle-row:hover {
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
 }
 
 .planning-vehicle-name {
   font-weight: 600;
   font-size: 15px;
-  color: #111827;
+  color: var(--theme-text-heading);
 }
 
 .planning-vehicle-registration {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-family: 'Monaco', monospace;
 }
 
@@ -90,8 +95,8 @@
 .planning-days-header {
   height: 80px;
   display: flex;
-  background: #f3f4f6;
-  border-bottom: 2px solid #e5e7eb;
+  background: var(--theme-bg-tertiary);
+  border-bottom: 2px solid var(--theme-border-medium);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -105,19 +110,19 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--theme-border-medium);
 }
 
 .planning-day-name {
   font-weight: 600;
   font-size: 14px;
-  color: #111827;
+  color: var(--theme-text-heading);
   text-transform: capitalize;
 }
 
 .planning-day-date {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   text-transform: capitalize;
 }
 
@@ -128,13 +133,13 @@
 .planning-grid-row {
   display: flex;
   height: 100px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--theme-border-medium);
 }
 
 .planning-cell {
   min-width: 200px;
   flex: 1;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--theme-border-medium);
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -145,7 +150,7 @@
 }
 
 .planning-cell:hover {
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
 }
 
 .planning-cell-empty {
@@ -155,8 +160,8 @@
 
 /* Réservations */
 .planning-reservation {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border-left: 3px solid #3b82f6;
+  background: linear-gradient(135deg, #dbeafe 0%, var(--theme-info-border) 100%);
+  border-left: 3px solid var(--theme-info);
   border-radius: 6px;
   padding: 8px;
   cursor: pointer;
@@ -173,7 +178,7 @@
 }
 
 .planning-reservation-icon {
-  color: #3b82f6;
+  color: var(--theme-info);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -194,7 +199,7 @@
 
 .planning-reservation-period {
   font-size: 11px;
-  color: #3b82f6;
+  color: var(--theme-info);
   margin-top: 2px;
 }
 
@@ -225,7 +230,7 @@
 }
 
 .planning-maintenance-in_progress {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  background: linear-gradient(135deg, #dbeafe 0%, var(--theme-info-border) 100%);
 }
 
 .planning-maintenance-pending {
@@ -242,15 +247,15 @@
 }
 
 .planning-maintenance-reported .planning-maintenance-icon {
-  color: #dc2626;
+  color: var(--theme-danger-dark);
 }
 
 .planning-maintenance-scheduled .planning-maintenance-icon {
-  color: #d97706;
+  color: var(--theme-warning-dark);
 }
 
 .planning-maintenance-in_progress .planning-maintenance-icon {
-  color: #2563eb;
+  color: var(--theme-info-dark);
 }
 
 .planning-maintenance-pending .planning-maintenance-icon {
@@ -269,7 +274,7 @@
 .planning-maintenance-description {
   font-weight: 600;
   font-size: 13px;
-  color: #111827;
+  color: var(--theme-text-heading);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -281,15 +286,15 @@
 }
 
 .planning-maintenance-reported .planning-maintenance-status {
-  color: #dc2626;
+  color: var(--theme-danger-dark);
 }
 
 .planning-maintenance-scheduled .planning-maintenance-status {
-  color: #d97706;
+  color: var(--theme-warning-dark);
 }
 
 .planning-maintenance-in_progress .planning-maintenance-status {
-  color: #2563eb;
+  color: var(--theme-info-dark);
 }
 
 .planning-maintenance-pending .planning-maintenance-status {
@@ -301,6 +306,157 @@
 }
 
 /* Scrollbars */
+
+/* Mode toggle */
+.planning-mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--theme-bg-tertiary);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.planning-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--theme-text-gray);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.planning-mode-btn:hover {
+  color: var(--theme-text-heading);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.planning-mode-btn.active {
+  background: white;
+  color: var(--theme-info);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+}
+
+/* Personnel planning */
+.planning-person-row {
+  gap: 2px;
+}
+
+.planning-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  color: var(--theme-text-gray);
+  font-size: 14px;
+  width: 100%;
+}
+
+.planning-loading .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Missions */
+.planning-mission {
+  border-radius: 6px;
+  padding: 8px;
+  cursor: default;
+  transition: all 0.2s;
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  border-left: 3px solid;
+  min-height: 40px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.planning-mission:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.planning-mission-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--theme-text-gray);
+}
+
+.planning-mission-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.planning-mission-type {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.planning-mission-client {
+  font-size: 12px;
+  color: var(--theme-text-heading);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.planning-mission-location {
+  font-size: 11px;
+  color: var(--theme-text-gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+/* Indisponibilités */
+.planning-unavailability {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #fef2f2;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #b91c1c;
+  font-weight: 500;
+}
+
+.planning-cell-unavailable {
+  background: #fff5f5 !important;
+}
+
+.planning-cell-available .available-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  opacity: 0.4;
+}
+
+.planning-cell-available {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scrollbars (original) */
 .planning-vehicles-list::-webkit-scrollbar,
 .planning-grid-container::-webkit-scrollbar,
 .planning-cell::-webkit-scrollbar {
@@ -311,13 +467,13 @@
 .planning-vehicles-list::-webkit-scrollbar-track,
 .planning-grid-container::-webkit-scrollbar-track,
 .planning-cell::-webkit-scrollbar-track {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
 }
 
 .planning-vehicles-list::-webkit-scrollbar-thumb,
 .planning-grid-container::-webkit-scrollbar-thumb,
 .planning-cell::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--theme-border-muted);
   border-radius: 4px;
 }
 

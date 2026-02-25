@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container, Mail, Boxes, Sun, Moon } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, LayoutDashboard, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container, Mail, Boxes, Sun, Moon } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -236,6 +236,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
           <div className="module-tabs" role="tablist" aria-label="Module principal">
             {(() => {
               const allTabs = [
+                { id: 'dashboard', label: 'Accueil', icon: LayoutDashboard },
                 { id: 'vehicles', label: 'Parc', icon: Truck },
                 { id: 'personnel', label: 'Personnel', icon: Users },
                 { id: 'affaires', label: 'Affaires', icon: Briefcase },

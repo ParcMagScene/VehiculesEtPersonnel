@@ -315,6 +315,28 @@
   color: var(--theme-text-dark);
 }
 
+/* Bouton Import BL dans toolbar */
+.affaires-tb-bl-import-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--accent-color, #6366f1);
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.06);
+  color: var(--accent-color, #6366f1);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.affaires-tb-bl-import-btn:hover {
+  background: var(--accent-color, #6366f1);
+  color: #fff;
+}
+
 /* ═══ Barre d'info (compteur + frise) ═══ */
 
 .affaires-info-bar {

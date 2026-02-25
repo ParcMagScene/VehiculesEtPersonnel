@@ -7,6 +7,7 @@ import './EventDetailsModal.css';
 import { useToast } from '../hooks/useToast';
 
 const BLImportModal = lazy(() => import('./BLImportModal'));
+const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
 
 const API_BASE_URL = getApiUrl();
 
@@ -31,6 +32,7 @@ function EventDetailsModal({
   const [previewFile, setPreviewFile] = useState(null);
   const [showFolderView, setShowFolderView] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
+  const [showDisplayDialog, setShowDisplayDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editingDriveLink, setEditingDriveLink] = useState(null); // { reservationId, index, url, label } (index = -1 pour nouveau)
   const [savingDriveLink, setSavingDriveLink] = useState(false);
@@ -633,6 +635,13 @@ function EventDetailsModal({
           </button>
           <div className="footer-actions">
             <button
+              className="btn-display-event"
+              onClick={() => setShowDisplayDialog(true)}
+              title="Ajouter à l'affichage dynamique"
+            >
+              📺 Affichage
+            </button>
+            <button
               className="btn-bl-import"
               onClick={() => setShowBLImport(true)}
               title="Importer un BL pour cet événement"
@@ -690,6 +699,21 @@ function EventDetailsModal({
               const m = event.summary.match(/AF\d{4,}/i);
               return m ? m[0].toUpperCase() : '';
             })() : ''}
+          />
+        </Suspense>
+      )}
+
+      {/* Dynamic Display Dialog */}
+      {showDisplayDialog && (
+        <Suspense fallback={null}>
+          <DynamicDisplayDialog
+            defaultDate={event?.start?.date || event?.start?.dateTime?.slice(0, 10) || null}
+            defaultAffaireId={event?.summary ? (() => {
+              const m = event.summary.match(/AF\d{4,}/i);
+              return m ? m[0].toUpperCase() : '';
+            })() : ''}
+            onSave={() => setShowDisplayDialog(false)}
+            onClose={() => setShowDisplayDialog(false)}
           />
         </Suspense>
       )}

@@ -741,6 +741,27 @@ section h3 {
   transform: translateY(-1px);
 }
 
+.event-details-modal .btn-display-event {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--btn-padding);
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border: 1px solid #10b981;
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+}
+
+.event-details-modal .btn-display-event:hover {
+  background: #10b981;
+  color: white;
+  transform: translateY(-1px);
+}
+
 .event-details-modal .btn-danger {
   display: flex;
   align-items: center;

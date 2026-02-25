@@ -804,6 +804,12 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             persons={persons}
             onClose={() => setSelectedTicket(null)}
             onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
+            onDelete={async (id) => {
+              if (!confirm('Supprimer ce ticket ?')) return;
+              await api.deleteSavTicket(id);
+              setSelectedTicket(null);
+              loadData();
+            }}
             onOpenDialog={(t) => { setSelectedTicket(null); setDialogTicket(t); }}
             onOpenEquipmentDialog={(eq) => { setSelectedTicket(null); setDialogEquipment(eq); }}
           />
@@ -1561,8 +1567,8 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
                 <td>{t.cost != null ? `${parseFloat(t.cost).toFixed(2)} €` : '—'}</td>
                 <td>
                   <div className="eq-table-actions">
-                    <button onClick={() => onEdit(t)} title="Modifier"><Edit2 size={14} /></button>
-                    <button onClick={() => onDelete(t.id)} title="Supprimer" className="eq-btn-danger-sm"><Trash2 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(t); }} title="Modifier"><Edit2 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} title="Supprimer" className="eq-btn-danger-sm"><Trash2 size={14} /></button>
                   </div>
                 </td>
               </tr>
@@ -1905,7 +1911,7 @@ const AssignModal = ({ equipment: eq, persons, onSave, onClose }) => {
 };
 
 // ═══ VOLET LATÉRAL SAV (clic simple) ═══
-const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDialog, onOpenEquipmentDialog }) => {
+const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onDelete, onOpenDialog, onOpenEquipmentDialog }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -1968,6 +1974,7 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDial
         <button className="eq-slide-open-btn" onClick={() => onOpenDialog(t)} style={{ flex: 1 }}>
           <ExternalLink size={14} /> Fiche complète
         </button>
+        {onDelete && <button className="eq-btn-danger-sm" onClick={() => onDelete(t.id)} title="Supprimer" style={{ padding: '6px 10px' }}><Trash2 size={14} /></button>}
       </div>
     </div>
   );

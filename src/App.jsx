@@ -37,6 +37,7 @@ const StockPanel = lazy(() => import('./components/StockPanel'));
 const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/MailingPanel'));
+const ReportsPanel = lazy(() => import('./components/ReportsPanel'));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
 
@@ -1191,6 +1192,19 @@ function App() {
           </div>
         }>
           <StockPanel
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {activeModule === 'reports' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement des rapports...</p>
+          </div>
+        }>
+          <ReportsPanel
             currentUser={currentUser}
           />
         </Suspense>

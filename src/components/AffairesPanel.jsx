@@ -1012,6 +1012,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           onClose={() => setSelectedAffaire(null)}
           onOpenDialog={(aff) => { setSelectedAffaire(null); setDialogAffaire(aff); }}
           onNavigateToEntity={onNavigateToEntity}
+          onRefresh={handleRefresh}
         />
       </div>
 

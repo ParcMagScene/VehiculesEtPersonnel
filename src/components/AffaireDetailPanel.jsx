@@ -791,7 +791,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
 // Volet glissant (panneau droit)
 // ═══════════════════════════════════════
 
-const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose, onOpenDialog, onNavigateToEntity }) => {
+const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose, onOpenDialog, onNavigateToEntity, onRefresh }) => {
   const [missions, setMissions] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -877,7 +877,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
         <Suspense fallback={null}>
           <BLImportModal
             onClose={() => setShowBLImport(false)}
-            onImported={() => setShowBLImport(false)}
+            onImported={() => { setShowBLImport(false); if (onRefresh) onRefresh(); }}
             defaultAffaireId={currentAffaire.numeroAffaire}
             defaultAffaireType={currentAffaire.type}
           />

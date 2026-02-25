@@ -38,6 +38,11 @@ CREATE TABLE IF NOT EXISTS bl_imports (
   raw_text TEXT,
   parsed_data TEXT,
   status TEXT DEFAULT 'validated' CHECK(status IN ('pending', 'validated', 'rejected')),
+  affaire_type TEXT,
+  doc_type TEXT,
+  confidence_score REAL,
+  sections_data TEXT,
+  field_confidence TEXT,
   created_by INTEGER REFERENCES users(id),
   created_at TEXT DEFAULT (datetime('now'))
 );

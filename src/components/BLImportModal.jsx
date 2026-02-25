@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save } from 'lucide-react';
+import { FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save, Tag } from 'lucide-react';
 import api from '../utils/api';
-import { extractTextFromPDF, smartParse, detectDocumentType, getDocTypeLabel } from '../utils/pdfParser';
+import { extractTextFromPDF, smartParse, getDocTypeLabel } from '../utils/pdfParser';
 import { useToast } from '../hooks/useToast';
 import './BLImportModal.css';
 
@@ -12,8 +12,16 @@ const formatFileSize = (bytes) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 };
 
+// Types d'affaire disponibles
+const AFFAIRE_TYPE_OPTIONS = [
+  { value: 'Prestation', label: 'Prestation', color: '#3b82f6', icon: '🎭' },
+  { value: 'Location', label: 'Location', color: '#f59e0b', icon: '🏗️' },
+  { value: 'Installation', label: 'Installation', color: '#10b981', icon: '⚙️' },
+  { value: 'Vente', label: 'Vente', color: '#8b5cf6', icon: '💰' },
+];
+
 // ═══ Composant Principal ═══
-function BLImportModal({ onClose, onImported, defaultAffaireId }) {
+function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireType }) {
   const toast = useToast();
   const fileInputRef = useRef(null);
 
@@ -26,8 +34,10 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
   const [showRawText, setShowRawText] = useState(false);
   const [docType, setDocType] = useState(null);
   const [affaireId, setAffaireId] = useState(defaultAffaireId || '');
+  const [affaireType, setAffaireType] = useState(defaultAffaireType || '');
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [editedFields, setEditedFields] = useState({});
 
   // Gestion du drag & drop
   const handleDragOver = useCallback((e) => {
@@ -69,18 +79,20 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
       const text = await extractTextFromPDF(selectedFile);
       setRawText(text);
 
-      const type = detectDocumentType(text);
-      setDocType(type);
-
       const parsed = smartParse(text);
       setParsedData(parsed);
+      setDocType(parsed.docType);
 
       // Auto-remplir l'affaire si trouvée
       if (parsed?.numero && !affaireId) {
         setAffaireId(parsed.numero);
       }
+      // Auto-remplir le type si détecté
+      if (parsed?.type && !affaireType) {
+        setAffaireType(parsed.type);
+      }
 
-      toast.success(`PDF analysé — ${getDocTypeLabel(type)}`);
+      toast.success(`PDF analysé — ${parsed.docTypeLabel}`);
     } catch (err) {
       toast.error('Erreur parsing PDF : ' + err.message);
     } finally {
@@ -93,9 +105,16 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
     setParsedData(null);
     setRawText('');
     setDocType(null);
+    setEditedFields({});
   };
 
   // Sauvegarder l'import BL dans la base
+  // Fusionner les champs édités avec les données parsées
+  const getMergedData = () => {
+    if (!parsedData) return null;
+    return { ...parsedData, ...editedFields };
+  };
+
   const handleSave = async () => {
     if (!file && !rawText) {
       toast.warning('Aucun fichier à importer');
@@ -104,11 +123,12 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
 
     setSaving(true);
     try {
+      const merged = getMergedData();
       const formData = new FormData();
       if (file) formData.append('file', file);
       if (affaireId) formData.append('affaire_id', affaireId);
       if (rawText) formData.append('raw_text', rawText);
-      if (parsedData) formData.append('parsed_data', JSON.stringify(parsedData));
+      if (merged) formData.append('parsed_data', JSON.stringify(merged));
       formData.append('status', 'pending');
 
       await api.uploadBLImport(formData);
@@ -131,12 +151,13 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
 
     setGenerating(true);
     try {
+      const merged = getMergedData();
       // Sauvegarder d'abord le BL
       const formData = new FormData();
       if (file) formData.append('file', file);
       if (affaireId) formData.append('affaire_id', affaireId);
       if (rawText) formData.append('raw_text', rawText);
-      formData.append('parsed_data', JSON.stringify(parsedData));
+      formData.append('parsed_data', JSON.stringify(merged));
       formData.append('status', 'validated');
 
       const blImport = await api.uploadBLImport(formData);
@@ -144,36 +165,37 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
       // Créer les événements d'affichage dynamique
       const today = new Date().toISOString().slice(0, 10);
       const eventsToCreate = [];
+      const eventCategory = (affaireType || merged.type || 'prestation').toLowerCase();
 
       // Événement de livraison si date trouvée
-      if (parsedData.date || parsedData.dateLivraison) {
+      if (merged.date || merged.dateLivraison) {
         eventsToCreate.push({
-          affaire_id: affaireId || parsedData.numero || null,
+          affaire_id: affaireId || merged.numero || null,
           bl_import_id: blImport.id,
           type: 'livraison',
-          category: 'prestation',
-          date: parsedData.dateLivraison || parsedData.date || today,
+          category: eventCategory,
+          date: merged.dateLivraison || merged.date || today,
           period: 'AM',
-          comment: `BL ${file?.name || ''} — ${(parsedData.items || []).length} article(s)`,
-          client: parsedData.client || parsedData.destinataire || '',
-          location: parsedData.adresse || parsedData.lieu || '',
+          comment: `BL ${file?.name || ''} — ${(merged.items || []).length} article(s)`,
+          client: merged.client || merged.destinataire || '',
+          location: merged.adresse || merged.lieu || '',
         });
       }
 
       // Événement de préparation la veille
-      if (parsedData.date || parsedData.dateLivraison) {
-        const livrDate = new Date((parsedData.dateLivraison || parsedData.date) + 'T00:00:00');
+      if (merged.date || merged.dateLivraison) {
+        const livrDate = new Date((merged.dateLivraison || merged.date) + 'T00:00:00');
         livrDate.setDate(livrDate.getDate() - 1);
         const prepDate = livrDate.toISOString().slice(0, 10);
         eventsToCreate.push({
-          affaire_id: affaireId || parsedData.numero || null,
+          affaire_id: affaireId || merged.numero || null,
           bl_import_id: blImport.id,
           type: 'preparation',
-          category: 'prestation',
+          category: eventCategory,
           date: prepDate,
           period: 'PM',
-          comment: `Préparation BL ${file?.name || ''} — ${(parsedData.items || []).length} article(s)`,
-          client: parsedData.client || parsedData.destinataire || '',
+          comment: `Préparation BL ${file?.name || ''} — ${(merged.items || []).length} article(s)`,
+          client: merged.client || merged.destinataire || '',
           location: '',
         });
       }
@@ -181,15 +203,15 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
       // Si pas de date, créer un seul événement pour aujourd'hui
       if (eventsToCreate.length === 0) {
         eventsToCreate.push({
-          affaire_id: affaireId || parsedData.numero || null,
+          affaire_id: affaireId || merged.numero || null,
           bl_import_id: blImport.id,
           type: 'livraison',
-          category: 'prestation',
+          category: eventCategory,
           date: today,
           period: 'AM',
-          comment: `BL ${file?.name || ''} — ${(parsedData.items || []).length} article(s)`,
-          client: parsedData.client || parsedData.destinataire || '',
-          location: parsedData.adresse || parsedData.lieu || '',
+          comment: `BL ${file?.name || ''} — ${(merged.items || []).length} article(s)`,
+          client: merged.client || merged.destinataire || '',
+          location: merged.adresse || merged.lieu || '',
         });
       }
 
@@ -256,7 +278,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
                   <div className="file-size">{formatFileSize(file.size)}</div>
                 </div>
                 {docType && (
-                  <span className={`status-badge ${docType === 'bon_livraison' ? 'success' : 'warning'}`}>
+                  <span className={`status-badge ${['bon_livraison','bl_vente','bon_preparation'].includes(docType) ? 'success' : 'warning'}`}>
                     {getDocTypeLabel(docType)}
                   </span>
                 )}
@@ -283,85 +305,131 @@ function BLImportModal({ onClose, onImported, defaultAffaireId }) {
                 />
               </div>
 
-              {/* Résultats du parsing */}
-              {parsedData && (
-                <div className="parse-results">
-                  <h4>
-                    <CheckCircle size={16} style={{ color: '#10b981' }} />
-                    Données extraites
-                  </h4>
-
-                  {parsedData.numero && (
-                    <div className="parsed-field">
-                      <span className="field-label">N° Document</span>
-                      <span className="field-value">{parsedData.numero}</span>
-                    </div>
-                  )}
-                  {parsedData.client && (
-                    <div className="parsed-field">
-                      <span className="field-label">Client</span>
-                      <span className="field-value">{parsedData.client}</span>
-                    </div>
-                  )}
-                  {parsedData.destinataire && (
-                    <div className="parsed-field">
-                      <span className="field-label">Destinataire</span>
-                      <span className="field-value">{parsedData.destinataire}</span>
-                    </div>
-                  )}
-                  {(parsedData.date || parsedData.dateLivraison) && (
-                    <div className="parsed-field">
-                      <span className="field-label">Date</span>
-                      <span className="field-value">{parsedData.dateLivraison || parsedData.date}</span>
-                    </div>
-                  )}
-                  {parsedData.adresse && (
-                    <div className="parsed-field">
-                      <span className="field-label">Adresse</span>
-                      <span className="field-value">{parsedData.adresse}</span>
-                    </div>
-                  )}
-                  {(parsedData.montantHT || parsedData.montantTTC) && (
-                    <div className="parsed-field">
-                      <span className="field-label">Montant</span>
-                      <span className="field-value">
-                        {parsedData.montantHT ? `${parsedData.montantHT} HT` : ''}
-                        {parsedData.montantTTC ? ` / ${parsedData.montantTTC} TTC` : ''}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Articles */}
-                  {parsedData.items && parsedData.items.length > 0 && (
-                    <div className="parsed-items">
-                      <h5>Articles ({parsedData.items.length})</h5>
-                      {parsedData.items.slice(0, 15).map((item, idx) => (
-                        <div key={idx} className="parsed-item">
-                          <span className="item-qty">{item.quantity || item.qte || '1'}</span>
-                          <span className="item-desc">{item.description || item.designation || item.label || JSON.stringify(item)}</span>
-                        </div>
-                      ))}
-                      {parsedData.items.length > 15 && (
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '4px 12px' }}>
-                          ... et {parsedData.items.length - 15} autre(s)
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Texte brut toggle */}
-                  <button
-                    className="raw-text-toggle"
-                    onClick={() => setShowRawText(!showRawText)}
-                  >
-                    {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
-                    {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
-                  </button>
-                  {showRawText && (
-                    <div className="raw-text-block">{rawText}</div>
-                  )}
+              {/* Type d'affaire */}
+              <div className="affaire-section">
+                <label><Tag size={14} /> Type d'affaire</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {AFFAIRE_TYPE_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setAffaireType(opt.value)}
+                      style={{
+                        flex: 1, padding: '6px 8px', borderRadius: 6, fontSize: '0.8rem',
+                        border: affaireType === opt.value ? `2px solid ${opt.color}` : '1px solid var(--border-color)',
+                        background: affaireType === opt.value ? `${opt.color}18` : 'transparent',
+                        color: affaireType === opt.value ? opt.color : 'var(--text-secondary)',
+                        cursor: 'pointer', fontWeight: affaireType === opt.value ? 600 : 400,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {opt.icon} {opt.label}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
+
+              {/* Résultats du parsing */}
+              {parsedData && (() => {
+                const CONF_COLORS = { high: '#10b981', medium: '#f59e0b', low: '#ef4444' };
+                const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
+                const FIELD_DEFS = [
+                  { key: 'numero', label: 'N° Affaire' },
+                  { key: 'client', label: 'Client' },
+                  { key: 'date', label: 'Date' },
+                  { key: 'nomAffaire', label: 'Nom / Objet' },
+                  { key: 'interlocuteur', label: 'Interlocuteur' },
+                  { key: 'adresse', label: 'Adresse' },
+                  { key: 'devis', label: 'Devis' },
+                  { key: 'tel', label: 'Téléphone' },
+                  { key: 'fax', label: 'Fax' },
+                ];
+                const fc = parsedData._fieldConfidence || {};
+                const getVal = (key) => editedFields[key] !== undefined ? editedFields[key] : (parsedData[key] || '');
+                return (
+                  <div className="parse-results">
+                    <h4>
+                      <CheckCircle size={16} style={{ color: '#10b981' }} />
+                      Données extraites
+                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                        {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs • {parsedData.confidence}% confiance
+                      </span>
+                    </h4>
+
+                    {FIELD_DEFS.map(field => {
+                      const val = getVal(field.key);
+                      const conf = fc[field.key];
+                      const isEdited = editedFields[field.key] !== undefined;
+                      return (
+                        <div key={field.key} className="parsed-field" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span
+                            className="conf-dot"
+                            title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
+                            style={{ color: conf ? CONF_COLORS[conf] : '#94a3b8', fontSize: '0.7rem', flexShrink: 0 }}
+                          >●</span>
+                          <span className="field-label" style={{ minWidth: 85, flexShrink: 0 }}>{field.label}</span>
+                          <input
+                            type="text"
+                            value={val}
+                            onChange={e => setEditedFields(p => ({ ...p, [field.key]: e.target.value }))}
+                            placeholder={`${field.label} non détecté`}
+                            style={{
+                              flex: 1, padding: '3px 8px', borderRadius: 5, fontSize: '0.82rem',
+                              border: `1px solid ${!val ? '#ef444440' : isEdited ? '#3b82f680' : 'var(--border-color)'}`,
+                              background: isEdited ? '#3b82f608' : 'var(--bg-secondary, #f8f8f8)',
+                              color: 'var(--text-primary)',
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+
+                    {/* Sections (Format B) */}
+                    {parsedData.sections && parsedData.sections.length > 0 && (
+                      <div style={{ marginTop: 8, padding: '6px 0' }}>
+                        <h5 style={{ fontSize: '0.82rem', marginBottom: 4 }}>📂 Sections ({parsedData.sections.length})</h5>
+                        {parsedData.sections.map((sec, idx) => (
+                          <div key={idx} style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', padding: '2px 8px' }}>
+                            <strong>{sec.name}</strong> — {sec.items?.length || 0} article(s)
+                            {sec.dateDebut && <span> • {sec.dateDebut} → {sec.dateFin}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Articles */}
+                    {parsedData.items && parsedData.items.length > 0 && (
+                      <div className="parsed-items">
+                        <h5>Articles ({parsedData.items.length})</h5>
+                        {parsedData.items.slice(0, 15).map((item, idx) => (
+                          <div key={idx} className="parsed-item">
+                            <span className="item-qty">{item.quantity || item.qte || '1'}</span>
+                            <span className="item-desc">{item.description || item.designation || item.label || JSON.stringify(item)}</span>
+                            {item.reference && <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginLeft: 4 }}>({item.reference})</span>}
+                          </div>
+                        ))}
+                        {parsedData.items.length > 15 && (
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '4px 12px' }}>
+                            ... et {parsedData.items.length - 15} autre(s)
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Texte brut toggle */}
+                    <button
+                      className="raw-text-toggle"
+                      onClick={() => setShowRawText(!showRawText)}
+                    >
+                      {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
+                      {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
+                    </button>
+                    {showRawText && (
+                      <div className="raw-text-block">{rawText}</div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Pas de données */}
               {!parsing && !parsedData && rawText && (

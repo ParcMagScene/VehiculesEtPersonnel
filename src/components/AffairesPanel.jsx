@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2 } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -10,6 +10,7 @@ import WeekSelector from './WeekSelector';
 import './AffairesPanel.css';
 
 const BLImportModal = lazy(() => import('./BLImportModal'));
+const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 
 const AFFAIRE_TYPES = [
   { value: 'Prestation', label: 'Prestation', color: '#3b82f6', icon: '🎭' },
@@ -94,6 +95,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   // BL Import modal
   const [showBLImport, setShowBLImport] = useState(false);
   const [blImportAffaireId, setBlImportAffaireId] = useState(null);
+  const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
 
   // Timeline / frise chronologique
   const timelineRef = useRef(null);
@@ -883,6 +885,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           >
             <FileText size={14} /> Import BL
           </button>
+          <button
+            className="affaires-tb-bl-import-btn"
+            onClick={() => setShowBatchAnalysis(true)}
+            title="Analyse batch des BL PDF"
+            style={{ gap: 4 }}
+          >
+            <BarChart2 size={14} /> Analyse batch
+          </button>
         </div>
       </div>
 
@@ -1077,6 +1087,13 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             onImported={() => { setShowBLImport(false); setBlImportAffaireId(null); handleRefresh(); }}
             defaultAffaireId={blImportAffaireId}
           />
+        </Suspense>
+      )}
+
+      {/* Batch Analysis Modal */}
+      {showBatchAnalysis && (
+        <Suspense fallback={null}>
+          <BLBatchAnalysis onClose={() => setShowBatchAnalysis(false)} />
         </Suspense>
       )}
     </div>

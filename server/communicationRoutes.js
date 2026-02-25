@@ -233,9 +233,22 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
       const id = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('hex');
 
+      // Extraire les métadonnées enrichies du parsed_data
+      let affaireType = null, docType = null, confidenceScore = null, sectionsData = null, fieldConfidence = null;
+      if (parsed_data) {
+        try {
+          const pd = typeof parsed_data === 'string' ? JSON.parse(parsed_data) : parsed_data;
+          affaireType = pd.type || null;
+          docType = pd.docType || null;
+          confidenceScore = pd.confidence || null;
+          sectionsData = pd.sections && pd.sections.length > 0 ? JSON.stringify(pd.sections) : null;
+          fieldConfidence = pd._fieldConfidence ? JSON.stringify(pd._fieldConfidence) : null;
+        } catch (_) { /* ignore parse errors */ }
+      }
+
       const stmt = db.prepare(`
-        INSERT INTO bl_imports (id, affaire_id, filename, file_path, mime_type, raw_text, parsed_data, status, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO bl_imports (id, affaire_id, filename, file_path, mime_type, raw_text, parsed_data, status, affaire_type, doc_type, confidence_score, sections_data, field_confidence, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
       stmt.run(
@@ -247,6 +260,11 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         raw_text || null,
         parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null,
         status || 'validated',
+        affaireType,
+        docType,
+        confidenceScore,
+        sectionsData,
+        fieldConfidence,
         req.user.id
       );
 

@@ -381,10 +381,18 @@
 /* ═══ CONTENT WRAPPER ═══ */
 .eq-content-wrapper {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex: 1;
   overflow: hidden;
   position: relative;
+}
+
+.eq-content-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* ═══ DEPOT MAP ═══ */

@@ -16,28 +16,28 @@
   min-height: 38px;
   padding: 6px 10px;
   background: white;
-  border: 1px solid var(--border-color, #d1d5db);
+  border: 1px solid var(--border-color, var(--theme-border-muted));
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
-  color: var(--text-primary, #1e293b);
+  color: var(--text-primary, var(--theme-text-primary));
   transition: border-color 0.2s, box-shadow 0.2s;
   text-align: left;
   gap: 8px;
 }
 
 .driver-select-trigger:hover {
-  border-color: var(--primary-color, #2563eb);
+  border-color: var(--primary-color, var(--theme-info-dark));
 }
 
 .driver-select-trigger.open {
-  border-color: var(--primary-color, #2563eb);
+  border-color: var(--primary-color, var(--theme-info-dark));
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .driver-select-trigger:focus {
   outline: none;
-  border-color: var(--primary-color, #2563eb);
+  border-color: var(--primary-color, var(--theme-info-dark));
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
@@ -59,19 +59,19 @@
 
 .driver-select-skill {
   font-size: 0.75rem;
-  color: var(--text-secondary, #64748b);
+  color: var(--text-secondary, var(--theme-text-secondary));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .driver-select-placeholder {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   flex: 1;
 }
 
 .driver-select-chevron {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   flex-shrink: 0;
   transition: transform 0.2s;
 }
@@ -105,7 +105,7 @@
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid var(--border-color, #d1d5db);
+  border: 1px solid var(--border-color, var(--theme-border-muted));
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   z-index: 1000;
@@ -121,7 +121,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   user-select: none;
 }
 
@@ -137,11 +137,11 @@
 }
 
 .driver-select-option:hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .driver-select-option.selected {
-  background: #eff6ff;
+  background: var(--theme-info-bg);
 }
 
 .driver-select-option-avatar {
@@ -164,7 +164,7 @@
 .driver-select-option-name {
   font-size: 0.88rem;
   font-weight: 500;
-  color: var(--text-primary, #1e293b);
+  color: var(--text-primary, var(--theme-text-primary));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -176,21 +176,21 @@
 
 .driver-select-option-skill {
   font-size: 0.72rem;
-  color: var(--text-secondary, #64748b);
+  color: var(--text-secondary, var(--theme-text-secondary));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .driver-select-check {
-  color: var(--primary-color, #2563eb);
+  color: var(--primary-color, var(--theme-info-dark));
   flex-shrink: 0;
 }
 
 .driver-select-empty {
   padding: 16px;
   text-align: center;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   font-size: 0.85rem;
 }
 
@@ -209,5 +209,5 @@
 }
 
 .driver-select-dropdown::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--theme-text-muted);
 }

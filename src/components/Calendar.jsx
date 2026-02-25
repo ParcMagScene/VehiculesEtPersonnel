@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react';
 import useWindowWidth from '../hooks/useWindowWidth';
 import {
   startOfWeek,
@@ -35,7 +35,7 @@ import './Calendar.css';
 
 // Fonction pour obtenir les initiales d'un utilisateur
 const getUserInitials = (userId, currentUser, users = []) => {
-  if (currentUser && userId === currentUser.id) {
+  if (currentUser && userId === currentUser.id && currentUser.name) {
     return currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
   
@@ -626,14 +626,16 @@ const Calendar = ({
   // Fonctions de navigation (startTransition pour ne pas bloquer l'UI)
   const goToPrevious = useCallback(() => {
     const newDate = new Date(currentDate);
-    if (view === 'week') newDate.setDate(newDate.getDate() - 7);
+    if (view === 'day') newDate.setDate(newDate.getDate() - 1);
+    else if (view === 'week') newDate.setDate(newDate.getDate() - 7);
     else if (view === 'month') newDate.setMonth(newDate.getMonth() - 1);
     else newDate.setFullYear(newDate.getFullYear() - 1);
     startTransition(() => setCurrentDate(newDate));
   }, [currentDate, view, setCurrentDate]);
   const goToNext = useCallback(() => {
     const newDate = new Date(currentDate);
-    if (view === 'week') newDate.setDate(newDate.getDate() + 7);
+    if (view === 'day') newDate.setDate(newDate.getDate() + 1);
+    else if (view === 'week') newDate.setDate(newDate.getDate() + 7);
     else if (view === 'month') newDate.setMonth(newDate.getMonth() + 1);
     else newDate.setFullYear(newDate.getFullYear() + 1);
     startTransition(() => setCurrentDate(newDate));
@@ -641,13 +643,15 @@ const Calendar = ({
   const goToToday = useCallback(() => startTransition(() => setCurrentDate(new Date())), [setCurrentDate]);
   const getDateLabel = () => {
     let label = '';
-    if (view === 'week') label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
+    if (view === 'day') label = format(currentDate, "EEEE d MMMM yyyy", { locale: fr });
+    else if (view === 'week') label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
     else if (view === 'month') label = format(currentDate, 'MMMM yyyy', { locale: fr });
     else label = format(currentDate, 'yyyy', { locale: fr });
     return label.charAt(0).toUpperCase() + label.slice(1);
   };
   const isCurrentPeriod = () => {
     const today = new Date();
+    if (view === 'day') return isSameDay(currentDate, today);
     if (view === 'week') return isSameWeek(currentDate, today, { weekStartsOn: 1 });
     if (view === 'month') return isSameMonth(currentDate, today);
     return isSameYear(currentDate, today);
@@ -820,6 +824,7 @@ const Calendar = ({
     if (!reservations || !Array.isArray(reservations)) return;
     const token = localStorage.getItem('auth_token');
     if (!token) return;
+    const controller = new AbortController();
     const headers = { 'Authorization': `Bearer ${token}` };
     const tourneeIds = reservations
       .filter(r => (r.isTournee || r.is_tournee) && r.id && !calendarTripCache[r.id])
@@ -833,11 +838,13 @@ const Calendar = ({
     const loadBatch = async (ids) => {
       const BATCH_SIZE = 5;
       for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        if (controller.signal.aborted) return;
         const batch = ids.slice(i, i + BATCH_SIZE);
         await Promise.allSettled(batch.map(id =>
-          fetch(`/api/trip-details/${id}`, { headers })
+          fetch(`/api/trip-details/${id}`, { headers, signal: controller.signal })
             .then(r => r.ok ? r.json() : [])
             .then(data => {
+              if (controller.signal.aborted) return;
               const trips = Array.isArray(data) ? data : (data.tripDetails || []);
               setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
             })
@@ -847,6 +854,7 @@ const Calendar = ({
       }
     };
     if (allIds.length > 0) loadBatch(allIds);
+    return () => controller.abort();
   }, [reservations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ouvrir le modal automatiquement quand une réservation doit être éditée depuis l'extérieur
@@ -862,6 +870,10 @@ const Calendar = ({
     }
   };
 
+  // Ref pour les données volatiles utilisées dans le mouseup global
+  const reservationsRef = useRef(reservations);
+  useEffect(() => { reservationsRef.current = reservations; }, [reservations]);
+
   // Gérer le mouseup global pour le drag-and-drop, resize et block-drag
   useEffect(() => {
     const handleGlobalMouseUp = () => {
@@ -870,7 +882,7 @@ const Calendar = ({
         const { block } = pendingBlockDragRef.current;
         pendingBlockDragRef.current = null;
         if (!block.isMaintenance) {
-          const existing = reservations.find(r => r.id === block.id);
+          const existing = reservationsRef.current.find(r => r.id === block.id);
           if (existing) setSelectedReservation(existing);
         }
         return;
@@ -890,6 +902,7 @@ const Calendar = ({
     
     document.addEventListener('mouseup', handleGlobalMouseUp);
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging, dragState, resizeState, blockDragState]);
 
   // Fonctions de gestion du tooltip
@@ -1087,7 +1100,9 @@ const Calendar = ({
 
   // days et periods doivent être définis AVANT reservationLookup qui en dépend
   const days = useMemo(() => {
-    if (view === 'week') {
+    if (view === 'day') {
+      return [currentDate];
+    } else if (view === 'week') {
       return eachDayOfInterval({
         start: startOfWeek(currentDate, { weekStartsOn: 1 }),
         end: endOfWeek(currentDate, { weekStartsOn: 1 }),
@@ -1105,6 +1120,12 @@ const Calendar = ({
       });
     }
   }, [view, currentDate]);
+
+  // Heures pour la vue jour (référence future si granularité horaire ajoutée)
+  const dayHours = useMemo(() => {
+    if (view !== 'day') return [];
+    return Array.from({ length: 16 }, (_, i) => i + 6); // 6h à 21h
+  }, [view]);
 
   const periods = view === 'year' ? ['M'] : ['AM', 'PM'];
 
@@ -1283,7 +1304,7 @@ const Calendar = ({
   const handleDayClick = useCallback((day) => {
     if (view === 'month') {
       setCurrentDate(day);
-      setView('week');
+      setView('day');
     }
   }, [view, setCurrentDate, setView]);
 
@@ -1856,6 +1877,10 @@ const Calendar = ({
       minWidth = windowWidth <= 480 ? 80 : windowWidth <= 768 ? 100 : windowWidth <= 1024 ? 120 : 150;
       return `repeat(12, minmax(${minWidth}px, 1fr))`;
     }
+    if (view === 'day') {
+      // Vue jour : 2 colonnes larges (AM/PM)
+      return `repeat(2, 1fr)`;
+    }
     if (view === 'week') {
       minWidth = windowWidth <= 480 ? 55 : windowWidth <= 768 ? 65 : windowWidth <= 1024 ? 80 : 100;
     } else {
@@ -1927,6 +1952,7 @@ const Calendar = ({
       {/* Toolbar de navigation */}
       <div className="cal-nav-toolbar">
         <div className="cal-nav-views">
+          <button className={`cal-nav-view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => setView('day')}>Jour</button>
           <button className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</button>
           <button className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</button>
           <button className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</button>
@@ -1938,11 +1964,12 @@ const Calendar = ({
           <span 
             className="cal-nav-label clickable"
             onClick={() => {
+              if (view === 'day') setShowWeekSelector(true);
               if (view === 'month') setShowMonthSelector(true);
               if (view === 'week') setShowWeekSelector(true);
               if (view === 'year') setShowYearSelector(true);
             }}
-            title={view === 'month' ? 'Sélectionner un mois' : view === 'week' ? 'Sélectionner une semaine' : 'Sélectionner une année'}
+            title={view === 'day' ? 'Sélectionner une date' : view === 'month' ? 'Sélectionner un mois' : view === 'week' ? 'Sélectionner une semaine' : 'Sélectionner une année'}
           >
             {getDateLabel()}
           </span>
@@ -1967,7 +1994,20 @@ const Calendar = ({
           <div className="calendar-headers-scroll-area">
             <div className={`calendar-grid-headers ${view}-view`} style={{ gridTemplateColumns: gridColumns }}>
               {/* En-tête */}
-              {view === 'year' ? (
+              {view === 'day' ? (
+                // Vue jour : 2 colonnes Matin/Après-midi
+                <>
+                  <div className="calendar-header">
+                    <div className={`calendar-header-cell day-header day-view-header ${isToday(currentDate) ? 'today' : ''}`}>
+                      <div className="day-name">Matin</div>
+                      <div className="day-number">{format(currentDate, 'EEEE d MMMM', { locale: fr })}</div>
+                    </div>
+                    <div className={`calendar-header-cell day-header day-view-header ${isToday(currentDate) ? 'today' : ''}`}>
+                      <div className="day-name">Après-midi</div>
+                    </div>
+                  </div>
+                </>
+              ) : view === 'year' ? (
                 // Vue année : 12 colonnes pour les 12 mois
                 <>
                   <div className="calendar-header">
@@ -2294,7 +2334,7 @@ const Calendar = ({
                         >
                           {/* Pastille utilisateur créateur */}
                           {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : users.find(u => u.id === block.createdBy)?. name || "Utilisateur " + block.createdBy}`}>
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : (users.find(u => u.id === block.createdBy)?.name || `Utilisateur ${block.createdBy}`)}`}>
                               {getUserInitials(block.createdBy, currentUser, users)}
                             </div>
                           )}
@@ -2487,7 +2527,7 @@ const Calendar = ({
                         >
                           {/* Pastille utilisateur créateur */}
                           {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : users.find(u => u.id === block.createdBy)?. name || "Utilisateur " + block.createdBy}`}>
+                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : (users.find(u => u.id === block.createdBy)?.name || `Utilisateur ${block.createdBy}`)}`}>
                               {getUserInitials(block.createdBy, currentUser, users)}
                             </div>
                           )}

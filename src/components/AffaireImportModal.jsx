@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import logger from "../utils/logger";
 import api, { getApiUrl } from '../utils/api';
 import './AffaireImportModal.css';
-import { extractTextFromPDF, parseBonLivraison, parseDate } from '../utils/pdfParser';
+import { extractTextFromPDF, parseBonLivraison, parseDate, smartParse, batchParsePDFs, getDocTypeLabel, DOC_TYPES } from '../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../utils/indexedDB';
 import PhoneInput from './PhoneInput';
 import AddressAutocomplete from './AddressAutocomplete';
+import { useToast } from '../hooks/useToast';
 
 const AffaireImportModal = ({ 
   isOpen, 
@@ -15,6 +16,7 @@ const AffaireImportModal = ({
   onEventUpdated,
   onRequestEditReservation
 }) => {
+  const toast = useToast();
   const [step, setStep] = useState('upload'); // 'choice', 'upload', 'form', 'edit-event', 'upload-additional'
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -44,9 +46,26 @@ const AffaireImportModal = ({
   const [initialFormData, setInitialFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
   
+  // ═══ Nouveaux états : aperçu PDF, détection type, batch ═══
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [detectedDocType, setDetectedDocType] = useState(null); // { docType, docTypeLabel, confidence }
+  const [extractedText, setExtractedText] = useState('');
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchResults, setBatchResults] = useState([]); // [{ file, docType, confidence, info, error }]
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [selectedBatchIndex, setSelectedBatchIndex] = useState(-1);
+  
   const fileInputRef = useRef(null);
   const additionalFileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    };
+  }, [pdfPreviewUrl]);
 
   // Convertir les dates en format string
   const getDateString = (date) => {
@@ -214,7 +233,7 @@ const AffaireImportModal = ({
 
   const handleAdditionalBLUpload = async (file) => {
     if (!file || file.type !== 'application/pdf') {
-      alert('Veuillez sélectionner un fichier PDF');
+      toast.warning('Veuillez sélectionner un fichier PDF');
       return;
     }
 
@@ -236,7 +255,7 @@ const AffaireImportModal = ({
       setStep('form');
     } catch (error) {
       console.error('Erreur upload BL additionnel:', error);
-      alert('Erreur lors de l\'upload du BL');
+      toast.error('Erreur lors de l\'upload du BL');
     }
   };
 
@@ -279,7 +298,7 @@ const AffaireImportModal = ({
 
   const handleFileSelection = async (file) => {
     if (file.type !== 'application/pdf') {
-      alert('Veuillez sélectionner un fichier PDF');
+      toast.warning('Veuillez sélectionner un fichier PDF');
       return;
     }
 
@@ -303,10 +322,18 @@ const AffaireImportModal = ({
       // Extraire le texte du PDF
       const text = await extractTextFromPDF(file);
       logger.log('📝 Texte extrait:', text.substring(0, 200) + '...');
+      setExtractedText(text);
       
-      // Parser les informations
-      const info = parseBonLivraison(text);
-      logger.log('📊 Informations parsées:', info);
+      // Générer l'aperçu PDF
+      const previewUrl = URL.createObjectURL(file);
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+      setPdfPreviewUrl(previewUrl);
+      
+      // Parse intelligent : détection auto du type + parseur spécialisé
+      const parsed = smartParse(text);
+      const info = parsed.info;
+      setDetectedDocType({ docType: parsed.docType, docTypeLabel: parsed.docTypeLabel, confidence: parsed.confidence });
+      logger.log('📊 Informations parsées (%s, confiance %d%):', parsed.docTypeLabel, parsed.confidence, info);
 
       // Vérifier si ce numéro d'affaire existe déjà
       const numeroAffaire = info.numeroAffaire || '';
@@ -328,7 +355,8 @@ const AffaireImportModal = ({
         }
       }
       
-      // Préremplir le formulaire
+      // Préremplir le formulaire (dateLocation est normalisé par smartParse)
+      const dateValue = info.dateLocation || info.dateDevis || info.dateFacture || null;
       setFormData(prev => ({
         ...prev,
         numeroAffaire: info.numeroAffaire || prev.numeroAffaire,
@@ -337,7 +365,7 @@ const AffaireImportModal = ({
         interlocuteur: info.interlocuteur || prev.interlocuteur,
         tel: info.tel || prev.tel,
         fax: info.fax || prev.fax,
-        dateDebut: info.dateLocation || prev.dateDebut,
+        dateDebut: dateValue || prev.dateDebut,
         devis: info.devis || prev.devis,
         adresseLivraison: info.adresseLivraison || prev.adresseLivraison,
         titre: prev.titre || info.nomAffaire || '',
@@ -348,7 +376,7 @@ const AffaireImportModal = ({
       setStep('form');
     } catch (error) {
       console.error('❌ Erreur traitement PDF:', error);
-      alert(`Erreur lors de l'analyse du PDF: ${error.message}\n\nVeuillez remplir le formulaire manuellement.`);
+      toast.warning(`Erreur lors de l'analyse du PDF: ${error.message} Veuillez remplir le formulaire manuellement.`);
       setStep('form');
     } finally {
       setIsProcessing(false);
@@ -432,7 +460,7 @@ const AffaireImportModal = ({
 
   const handleSubmit = async () => {
     if (!formData.numeroAffaire || !formData.client) {
-      alert('Veuillez renseigner au moins le numéro d\'affaire et le client');
+      toast.warning('Veuillez renseigner au moins le numéro d\'affaire et le client');
       return;
     }
 
@@ -530,7 +558,7 @@ const AffaireImportModal = ({
       resetForm();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde de l\'affaire');
+      toast.error('Erreur lors de la sauvegarde de l\'affaire');
     } finally {
       setIsProcessing(false);
     }
@@ -538,6 +566,78 @@ const AffaireImportModal = ({
 
   const handleCreateWithoutPDF = () => {
     setStep('form');
+  };
+
+  // ═══ Handlers batch mode ═══
+  const handleBatchUpload = async (files) => {
+    const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+    if (pdfFiles.length === 0) {
+      toast.warning('Aucun fichier PDF sélectionné');
+      return;
+    }
+    if (pdfFiles.length === 1) {
+      setBatchMode(false);
+      await handleFileSelection(pdfFiles[0]);
+      return;
+    }
+    // Mode batch
+    setBatchMode(true);
+    setIsProcessing(true);
+    setBatchProgress({ current: 0, total: pdfFiles.length });
+    setBatchResults([]);
+    setSelectedBatchIndex(-1);
+
+    const results = await batchParsePDFs(pdfFiles, (current, total, result) => {
+      setBatchProgress({ current, total });
+      setBatchResults(prev => [...prev, result]);
+    });
+
+    setIsProcessing(false);
+    logger.log('📦 Batch terminé:', results.length, 'fichiers traités');
+  };
+
+  const handleSelectBatchResult = (index) => {
+    setSelectedBatchIndex(index);
+    const result = batchResults[index];
+    if (!result || result.error) return;
+
+    setPdfFile(result.file);
+    setDetectedDocType({ docType: result.docType, docTypeLabel: result.docTypeLabel, confidence: result.confidence });
+    setExtractedText(result.text);
+
+    const info = result.info;
+    const dateValue = info.dateLocation || info.dateDevis || info.dateFacture || null;
+    setFormData(prev => ({
+      ...prev,
+      numeroAffaire: info.numeroAffaire || prev.numeroAffaire,
+      type: info.type || prev.type,
+      client: info.client || prev.client,
+      interlocuteur: info.interlocuteur || prev.interlocuteur,
+      tel: info.tel || prev.tel,
+      fax: info.fax || prev.fax,
+      dateDebut: dateValue || prev.dateDebut,
+      devis: info.devis || prev.devis,
+      adresseLivraison: info.adresseLivraison || prev.adresseLivraison,
+      titre: prev.titre || info.nomAffaire || '',
+      description: prev.description || `${info.client || ''} - ${info.nomAffaire || ''}`
+    }));
+
+    // Preview URL
+    if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    setPdfPreviewUrl(URL.createObjectURL(result.file));
+    setStep('form');
+  };
+
+  const getConfidenceColor = (confidence) => {
+    if (confidence >= 70) return '#10b981';
+    if (confidence >= 40) return '#f59e0b';
+    return '#ef4444';
+  };
+
+  const getConfidenceLabel = (confidence) => {
+    if (confidence >= 70) return 'Élevée';
+    if (confidence >= 40) return 'Moyenne';
+    return 'Faible';
   };
 
   const resetForm = () => {
@@ -558,6 +658,15 @@ const AffaireImportModal = ({
     });
     setExistingAffaires([]);
     setReplaceConfirm(null);
+    setDetectedDocType(null);
+    setExtractedText('');
+    setBatchMode(false);
+    setBatchResults([]);
+    setBatchProgress({ current: 0, total: 0 });
+    setSelectedBatchIndex(-1);
+    if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    setPdfPreviewUrl(null);
+    setShowPreview(false);
   };
 
   if (!isOpen) return null;
@@ -625,35 +734,105 @@ const AffaireImportModal = ({
             </div>
           )}
 
-          {/* Étape 2: Upload du PDF */}
-          {step === 'upload' && !isProcessing && (
+          {/* Étape 2: Upload du PDF (simple ou batch) */}
+          {step === 'upload' && !isProcessing && !batchMode && (
             <div 
               ref={dropZoneRef}
               className={`drop-zone ${isDragging ? 'dragging' : ''}`}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
-              onDrop={handleDrop}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+                const files = e.dataTransfer.files;
+                if (files.length > 1) {
+                  handleBatchUpload(files);
+                } else if (files.length === 1) {
+                  handleFileSelection(files[0]);
+                }
+              }}
             >
               <div className="drop-zone-content">
                 <div className="drop-zone-icon">📁</div>
                 <p className="drop-zone-text">
-                  Glissez-déposez un fichier PDF ici
+                  Glissez-déposez un ou plusieurs PDF ici
                 </p>
                 <p className="drop-zone-or">ou</p>
-                <button 
-                  className="browse-button"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Parcourir les fichiers
-                </button>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                  <button 
+                    className="browse-button"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Parcourir
+                  </button>
+                  <button 
+                    className="browse-button batch-browse"
+                    onClick={() => {
+                      fileInputRef.current.multiple = true;
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    📦 Lot de PDFs
+                  </button>
+                </div>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept=".pdf"
                   style={{ display: 'none' }}
-                  onChange={handleFileInput}
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files.length > 1) {
+                      handleBatchUpload(files);
+                    } else if (files.length === 1) {
+                      handleFileSelection(files[0]);
+                    }
+                    fileInputRef.current.multiple = false;
+                  }}
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Résultats batch */}
+          {step === 'upload' && !isProcessing && batchMode && batchResults.length > 0 && (
+            <div className="batch-results-panel">
+              <div className="batch-results-header">
+                <h3>📦 {batchResults.length} documents analysés</h3>
+                <button className="btn-reset-batch" onClick={() => { setBatchMode(false); setBatchResults([]); }}>
+                  ← Retour
+                </button>
+              </div>
+              <div className="batch-results-list">
+                {batchResults.map((result, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`batch-result-item ${selectedBatchIndex === idx ? 'selected' : ''} ${result.error ? 'error' : ''}`}
+                    onClick={() => !result.error && handleSelectBatchResult(idx)}
+                  >
+                    <div className="batch-result-file">
+                      <span className="batch-result-icon">{result.error ? '❌' : '📄'}</span>
+                      <span className="batch-result-name">{result.file.name}</span>
+                    </div>
+                    {result.error ? (
+                      <span className="batch-result-error">{result.error}</span>
+                    ) : (
+                      <div className="batch-result-meta">
+                        <span className="doc-type-badge" style={{ background: getConfidenceColor(result.confidence) + '20', color: getConfidenceColor(result.confidence), border: `1px solid ${getConfidenceColor(result.confidence)}40` }}>
+                          {result.docTypeLabel}
+                        </span>
+                        <span className="batch-result-fields">
+                          {result.info.fieldsFound}/{result.info.fieldsTotal} champs
+                        </span>
+                        {result.info.numeroAffaire && (
+                          <span className="batch-result-affaire">{result.info.numeroAffaire}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -661,7 +840,16 @@ const AffaireImportModal = ({
           {isProcessing && (
             <div className="processing-indicator">
               <div className="spinner"></div>
-              <p>Analyse du PDF en cours...</p>
+              {batchMode ? (
+                <div>
+                  <p>Analyse des PDFs... {batchProgress.current}/{batchProgress.total}</p>
+                  <div className="batch-progress-bar">
+                    <div className="batch-progress-fill" style={{ width: `${batchProgress.total ? (batchProgress.current / batchProgress.total * 100) : 0}%` }} />
+                  </div>
+                </div>
+              ) : (
+                <p>Analyse du PDF en cours...</p>
+              )}
             </div>
           )}
 
@@ -734,23 +922,60 @@ const AffaireImportModal = ({
                 </div>
               )}
               
+              {/* Badge type de document détecté */}
+              {detectedDocType && (
+                <div className="detected-doc-banner">
+                  <div className="doc-type-info">
+                    <span className="doc-type-badge" style={{ background: getConfidenceColor(detectedDocType.confidence) + '20', color: getConfidenceColor(detectedDocType.confidence), border: `1px solid ${getConfidenceColor(detectedDocType.confidence)}40` }}>
+                      {detectedDocType.docTypeLabel}
+                    </span>
+                    <span className="doc-confidence">
+                      Confiance : <strong style={{ color: getConfidenceColor(detectedDocType.confidence) }}>{detectedDocType.confidence}%</strong>
+                      <span className="confidence-label"> ({getConfidenceLabel(detectedDocType.confidence)})</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {pdfFile && (
                 <div className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>✅ PDF analysé: {pdfFile.name}</span>
-                  <button 
-                    className="btn-view-pdf"
-                    onClick={() => {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        const blob = new Blob([e.target.result], { type: 'application/pdf' });
-                        const url = URL.createObjectURL(blob);
-                        window.open(url, '_blank');
-                      };
-                      reader.readAsArrayBuffer(pdfFile);
-                    }}
-                  >
-                    👁️ Voir le PDF
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="btn-view-pdf"
+                      onClick={() => setShowPreview(!showPreview)}
+                    >
+                      {showPreview ? '🔽 Masquer' : '👁️ Aperçu'}
+                    </button>
+                    <button 
+                      className="btn-view-pdf"
+                      onClick={() => {
+                        if (pdfPreviewUrl) {
+                          window.open(pdfPreviewUrl, '_blank');
+                        } else {
+                          const reader = new FileReader();
+                          reader.onload = (e) => {
+                            const blob = new Blob([e.target.result], { type: 'application/pdf' });
+                            window.open(URL.createObjectURL(blob), '_blank');
+                          };
+                          reader.readAsArrayBuffer(pdfFile);
+                        }
+                      }}
+                    >
+                      🔗 Ouvrir
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Aperçu PDF inline */}
+              {showPreview && pdfPreviewUrl && (
+                <div className="pdf-preview-container">
+                  <iframe
+                    src={pdfPreviewUrl}
+                    title="Aperçu PDF"
+                    className="pdf-preview-iframe"
+                  />
                 </div>
               )}
               

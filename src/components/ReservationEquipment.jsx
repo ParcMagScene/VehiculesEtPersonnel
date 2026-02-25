@@ -8,8 +8,10 @@ import { Package, Plus, Trash2, Box, Search, X, Weight, Ruler, ExternalLink } fr
 import api from '../utils/api';
 import { formatDimensions, buildChargementUrlForReservation, openInChargement } from '../utils/deepLinking';
 import './CataloguePanel.css';
+import { useToast } from '../hooks/useToast';
 
 export default function ReservationEquipment({ reservationId, currentUser }) {
+  const toast = useToast();
   const [data, setData] = useState({ items: [], summary: { count: 0, totalQuantity: 0, totalWeight: 0, totalVolume: 0 } });
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -35,7 +37,7 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
       await api.removeEquipmentFromReservation(reservationId, linkId);
       loadEquipment();
     } catch (e) {
-      alert(e.message || 'Erreur');
+      toast.error(e.message || 'Erreur');
     }
   };
 
@@ -162,7 +164,7 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
       });
       onAdded();
     } catch (e) {
-      alert(e.message || 'Erreur');
+      toast.error(e.message || 'Erreur');
     } finally {
       setSubmitting(false);
     }

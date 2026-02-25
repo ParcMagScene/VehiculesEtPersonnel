@@ -5,6 +5,7 @@ import { ArrowLeft, Car, Calendar, Users, MapPin, Plus, ChevronRight, Check } fr
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import api from '../../utils/api';
 import './MobileReservations.css';
+import { useToast } from '../../hooks/useToast';
 
 // Fonction pour formater une date en toute sécurité
 const safeFormatDate = (dateValue, formatStr = 'dd MMM yyyy') => {
@@ -20,6 +21,7 @@ const safeFormatDate = (dateValue, formatStr = 'dd MMM yyyy') => {
 };
 
 const MobileReservations = forwardRef(({ vehicles, reservations, clients, drivers, currentUser, onReservationCreated, onBack }, ref) => {
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [openedDirectly, setOpenedDirectly] = useState(false);
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
@@ -76,7 +78,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
           locationName: formData.locationId || '',
           notes: formData.notes || ''
         });
-        alert('✅ Demande de réservation envoyée !\n\nVotre demande a été transmise aux administrateurs pour validation.');
+        toast.success('Demande de réservation envoyée ! Votre demande a été transmise aux administrateurs pour validation.');
       }
       setShowForm(false);
       setFormData({

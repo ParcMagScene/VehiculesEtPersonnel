@@ -10,10 +10,12 @@ import { formatDimensions, buildChargementUrlForEquipment, openInChargement } fr
 import DepotMap from './DepotMap';
 import LocationSelector from './LocationSelector';
 import './CataloguePanel.css';
+import { useToast } from '../hooks/useToast';
 
 const PAGE_SIZE = 50;
 
 export default function CataloguePanel({ currentUser }) {
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -113,7 +115,7 @@ export default function CataloguePanel({ currentUser }) {
       setCategories(cat || []);
       setLocationStats(locStats || null);
     } catch (e) {
-      alert(e.message || 'Erreur lors de la sauvegarde');
+      toast.error(e.message || 'Erreur lors de la sauvegarde');
     }
   };
 
@@ -123,7 +125,7 @@ export default function CataloguePanel({ currentUser }) {
       await api.deleteCatalogEquipment(item.id);
       loadItems();
     } catch (e) {
-      alert(e.message || 'Erreur lors de la suppression');
+      toast.error(e.message || 'Erreur lors de la suppression');
     }
   };
 

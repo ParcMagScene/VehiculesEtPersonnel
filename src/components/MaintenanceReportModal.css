@@ -33,7 +33,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #1e3a5f, #2563eb);
+  background: linear-gradient(135deg, #1e3a5f, var(--theme-info-dark));
   color: white;
 }
 
@@ -66,15 +66,15 @@
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--theme-bg-page);
+  border-bottom: 1px solid var(--theme-border-medium);
   flex-wrap: wrap;
 }
 
 .mr-toolbar-left {
   display: flex;
   gap: 2px;
-  background: #e5e7eb;
+  background: var(--theme-border-medium);
   border-radius: 6px;
   padding: 2px;
 }
@@ -87,7 +87,7 @@
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   transition: all 0.15s;
 }
 
@@ -107,37 +107,37 @@
 
 .mr-nav-btn {
   background: white;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-muted);
   border-radius: 6px;
   padding: 4px 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  color: #374151;
+  color: var(--theme-text-body);
   transition: all 0.15s;
 }
 
 .mr-nav-btn:hover {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   border-color: #9ca3af;
 }
 
 .mr-today-btn {
   background: white;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-muted);
   border-radius: 6px;
   padding: 4px 10px;
   cursor: pointer;
   font-size: 11px;
   font-weight: 500;
-  color: #374151;
+  color: var(--theme-text-body);
   transition: all 0.15s;
 }
 
 .mr-today-btn:hover {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  color: #2563eb;
+  background: var(--theme-info-bg);
+  border-color: var(--theme-info);
+  color: var(--theme-info-dark);
 }
 
 .mr-date-label {
@@ -156,7 +156,7 @@
 
 .mr-type-select {
   padding: 5px 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-muted);
   border-radius: 6px;
   font-size: 12px;
   background: white;
@@ -168,18 +168,18 @@
   align-items: center;
   gap: 4px;
   padding: 5px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-muted);
   border-radius: 6px;
   background: white;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  color: #374151;
+  color: var(--theme-text-body);
   transition: all 0.15s;
 }
 
 .mr-action-btn:hover {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   border-color: #9ca3af;
 }
 
@@ -220,12 +220,12 @@
 }
 
 .mr-table th {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   padding: 8px 10px;
   text-align: left;
   font-weight: 600;
-  color: #475569;
-  border-bottom: 2px solid #e2e8f0;
+  color: var(--theme-text-subtle);
+  border-bottom: 2px solid var(--theme-border);
   white-space: nowrap;
   position: sticky;
   top: 0;
@@ -234,12 +234,12 @@
 
 .mr-table td {
   padding: 7px 10px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--theme-border-light);
   vertical-align: middle;
 }
 
 .mr-table tr:hover {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
 }
 
 .mr-table tr:nth-child(even) {
@@ -247,13 +247,13 @@
 }
 
 .mr-table tr:nth-child(even):hover {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .mr-mono {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 .mr-desc {
@@ -286,7 +286,7 @@
 
 .mr-badge.exit {
   background: #fee2e2;
-  color: #dc2626;
+  color: var(--theme-danger-dark);
 }
 
 .mr-badge.both {

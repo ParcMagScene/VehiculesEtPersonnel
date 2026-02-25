@@ -32,14 +32,9 @@ export const loadGoogleMapsAPI = (apiKey) => {
       isLoaded = true;
       return Promise.resolve();
     }
-    // Script existe mais pas encore chargé, attendre l'événement load
-    return new Promise((resolve, reject) => {
-      existingScript.addEventListener('load', () => {
-        isLoaded = true;
-        resolve();
-      });
-      existingScript.addEventListener('error', reject);
-    });
+    // Le script existe mais l'API n'est pas disponible — le script a peut-être échoué.
+    // Supprimer l'ancien script pour permettre un nouveau chargement propre.
+    existingScript.remove();
   }
 
   // Commencer le chargement
@@ -75,6 +70,9 @@ export const loadGoogleMapsAPI = (apiKey) => {
 
       script.onerror = (error) => {
         isLoading = false;
+        
+        // Supprimer le script échoué du DOM pour permettre un retry propre
+        script.remove();
         
         // Rejeter toutes les promesses en attente
         loadPromises.forEach(({ reject: rej }) => rej(error));

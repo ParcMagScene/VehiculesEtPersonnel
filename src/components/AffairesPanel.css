@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   gap: 12px;
 }
 
@@ -28,17 +28,17 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: #fef2f2;
+  background: var(--theme-danger-bg);
   border: 1px solid #fecaca;
   border-radius: 8px;
-  color: #dc2626;
+  color: var(--theme-danger-dark);
   font-size: 13px;
   margin-bottom: 12px;
 }
 
 .affaires-error button {
   margin-left: auto;
-  background: #dc2626;
+  background: var(--theme-danger-dark);
   color: white;
   border: none;
   border-radius: 6px;
@@ -52,10 +52,10 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #fffbeb;
+  background: var(--theme-warning-bg);
   border: 1px solid #fed7aa;
   border-radius: 8px;
-  color: #d97706;
+  color: var(--theme-warning-dark);
   font-size: 13px;
   margin-bottom: 12px;
 }
@@ -87,8 +87,8 @@
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--theme-bg-page);
+  border: 1px solid var(--theme-border);
   border-radius: 10px;
   margin-bottom: 8px;
   flex-shrink: 0;
@@ -107,7 +107,7 @@
   align-items: center;
   gap: 6px;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   padding: 0 10px;
   height: 32px;
@@ -118,12 +118,12 @@
 }
 
 .affaires-tb-search:focus-within {
-  border-color: var(--theme-primary, #667eea);
+  border-color: var(--theme-primary, var(--theme-primary));
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
 }
 
 .affaires-tb-search svg {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   flex-shrink: 0;
 }
 
@@ -131,20 +131,20 @@
   background: none;
   border: none;
   outline: none;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   font-size: 13px;
   width: 100%;
   padding: 0;
 }
 
 .affaires-tb-search input::placeholder {
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 
 .affaires-tb-search-clear {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   cursor: pointer;
   padding: 2px;
   display: flex;
@@ -154,14 +154,14 @@
 }
 
 .affaires-tb-search-clear:hover {
-  color: #334155;
-  background: #e2e8f0;
+  color: var(--theme-text-dark);
+  background: var(--theme-border);
 }
 
 .affaires-type-selector {
   display: flex;
   gap: 3px;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-radius: 8px;
   padding: 3px;
   flex-shrink: 0;
@@ -177,19 +177,19 @@
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 }
 
 .affaires-type-btn:hover {
-  background: #e2e8f0;
-  color: #334155;
+  background: var(--theme-border);
+  color: var(--theme-text-dark);
 }
 
 .affaires-type-btn.active {
-  background: var(--type-color, #3b82f6);
+  background: var(--type-color, var(--theme-info));
   color: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
@@ -206,14 +206,14 @@
 .affaires-tb-divider {
   width: 1px;
   height: 22px;
-  background: #e2e8f0;
+  background: var(--theme-border);
   flex-shrink: 0;
 }
 
 .affaires-tb-view-selector {
   display: flex;
   gap: 2px;
-  background: #e2e8f0;
+  background: var(--theme-border);
   border-radius: 6px;
   padding: 2px;
   flex-shrink: 0;
@@ -224,7 +224,7 @@
   border: none;
   border-radius: 5px;
   background: transparent;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -233,11 +233,11 @@
 }
 
 .affaires-tb-view-btn:hover {
-  color: #334155;
+  color: var(--theme-text-dark);
 }
 
 .affaires-tb-view-btn.active {
-  background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
+  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: white;
   box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
 }
@@ -247,10 +247,10 @@
   align-items: center;
   justify-content: center;
   padding: 4px 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
   background: white;
-  color: #475569;
+  color: var(--theme-text-subtle);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -260,20 +260,20 @@
 }
 
 .affaires-tb-nav-btn:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
+  background: var(--theme-border-light);
+  border-color: var(--theme-text-muted);
 }
 
 .affaires-tb-nav-btn.today-hl {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  color: #2563eb;
+  background: var(--theme-info-bg);
+  border-color: var(--theme-info);
+  color: var(--theme-info-dark);
 }
 
 .affaires-tb-date-label {
   font-size: 13px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   cursor: pointer;
   white-space: nowrap;
   padding: 4px 8px;
@@ -283,8 +283,8 @@
 }
 
 .affaires-tb-date-label:hover {
-  background: #f1f5f9;
-  color: var(--theme-primary, #667eea);
+  background: var(--theme-border-light);
+  color: var(--theme-primary, var(--theme-primary));
 }
 
 .affaires-tb-toggle {
@@ -299,7 +299,7 @@
 .affaires-tb-toggle input[type="checkbox"] {
   width: 14px;
   height: 14px;
-  accent-color: var(--theme-indigo, #667eea);
+  accent-color: var(--theme-indigo, var(--theme-primary));
   cursor: pointer;
   margin: 0;
 }
@@ -307,12 +307,12 @@
 .affaires-tb-toggle span {
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
 }
 
 .affaires-tb-toggle:hover span {
-  color: #334155;
+  color: var(--theme-text-dark);
 }
 
 /* ═══ Barre d'info (compteur + frise) ═══ */
@@ -332,8 +332,8 @@
   justify-content: center;
   min-width: 56px;
   padding: 4px 10px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  background: var(--theme-border-light);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   flex-shrink: 0;
   line-height: 1.2;
@@ -342,14 +342,14 @@
 .affaires-count-number {
   font-size: 18px;
   font-weight: 800;
-  color: #334155;
+  color: var(--theme-text-dark);
   letter-spacing: -0.5px;
 }
 
 .affaires-count-label {
   font-size: 9px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -401,7 +401,7 @@
   left: 12px;
   right: 4px;
   height: 18px;
-  background: linear-gradient(to bottom, #e8ecf1, #e2e8f0);
+  background: linear-gradient(to bottom, #e8ecf1, var(--theme-border));
   border-radius: 4px;
   overflow: visible;
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
@@ -423,12 +423,12 @@
   display: block;
   width: 1.5px;
   height: 18px;
-  background: #94a3b8;
+  background: var(--theme-text-muted);
 }
 
 .marker-label {
   font-size: 9px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-weight: 600;
   white-space: nowrap;
   margin-top: 2px;
@@ -460,7 +460,7 @@
   top: -2px;
   height: 22px;
   width: 2px;
-  background: #ef4444;
+  background: var(--theme-danger);
   border-radius: 1px;
   pointer-events: none;
   z-index: 4;
@@ -473,7 +473,7 @@
   left: -3px;
   width: 8px;
   height: 8px;
-  background: #ef4444;
+  background: var(--theme-danger);
   border-radius: 50%;
 }
 
@@ -534,13 +534,13 @@
 
 /* Ligne affaire surlignée par la frise */
 .affaire-row.highlighted {
-  background: #c7d2fe !important;
+  background: var(--theme-bg-indigo-lighter) !important;
   box-shadow: inset 4px 0 0 var(--theme-primary);
   opacity: 1 !important;
 }
 
 .affaire-row.highlighted .ar-numero {
-  color: #5b21b6;
+  color: var(--theme-primary-dark);
   font-weight: 800;
 }
 
@@ -551,12 +551,12 @@
 
 /* Ligne sélectionnée (clic simple) */
 .affaire-row.selected {
-  background: #e0e7ff !important;
+  background: var(--theme-bg-indigo-light) !important;
   box-shadow: inset 3px 0 0 var(--theme-secondary);
 }
 
 .affaire-row.selected .ar-numero {
-  color: #5b21b6;
+  color: var(--theme-primary-dark);
 }
 
 /* ═══ Corps (liste + volet détail) ═══ */
@@ -581,7 +581,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border);
   border-radius: 10px;
   background: white;
   transition: flex 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -593,7 +593,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   gap: 12px;
   text-align: center;
 }
@@ -617,7 +617,7 @@
   box-sizing: border-box;
   padding: 8px 12px;
   background: var(--theme-gradient);
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--theme-border);
   font-size: 11px;
   font-weight: 700;
   color: white;
@@ -652,12 +652,12 @@
 }
 
 .affaire-table-header .sortable:hover {
-  color: #e0e7ff;
+  color: var(--theme-bg-indigo-light);
 }
 
 .sort-arrow {
   font-size: 9px;
-  color: #c7d2fe;
+  color: var(--theme-bg-indigo-lighter);
   line-height: 1;
 }
 
@@ -670,9 +670,9 @@
   width: 100%;
   box-sizing: border-box;
   padding: 7px 12px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--theme-border-light);
   font-size: 13px;
-  color: #334155;
+  color: var(--theme-text-dark);
   gap: 8px;
   transition: background 0.15s;
   flex-shrink: 0;
@@ -684,7 +684,7 @@
 }
 
 .affaire-row:hover {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
 }
 
 .affaire-row.status-past {
@@ -693,25 +693,25 @@
 
 .affaire-row.archived {
   opacity: 0.4;
-  background: #f8fafc;
+  background: var(--theme-bg-page);
 }
 
 .affaire-row.archived:hover {
   opacity: 0.65;
-  background: #f1f5f9;
+  background: var(--theme-border-light);
 }
 
 .affaire-row.archived .ar-numero {
   text-decoration: line-through;
-  text-decoration-color: #94a3b8;
+  text-decoration-color: var(--theme-text-muted);
 }
 
 .affaire-row.status-active {
-  background: #f0fdf4;
+  background: var(--theme-success-bg);
 }
 
 .affaire-row.status-upcoming {
-  background: #eef2ff;
+  background: var(--theme-bg-hover);
 }
 
 .affaire-row.status-active:hover {
@@ -719,7 +719,7 @@
 }
 
 .affaire-row.status-upcoming:hover {
-  background: #e0e7ff;
+  background: var(--theme-bg-indigo-light);
 }
 
 /* Indicateur de statut (pastille) */
@@ -733,8 +733,8 @@
 }
 
 .status-dot.active {
-  background: #10b981;
-  box-shadow: 0 0 4px #10b981;
+  background: var(--theme-success-alt);
+  box-shadow: 0 0 4px var(--theme-success-alt);
 }
 
 .status-dot.past {
@@ -747,7 +747,7 @@
 }
 
 .status-dot.archived {
-  background: #94a3b8;
+  background: var(--theme-text-muted);
   border: 2px solid #cbd5e1;
   width: 6px;
   height: 6px;
@@ -761,7 +761,7 @@
   font-weight: 700;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 13px;
-  color: #1e293b;
+  color: var(--theme-text-primary);
   letter-spacing: 0.3px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -793,7 +793,7 @@
   flex-shrink: 1;
   min-width: 100px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -803,7 +803,7 @@
   flex: 1;
   min-width: 60px;
   font-weight: 600;
-  color: #334155;
+  color: var(--theme-text-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -812,7 +812,7 @@
 .ar-titre {
   flex: 1.5;
   min-width: 60px;
-  color: #475569;
+  color: var(--theme-text-subtle);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -821,7 +821,7 @@
 .ar-lieu {
   flex: 1;
   min-width: 50px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-style: italic;
   white-space: nowrap;
   overflow: hidden;
@@ -855,11 +855,11 @@
 
 .file-badge {
   background: #dcfce7;
-  color: #16a34a;
+  color: var(--theme-success-dark);
 }
 
 .link-badge {
-  background: #e0e7ff;
+  background: var(--theme-bg-indigo-light);
   color: var(--theme-primary);
 }
 
@@ -884,11 +884,11 @@
   text-align: center;
   font-weight: 700;
   font-size: 13px;
-  color: #475569;
+  color: var(--theme-text-subtle);
 }
 
 .ar-resa { color: #0284c7; }
-.ar-pers { color: #d97706; }
+.ar-pers { color: var(--theme-warning-dark); }
 
 /* ═══ Responsive ═══ */
 

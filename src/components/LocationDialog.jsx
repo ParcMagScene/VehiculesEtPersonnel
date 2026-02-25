@@ -5,8 +5,10 @@ import api from '../utils/api';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
+import { useToast } from '../hooks/useToast';
 
 const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: location?.name || '',
     address: location?.address || '',
@@ -238,7 +240,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           ? '⚠️ L\'API Maps JavaScript n\'est pas activée pour votre clé API.\n\nConsultez le fichier GOOGLE_MAPS_ACTIVATION.md pour les instructions.'
           : error.message;
         
-        alert(errorMsg);
+        toast.error(errorMsg);
       });
 
     // Nettoyage
@@ -337,7 +339,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     
     
     if (!formData.name.trim()) {
-      alert('Le nom du lieu est obligatoire');
+      toast.warning('Le nom du lieu est obligatoire');
       return;
     }
     

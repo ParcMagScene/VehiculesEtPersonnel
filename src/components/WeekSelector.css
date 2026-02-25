@@ -32,7 +32,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--theme-border-medium);
   background: var(--theme-gradient);
   color: white;
   border-radius: 0.98rem 0.98rem 0 0;
@@ -60,7 +60,7 @@
   text-align: center;
   font-weight: 600;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   padding: 0.5rem;
 }
 
@@ -73,8 +73,8 @@
 
 .week-selector-day {
   aspect-ratio: 1;
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  background: var(--theme-bg-secondary);
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -105,9 +105,9 @@
 }
 
 .week-selector-day.today {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--theme-info) 0%, var(--theme-info-dark) 100%);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--theme-info);
   font-weight: 700;
 }
 
@@ -134,7 +134,7 @@
 .day-number {
   font-size: 1rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .day-dots {
@@ -153,13 +153,13 @@
 }
 
 .week-selector-list {
-  border-top: 2px solid #e5e7eb;
+  border-top: 2px solid var(--theme-border-medium);
   padding-top: 1.5rem;
 }
 
 .week-selector-list h4 {
   margin: 0 0 1rem 0;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   font-size: 1rem;
   font-weight: 700;
 }
@@ -171,8 +171,8 @@
 }
 
 .week-item {
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  background: var(--theme-bg-secondary);
+  border: 2px solid var(--theme-border-medium);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   cursor: pointer;
@@ -198,12 +198,12 @@
 
 .week-number {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .week-dates {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
 }
 
 @media (max-width: 768px) {

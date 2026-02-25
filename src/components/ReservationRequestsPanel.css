@@ -60,15 +60,15 @@
 }
 
 .request-card.pending {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--theme-warning);
 }
 
 .request-card.approved {
-  border-left: 4px solid #10b981;
+  border-left: 4px solid var(--theme-success-alt);
 }
 
 .request-card.rejected {
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--theme-danger);
 }
 
 .request-header {
@@ -154,7 +154,7 @@
 .approve-button {
   flex: 1;
   padding: 10px;
-  background: #10b981;
+  background: var(--theme-success-alt);
   color: white;
   border: none;
   border-radius: 6px;
@@ -174,7 +174,7 @@
 .reject-button {
   flex: 1;
   padding: 10px;
-  background: #ef4444;
+  background: var(--theme-danger);
   color: white;
   border: none;
   border-radius: 6px;
@@ -188,14 +188,14 @@
 }
 
 .reject-button:hover {
-  background: #dc2626;
+  background: var(--theme-danger-dark);
 }
 
 .rejection-reason {
   margin-top: 12px;
   padding: 12px;
   background: #fee2e2;
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--theme-danger);
   border-radius: 6px;
   font-size: 14px;
   color: #991b1b;
@@ -276,11 +276,11 @@
 }
 
 .reject-dialog-actions .cancel {
-  background: #e5e7eb;
+  background: var(--theme-border-medium);
   color: #333;
 }
 
 .reject-dialog-actions .confirm {
-  background: #ef4444;
+  background: var(--theme-danger);
   color: white;
 }

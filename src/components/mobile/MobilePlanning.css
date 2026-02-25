@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -16,7 +16,7 @@
   justify-content: space-between;
   padding: 16px;
   background: white;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--theme-border-medium);
 }
 
 .month-navigation {
@@ -27,7 +27,7 @@
 }
 
 .month-nav-btn {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   border: none;
   border-radius: 8px;
   width: 36px;
@@ -37,11 +37,11 @@
   justify-content: center;
   cursor: pointer;
   transition: background 0.2s;
-  color: #374151;
+  color: var(--theme-text-body);
 }
 
 .month-nav-btn:active {
-  background: #e5e7eb;
+  background: var(--theme-border-medium);
 }
 
 .today-btn {
@@ -68,7 +68,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: var(--theme-text-heading);
   text-transform: capitalize;
   flex: 1;
   text-align: center;
@@ -81,14 +81,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   cursor: pointer;
   border-radius: 8px;
   transition: background 0.2s;
 }
 
 .close-button:active {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
 }
 
 .mobile-planning-container {
@@ -115,7 +115,7 @@
 .mobile-days-header {
   display: flex;
   background: white;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--theme-border-medium);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -126,7 +126,7 @@
   min-width: 80px;
   padding: 12px 4px;
   text-align: center;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--theme-border-medium);
 }
 
 .mobile-day-column.today {
@@ -146,14 +146,14 @@
 .mobile-day-name {
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   text-transform: uppercase;
 }
 
 .mobile-day-date {
   font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  color: var(--theme-text-heading);
   margin-top: 2px;
 }
 
@@ -164,7 +164,7 @@
 
 .mobile-vehicle-row {
   background: white;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--theme-border-medium);
   position: relative;
 }
 
@@ -179,8 +179,8 @@
 
 .mobile-vehicle-label {
   padding: 6px 12px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--theme-bg-secondary);
+  border-bottom: 1px solid var(--theme-border-medium);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -193,12 +193,12 @@
 .mobile-vehicle-name {
   font-size: 12px;
   font-weight: 600;
-  color: #111827;
+  color: var(--theme-text-heading);
 }
 
 .mobile-vehicle-registration {
   font-size: 10px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-family: 'Monaco', monospace;
   background: white;
   padding: 2px 6px;
@@ -220,7 +220,7 @@
 .mobile-day-cell {
   width: 80px;
   height: 60px;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--theme-border-medium);
 }
 
 .mobile-day-cell:last-child {
@@ -291,7 +291,7 @@
 .mobile-item-title {
   font-size: 11px;
   font-weight: 700;
-  color: #111827;
+  color: var(--theme-text-heading);
   white-space: normal;
   line-height: 1.3;
 }
@@ -354,11 +354,11 @@
 }
 
 .mobile-maintenance-reported .mobile-item-icon {
-  color: #dc2626;
+  color: var(--theme-danger-dark);
 }
 
 .mobile-maintenance-reported .mobile-item-subtitle {
-  color: #dc2626;
+  color: var(--theme-danger-dark);
 }
 
 .mobile-maintenance-scheduled {
@@ -366,23 +366,23 @@
 }
 
 .mobile-maintenance-scheduled .mobile-item-icon {
-  color: #d97706;
+  color: var(--theme-warning-dark);
 }
 
 .mobile-maintenance-scheduled .mobile-item-subtitle {
-  color: #d97706;
+  color: var(--theme-warning-dark);
 }
 
 .mobile-maintenance-in_progress {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  background: linear-gradient(135deg, #dbeafe 0%, var(--theme-info-border) 100%);
 }
 
 .mobile-maintenance-in_progress .mobile-item-icon {
-  color: #2563eb;
+  color: var(--theme-info-dark);
 }
 
 .mobile-maintenance-in_progress .mobile-item-subtitle {
-  color: #2563eb;
+  color: var(--theme-info-dark);
 }
 
 .mobile-maintenance-pending {
@@ -423,6 +423,6 @@
 
 .mobile-planning-scroll::-webkit-scrollbar-thumb,
 .mobile-day-cell::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--theme-border-muted);
   border-radius: 2px;
 }

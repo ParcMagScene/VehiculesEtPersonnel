@@ -29,13 +29,13 @@
 
 .login-header h1 {
   font-size: 24px;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
   margin: 0 0 10px 0;
 }
 
 .login-header p {
   font-size: 16px;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   margin: 0;
 }
 
@@ -54,12 +54,12 @@
 .login-form .form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--theme-text-body);
 }
 
 .login-form .form-group input {
   padding: 12px 16px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--theme-border-medium);
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.2s;
@@ -73,8 +73,8 @@
 
 .error-message {
   background: #fee2e2;
-  border: 1px solid #ef4444;
-  color: #dc2626;
+  border: 1px solid var(--theme-danger);
+  color: var(--theme-danger-dark);
   padding: 12px;
   border-radius: 8px;
   font-size: 14px;

@@ -3,8 +3,10 @@ import { LogIn, UserPlus, Mail, Key } from 'lucide-react';
 import api, { getApiUrl } from '../../utils/api';
 import AccessRequestModal from '../AccessRequestModal';
 import './MobileLogin.css';
+import { useToast } from '../../hooks/useToast';
 
 function MobileLogin({ onLogin }) {
+  const toast = useToast();
   const [mode, setMode] = useState('login'); // 'login', 'register'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,7 +32,7 @@ function MobileLogin({ onLogin }) {
         setMode('login');
         setPassword('');
         setError('');
-        alert('✅ Compte créé avec succès !\n\nVous pouvez maintenant vous connecter.');
+        toast.success('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
       } else {
         try {
           const data = await api.login(email, password);
@@ -170,7 +172,7 @@ function MobileLogin({ onLogin }) {
         <AccessRequestModal
           onClose={() => setShowAccessRequest(false)}
           onSuccess={() => {
-            alert('✅ Demande envoyée avec succès !\n\nVous recevrez un email dès qu\'un administrateur aura validé votre demande.');
+            toast.success('Demande envoyée avec succès ! Vous recevrez un email dès qu\'un administrateur aura validé votre demande.');
           }}
         />
       )}

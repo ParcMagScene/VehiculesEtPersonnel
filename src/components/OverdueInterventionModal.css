@@ -20,7 +20,7 @@
 }
 
 .overdue-intervention-modal {
-  background: #f8fafc;
+  background: var(--theme-bg-page);
   border-radius: 16px;
   width: 90%;
   max-width: 500px;
@@ -83,7 +83,7 @@
 }
 
 .overdue-intervention-modal-content::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--theme-border-light);
   border-radius: 3px;
   margin: 8px 0;
 }
@@ -94,20 +94,20 @@
 }
 
 .overdue-intervention-modal-content::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--theme-text-muted);
 }
 
 .intervention-info {
   margin-bottom: 24px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--theme-border-medium);
 }
 
 .intervention-info h3 {
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 12px 0;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 
 .intervention-description {
@@ -118,7 +118,7 @@
 }
 
 .intervention-dates {
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 14px;
   margin: 0;
   font-style: italic;
@@ -129,8 +129,8 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border-top: 1px solid var(--theme-border-medium);
+  background: var(--theme-bg-secondary);
   border-radius: 0 0 16px 16px;
   flex-shrink: 0;
 }
@@ -175,12 +175,12 @@
 }
 
 .action-button.reschedule {
-  border-color: var(--btn-warning-color, #d97706);
-  color: var(--btn-warning-color, #d97706);
+  border-color: var(--btn-warning-color, var(--theme-warning-dark));
+  color: var(--btn-warning-color, var(--theme-warning-dark));
 }
 
 .action-button.reschedule:hover {
-  background: var(--btn-warning-color, #d97706);
+  background: var(--btn-warning-color, var(--theme-warning-dark));
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
@@ -206,7 +206,7 @@
 
 .reason-input-container label {
   font-weight: 500;
-  color: #374151;
+  color: var(--theme-text-body);
   font-size: 14px;
 }
 
@@ -231,8 +231,8 @@
   gap: 12px;
   justify-content: flex-end;
   padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border-top: 1px solid var(--theme-border-medium);
+  background: var(--theme-bg-secondary);
   border-radius: 0 0 16px 16px;
   flex-shrink: 0;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container, Mail, Boxes } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, LayoutDashboard, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Container, Mail, Boxes, Sun, Moon, BarChart3 } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -8,8 +8,10 @@ import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
+import { useToast } from '../hooks/useToast';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {} }) => {
+const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
+  const toast = useToast();
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -157,7 +159,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      alert('Erreur lors de la mise à jour de l\'intervention');
+      toast.error('Erreur lors de la mise à jour de l\'intervention');
     }
   };
 
@@ -173,7 +175,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      alert('Erreur lors de la mise à jour de l\'intervention');
+      toast.error('Erreur lors de la mise à jour de l\'intervention');
     }
   };
 
@@ -189,7 +191,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     } catch (error) {
       console.error('Erreur lors de la mise en attente:', error);
-      alert('Erreur lors de la mise en attente de l\'intervention');
+      toast.error('Erreur lors de la mise en attente de l\'intervention');
     }
   };
 
@@ -206,7 +208,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       }
     } catch (error) {
       console.error('Erreur lors du report:', error);
-      alert('Erreur lors du report de l\'intervention');
+      toast.error('Erreur lors du report de l\'intervention');
     }
     setSelectedOverdueIntervention(null);
   };
@@ -222,10 +224,19 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <HelpCircle size={18} />
               <span>Aide</span>
             </button>
+            <button 
+              className="theme-toggle-btn" 
+              onClick={onToggleTheme} 
+              title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'} 
+              aria-label="Basculer le thème"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
           </div>
           <div className="module-tabs" role="tablist" aria-label="Module principal">
             {(() => {
               const allTabs = [
+                { id: 'dashboard', label: 'Accueil', icon: LayoutDashboard },
                 { id: 'vehicles', label: 'Parc', icon: Truck },
                 { id: 'personnel', label: 'Personnel', icon: Users },
                 { id: 'affaires', label: 'Affaires', icon: Briefcase },
@@ -234,6 +245,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                 { id: 'catalog', label: 'Catalogue', icon: BookOpen },
                 { id: 'trucks', label: 'Camions', icon: Container },
                 { id: 'stock', label: 'Stock', icon: Boxes },
+                { id: 'reports', label: 'Rapports', icon: BarChart3 },
               ];
               const hiddenTabs = tabPrefs.hiddenTabs || [];
               const tabOrder = tabPrefs.tabOrder || allTabs.map(t => t.id);
@@ -625,7 +637,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                           setRejectionReason('');
                                         } catch (error) {
                                           console.error('Erreur refus:', error);
-                                          alert('Erreur lors du refus de la demande');
+                                          toast.error('Erreur lors du refus de la demande');
                                         }
                                       }}
                                     >
@@ -654,7 +666,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                         if (onReservationUpdate) onReservationUpdate();
                                       } catch (error) {
                                         console.error('Erreur approbation:', error);
-                                        alert('Erreur lors de l\'approbation');
+                                        toast.error('Erreur lors de l\'approbation');
                                       }
                                     }}
                                   >
@@ -802,7 +814,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                           setRejectingRequestId(null);
                                           setRejectionReason('');
                                         } catch (error) {
-                                          alert('Erreur lors du refus');
+                                          toast.error('Erreur lors du refus');
                                         }
                                       }}
                                     >
@@ -826,9 +838,9 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                         await api.approveReservationRequest(request.id);
                                         setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
                                         setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                        alert('Demande approuvée ! La réservation a été créée.');
+                                        toast.success('Demande approuvée ! La réservation a été créée.');
                                       } catch (error) {
-                                        alert('Erreur lors de la validation');
+                                        toast.error('Erreur lors de la validation');
                                       }
                                     }}
                                   >

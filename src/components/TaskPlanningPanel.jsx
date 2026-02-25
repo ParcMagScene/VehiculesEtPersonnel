@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
@@ -8,6 +8,8 @@ import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from '../hooks/useToast';
 import './TaskPlanningPanel.css';
+
+const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
 // ═══ Constantes ═══
 const SECTIONS = {
@@ -74,6 +76,7 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   const [addingSection, setAddingSection] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPerson, setNewTaskPerson] = useState('');
+  const [showPdfExport, setShowPdfExport] = useState(false);
 
   // Semaine : 7 jours à partir du lundi
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
@@ -183,23 +186,9 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
     }
   };
 
-  // Export PDF
-  const handleExportPdf = async () => {
-    try {
-      toast.info('Génération du PDF…');
-      const blob = await api.exportTasksPdf(selectedDate);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `taches-${selectedDate}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success('PDF téléchargé');
-    } catch (err) {
-      toast.error('Erreur export PDF');
-    }
+  // Export PDF — ouvrir la modale d'export
+  const handleExportPdf = () => {
+    setShowPdfExport(true);
   };
 
   const renderTaskRow = (task) => {
@@ -444,6 +433,15 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
       )}
 
       {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+      {showPdfExport && (
+        <Suspense fallback={null}>
+          <TaskPDFExportModal
+            date={selectedDate}
+            tasks={tasks}
+            onClose={() => setShowPdfExport(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

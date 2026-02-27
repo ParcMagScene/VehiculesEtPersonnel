@@ -34,17 +34,18 @@ export default function CataloguePanel({ currentUser }) {
   const [allDepotZones, setAllDepotZones] = useState(null);
   const [locationStats, setLocationStats] = useState(null);
   const [selectedMapZone, setSelectedMapZone] = useState(null);
-  const [depotMapModalZone, setDepotMapModalZone] = useState(null);
+  const [depotMapModalZone, setDepotMapModalZone] = useState(null); // { zoneId, equipmentName } or null
 
   // Trouver le bon dépôt pour la zone cliquée
   const modalDepotData = useMemo(() => {
-    if (!depotMapModalZone) return null;
+    const zoneId = depotMapModalZone?.zoneId;
+    if (!zoneId) return null;
     if (allDepotZones?.depots) {
       for (const depot of allDepotZones.depots) {
-        if (depot.zones?.find(z => z.id === depotMapModalZone || z.codes?.includes(depotMapModalZone))) return depot;
+        if (depot.zones?.find(z => z.id === zoneId || z.codes?.includes(zoneId))) return depot;
       }
     }
-    if (depotZones?.zones?.find(z => z.id === depotMapModalZone || z.codes?.includes(depotMapModalZone))) return depotZones;
+    if (depotZones?.zones?.find(z => z.id === zoneId || z.codes?.includes(zoneId))) return depotZones;
     return depotZones || (allDepotZones?.depots?.[0]) || null;
   }, [depotMapModalZone, depotZones, allDepotZones]);
 
@@ -272,7 +273,7 @@ export default function CataloguePanel({ currentUser }) {
                     <td className="td-weight">{item.weight ? `${item.weight} kg` : '—'}</td>
                     <td className="td-zone">
                       {item.location_zone ? (
-                        <span className="catalog-badge catalog-badge-zone catalog-zone-clickable" title="Voir sur le plan" onClick={(e) => { e.stopPropagation(); setDepotMapModalZone(item.location_zone); }} style={{ cursor: 'pointer' }}>
+                        <span className="catalog-badge catalog-badge-zone catalog-zone-clickable" title="Voir sur le plan" onClick={(e) => { e.stopPropagation(); setDepotMapModalZone({ zoneId: item.location_zone, equipmentName: item.name }); }} style={{ cursor: 'pointer' }}>
                           <MapPin size={12} />
                           {item.location_zone}
                           {item.location_code && <span className="zone-code-sm">{item.location_code}</span>}
@@ -336,15 +337,16 @@ export default function CataloguePanel({ currentUser }) {
         <div className="eq-depot-map-modal-overlay" onClick={() => setDepotMapModalZone(null)}>
           <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
             <div className="eq-depot-map-modal-header">
-              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone}</h3>
+              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone.zoneId}{depotMapModalZone.equipmentName ? ` · ${depotMapModalZone.equipmentName}` : ''}</h3>
               <button className="eq-dialog-close" onClick={() => setDepotMapModalZone(null)} title="Fermer"><X size={20} /></button>
             </div>
             <div className="eq-depot-map-modal-body">
               <DepotMap
                 zones={modalDepotData}
                 stats={locationStats}
-                selectedZone={depotMapModalZone}
-                focusZoneId={depotMapModalZone}
+                selectedZone={depotMapModalZone.zoneId}
+                focusZoneId={depotMapModalZone.zoneId}
+                focusEquipmentName={depotMapModalZone.equipmentName}
                 onZoneSelect={() => {}}
                 onZoneFilter={() => {}}
               />

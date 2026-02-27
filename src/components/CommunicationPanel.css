@@ -126,9 +126,12 @@
 
 /* ── Events Overview (au-dessus de la toolbar) ── */
 .dd-events-overview {
-  padding: 10px 20px 8px;
+  padding: 10px 20px 10px;
   border-bottom: 1px solid var(--theme-border);
   background: var(--theme-bg-secondary, #f8fafc);
+}
+.dd-events-overview-header {
+  margin-bottom: 6px;
 }
 .dd-events-overview-title {
   display: flex;
@@ -137,7 +140,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--theme-text-primary);
-  margin: 0 0 6px;
+  margin: 0;
 }
 .dd-events-count {
   background: var(--theme-primary, #3b82f6);
@@ -159,56 +162,205 @@
 .dd-events-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  max-height: 240px;
+  gap: 4px;
+  max-height: 400px;
   overflow-y: auto;
 }
-.dd-evt-mini {
+
+/* ── RDV rows (style Planning) ── */
+.dd-rdv-block {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.dd-rdv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 3px solid #4285f4;
+  background: rgba(66, 133, 244, 0.04);
+  transition: background 0.15s;
+  flex-wrap: wrap;
+}
+.dd-rdv-row:hover {
+  background: rgba(66, 133, 244, 0.08);
+}
+.dd-rdv-row.processed {
+  border-left-color: #10b981;
+}
+.dd-rdv-row.affaire-rdv {
+  border-left-color: var(--theme-primary, #6366f1);
+  background: rgba(99, 102, 241, 0.04);
+}
+.dd-rdv-row.affaire-rdv:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+.dd-rdv-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.dd-rdv-info {
+  flex: 1;
+  min-width: 0;
+}
+.dd-rdv-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--theme-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dd-rdv-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: var(--theme-text-secondary, #64748b);
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.dd-rdv-meta span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.dd-rdv-date-badge {
+  text-transform: capitalize;
+  background: rgba(59, 130, 246, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+.dd-rdv-actions {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  border-left: 3px solid transparent;
+  flex-shrink: 0;
+}
+.dd-affaire-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(66, 133, 244, 0.12);
+  color: #4285f4;
   font-size: 0.78rem;
-  background: var(--theme-card-bg, #fff);
-  transition: background 0.15s;
+  font-weight: 600;
 }
-.dd-evt-mini:hover {
-  background: var(--theme-hover-bg, #eef2f7);
+.dd-google-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: #4285f4;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
-.dd-evt-mini.google {
-  border-left-color: #4285f4;
+.dd-google-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
 }
-.dd-evt-mini-title {
+.dd-google-status.done {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+.dd-google-status.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+.dd-btn-rdv-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  background: var(--theme-bg-card, #fff);
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dd-btn-rdv-view:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: #10b981;
+}
+
+/* Linked tasks under a Google event */
+.dd-rdv-linked-tasks {
+  padding: 2px 12px 6px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dd-linked-task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-left: 2px solid var(--theme-border);
+  border-radius: 0 4px 4px 0;
+  font-size: 0.78rem;
+  background: var(--theme-bg-card, #fff);
+}
+.dd-linked-task.done {
+  opacity: 0.6;
+}
+.dd-lt-status {
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+.dd-lt-status.done { color: #10b981; }
+.dd-lt-status.in_progress { color: #f59e0b; }
+.dd-lt-status.pending { color: var(--theme-text-muted, #94a3b8); }
+.dd-lt-label {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--theme-text-primary);
 }
-.dd-evt-mini-time {
+.dd-lt-person {
+  display: flex;
+  align-items: center;
+  gap: 3px;
   font-size: 0.7rem;
-  color: var(--theme-text-secondary, #64748b);
+  color: var(--theme-text-secondary);
   flex-shrink: 0;
 }
-.dd-evt-mini-date {
-  font-size: 0.65rem;
-  color: var(--theme-text-muted, #94a3b8);
-  flex-shrink: 0;
-  text-transform: capitalize;
+
+/* Detail card */
+.dd-rdv-detail {
+  width: 100%;
+  padding: 8px 14px;
+  margin: 4px 0 0 32px;
+  background: var(--theme-bg-secondary, #f8fafc);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
 }
-.dd-evt-mini-status {
-  font-size: 0.7rem;
-  flex-shrink: 0;
+.dd-rdv-detail-row {
+  display: flex;
+  gap: 6px;
+  color: var(--theme-text-secondary);
 }
-.dd-evt-mini-status.done { color: #10b981; }
-.dd-evt-mini-status.in_progress { color: #f59e0b; }
-.dd-evt-mini-status.pending { color: var(--theme-text-muted, #94a3b8); }
-.dd-evt-mini-affnum {
-  font-size: 0.65rem;
-  color: var(--theme-text-secondary, #64748b);
-  flex-shrink: 0;
+.dd-rdv-detail-row strong {
+  color: var(--theme-text-primary);
+  min-width: 90px;
 }
 
 /* Google cards in week view */

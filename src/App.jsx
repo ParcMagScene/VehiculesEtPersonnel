@@ -32,7 +32,6 @@ const AffairesPanel = lazy(() => import('./components/AffairesPanel'));
 const EquipmentPanel = lazy(() => import('./components/EquipmentPanel'));
 const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
 const CataloguePanel = lazy(() => import('./components/CataloguePanel'));
-const TruckModelPanel = lazy(() => import('./components/TruckModelPanel'));
 const StockPanel = lazy(() => import('./components/StockPanel'));
 const CommunicationPanel = lazy(() => import('./components/CommunicationPanel'));
 // const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
@@ -160,7 +159,6 @@ function App() {
     mod_equipment: () => { setActiveModule('equipment'); setShowManagement(false); setShowSettings(false); },
     mod_orders: () => { setActiveModule('orders'); setShowManagement(false); setShowSettings(false); },
     mod_catalog: () => { setActiveModule('catalog'); setShowManagement(false); setShowSettings(false); },
-    mod_trucks: () => { setActiveModule('trucks'); setShowManagement(false); setShowSettings(false); },
     open_messaging: () => setShowMessaging(v => !v),
     open_help: () => setShowHelp(v => !v),
     open_preferences: () => setShowPreferences(true),
@@ -687,7 +685,8 @@ function App() {
       // Appliquer les préférences utilisateur au login
       try {
         const prefs = await api.getPreferences();
-        if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
+        if (prefs.defaultModule && prefs.defaultModule !== 'trucks') setActiveModule(prefs.defaultModule);
+        if (prefs.defaultModule === 'trucks') setActiveModule('vehicles');
         if (prefs.defaultView) setView(prefs.defaultView);
         // Stocker les préférences de notification pour le polling
         userPrefsRef.current = {
@@ -696,11 +695,12 @@ function App() {
         };
         // Appliquer le volume
         setVolume((prefs.soundVolume ?? 70) / 100);
-        // Charger les préférences d'onglets
-        setTabPrefs({
-          tabOrder: prefs.tabOrder || null,
-          hiddenTabs: prefs.hiddenTabs || [],
-        });
+        // Migration préférences onglets : nettoyer les modules supprimés, ajouter les nouveaux
+        const VALID_TABS = ['vehicles','personnel','affaires','equipment','orders','catalog','stock','communication'];
+        let tabOrder = (prefs.tabOrder || VALID_TABS).filter(id => VALID_TABS.includes(id));
+        VALID_TABS.forEach(id => { if (!tabOrder.includes(id)) tabOrder.push(id); });
+        const hiddenTabs = (prefs.hiddenTabs || []).filter(id => VALID_TABS.includes(id));
+        setTabPrefs({ tabOrder, hiddenTabs });
         // Demander la permission navigateur si notifications activées
         if (prefs.notificationsEnabled !== false) {
           requestNotificationPermission();
@@ -926,7 +926,7 @@ function App() {
         </div>
       )}
       
-      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'trucks' && activeModule !== 'stock' && activeModule !== 'communication' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'stock' && activeModule !== 'communication' && (
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}
@@ -1152,19 +1152,6 @@ function App() {
         </Suspense>
       )}
 
-      {activeModule === 'trucks' && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement des modèles de camions...</p>
-          </div>
-        }>
-          <TruckModelPanel
-            currentUser={currentUser}
-          />
-        </Suspense>
-      )}
-
       {activeModule === 'stock' && (
         <Suspense fallback={
           <div className="loading-overlay">
@@ -1372,10 +1359,13 @@ function App() {
             };
             // Volume
             setVolume((prefs.soundVolume ?? 70) / 100);
-            // Mettre à jour les préférences d'onglets
+            // Migration préférences onglets
+            const VT = ['vehicles','personnel','affaires','equipment','orders','catalog','stock','communication'];
+            let to = (prefs.tabOrder || VT).filter(id => VT.includes(id));
+            VT.forEach(id => { if (!to.includes(id)) to.push(id); });
             setTabPrefs({
-              tabOrder: prefs.tabOrder || null,
-              hiddenTabs: prefs.hiddenTabs || [],
+              tabOrder: to,
+              hiddenTabs: (prefs.hiddenTabs || []).filter(id => VT.includes(id)),
             });
             // Demander la permission si notifications activées
             if (prefs.notificationsEnabled !== false) {

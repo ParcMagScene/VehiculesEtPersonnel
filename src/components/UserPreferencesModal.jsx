@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Container, Boxes, Sun, Moon } from 'lucide-react';
+import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Boxes, Sun, Moon, Radio } from 'lucide-react';
 import api from '../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, getVolume, SOUND_TYPES } from '../utils/notificationSound';
 import { PALETTES } from '../hooks/useTheme';
@@ -14,9 +14,11 @@ const ALL_MODULES = [
   { id: 'equipment', label: 'Matériel', icon: Package },
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
   { id: 'catalog', label: 'Catalogue', icon: BookOpen },
-  { id: 'trucks', label: 'Camions', icon: Container },
   { id: 'stock', label: 'Stock', icon: Boxes },
+  { id: 'communication', label: 'Communication', icon: Radio },
 ];
+
+const VALID_MODULE_IDS = new Set(ALL_MODULES.map(m => m.id));
 
 const DEFAULT_TAB_ORDER = ALL_MODULES.map(m => m.id);
 const DEFAULT_HIDDEN_TABS = [];
@@ -56,6 +58,15 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
       try {
         const data = await api.getPreferences();
         const merged = { ...DEFAULT_PREFS, ...data };
+        // Migration : synchroniser tabOrder avec les modules actuels
+        let order = merged.tabOrder || DEFAULT_TAB_ORDER;
+        // Retirer les modules supprimés
+        order = order.filter(id => VALID_MODULE_IDS.has(id));
+        // Ajouter les nouveaux modules absents
+        ALL_MODULES.forEach(m => { if (!order.includes(m.id)) order.push(m.id); });
+        merged.tabOrder = order;
+        // Nettoyer hiddenTabs des modules supprimés
+        merged.hiddenTabs = (merged.hiddenTabs || []).filter(id => VALID_MODULE_IDS.has(id));
         setPrefs(merged);
         setOriginalPrefs(merged);
         setHasChanges(false);
@@ -152,6 +163,9 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                 <option value="affaires">Affaires</option>
                 <option value="equipment">Matériel</option>
                 <option value="orders">Commandes</option>
+                <option value="catalog">Catalogue</option>
+                <option value="stock">Stock</option>
+                <option value="communication">Communication</option>
               </select>
             </div>
 

@@ -14,6 +14,7 @@ import './CommunicationPanel.css';
 
 const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
 const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
+const EventTaskModal = lazy(() => import('./EventTaskModal'));
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {
@@ -78,6 +79,10 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [confirmDialog, setConfirmDialog] = useState(null);
+
+  // EventTaskModal + détails RDV
+  const [eventTaskModalEvent, setEventTaskModalEvent] = useState(null);
+  const [expandedRdv, setExpandedRdv] = useState(null);
 
   // Week days computation
   const weekDays = useMemo(() => {
@@ -438,64 +443,143 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     );
   };
 
-  // Nombre total d'éléments planifiés visibles
-  const visibleTasks = useMemo(() => filteredTasks.filter(t => t.visible !== 0), [filteredTasks]);
-  const visibleEvents = useMemo(() => filteredEvents.filter(e => e.visible !== 0), [filteredEvents]);
-  const allPlanningItems = visibleEvents.length + visibleTasks.length + filteredGoogleEvents.length + filteredAffaires.length;
+  // IDs Google event qui ont déjà des tâches créées
+  const processedGoogleIds = useMemo(() =>
+    new Set(filteredTasks.filter(t => t.source_type === 'google_event' && t.source_id).map(t => t.source_id)),
+    [filteredTasks]
+  );
 
-  const renderGoogleEventMini = (ev) => {
-    const summary = ev.summary || 'Événement';
-    const startDT = ev.start?.dateTime || ev.start?.date || '';
+  // Tâches liées par Google event ID
+  const tasksByGoogleId = useMemo(() => {
+    const map = {};
+    filteredTasks.forEach(t => {
+      if (t.source_type === 'google_event' && t.source_id) {
+        if (!map[t.source_id]) map[t.source_id] = [];
+        map[t.source_id].push(t);
+      }
+    });
+    return map;
+  }, [filteredTasks]);
+
+  const allPlanningItems = filteredGoogleEvents.length + filteredAffaires.length;
+
+  // ── Rendu Google event (style identique à la Planification) ──
+  const renderGoogleRdvRow = (event) => {
+    const summary = event.summary || 'Événement';
+    const startDT = event.start?.dateTime || event.start?.date || '';
+    const endDT = event.end?.dateTime || event.end?.date || '';
     const timeStr = startDT.includes('T')
-      ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      : '';
+      ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
+      : 'Journée entière';
+    const location = event.location || '';
+    const affaireNum = (summary.match(/AF\d{4,}/i) || [''])[0];
+    const isProcessed = processedGoogleIds.has(event.id);
+    const isExpanded = expandedRdv === `gcal-${event.id}`;
+    const linkedTasks = tasksByGoogleId[event.id] || [];
+    const showDate = viewMode === 'week';
     const dateStr = startDT.slice(0, 10);
-    const showDate = viewMode === 'week';
+
     return (
-      <div key={`gev-${ev.id}`} className="dd-evt-mini google">
-        <Calendar size={13} style={{ color: '#4285f4', flexShrink: 0 }} />
-        <span className="dd-evt-mini-title">{summary}</span>
-        {timeStr && <span className="dd-evt-mini-time">{timeStr}</span>}
-        {showDate && <span className="dd-evt-mini-date">{new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</span>}
+      <div key={`gcal-rdv-${event.id}`} className="dd-rdv-block">
+        <div
+          className={`dd-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
+          onClick={() => setEventTaskModalEvent(event)}
+          style={{ cursor: 'pointer' }}
+        >
+          <span className="dd-rdv-icon" style={{ color: isProcessed ? '#10b981' : '#4285f4' }}>
+            <Calendar size={14} />
+          </span>
+          <div className="dd-rdv-info">
+            <div className="dd-rdv-title">
+              {affaireNum && <span className="dd-affaire-tag">{affaireNum}</span>} {summary}
+            </div>
+            <div className="dd-rdv-meta">
+              <span><Clock size={11} /> {timeStr}</span>
+              {location && <span><MapPin size={11} /> {location}</span>}
+              {showDate && <span className="dd-rdv-date-badge">{new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</span>}
+            </div>
+          </div>
+          <div className="dd-rdv-actions">
+            <span className={`dd-google-status ${isProcessed ? 'done' : 'pending'}`}>
+              {isProcessed ? '✓ Planifié' : '⚙ Définir'}
+            </span>
+            <span className="dd-google-badge" title="Google Calendar">G</span>
+            <button className="dd-btn-rdv-view" onClick={(e) => { e.stopPropagation(); setExpandedRdv(isExpanded ? null : `gcal-${event.id}`); }} title="Voir détails">
+              <Eye size={14} />
+            </button>
+          </div>
+        </div>
+        {/* Tâches liées à cet événement */}
+        {linkedTasks.length > 0 && (
+          <div className="dd-rdv-linked-tasks">
+            {linkedTasks.map(t => {
+              const secInfo = TASK_SECTION_INFO[t.section] || { label: t.section, emoji: '📋', color: 'var(--theme-text-secondary)' };
+              return (
+                <div key={`lt-${t.id}`} className={`dd-linked-task ${t.status || 'pending'}`} style={{ borderLeftColor: secInfo.color }}>
+                  <span className={`dd-lt-status ${t.status || 'pending'}`}>
+                    {t.status === 'done' ? '✓' : t.status === 'in_progress' ? '▶' : '○'}
+                  </span>
+                  <span className="dd-lt-label">{secInfo.emoji} {t.label || secInfo.label}</span>
+                  {(t.person_first_name || t.person_last_name) && (
+                    <span className="dd-lt-person"><User size={10} /> {t.person_first_name} {t.person_last_name}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {isExpanded && (
+          <div className="dd-rdv-detail" onClick={e => e.stopPropagation()}>
+            <div className="dd-rdv-detail-row"><strong>Titre :</strong> {summary}</div>
+            {affaireNum && <div className="dd-rdv-detail-row"><strong>Affaire :</strong> {affaireNum}</div>}
+            <div className="dd-rdv-detail-row"><strong>Horaire :</strong> {timeStr}</div>
+            {location && <div className="dd-rdv-detail-row"><strong>Lieu :</strong> {location}</div>}
+            {event.description && <div className="dd-rdv-detail-row"><strong>Description :</strong> {event.description.slice(0, 200)}{event.description.length > 200 ? '…' : ''}</div>}
+          </div>
+        )}
       </div>
     );
   };
 
-  const renderVisibleEventMini = (ev) => {
-    const typeInfo = EVENT_TYPES[ev.type] || { label: ev.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
-    const showDate = viewMode === 'week';
+  // ── Rendu affaire RDV (style identique à la Planification) ──
+  const renderAffaireRdvRow = (affaire) => {
+    const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+    const isExpanded = expandedRdv === affaire.numeroAffaire;
     return (
-      <div key={`dev-${ev.id}`} className="dd-evt-mini display" style={{ borderLeftColor: typeInfo.color }}>
-        <Monitor size={13} style={{ color: typeInfo.color, flexShrink: 0 }} />
-        <span className="dd-evt-mini-title">{typeInfo.emoji} {ev.client || typeInfo.label}</span>
-        {ev.time && <span className="dd-evt-mini-time">{ev.time}</span>}
-        {showDate && ev.date && <span className="dd-evt-mini-date">{new Date(ev.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</span>}
-      </div>
-    );
-  };
-
-  const renderVisibleTaskMini = (t) => {
-    const secInfo = TASK_SECTION_INFO[t.section] || { label: t.section, emoji: '📋', color: 'var(--theme-text-secondary)' };
-    const showDate = viewMode === 'week';
-    return (
-      <div key={`dtk-${t.id}`} className="dd-evt-mini task" style={{ borderLeftColor: secInfo.color }}>
-        <ClipboardList size={13} style={{ color: secInfo.color, flexShrink: 0 }} />
-        <span className="dd-evt-mini-title">{secInfo.emoji} {t.label || secInfo.label}</span>
-        <span className={`dd-evt-mini-status ${t.status || 'pending'}`}>
-          {t.status === 'done' ? '✓' : t.status === 'in_progress' ? '▶' : '○'}
-        </span>
-        {showDate && t.date && <span className="dd-evt-mini-date">{new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</span>}
-      </div>
-    );
-  };
-
-  const renderAffaireMini = (a) => {
-    const typeInfo = AFFAIRE_TYPE_INFO[a.type] || { label: 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
-    return (
-      <div key={`daf-${a.numeroAffaire || a.id}`} className="dd-evt-mini affaire" style={{ borderLeftColor: typeInfo.color }}>
-        <Briefcase size={13} style={{ color: typeInfo.color, flexShrink: 0 }} />
-        <span className="dd-evt-mini-title">{typeInfo.emoji} {a.client || a.numeroAffaire}</span>
-        <span className="dd-evt-mini-affnum">{a.numeroAffaire}</span>
+      <div key={`rdv-${affaire.numeroAffaire}`} className="dd-rdv-block">
+        <div className="dd-rdv-row affaire-rdv">
+          <span className="dd-rdv-icon" style={{ color: typeInfo.color }}>
+            <Calendar size={14} />
+          </span>
+          <div className="dd-rdv-info">
+            <div className="dd-rdv-title">
+              {typeInfo.emoji} {affaire.numeroAffaire} — {affaire.client || 'Sans client'}
+            </div>
+            <div className="dd-rdv-meta">
+              {affaire.adresseLivraison && <span><MapPin size={11} /> {affaire.adresseLivraison.split('\n')[0]}</span>}
+              {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
+              {affaire.tel && <span>📞 {affaire.tel}</span>}
+              <span>📆 {affaire.dateDebut ? new Date(affaire.dateDebut + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}
+                {affaire.dateFin ? ` → ${new Date(affaire.dateFin + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
+              </span>
+            </div>
+          </div>
+          <div className="dd-rdv-actions">
+            <button className="dd-btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
+              <Eye size={14} />
+            </button>
+          </div>
+        </div>
+        {isExpanded && (
+          <div className="dd-rdv-detail">
+            <div className="dd-rdv-detail-row"><strong>Client :</strong> {affaire.client || '—'}</div>
+            <div className="dd-rdv-detail-row"><strong>Interlocuteur :</strong> {affaire.interlocuteur || '—'}</div>
+            <div className="dd-rdv-detail-row"><strong>Tél :</strong> {affaire.tel || '—'}</div>
+            <div className="dd-rdv-detail-row"><strong>Adresse :</strong> {affaire.adresseLivraison?.split('\n').join(', ') || '—'}</div>
+            {affaire.titre && <div className="dd-rdv-detail-row"><strong>Titre :</strong> {affaire.titre}</div>}
+            {affaire.devis && <div className="dd-rdv-detail-row"><strong>Devis :</strong> {affaire.devis}</div>}
+          </div>
+        )}
       </div>
     );
   };
@@ -504,19 +588,19 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     <div className="dynamic-display-panel">
       {/* ══ Section Événements du jour / de la semaine ══ */}
       <div className="dd-events-overview">
-        <h3 className="dd-events-overview-title">
-          <Calendar size={18} />
-          {viewMode === 'week' ? 'Événements de la semaine' : 'Événements du jour'}
-          {allPlanningItems > 0 && <span className="dd-events-count">{allPlanningItems}</span>}
-        </h3>
+        <div className="dd-events-overview-header">
+          <h3 className="dd-events-overview-title">
+            <Calendar size={18} />
+            {viewMode === 'week' ? 'Événements de la semaine' : 'Événements du jour'}
+            {allPlanningItems > 0 && <span className="dd-events-count">{allPlanningItems}</span>}
+          </h3>
+        </div>
         {allPlanningItems === 0 ? (
           <div className="dd-events-empty">Aucun événement</div>
         ) : (
           <div className="dd-events-list">
-            {filteredGoogleEvents.map(renderGoogleEventMini)}
-            {filteredAffaires.map(renderAffaireMini)}
-            {visibleEvents.map(renderVisibleEventMini)}
-            {visibleTasks.map(renderVisibleTaskMini)}
+            {filteredGoogleEvents.map(renderGoogleRdvRow)}
+            {filteredAffaires.map(renderAffaireRdvRow)}
           </div>
         )}
       </div>
@@ -707,6 +791,19 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
       </div>
 
       {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+
+      {/* EventTaskModal pour définir des tâches à partir d'un événement Google */}
+      {eventTaskModalEvent && (
+        <Suspense fallback={null}>
+          <EventTaskModal
+            event={eventTaskModalEvent}
+            existingTasks={filteredTasks.filter(t => t.source_type === 'google_event' && t.source_id === eventTaskModalEvent.id)}
+            onSave={() => { setEventTaskModalEvent(null); loadEvents(); }}
+            onDelete={() => { setEventTaskModalEvent(null); loadEvents(); }}
+            onClose={() => setEventTaskModalEvent(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

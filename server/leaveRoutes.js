@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import db, { addToHistory } from './database.js';
+import { alertLeaveCreated, alertLeaveDecision } from './emailService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -474,6 +475,13 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       addToHistory('leave_request', result.lastInsertRowid, 'created', 
         { leaveType, startDate, endDate, workingDays }, req.user.id, req.user.name);
 
+      // Alerte email aux admins
+      try {
+        const person = db.prepare('SELECT first_name, last_name FROM persons WHERE id = ?').get(personId);
+        const personName = person ? `${person.first_name || ''} ${person.last_name || ''}`.trim() : req.user.name;
+        alertLeaveCreated(db, created, personName);
+      } catch (emailErr) { logger.warn('Alerte email congé:', emailErr.message); }
+
       res.status(201).json(created);
     } catch (error) {
       logger.error('Erreur POST /api/leaves:', error);
@@ -726,6 +734,11 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN users u ON u.id = lr.decision_by
         WHERE lr.id = ?
       `).get(req.params.id);
+
+      // Alerte email à l'employé (décision)
+      try {
+        alertLeaveDecision(db, { ...updated, status }, req.user.name);
+      } catch (emailErr) { logger.warn('Alerte email décision congé:', emailErr.message); }
 
       res.json(updated);
     } catch (error) {

@@ -1111,6 +1111,21 @@ function initializeDatabase() {
     `);
     // Insérer une config par défaut si elle n'existe pas
     db.exec(`INSERT OR IGNORE INTO email_config (id) VALUES (1)`);
+
+    // Migration: ajouter les nouvelles colonnes d'alerte
+    const emailCols = db.prepare('PRAGMA table_info(email_config)').all().map(c => c.name);
+    if (!emailCols.includes('alert_leave')) {
+      db.prepare('ALTER TABLE email_config ADD COLUMN alert_leave BOOLEAN DEFAULT 1').run();
+      logger.info('  + email_config.alert_leave');
+    }
+    if (!emailCols.includes('alert_sav')) {
+      db.prepare('ALTER TABLE email_config ADD COLUMN alert_sav BOOLEAN DEFAULT 1').run();
+      logger.info('  + email_config.alert_sav');
+    }
+    if (!emailCols.includes('alert_maintenance')) {
+      db.prepare('ALTER TABLE email_config ADD COLUMN alert_maintenance BOOLEAN DEFAULT 1').run();
+      logger.info('  + email_config.alert_maintenance');
+    }
   } catch (error) {
     logger.warn('⚠️ Migration email_config:', error.message);
   }

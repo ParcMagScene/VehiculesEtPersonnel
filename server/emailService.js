@@ -215,6 +215,160 @@ export async function alertOverdueIntervention(db, intervention, vehicleName) {
   });
 }
 
+// ═══════════════════════════════════════
+// Congés
+// ═══════════════════════════════════════
+
+/**
+ * Alerte : nouvelle demande de congé (envoyée aux admins)
+ */
+export async function alertLeaveCreated(db, leave, personName) {
+  const config = db.prepare('SELECT alert_leave FROM email_config WHERE id = 1').get();
+  if (!config?.alert_leave) return;
+  const admins = getAdminEmails(db);
+  if (admins.length === 0) return;
+
+  const typeLabel = leave.leave_type || leave.leaveType || 'Congé';
+  await sendEmail({
+    to: admins.join(','),
+    subject: `Demande de congé — ${personName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 20px; border-radius: 12px 12px 0 0;">
+          <h2 style="color: white; margin: 0;">🏖️ Nouvelle demande de congé</h2>
+        </div>
+        <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
+          <p><strong>Employé :</strong> ${personName}</p>
+          <p><strong>Type :</strong> ${typeLabel}</p>
+          <p><strong>Du :</strong> ${leave.start_date || leave.startDate || ''}</p>
+          <p><strong>Au :</strong> ${leave.end_date || leave.endDate || ''}</p>
+          <p><strong>Jours ouvrés :</strong> ${leave.working_days || leave.workingDays || '—'}</p>
+          ${leave.employee_comment ? `<p><strong>Commentaire :</strong> ${leave.employee_comment}</p>` : ''}
+          <p style="color: #64748b; font-size: 12px; margin-top: 16px;">
+            Connectez-vous à eM@g pour valider ou refuser cette demande.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+}
+
+/**
+ * Alerte : décision sur une demande de congé (envoyée à l'employé)
+ */
+export async function alertLeaveDecision(db, leave, decisionBy) {
+  const config = db.prepare('SELECT alert_leave FROM email_config WHERE id = 1').get();
+  if (!config?.alert_leave) return;
+
+  // Trouver l'email de l'employé
+  const person = db.prepare('SELECT p.first_name, p.last_name, p.email FROM persons p WHERE p.id = ?').get(leave.person_id);
+  const email = person?.email || getUserEmail(db, leave.user_id);
+  if (!email) return;
+
+  const personName = person ? `${person.first_name || ''} ${person.last_name || ''}`.trim() : 'Employé';
+  const statusLabels = { accepted: '✅ Acceptée', refused: '❌ Refusée', modified: '✏️ Modifiée' };
+  const statusLabel = statusLabels[leave.status] || leave.status;
+  const bgColor = leave.status === 'accepted' ? '#10b981' : leave.status === 'refused' ? '#ef4444' : '#f59e0b';
+
+  await sendEmail({
+    to: email,
+    subject: `Congé ${statusLabel} — ${personName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, ${bgColor} 0%, ${bgColor}dd 100%); padding: 20px; border-radius: 12px 12px 0 0;">
+          <h2 style="color: white; margin: 0;">${statusLabel}</h2>
+        </div>
+        <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
+          <p><strong>Demande :</strong> ${leave.leave_type || ''}</p>
+          <p><strong>Du :</strong> ${leave.start_date || ''} au ${leave.end_date || ''}</p>
+          <p><strong>Décision par :</strong> ${decisionBy}</p>
+          ${leave.admin_comment ? `<p><strong>Commentaire :</strong> ${leave.admin_comment}</p>` : ''}
+          ${leave.status === 'modified' ? `<p><strong>Nouvelles dates :</strong> ${leave.modified_start_date || ''} au ${leave.modified_end_date || ''}</p>` : ''}
+        </div>
+      </div>
+    `,
+  });
+}
+
+// ═══════════════════════════════════════
+// Tickets SAV
+// ═══════════════════════════════════════
+
+/**
+ * Alerte : nouveau ticket SAV créé
+ */
+export async function alertSavTicketCreated(db, ticket, creatorName) {
+  const config = db.prepare('SELECT alert_sav FROM email_config WHERE id = 1').get();
+  if (!config?.alert_sav) return;
+  const admins = getAdminEmails(db);
+  if (admins.length === 0) return;
+
+  // Récupérer le nom de l'équipement
+  const eq = db.prepare('SELECT name, serial_number FROM equipment WHERE id = ?').get(ticket.equipment_id);
+  const eqName = eq?.name || `ID ${ticket.equipment_id}`;
+
+  await sendEmail({
+    to: admins.join(','),
+    subject: `Ticket SAV — ${ticket.title || eqName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 20px; border-radius: 12px 12px 0 0;">
+          <h2 style="color: white; margin: 0;">🔧 Nouveau ticket SAV</h2>
+        </div>
+        <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
+          <p><strong>Équipement :</strong> ${eqName}${eq?.serial_number ? ` (S/N: ${eq.serial_number})` : ''}</p>
+          <p><strong>Titre :</strong> ${ticket.title || 'N/A'}</p>
+          <p><strong>Type :</strong> ${ticket.type || 'panne'}</p>
+          <p><strong>Priorité :</strong> ${ticket.priority || 'medium'}</p>
+          ${ticket.description ? `<p><strong>Description :</strong> ${ticket.description}</p>` : ''}
+          <p><strong>Créé par :</strong> ${creatorName || 'Inconnu'}</p>
+          <p style="color: #64748b; font-size: 12px; margin-top: 16px;">
+            Connectez-vous à eM@g pour traiter ce ticket.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+}
+
+// ═══════════════════════════════════════
+// Maintenances / Contrôles techniques
+// ═══════════════════════════════════════
+
+/**
+ * Alerte : nouvelle maintenance ou contrôle technique créé
+ */
+export async function alertMaintenanceCreated(db, maintenance, vehicleName, creatorName) {
+  const config = db.prepare('SELECT alert_maintenance FROM email_config WHERE id = 1').get();
+  if (!config?.alert_maintenance) return;
+  const admins = getAdminEmails(db);
+  if (admins.length === 0) return;
+
+  const isCT = !!maintenance.technical_control_type;
+  const title = isCT ? `Contrôle technique ${maintenance.technical_control_type}` : 'Nouvelle maintenance';
+  const icon = isCT ? '🔍' : '🔧';
+
+  await sendEmail({
+    to: admins.join(','),
+    subject: `${title} — ${vehicleName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 20px; border-radius: 12px 12px 0 0;">
+          <h2 style="color: white; margin: 0;">${icon} ${title}</h2>
+        </div>
+        <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
+          <p><strong>Véhicule :</strong> ${vehicleName}</p>
+          <p><strong>Type :</strong> ${maintenance.type || 'N/A'}${isCT ? ` (${maintenance.technical_control_type})` : ''}</p>
+          <p><strong>Du :</strong> ${maintenance.start_date || ''} au ${maintenance.end_date || ''}</p>
+          ${maintenance.description ? `<p><strong>Description :</strong> ${maintenance.description}</p>` : ''}
+          ${maintenance.garage ? `<p><strong>Garage :</strong> ${maintenance.garage}</p>` : ''}
+          <p><strong>Créé par :</strong> ${creatorName || 'Inconnu'}</p>
+        </div>
+      </div>
+    `,
+  });
+}
+
 export default {
   initEmailTransporter,
   getTransporter: () => ({ transporter, emailConfig }),
@@ -222,4 +376,8 @@ export default {
   alertReservationCreated,
   alertAssignmentCreated,
   alertOverdueIntervention,
+  alertLeaveCreated,
+  alertLeaveDecision,
+  alertSavTicketCreated,
+  alertMaintenanceCreated,
 };

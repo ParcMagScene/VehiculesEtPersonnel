@@ -2751,3 +2751,35 @@
   from { opacity: 0; transform: translateY(30px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ═══ DEPOT MAP MODAL — MOBILE ═══ */
+@media (max-width: 768px) {
+  .eq-depot-map-modal {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    border: none;
+  }
+  .eq-depot-map-modal-header {
+    padding: 12px 14px;
+  }
+  .eq-depot-map-modal-header h3 {
+    font-size: 0.88rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: calc(100vw - 80px);
+  }
+  .eq-depot-map-modal-header .eq-dialog-close {
+    min-width: 42px;
+    min-height: 42px;
+    flex-shrink: 0;
+  }
+  .eq-depot-map-modal-body {
+    padding: 8px;
+    flex: 1;
+    overflow-y: auto;
+  }
+}

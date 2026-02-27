@@ -15,7 +15,7 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.3;
 
-export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZoneFilter, focusZoneId }) {
+export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZoneFilter, focusZoneId, focusEquipmentName }) {
   // Dimensions dynamiques depuis le JSON (chaque dépôt peut avoir ses propres dimensions)
   const SVG_WIDTH = zones?.svgWidth || DEFAULT_SVG_WIDTH;
   const SVG_HEIGHT = zones?.svgHeight || DEFAULT_SVG_HEIGHT;
@@ -28,6 +28,8 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const svgRef = useRef(null);
+  const lastTouchRef = useRef(null);
+  const lastPinchRef = useRef(null);
 
   // Auto-focus on a zone when focusZoneId is set
   useEffect(() => {
@@ -110,7 +112,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
     }
   }, [handleWheel]);
 
-  // Pan handlers
+  // Pan handlers (mouse)
   const handleMouseDown = (e) => {
     if (zoom <= 1) return;
     setIsPanning(true);
@@ -121,6 +123,57 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
     setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
   };
   const handleMouseUp = () => setIsPanning(false);
+
+  // Touch handlers (mobile pan + pinch-to-zoom)
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      // Pinch start
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastPinchRef.current = Math.hypot(dx, dy);
+      lastTouchRef.current = null;
+    } else if (e.touches.length === 1 && zoom > 1) {
+      // Pan start
+      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      lastPinchRef.current = null;
+    }
+  }, [zoom]);
+
+  const handleTouchMove = useCallback((e) => {
+    e.preventDefault();
+    if (e.touches.length === 2 && lastPinchRef.current !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const scale = dist / lastPinchRef.current;
+      setZoom(z => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z * scale)));
+      lastPinchRef.current = dist;
+    } else if (e.touches.length === 1 && lastTouchRef.current && zoom > 1) {
+      const dx = e.touches[0].clientX - lastTouchRef.current.x;
+      const dy = e.touches[0].clientY - lastTouchRef.current.y;
+      setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, [zoom]);
+
+  const handleTouchEnd = useCallback(() => {
+    lastTouchRef.current = null;
+    lastPinchRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    const svgEl = svgRef.current;
+    if (svgEl) {
+      svgEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+      svgEl.addEventListener('touchmove', handleTouchMove, { passive: false });
+      svgEl.addEventListener('touchend', handleTouchEnd);
+      return () => {
+        svgEl.removeEventListener('touchstart', handleTouchStart);
+        svgEl.removeEventListener('touchmove', handleTouchMove);
+        svgEl.removeEventListener('touchend', handleTouchEnd);
+      };
+    }
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   // Recherche visuelle
   const handleSearch = useCallback(async (query) => {
@@ -448,6 +501,43 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
               </g>
             );
           })}
+
+          {/* Focus indicator: pulsing marker + equipment name on the focused zone */}
+          {focusZoneId && (() => {
+            const fz = floorZones.find(z => z.id === focusZoneId || z.codes?.includes(focusZoneId));
+            if (!fz) return null;
+            const { x, y, width, height } = fz.bbox;
+            const cx = x + width / 2;
+            const cy = y + height / 2;
+            return (
+              <g className="depot-focus-indicator" style={{ pointerEvents: 'none' }}>
+                {/* Pulsing outer ring */}
+                <circle cx={cx} cy={cy} r={Math.max(width, height) * 0.6} fill="none" stroke="#fbbf24" strokeWidth="2" className="focus-pulse-ring" />
+                <circle cx={cx} cy={cy} r={Math.max(width, height) * 0.45} fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.5" className="focus-pulse-ring-inner" />
+                {/* Corner brackets for zone highlight */}
+                <polyline points={`${x},${y + 12} ${x},${y} ${x + 12},${y}`} fill="none" stroke="#fbbf24" strokeWidth="2.5" />
+                <polyline points={`${x + width - 12},${y} ${x + width},${y} ${x + width},${y + 12}`} fill="none" stroke="#fbbf24" strokeWidth="2.5" />
+                <polyline points={`${x + width},${y + height - 12} ${x + width},${y + height} ${x + width - 12},${y + height}`} fill="none" stroke="#fbbf24" strokeWidth="2.5" />
+                <polyline points={`${x + 12},${y + height} ${x},${y + height} ${x},${y + height - 12}`} fill="none" stroke="#fbbf24" strokeWidth="2.5" />
+                {/* Equipment name label above zone */}
+                {focusEquipmentName && (
+                  <>
+                    <rect
+                      x={cx - Math.min(focusEquipmentName.length * 3.8 + 16, 140)}
+                      y={y - 28}
+                      width={Math.min(focusEquipmentName.length * 7.6 + 32, 280)}
+                      height={22}
+                      rx="6"
+                      fill="#fbbf24"
+                    />
+                    <text x={cx} y={y - 14} textAnchor="middle" dominantBaseline="middle" fill="#0f172a" fontSize="10" fontWeight="700">
+                      📍 {focusEquipmentName.length > 36 ? focusEquipmentName.slice(0, 34) + '…' : focusEquipmentName}
+                    </text>
+                  </>
+                )}
+              </g>
+            );
+          })()}
 
           {/* Floor label */}
           <text x="12" y={SVG_HEIGHT - 8} fill="#475569" fontSize="11" fontWeight="500">

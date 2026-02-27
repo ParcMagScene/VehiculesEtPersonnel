@@ -362,19 +362,20 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [locationStats, setLocationStats] = useState(null);
   const [filterZone, setFilterZone] = useState('');
   const [showDepotMap, setShowDepotMap] = useState(false);
-  const [depotMapModalZone, setDepotMapModalZone] = useState(null); // zone ID to focus in modal
+  const [depotMapModalZone, setDepotMapModalZone] = useState(null); // { zoneId, equipmentName } or null
 
   // Trouver le bon dépôt pour la zone cliquée (dépôt 1 ou 2)
   const modalDepotData = useMemo(() => {
-    if (!depotMapModalZone) return null;
+    const zoneId = depotMapModalZone?.zoneId;
+    if (!zoneId) return null;
     // Chercher dans allDepotZones (contient tous les dépôts)
     if (allDepotZones?.depots) {
       for (const depot of allDepotZones.depots) {
-        if (depot.zones?.find(z => z.id === depotMapModalZone || z.codes?.includes(depotMapModalZone))) return depot;
+        if (depot.zones?.find(z => z.id === zoneId || z.codes?.includes(zoneId))) return depot;
       }
     }
     // Fallback: dépôt 1
-    if (depotZones?.zones?.find(z => z.id === depotMapModalZone || z.codes?.includes(depotMapModalZone))) return depotZones;
+    if (depotZones?.zones?.find(z => z.id === zoneId || z.codes?.includes(zoneId))) return depotZones;
     // Dernier recours: retourner le premier dépôt disponible
     return depotZones || (allDepotZones?.depots?.[0]) || null;
   }, [depotMapModalZone, depotZones, allDepotZones]);
@@ -734,7 +735,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
               favoriteIds={favoriteIds}
               watchIds={watchIds}
               onToggleList={toggleList}
-              onOpenDepotMap={(zoneId) => setDepotMapModalZone(zoneId)}
+              onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
               onSelect={(eq) => {
                 clearTimeout(clickTimerRef.current);
                 clickTimerRef.current = setTimeout(() => {
@@ -803,7 +804,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
             onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
             isAdmin={isAdmin}
-            onOpenDepotMap={(zoneId) => setDepotMapModalZone(zoneId)}
+            onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
           />
         )}
 
@@ -849,7 +850,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
         onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
         onSerialize={handleSerializeEquipment}
-        onOpenDepotMap={(zoneId) => setDepotMapModalZone(zoneId)}
+        onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
       />
 
       {/* Dialog SAV (double-clic) */}
@@ -1030,15 +1031,16 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         <div className="eq-depot-map-modal-overlay" onClick={() => setDepotMapModalZone(null)}>
           <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
             <div className="eq-depot-map-modal-header">
-              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone}</h3>
+              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone.zoneId}{depotMapModalZone.equipmentName ? ` · ${depotMapModalZone.equipmentName}` : ''}</h3>
               <button className="eq-dialog-close" onClick={() => setDepotMapModalZone(null)} title="Fermer"><X size={20} /></button>
             </div>
             <div className="eq-depot-map-modal-body">
               <DepotMap
                 zones={modalDepotData}
                 stats={locationStats}
-                selectedZone={depotMapModalZone}
-                focusZoneId={depotMapModalZone}
+                selectedZone={depotMapModalZone.zoneId}
+                focusZoneId={depotMapModalZone.zoneId}
+                focusEquipmentName={depotMapModalZone.equipmentName}
                 onZoneSelect={(zoneId) => {}}
                 onZoneFilter={() => {}}
               />
@@ -1427,7 +1429,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                       }
                     }
                     if (z) return (
-                      <span className="eq-zone-badge eq-zone-clickable" style={{ background: z.color, color: z.textColor || '#fff' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId); }} title="Voir sur le plan">
+                      <span className="eq-zone-badge eq-zone-clickable" style={{ background: z.color, color: z.textColor || '#fff' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }} title="Voir sur le plan">
                         <MapPin size={11} />
                         {z.label}
                         {(eq.location_code || eq.locationCode) && <span className="eq-zone-code">{eq.location_code || eq.locationCode}</span>}
@@ -1435,7 +1437,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                     );
                     // Zone non trouvée dans les JSON mais présente en base → quand même cliquable
                     return (
-                      <span className="eq-zone-badge eq-zone-clickable" style={{ background: 'var(--theme-text-secondary)', color: 'var(--theme-text-inverse)' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId); }} title="Voir sur le plan">
+                      <span className="eq-zone-badge eq-zone-clickable" style={{ background: 'var(--theme-text-secondary)', color: 'var(--theme-text-inverse)' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }} title="Voir sur le plan">
                         <MapPin size={11} />
                         {zoneId}
                       </span>
@@ -1557,7 +1559,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
               <MapPin size={14} /><span>Zone dépôt</span>
               <strong>{(eq.location_zone || eq.locationZone) ? `${(eq.location_depot || eq.locationDepot) ? `D${eq.location_depot || eq.locationDepot} — ` : ''}${eq.location_zone || eq.locationZone}${(eq.location_code || eq.locationCode) ? ` — ${eq.location_code || eq.locationCode}` : ''}${(eq.location_floor || eq.locationFloor) ? ` (${eq.location_floor || eq.locationFloor})` : ''}` : eq.location}</strong>
               {(eq.location_zone || eq.locationZone) && onOpenDepotMap && (
-                <button className="eq-zone-map-btn" onClick={(e) => { e.stopPropagation(); onOpenDepotMap(eq.location_zone || eq.locationZone); }} title="Voir sur le plan">
+                <button className="eq-zone-map-btn" onClick={(e) => { e.stopPropagation(); onOpenDepotMap(eq.location_zone || eq.locationZone, eq.name); }} title="Voir sur le plan">
                   <Map size={13} /> Plan
                 </button>
               )}

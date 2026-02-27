@@ -16,7 +16,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
   flex-wrap: wrap;
   flex-shrink: 0;
@@ -63,7 +63,7 @@
   gap: 6px;
   padding: 6px 12px;
   border: 1px solid var(--theme-border);
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
@@ -75,7 +75,7 @@
 
 .ebl-select-all:hover {
   background: var(--theme-bg-page);
-  border-color: #cbd5e1;
+  border-color: var(--theme-border);
 }
 
 .ebl-logo-toggle {
@@ -90,7 +90,7 @@
 .ebl-toggle-btn {
   padding: 4px 10px;
   border: 1px solid var(--theme-border);
-  background: white;
+  background: var(--theme-bg-card);
   font-size: 11px;
   font-weight: 600;
   color: var(--theme-text-secondary);
@@ -108,9 +108,9 @@
 }
 
 .ebl-toggle-btn.active {
-  background: #6366f1;
-  color: white;
-  border-color: #6366f1;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  border-color: var(--theme-primary);
 }
 
 /* Barre info sélection */
@@ -120,7 +120,7 @@
   gap: 8px;
   padding: 8px 16px;
   background: var(--theme-bg-hover);
-  color: #4f46e5;
+  color: var(--theme-primary-dark);
   font-size: 13px;
   font-weight: 600;
   border-bottom: 1px solid var(--theme-bg-indigo-lighter);
@@ -129,7 +129,7 @@
 
 .ebl-page-info {
   font-weight: 400;
-  color: #6366f1;
+  color: var(--theme-primary);
   font-size: 12px;
 }
 
@@ -147,7 +147,7 @@
   border: 1px solid var(--theme-border);
   border-radius: 10px;
   overflow: hidden;
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .ebl-group-header {
@@ -178,14 +178,14 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: #cbd5e1;
+  color: var(--theme-text-muted);
   display: flex;
   padding: 0;
   transition: color 0.15s;
 }
 
 .ebl-checkbox.checked {
-  color: #6366f1;
+  color: var(--theme-primary);
 }
 
 .ebl-checkbox.partial {
@@ -227,7 +227,7 @@
 }
 
 .ebl-item:hover {
-  background: #fafafa;
+  background: var(--theme-bg-secondary);
 }
 
 .ebl-item.selected {
@@ -246,7 +246,7 @@
 .ebl-uid {
   font-family: monospace;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--theme-primary);
   white-space: nowrap;
 }
 
@@ -273,7 +273,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 4px;
-  background: #fafafa;
+  background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
   border-radius: 4px;
 }
@@ -311,12 +311,12 @@
   align-items: center;
   gap: 6px;
   padding: 8px 18px;
-  border: 1px solid #6366f1;
-  background: white;
+  border: 1px solid var(--theme-primary);
+  background: var(--theme-bg-card);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 700;
-  color: #6366f1;
+  color: var(--theme-primary);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -331,17 +331,17 @@
   gap: 8px;
   padding: 8px 20px;
   border: none;
-  background: #6366f1;
+  background: var(--theme-primary);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .ebl-btn-print:hover {
-  background: #4f46e5;
+  background: var(--theme-primary-dark);
 }
 
 .ebl-btn-print:disabled,

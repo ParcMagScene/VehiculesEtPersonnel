@@ -1,11 +1,14 @@
-# 🚀 Guide de Démarrage Rapide - eM@g
+# 🚀 Guide de Démarrage Rapide — eM@g
 
 ## 📋 Table des Matières
+
 1. [Premiers Pas](#premiers-pas)
 2. [Interface Desktop](#interface-desktop)
 3. [Interface Mobile](#interface-mobile)
-4. [Rôles Utilisateurs](#rôles-utilisateurs)
-5. [Dépannage](#dépannage)
+4. [Rôles & Permissions](#rôles--permissions)
+5. [Modules](#modules)
+6. [Dépannage](#dépannage)
+7. [Astuces](#astuces)
 
 ---
 
@@ -13,26 +16,16 @@
 
 ### 1. Demande d'Accès
 
-Si vous n'avez pas encore de compte :
-
-1. **Accédez à l'application** via l'URL fournie par votre administrateur
-2. **Cliquez sur "Demander un accès"** en bas du formulaire de connexion
-3. **Remplissez le formulaire** :
-   - Nom complet
-   - Adresse email professionnelle
-   - Raison de la demande
-4. **Validez** et attendez l'approbation d'un administrateur
-
-> ⏱️ **Délai** : Les demandes sont généralement traitées sous 24h ouvrées
+1. Accédez à l'application via l'URL fournie par votre administrateur
+2. Cliquez sur **"Demander un accès"** en bas du formulaire de connexion
+3. Remplissez : nom complet, email professionnel, raison
+4. Attendez l'approbation admin (généralement < 24 h ouvrées)
 
 ### 2. Première Connexion
 
-Une fois votre compte approuvé :
-
-1. **Ouvrez l'email de confirmation** reçu
-2. **Connectez-vous** avec votre adresse email
-3. **Créez votre mot de passe** lors de la première connexion
-4. **Acceptez les conditions d'utilisation**
+1. Connectez-vous avec votre email
+2. Créez votre mot de passe
+3. Vous accédez au calendrier principal
 
 ---
 
@@ -40,279 +33,204 @@ Une fois votre compte approuvé :
 
 ### Vue Calendrier
 
-#### Navigation
-- **Boutons en haut** : Changez entre vues Semaine / Mois / Année
-- **Sélecteur de période** : Cliquez pour choisir une date précise
-- **Flèches ← →** : Naviguez entre les périodes
+- **Vues** : Semaine / Mois / Année / Planning (boutons en haut)
+- **Navigation** : Flèches ← → ou clic sur le sélecteur de période
+- **Créer une réservation** : Clic sur cellule vide → formulaire (véhicule, dates, affaire, conducteur)
+- **Modifier** : Clic sur réservation existante → édition ou suppression
 
-#### Créer une Réservation
+### Barre de navigation (Header)
 
-1. **Cliquez sur une cellule vide** dans le calendrier
-2. **Remplissez le formulaire** :
-   - **Véhicule** : Sélectionnez dans la liste (avec photo)
-   - **Dates** : Début et fin de réservation
-   - **Affaire** : Numéro de projet/chantier
-   - **Conducteur** : Nom du conducteur
-   - **Notes** : Informations complémentaires (optionnel)
-3. **Validez** avec le bouton "Créer"
+| Bouton | Fonction |
+|--------|----------|
+| **Nouvelle réservation** | Créer une réservation véhicule |
+| **Nouvelle affectation** | Affecter du personnel à une mission |
+| **Nouvelle affaire** | Créer un dossier projet |
+| **Aide** | Documentation contextuelle |
+| **Gestion** | Panel d'administration (multi-onglets) |
+| **Module** | Menu déroulant pour accéder aux modules |
 
-#### Modifier une Réservation
+### Modules accessibles
 
-1. **Cliquez sur une réservation existante** (cellule colorée)
-2. **Modifiez les informations** nécessaires
-3. **Sauvegardez** ou **Supprimez** si besoin
-
-#### Maintenance des Véhicules
-
-1. **Cliquez sur un véhicule** dans la liste de gauche
-2. **Sélectionnez "Maintenance"** dans la fiche détaillée
-3. **Enregistrez** :
-   - Type de maintenance (révision, réparation, contrôle technique)
-   - Dates de début et fin
-   - Description des travaux
-   - Coût (optionnel)
-
-### Vue Planning
-
-Affichage alternatif montrant :
-- **Toutes les réservations** par véhicule
-- **Disponibilités** en temps réel
-- **Conflits potentiels** (chevauchements)
+| Module | Icône | Description |
+|--------|-------|-------------|
+| Véhicules | 🚗 | Calendrier & planning véhicules |
+| Personnel | 👷 | Personnes, compétences, missions, planning |
+| Affaires | 📎 | Dossiers projets, BL, pièces jointes |
+| Catalogue | 📦 | Équipements catalogue (familles, catégories) |
+| Équipements | 🏷️ | Matériel individualisé (UID, SAV, localisation) |
+| Camions | 🚛 | Modèles de camions (chargement 3D) |
+| Communication | 📢 | Événements d'entreprise, notes internes |
+| Stock | 📊 | Mouvements de stock, inventaire |
+| Commandes | 🛒 | Commandes fournisseurs |
 
 ---
 
 ## 📱 Interface Mobile
 
-### Accès via QR Code
+### Accès
 
-#### Première Configuration
+- URL : `/mobile` ou scan du **QR code** sur le véhicule
+- PWA : ajoutez à l'écran d'accueil pour un accès direct
 
-1. **Scannez le QR code** apposé sur le véhicule
-2. **Autorisez l'accès caméra** de votre smartphone
-3. **Connectez-vous** avec vos identifiants
-4. **Le véhicule est automatiquement sélectionné**
+### Fonctions disponibles
 
-> 💡 **Astuce** : Ajoutez l'application à votre écran d'accueil pour un accès rapide
-
-#### Fonctions Disponibles
-
-##### 📅 Consulter les Réservations
-- Voir les réservations **actuelles et futures** du véhicule
-- Filtrer par date
-- Voir les détails (conducteur, affaire, durée)
-
-##### ➕ Créer une Réservation Rapide
-1. **Dates automatiques** : aujourd'hui ou période suggérée
-2. **Véhicule présélectionné** depuis le QR code
-3. **Renseignez** : Affaire + Conducteur
-4. **Validez** en 2 clics
-
-##### 🔧 Signaler un Problème
-1. **Bouton "Signaler"** sur la fiche véhicule
-2. **Type de problème** : Panne, dommage, entretien nécessaire
-3. **Photo** : Prenez une photo du problème (optionnel)
-4. **Description** : Expliquez brièvement
-5. **Envoi** : L'administrateur est notifié instantanément
-
-##### 📊 Voir l'Historique
-- **Toutes les réservations passées** du véhicule
-- **Historique de maintenance**
-- **Kilométrage** et statistiques d'utilisation
+| Fonction | Description |
+|----------|-------------|
+| **Planning** | Réservations actuelles et futures |
+| **Réservation rapide** | Véhicule présélectionné (QR), 2 clics |
+| **Signaler un problème** | Panne, dommage + photo optionnelle |
+| **Historique** | Réservations passées + maintenances |
+| **Personnel** | Personnes et disponibilités |
+| **Messagerie** | Conversations temps réel |
+| **Tableau de bord** | Vue globale du parc |
 
 ### Mode Hors Ligne
 
-L'application fonctionne en mode déconnecté :
-- ✅ Consultation des données récentes
-- ✅ Création de réservations (synchronisées plus tard)
-- ❌ Modifications en temps réel impossibles
+- ✅ Consultation des données récentes (cache)
+- ✅ Création de réservations (synchronisées au retour réseau)
+- ❌ Modifications temps réel
 
 ---
 
-## 👥 Rôles Utilisateurs
+## 👥 Rôles & Permissions
 
 ### 👤 Utilisateur Standard
 
-**Permissions** :
-- ✅ Consulter le calendrier (lecture seule)
-- ✅ Voir toutes les réservations
-- ✅ Voir les détails des véhicules
-- ✅ Accéder à l'interface mobile
-- ❌ Créer des réservations
-- ❌ Modifier des réservations
-- ❌ Supprimer des réservations
-- ❌ Gérer les utilisateurs
-- ❌ Gérer les véhicules
-- ❌ Planifier des interventions
+- ✅ Consulter calendrier, réservations, véhicules (lecture seule)
+- ✅ Accéder mobile, messagerie
+- ✅ Signaler des pannes (status `reported`)
+- ❌ Créer/modifier réservations
+- ❌ Gérer véhicules, utilisateurs, catalogue
 
-> 💡 **Note** : Les utilisateurs standard ont un accès en **lecture seule** au planning. Pour créer ou modifier des réservations, ils doivent demander les droits administrateur.
+### 🔑 Administrateur (`is_admin`)
 
-### 🔑 Administrateur
+Accès complet : réservations, véhicules, maintenances, utilisateurs, imports, configuration.
 
-**Permissions complètes** :
-- ✅ **Gérer tous les utilisateurs** :
-  - Approuver/rejeter les demandes d'accès
-  - Attribuer les droits administrateur
-  - Réinitialiser les mots de passe
-  - Désactiver des comptes
-- ✅ **Gérer toutes les réservations** :
-  - Créer des réservations
-  - Modifier n'importe quelle réservation
-  - Supprimer des réservations
-  - Résoudre les conflits
-- ✅ **Gérer les véhicules** :
-  - Ajouter/supprimer des véhicules
-  - Mettre à jour les informations
-  - Gérer la maintenance
-  - Planifier les interventions
-- ✅ **Notification badge** : Voir les demandes d'accès en attente
+### 🏷️ Permissions spécifiques
+
+| Permission | Portée |
+|------------|--------|
+| `can_manage_catalog` | CRUD catalogue équipements + flight-cases |
+| `can_manage_trucks` | CRUD modèles de camions |
+
+> Les admins ont automatiquement toutes les permissions.
 
 ### Passage Administrateur
 
-Un administrateur peut **attribuer des droits** lors de l'approbation d'une demande :
+Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès :
 1. Notification sur le bouton **"Gestion"** (pastille rouge)
-2. Clic sur **"Approuver"**
-3. Répondre **"oui"** ou **"non"** à la question des droits admin
+2. **"Approuver"** → répondre « oui » ou « non » à la question des droits admin
+
+---
+
+## 📦 Modules
+
+### Calendrier & Réservations
+- 4 vues (semaine, mois, année, planning)
+- Codage couleur par véhicule
+- Détection des chevauchements
+- Intégration Google Calendar (lecture + création depuis événements Google)
+
+### Maintenance
+- Types : entretien programmé, réparation, contrôle technique, signalement panne
+- Statuts : `reported` → `scheduled` → `in_progress` → `completed`
+- Transition automatique selon les dates
+
+### Personnel & Congés
+- Gestion personnes, compétences (8 catégories), missions
+- Détection automatique conflits d'affectation
+- Planning visuel (grille semaine)
+- Demandes de congés avec workflow d'approbation et solde
+
+### Affaires
+- Dossiers projets avec pièces jointes (50 MB max)
+- Import BL par PDF (standard + fournisseur/prestataire)
+- Import Excel, historique, liens vers réservations
+
+### Catalogue & Équipements
+- Catalogue par familles / sous-familles / catégories
+- Équipements individualisés avec UID unique et n° de série
+- **Localisation multi-dépôt** : 2 dépôts avec plan interactif SVG
+- Sélecteur 4 niveaux : Dépôt → Étage → Zone → Code
+- Tickets SAV (suivi pannes matériel)
+- Listes d'équipements nommées
+
+### Communication & Mailing
+- Événements d'entreprise (calendrier, affichage écran déporté)
+- Notes internes
+- Mailing avancé : templates, envoi groupé, historique
+
+### Stock & Commandes
+- Mouvements entrées/sorties, inventaire
+- Commandes fournisseurs, lignes de commande, suivi réception
+
+### Messagerie
+- Conversations temps réel entre utilisateurs
+- Disponible desktop et mobile
 
 ---
 
 ## 🔧 Dépannage
 
-### Problèmes de Connexion
+### Connexion
 
-#### "Email ou mot de passe incorrect"
-- ✅ Vérifiez la casse (majuscules/minuscules)
-- ✅ Utilisez l'email professionnel exact
-- ✅ Demandez une réinitialisation de mot de passe
+| Problème | Solution |
+|----------|----------|
+| « Email ou mot de passe incorrect » | Vérifiez la casse et l'email exact. Demandez un reset. |
+| « Failed to fetch » | Vérifiez la connexion, rafraîchissez (F5/Cmd+R), videz le cache. |
 
-#### "Failed to fetch"
-- ✅ Vérifiez votre connexion Internet
-- ✅ Actualisez la page (F5 ou Cmd+R)
-- ✅ Vider le cache du navigateur
-- ✅ Contactez l'administrateur si persistant
+### Réservations
 
-### Problèmes de Réservation
-
-#### "La réservation n'apparaît pas"
-- ✅ Vérifiez la date sélectionnée dans le calendrier
-- ✅ Actualisez la page
-- ✅ Vérifiez que vous êtes sur la bonne vue (semaine/mois)
-
-#### "Impossible de créer une réservation"
-- ✅ Vérifiez que le véhicule est disponible sur la période
-- ✅ Tous les champs obligatoires sont remplis ?
-- ✅ Les dates sont dans le bon ordre (début < fin)
-
-### Problèmes Mobile
-
-#### "Le QR code ne scanne pas"
-- ✅ Autorisez l'accès à la caméra dans les paramètres
-- ✅ Assurez un bon éclairage
-- ✅ Tenez le téléphone stable à 10-15 cm
-- ✅ Nettoyez l'objectif de la caméra
-
-#### "L'application est lente"
-- ✅ Vérifiez votre connexion réseau (WiFi/4G)
-- ✅ Fermez les autres applications
-- ✅ Videz le cache du navigateur mobile
-- ✅ Redémarrez l'application
-
-### Synchronisation Google Calendar
-
-#### "Événements non synchronisés"
-- ✅ Vérifiez que l'authentification Google est active
-- ✅ Autorisez les permissions calendrier
-- ✅ Réautorisez l'accès dans Paramètres
-- ✅ La synchronisation peut prendre 5-10 minutes
-
----
-
-## 📞 Support
-
-### Contacts
-
-- **Email** : support@magscene.fr
-- **Téléphone** : 01 XX XX XX XX
-- **Horaires** : Lundi-Vendredi, 9h-18h
-
-### Avant de Contacter
-
-Ayez sous la main :
-- 📧 Votre adresse email de connexion
-- 🖥️ Navigateur et système d'exploitation
-- 📸 Capture d'écran du problème (si possible)
-- 📝 Description détaillée des étapes reproduisant le problème
-
----
-
-## 🎓 Astuces & Bonnes Pratiques
-
-### Organisation
-
-1. **Planifiez à l'avance** : Réservez vos véhicules dès que possible
-2. **Libérez rapidement** : Supprimez les réservations inutilisées
-3. **Soyez précis** : Renseignez toujours l'affaire et le conducteur
-4. **Notes utiles** : Ajoutez des infos pour vos collègues (lieu, équipement spécial)
+| Problème | Solution |
+|----------|----------|
+| N'apparaît pas | Vérifiez la date / vue sélectionnée, rafraîchissez. |
+| Impossible de créer | Vérifiez disponibilité du véhicule et champs obligatoires. |
 
 ### Mobile
 
-1. **Ajoutez à l'écran d'accueil** : Accès direct sans navigateur
-2. **Scannez avant utilisation** : Vérifiez la disponibilité in situ
-3. **Signalez immédiatement** : Tout problème technique détecté
-4. **Photos** : Documentez l'état du véhicule avant/après
+| Problème | Solution |
+|----------|----------|
+| QR code ne scanne pas | Autorisez la caméra, assurez un bon éclairage, tenez à 10-15 cm. |
+| Application lente | Vérifiez le réseau, videz le cache, redémarrez l'app. |
+
+### Google Calendar
+
+| Problème | Solution |
+|----------|----------|
+| Événements non synchronisés | Vérifiez l'auth Google, réautorisez dans Paramètres. Délai : 5-10 min. |
+
+---
+
+## 🎓 Astuces
+
+### Organisation
+- **Planifiez à l'avance** — réservez dès confirmation du chantier
+- **Libérez vite** — supprimez les réservations annulées
+- **Soyez précis** — renseignez toujours affaire + conducteur
+- **Notes utiles** — lieu, équipement spécial, contact client
+
+### Mobile
+- **Écran d'accueil** — ajoutez la PWA pour accès direct
+- **Scannez avant** — vérifiez la disponibilité in situ
+- **Signalez immédiatement** — photo + description brève
 
 ### Sécurité
-
-1. **Mot de passe fort** : Min. 8 caractères, lettres + chiffres
-2. **Déconnexion** : Sur ordinateurs partagés
-3. **Confidentialité** : Ne partagez pas vos identifiants
-4. **Mises à jour** : Acceptez les notifications de nouvelle version
+- Mot de passe fort (&ge; 8 caractères, lettres + chiffres)
+- Déconnectez-vous sur les postes partagés
+- Ne partagez jamais vos identifiants
 
 ---
 
-## 🆕 Nouveautés Récentes
+## 📄 Autres Documentations
 
-### Version Actuelle (Février 2026)
-
-✨ **Module Affaires** :
-- Gestion complète des dossiers projets
-- Pièces jointes multi-format (50 MB max)
-- Import BL (PDF) et Excel
-- Historique et liens vers réservations/missions
-
-✨ **Module Personnel** :
-- Gestion des personnes, compétences, missions, planning
-- Détection automatique des conflits d'affectation
-- Planning visuel (grille semaine)
-
-💬 **Messagerie interne** :
-- Conversations temps réel entre utilisateurs
-- Notifications de nouveaux messages
-- Disponible sur desktop et mobile
-
-🎨 **Améliorations visuelles** :
-- Logo eM@g Scene dans le header et les QR codes
-- Header redesigné : boutons contextuels (Nouvelle réservation / affectation)
-- Bouton "Nouvelle affaire" toujours visible
-- Thème indigo/violet
-
-📱 **Mobile enrichi** :
-- Page d'accueil avec navigation rapide
-- Personnel, messagerie, tableau de bord parc
-- 10 composants mobiles dédiés
-
-🔧 **Corrections** :
-- Résolution des erreurs de connexion
-- Amélioration de la stabilité
-- Correction des bugs de synchronisation
+| Fichier | Contenu |
+|---------|---------|
+| `ARCHITECTURE.md` | Architecture technique complète, API, schéma DB, modules |
+| `SECURITY.md` | Politique de sécurité, vulnérabilités, audit |
+| `README.md` | Vue d'ensemble, installation, stack |
 
 ---
 
-## 📄 Licence & Mentions
-
-© 2024 MagScene - Tous droits réservés
-
-Ce guide est destiné à un usage interne uniquement.
-Toute reproduction ou distribution externe est interdite sans autorisation.
-
-**Version** : 2.0  
-**Dernière mise à jour** : Février 2026
+**Version :** 3.0
+**Dernière mise à jour :** 26 février 2026
+© MagScene — Usage interne uniquement

@@ -2,8 +2,7 @@
  * Routes du module Mailing Avancé
  * Templates, envoi, historique
  */
-import { initEmailTransporter } from './emailService.js';
-import nodemailer from 'nodemailer';
+import { initEmailTransporter, getTransporter } from './emailService.js';
 import logger from './logger.js';
 import db from './database.js';
 
@@ -152,21 +151,27 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Sujet obligatoire' });
       }
 
-      // Créer un transporteur
-      const transport = nodemailer.createTransport({
-        host: config.smtp_host,
-        port: config.smtp_port || 587,
-        secure: config.smtp_secure === 1,
-        auth: { user: config.smtp_user, pass: config.smtp_pass },
-      });
+      // Utiliser le transporteur singleton de emailService
+      const { transporter: transport, emailConfig } = getTransporter();
+      if (!transport) {
+        // Fallback : réinitialiser le transporteur si non-initialisé
+        initEmailTransporter(db);
+        const retry = getTransporter();
+        if (!retry.transporter) {
+          return res.status(500).json({ error: 'Transporteur email non configuré' });
+        }
+      }
+      const activeTransport = transport || getTransporter().transporter;
+      const fromName = emailConfig?.from_name || config.from_name || 'eM@g';
+      const fromEmail = emailConfig?.smtp_user || config.smtp_user;
 
       const recipientList = Array.isArray(recipients) ? recipients : [recipients];
       const results = [];
 
       for (const to of recipientList) {
         try {
-          await transport.sendMail({
-            from: `"${config.from_name || 'eM@g'}" <${config.smtp_user}>`,
+          await activeTransport.sendMail({
+            from: `"${fromName}" <${fromEmail}>`,
             to,
             subject: `[eM@g] ${finalSubject}`,
             html: finalHtml,
@@ -269,7 +274,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
 
       // Personnel
       try {
-        const persons = db.prepare("SELECT id, name, email FROM persons WHERE email IS NOT NULL AND email != ''").all();
+        const persons = db.prepare("SELECT id, first_name || ' ' || last_name as name, email FROM persons WHERE email IS NOT NULL AND email != ''").all();
         persons.forEach(p => contacts.push({ type: 'person', id: p.id, name: p.name, email: p.email }));
       } catch { /* table pas encore créée */ }
 

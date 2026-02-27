@@ -108,7 +108,7 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
                 )}
               </div>
               <span className="eq-qty">×{item.quantity}</span>
-              {item.weight && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{item.weight * item.quantity} kg</span>}
+              {item.weight && <span style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>{item.weight * item.quantity} kg</span>}
               <button className="catalog-btn catalog-btn-danger catalog-btn-sm" onClick={() => handleRemove(item.id)} title="Retirer">
                 <Trash2 size={14} />
               </button>
@@ -182,7 +182,7 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
           <div className="catalog-form-group">
             <label>Rechercher dans le catalogue</label>
             <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--theme-text-muted)' }} />
               <input
                 type="text"
                 value={search}
@@ -195,11 +195,11 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
           </div>
 
           {/* Results */}
-          <div style={{ maxHeight: '250px', overflowY: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <div style={{ maxHeight: '250px', overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--theme-border)' }}>
             {loading ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>Recherche…</div>
+              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-muted)' }}>Recherche…</div>
             ) : catalogItems.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8' }}>Aucun résultat</div>
+              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-muted)' }}>Aucun résultat</div>
             ) : (
               catalogItems.map(item => (
                 <div
@@ -209,12 +209,12 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
                     padding: '0.5rem 0.75rem',
                     cursor: 'pointer',
                     background: selectedItem?.id === item.id ? 'rgba(99,102,241,0.1)' : 'transparent',
-                    borderBottom: '1px solid #f1f5f9',
-                    borderLeft: selectedItem?.id === item.id ? '3px solid #6366f1' : '3px solid transparent',
+                    borderBottom: '1px solid var(--theme-border)',
+                    borderLeft: selectedItem?.id === item.id ? '3px solid var(--theme-primary)' : '3px solid transparent',
                   }}
                 >
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>
                     {item.reference || 'Sans réf.'} · {item.family || ''} · {formatDimensions(item.dimensions)}
                   </div>
                 </div>

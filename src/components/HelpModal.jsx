@@ -66,7 +66,7 @@ const MODULE_GUIDES = [
     ]
   },
   {
-    id: 'general', icon: Shield, title: 'Général', color: '#64748b',
+    id: 'general', icon: Shield, title: 'Général', color: 'var(--theme-text-secondary)',
     tips: [
       { title: 'Google Calendar', text: "Les événements Google Calendar apparaissent en bandeau au-dessus du planning. Cliquez sur un événement pour créer une réservation associée." },
       { title: 'Messagerie interne', text: "Cliquez sur l'icône 💬 dans le header pour échanger avec les autres utilisateurs et partager des fichiers." },

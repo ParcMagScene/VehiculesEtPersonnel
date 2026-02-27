@@ -2,7 +2,7 @@
 .display-dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,7 +11,7 @@
 }
 
 .display-dialog {
-  background: var(--bg-primary, #ffffff);
+  background: var(--theme-bg-card);
   border-radius: 14px;
   width: 92%;
   max-width: 580px;
@@ -37,7 +37,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .display-dialog .dialog-header h3 {
@@ -47,11 +47,11 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--theme-text-primary);
 }
 
 .display-dialog .dialog-header h3 svg {
-  color: var(--accent-color, #6366f1);
+  color: var(--theme-primary);
 }
 
 .display-dialog .dialog-close {
@@ -60,7 +60,7 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--theme-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -69,8 +69,8 @@
 }
 
 .display-dialog .dialog-close:hover {
-  background: var(--bg-tertiary, #f1f5f9);
-  color: var(--text-primary);
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-primary);
 }
 
 .display-dialog .dialog-body {
@@ -95,7 +95,7 @@
 .display-dialog .form-group label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-secondary, #64748b);
+  color: var(--theme-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -110,10 +110,10 @@
 .display-dialog .form-group textarea {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
   font-size: 0.9rem;
   font-family: inherit;
   transition: border-color 0.15s;
@@ -123,7 +123,7 @@
 .display-dialog .form-group select:focus,
 .display-dialog .form-group textarea:focus {
   outline: none;
-  border-color: var(--accent-color, #6366f1);
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
@@ -144,10 +144,10 @@
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  border: 2px solid var(--border-color, #e2e8f0);
+  border: 2px solid var(--theme-border);
   border-radius: 10px;
-  background: var(--bg-primary);
-  color: var(--text-secondary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -155,12 +155,12 @@
 }
 
 .display-dialog .type-chip:hover {
-  border-color: var(--text-secondary);
+  border-color: var(--theme-text-secondary);
 }
 
 .display-dialog .type-chip.selected {
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 /* Category pills */
@@ -172,10 +172,10 @@
 
 .display-dialog .cat-pill {
   padding: 6px 14px;
-  border: 2px solid var(--border-color, #e2e8f0);
+  border: 2px solid var(--theme-border);
   border-radius: 10px;
-  background: var(--bg-primary);
-  color: var(--text-secondary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -183,12 +183,12 @@
 }
 
 .display-dialog .cat-pill:hover {
-  border-color: var(--text-secondary);
+  border-color: var(--theme-text-secondary);
 }
 
 .display-dialog .cat-pill.selected {
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 /* Period toggle */
@@ -204,10 +204,10 @@
   justify-content: center;
   gap: 6px;
   padding: 10px 16px;
-  border: 2px solid var(--border-color, #e2e8f0);
+  border: 2px solid var(--theme-border);
   border-radius: 10px;
-  background: var(--bg-primary);
-  color: var(--text-secondary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -215,13 +215,13 @@
 }
 
 .display-dialog .period-btn:hover {
-  border-color: var(--accent-color, #6366f1);
+  border-color: var(--theme-primary);
 }
 
 .display-dialog .period-btn.selected {
-  border-color: var(--accent-color, #6366f1);
+  border-color: var(--theme-primary);
   background: rgba(99, 102, 241, 0.08);
-  color: var(--accent-color, #6366f1);
+  color: var(--theme-primary);
 }
 
 /* Affaire autocomplete */
@@ -234,8 +234,8 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg-primary, #fff);
-  border: 1px solid var(--border-color, #e2e8f0);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   max-height: 160px;
   overflow-y: auto;
@@ -251,16 +251,16 @@
 }
 
 .display-dialog .affaire-suggestion:hover {
-  background: var(--bg-tertiary, #f1f5f9);
+  background: var(--theme-bg-tertiary);
 }
 
 .display-dialog .affaire-suggestion .affaire-id {
   font-weight: 700;
-  color: var(--accent-color, #6366f1);
+  color: var(--theme-primary);
 }
 
 .display-dialog .affaire-suggestion .affaire-name {
-  color: var(--text-secondary);
+  color: var(--theme-text-secondary);
   margin-left: 8px;
   font-size: 0.8rem;
 }
@@ -272,15 +272,15 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-top: 1px solid var(--border-color, #e2e8f0);
+  border-top: 1px solid var(--theme-border);
 }
 
 .display-dialog .btn-cancel {
   padding: 8px 20px;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-secondary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -288,7 +288,7 @@
 }
 
 .display-dialog .btn-cancel:hover {
-  background: var(--bg-tertiary, #f1f5f9);
+  background: var(--theme-bg-tertiary);
 }
 
 .display-dialog .btn-save {
@@ -298,8 +298,8 @@
   padding: 8px 24px;
   border: none;
   border-radius: 8px;
-  background: var(--accent-color, #6366f1);
-  color: white;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;

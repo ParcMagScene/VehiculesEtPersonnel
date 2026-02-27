@@ -19,11 +19,8 @@
     "watch-photos": "node scripts/watch-photos.js"
   },
   "dependencies": {
-    "@react-oauth/google": "^0.13.4",
-    "canvas": "^3.2.1",
     "date-fns": "^3.3.1",
     "lucide-react": "^0.344.0",
-    "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.4.530",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",

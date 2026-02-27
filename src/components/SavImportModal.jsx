@@ -58,7 +58,7 @@ function parseCSV(text, separator = ';') {
 }
 
 const STATUS_MAP = {
-  closed: { label: 'Clôturée', color: '#6b7280', icon: '✅' },
+  closed: { label: 'Clôturée', color: 'var(--theme-text-gray)', icon: '✅' },
   in_progress: { label: 'En cours', color: '#f59e0b', icon: '🔧' },
   open: { label: 'Ouverte', color: '#ef4444', icon: '🔴' },
 };
@@ -219,12 +219,12 @@ const SavImportModal = ({ onClose, onImportDone }) => {
 
               {/* Option doublons */}
               {preview.duplicatesCount > 0 && (
-                <div className="eq-import-section" style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: 10, border: '1px solid #fecaca' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#991b1b' }}>
+                <div className="eq-import-section" style={{ padding: '10px 14px', background: 'var(--theme-danger-bg)', borderRadius: 10, border: '1px solid var(--theme-danger-border, #fecaca)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--theme-danger-text)' }}>
                     <input type="checkbox" checked={skipDuplicates} onChange={(e) => setSkipDuplicates(e.target.checked)} />
                     Ignorer les {preview.duplicatesCount} doublon(s) déjà présents en base
                   </label>
-                  <p style={{ fontSize: 11, color: '#7f1d1d', margin: '4px 0 0 26px' }}>
+                  <p style={{ fontSize: 11, color: 'var(--theme-danger-text)', margin: '4px 0 0 26px' }}>
                     {preview.duplicatesCount} intervention(s) existent déjà avec le même N° d’intervention.
                     {skipDuplicates ? ' Elles seront ignorées.' : ' Elles seront importées en doublon.'}
                   </p>
@@ -266,7 +266,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                     </thead>
                     <tbody>
                       {(preview.sample || []).map((row, i) => (
-                        <tr key={i} style={{ background: row.matched ? '' : '#fef3c7' }}>
+                        <tr key={i} style={{ background: row.matched ? '' : 'var(--btn-warning-bg)' }}>
                           <td>{row.matched ? '✅' : '⚠️'}</td>
                           <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{row.intervention} {row.isDuplicate && <span style={{ color: '#ef4444', fontSize: 10, fontWeight: 700 }}>🔁</span>}</td>
                           <td>{row.code_article}</td>
@@ -276,7 +276,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                           <td>{formatDate(row.endDate)}</td>
                           <td>{row.cost > 0 ? `${row.cost.toFixed(2)} €` : '—'}</td>
                           <td>
-                            <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 10, fontWeight: 600, background: (STATUS_MAP[row.status]?.color || '#6b7280') + '20', color: STATUS_MAP[row.status]?.color || '#6b7280' }}>
+                            <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 10, fontWeight: 600, background: (STATUS_MAP[row.status]?.color || 'var(--theme-text-gray)') + '20', color: STATUS_MAP[row.status]?.color || 'var(--theme-text-gray)' }}>
                               {STATUS_MAP[row.status]?.label || row.status}
                             </span>
                           </td>
@@ -293,7 +293,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                   <h4 style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <AlertInfo size={16} /> {preview.unmatchedItems.length} intervention(s) sans correspondance
                   </h4>
-                  <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
+                  <p style={{ fontSize: 12, color: 'var(--theme-text-secondary)', marginBottom: 12 }}>
                     Ces interventions seront importées mais non liées à un équipement. Vous pouvez les lier manuellement ci-dessous ou plus tard depuis l'onglet SAV.
                   </p>
                   <div className="eq-import-table-wrap" style={{ maxHeight: 300 }}>
@@ -348,9 +348,9 @@ const SavImportModal = ({ onClose, onImportDone }) => {
 
               {/* Popup de sélection d'équipement pour liaison manuelle */}
               {linkingIndex !== null && (
-                <div className="eq-modal-overlay" style={{ top: 0, zIndex: 2000, background: 'rgba(0,0,0,0.3)' }}
+                <div className="eq-modal-overlay" style={{ top: 0, zIndex: 2000, background: 'var(--theme-overlay)' }}
                      onClick={(e) => { if (e.target === e.currentTarget) setLinkingIndex(null); }}>
-                  <div style={{ background: 'white', borderRadius: 12, padding: 20, maxWidth: 500, width: '90%', maxHeight: '60vh', display: 'flex', flexDirection: 'column', margin: 'auto' }}>
+                  <div style={{ background: 'var(--theme-bg-card)', borderRadius: 12, padding: 20, maxWidth: 500, width: '90%', maxHeight: '60vh', display: 'flex', flexDirection: 'column', margin: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <h4 style={{ margin: 0 }}>🔗 Lier à un équipement</h4>
                       <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setLinkingIndex(null)}><X size={18} /></button>
@@ -358,27 +358,27 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                     {(() => {
                       const item = preview.unmatchedItems?.find(u => u.index === linkingIndex);
                       return item ? (
-                        <div style={{ marginBottom: 12, padding: 8, background: '#f8fafc', borderRadius: 8, fontSize: 12 }}>
+                        <div style={{ marginBottom: 12, padding: 8, background: 'var(--theme-bg-page)', borderRadius: 8, fontSize: 12 }}>
                           <strong>{item.intervention}</strong> — {item.nom} {item.serial ? `(S/N: ${item.serial})` : ''}
                         </div>
                       ) : null;
                     })()}
                     <div style={{ position: 'relative', marginBottom: 12 }}>
-                      <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: '#94a3b8' }} />
+                      <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--theme-text-muted)' }} />
                       <input
                         type="text"
                         value={linkSearch}
                         onChange={(e) => setLinkSearch(e.target.value)}
                         placeholder="Chercher par nom, référence ou N° série..."
-                        style={{ width: '100%', padding: '8px 8px 8px 32px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
+                        style={{ width: '100%', padding: '8px 8px 8px 32px', border: '1px solid var(--theme-border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
                         autoFocus
                       />
                     </div>
-                    <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+                    <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--theme-border)', borderRadius: 8 }}>
                       {filteredEquipment.map(eq => (
                         <div
                           key={eq.id}
-                          style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: 13, transition: 'background 0.1s' }}
+                          style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--theme-border)', fontSize: 13, transition: 'background 0.1s' }}
                           className="eq-link-option"
                           onClick={() => {
                             setManualLinks(prev => ({ ...prev, [linkingIndex]: eq.id }));
@@ -388,13 +388,13 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                           onMouseLeave={(e) => e.currentTarget.style.background = ''}
                         >
                           <strong>{eq.name}</strong>
-                          <span style={{ marginLeft: 8, fontSize: 11, color: '#64748b' }}>
+                          <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--theme-text-secondary)' }}>
                             {eq.reference ? `Réf: ${eq.reference}` : ''} {eq.serial_number ? `S/N: ${eq.serial_number}` : ''}
                           </span>
                         </div>
                       ))}
                       {filteredEquipment.length === 0 && (
-                        <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+                        <div style={{ padding: 20, textAlign: 'center', color: 'var(--theme-text-muted)', fontSize: 13 }}>
                           {linkSearch ? 'Aucun résultat' : 'Tapez pour chercher...'}
                         </div>
                       )}
@@ -436,13 +436,13 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                 )}
                 {result.skippedDuplicates > 0 && (
                   <div className="eq-import-result-stat">
-                    <span className="eq-import-result-value" style={{ color: '#6b7280' }}>{result.skippedDuplicates}</span>
+                    <span className="eq-import-result-value" style={{ color: 'var(--theme-text-gray)' }}>{result.skippedDuplicates}</span>
                     <span>🔁 Doublons ignorés</span>
                   </div>
                 )}
               </div>
               {result.createdUnlinked > 0 && (
-                <p style={{ fontSize: 12, color: '#64748b', marginTop: 12 }}>
+                <p style={{ fontSize: 12, color: 'var(--theme-text-secondary)', marginTop: 12 }}>
                   Les interventions non liées sont accessibles depuis l'onglet SAV pour liaison manuelle.
                 </p>
               )}

@@ -1,4 +1,5 @@
 import db, { addToHistory } from './database.js';
+import logger from './logger.js';
 
 // ═══════════════════════════════════════════════════════════════
 // Catégories Stock
@@ -17,7 +18,7 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
       `).all();
       res.json(categories);
     } catch (error) {
-      console.error('Erreur liste catégories stock:', error);
+      logger.error('Erreur liste catégories stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -35,7 +36,7 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
       const category = db.prepare('SELECT * FROM stock_categories WHERE id = ?').get(result.lastInsertRowid);
       res.status(201).json(category);
     } catch (error) {
-      console.error('Erreur création catégorie stock:', error);
+      logger.error('Erreur création catégorie stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -54,7 +55,7 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
       if (!category) return res.status(404).json({ error: 'Catégorie non trouvée' });
       res.json(category);
     } catch (error) {
-      console.error('Erreur modification catégorie stock:', error);
+      logger.error('Erreur modification catégorie stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -73,7 +74,7 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
       db.prepare('DELETE FROM stock_categories WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      console.error('Erreur suppression catégorie stock:', error);
+      logger.error('Erreur suppression catégorie stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -121,7 +122,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       const items = db.prepare(query).all(...params);
       res.json(items);
     } catch (error) {
-      console.error('Erreur liste articles stock:', error);
+      logger.error('Erreur liste articles stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -141,13 +142,13 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       if (!item) return res.status(404).json({ error: 'Article non trouvé' });
       res.json(item);
     } catch (error) {
-      console.error('Erreur détail article stock:', error);
+      logger.error('Erreur détail article stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
   // Créer un article
-  app.post('/api/stock/items', authenticateToken, (req, res) => {
+  app.post('/api/stock/items', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo } = req.body;
       if (!name) return res.status(400).json({ error: 'Le nom est requis' });
@@ -193,13 +194,13 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       if (error.message?.includes('UNIQUE constraint')) {
         return res.status(400).json({ error: 'Cette référence existe déjà' });
       }
-      console.error('Erreur création article stock:', error);
+      logger.error('Erreur création article stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
   // Modifier un article
-  app.put('/api/stock/items/:id', authenticateToken, (req, res) => {
+  app.put('/api/stock/items/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo, is_active } = req.body;
       if (!name) return res.status(400).json({ error: 'Le nom est requis' });
@@ -253,7 +254,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       if (error.message?.includes('UNIQUE constraint')) {
         return res.status(400).json({ error: 'Cette référence existe déjà' });
       }
-      console.error('Erreur modification article stock:', error);
+      logger.error('Erreur modification article stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -268,7 +269,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       db.prepare('DELETE FROM stock_items WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      console.error('Erreur suppression article stock:', error);
+      logger.error('Erreur suppression article stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -277,9 +278,9 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
 // ═══════════════════════════════════════════════════════════════
 // Mouvements de Stock
 // ═══════════════════════════════════════════════════════════════
-export function setupStockMovementsRoutes(app, authenticateToken) {
+export function setupStockMovementsRoutes(app, authenticateToken, requireAdmin) {
   // Créer un mouvement (entrée, sortie, ajustement, retour)
-  app.post('/api/stock/movements', authenticateToken, (req, res) => {
+  app.post('/api/stock/movements', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { stock_item_id, type, quantity, reason, reference, linked_entity_type, linked_entity_id } = req.body;
       if (!stock_item_id || !type || !quantity) {
@@ -323,7 +324,7 @@ export function setupStockMovementsRoutes(app, authenticateToken) {
       const movement = db.prepare('SELECT * FROM stock_movements WHERE id = ?').get(movResult.lastInsertRowid);
       res.status(201).json({ ...movement, item_name: item.name, item_reference: item.reference });
     } catch (error) {
-      console.error('Erreur mouvement stock:', error);
+      logger.error('Erreur mouvement stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -369,7 +370,7 @@ export function setupStockMovementsRoutes(app, authenticateToken) {
 
       res.json({ movements, total: total.count });
     } catch (error) {
-      console.error('Erreur historique mouvements stock:', error);
+      logger.error('Erreur historique mouvements stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -425,7 +426,7 @@ export function setupStockStatsRoutes(app, authenticateToken) {
         lowStockItems
       });
     } catch (error) {
-      console.error('Erreur stats stock:', error);
+      logger.error('Erreur stats stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });

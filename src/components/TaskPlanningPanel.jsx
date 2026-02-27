@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
-  CalendarDays, LayoutList, Monitor
+  CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye
 } from 'lucide-react';
 import api from '../utils/api';
+import { formatDateFr } from '../utils/formatUtils';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from '../hooks/useToast';
 import './TaskPlanningPanel.css';
@@ -13,13 +14,22 @@ const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
 // ═══ Constantes ═══
 const SECTIONS = {
+  rdv:                { label: 'RDV du jour',         emoji: '📅', color: '#059669' },
   prep_locations:     { label: 'Prépa Locations',    emoji: '📦', color: '#3b82f6' },
   prep_prestations:   { label: 'Prépa Prestations',  emoji: '🎤', color: '#f59e0b' },
   prep_ventes:        { label: 'Prépa Ventes',       emoji: '🏷️', color: '#10b981' },
+  prep_installations: { label: 'Prépa Installations', emoji: '⚙️', color: '#8b5cf6' },
   taches_prioritaires:{ label: 'Tâches Prioritaires', emoji: '🔴', color: '#ef4444' },
   taches_secondaires: { label: 'Tâches Secondaires', emoji: '🟡', color: '#f59e0b' },
   courses:            { label: 'Courses',             emoji: '🚗', color: '#8b5cf6' },
-  manual:             { label: 'Autres',              emoji: '📋', color: '#64748b' },
+  manual:             { label: 'Autres',              emoji: '📋', color: 'var(--theme-text-secondary)' },
+};
+
+const AFFAIRE_TYPE_INFO = {
+  'Prestation':    { label: 'Prestation',    emoji: '🎭', color: '#f59e0b', section: 'prep_prestations' },
+  'Location':      { label: 'Location',      emoji: '🏗️', color: '#3b82f6', section: 'prep_locations' },
+  'Vente':         { label: 'Vente',         emoji: '💰', color: '#8b5cf6', section: 'prep_ventes' },
+  'Installation':  { label: 'Installation',  emoji: '⚙️', color: '#10b981', section: 'prep_installations' },
 };
 
 const EVENT_TYPES = {
@@ -38,11 +48,17 @@ const mapEventToSection = (event) => {
     if (cat === 'location') return 'prep_locations';
     if (cat === 'prestation') return 'prep_prestations';
     if (cat === 'vente') return 'prep_ventes';
+    if (cat === 'installation') return 'prep_installations';
     return 'prep_locations';
   }
   if (['livraison', 'enlevement', 'depart'].includes(type)) return 'taches_prioritaires';
   if (['retour', 'recuperation'].includes(type)) return 'taches_secondaires';
   return 'manual';
+};
+
+const mapAffaireToSection = (affaire) => {
+  const info = AFFAIRE_TYPE_INFO[affaire.type];
+  return info ? info.section : 'manual';
 };
 
 const STATUS_ORDER = ['pending', 'in_progress', 'done', 'cancelled'];
@@ -56,12 +72,6 @@ const addDays = (dateStr, n) => {
   const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() + n);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-const formatDateFr = (dateStr) => {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 };
 
 const formatDateShort = (dateStr) => {
@@ -86,10 +96,11 @@ const getWeekDays = (dateStr) => {
 };
 
 // ═══ Composant Principal ═══
-function TaskPlanningPanel({ currentUser, refreshKey }) {
+function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
   const toast = useToast();
   const [tasks, setTasks] = useState([]);
   const [persons, setPersons] = useState([]);
+  const [affaires, setAffaires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [viewMode, setViewMode] = useState('day'); // 'day' | 'week'
@@ -101,28 +112,35 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   const [newTaskPerson, setNewTaskPerson] = useState('');
   const [showPdfExport, setShowPdfExport] = useState(false);
   const [displayEvents, setDisplayEvents] = useState([]);
+  // Personnel assignment popover for display events
+  const [assigningEventId, setAssigningEventId] = useState(null);
+  // RDV detail expansion
+  const [expandedRdv, setExpandedRdv] = useState(null);
 
   // Semaine : 7 jours à partir du lundi
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
 
-  // Load tasks + display events
+  // Load tasks + display events + affaires
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
-      let data, events;
+      let data, events, affairesData;
       if (viewMode === 'week') {
-        [data, events] = await Promise.all([
+        [data, events, affairesData] = await Promise.all([
           api.getTasks({ dateFrom: weekDays[0], dateTo: weekDays[6] }),
           api.getDisplayEvents({ dateFrom: weekDays[0], dateTo: weekDays[6] }),
+          api.getPlanningAffaires({ dateFrom: weekDays[0], dateTo: weekDays[6] }),
         ]);
       } else {
-        [data, events] = await Promise.all([
+        [data, events, affairesData] = await Promise.all([
           api.getTasks({ date: selectedDate }),
           api.getDisplayEvents({ date: selectedDate }),
+          api.getPlanningAffaires({ date: selectedDate }),
         ]);
       }
       setTasks(data);
       setDisplayEvents(Array.isArray(events) ? events : []);
+      setAffaires(Array.isArray(affairesData) ? affairesData : []);
     } catch (err) {
       toast.error('Erreur chargement tâches');
     } finally {
@@ -176,6 +194,53 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
     });
     return groups;
   }, [unlinkedEvents]);
+
+  // Filtrer les événements Google Calendar dont le titre contient "rdv"
+  const googleRdvEvents = useMemo(() => {
+    if (!googleEvents || googleEvents.length === 0) return [];
+    return googleEvents.filter(ev => {
+      const summary = ev.summary || '';
+      if (!/rdv/i.test(summary)) return false;
+      // Filtrer par date sélectionnée (ou semaine)
+      const evDate = ev.start?.dateTime || ev.start?.date || '';
+      const evDateStr = evDate.slice(0, 10);
+      if (viewMode === 'week') {
+        return weekDays.includes(evDateStr);
+      }
+      return evDateStr === selectedDate;
+    });
+  }, [googleEvents, selectedDate, viewMode, weekDays]);
+
+  // Affaires groupées par section de préparation
+  const affairesBySection = useMemo(() => {
+    const groups = {};
+    Object.keys(SECTIONS).forEach(k => { groups[k] = []; });
+    affaires.forEach(a => {
+      const sec = mapAffaireToSection(a);
+      if (!groups[sec]) groups[sec] = [];
+      groups[sec].push(a);
+      // Seules les affaires dont le titre contient "rdv" vont dans la section RDV
+      if (a.titre && /rdv/i.test(a.titre)) {
+        if (!groups.rdv) groups.rdv = [];
+        groups.rdv.push(a);
+      }
+    });
+    return groups;
+  }, [affaires]);
+
+  // Assigner un personnel à un événement d'affichage
+  const handleAssignPerson = async (eventId, personId) => {
+    try {
+      await api.assignDisplayEvent(eventId, personId || null);
+      toast.success('Personnel affecté');
+      setAssigningEventId(null);
+      loadTasks();
+    } catch (err) {
+      toast.error('Erreur affectation');
+    }
+  };
+
+
 
   // Toggle task status
   const cycleStatus = async (task) => {
@@ -307,7 +372,8 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   };
 
   const renderDisplayEventRow = (event) => {
-    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: '#64748b' };
+    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
+    const isPrep = event.type === 'preparation';
     return (
       <div key={`de-${event.id}`} className="task-row display-event-row">
         <span className="display-event-icon" style={{ color: typeInfo.color }}>
@@ -325,6 +391,38 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
             {event.comment && <span>📝 {event.comment.slice(0, 40)}{event.comment.length > 40 ? '…' : ''}</span>}
           </div>
         </div>
+
+        {/* Affectation personnel (préparations) */}
+        {isPrep && (
+          <div className="event-assign-container">
+            {event.assigned_person_first_name ? (
+              <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)}>
+                <User size={12} />
+                {event.assigned_person_first_name} {event.assigned_person_last_name?.charAt(0)}.
+              </span>
+            ) : (
+              <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)} title="Affecter un personnel">
+                <UserPlus size={13} />
+              </button>
+            )}
+            {assigningEventId === event.id && (
+              <div className="assign-dropdown">
+                <div className="assign-dropdown-title">Affecter à :</div>
+                {event.assigned_person_id && (
+                  <div className="assign-option unassign" onClick={() => handleAssignPerson(event.id, null)}>
+                    <X size={12} /> Retirer l'affectation
+                  </div>
+                )}
+                {persons.map(p => (
+                  <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(event.id, p.id)}>
+                    <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="task-actions">
           <button className="delete" onClick={() => handleDeleteDisplayEvent(event.id)} title="Retirer">
             <Trash2 size={14} />
@@ -334,22 +432,141 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
     );
   };
 
+  // Carte affaire dans une section
+  const renderAffaireRow = (affaire) => {
+    const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+    return (
+      <div key={`aff-${affaire.numeroAffaire}`} className="task-row affaire-row">
+        <span className="display-event-icon" style={{ color: typeInfo.color }}>
+          <Briefcase size={14} />
+        </span>
+        <div className="task-info">
+          <div className="task-title">
+            {typeInfo.emoji} {affaire.numeroAffaire}
+            {affaire.client ? ` — ${affaire.client}` : ''}
+          </div>
+          <div className="task-meta">
+            {affaire.adresseLivraison && <span><MapPin size={11} /> {affaire.adresseLivraison.split('\n')[0]}</span>}
+            {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
+            {affaire.blCount > 0 && <span>📄 {affaire.blCount} BL</span>}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Carte RDV Google Calendar
+  const renderGoogleRdvRow = (event) => {
+    const summary = event.summary || 'RDV';
+    const startDT = event.start?.dateTime || event.start?.date || '';
+    const endDT = event.end?.dateTime || event.end?.date || '';
+    const timeStr = startDT.includes('T')
+      ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
+      : 'Journée entière';
+    const location = event.location || '';
+    const description = event.description || '';
+    const affaireNum = event.affaire || '';
+    const isExpanded = expandedRdv === `gcal-${event.id}`;
+    return (
+      <div key={`gcal-rdv-${event.id}`} className="task-row rdv-row google-rdv-row">
+        <span className="display-event-icon" style={{ color: 'var(--theme-primary)' }}>
+          <Calendar size={14} />
+        </span>
+        <div className="task-info">
+          <div className="task-title">
+            📅 {affaireNum && <span className="affaire-tag">{affaireNum}</span>} {summary}
+          </div>
+          <div className="task-meta">
+            <span><Clock size={11} /> {timeStr}</span>
+            {location && <span><MapPin size={11} /> {location}</span>}
+          </div>
+        </div>
+        <div className="task-actions rdv-actions">
+          <span className="google-badge" title="Google Calendar">G</span>
+          <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : `gcal-${event.id}`)} title="Voir détails">
+            <Eye size={14} />
+          </button>
+        </div>
+        {isExpanded && (
+          <div className="rdv-detail-card">
+            <div className="rdv-detail-row"><strong>Titre :</strong> {summary}</div>
+            {affaireNum && <div className="rdv-detail-row"><strong>Affaire :</strong> {affaireNum}</div>}
+            <div className="rdv-detail-row"><strong>Horaire :</strong> {timeStr}</div>
+            {location && <div className="rdv-detail-row"><strong>Lieu :</strong> {location}</div>}
+            {description && <div className="rdv-detail-row"><strong>Description :</strong> {description.slice(0, 200)}{description.length > 200 ? '…' : ''}</div>}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Carte RDV : affaire avec détails dépliables
+  const renderRdvRow = (affaire) => {
+    const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+    const isExpanded = expandedRdv === affaire.numeroAffaire;
+    return (
+      <div key={`rdv-${affaire.numeroAffaire}`} className="task-row rdv-row">
+        <span className="display-event-icon" style={{ color: typeInfo.color }}>
+          <Calendar size={14} />
+        </span>
+        <div className="task-info">
+          <div className="task-title">
+            {typeInfo.emoji} {affaire.numeroAffaire} — {affaire.client || 'Sans client'}
+          </div>
+          <div className="task-meta">
+            {affaire.adresseLivraison && <span><MapPin size={11} /> {affaire.adresseLivraison.split('\n')[0]}</span>}
+            {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
+            {affaire.tel && <span>📞 {affaire.tel}</span>}
+            <span>📆 {affaire.dateDebut ? new Date(affaire.dateDebut + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}
+              {affaire.dateFin ? ` → ${new Date(affaire.dateFin + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
+            </span>
+          </div>
+        </div>
+        <div className="task-actions rdv-actions">
+          <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
+            <Eye size={14} />
+          </button>
+        </div>
+        {isExpanded && (
+          <div className="rdv-detail-card">
+            <div className="rdv-detail-row"><strong>Client :</strong> {affaire.client || '—'}</div>
+            <div className="rdv-detail-row"><strong>Interlocuteur :</strong> {affaire.interlocuteur || '—'}</div>
+            <div className="rdv-detail-row"><strong>Tél :</strong> {affaire.tel || '—'}</div>
+            <div className="rdv-detail-row"><strong>Adresse :</strong> {affaire.adresseLivraison?.split('\n').join(', ') || '—'}</div>
+            {affaire.titre && <div className="rdv-detail-row"><strong>Titre :</strong> {affaire.titre}</div>}
+            {affaire.devis && <div className="rdv-detail-row"><strong>Devis :</strong> {affaire.devis}</div>}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSection = (sectionKey) => {
     const info = SECTIONS[sectionKey];
     const sectionTasks = grouped[sectionKey] || [];
     const sectionEvents = eventsBySection[sectionKey] || [];
+    const sectionAffaires = affairesBySection[sectionKey] || [];
+    const isRdv = sectionKey === 'rdv';
+    const googleRdvCount = isRdv ? googleRdvEvents.length : 0;
+    const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount;
 
     return (
-      <div key={sectionKey} className="task-section">
+      <div key={sectionKey} className={`task-section ${isRdv ? 'rdv-section' : ''}`}>
         <div className="section-header" style={{ borderBottomColor: info.color }}>
           <h4>
             <span>{info.emoji}</span>
             {info.label}
           </h4>
-          <span className="section-count">{sectionTasks.length + sectionEvents.length}</span>
+          <span className="section-count">{totalCount}</span>
         </div>
 
-        {sectionEvents.map(renderDisplayEventRow)}
+        {/* Section RDV : Google Calendar RDV + affaires avec "rdv" dans le titre */}
+        {isRdv && googleRdvEvents.map(renderGoogleRdvRow)}
+        {isRdv && sectionAffaires.map(renderRdvRow)}
+
+        {/* Sections non-RDV : affaires + événements + tâches */}
+        {!isRdv && sectionAffaires.map(renderAffaireRow)}
+        {!isRdv && sectionEvents.map(renderDisplayEventRow)}
         {sectionTasks.map(renderTaskRow)}
 
         {addingSection === sectionKey ? (
@@ -402,7 +619,7 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
   const weekGrouped = useMemo(() => {
     if (viewMode !== 'week') return {};
     const map = {};
-    weekDays.forEach(d => { map[d] = { tasks: [], events: [] }; });
+    weekDays.forEach(d => { map[d] = { tasks: [], events: [], affaires: [] }; });
     tasks.forEach(t => {
       const d = t.date;
       if (map[d]) map[d].tasks.push(t);
@@ -411,8 +628,16 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
       const d = ev.date;
       if (map[d]) map[d].events.push(ev);
     });
+    // Ajouter les affaires à chaque jour où elles sont actives
+    affaires.forEach(a => {
+      weekDays.forEach(d => {
+        if (a.dateDebut && a.dateDebut <= d && (!a.dateFin || a.dateFin === '' || a.dateFin >= d)) {
+          if (map[d]) map[d].affaires.push(a);
+        }
+      });
+    });
     return map;
-  }, [tasks, unlinkedEvents, weekDays, viewMode]);
+  }, [tasks, unlinkedEvents, affaires, weekDays, viewMode]);
 
   // ── Vue semaine : mini-carte tâche ──
   const renderWeekTaskCard = (task) => {
@@ -443,7 +668,7 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
 
   // ── Vue semaine : mini-carte événement d'affichage ──
   const renderWeekEventCard = (event) => {
-    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: '#64748b' };
+    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
     return (
       <div
         key={`de-${event.id}`}
@@ -456,6 +681,22 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
         <button className="week-event-del" onClick={() => handleDeleteDisplayEvent(event.id)} title="Retirer">
           <Trash2 size={10} />
         </button>
+      </div>
+    );
+  };
+
+  // ── Vue semaine : mini-carte affaire ──
+  const renderWeekAffaireCard = (affaire) => {
+    const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+    return (
+      <div
+        key={`wa-${affaire.numeroAffaire}`}
+        className="week-event-card week-affaire-card"
+        style={{ borderLeftColor: typeInfo.color }}
+        title={`${typeInfo.label} ${affaire.numeroAffaire}${affaire.client ? ` — ${affaire.client}` : ''}`}
+      >
+        <Briefcase size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
+        <span className="week-event-title">{typeInfo.emoji} {affaire.client || affaire.numeroAffaire}</span>
       </div>
     );
   };
@@ -497,7 +738,7 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
             </button>
           </div>
           {totalTasks > 0 && (
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: '0.82rem', color: 'var(--theme-text-secondary)' }}>
               {doneTasks}/{totalTasks} terminée{doneTasks > 1 ? 's' : ''}
             </span>
           )}
@@ -522,12 +763,12 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
         <div className="week-view-container">
           <div className="week-grid">
             {weekDays.map(dayStr => {
-              const dayData = weekGrouped[dayStr] || { tasks: [], events: [] };
+              const dayData = weekGrouped[dayStr] || { tasks: [], events: [], affaires: [] };
               const isToday = dayStr === todayStr();
               const dayDate = new Date(dayStr + 'T00:00:00');
               const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
               const dayDone = dayData.tasks.filter(t => t.status === 'done').length;
-              const totalItems = dayData.tasks.length + dayData.events.length;
+              const totalItems = dayData.tasks.length + dayData.events.length + dayData.affaires.length;
 
               return (
                 <div key={dayStr} className={`week-day-column ${isToday ? 'today' : ''}`}>
@@ -544,6 +785,7 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
                       <div className="week-empty">—</div>
                     ) : (
                       <>
+                        {dayData.affaires.map(renderWeekAffaireCard)}
                         {dayData.events.map(renderWeekEventCard)}
                         {dayData.tasks.map(renderWeekTaskCard)}
                       </>
@@ -567,6 +809,9 @@ function TaskPlanningPanel({ currentUser, refreshKey }) {
           <TaskPDFExportModal
             date={selectedDate}
             tasks={tasks}
+            affaires={affaires}
+            displayEvents={displayEvents}
+            googleRdvEvents={googleRdvEvents}
             onClose={() => setShowPdfExport(false)}
           />
         </Suspense>

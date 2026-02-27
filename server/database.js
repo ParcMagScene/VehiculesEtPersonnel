@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import logger from "./logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,7 +22,7 @@ const db = new Database(dbPath);
 
 // Log du fichier DB utilisé (utile pour vérifier l'isolation dev/prod)
 const mode = process.env.NODE_ENV || 'production';
-console.log(`📂 Base de données: ${DB_FILENAME} (mode: ${mode})`);
+logger.info(`📂 Base de données: ${DB_FILENAME} (mode: ${mode})`);
 
 // Activer les clés étrangères
 db.pragma('foreign_keys = ON');
@@ -171,6 +172,7 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       address TEXT,
+      type TEXT DEFAULT 'Salle de spectacle',
       lat REAL,
       lng REAL,
       place_id TEXT,
@@ -503,7 +505,7 @@ function initializeDatabase() {
       ('Électricité', 'logistique', 'Habilitation électrique');
   `);
 
-  console.log('✅ Module Planning Personnel initialisé');
+  logger.info('✅ Module Planning Personnel initialisé');
 
   // ═══════════════════════════════════════════════════════
   // MODULE AFFAIRES
@@ -542,7 +544,7 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_affaires_google_event ON affaires(google_event_id);
   `);
 
-  console.log('✅ Module Affaires initialisé');
+  logger.info('✅ Module Affaires initialisé');
 
   // ═══════════════════════════════════════════════════════
   // MODULE POSTES
@@ -641,7 +643,7 @@ function initializeDatabase() {
       ('Coordinateur(trice) de projets', 'administratif', 0)
   `);
 
-  console.log('✅ Module Postes initialisé');
+  logger.info('✅ Module Postes initialisé');
 
   // Migration: required_skill_id (INTEGER FK) → required_skills (TEXT JSON, sans FK)
   try {
@@ -659,10 +661,10 @@ function initializeDatabase() {
         catch { val = JSON.stringify([m.required_skill_id]); }
         update.run(val, m.id);
       }
-      console.log('✅ Migration required_skill_id → required_skills effectuée');
+      logger.info('✅ Migration required_skill_id → required_skills effectuée');
     }
   } catch (error) {
-    console.warn('⚠️ Migration required_skills:', error.message);
+    logger.warn('⚠️ Migration required_skills:', error.message);
   }
 
   // Migration: ajouter default_positions (JSON) dans persons
@@ -671,7 +673,7 @@ function initializeDatabase() {
     const hasDefaultPositions = personsCols.some(col => col.name === 'default_positions');
     if (!hasDefaultPositions) {
       db.prepare("ALTER TABLE persons ADD COLUMN default_positions TEXT DEFAULT '[]'").run();
-      console.log('✅ Colonne default_positions ajoutée à persons');
+      logger.info('✅ Colonne default_positions ajoutée à persons');
     }
   } catch (error) {
     // Colonne déjà présente
@@ -801,7 +803,7 @@ function initializeDatabase() {
       ('2027-12-25', 'Noël', 2027)
   `);
 
-  console.log('✅ Module Gestion des Congés initialisé');
+  logger.info('✅ Module Gestion des Congés initialisé');
 
   // ═══════════════════════════════════════════════════════
   // FIN MODULE GESTION DES CONGÉS
@@ -822,28 +824,28 @@ function initializeDatabase() {
     
     if (!hasKilometrage) {
       db.prepare("ALTER TABLE vehicles ADD COLUMN kilometrage INTEGER DEFAULT 0").run();
-      console.log('✅ Colonne kilometrage ajoutée');
+      logger.info('✅ Colonne kilometrage ajoutée');
     }
     
     if (!hasControleTechniqueType) {
       db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_type TEXT").run();
-      console.log('✅ Colonne controle_technique_type ajoutée');
+      logger.info('✅ Colonne controle_technique_type ajoutée');
     }
     
     if (!hasControleTechniqueDate) {
       db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_date TEXT").run();
-      console.log('✅ Colonne controle_technique_date ajoutée');
+      logger.info('✅ Colonne controle_technique_date ajoutée');
     }
     
     if (!hasControleTechniqueDeadline) {
       db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_deadline TEXT").run();
-      console.log('✅ Colonne controle_technique_deadline ajoutée');
+      logger.info('✅ Colonne controle_technique_deadline ajoutée');
     }
 
     // Ajouter la nouvelle colonne pour les contrôles multiples
     if (!hasControlesTechniques) {
       db.prepare("ALTER TABLE vehicles ADD COLUMN controles_techniques TEXT DEFAULT '[]'").run();
-      console.log('✅ Colonne controles_techniques ajoutée');
+      logger.info('✅ Colonne controles_techniques ajoutée');
       
       // Migrer les anciennes données vers le nouveau format
       const vehiclesWithOldData = db.prepare(`
@@ -863,11 +865,11 @@ function initializeDatabase() {
       }
       
       if (vehiclesWithOldData.length > 0) {
-        console.log(`✅ Migration de ${vehiclesWithOldData.length} contrôles techniques vers le nouveau format`);
+        logger.info(`✅ Migration de ${vehiclesWithOldData.length} contrôles techniques vers le nouveau format`);
       }
     }
   } catch (error) {
-    console.log('Info: Colonnes véhicules déjà présentes');
+    logger.info('Info: Colonnes véhicules déjà présentes');
   }
 
   // Migration ONE-TIME: Ajouter les contrôles TACHYGRAPHE et LIMITEUR pour les PL
@@ -916,10 +918,10 @@ function initializeDatabase() {
 
       // Marquer la migration comme appliquée
       db.prepare("INSERT INTO migrations_log (name) VALUES (?)").run('add_tachygraphe_limiteur');
-      console.log(`✅ Migration Tachygraphe/Limiteur appliquée (${addedCount} véhicule(s) PL)`);
+      logger.info(`✅ Migration Tachygraphe/Limiteur appliquée (${addedCount} véhicule(s) PL)`);
     }
   } catch (error) {
-    console.error('Erreur migration Tachygraphe/Limiteur:', error.message);
+    logger.error('Erreur migration Tachygraphe/Limiteur:', error.message);
   }
 
   // Migration: ajouter trip_group_id dans trip_details pour lier les trajets
@@ -930,10 +932,10 @@ function initializeDatabase() {
     if (!hasTripGroupId) {
       db.prepare("ALTER TABLE trip_details ADD COLUMN trip_group_id TEXT").run();
       db.exec("CREATE INDEX IF NOT EXISTS idx_trip_details_trip_group_id ON trip_details(trip_group_id)");
-      console.log('✅ Colonne trip_group_id ajoutée à trip_details');
+      logger.info('✅ Colonne trip_group_id ajoutée à trip_details');
     }
   } catch (error) {
-    console.log('Info: Colonne trip_group_id déjà présente ou table trip_details non créée');
+    logger.info('Info: Colonne trip_group_id déjà présente ou table trip_details non créée');
   }
 
   // Migration: ajouter avatar dans users
@@ -942,20 +944,20 @@ function initializeDatabase() {
     const hasAvatar = userColumns.some(col => col.name === 'avatar');
     if (!hasAvatar) {
       db.prepare("ALTER TABLE users ADD COLUMN avatar TEXT").run();
-      console.log('✅ Colonne avatar ajoutée à users');
+      logger.info('✅ Colonne avatar ajoutée à users');
     }
     const hasPreferences = userColumns.some(col => col.name === 'preferences');
     if (!hasPreferences) {
       db.prepare("ALTER TABLE users ADD COLUMN preferences TEXT DEFAULT '{}'").run();
-      console.log('✅ Colonne preferences ajoutée à users');
+      logger.info('✅ Colonne preferences ajoutée à users');
     }
     const hasPermissions = userColumns.some(col => col.name === 'permissions');
     if (!hasPermissions) {
       db.prepare("ALTER TABLE users ADD COLUMN permissions TEXT DEFAULT '{}'").run();
-      console.log('✅ Colonne permissions ajoutée à users');
+      logger.info('✅ Colonne permissions ajoutée à users');
     }
   } catch (error) {
-    console.log('Info: Colonnes avatar/preferences déjà présentes');
+    logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }
 
   // Migration: ajouter google_drive_link dans reservations
@@ -964,10 +966,10 @@ function initializeDatabase() {
     const hasDriveLink = resColumns.some(col => col.name === 'google_drive_link');
     if (!hasDriveLink) {
       db.prepare("ALTER TABLE reservations ADD COLUMN google_drive_link TEXT").run();
-      console.log('✅ Colonne google_drive_link ajoutée à reservations');
+      logger.info('✅ Colonne google_drive_link ajoutée à reservations');
     }
   } catch (error) {
-    console.log('Info: Colonne google_drive_link déjà présente');
+    logger.info('Info: Colonne google_drive_link déjà présente');
   }
 
   // Migration: ajouter contract_type dans persons + migrer les types existants
@@ -976,7 +978,7 @@ function initializeDatabase() {
     const hasContractType = personsColumns.some(col => col.name === 'contract_type');
     if (!hasContractType) {
       db.prepare("ALTER TABLE persons ADD COLUMN contract_type TEXT").run();
-      console.log('✅ Colonne contract_type ajoutée à persons');
+      logger.info('✅ Colonne contract_type ajoutée à persons');
 
       // Migrer les types existants vers le nouveau système
       // salarié, technicien, conducteur → type='permanent'
@@ -998,17 +1000,17 @@ function initializeDatabase() {
         }
       }
       if (migrated > 0) {
-        console.log(`✅ Migration types personnel : ${migrated} personnes migrées (permanent/contractuel)`);
+        logger.info(`✅ Migration types personnel : ${migrated} personnes migrées (permanent/contractuel)`);
       }
     }
   } catch (error) {
-    console.log('Info: Colonne contract_type déjà présente ou erreur migration:', error.message);
+    logger.info('Info: Colonne contract_type déjà présente ou erreur migration:', error.message);
   }
 
   // Migration: ajouter day_states (JSON) dans missions pour stocker les jours ON/OFF
   try {
     db.prepare("ALTER TABLE missions ADD COLUMN day_states TEXT").run();
-    console.log('✅ Migration: colonne day_states ajoutée à missions');
+    logger.info('✅ Migration: colonne day_states ajoutée à missions');
   } catch (error) {
     // Colonne déjà présente — OK
   }
@@ -1016,7 +1018,7 @@ function initializeDatabase() {
   // Migration: ajouter colonne 'affaire' dans missions pour lien direct affaire↔mission
   try {
     db.prepare("ALTER TABLE missions ADD COLUMN affaire TEXT").run();
-    console.log('✅ Migration: colonne affaire ajoutée à missions');
+    logger.info('✅ Migration: colonne affaire ajoutée à missions');
     // Backfill: extraire le numéro d'affaire depuis le titre (ex: "AF32512 — ...")
     const missionsToFix = db.prepare("SELECT id, title, notes FROM missions WHERE affaire IS NULL").all();
     for (const m of missionsToFix) {
@@ -1027,7 +1029,7 @@ function initializeDatabase() {
       }
     }
     db.exec('CREATE INDEX IF NOT EXISTS idx_missions_affaire ON missions(affaire)');
-    console.log('✅ Migration: backfill affaire dans missions effectué');
+    logger.info('✅ Migration: backfill affaire dans missions effectué');
   } catch (error) {
     // Colonne déjà présente — OK
   }
@@ -1085,7 +1087,7 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_participants_user ON conversation_participants(user_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_participants_conversation ON conversation_participants(conversation_id)');
   } catch (error) {
-    console.warn('⚠️ Migration messagerie:', error.message);
+    logger.warn('⚠️ Migration messagerie:', error.message);
   }
 
   // ═══ Table configuration email ═══
@@ -1110,7 +1112,7 @@ function initializeDatabase() {
     // Insérer une config par défaut si elle n'existe pas
     db.exec(`INSERT OR IGNORE INTO email_config (id) VALUES (1)`);
   } catch (error) {
-    console.warn('⚠️ Migration email_config:', error.message);
+    logger.warn('⚠️ Migration email_config:', error.message);
   }
 
   // ═══ Migration: Système de gestion des congés ═══
@@ -1122,10 +1124,10 @@ function initializeDatabase() {
       db.prepare("ALTER TABLE availabilities ADD COLUMN approved_by INTEGER").run();
       db.prepare("ALTER TABLE availabilities ADD COLUMN approved_at DATETIME").run();
       db.prepare("ALTER TABLE availabilities ADD COLUMN rejection_reason TEXT").run();
-      console.log('✅ Migration: colonnes leave management ajoutées à availabilities');
+      logger.info('✅ Migration: colonnes leave management ajoutées à availabilities');
     }
   } catch (error) {
-    console.warn('⚠️ Migration leave management:', error.message);
+    logger.warn('⚠️ Migration leave management:', error.message);
   }
 
   // ═══ Module Parc Matériel + SAV ═══
@@ -1214,11 +1216,11 @@ function initializeDatabase() {
       const catCols = db.prepare("PRAGMA table_info(equipment_categories)").all().map(c => c.name);
       if (!catCols.includes('parent_id')) {
         db.prepare('ALTER TABLE equipment_categories ADD COLUMN parent_id INTEGER').run();
-        console.log('✅ Migration: parent_id ajouté à equipment_categories');
+        logger.info('✅ Migration: parent_id ajouté à equipment_categories');
       }
       if (!catCols.includes('level')) {
         db.prepare("ALTER TABLE equipment_categories ADD COLUMN level TEXT NOT NULL DEFAULT 'category'").run();
-        console.log('✅ Migration: level ajouté à equipment_categories');
+        logger.info('✅ Migration: level ajouté à equipment_categories');
       }
     } catch (e) { /* colonnes déjà présentes */ }
 
@@ -1227,17 +1229,17 @@ function initializeDatabase() {
       const eqCols = db.prepare("PRAGMA table_info(equipment)").all().map(c => c.name);
       if (!eqCols.includes('brand')) {
         db.prepare('ALTER TABLE equipment ADD COLUMN brand TEXT').run();
-        console.log('✅ Migration: brand ajouté à equipment');
+        logger.info('✅ Migration: brand ajouté à equipment');
       }
       if (!eqCols.includes('stock_quantity')) {
         db.prepare('ALTER TABLE equipment ADD COLUMN stock_quantity INTEGER DEFAULT 1').run();
-        console.log('✅ Migration: stock_quantity ajouté à equipment');
+        logger.info('✅ Migration: stock_quantity ajouté à equipment');
       }
       if (!eqCols.includes('uid')) {
         db.prepare('ALTER TABLE equipment ADD COLUMN uid TEXT').run();
         // SQLite ne supporte pas ADD COLUMN UNIQUE, on crée un index séparé
         db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_uid ON equipment(uid)').run();
-        console.log('✅ Migration: uid ajouté à equipment');
+        logger.info('✅ Migration: uid ajouté à equipment');
         // Générer les UID pour les équipements existants
         const existingEq = db.prepare('SELECT id FROM equipment WHERE uid IS NULL').all();
         const updateUid = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
@@ -1245,7 +1247,7 @@ function initializeDatabase() {
           const uid = 'EMAG-' + String(eq.id).padStart(5, '0');
           updateUid.run(uid, eq.id);
         }
-        if (existingEq.length > 0) console.log(`✅ Migration: ${existingEq.length} UID générés`);
+        if (existingEq.length > 0) logger.info(`✅ Migration: ${existingEq.length} UID générés`);
       }
     } catch (e) { /* colonnes déjà présentes */ }
 
@@ -1297,10 +1299,10 @@ function initializeDatabase() {
           ALTER TABLE sav_tickets_new RENAME TO sav_tickets;
           CREATE INDEX IF NOT EXISTS idx_sav_tickets_equipment_id ON sav_tickets(equipment_id);
         `);
-        console.log('✅ Migration: import_code/serial/name ajoutés à sav_tickets, equipment_id nullable');
+        logger.info('✅ Migration: import_code/serial/name ajoutés à sav_tickets, equipment_id nullable');
       }
     } catch (e) {
-      console.warn('⚠️ Migration sav_tickets import:', e.message);
+      logger.warn('⚠️ Migration sav_tickets import:', e.message);
     }
 
     // Catégories par défaut
@@ -1317,7 +1319,7 @@ function initializeDatabase() {
       insertCat.run('Autre', '📦', '#64748b', 'family');
     }
   } catch (error) {
-    console.warn('⚠️ Migration parc matériel:', error.message);
+    logger.warn('⚠️ Migration parc matériel:', error.message);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -1418,9 +1420,9 @@ function initializeDatabase() {
       )
     `);
 
-    console.log('✅ Tables commandes & ventes créées');
+    logger.info('✅ Tables commandes & ventes créées');
   } catch (error) {
-    console.warn('⚠️ Migration commandes & ventes:', error.message);
+    logger.warn('⚠️ Migration commandes & ventes:', error.message);
   }
 
   // Migration: ajouter code_libre et postal_code, city dans persons
@@ -1430,20 +1432,20 @@ function initializeDatabase() {
     if (!hasCodeLibre) {
       db.prepare("ALTER TABLE persons ADD COLUMN code_libre TEXT").run();
       db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_code_libre ON persons(code_libre)');
-      console.log('✅ Colonne code_libre ajoutée à persons');
+      logger.info('✅ Colonne code_libre ajoutée à persons');
     }
     const hasPostalCode = personsCols2.some(col => col.name === 'postal_code');
     if (!hasPostalCode) {
       db.prepare("ALTER TABLE persons ADD COLUMN postal_code TEXT").run();
-      console.log('✅ Colonne postal_code ajoutée à persons');
+      logger.info('✅ Colonne postal_code ajoutée à persons');
     }
     const hasCity = personsCols2.some(col => col.name === 'city');
     if (!hasCity) {
       db.prepare("ALTER TABLE persons ADD COLUMN city TEXT").run();
-      console.log('✅ Colonne city ajoutée à persons');
+      logger.info('✅ Colonne city ajoutée à persons');
     }
   } catch (error) {
-    console.log('Info: Migration code_libre/postal_code/city:', error.message);
+    logger.info('Info: Migration code_libre/postal_code/city:', error.message);
   }
 
   // ============================================================
@@ -1527,20 +1529,24 @@ function initializeDatabase() {
     const colNames = catalogCols.map(c => c.name);
     if (!colNames.includes('location_zone')) {
       db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_zone TEXT").run();
-      console.log('✅ Migration: ajout colonne location_zone à equipment_catalog');
+      logger.info('✅ Migration: ajout colonne location_zone à equipment_catalog');
     }
     if (!colNames.includes('location_code')) {
       db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_code TEXT").run();
-      console.log('✅ Migration: ajout colonne location_code à equipment_catalog');
+      logger.info('✅ Migration: ajout colonne location_code à equipment_catalog');
     }
     if (!colNames.includes('location_floor')) {
       db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_floor TEXT").run();
-      console.log('✅ Migration: ajout colonne location_floor à equipment_catalog');
+      logger.info('✅ Migration: ajout colonne location_floor à equipment_catalog');
+    }
+    if (!colNames.includes('location_depot')) {
+      db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_depot TEXT").run();
+      logger.info('✅ Migration: ajout colonne location_depot à equipment_catalog');
     }
     db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_location_zone ON equipment_catalog(location_zone)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_location_floor ON equipment_catalog(location_floor)');
   } catch (error) {
-    console.warn('⚠️ Migration location_zone/code/floor:', error.message);
+    logger.warn('⚠️ Migration location_zone/code/floor:', error.message);
   }
 
   // ═══ Migration: Localisation dépôt pour equipment (inventaire matériel) ═══
@@ -1549,22 +1555,92 @@ function initializeDatabase() {
     const eqColNames = eqCols.map(c => c.name);
     if (!eqColNames.includes('location_zone')) {
       db.prepare("ALTER TABLE equipment ADD COLUMN location_zone TEXT").run();
-      console.log('✅ Migration: ajout colonne location_zone à equipment');
+      logger.info('✅ Migration: ajout colonne location_zone à equipment');
     }
     if (!eqColNames.includes('location_code')) {
       db.prepare("ALTER TABLE equipment ADD COLUMN location_code TEXT").run();
-      console.log('✅ Migration: ajout colonne location_code à equipment');
+      logger.info('✅ Migration: ajout colonne location_code à equipment');
     }
     if (!eqColNames.includes('location_floor')) {
       db.prepare("ALTER TABLE equipment ADD COLUMN location_floor TEXT").run();
-      console.log('✅ Migration: ajout colonne location_floor à equipment');
+      logger.info('✅ Migration: ajout colonne location_floor à equipment');
+    }
+    if (!eqColNames.includes('location_depot')) {
+      db.prepare("ALTER TABLE equipment ADD COLUMN location_depot TEXT").run();
+      logger.info('✅ Migration: ajout colonne location_depot à equipment');
     }
     db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_location_zone ON equipment(location_zone)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_location_floor ON equipment(location_floor)');
-    // Migrer les données textuelles 'location' existantes vers location_zone si possible
-    // (les valeurs texte libres ne correspondront pas aux zone IDs, donc on laisse tel quel)
+    db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_location_depot ON equipment(location_depot)');
   } catch (error) {
-    console.warn('⚠️ Migration equipment location_zone/code/floor:', error.message);
+    logger.warn('⚠️ Migration equipment location_zone/code/floor:', error.message);
+  }
+
+  // ═══ Migration: Parser les valeurs texte "location" → champs structurés ═══
+  try {
+    const needsMigration = db.prepare(
+      "SELECT COUNT(*) as cnt FROM equipment WHERE location IS NOT NULL AND location != '' AND (location_depot IS NULL OR location_depot = '')"
+    ).get();
+    if (needsMigration.cnt > 0) {
+      logger.info(`📦 Migration localisation: ${needsMigration.cnt} équipements à migrer...`);
+
+      // Mapping zone → étage pour chaque dépôt
+      const depot1RDC = new Set(['A1','A2','A3','A4','A5','B1','B2','B3','B4','C','C1','C2','C3','C4','C5','C6','D1','D2','D3','D4','QUAI1','QUAI2','QUAI3','BUREAUX','ENTREE','I1','I2','I3']);
+      const depot1MEZZ = new Set(['E1','E2','E3','F','F1','F2','F3','F4','F5','F6','F7','F8','G','G1','G2','G3','H','H1','H2','H3','CUISINE','LOCAL_GELAT','CHAMBRE','SALLE_REU','ARC_INFO']);
+      const depot2RDC = new Set(['J','J1','J2','J3','J4','J5','K','K1','K2','K3','K4','L','L1','L2','N','QUAI1','QUAI2','TOURNEES','WC']);
+      const depot2MEZZ = new Set(['M','M1']);
+
+      const items = db.prepare(
+        "SELECT id, location FROM equipment WHERE location IS NOT NULL AND location != '' AND (location_depot IS NULL OR location_depot = '')"
+      ).all();
+
+      const updateStmt = db.prepare(
+        "UPDATE equipment SET location_depot = ?, location_zone = ?, location_floor = ? WHERE id = ?"
+      );
+
+      const migrateTransaction = db.transaction(() => {
+        let migrated = 0;
+        for (const item of items) {
+          const match = item.location.match(/^Entrepôt\s+(\d+)\s*:\s*(.+)$/i);
+          if (match) {
+            const depot = match[1];
+            let zone = match[2].trim();
+            let floor = null;
+
+            if (depot === '1') {
+              if (depot1RDC.has(zone)) floor = 'RDC';
+              else if (depot1MEZZ.has(zone)) floor = 'MEZZ';
+            } else if (depot === '2') {
+              // "M" seul → M1
+              if (zone === 'M') zone = 'M1';
+              if (depot2RDC.has(zone)) floor = 'RDC';
+              else if (depot2MEZZ.has(zone)) floor = 'MEZZ';
+            }
+
+            updateStmt.run(depot, zone, floor, item.id);
+            migrated++;
+          } else if (/^[A-Z]\d?$/i.test(item.location) && item.location !== 'Hors stock' && item.location !== 'Hors-Stock') {
+            // Zone seule sans "Entrepôt" (ex: "E3") — essayer de deviner le dépôt
+            const zone = item.location.trim();
+            if (depot1RDC.has(zone) || depot1MEZZ.has(zone)) {
+              const floor = depot1RDC.has(zone) ? 'RDC' : 'MEZZ';
+              updateStmt.run('1', zone, floor, item.id);
+              migrated++;
+            } else if (depot2RDC.has(zone) || depot2MEZZ.has(zone)) {
+              const floor = depot2RDC.has(zone) ? 'RDC' : 'MEZZ';
+              updateStmt.run('2', zone, floor, item.id);
+              migrated++;
+            }
+          }
+        }
+        return migrated;
+      });
+
+      const count = migrateTransaction();
+      logger.info(`✅ Migration localisation: ${count}/${items.length} équipements migrés`);
+    }
+  } catch (error) {
+    logger.warn('⚠️ Migration parsing location:', error.message);
   }
 
   // ═══ Module Mailing Avancé ═══
@@ -1599,7 +1675,7 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_mail_history_sent_at ON mail_history(sent_at)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_mail_history_template ON mail_history(template_id)');
   } catch (error) {
-    console.warn('⚠️ Migration mailing:', error.message);
+    logger.warn('⚠️ Migration mailing:', error.message);
   }
 
   // ═══ Tables Stock & Pièces ═══
@@ -1668,7 +1744,7 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_date ON stock_movements(created_at)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON stock_movements(type)');
   } catch (error) {
-    console.warn('⚠️ Migration stock:', error.message);
+    logger.warn('⚠️ Migration stock:', error.message);
   }
 
   // ═══ MODULE COMMUNICATION (Affichage dynamique + Planification + Import BL) ═══
@@ -1697,6 +1773,13 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_dde_affaire ON dynamic_display_events(affaire_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_dde_type ON dynamic_display_events(type)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_dde_category ON dynamic_display_events(category)');
+
+    // Migration : ajout colonne visible si absente
+    const ddeColumns = db.pragma('table_info(dynamic_display_events)');
+    if (!ddeColumns.find(c => c.name === 'visible')) {
+      db.exec('ALTER TABLE dynamic_display_events ADD COLUMN visible INTEGER DEFAULT 1');
+      logger.info('✅ Colonne visible ajoutée à dynamic_display_events');
+    }
 
     db.exec(`
       CREATE TABLE IF NOT EXISTS bl_imports (
@@ -1750,36 +1833,63 @@ function initializeDatabase() {
     const blCols = db.prepare("PRAGMA table_info(bl_imports)").all().map(c => c.name);
     if (!blCols.includes('affaire_type')) {
       db.prepare("ALTER TABLE bl_imports ADD COLUMN affaire_type TEXT").run();
-      console.log('  + bl_imports.affaire_type');
+      logger.info('  + bl_imports.affaire_type');
     }
     if (!blCols.includes('doc_type')) {
       db.prepare("ALTER TABLE bl_imports ADD COLUMN doc_type TEXT").run();
-      console.log('  + bl_imports.doc_type');
+      logger.info('  + bl_imports.doc_type');
     }
     if (!blCols.includes('confidence_score')) {
       db.prepare("ALTER TABLE bl_imports ADD COLUMN confidence_score REAL").run();
-      console.log('  + bl_imports.confidence_score');
+      logger.info('  + bl_imports.confidence_score');
     }
     if (!blCols.includes('sections_data')) {
       db.prepare("ALTER TABLE bl_imports ADD COLUMN sections_data TEXT").run();
-      console.log('  + bl_imports.sections_data');
+      logger.info('  + bl_imports.sections_data');
     }
     if (!blCols.includes('field_confidence')) {
       db.prepare("ALTER TABLE bl_imports ADD COLUMN field_confidence TEXT").run();
-      console.log('  + bl_imports.field_confidence');
+      logger.info('  + bl_imports.field_confidence');
     }
   } catch (error) {
-    console.warn('⚠️ Migration communication:', error.message);
+    logger.warn('⚠️ Migration communication:', error.message);
   }
 
-  console.log('✅ Base de données initialisée');
+  // ═══ Table bp_items : liaison BP → Catalogue Équipement ═══
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS bp_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bl_import_id TEXT NOT NULL,
+        equipment_catalog_id TEXT,
+        reference TEXT,
+        description TEXT,
+        section TEXT,
+        quantity INTEGER DEFAULT 1,
+        poids REAL,
+        volume REAL,
+        match_status TEXT DEFAULT 'unmatched',
+        match_confidence REAL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (bl_import_id) REFERENCES bl_imports(id) ON DELETE CASCADE,
+        FOREIGN KEY (equipment_catalog_id) REFERENCES equipment_catalog(id) ON DELETE SET NULL
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_bl ON bp_items(bl_import_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_catalog ON bp_items(equipment_catalog_id)');
+    logger.info('  ✅ Table bp_items (liaison BP ↔ catalogue)');
+  } catch (error) {
+    logger.warn('⚠️ Migration bp_items:', error.message);
+  }
+
+  logger.info('✅ Base de données initialisée');
 }
 
 // Fonctions helper pour l'historique
 export function addToHistory(entityType, entityId, action, changes, userId, userName) {
   // Si entityId est null ou undefined, ne pas enregistrer l'historique
   if (!entityId) {
-    console.warn(`⚠️  Tentative d'ajout à l'historique sans entity_id pour ${entityType}`);
+    logger.warn(`⚠️  Tentative d'ajout à l'historique sans entity_id pour ${entityType}`);
     return;
   }
   
@@ -1803,13 +1913,21 @@ export function getHistory(entityType, entityId) {
 
 initializeDatabase();
 
+// ═══ Migration : ajouter colonne 'type' à locations (si absente) ═══
+try {
+  db.exec("ALTER TABLE locations ADD COLUMN type TEXT DEFAULT 'Salle de spectacle'");
+  logger.info('✅ Migration: ajout colonne type à locations');
+} catch {
+  // Colonne déjà existante
+}
+
 // Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
   try {
     db.pragma('wal_checkpoint(FULL)');
-    console.log('✅ Checkpoint WAL effectué');
+    logger.info('✅ Checkpoint WAL effectué');
   } catch (error) {
-    console.error('❌ Erreur checkpoint WAL:', error);
+    logger.error('❌ Erreur checkpoint WAL:', error);
   }
 }
 
@@ -1820,9 +1938,9 @@ export function closeDatabase() {
     // Faire un checkpoint final avant de fermer
     checkpointDatabase();
     db.close();
-    console.log('✅ Base de données fermée proprement');
+    logger.info('✅ Base de données fermée proprement');
   } catch (error) {
-    console.error('❌ Erreur fermeture DB:', error);
+    logger.error('❌ Erreur fermeture DB:', error);
   }
 }
 

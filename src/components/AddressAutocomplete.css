@@ -31,7 +31,7 @@
 }
 
 .pac-item:hover {
-  background: #f0f5ff !important;
+  background: var(--theme-info-bg) !important;
 }
 
 .pac-item-query {
@@ -45,22 +45,22 @@
 
 /* Dark mode for Google Maps dropdown */
 [data-theme="dark"] .pac-container {
-  background: var(--theme-text-primary) !important;
-  border-color: var(--theme-text-subtle) !important;
+  background: var(--theme-bg-card) !important;
+  border-color: var(--theme-border) !important;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
 }
 
 [data-theme="dark"] .pac-item {
-  border-top-color: var(--theme-text-dark) !important;
-  color: var(--theme-border) !important;
+  border-top-color: var(--theme-border) !important;
+  color: var(--theme-text-secondary) !important;
 }
 
 [data-theme="dark"] .pac-item:hover {
-  background: var(--theme-text-dark) !important;
+  background: var(--theme-bg-tertiary) !important;
 }
 
 [data-theme="dark"] .pac-item-query {
-  color: var(--theme-border) !important;
+  color: var(--theme-text-primary) !important;
 }
 
 [data-theme="dark"] .pac-icon {

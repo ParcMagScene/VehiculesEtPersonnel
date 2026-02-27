@@ -3,8 +3,8 @@
    ============================================================ */
 
 .depot-map-container {
-  background: var(--card-bg, var(--theme-text-primary));
-  border: 1px solid var(--border-color, var(--theme-text-dark));
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -15,7 +15,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-color, var(--theme-text-dark));
+  border-bottom: 1px solid var(--theme-border);
   gap: 0.75rem;
   flex-wrap: wrap;
 }
@@ -26,7 +26,7 @@
   gap: 0.5rem;
   font-weight: 600;
   font-size: 0.95rem;
-  color: var(--text-primary, var(--theme-border));
+  color: var(--theme-text-primary);
 }
 
 .depot-map-count {
@@ -58,22 +58,22 @@
   gap: 0.35rem;
   padding: 0.35rem 0.75rem;
   font-size: 0.8rem;
-  border: 1px solid var(--border-color, var(--theme-text-subtle));
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
   background: transparent;
-  color: var(--text-secondary, var(--theme-text-muted));
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .depot-floor-btn:hover {
-  background: var(--hover-bg, var(--theme-text-dark));
-  color: var(--text-primary, var(--theme-border));
+  background: var(--hover-bg, var(--theme-bg-tertiary));
+  color: var(--theme-text-primary);
 }
 
 .depot-floor-btn.active {
   background: var(--theme-info);
-  color: #ffffff;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-info);
 }
 
@@ -111,10 +111,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.3rem 0.6rem;
-  border: 1px solid var(--border-color, var(--theme-text-dark));
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
   background: transparent;
-  color: var(--text-secondary, var(--theme-text-muted));
+  color: var(--theme-text-secondary);
   min-width: 200px;
 }
 
@@ -124,7 +124,7 @@
   outline: none;
   font-size: 0.8rem;
   background: transparent;
-  color: var(--text-primary, var(--theme-border));
+  color: var(--theme-text-primary);
   min-width: 100px;
 }
 
@@ -140,7 +140,7 @@
   display: flex;
   align-items: center;
   gap: 0.2rem;
-  border: 1px solid var(--border-color, var(--theme-text-dark));
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
   padding: 0.15rem;
 }
@@ -151,7 +151,7 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--text-secondary, var(--theme-text-muted));
+  color: var(--theme-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -160,8 +160,8 @@
 }
 
 .depot-zoom-controls button:hover:not(:disabled) {
-  background: var(--hover-bg, var(--theme-text-dark));
-  color: var(--text-primary, var(--theme-border));
+  background: var(--hover-bg, var(--theme-bg-tertiary));
+  color: var(--theme-text-primary);
 }
 
 .depot-zoom-controls button:disabled {
@@ -172,7 +172,7 @@
 .depot-zoom-level {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-secondary, var(--theme-text-muted));
+  color: var(--theme-text-secondary);
   min-width: 36px;
   text-align: center;
 }
@@ -247,7 +247,7 @@
   font-size: 0.65rem;
   font-family: 'Monaco', monospace;
   background: #334155;
-  color: #94a3b8;
+  color: var(--theme-text-secondary);
   padding: 1px 6px;
   border-radius: 3px;
 }
@@ -255,7 +255,7 @@
 .depot-tooltip-loading {
   padding: 8px 12px;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-style: italic;
 }
 
@@ -286,7 +286,7 @@
 }
 
 .tooltip-item-name {
-  color: #cbd5e1;
+  color: var(--theme-bg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -295,21 +295,21 @@
 .depot-tooltip-more {
   padding: 4px 12px 6px;
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-style: italic;
 }
 
 .depot-tooltip-empty {
   padding: 8px 12px;
   font-size: 0.75rem;
-  color: #475569;
+  color: var(--theme-text-subtle);
 }
 
 /* Legend search highlight */
 .legend-chip.highlighted {
   background: color-mix(in srgb, var(--chip-color) 30%, transparent);
   border-color: #fbbf24;
-  color: var(--text-primary, var(--theme-border));
+  color: var(--theme-text-primary);
   font-weight: 600;
 }
 
@@ -340,9 +340,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1rem;
-  border-top: 1px solid var(--border-color, var(--theme-text-dark));
+  border-top: 1px solid var(--theme-border);
   flex-wrap: wrap;
-  color: var(--text-secondary, var(--theme-text-muted));
+  color: var(--theme-text-secondary);
   font-size: 0.8rem;
 }
 
@@ -359,10 +359,10 @@
   gap: 0.3rem;
   padding: 0.2rem 0.5rem;
   font-size: 0.72rem;
-  border: 1px solid var(--border-color, var(--theme-text-dark));
+  border: 1px solid var(--theme-border);
   border-radius: 12px;
   background: transparent;
-  color: var(--text-secondary, var(--theme-text-muted));
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -371,7 +371,7 @@
 .legend-chip.active {
   background: color-mix(in srgb, var(--chip-color) 20%, transparent);
   border-color: var(--chip-color);
-  color: var(--text-primary, var(--theme-border));
+  color: var(--theme-text-primary);
 }
 
 .legend-dot {

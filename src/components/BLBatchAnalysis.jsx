@@ -95,8 +95,8 @@ export default function BLBatchAnalysis({ onClose }) {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="modal-header" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px', borderBottom: '1px solid var(--border-color)' }}>
-          <BarChart2 size={20} style={{ color: '#3b82f6' }} />
+        <div className="modal-header" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px', borderBottom: '1px solid var(--theme-border)' }}>
+          <BarChart2 size={20} style={{ color: 'var(--theme-primary)' }} />
           <h3 style={{ flex: 1, margin: 0, fontSize: '1.1rem' }}>Analyse batch des BL</h3>
           <button onClick={onClose} className="modal-close-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
             <X size={18} />
@@ -110,8 +110,8 @@ export default function BLBatchAnalysis({ onClose }) {
             <label
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-                border: '2px dashed var(--border-color)', borderRadius: 8, cursor: 'pointer',
-                fontSize: '0.85rem', color: 'var(--text-secondary)', flex: 1, justifyContent: 'center'
+                border: '2px dashed var(--theme-border)', borderRadius: 8, cursor: 'pointer',
+                fontSize: '0.85rem', color: 'var(--theme-text-secondary)', flex: 1, justifyContent: 'center'
               }}
             >
               <Upload size={16} />
@@ -129,7 +129,7 @@ export default function BLBatchAnalysis({ onClose }) {
               disabled={files.length === 0 || running}
               style={{
                 padding: '8px 20px', borderRadius: 8, border: 'none',
-                background: '#3b82f6', color: '#fff', cursor: files.length > 0 && !running ? 'pointer' : 'not-allowed',
+                background: 'var(--theme-primary)', color: 'var(--theme-text-inverse)', cursor: files.length > 0 && !running ? 'pointer' : 'not-allowed',
                 opacity: files.length === 0 || running ? 0.5 : 1, fontSize: '0.85rem', fontWeight: 600
               }}
             >
@@ -139,9 +139,9 @@ export default function BLBatchAnalysis({ onClose }) {
 
           {/* Barre de progression */}
           {running && (
-            <div style={{ height: 4, background: 'var(--border-color)', borderRadius: 2, marginBottom: 16, overflow: 'hidden' }}>
+            <div style={{ height: 4, background: 'var(--theme-border)', borderRadius: 2, marginBottom: 16, overflow: 'hidden' }}>
               <div style={{
-                height: '100%', background: '#3b82f6', borderRadius: 2,
+                height: '100%', background: 'var(--theme-primary)', borderRadius: 2,
                 width: `${progress.total > 0 ? (progress.current / progress.total * 100) : 0}%`,
                 transition: 'width 0.3s ease'
               }} />
@@ -152,7 +152,7 @@ export default function BLBatchAnalysis({ onClose }) {
           {stats && (
             <div style={{ marginBottom: 20 }}>
               <h4 style={{ margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BarChart2 size={16} style={{ color: '#3b82f6' }} />
+                <BarChart2 size={16} style={{ color: 'var(--theme-primary)' }} />
                 Rapport ({stats.total} fichier(s))
               </h4>
 
@@ -171,7 +171,7 @@ export default function BLBatchAnalysis({ onClose }) {
                   {Object.entries(stats.byDocType).map(([type, count]) => (
                     <span key={type} style={{
                       padding: '3px 10px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 500,
-                      background: 'var(--bg-secondary, #f0f0f0)', border: '1px solid var(--border-color)'
+                      background: 'var(--theme-bg-secondary)', border: '1px solid var(--theme-border)'
                     }}>
                       {type}: {count}
                     </span>
@@ -187,8 +187,8 @@ export default function BLBatchAnalysis({ onClose }) {
                   const barColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
                   return (
                     <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                      <span style={{ fontSize: '0.78rem', width: 90, color: 'var(--text-secondary)' }}>{FIELD_LABELS[k]}</span>
-                      <div style={{ flex: 1, height: 6, background: 'var(--border-color)', borderRadius: 3, overflow: 'hidden' }}>
+                      <span style={{ fontSize: '0.78rem', width: 90, color: 'var(--theme-text-secondary)' }}>{FIELD_LABELS[k]}</span>
+                      <div style={{ flex: 1, height: 6, background: 'var(--theme-border)', borderRadius: 3, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3, transition: 'width 0.3s' }} />
                       </div>
                       <span style={{ fontSize: '0.72rem', width: 35, textAlign: 'right', color: barColor, fontWeight: 600 }}>{pct}%</span>
@@ -208,8 +208,8 @@ export default function BLBatchAnalysis({ onClose }) {
                 const fc = r._fieldConfidence || {};
                 return (
                   <div key={idx} style={{
-                    border: '1px solid var(--border-color)', borderRadius: 8, marginBottom: 6,
-                    background: r.error ? '#fef2f210' : 'var(--bg-primary, #fff)'
+                    border: '1px solid var(--theme-border)', borderRadius: 8, marginBottom: 6,
+                    background: r.error ? '#fef2f210' : 'var(--theme-bg-card)'
                   }}>
                     {/* Ligne résumé */}
                     <div
@@ -232,14 +232,14 @@ export default function BLBatchAnalysis({ onClose }) {
                         <>
                           <span style={{
                             padding: '2px 8px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 500,
-                            background: '#3b82f615', color: '#3b82f6'
+                            background: 'var(--theme-primary-light)', color: 'var(--theme-primary)'
                           }}>
                             {r.docTypeLabel}
                           </span>
                           <span style={{ fontSize: '0.75rem', color: r.confidence >= 70 ? '#10b981' : '#f59e0b' }}>
                             {r.confidence}%
                           </span>
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--theme-text-secondary)' }}>
                             {r.fieldsFound}/{r.fieldsTotal}
                           </span>
                         </>
@@ -248,16 +248,16 @@ export default function BLBatchAnalysis({ onClose }) {
 
                     {/* Détail expansible */}
                     {isExpanded && !r.error && (
-                      <div style={{ padding: '0 12px 10px', borderTop: '1px solid var(--border-color)' }}>
+                      <div style={{ padding: '0 12px 10px', borderTop: '1px solid var(--theme-border)' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', marginTop: 8 }}>
                           {FIELD_KEYS.filter(k => k !== 'items').map(k => {
                             const val = r[k];
                             const conf = fc[k];
                             return (
                               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem' }}>
-                                <span style={{ color: conf ? CONF_COLORS[conf] : '#94a3b8', fontSize: '0.6rem' }}>●</span>
-                                <span style={{ color: 'var(--text-secondary)', minWidth: 70 }}>{FIELD_LABELS[k]}</span>
-                                <span style={{ fontWeight: val ? 500 : 300, color: val ? 'var(--text-primary)' : '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <span style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)', fontSize: '0.6rem' }}>●</span>
+                                <span style={{ color: 'var(--theme-text-secondary)', minWidth: 70 }}>{FIELD_LABELS[k]}</span>
+                                <span style={{ fontWeight: val ? 500 : 300, color: val ? 'var(--theme-text-primary)' : 'var(--theme-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {val || '—'}
                                 </span>
                               </div>
@@ -266,7 +266,7 @@ export default function BLBatchAnalysis({ onClose }) {
                         </div>
                         {/* Articles count */}
                         {r.items && r.items.length > 0 && (
-                          <div style={{ fontSize: '0.78rem', marginTop: 6, color: 'var(--text-secondary)' }}>
+                          <div style={{ fontSize: '0.78rem', marginTop: 6, color: 'var(--theme-text-secondary)' }}>
                             📦 {r.items.length} article(s)
                             {r.sections && r.sections.length > 0 && <> • 📂 {r.sections.length} section(s)</>}
                           </div>
@@ -274,7 +274,7 @@ export default function BLBatchAnalysis({ onClose }) {
                       </div>
                     )}
                     {isExpanded && r.error && (
-                      <div style={{ padding: '6px 12px 10px', borderTop: '1px solid var(--border-color)', fontSize: '0.78rem', color: '#ef4444' }}>
+                      <div style={{ padding: '6px 12px 10px', borderTop: '1px solid var(--theme-border)', fontSize: '0.78rem', color: '#ef4444' }}>
                         {r.error}
                       </div>
                     )}
@@ -286,7 +286,7 @@ export default function BLBatchAnalysis({ onClose }) {
 
           {/* État vide */}
           {!results && !running && files.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-secondary)' }}>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--theme-text-secondary)' }}>
               <BarChart2 size={48} strokeWidth={1} />
               <p style={{ marginTop: 8, fontSize: '0.85rem' }}>
                 Sélectionnez des fichiers PDF pour lancer l'analyse batch.
@@ -305,11 +305,11 @@ export default function BLBatchAnalysis({ onClose }) {
 function KPICard({ label, value, total, color }) {
   return (
     <div style={{
-      padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-color)',
+      padding: '10px 12px', borderRadius: 8, border: '1px solid var(--theme-border)',
       background: `${color}08`, textAlign: 'center'
     }}>
       <div style={{ fontSize: '1.3rem', fontWeight: 700, color }}>{value}</div>
-      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+      <div style={{ fontSize: '0.72rem', color: 'var(--theme-text-secondary)' }}>
         {label}{total !== undefined ? ` / ${total}` : ''}
       </div>
     </div>

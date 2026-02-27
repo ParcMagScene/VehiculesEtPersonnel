@@ -12,7 +12,7 @@
 }
 
 .login-container {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   padding: 40px;
   width: 90%;
@@ -72,7 +72,7 @@
 }
 
 .error-message {
-  background: #fee2e2;
+  background: var(--theme-danger-bg);
   border: 1px solid var(--theme-danger);
   color: var(--theme-danger-dark);
   padding: 12px;
@@ -189,7 +189,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -198,7 +198,7 @@
 }
 
 .login-modal-content {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 12px;
   position: relative;
   z-index: 1;
@@ -217,7 +217,7 @@
 .session-conflict-modal .modal-header h3 {
   margin: 0;
   font-size: 18px;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .session-conflict-modal .modal-body {
@@ -235,7 +235,7 @@
   padding: var(--btn-padding);
   border: var(--btn-secondary-border);
   border-radius: var(--btn-radius);
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--btn-secondary-color);
   cursor: pointer;
   font-size: var(--btn-font-size);

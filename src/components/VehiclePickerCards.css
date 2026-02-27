@@ -23,7 +23,7 @@
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.15s ease;
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .vehicle-picker-card:active {
@@ -32,7 +32,7 @@
 
 .vehicle-picker-card.selected {
   border-color: var(--theme-primary);
-  background: #f5f3ff;
+  background: var(--theme-purple-bg);
 }
 
 .vehicle-picker-card.readonly {
@@ -62,7 +62,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
 }
 
 .vehicle-picker-info {
@@ -95,7 +95,7 @@
 
 .vehicle-picker-type {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   background: var(--theme-bg-tertiary);
   padding: 0.1rem 0.4rem;
   border-radius: 0.25rem;
@@ -113,7 +113,7 @@
   width: 28px;
   height: 28px;
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -123,7 +123,7 @@
 .vehicle-picker-empty {
   text-align: center;
   padding: 1.5rem 0.5rem;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-size: 0.875rem;
 }
 
@@ -149,19 +149,19 @@
   border-radius: 0.75rem;
   cursor: pointer;
   transition: all 0.15s ease;
-  background: white;
+  background: var(--theme-bg-card);
   position: relative;
   text-align: center;
 }
 
 .vehicle-picker-card-desktop:hover {
   border-color: var(--theme-bg-indigo-lighter);
-  background: #f8f7ff;
+  background: var(--theme-purple-bg);
 }
 
 .vehicle-picker-card-desktop.selected {
   border-color: var(--theme-primary);
-  background: #ede9fe;
+  background: var(--theme-purple-bg);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
@@ -190,7 +190,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
 }
 
 .vehicle-picker-info-desktop {
@@ -224,7 +224,7 @@
 
 .vehicle-picker-type-desktop {
   font-size: 0.65rem;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   background: var(--theme-bg-tertiary);
   padding: 0.1rem 0.35rem;
   border-radius: 0.25rem;
@@ -244,7 +244,7 @@
   width: 22px;
   height: 22px;
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border-radius: 50%;
   display: flex;
   align-items: center;

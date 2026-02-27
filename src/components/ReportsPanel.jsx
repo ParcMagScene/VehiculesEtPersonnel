@@ -648,7 +648,7 @@ const ReportsPanel = ({ currentUser }) => {
               <span className="rp-kpi-val">{personnelReport.active}</span>
               <span className="rp-kpi-lbl">Actifs</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#6b7280' }}>
+            <div className="rp-kpi" style={{ borderColor: 'var(--theme-text-gray)' }}>
               <span className="rp-kpi-val">{personnelReport.inactive}</span>
               <span className="rp-kpi-lbl">Inactifs</span>
             </div>

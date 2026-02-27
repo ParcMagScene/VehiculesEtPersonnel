@@ -7,7 +7,7 @@
 
 .planning-header {
   padding: 16px 24px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 2px solid var(--theme-border-medium);
   display: flex;
   align-items: center;
@@ -33,7 +33,7 @@
 .planning-vehicles-column {
   width: 250px;
   flex-shrink: 0;
-  background: white;
+  background: var(--theme-bg-card);
   border-right: 2px solid var(--theme-border-medium);
   display: flex;
   flex-direction: column;
@@ -64,7 +64,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 4px;
-  background: white;
+  background: var(--theme-bg-card);
   transition: background 0.2s;
 }
 
@@ -144,7 +144,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: white;
+  background: var(--theme-bg-card);
   position: relative;
   overflow-y: auto;
 }
@@ -160,7 +160,7 @@
 
 /* Réservations */
 .planning-reservation {
-  background: linear-gradient(135deg, #dbeafe 0%, var(--theme-info-border) 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
   border-left: 3px solid var(--theme-info);
   border-radius: 6px;
   padding: 8px;
@@ -191,7 +191,7 @@
 .planning-reservation-client {
   font-weight: 600;
   font-size: 13px;
-  color: #1e40af;
+  color: var(--theme-info-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -222,23 +222,23 @@
 }
 
 .planning-maintenance-reported {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  background: linear-gradient(135deg, var(--theme-danger-bg) 0%, var(--theme-danger-bg) 100%);
 }
 
 .planning-maintenance-scheduled {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, var(--theme-warning-bg) 0%, var(--btn-warning-hover-bg) 100%);
 }
 
 .planning-maintenance-in_progress {
-  background: linear-gradient(135deg, #dbeafe 0%, var(--theme-info-border) 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
 }
 
 .planning-maintenance-pending {
-  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  background: linear-gradient(135deg, var(--theme-purple-bg) 0%, var(--theme-purple-bg-strong) 100%);
 }
 
 .planning-maintenance-completed {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  background: linear-gradient(135deg, var(--btn-success-bg) 0%, var(--btn-success-hover-bg) 100%);
 }
 
 .planning-maintenance-icon {
@@ -259,11 +259,11 @@
 }
 
 .planning-maintenance-pending .planning-maintenance-icon {
-  color: #7c3aed;
+  color: var(--theme-purple-accent);
 }
 
 .planning-maintenance-completed .planning-maintenance-icon {
-  color: #059669;
+  color: var(--btn-success-color);
 }
 
 .planning-maintenance-info {
@@ -298,11 +298,11 @@
 }
 
 .planning-maintenance-pending .planning-maintenance-status {
-  color: #7c3aed;
+  color: var(--theme-purple-accent);
 }
 
 .planning-maintenance-completed .planning-maintenance-status {
-  color: #059669;
+  color: var(--btn-success-color);
 }
 
 /* Scrollbars */
@@ -337,7 +337,7 @@
 }
 
 .planning-mode-btn.active {
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--theme-info);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   font-weight: 600;
@@ -379,7 +379,7 @@
   gap: 8px;
   border-left: 3px solid;
   min-height: 40px;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #e0f2fe 100%);
 }
 
 .planning-mission:hover {
@@ -430,15 +430,15 @@
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  background: #fef2f2;
+  background: var(--theme-danger-bg);
   border-radius: 4px;
   font-size: 11px;
-  color: #b91c1c;
+  color: var(--theme-danger-text-alt);
   font-weight: 500;
 }
 
 .planning-cell-unavailable {
-  background: #fff5f5 !important;
+  background: var(--theme-danger-bg) !important;
 }
 
 .planning-cell-available .available-dot {

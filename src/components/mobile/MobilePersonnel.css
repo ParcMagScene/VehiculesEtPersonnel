@@ -13,7 +13,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
 }
 
@@ -47,7 +47,7 @@
 
 .mpers-stat {
   flex: 1;
-  background: white;
+  background: var(--theme-bg-card);
   padding: 14px 12px;
   text-align: center;
   display: flex;
@@ -76,7 +76,7 @@
   gap: 10px;
   margin: 12px 16px 0;
   padding: 10px 14px;
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 10px;
   border: 1px solid var(--theme-border-medium);
 }
@@ -106,7 +106,7 @@
   padding: 6px 14px;
   border-radius: 16px;
   border: 1px solid var(--theme-border-muted);
-  background: white;
+  background: var(--theme-bg-card);
   font-size: 0.8rem;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -116,7 +116,7 @@
 
 .mpers-filters button.active {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
-  color: white;
+  color: var(--theme-text-inverse);
   border-color: transparent;
 }
 
@@ -130,7 +130,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px;
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   margin-bottom: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -150,7 +150,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 600;
   font-size: 0.9rem;
   flex-shrink: 0;
@@ -188,7 +188,7 @@
   gap: 3px;
   font-size: 0.72rem;
   color: var(--theme-indigo);
-  background: #ede9fe;
+  background: var(--theme-purple-bg);
   padding: 2px 8px;
   border-radius: 8px;
   font-weight: 500;
@@ -248,7 +248,7 @@
   align-items: center;
   gap: 8px;
   padding: 24px 16px 20px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-bg-tertiary);
 }
 
@@ -266,7 +266,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 700;
   font-size: 1.8rem;
 }
@@ -285,13 +285,13 @@
 }
 
 .mpers-status-tag.active {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
 }
 
 .mpers-status-tag.inactive {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
 }
 
 .mpers-contract {
@@ -305,7 +305,7 @@
 /* Sections */
 .mpers-section {
   padding: 16px;
-  background: white;
+  background: var(--theme-bg-card);
   margin-top: 8px;
 }
 
@@ -357,10 +357,10 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #ede9fe;
+  background: var(--theme-purple-bg);
   border-radius: 16px;
   font-size: 0.8rem;
-  color: #4c1d95;
+  color: var(--theme-info-text-alt);
   font-weight: 500;
 }
 
@@ -378,8 +378,8 @@
 
 .mpers-position-tag {
   padding: 5px 12px;
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-dark);
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 500;

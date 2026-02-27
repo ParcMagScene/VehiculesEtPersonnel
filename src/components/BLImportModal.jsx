@@ -149,8 +149,11 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       } else {
         toast.success(`BL importé et lié à l'affaire ${affaireId || '(non spécifiée)'}`);
       }
-      onImported?.();
-      onClose();
+      if (onImported) {
+        onImported();
+      } else {
+        onClose();
+      }
     } catch (err) {
       toast.error('Erreur import : ' + err.message);
     } finally {
@@ -251,8 +254,11 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
         msg += ` — Affaire ${affaireId} créée automatiquement`;
       }
       toast.success(msg);
-      onImported?.();
-      onClose();
+      if (onImported) {
+        onImported();
+      } else {
+        onClose();
+      }
     } catch (err) {
       toast.error('Erreur : ' + err.message);
     } finally {
@@ -341,9 +347,9 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                       onClick={() => setAffaireType(opt.value)}
                       style={{
                         flex: 1, padding: '6px 8px', borderRadius: 6, fontSize: '0.8rem',
-                        border: affaireType === opt.value ? `2px solid ${opt.color}` : '1px solid var(--border-color)',
+                        border: affaireType === opt.value ? `2px solid ${opt.color}` : '1px solid var(--theme-border)',
                         background: affaireType === opt.value ? `${opt.color}18` : 'transparent',
-                        color: affaireType === opt.value ? opt.color : 'var(--text-secondary)',
+                        color: affaireType === opt.value ? opt.color : 'var(--theme-text-secondary)',
                         cursor: 'pointer', fontWeight: affaireType === opt.value ? 600 : 400,
                         transition: 'all 0.15s',
                       }}
@@ -390,7 +396,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                     <h4>
                       <CheckCircle size={16} style={{ color: '#10b981' }} />
                       Données extraites
-                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--theme-text-secondary)', fontWeight: 400 }}>
                         {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs • {parsedData.confidence}% confiance
                       </span>
                     </h4>
@@ -401,16 +407,16 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                       const isEdited = editedFields[field.key] !== undefined;
                       const inputStyle = {
                         flex: 1, padding: '3px 8px', borderRadius: 5, fontSize: '0.82rem',
-                        border: `1px solid ${!val ? '#ef444440' : isEdited ? '#3b82f680' : 'var(--border-color)'}`,
-                        background: isEdited ? '#3b82f608' : 'var(--bg-secondary, #f8f8f8)',
-                        color: 'var(--text-primary)',
+                        border: `1px solid ${!val ? '#ef444440' : isEdited ? '#3b82f680' : 'var(--theme-border)'}`,
+                        background: isEdited ? '#3b82f608' : 'var(--theme-bg-secondary)',
+                        color: 'var(--theme-text-primary)',
                       };
                       return (
                         <div key={field.key} className="parsed-field" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span
                             className="conf-dot"
                             title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
-                            style={{ color: conf ? CONF_COLORS[conf] : '#94a3b8', fontSize: '0.7rem', flexShrink: 0 }}
+                            style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)', fontSize: '0.7rem', flexShrink: 0 }}
                           >●</span>
                           <span className="field-label" style={{ minWidth: 85, flexShrink: 0 }}>{field.label}</span>
                           {field.key === 'adresse' ? (
@@ -439,7 +445,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                       <div style={{ marginTop: 8, padding: '6px 0' }}>
                         <h5 style={{ fontSize: '0.82rem', marginBottom: 4 }}>📂 Sections ({parsedData.sections.length})</h5>
                         {parsedData.sections.map((sec, idx) => (
-                          <div key={idx} style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', padding: '2px 8px' }}>
+                          <div key={idx} style={{ fontSize: '0.78rem', color: 'var(--theme-text-secondary)', padding: '2px 8px' }}>
                             <strong>{sec.name}</strong> — {sec.items?.length || 0} article(s)
                             {sec.dateDebut && <span> • {sec.dateDebut} → {sec.dateFin}</span>}
                           </div>
@@ -454,9 +460,9 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 8px' }}>
                           {parsedData.fournisseurs.map((f, idx) => (
                             <span key={idx} style={{
-                              fontSize: '0.72rem', background: 'var(--bg-tertiary, #1e293b)',
-                              color: 'var(--text-primary, #e2e8f0)', padding: '2px 8px', borderRadius: 4,
-                              border: '1px solid var(--border-color, #334155)'
+                              fontSize: '0.72rem', background: 'var(--theme-bg-tertiary)',
+                              color: 'var(--theme-text-primary)', padding: '2px 8px', borderRadius: 4,
+                              border: '1px solid var(--theme-border)'
                             }}>{f}</span>
                           ))}
                         </div>
@@ -472,21 +478,21 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                             <span className="item-qty">{item.quantity || item.qte || '1'}</span>
                             <span className="item-desc" style={{ flex: 1 }}>
                               {item.description || item.designation || item.label || JSON.stringify(item)}
-                              {item.code && <span style={{ fontSize: '0.65rem', color: '#64748b', marginLeft: 4 }}>({item.code})</span>}
+                              {item.code && <span style={{ fontSize: '0.65rem', color: 'var(--theme-text-secondary)', marginLeft: 4 }}>({item.code})</span>}
                             </span>
                             {(item.reference || item.section) && (
-                              <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginLeft: 4 }}>({item.reference || item.section})</span>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)', marginLeft: 4 }}>({item.reference || item.section})</span>
                             )}
                             {item.fournisseur && (
                               <span style={{
-                                fontSize: '0.62rem', background: '#164e63', color: '#67e8f9',
+                                fontSize: '0.62rem', background: 'var(--theme-info-bg, #164e63)', color: 'var(--theme-info-text, #67e8f9)',
                                 borderRadius: 3, padding: '1px 5px', whiteSpace: 'nowrap', marginLeft: 'auto'
                               }}>{item.fournisseur}</span>
                             )}
                           </div>
                         ))}
                         {parsedData.items.length > 30 && (
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '4px 12px' }}>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)', padding: '4px 12px' }}>
                             ... et {parsedData.items.length - 30} autre(s)
                           </p>
                         )}

@@ -9,6 +9,7 @@ import OverdueInterventionModal from './OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
 import ProfileEditModal from './ProfileEditModal';
 import { useToast } from '../hooks/useToast';
+import './Header.css';
 
 const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
   const toast = useToast();
@@ -1045,168 +1046,53 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
 
                 {showUserMenu && (
                   <>
-                    <div 
-                      style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        zIndex: 999
-                      }}
-                      onClick={() => setShowUserMenu(false)}
-                    />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '50px',
-                        right: 0,
-                        background: 'white',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                        overflow: 'hidden',
-                        minWidth: '200px',
-                        zIndex: 1000
-                      }}
-                    >
-                      <div style={{
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #e5e7eb',
-                        background: '#f9fafb',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px'
-                      }}>
+                    <div className="user-menu-overlay" onClick={() => setShowUserMenu(false)} />
+                    <div className="user-menu-dropdown">
+                      <div className="user-menu-header">
                         <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size={40} />
                         <div>
-                          <div style={{ fontWeight: 600, color: '#1f2937' }}>{currentUser.name}</div>
-                          <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                          <div className="user-menu-name">{currentUser.name}</div>
+                          <div className="user-menu-role">
                             {currentUser.isAdmin ? 'Administrateur' : 'Utilisateur'}
                           </div>
                         </div>
                       </div>
                       
                       <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          setShowProfileModal(true);
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          border: 'none',
-                          background: 'white',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          color: '#374151',
-                          transition: 'background 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                        className="user-menu-btn"
+                        onClick={() => { setShowUserMenu(false); setShowProfileModal(true); }}
                       >
                         <UserCog size={16} />
                         Mon profil
                       </button>
 
                       <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          if (onOpenPreferences) onOpenPreferences();
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          border: 'none',
-                          background: 'white',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          color: '#374151',
-                          transition: 'background 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                        className="user-menu-btn"
+                        onClick={() => { setShowUserMenu(false); if (onOpenPreferences) onOpenPreferences(); }}
                       >
                         <Settings size={16} />
                         Préférences
                       </button>
 
                       <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          onLogout();
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          border: 'none',
-                          background: 'white',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          color: '#374151',
-                          transition: 'background 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                        onMouseLeave={(e) => e.target.style.background = 'white'}
+                        className="user-menu-btn"
+                        onClick={() => { setShowUserMenu(false); onLogout(); }}
                       >
                         <LayoutGrid size={16} />
                         Changer d'utilisateur
                       </button>
 
                       <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          onLogout();
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          border: 'none',
-                          background: 'white',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          color: '#dc2626',
-                          transition: 'background 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          fontWeight: 500
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
-                        onMouseLeave={(e) => e.target.style.background = 'white'}
+                        className="user-menu-btn danger"
+                        onClick={() => { setShowUserMenu(false); onLogout(); }}
                       >
                         <XCircle size={16} />
                         Se déconnecter
                       </button>
 
                       <button
+                        className="user-menu-cancel"
                         onClick={() => setShowUserMenu(false)}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          border: 'none',
-                          borderTop: '1px solid #e5e7eb',
-                          background: '#f9fafb',
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          color: '#6b7280',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = '#f3f4f6'}
-                        onMouseLeave={(e) => e.target.style.background = '#f9fafb'}
                       >
                         Annuler
                       </button>

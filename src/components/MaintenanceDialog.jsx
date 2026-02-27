@@ -372,9 +372,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       pending: '#8b5cf6',
       PENDING: '#8b5cf6',
       rescheduled: '#f97316',
-      cancelled: '#6b7280'
+      cancelled: 'var(--theme-text-gray)'
     };
-    return colors[status] || '#6b7280';
+    return colors[status] || 'var(--theme-text-gray)';
   };
 
   const getTypeLabel = (type) => {
@@ -684,7 +684,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                           ) : null;
                         })()}
                         {!formData.technicalControlType && (
-                          <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                          <small style={{ color: 'var(--theme-text-secondary)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
                             ℹ️ Sélectionnez un type pour voir sa périodicité
                           </small>
                         )}
@@ -868,13 +868,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           ) : activeTab === 'km-history' ? (
             <div className="maintenance-history">
               {/* En-tête avec immatriculation */}
-              <div className="km-history-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '10px 14px', background: '#f0f4f8', borderRadius: '8px' }}>
+              <div className="km-history-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '10px 14px', background: 'var(--theme-bg-tertiary)', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Gauge size={18} />
                   <strong>Historique des relevés kilométriques</strong>
                 </div>
                 {vehicle.registration && (
-                  <span style={{ fontSize: '0.9em', color: '#475569', fontWeight: 600, background: '#e2e8f0', padding: '3px 10px', borderRadius: '6px' }}>
+                  <span style={{ fontSize: '0.9em', color: 'var(--theme-text-subtle)', fontWeight: 600, background: 'var(--theme-bg-tertiary)', padding: '3px 10px', borderRadius: '6px' }}>
                     🚛 {vehicle.registration}
                   </span>
                 )}
@@ -886,7 +886,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               ) : (
                 <div className="maintenance-list">
                   {mileageHistory.map((entry, idx) => (
-                    <div key={entry.id || idx} className="maintenance-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+                    <div key={entry.id || idx} className="maintenance-card" style={{ borderLeft: '4px solid var(--theme-primary)' }}>
                       <div className="maintenance-card-header">
                         <div className="maintenance-card-title">
                           <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -943,8 +943,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
             <div className="maintenance-history">
               {/* En-tête avec immatriculation */}
               {vehicle.registration && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', padding: '6px 12px', background: '#f0f4f8', borderRadius: '6px', width: 'fit-content' }}>
-                  <span style={{ fontSize: '0.9em', color: '#475569', fontWeight: 600 }}>🚛 {vehicle.registration}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', padding: '6px 12px', background: 'var(--theme-bg-tertiary)', borderRadius: '6px', width: 'fit-content' }}>
+                  <span style={{ fontSize: '0.9em', color: 'var(--theme-text-subtle)', fontWeight: 600 }}>🚛 {vehicle.registration}</span>
                 </div>
               )}
               {vehicleMaintenances.length === 0 ? (

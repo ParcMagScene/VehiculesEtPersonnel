@@ -607,33 +607,184 @@ export const parseBonPreparation = (text) => {
         else if (/vente|vte/i.test(info.nomAffaire)) info.type = 'Vente';
       }
 
-      // Trouver "Devis" keyword
+      // Trouver "Devis" keyword — soit ligne isolée, soit fusionnée "1001 Devis 05/02/2026"
       const devisIdx = lines.findIndex((l, i) => i > afIdx && l === 'Devis');
+      // Aussi chercher la ligne fusionnée contenant "Devis"
+      const devisInlineIdx = devisIdx < 0
+        ? lines.findIndex((l, i) => i > afIdx && /\bDevis\b/i.test(l) && /\d{3,}/.test(l))
+        : -1;
+      // Index effectif de la ligne contenant l'info devis
+      const devisLineIdx = devisIdx >= 0 ? devisIdx : devisInlineIdx;
+
       if (devisIdx >= 0) {
-        // Numéro de devis = ligne avant "Devis"
+        // Cas classique : "Devis" sur sa propre ligne
         if (devisIdx > 0 && /^\d+$/.test(lines[devisIdx - 1])) {
           info.devis = lines[devisIdx - 1];
           info.fieldsFound++;
+        } else if (devisIdx + 1 < lines.length && /^\d+$/.test(lines[devisIdx + 1])) {
+          info.devis = lines[devisIdx + 1];
+          info.fieldsFound++;
         }
-        // Date devis = ligne après "Devis"
-        if (devisIdx + 1 < lines.length) {
-          const dm = lines[devisIdx + 1].match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        const dateSearchStart = devisIdx + 1;
+        for (let j = dateSearchStart; j < Math.min(devisIdx + 4, lines.length); j++) {
+          const dm = lines[j].match(/(\d{2})\/(\d{2})\/(\d{4})/);
           if (dm) {
             info.devisDate = `${dm[3]}-${dm[2]}-${dm[1]}`;
             info.fieldsFound++;
+            break;
           }
         }
-        // Client + adresse : entre nomAffaire et devis
+      } else if (devisInlineIdx >= 0) {
+        // Cas fusionné : "1001 Devis 05/02/2026" ou "Devis 1001" sur une seule ligne
+        const devisLine = lines[devisInlineIdx];
+        const numMatch = devisLine.match(/(\d{3,})\s*Devis|Devis\s*(\d{3,})/i);
+        if (numMatch) {
+          info.devis = numMatch[1] || numMatch[2];
+          info.fieldsFound++;
+        }
+        const dateMatch = devisLine.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        if (dateMatch) {
+          info.devisDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+          info.fieldsFound++;
+        }
+      }
+
+      // Client + adresse : entre nomAffaire (afIdx+1) et la ligne devis
+      if (devisLineIdx >= 0) {
         const clientStart = afIdx + 2;
-        const clientEnd = /^\d+$/.test(lines[devisIdx - 1]) ? devisIdx - 1 : devisIdx;
+        // Pour le cas classique, exclure le numéro de devis s'il est sur la ligne avant
+        const clientEnd = (devisIdx >= 0 && /^\d+$/.test(lines[devisIdx - 1]))
+          ? devisIdx - 1
+          : devisLineIdx;
         const clientLines = lines.slice(clientStart, clientEnd);
-        if (clientLines.length > 0) {
+        if (clientLines.length > 0 && !info.client) {
           info.client = clientLines[0];
           info.fieldsFound++;
           if (clientLines.length > 1) {
             info.adresseLivraison = clientLines.slice(1).join('\n');
             info.fieldsFound++;
           }
+        } else if (clientLines.length > 1 && !info.adresseLivraison) {
+          // Client déjà trouvé par fallback mais pas l'adresse
+          info.adresseLivraison = clientLines.slice(1).join('\n');
+          info.fieldsFound++;
+        }
+      }
+    }
+
+    // ── Fallback : recherche du devis via le label ou inline ──
+    if (!info.devis) {
+      // Forme inline: "Devis 1001" ou "Devis : 1001" ou "1001 Devis"
+      const devisInlineMatch = text.match(/\bDevis\s*[:\s]\s*(\d{3,})/i);
+      if (devisInlineMatch) {
+        info.devis = devisInlineMatch[1];
+        info.fieldsFound++;
+      }
+      // Chercher aussi le label "Devis" suivi d'un numéro + date sur les lignes voisines
+      if (!info.devis) {
+        for (let li = 0; li < lines.length; li++) {
+          if (/^Devis$/i.test(lines[li])) {
+            // Chercher un numéro dans les 3 lignes avant ou après
+            for (let delta = -2; delta <= 3; delta++) {
+              const idx = li + delta;
+              if (idx >= 0 && idx < lines.length && idx !== li && /^\d{3,}$/.test(lines[idx])) {
+                info.devis = lines[idx];
+                info.fieldsFound++;
+                break;
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+    // Fallback date devis
+    if (!info.devisDate) {
+      // "du DD/MM/YYYY" pattern near "Devis"
+      const devisDateMatch = text.match(/\bDevis\b[^\n]{0,30}?(\d{2})\/(\d{2})\/(\d{4})/i);
+      if (devisDateMatch) {
+        info.devisDate = `${devisDateMatch[3]}-${devisDateMatch[2]}-${devisDateMatch[1]}`;
+        info.fieldsFound++;
+      }
+    }
+
+    // ── Fallback : recherche du client via le label "Client" ──
+    // pdfjs-dist peut produire "Client NomDuClient" sur une même ligne ou "Client" suivi du nom sur la ligne suivante
+    if (!info.client) {
+      const clientLabelIdx = lines.findIndex(l => /^Client$/i.test(l));
+      if (clientLabelIdx >= 0 && clientLabelIdx + 1 < lines.length) {
+        // Le client est sur la ligne suivante (si ce n'est pas un autre label connu)
+        const nextLine = lines[clientLabelIdx + 1];
+        if (nextLine && !/^(du|au|Adresse|R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|Interlocuteur|Affaire|Devis)\b/i.test(nextLine)) {
+          info.client = nextLine;
+          info.fieldsFound++;
+        }
+      }
+      // Ou "Client" en début de ligne suivi de la valeur : "Client C'KELPROD"
+      if (!info.client) {
+        const clientInlineMatch = text.match(/\bClient\s*[:\s]\s*([A-ZÀ-ÿ][A-ZÀ-ÿ'\s\-&.]{2,})/i);
+        if (clientInlineMatch) {
+          const val = clientInlineMatch[1].trim();
+          // Exclure les faux positifs (labels de colonnes, mots-clés)
+          if (!/^(du|au|Adresse|R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume)\b/i.test(val)) {
+            info.client = val;
+            info.fieldsFound++;
+          }
+        }
+      }
+    }
+
+    // ── Fallback : recherche de l'adresse via "Adresse de livraison" ou patterns ──
+    if (!info.adresseLivraison) {
+      const addrLabelIdx = lines.findIndex(l => /Adresse de livraison/i.test(l));
+      if (addrLabelIdx >= 0) {
+        // D'abord chercher APRÈS le label (format classique)
+        const addrLinesAfter = [];
+        for (let j = addrLabelIdx + 1; j < Math.min(addrLabelIdx + 5, lines.length); j++) {
+          const ln = lines[j];
+          if (/^(R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|SONORISATION|LUMIERE|STRUCTURE|REGIE|VIDEO)\b/i.test(ln)) break;
+          if (/\d{5}\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(ln) || /^\d+\s+(Rue|Avenue|Boulevard|Bd|Place|All[eé]e|Impasse|Chemin|Route)\b/i.test(ln) || /^(FRANCE|FR)$/i.test(ln)) {
+            addrLinesAfter.push(ln);
+          } else if (addrLinesAfter.length > 0 || ln.length > 5) {
+            addrLinesAfter.push(ln);
+          }
+        }
+        if (addrLinesAfter.length > 0) {
+          info.adresseLivraison = addrLinesAfter.join('\n');
+          info.fieldsFound++;
+        }
+      }
+      // Si toujours rien, chercher des lignes d'adresse AVANT le label (format Locmat : labels après valeurs)
+      if (!info.adresseLivraison && info.client) {
+        const clientIdx = lines.findIndex(l => l === info.client);
+        if (clientIdx >= 0) {
+          const addrLinesBefore = [];
+          const stopIdx = addrLabelIdx >= 0 ? addrLabelIdx : Math.min(clientIdx + 6, lines.length);
+          for (let j = clientIdx + 1; j < stopIdx; j++) {
+            const ln = lines[j];
+            // S'arrêter si on tombe sur un label ou la ligne devis fusionnée
+            if (/\bDevis\b/i.test(ln) || /^(Affaire|Interlocuteur|Client|du|Adresse|R[eé]f[eé]rence)\b/i.test(ln)) break;
+            // Accepter les lignes qui ressemblent à une adresse
+            if (/\d{5}\s+\S/.test(ln) || /\d+\s*(Rue|Avenue|Boulevard|Bd|Place|All[eé]e|Impasse|Chemin|Route|Av\.|Cours)\b/i.test(ln) || /^(FRANCE|FR)$/i.test(ln) || ln.length > 5) {
+              addrLinesBefore.push(ln);
+            }
+          }
+          if (addrLinesBefore.length > 0) {
+            info.adresseLivraison = addrLinesBefore.join('\n');
+            info.fieldsFound++;
+          }
+        }
+      }
+    }
+
+    // ── Fallback : interlocuteur via le label ──
+    if (!info.interlocuteur) {
+      const interLabelIdx = lines.findIndex(l => /^Interlocuteur$/i.test(l));
+      if (interLabelIdx >= 0 && interLabelIdx + 1 < lines.length) {
+        const nextLine = lines[interLabelIdx + 1];
+        if (nextLine && !/^(Client|du|au|Adresse|R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|Affaire|Devis)\b/i.test(nextLine) && nextLine.length > 1) {
+          info.interlocuteur = nextLine;
+          info.fieldsFound++;
         }
       }
     }

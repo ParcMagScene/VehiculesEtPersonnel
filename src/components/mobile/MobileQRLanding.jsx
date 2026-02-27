@@ -11,7 +11,7 @@ const EQUIPMENT_STATUS = {
   available: { label: 'Disponible', color: '#10b981', icon: '✅' },
   in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
   maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
-  retired: { label: 'Réformé', color: '#6b7280', icon: '⛔' },
+  retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 
 function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {

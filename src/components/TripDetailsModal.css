@@ -94,7 +94,7 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 0.75rem;
-  background: white;
+  background: var(--theme-bg-card);
   border: 2px solid var(--theme-primary);
   color: var(--theme-primary);
   border-radius: var(--btn-radius);
@@ -107,7 +107,7 @@
 
 .new-location-btn:hover {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   transform: translateY(-1px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
@@ -172,7 +172,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -183,7 +183,7 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   cursor: pointer;
@@ -202,15 +202,15 @@
 
 .duration-result {
   padding: 0.5rem 1rem;
-  background: #dcfce7;
-  color: #166534;
+  background: var(--theme-success-bg-strong);
+  color: var(--theme-success-text-alt);
   border-radius: 0.375rem;
   font-weight: 600;
 }
 
 /* Pauses */
 .pauses-section {
-  background: white;
+  background: var(--theme-bg-card);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1.5rem;
@@ -367,11 +367,11 @@
 
 .combined-tab:hover {
   background: rgba(255, 255, 255, 0.3);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .combined-tab.active {
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--theme-text-body);
   border-color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
@@ -392,7 +392,7 @@
 
 .combined-tab.active .tab-number {
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .combined-tab .tab-title {
@@ -406,7 +406,7 @@
   padding: 0.1rem 0.35rem;
   border-radius: 0.2rem;
   background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
+  color: var(--theme-primary-light);
 }
 
 .combined-tab.active .tab-affaire {
@@ -430,7 +430,7 @@
 /* ===== Timeline chronologique (trajets liés) ===== */
 .combined-timeline {
   padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-purple-bg) 100%);
   border-bottom: 2px solid var(--theme-border-medium);
 }
 
@@ -471,7 +471,7 @@
 .timeline-step-icon {
   font-size: 1.1rem;
   z-index: 1;
-  background: white;
+  background: var(--theme-bg-card);
   width: 2rem;
   height: 2rem;
   display: flex;
@@ -489,7 +489,7 @@
 
 .timeline-step--arrival .timeline-step-icon {
   border-color: var(--theme-primary-light);
-  background: #f5f3ff;
+  background: var(--theme-purple-bg);
 }
 
 .timeline-step--transfer .timeline-step-icon {
@@ -499,12 +499,12 @@
 
 .timeline-step--return-departure .timeline-step-icon {
   border-color: var(--theme-success-alt);
-  background: #ecfdf5;
+  background: var(--theme-success-bg);
 }
 
 .timeline-step--final-arrival .timeline-step-icon {
   border-color: var(--theme-success-alt);
-  background: #ecfdf5;
+  background: var(--theme-success-bg);
 }
 
 .timeline-step--pause .timeline-step-icon {
@@ -524,7 +524,7 @@
 }
 
 .timeline-step--departure .timeline-step-line {
-  background: #93c5fd;
+  background: var(--theme-info-border);
 }
 
 .timeline-step--transfer .timeline-step-line {
@@ -533,7 +533,7 @@
 }
 
 .timeline-step--return-departure .timeline-step-line {
-  background: #6ee7b7;
+  background: var(--theme-success-border);
 }
 
 .timeline-step-content {
@@ -555,11 +555,11 @@
   color: var(--theme-text-body);
 }
 
-.timeline-step--departure .timeline-step-label { color: #1d4ed8; }
-.timeline-step--arrival .timeline-step-label { color: #6d28d9; }
-.timeline-step--transfer .timeline-step-label { color: #b45309; }
-.timeline-step--return-departure .timeline-step-label { color: #047857; }
-.timeline-step--final-arrival .timeline-step-label { color: #047857; }
+.timeline-step--departure .timeline-step-label { color: var(--theme-info-text); }
+.timeline-step--arrival .timeline-step-label { color: var(--theme-purple-text); }
+.timeline-step--transfer .timeline-step-label { color: var(--theme-warning-text-alt); }
+.timeline-step--return-departure .timeline-step-label { color: var(--theme-success-text); }
+.timeline-step--final-arrival .timeline-step-label { color: var(--theme-success-text); }
 .timeline-step--pause .timeline-step-label { color: var(--theme-text-gray); font-weight: 500; font-size: 0.75rem; }
 
 .timeline-step-affaire {
@@ -590,16 +590,16 @@
 
 .timeline-datetime {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-weight: 500;
 }
 
 .timeline-duration {
   font-size: 0.7rem;
-  color: #059669;
+  color: var(--btn-success-color);
   font-weight: 600;
   padding: 0.1rem 0.35rem;
-  background: #ecfdf5;
+  background: var(--theme-success-bg);
   border-radius: 0.2rem;
 }
 
@@ -626,7 +626,7 @@
 .timeline-hint {
   margin: 0.5rem 0 0 0;
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-style: italic;
   text-align: center;
 }
@@ -657,7 +657,7 @@
   padding: 0.375rem 0.75rem;
   border: 2px solid transparent;
   border-radius: 0.375rem;
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--theme-text-gray);
   cursor: pointer;
   font-size: 0.75rem;
@@ -674,7 +674,7 @@
 
 .combined-edit-tab.active {
   background: var(--theme-bg-hover);
-  color: #4338ca;
+  color: var(--theme-info-text-alt);
   border-color: var(--theme-indigo);
   font-weight: 600;
 }
@@ -694,7 +694,7 @@
 
 .combined-edit-tab.active .tab-number {
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .combined-edit-tab .tab-title {
@@ -718,7 +718,7 @@
 
 .combined-edit-tab .tab-role {
   font-size: 0.625rem;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-style: italic;
 }
 
@@ -737,8 +737,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1.5rem;
-  background: #fefce8;
-  border-bottom: 1px solid #fde68a;
+  background: var(--theme-warning-bg);
+  border-bottom: 1px solid var(--btn-warning-hover-bg);
   font-size: 0.8rem;
   color: var(--theme-text-body);
   flex-wrap: wrap;
@@ -747,7 +747,7 @@
 .editing-badge {
   padding: 0.15rem 0.5rem;
   background: var(--theme-indigo);
-  color: white;
+  color: var(--theme-text-inverse);
   border-radius: 0.25rem;
   font-size: 0.7rem;
   font-weight: 600;
@@ -771,16 +771,16 @@
 }
 
 .editing-role-aller {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-text);
 }
 
 .editing-role-retour {
-  background: #d1fae5;
-  color: #047857;
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
 }
 
 .editing-role-transfert {
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text-alt);
 }

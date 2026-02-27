@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: var(--theme-bg-page);
 }
 
 .task-planning-panel .tp-toolbar {
@@ -10,7 +11,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  border-bottom: 1px solid var(--theme-border);
   gap: 12px;
   flex-wrap: wrap;
   flex-shrink: 0;
@@ -41,15 +42,15 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
   cursor: pointer;
 }
 
 .task-planning-panel .tp-date-nav button:hover {
-  background: var(--bg-tertiary, #f1f5f9);
+  background: var(--theme-bg-tertiary);
 }
 
 .task-planning-panel .tp-date-nav .tp-current-date {
@@ -63,7 +64,7 @@
 }
 
 .task-planning-panel .tp-date-nav .tp-current-date:hover {
-  background: var(--bg-tertiary, #f1f5f9);
+  background: var(--theme-bg-tertiary);
 }
 
 .task-planning-panel .btn-add-task {
@@ -73,8 +74,8 @@
   padding: 8px 16px;
   border: none;
   border-radius: 8px;
-  background: var(--accent-color, #6366f1);
-  color: white;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -89,17 +90,17 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
 }
 
 .task-planning-panel .btn-export-pdf:hover {
-  background: var(--bg-tertiary, #f1f5f9);
+  background: var(--theme-bg-tertiary);
 }
 
 /* Sections container */
@@ -119,10 +120,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  background: var(--bg-tertiary, #f8fafc);
+  background: var(--theme-bg-secondary);
   border-radius: 10px 10px 0 0;
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-bottom: 2px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
+  border-bottom: 2px solid var(--theme-border);
 }
 
 .task-planning-panel .section-header h4 {
@@ -132,7 +133,7 @@
   margin: 0;
   font-size: 0.88rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--theme-text-primary);
 }
 
 .task-planning-panel .section-header .section-count {
@@ -140,8 +141,8 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 10px;
-  background: var(--accent-color, #6366f1);
-  color: white;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
 }
 
 /* Task row */
@@ -150,7 +151,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-top: none;
   transition: background 0.1s;
 }
@@ -160,14 +161,14 @@
 }
 
 .task-planning-panel .task-row:hover {
-  background: var(--bg-tertiary, #f8fafc);
+  background: var(--theme-bg-secondary);
 }
 
 .task-planning-panel .task-status-btn {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid var(--border-color, #cbd5e1);
+  border: 2px solid var(--theme-border);
   background: transparent;
   cursor: pointer;
   display: flex;
@@ -180,7 +181,7 @@
 .task-planning-panel .task-status-btn.done {
   border-color: #10b981;
   background: #10b981;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .task-planning-panel .task-status-btn.in-progress {
@@ -197,7 +198,7 @@
 .task-planning-panel .task-title {
   font-size: 0.88rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--theme-text-primary);
 }
 
 .task-planning-panel .task-title.done {
@@ -210,7 +211,7 @@
   align-items: center;
   gap: 10px;
   font-size: 0.78rem;
-  color: var(--text-secondary);
+  color: var(--theme-text-secondary);
   margin-top: 2px;
 }
 
@@ -227,7 +228,7 @@
   padding: 3px 10px;
   border-radius: 12px;
   background: rgba(99, 102, 241, 0.08);
-  color: var(--accent-color, #6366f1);
+  color: var(--theme-primary);
   font-size: 0.78rem;
   font-weight: 600;
   flex-shrink: 0;
@@ -245,7 +246,7 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--theme-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -253,7 +254,7 @@
 }
 
 .task-planning-panel .task-actions button:hover {
-  background: var(--bg-tertiary, #f1f5f9);
+  background: var(--theme-bg-tertiary);
 }
 
 .task-planning-panel .task-actions button.delete:hover {
@@ -266,18 +267,18 @@
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border: 1px dashed var(--border-color, #cbd5e1);
+  border: 1px dashed var(--theme-border);
   border-top: none;
   border-radius: 0 0 10px 10px;
-  color: var(--text-secondary);
+  color: var(--theme-text-secondary);
   font-size: 0.82rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .task-planning-panel .add-task-inline:hover {
-  background: var(--bg-tertiary, #f8fafc);
-  color: var(--accent-color, #6366f1);
+  background: var(--theme-bg-secondary);
+  color: var(--theme-primary);
 }
 
 /* Task form inline */
@@ -285,7 +286,7 @@
   display: flex;
   gap: 8px;
   padding: 10px 14px;
-  border: 1px solid var(--accent-color, #6366f1);
+  border: 1px solid var(--theme-primary);
   border-top: none;
   border-radius: 0 0 10px 10px;
   background: rgba(99, 102, 241, 0.03);
@@ -295,17 +296,17 @@
 .task-planning-panel .task-form-inline input,
 .task-planning-panel .task-form-inline select {
   padding: 6px 10px;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
   font-size: 0.85rem;
 }
 
 .task-planning-panel .task-form-inline input:focus,
 .task-planning-panel .task-form-inline select:focus {
   outline: none;
-  border-color: var(--accent-color, #6366f1);
+  border-color: var(--theme-primary);
 }
 
 .task-planning-panel .task-form-inline input[type="text"] {
@@ -330,13 +331,13 @@
 }
 
 .task-planning-panel .task-form-inline .form-actions .btn-confirm {
-  background: var(--accent-color, #6366f1);
-  color: white;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
 }
 
 .task-planning-panel .task-form-inline .form-actions .btn-cancel {
-  background: var(--bg-tertiary, #f1f5f9);
-  color: var(--text-secondary);
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-secondary);
 }
 
 /* Empty state */
@@ -346,7 +347,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: var(--text-secondary);
+  color: var(--theme-text-secondary);
 }
 
 .task-planning-panel .empty-state svg {
@@ -378,7 +379,7 @@
 /* ═══ Toggle Jour / Semaine ═══ */
 .task-planning-panel .tp-view-toggle {
   display: flex;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -389,8 +390,8 @@
   gap: 5px;
   padding: 6px 12px;
   border: none;
-  background: var(--bg-primary);
-  color: var(--text-secondary);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -398,16 +399,16 @@
 }
 
 .task-planning-panel .tp-view-toggle button + button {
-  border-left: 1px solid var(--border-color, #e2e8f0);
+  border-left: 1px solid var(--theme-border);
 }
 
 .task-planning-panel .tp-view-toggle button.active {
-  background: var(--accent-color, #6366f1);
-  color: white;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
 }
 
 .task-planning-panel .tp-view-toggle button:hover:not(.active) {
-  background: var(--bg-tertiary, #f1f5f9);
+  background: var(--theme-bg-tertiary);
 }
 
 /* ═══ VUE SEMAINE ═══ */
@@ -427,15 +428,15 @@
 .task-planning-panel .week-day-column {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-radius: 10px;
   overflow: hidden;
-  background: var(--bg-primary);
+  background: var(--theme-bg-card);
 }
 
 .task-planning-panel .week-day-column.today {
-  border-color: var(--accent-color, #6366f1);
-  box-shadow: 0 0 0 1px var(--accent-color, #6366f1);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 1px var(--theme-primary);
 }
 
 .task-planning-panel .week-day-header {
@@ -443,8 +444,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  background: var(--bg-tertiary, #f8fafc);
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  background: var(--theme-bg-secondary);
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .task-planning-panel .week-day-column.today .week-day-header {
@@ -454,17 +455,17 @@
 .task-planning-panel .week-day-label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--theme-text-primary);
   text-transform: capitalize;
 }
 
 .task-planning-panel .week-day-count {
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--theme-text-secondary);
   padding: 1px 6px;
   border-radius: 8px;
-  background: var(--bg-primary);
+  background: var(--theme-bg-card);
 }
 
 .task-planning-panel .week-day-tasks {
@@ -478,7 +479,7 @@
 
 .task-planning-panel .week-empty {
   text-align: center;
-  color: var(--text-secondary);
+  color: var(--theme-text-secondary);
   opacity: 0.4;
   padding: 16px 0;
   font-size: 0.85rem;
@@ -491,15 +492,15 @@
   gap: 5px;
   padding: 5px 7px;
   border-radius: 6px;
-  border-left: 3px solid var(--accent-color, #6366f1);
-  background: var(--bg-tertiary, #f8fafc);
+  border-left: 3px solid var(--theme-primary);
+  background: var(--theme-bg-secondary);
   font-size: 0.75rem;
   transition: background 0.1s;
   cursor: default;
 }
 
 .task-planning-panel .week-task-card:hover {
-  background: var(--bg-secondary, #f1f5f9);
+  background: var(--theme-bg-tertiary);
 }
 
 .task-planning-panel .week-task-card.done {
@@ -524,7 +525,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--theme-text-primary);
 }
 
 .task-planning-panel .week-task-title.done {
@@ -538,7 +539,7 @@
   height: 20px;
   border-radius: 50%;
   background: rgba(99, 102, 241, 0.1);
-  color: var(--accent-color, #6366f1);
+  color: var(--theme-primary);
   font-size: 0.65rem;
   font-weight: 700;
   display: flex;
@@ -549,7 +550,7 @@
 /* ═══ Display event rows in planning ═══ */
 .task-planning-panel .display-event-row {
   background: rgba(99, 102, 241, 0.04);
-  border-left: 3px solid var(--accent-color, #6366f1);
+  border-left: 3px solid var(--theme-primary);
 }
 
 .task-planning-panel .display-event-icon {
@@ -587,7 +588,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--theme-text-primary);
   font-size: 0.72rem;
 }
 
@@ -613,4 +614,224 @@
 .task-planning-panel .week-event-del:hover {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
+}
+
+/* ═══ Week affaire cards ═══ */
+.task-planning-panel .week-affaire-card {
+  background: rgba(99, 102, 241, 0.06);
+}
+
+/* ═══ Affaire rows in sections ═══ */
+.task-planning-panel .affaire-row {
+  border-left: 3px solid var(--theme-primary);
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.task-planning-panel .affaire-row:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* ═══ RDV section ═══ */
+.task-planning-panel .rdv-section {
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.02);
+}
+
+.task-planning-panel .rdv-row {
+  border-left: 3px solid var(--theme-primary);
+  background: rgba(99, 102, 241, 0.04);
+  flex-wrap: wrap;
+}
+
+.task-planning-panel .google-rdv-row {
+  border-left: 3px solid #4285f4;
+  background: rgba(66, 133, 244, 0.04);
+}
+
+.task-planning-panel .google-rdv-row:hover {
+  background: rgba(66, 133, 244, 0.08);
+}
+
+.task-planning-panel .google-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: #4285f4;
+  color: var(--theme-text-inverse);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.task-planning-panel .affaire-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--theme-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.task-planning-panel .google-rdv-row .affaire-tag {
+  background: rgba(66, 133, 244, 0.12);
+  color: #4285f4;
+}
+
+.task-planning-panel .rdv-row:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.task-planning-panel .rdv-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.task-planning-panel .btn-rdv-print,
+.task-planning-panel .btn-rdv-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.task-planning-panel .btn-rdv-print:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.task-planning-panel .btn-rdv-view:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.task-planning-panel .rdv-detail-card {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.task-planning-panel .rdv-detail-row {
+  display: flex;
+  gap: 6px;
+  color: var(--theme-text-secondary);
+}
+
+.task-planning-panel .rdv-detail-row strong {
+  color: var(--theme-text-primary);
+  min-width: 90px;
+}
+
+/* ═══ Personnel assignment dropdown ═══ */
+.task-planning-panel .event-assign-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.task-planning-panel .btn-assign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px dashed var(--theme-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.task-planning-panel .btn-assign:hover {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.task-planning-panel .task-person.assigned {
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--theme-primary);
+  transition: background 0.15s;
+}
+
+.task-planning-panel .task-person.assigned:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.task-planning-panel .assign-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  width: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding: 6px 0;
+  margin-top: 4px;
+}
+
+.task-planning-panel .assign-dropdown-title {
+  padding: 4px 12px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.task-planning-panel .assign-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  color: var(--theme-text-primary);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.task-planning-panel .assign-option:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.task-planning-panel .assign-option.unassign {
+  color: #ef4444;
+  border-bottom: 1px solid var(--theme-border);
+  margin-bottom: 2px;
+}
+
+.task-planning-panel .assign-option.unassign:hover {
+  background: rgba(239, 68, 68, 0.06);
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Map, Cloud, Gauge } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Map, MapPin, Cloud, Gauge } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../utils/photoList';
 import { formatPhoneDisplay } from './PhoneInput';
@@ -9,6 +9,7 @@ import UserManagement from './UserManagement';
 import GoogleCalendarConfig from './GoogleCalendarConfig';
 import ChangePassword from './ChangePassword';
 import MobileAccess from './MobileAccess';
+import DepotMap from './DepotMap';
 import LocationDialog from './LocationDialog';
 import ClientDialog from './ClientDialog';
 import ReservationRequestsPanel from './ReservationRequestsPanel';
@@ -16,7 +17,6 @@ import VehicleMaintenanceModal from './VehicleMaintenanceModal';
 import api from '../utils/api';
 import PersonnelPanel from './PersonnelPanel';
 import './ManagementPanel.css';
-import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 import { useToast } from '../hooks/useToast';
 
 const ManagementPanel = ({
@@ -78,8 +78,13 @@ const ManagementPanel = ({
   const [companyAddress, setCompanyAddress] = useState('');
   const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
-  const companyAddressInputRef = useRef(null);
+
   const fileInputRef = useRef(null);
+
+  // State pour le plan dépôt (onglet settings)
+  const [depotZones, setDepotZones] = useState(null);
+  const [locationStats, setLocationStats] = useState(null);
+  const [activeDepot, setActiveDepot] = useState(1);
 
   // Charger le nombre de demandes d'accès en attente
   useEffect(() => {
@@ -109,54 +114,26 @@ const ManagementPanel = ({
     loadCompanyAddress();
   }, []);
 
-  // Initialiser l'autocomplétion pour le champ Adresse de Mag Scène
+  // Charger zones dépôt et stats quand l'onglet plan-dépôt est activé
   useEffect(() => {
-    if (activeTab !== 'locations' || !companyAddressInputRef.current) return;
-
-    const initCompanyAddressAutocomplete = async () => {
+    if (activeTab !== 'depot-map') return;
+    setDepotZones(null); // Reset pendant le chargement
+    const loadDepotData = async () => {
       try {
-        // Vérifier si Google Maps est déjà chargé
-        if (!isGoogleMapsLoaded()) {
-          const configData = await api.getGoogleMapsApiKey();
-          const apiKey = configData.value;
-          
-          if (!apiKey) return;
-
-          // Charger Google Maps avec le loader centralisé
-          await loadGoogleMapsAPI(apiKey);
-        }
-
-        // Vérifier que l'API est bien chargée
-        if (!window.google?.maps?.places?.Autocomplete) {
-          console.error('Google Maps Places API pas disponible');
-          return;
-        }
-
-        // Vérifier que le ref existe
-        if (!companyAddressInputRef.current) {
-          console.error('Référence input adresse non disponible');
-          return;
-        }
-
-        // Utiliser l'ancienne API Autocomplete (plus fiable)
-        const autocomplete = new window.google.maps.places.Autocomplete(companyAddressInputRef.current, {
-          componentRestrictions: { country: 'fr' },
-          fields: ['formatted_address']
-        });
-        
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.formatted_address) {
-            setCompanyAddress(place.formatted_address);
-          }
-        });
-      } catch (error) {
-        console.error('Erreur initialisation autocomplete:', error);
+        const [zonesData, statsData] = await Promise.all([
+          api.getEquipmentDepotZones(activeDepot).catch(() => null),
+          api.getEquipmentLocationStats().catch(() => null),
+        ]);
+        if (zonesData) setDepotZones(zonesData);
+        if (statsData) setLocationStats(statsData);
+      } catch (err) {
+        console.error('[ManagementPanel] Depot data load error:', err);
       }
     };
+    loadDepotData();
+  }, [activeTab, activeDepot]);
 
-    initCompanyAddressAutocomplete();
-  }, [activeTab]);
+
 
   // Charger la liste des photos au montage du composant
   useEffect(() => {
@@ -181,12 +158,13 @@ const ManagementPanel = ({
   // Les lieux utilisent maintenant LocationDialog avec PlaceAutocompleteElement
 
   const tabs = panelType === 'settings' ? [
-    { id: 'account', label: 'Mon compte', icon: Lock, color: '#6b7280' },
+    { id: 'account', label: 'Mon compte', icon: Lock, color: 'var(--theme-text-gray)' },
     ...(currentUser?.isAdmin ? [
       { id: 'users', label: 'Utilisateurs', icon: Shield, color: '#ef4444' },
       { id: 'sync', label: 'Import/Export', icon: Cloud, color: '#ec4899' },
       { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
       { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
+      { id: 'depot-map', label: 'Plan Dépôt', icon: MapPin, color: '#10b981' },
     ] : []),
   ] : [
     { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
@@ -928,6 +906,60 @@ const ManagementPanel = ({
             <MobileAccess />
           )}
 
+          {/* Plan du Dépôt (Admin uniquement) */}
+          {activeTab === 'depot-map' && currentUser?.isAdmin && (
+            <div className="depot-map-settings-wrapper" style={{ padding: '0 8px' }}>
+              {/* Sélecteur de dépôt */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+                <button
+                  onClick={() => setActiveDepot(1)}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 8,
+                    border: activeDepot === 1 ? '2px solid #10b981' : '1px solid #334155',
+                    background: activeDepot === 1 ? 'rgba(16,185,129,0.15)' : 'rgba(30,41,59,0.5)',
+                    color: activeDepot === 1 ? '#10b981' : 'var(--theme-text-muted)',
+                    fontWeight: activeDepot === 1 ? 600 : 400,
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Dépôt 1 — Événementiel
+                </button>
+                <button
+                  onClick={() => setActiveDepot(2)}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 8,
+                    border: activeDepot === 2 ? '2px solid #3b82f6' : '1px solid #334155',
+                    background: activeDepot === 2 ? 'rgba(59,130,246,0.15)' : 'rgba(30,41,59,0.5)',
+                    color: activeDepot === 2 ? '#3b82f6' : 'var(--theme-text-muted)',
+                    fontWeight: activeDepot === 2 ? 600 : 400,
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Dépôt 2 — Structure
+                </button>
+              </div>
+              {depotZones ? (
+                <DepotMap
+                  zones={depotZones}
+                  stats={locationStats}
+                  selectedZone={null}
+                  onZoneSelect={() => {}}
+                  onZoneFilter={() => {}}
+                />
+              ) : (
+                <div style={{ padding: 32, textAlign: 'center', color: 'var(--theme-text-muted)' }}>
+                  Chargement du plan...
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Demandes de réservation (Admin uniquement) */}
           {activeTab === 'requests' && currentUser?.isAdmin && (
             <ReservationRequestsPanel 
@@ -942,7 +974,7 @@ const ManagementPanel = ({
           )}
 
           {/* Liste des éléments */}
-          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && (
+          {activeTab !== 'sync' && activeTab !== 'account' && activeTab !== 'users' && activeTab !== 'google-config' && activeTab !== 'mobile' && activeTab !== 'requests' && activeTab !== 'depot-map' && (
           <div className="items-section">
             {activeTab === 'vehicles' ? (
               <>
@@ -1343,8 +1375,8 @@ const ManagementPanel = ({
                                             <span style={{ 
                                               marginLeft: '8px', 
                                               padding: '2px 8px', 
-                                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
-                                              color: 'white', 
+                                              background: 'var(--theme-gradient-primary)', 
+                                              color: 'var(--theme-text-inverse)', 
                                               borderRadius: '4px', 
                                               fontSize: '0.75rem',
                                               fontWeight: '600'

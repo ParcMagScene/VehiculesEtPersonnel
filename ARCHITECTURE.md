@@ -1,6 +1,6 @@
 # 🏗️ Architecture Complète — eM@g
 
-> **Dernière mise à jour** : 13 février 2026
+> **Dernière mise à jour** : 26 février 2026
 > **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
 > **Domaine** : `magsav.duckdns.org`
 
@@ -16,26 +16,33 @@
 6. [Base de données](#6-base-de-données)
 7. [API — Catalogue des routes](#7-api--catalogue-des-routes)
 8. [Modules fonctionnels](#8-modules-fonctionnels)
-9. [Authentification & sécurité](#9-authentification--sécurité)
-10. [Déploiement & infrastructure](#10-déploiement--infrastructure)
-11. [Conventions de code](#11-conventions-de-code)
-12. [Diagramme des relations](#12-diagramme-des-relations)
+9. [Module Catalogue & Équipements](#9-module-catalogue--équipements)
+10. [Localisation multi-dépôt](#10-localisation-multi-dépôt)
+11. [Deep Linking — Chargement 3D](#11-deep-linking--chargement-3d)
+12. [Synchronisation inventaire](#12-synchronisation-inventaire)
+13. [Authentification & sécurité](#13-authentification--sécurité)
+14. [Déploiement & infrastructure](#14-déploiement--infrastructure)
+15. [Conventions de code](#15-conventions-de-code)
+16. [Diagramme des relations](#16-diagramme-des-relations)
 
 ---
 
 ## 1. Vue d'ensemble
 
-Application web de **gestion de flotte de véhicules et de planning du personnel** pour Mag Scène (entreprise de prestations événementielles à La Réunion). Elle permet de :
+Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour Mag Scène (entreprise de prestations événementielles à La Réunion). Elle permet de :
 
 - **Réserver** des véhicules sur un calendrier interactif (vue semaine/mois/année/planning)
 - **Gérer l'entretien** : maintenances programmées, signalements de pannes, contrôles techniques
 - **Planifier les trajets** : détails aller/retour, pauses, jonctions entre événements
 - **Administrer les utilisateurs** : inscription par invitation, rôles admin/user, demandes d'accès
-- **Importer des données** : BL (bons de livraison PDF), fichiers Excel, véhicules CSV
+- **Importer des données** : BL (bons de livraison PDF), fichiers Excel, CSV, BL fournisseur/prestataire
 - **Synchroniser Google Calendar** : lecture des événements, création de réservations depuis Google
 - **Gérer le personnel** : personnes, compétences, disponibilités, missions, affectations, planning
+- **Gérer les congés** : demandes, approbation, solde, planning intégré
 - **Gérer les affaires** : dossiers projets, pièces jointes, historique, liens réservations
-- **Messagerie interne** : conversations temps réel entre utilisateurs
+- **Cataloguer les équipements** : matériel individualisé avec UID, localisation multi-dépôt, plans interactifs SVG
+- **Gérer le stock** : mouvements entrées/sorties, inventaire, commandes fournisseurs
+- **Communiquer** : événements d'entreprise, notes internes, mailing, messagerie temps réel
 - **Accès mobile** : interface dédiée avec QR code (planning, réservations, maintenances, messagerie)
 
 ---
@@ -75,15 +82,7 @@ Application web de **gestion de flotte de véhicules et de planning du personnel
 | `express-rate-limit` | Protection anti-brute-force |
 | `multer` | Upload de fichiers |
 | `node-fetch` | Requêtes HTTP côté serveur |
-
-### Outils de développement
-
-| Outil | Rôle |
-|-------|------|
-| `eslint` + `eslint-plugin-react` + `eslint-plugin-react-hooks` | Linting |
-| `prettier` + `eslint-config-prettier` | Formatage |
-| `nodemon` | Rechargement auto backend (dev) |
-| `md-to-pdf` | Conversion documentation |
+| `nodemailer` | Envoi d'emails (module mailing) |
 
 ---
 
@@ -94,153 +93,105 @@ eM@g/
 ├── index.html                      # Point d'entrée HTML (SPA)
 ├── package.json                    # Dépendances frontend
 ├── vite.config.js                  # Config Vite (proxy, build, etc.)
-├── .eslintrc.cjs                   # Règles ESLint
-├── .prettierrc                     # Règles Prettier
-├── .prettierignore                 # Fichiers ignorés par Prettier
 │
 ├── src/                            # ══ CODE SOURCE FRONTEND ══
 │   ├── main.jsx                    # Point d'entrée React
-│   ├── App.jsx                     # Composant racine (~1248 lignes)
-│   ├── App.css                     # Styles globaux
-│   ├── index.css                   # Reset CSS
-│   ├── theme.css                   # Variables de thème
+│   ├── App.jsx                     # Composant racine (~1401 lignes)
+│   ├── App.css / index.css / theme.css
 │   │
-│   ├── components/                 # Composants React (43 fichiers desktop + 10 mobile)
+│   ├── components/                 # 79 composants React desktop
 │   │   ├── Calendar.jsx            # Calendrier principal (semaine/mois/année)
-│   │   ├── Header.jsx              # Barre de navigation + boutons Nouvelle affaire, Aide
-│   │   ├── LoginForm.jsx           # Formulaire de connexion
-│   │   ├── ManagementPanel.jsx     # Panel admin (onglets CRUD)
+│   │   ├── Header.jsx              # Barre de navigation + boutons contextuels
+│   │   ├── ManagementPanel.jsx     # Panel admin (multi-onglets)
+│   │   ├── EquipmentPanel.jsx      # Module équipements individualisés
+│   │   ├── CataloguePanel.jsx      # Module catalogue d'équipements
+│   │   ├── CommunicationPanel.jsx  # Communication & événements
+│   │   ├── MailingPanel.jsx        # Mailing avancé
+│   │   ├── StockPanel.jsx          # Gestion de stock
+│   │   ├── OrdersPanel.jsx         # Commandes fournisseurs
+│   │   ├── PersonnelPanel.jsx      # Module personnel complet
+│   │   ├── AffairesPanel.jsx       # Module affaires
+│   │   ├── MessagingPanel.jsx      # Messagerie interne
+│   │   ├── DepotMap.jsx            # Plan interactif du dépôt (SVG)
+│   │   ├── LocationSelector.jsx    # Sélecteur localisation 4 niveaux
+│   │   ├── TaskPlanningPanel.jsx   # Planning des tâches
 │   │   ├── ReservationModal.jsx    # Modal création/édition réservation
 │   │   ├── MaintenanceDialog.jsx   # Dialog maintenance/intervention
-│   │   ├── VehicleDetailsModal.jsx # Fiche détail véhicule
-│   │   ├── VehicleDetailPanel.jsx  # Panel latéral détail véhicule
-│   │   ├── EventDetailsModal.jsx   # Détail d'un événement calendrier
-│   │   ├── TripDetailsModal.jsx    # Planification de trajet
-│   │   ├── PlanningView.jsx        # Vue planning (liste chronologique)
-│   │   ├── UserManagement.jsx      # Gestion utilisateurs (admin)
-│   │   ├── AccessRequestModal.jsx  # Demande d'accès / création compte
-│   │   ├── GoogleCalendarBanner.jsx # Bandeau événements Google + boutons contextuels
-│   │   ├── GoogleCalendarConfig.jsx # Config Google (admin)
-│   │   ├── AffairesPanel.jsx       # Module affaires (liste, recherche, filtres)
-│   │   ├── AffaireDetailPanel.jsx  # Détail affaire (PJ, historique, liens)
-│   │   ├── AffaireImportModal.jsx  # Import BL/Excel
-│   │   ├── AssignmentDialog.jsx    # Dialog d'affectation personnel
-│   │   ├── InterventionModal.jsx   # Modal intervention rapide
-│   │   ├── OverdueInterventionModal.jsx # Alertes interventions en retard
-│   │   ├── ReservationRequestsPanel.jsx # Demandes de réservation
-│   │   ├── LocationDialog.jsx      # Dialog création lieu (Google Places)
-│   │   ├── ClientDialog.jsx        # Dialog création client
-│   │   ├── DriverSelect.jsx        # Sélecteur de conducteur
-│   │   ├── VehiclePickerCards.jsx   # Sélecteur de véhicule (cartes)
-│   │   ├── VehicleMaintenanceModal.jsx # Modal km/contrôle technique
-│   │   ├── ProfileEditModal.jsx    # Édition de profil utilisateur
-│   │   ├── ChangePassword.jsx      # Changement mot de passe
-│   │   ├── MobileAccess.jsx        # QR code accès mobile
-│   │   ├── QRCodeModal.jsx         # Affichage QR code
-│   │   ├── UserAvatar.jsx          # Avatar utilisateur
-│   │   ├── UserPreferencesModal.jsx # Préférences utilisateur (thème, module par défaut)
-│   │   ├── PersonnelPanel.jsx      # Module personnel (4 sous-onglets + PlanningTab)
-│   │   ├── PersonnelDetailPanel.jsx # Panel latéral détail personne
-│   │   ├── MessagingPanel.jsx      # Messagerie interne (conversations, messages)
-│   │   ├── HelpModal.jsx           # Modal d'aide contextuelle
-│   │   ├── UnsavedChangesDialog.jsx # Dialog changements non sauvegardés
-│   │   ├── ErrorBoundary.jsx       # Capture d'erreurs React
-│   │   ├── ConfirmDialog.jsx       # Dialog de confirmation
-│   │   ├── MonthSelector.jsx       # Sélecteur de mois
-│   │   ├── WeekSelector.jsx        # Sélecteur de semaine
-│   │   ├── YearSelector.jsx        # Sélecteur d'année
-│   │   └── mobile/                 # Interface mobile dédiée (10 composants)
+│   │   ├── BLImportModal.jsx       # Import BL standard
+│   │   ├── BLImportLocPrestaModal.jsx # Import BL fournisseur/prestataire
+│   │   └── mobile/                 # 14 composants mobile
 │   │       ├── MobileApp.jsx       # Routeur mobile
 │   │       ├── MobileHome.jsx      # Accueil mobile
-│   │       ├── MobileLogin.jsx     # Login mobile
-│   │       ├── MobilePlanning.jsx  # Planning mobile
-│   │       ├── MobileReservations.jsx # Réservations mobile
-│   │       ├── MobileMaintenances.jsx # Maintenances mobile
-│   │       ├── MobileAvailability.jsx # Disponibilité véhicules
-│   │       ├── MobilePersonnel.jsx # Personnel mobile
-│   │       ├── MobileMessaging.jsx # Messagerie mobile
-│   │       └── MobileParcDashboard.jsx # Tableau de bord parc mobile
+│   │       └── ...                 # Planning, réservations, maintenances, etc.
 │   │
-│   ├── hooks/                      # Hooks React custom (4 fichiers)
-│   │   ├── useAutocomplete.js      # Autocomplétion générique
-│   │   ├── useGooglePlacesAutocomplete.js # Google Places
-│   │   ├── useUnsavedChanges.js    # Détection changements non sauvegardés
-│   │   └── useWindowWidth.js       # Détection largeur fenêtre (responsive)
+│   ├── hooks/                      # 7 hooks React custom
+│   │   ├── useAutocomplete.js
+│   │   ├── useGooglePlacesAutocomplete.js
+│   │   ├── useUnsavedChanges.js
+│   │   └── useWindowWidth.js
 │   │
-│   └── utils/                      # Fonctions utilitaires (12 fichiers)
-│       ├── api.js                  # Client API (~793 lignes, ~102 méthodes)
+│   └── utils/                      # 13 fonctions utilitaires
+│       ├── api.js                  # Client API (~1424 lignes, ~242 méthodes)
+│       ├── deepLinking.js          # URL builders, ouverture protocole Chargement 3D
 │       ├── dateUtils.js            # Utilitaires de dates
 │       ├── excelImport.js          # Import Excel
-│       ├── googleMapsLoader.js     # Chargement Google Maps API
-│       ├── indexedDB.js            # Couche cache IndexedDB (12 stores)
-│       ├── logger.js               # Logger conditionnel (dev/prod)
-│       ├── notificationSound.js    # Son de notification
+│       ├── indexedDB.js            # Cache IndexedDB (12 stores)
 │       ├── pdfParser.js            # Parsing PDF (pdfjs-dist)
-│       ├── photoList.js            # Gestion photos véhicules
-│       ├── vehicleAvatars.js       # Avatars véhicules
-│       ├── vehicleUtils.js         # Utilitaires véhicules (CT, statuts)
-│       └── vehiclesCsvImport.js    # Import CSV véhicules
+│       └── ...
 │
 ├── server/                         # ══ CODE SOURCE BACKEND ══
-│   ├── server.js                   # Serveur Express principal (~2545 lignes)
-│   ├── routes.js                   # Routes additionnelles (~641 lignes)
-│   ├── personnelRoutes.js          # Routes module personnel (~928 lignes)
-│   ├── database.js                 # Initialisation SQLite + schéma (~966 lignes)
+│   ├── server.js                   # Serveur Express principal (~2835 lignes)
+│   ├── routes.js                   # Routes secondaires (~671 lignes)
+│   ├── personnelRoutes.js          # Routes personnel (~1319 lignes)
+│   ├── catalogRoutes.js            # Routes catalogue (~746 lignes)
+│   ├── equipmentRoutes.js          # Routes équipements (~1195 lignes)
+│   ├── communicationRoutes.js      # Routes communication (~931 lignes)
+│   ├── leaveRoutes.js              # Routes congés (~1323 lignes)
+│   ├── ordersRoutes.js             # Routes commandes (~636 lignes)
+│   ├── stockRoutes.js              # Routes stock (~432 lignes)
+│   ├── mailingRoutes.js            # Routes mailing (~294 lignes)
+│   ├── messagingRoutes.js          # Routes messagerie (~322 lignes)
+│   ├── emailService.js             # Service d'envoi d'emails (~217 lignes)
+│   ├── database.js                 # Init SQLite + schéma + migrations (~1915 lignes)
+│   ├── logger.js                   # Logger conditionnel
 │   ├── package.json                # Dépendances backend
 │   ├── ecosystem.config.js         # Configuration PM2
-│   ├── .env                        # Variables d'environnement (secrets)
-│   ├── .env.example                # Template variables d'environnement
-│   ├── logger.js                   # Logger backend
 │   ├── backup-database.sh          # Script de backup SQLite
-│   ├── import-backup.js            # Restauration depuis backup
-│   ├── backup-restore.json         # Config restauration
-│   ├── fix-schema.sql              # Corrections de schéma
-│   ├── vehicules.db                # Base de données SQLite
-│   ├── backups/                    # Dossier backups DB
-│   └── migrations/                 # Migrations SQL (9 fichiers)
-│       ├── add_affaire_to_missions.sql
-│       ├── add_day_states_to_missions.sql
-│       ├── add_messaging.sql
-│       ├── add_personnel_module.sql
-│       ├── add_technical_control_type_to_maintenances.sql
-│       ├── add_trip_details.sql
-│       ├── add_trip_group_id.sql
-│       ├── add_vehicle_maintenance_info.sql
-│       └── fix_trip_details_reservation_id_type.sql
+│   └── migrations/                 # 16 fichiers SQL
 │
 ├── public/                         # ══ ASSETS STATIQUES ══
+│   ├── depot-zones.json            # Zones du dépôt 1 — Événementiel (SVG 770×560)
+│   ├── depot2-zones.json           # Zones du dépôt 2 — Structure (SVG 770×510)
 │   ├── initial_data.json           # Données initiales (seed)
 │   ├── photos-list.json            # Index photos véhicules
-│   ├── pdf.worker.mjs              # Worker PDF.js
-│   ├── diagnostic.html             # Page diagnostic
-│   ├── guide-utilisation.html      # Guide utilisateur
-│   ├── Logos/                      # Logos de l'application
+│   ├── manifest.json               # PWA manifest
+│   ├── sw.js                       # Service Worker
 │   ├── Photos/                     # Photos des véhicules
-│   └── attachments/                # Pièces jointes (par affaire)
+│   ├── Logos/                      # Logos de l'application
+│   ├── attachments/                # Pièces jointes par affaire
+│   └── imports/                    # Fichiers CSV d'import
 │
-├── scripts/                        # ══ SCRIPTS UTILITAIRES ══
-│   ├── safe-deploy.sh              # Déploiement zero-downtime
-│   ├── dev-reset-db.sh             # Reset DB en développement
-│   ├── dev-start.sh                # Démarrage environnement dev
-│   ├── generate-icons.py           # Génération des icônes PWA
-│   ├── generate-photo-list.js      # Génération index photos
-│   └── watch-photos.js             # Watcher photos (dev)
-│
-└── _archive/                       # Documentation archivée
+└── scripts/                        # ══ SCRIPTS UTILITAIRES ══
+    ├── safe-deploy.sh              # Déploiement zero-downtime
+    ├── dev-reset-db.sh             # Reset DB en développement
+    ├── dev-start.sh                # Démarrage environnement dev
+    ├── sync_inventory_to_catalog.js # Import CSV/XLSX → catalogue
+    ├── generate-photo-list.js      # Génération index photos
+    └── watch-photos.js             # Watcher photos (dev)
 ```
 
 ---
 
 ## 4. Architecture Backend
 
-### Serveur Express (`server/server.js` + `server/routes.js`)
+### Serveur Express
 
 ```
 Client HTTP
     │
     ▼
 ┌─────────────────────────────────────────────┐
-│ Express (port 3002)                         │
+│ Express (port 3003 dev / 3002 prod)         │
 │                                             │
 │  ┌──────────────┐  ┌────────────────────┐   │
 │  │ Rate Limiter  │  │ CORS whitelist     │   │
@@ -248,55 +199,69 @@ Client HTTP
 │  │  -limit)      │  │  localhost:5174/    │   │
 │  │               │  │  4173, IP locale)   │   │
 │  └───────┬───────┘  └────────┬───────────┘   │
-│          │                   │               │
 │          ▼                   ▼               │
 │  ┌──────────────────────────────────────┐    │
-│  │ Middlewares                          │    │
-│  │  - express.json()                   │    │
-│  │  - express.static('./dist')         │    │
-│  │  - express.static('./public')       │    │
-│  │  - /attachments → public/attachments│    │
-│  │  - /avatars → uploads/avatars       │    │
-│  └───────────────┬──────────────────────┘    │
-│                  │                           │
-│                  ▼                           │
-│  ┌──────────────────────────────────────┐    │
-│  │ Route Handlers                       │    │
+│  │ Route Handlers (11 fichiers)         │    │
 │  │                                      │    │
 │  │  server.js :                         │    │
 │  │   - /api/auth/*      (auth)          │    │
 │  │   - /api/vehicles     (CRUD)         │    │
 │  │   - /api/reservations (CRUD)         │    │
-│  │   - /api/reservation-requests        │    │
 │  │   - /api/maintenances (CRUD)         │    │
-│  │   - /api/access-requests             │    │
 │  │   - /api/admin/*      (admin)        │    │
 │  │   - /api/users/*      (profils)      │    │
 │  │   - /api/upload-*     (fichiers)     │    │
 │  │   - /api/attachments* (PJ)           │    │
 │  │                                      │    │
 │  │  routes.js :                         │    │
-│  │   - /api/clients      (CRUD)         │    │
-│  │   - /api/drivers      (CRUD)         │    │
-│  │   - /api/locations    (CRUD)         │    │
-│  │   - /api/garages      (CRUD)         │    │
-│  │   - /api/config/*     (settings)     │    │
-│  │   - /api/trip-details (CRUD)         │    │
+│  │   - /api/clients, drivers, locations │    │
+│  │   - /api/garages, config, trip-*     │    │
 │  │                                      │    │
 │  │  personnelRoutes.js :                │    │
-│  │   - /api/persons      (CRUD)         │    │
-│  │   - /api/skills       (CRUD)         │    │
-│  │   - /api/availabilities (CRUD)       │    │
-│  │   - /api/missions     (CRUD)         │    │
-│  │   - /api/assignments  (CRUD)         │    │
-│  │   - /api/personnel/planning          │    │
+│  │   - /api/persons, skills             │    │
+│  │   - /api/availabilities, missions    │    │
+│  │   - /api/assignments, planning       │    │
+│  │                                      │    │
+│  │  catalogRoutes.js :                  │    │
+│  │   - /api/catalog/equipment (CRUD)    │    │
+│  │   - /api/flightcases (CRUD)          │    │
+│  │   - /api/trucks/models (CRUD)        │    │
+│  │   - /api/reservations/:id/equipment  │    │
+│  │                                      │    │
+│  │  equipmentRoutes.js :                │    │
+│  │   - /api/equipment (CRUD + SAV)      │    │
+│  │   - /api/equipment-depot-zones       │    │
+│  │   - /api/equipment-all-depot-zones   │    │
+│  │   - /api/equipment-location-stats    │    │
+│  │                                      │    │
+│  │  communicationRoutes.js :            │    │
+│  │   - /api/communication/* (events,    │    │
+│  │     notes, display-events)           │    │
+│  │                                      │    │
+│  │  leaveRoutes.js :                    │    │
+│  │   - /api/leaves/* (demandes,         │    │
+│  │     approbation, solde, planning)    │    │
+│  │                                      │    │
+│  │  ordersRoutes.js :                   │    │
+│  │   - /api/orders/* (commandes,        │    │
+│  │     fournisseurs, bons)              │    │
+│  │                                      │    │
+│  │  stockRoutes.js :                    │    │
+│  │   - /api/stock/* (mouvements,        │    │
+│  │     inventaire)                      │    │
+│  │                                      │    │
+│  │  mailingRoutes.js :                  │    │
+│  │   - /api/mailing/* (templates,       │    │
+│  │     campagnes, envois)               │    │
+│  │                                      │    │
+│  │  messagingRoutes.js :                │    │
+│  │   - /api/messages/* (conversations)  │    │
 │  └───────────────┬──────────────────────┘    │
-│                  │                           │
 │                  ▼                           │
 │  ┌──────────────────────────────────────┐    │
 │  │ SQLite (better-sqlite3)              │    │
 │  │ vehicules.db — WAL mode             │    │
-│  │ 22 tables, FK enforced             │    │
+│  │ 56 tables, FK enforced             │    │
 │  └──────────────────────────────────────┘    │
 └─────────────────────────────────────────────┘
 ```
@@ -305,11 +270,20 @@ Client HTTP
 
 | Fichier | Lignes | Rôle |
 |---------|--------|------|
-| `server.js` | ~2545 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads, messagerie) |
-| `routes.js` | ~641 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
-| `personnelRoutes.js` | ~928 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations, planning) |
-| `database.js` | ~966 | Initialisation schéma SQLite, pragmas, migrations dynamiques, 27 tables |
-| `logger.js` | ~30 | Logger conditionnel |
+| `server.js` | ~2835 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads, messagerie) |
+| `routes.js` | ~671 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
+| `personnelRoutes.js` | ~1319 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations) |
+| `leaveRoutes.js` | ~1323 | Routes module congés (demandes, approbation, solde, planning) |
+| `equipmentRoutes.js` | ~1195 | Routes équipements individualisés (UID, SAV, localisation multi-dépôt) |
+| `communicationRoutes.js` | ~931 | Routes communication (événements, notes, affichage écran) |
+| `catalogRoutes.js` | ~746 | Routes catalogue (équipements, flight-cases, camions, réservation-équipement) |
+| `ordersRoutes.js` | ~636 | Routes commandes fournisseurs |
+| `stockRoutes.js` | ~432 | Routes gestion de stock (mouvements, inventaire) |
+| `messagingRoutes.js` | ~322 | Routes messagerie interne |
+| `mailingRoutes.js` | ~294 | Routes mailing avancé (templates, campagnes) |
+| `emailService.js` | ~217 | Service d'envoi d'emails (nodemailer) |
+| `database.js` | ~1915 | Initialisation schéma SQLite, pragmas, migrations, 56 tables |
+| `logger.js` | ~23 | Logger conditionnel |
 
 ### Variables d'environnement (`server/.env`)
 
@@ -322,7 +296,7 @@ JWT_EXPIRY_DAYS=30
 
 ## 5. Architecture Frontend
 
-### Composant racine : `App.jsx` (~1248 lignes)
+### Composant racine : `App.jsx` (~1401 lignes)
 
 ```
 main.jsx
@@ -332,41 +306,29 @@ main.jsx
        ├─ Non authentifié → LoginForm
        └─ Authentifié →
             ├─ Header (toujours — boutons Nouvelle affaire, Aide)
-            ├─ GoogleCalendarBanner (sauf module Affaires — boutons Nouvelle réservation/affectation)
+            ├─ GoogleCalendarBanner (boutons Nouvelle réservation/affectation)
             ├─ activeModule === 'vehicles' ? Calendar | PlanningView
             ├─ activeModule === 'personnel' ? PersonnelPanel (lazy)
             ├─ activeModule === 'affaires' ? AffairesPanel (lazy)
+            ├─ activeModule === 'catalog' ? CataloguePanel (lazy)
+            ├─ activeModule === 'equipment' ? EquipmentPanel (lazy)
+            ├─ activeModule === 'trucks' ? TruckModelPanel (lazy)
+            ├─ activeModule === 'communication' ? CommunicationPanel (lazy)
+            ├─ activeModule === 'stock' ? StockPanel (lazy)
+            ├─ activeModule === 'orders' ? OrdersPanel (lazy)
             ├─ ManagementPanel (lazy, si showManagement)
             ├─ MessagingPanel (lazy, si showMessaging)
-            ├─ MaintenanceDialog (lazy, si selectedVehicle)
-            ├─ VehicleDetailsModal (si selectedVehicleForDetails)
-            ├─ VehicleMaintenanceModal (lazy, si selectedForKmControl)
-            ├─ UserPreferencesModal (lazy, si showPreferences)
-            └─ HelpModal (lazy, si showHelp)
+            └─ Modals divers (maintenance, détail véhicule, préférences, aide…)
 ```
-
-### States principaux de App.jsx
-
-| Catégorie | States |
-|-----------|--------|
-| **Navigation** | `view` (week/month/year/planning), `currentDate`, `activeModule` (vehicles/personnel/affaires) |
-| **Données métier** | `vehicles`, `reservations`, `clients`, `drivers`, `locations`, `garages`, `maintenances`, `users` |
-| **Google Calendar** | `calendarConfig`, `googleEvents`, `googleEventForReservation`, `hoveredEventId` |
-| **UI / Modals** | `showManagement`, `showMessaging`, `isLoading`, `reservationToEdit`, `selectedVehicleForMaintenance`, `maintenanceToEdit`, `selectedVehicleForDetails`, `selectedVehicleForKilometrageControl`, `maintenanceActionType` |
-| **Auth** | `isAuthenticated`, `currentUser` |
-| **Modules** | `quickReservationSlot`, `quickAssignmentSlot`, `navigateToPersonId` |
 
 ### Code splitting (lazy loading)
 
-8 composants chargés à la demande via `React.lazy()` :
-- `ManagementPanel` — Panel de gestion (le plus gros composant)
-- `MaintenanceDialog` — Dialog maintenance/intervention
-- `VehicleMaintenanceModal` — Modal kilométrage/contrôle technique
-- `PersonnelPanel` — Module personnel complet (~1995 lignes)
-- `AffairesPanel` — Module affaires (~791 lignes)
-- `MessagingPanel` — Messagerie interne
-- `UserPreferencesModal` — Préférences utilisateur
-- `HelpModal` — Modal d'aide contextuelle
+Composants chargés à la demande via `React.lazy()` :
+- `ManagementPanel`, `PersonnelPanel`, `AffairesPanel`
+- `CataloguePanel`, `EquipmentPanel`, `TruckModelPanel`
+- `CommunicationPanel`, `StockPanel`, `OrdersPanel`, `MailingPanel`
+- `MessagingPanel`, `MaintenanceDialog`, `DepotMap`
+- `UserPreferencesModal`, `HelpModal`
 
 ### Cache IndexedDB
 
@@ -387,11 +349,9 @@ Le frontend persiste les données dans IndexedDB (via `src/utils/indexedDB.js`) 
 | `skills` | Compétences |
 | `missions` | Missions |
 
-Le debounce de sauvegarde est de **500ms** pour éviter des écritures trop fréquentes.
+### Client API (`src/utils/api.js` — ~1424 lignes)
 
-### Client API (`src/utils/api.js` — ~793 lignes)
-
-Classe `ApiClient` avec ~102 méthodes. Fonctionnalités :
+Classe `ApiClient` avec ~242 méthodes. Fonctionnalités :
 - Détection automatique de l'URL backend (DuckDNS / localhost / IP)
 - Injection automatique du Bearer token JWT
 - Conversion `snake_case` ↔ `camelCase` transparente
@@ -409,344 +369,98 @@ Classe `ApiClient` avec ~102 méthodes. Fonctionnalités :
 - `PRAGMA synchronous = FULL` — Durabilité maximale
 - Checkpoint automatique toutes les 5 minutes
 
-### Schéma complet (27 tables)
+### Schéma — 56 tables
 
-#### `users` — Utilisateurs
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `email` | TEXT | UNIQUE NOT NULL |
-| `name` | TEXT | NOT NULL |
-| `password_hash` | TEXT | NOT NULL |
-| `is_admin` | BOOLEAN | DEFAULT 0 |
-| `password_reset_required` | BOOLEAN | DEFAULT 0 |
-| `avatar` | TEXT | — |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+#### Tables principales
 
-#### `active_sessions` — Sessions JWT actives
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `user_id` | INTEGER | NOT NULL, FK → users(id) |
-| `token_hash` | TEXT | NOT NULL |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-| `expires_at` | DATETIME | NOT NULL |
-| `last_activity` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| Table | Description |
+|-------|-------------|
+| `users` | Utilisateurs (email, password_hash, is_admin, avatar) |
+| `active_sessions` | Sessions JWT actives |
+| `vehicles` | Véhicules (immat, marque, modèle, km, CT, photo, display_color) |
+| `reservations` | Réservations de véhicules (dates, client, conducteur, affaire) |
+| `reservation_requests` | Demandes de réservation (workflow non-admin) |
+| `maintenances` | Maintenances & interventions (type, statut, garage, coût) |
+| `clients` | Clients |
+| `drivers` | Conducteurs |
+| `locations` | Lieux (avec coordonnées GPS) |
+| `garages` | Garages |
+| `config` | Configuration clé-valeur |
+| `authorized_emails` | Emails pré-autorisés |
+| `access_requests` | Demandes d'accès |
+| `modification_history` | Historique des modifications (audit trail) |
+| `trip_details` | Détails de trajets (aller/retour/jonctions) |
+| `trip_pauses` | Pauses de trajet |
 
-#### `vehicles` — Véhicules
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | TEXT | PK |
-| `name` | TEXT | NOT NULL |
-| `type` | TEXT | — |
-| `registration` | TEXT | — |
-| `brand` | TEXT | — |
-| `model` | TEXT | — |
-| `color` | TEXT | — |
-| `owner` | TEXT | — |
-| `comment` | TEXT | — |
-| `display_color` | TEXT | — |
-| `photo` | TEXT | — |
-| `order_index` | INTEGER | DEFAULT 0 |
-| `is_location` | BOOLEAN | DEFAULT 0 |
-| `kilometrage` | INTEGER | DEFAULT 0 |
-| `controles_techniques` | TEXT | DEFAULT '[]' (JSON array) |
-| `created_by` | INTEGER | FK → users(id) |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-| `modified_by` | INTEGER | FK → users(id) |
-| `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+#### Tables Personnel & Congés
 
-> **Note** : Les colonnes `controle_technique_type`, `controle_technique_date`, `controle_technique_deadline` sont **LEGACY** (remplacées par `controles_techniques` JSON).
+| Table | Description |
+|-------|-------------|
+| `persons` | Personnel (nom, type, poste, actif) |
+| `skills` | Compétences (8 catégories, 18 seed) |
+| `person_skills` | Association personne ↔ compétence (avec niveau) |
+| `availabilities` | Disponibilités / indisponibilités |
+| `missions` | Missions / prestations (6 statuts) |
+| `mission_assignments` | Affectation personne → mission |
+| `leave_requests` | Demandes de congé |
+| `leave_balances` | Soldes de congé |
+| `leave_types` | Types de congé |
 
-#### `reservations` — Réservations
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | TEXT | PK |
-| `vehicle_id` | TEXT | NOT NULL, FK → vehicles(id) ON DELETE CASCADE |
-| `start_date` | TEXT | NOT NULL |
-| `start_period` | TEXT | DEFAULT 'AM' |
-| `end_date` | TEXT | NOT NULL |
-| `end_period` | TEXT | DEFAULT 'PM' |
-| `client_name` | TEXT | — |
-| `driver_name` | TEXT | — |
-| `location_name` | TEXT | — |
-| `prestation_name` | TEXT | — |
-| `notes` | TEXT | — |
-| `google_event_id` | TEXT | — |
-| `affaire` | TEXT | — |
-| `is_tournee` | BOOLEAN | DEFAULT 0 |
-| `linked_event_ids` | TEXT | JSON array |
-| `created_by` | INTEGER | FK → users(id) |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-| `modified_by` | INTEGER | FK → users(id) |
-| `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+#### Tables Catalogue & Équipements
 
-#### `reservation_requests` — Demandes de réservation
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | TEXT | PK |
-| `vehicle_id` | TEXT | NOT NULL, FK → vehicles(id) ON DELETE CASCADE |
-| `start_date` | TEXT | NOT NULL |
-| `start_period` | TEXT | DEFAULT 'AM' |
-| `end_date` | TEXT | NOT NULL |
-| `end_period` | TEXT | DEFAULT 'PM' |
-| `client_name` | TEXT | — |
-| `driver_name` | TEXT | — |
-| `location_name` | TEXT | — |
-| `prestation_name` | TEXT | — |
-| `notes` | TEXT | — |
-| `status` | TEXT | DEFAULT 'pending' |
-| `requested_by` | INTEGER | NOT NULL, FK → users(id) |
-| `requested_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-| `reviewed_by` | INTEGER | FK → users(id) |
-| `reviewed_at` | DATETIME | — |
-| `rejection_reason` | TEXT | — |
+| Table | Description |
+|-------|-------------|
+| `equipment_catalog` | Catalogue d'équipements (ref, famille, catégorie, localisation) |
+| `equipment` | Matériel individualisé (UID, n° série, état, SAV, localisation multi-dépôt) |
+| `flightcases` | Modèles de flight-cases |
+| `truck_models` | Modèles de véhicules de transport |
+| `equipment_to_vehicle` | Association réservation ↔ équipement |
+| `sav_tickets` | Tickets SAV (suivi des pannes matériel) |
+| `equipment_lists` | Listes d'équipements nommées |
+| `equipment_list_items` | Items dans les listes |
 
-#### `maintenances` — Maintenances & interventions
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | TEXT | PK |
-| `vehicle_id` | TEXT | FK → vehicles(id) ON DELETE CASCADE |
-| `vehicle_name` | TEXT | — |
-| `type` | TEXT | — |
-| `status` | TEXT | — |
-| `date` | TEXT | — |
-| `end_date` | TEXT | — |
-| `start_date_period` | TEXT | — |
-| `end_date_period` | TEXT | — |
-| `description` | TEXT | — |
-| `garage_id` | INTEGER | FK → garages(id) |
-| `cost` | REAL | — |
-| `mileage` | INTEGER | — |
-| `notes` | TEXT | — |
-| `is_immobilized` | BOOLEAN | DEFAULT 0 |
-| `is_quick_report` | BOOLEAN | DEFAULT 0 |
-| `technical_control_type` | TEXT | — |
-| `reported_date` | DATETIME | — |
-| `reported_by` | INTEGER | FK → users(id) |
-| `created_by` | INTEGER | FK → users(id) |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-| `modified_by` | INTEGER | FK → users(id) |
-| `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+#### Tables Stock & Commandes
 
-#### `clients` — Clients
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `name` | TEXT | NOT NULL |
-| `email` | TEXT | — |
-| `phone` | TEXT | — |
-| `address` | TEXT | — |
-| `created_by` / `modified_by` | INTEGER | FK → users(id) |
-| `created_at` / `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| Table | Description |
+|-------|-------------|
+| `stock_movements` | Mouvements de stock (entrées/sorties) |
+| `stock_locations` | Emplacements de stockage |
+| `orders` | Commandes fournisseurs |
+| `order_items` | Lignes de commande |
+| `suppliers` | Fournisseurs |
 
-#### `drivers` — Conducteurs
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `name` | TEXT | NOT NULL |
-| `license_number` | TEXT | — |
-| `phone` | TEXT | — |
-| `created_by` / `modified_by` | INTEGER | FK → users(id) |
-| `created_at` / `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+#### Tables Communication & Mailing
 
-#### `locations` — Lieux
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `name` | TEXT | NOT NULL |
-| `address` | TEXT | — |
-| `lat` | REAL | — |
-| `lng` | REAL | — |
-| `place_id` | TEXT | — |
-| `type` | TEXT | — |
-| `created_by` / `modified_by` | INTEGER | FK → users(id) |
-| `created_at` / `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| Table | Description |
+|-------|-------------|
+| `communication_events` | Événements d'entreprise (visibilité, affichage écran) |
+| `communication_notes` | Notes internes |
+| `mail_templates` | Templates d'emails |
+| `mail_campaigns` | Campagnes de mailing |
+| `mail_recipients` | Destinataires de campagne |
+| `mail_sends` | Historique d'envois |
 
-#### `garages` — Garages
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `name` | TEXT | NOT NULL |
-| `address` | TEXT | — |
-| `phone` | TEXT | — |
-| `email` | TEXT | — |
-| `created_by` / `modified_by` | INTEGER | FK → users(id) |
-| `created_at` / `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+#### Tables Messagerie
 
-#### `config` — Configuration clé-valeur
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `key` | TEXT | PK |
-| `value` | TEXT | — |
-| `modified_by` | INTEGER | FK → users(id) |
-| `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| Table | Description |
+|-------|-------------|
+| `conversations` | Conversations de messagerie |
+| `conversation_participants` | Participants aux conversations |
+| `messages` | Messages texte |
 
-#### `authorized_emails` — Emails pré-autorisés
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `email` | TEXT | UNIQUE NOT NULL |
-| `status` | TEXT | DEFAULT 'pending' |
-| `is_admin` | INTEGER | DEFAULT 0 |
-| `activated_at` | DATETIME | — |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+### Migrations automatiques
 
-#### `access_requests` — Demandes d'accès
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `email` | TEXT | NOT NULL |
-| `name` | TEXT | NOT NULL |
-| `status` | TEXT | DEFAULT 'pending' |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-| `reviewed_by` | INTEGER | FK → users(id) |
-| `reviewed_at` | DATETIME | — |
-
-#### `modification_history` — Historique des modifications
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `entity_type` | TEXT | NOT NULL |
-| `entity_id` | TEXT | NOT NULL |
-| `action` | TEXT | NOT NULL |
-| `changes` | TEXT | JSON |
-| `user_id` | INTEGER | FK → users(id) |
-| `user_name` | TEXT | — |
-| `timestamp` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-
-#### `trip_details` — Détails de trajets
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `reservation_id` | TEXT | FK → reservations(id) |
-| `event_id` | TEXT | — |
-| `event_order` | INTEGER | — |
-| `departure_location` | TEXT | — |
-| `departure_date` | TEXT | — |
-| `departure_time` | TEXT | — |
-| `arrival_location` | TEXT | — |
-| `arrival_date` | TEXT | — |
-| `arrival_time` | TEXT | — |
-| `return_departure_location` | TEXT | — |
-| `return_departure_date` | TEXT | — |
-| `return_departure_time` | TEXT | — |
-| `return_arrival_location` | TEXT | — |
-| `return_arrival_date` | TEXT | — |
-| `return_arrival_time` | TEXT | — |
-| `driver_name` | TEXT | — |
-| `outbound_duration` | TEXT | — |
-| `return_duration` | TEXT | — |
-| `has_junction_with_next` | BOOLEAN | — |
-| `junction_location` | TEXT | — |
-| `trip_group_id` | TEXT | — |
-| `updated_at` | DATETIME | — |
-
-#### `trip_pauses` — Pauses de trajet
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `trip_detail_id` | INTEGER | FK → trip_details(id) |
-| `pause_type` | TEXT | — |
-| `location` | TEXT | — |
-| `start_time` | TEXT | — |
-| `duration` | TEXT | — |
-| `notes` | TEXT | — |
-
-#### `persons` — Personnel
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `first_name` | TEXT | NOT NULL |
-| `last_name` | TEXT | NOT NULL |
-| `email` | TEXT | — |
-| `phone` | TEXT | — |
-| `type` | TEXT | DEFAULT 'salarié' |
-| `position` | TEXT | — |
-| `is_active` | BOOLEAN | DEFAULT 1 |
-| `notes` | TEXT | — |
-| `created_by` | INTEGER | FK → users(id) |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-| `modified_by` | INTEGER | FK → users(id) |
-| `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-
-> **Types possibles** : salarié, technicien, conducteur, intermittent, indépendant
-
-#### `skills` — Compétences
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `name` | TEXT | NOT NULL UNIQUE |
-| `category` | TEXT | NOT NULL |
-| `description` | TEXT | — |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-
-> **Catégories** : Son, Lumière, Vidéo, Régie, Transport, Structure, Électricité, Autre
-> **Seed** : 18 compétences pré-insérées (INSERT OR IGNORE)
-
-#### `person_skills` — Association personne ↔ compétence
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `person_id` | INTEGER | NOT NULL, FK → persons(id) ON DELETE CASCADE |
-| `skill_id` | INTEGER | NOT NULL, FK → skills(id) ON DELETE CASCADE |
-| `level` | TEXT | DEFAULT 'intermédiaire' |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-
-> **Niveaux** : débutant, intermédiaire, confirmé, expert
-> **Contrainte** : UNIQUE(person_id, skill_id)
-
-#### `availabilities` — Disponibilités / indisponibilités
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `person_id` | INTEGER | NOT NULL, FK → persons(id) ON DELETE CASCADE |
-| `type` | TEXT | NOT NULL |
-| `start_date` | TEXT | NOT NULL |
-| `end_date` | TEXT | NOT NULL |
-| `reason` | TEXT | — |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-
-> **Types** : available, unavailable, vacation, sick, training
-
-#### `missions` — Missions / prestations
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `title` | TEXT | NOT NULL |
-| `description` | TEXT | — |
-| `start_date` | TEXT | NOT NULL |
-| `end_date` | TEXT | NOT NULL |
-| `location` | TEXT | — |
-| `client_name` | TEXT | — |
-| `status` | TEXT | DEFAULT 'draft' |
-| `required_persons` | INTEGER | DEFAULT 1 |
-| `reservation_id` | TEXT | FK → reservations(id) |
-| `notes` | TEXT | — |
-| `created_by` | INTEGER | FK → users(id) |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-| `modified_by` | INTEGER | FK → users(id) |
-| `modified_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-
-> **Statuts** : draft, planned, confirmed, in_progress, completed, cancelled
-
-#### `mission_assignments` — Affectation personne → mission
-| Colonne | Type | Contraintes |
-|---------|------|-------------|
-| `id` | INTEGER | PK AUTOINCREMENT |
-| `mission_id` | INTEGER | NOT NULL, FK → missions(id) ON DELETE CASCADE |
-| `person_id` | INTEGER | NOT NULL, FK → persons(id) ON DELETE CASCADE |
-| `role` | TEXT | — |
-| `status` | TEXT | DEFAULT 'proposed' |
-| `notes` | TEXT | — |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
-
-> **Statuts** : proposed, confirmed, declined, replaced, completed
-> **Contrainte** : UNIQUE(mission_id, person_id)
+Le fichier `database.js` exécute des migrations dynamiques au démarrage :
+- Détection de colonnes manquantes (ex: `location_depot`)
+- Parsing et migration de données texte → champs structurés
+- Transactions sécurisées (rollback en cas d'erreur)
+- Idempotent (safe re-run)
 
 ---
 
 ## 7. API — Catalogue des routes
+
+> **Total : ~267 routes API** réparties en 11 fichiers
 
 ### Authentification (`/api/auth/*`)
 
@@ -756,77 +470,45 @@ Classe `ApiClient` avec ~102 méthodes. Fonctionnalités :
 | POST | `/api/auth/login` | ❌ | Connexion → JWT |
 | POST | `/api/auth/force-login` | ❌ | Connexion forcée (kill autres sessions) |
 | POST | `/api/auth/logout` | ✅ | Déconnexion |
-| GET | `/api/auth/users` | ❌ | Liste des utilisateurs (id, email, name, avatar) |
 | POST | `/api/auth/change-password` | ✅ | Changer son mot de passe |
-| POST | `/api/auth/check-reset` | ❌ | Vérifier si reset requis |
-| POST | `/api/auth/set-new-password` | ❌ | Définir nouveau mot de passe (rate limited) |
 
 ### Véhicules (`/api/vehicles`)
 
-| Méthode | Route | Auth | Admin | Description |
-|---------|-------|:----:|:-----:|-------------|
-| GET | `/api/vehicles` | ✅ | ❌ | Liste tous les véhicules |
-| POST | `/api/vehicles` | ✅ | ❌ | Créer un véhicule |
-| PUT | `/api/vehicles/:id` | ✅ | ❌ | Modifier un véhicule |
-| DELETE | `/api/vehicles/:id` | ✅ | ❌ | Supprimer un véhicule |
+| Méthode | Route | Auth | Admin |
+|---------|-------|:----:|:-----:|
+| GET | `/api/vehicles` | ✅ | ❌ |
+| POST | `/api/vehicles` | ✅ | ❌ |
+| PUT | `/api/vehicles/:id` | ✅ | ❌ |
+| DELETE | `/api/vehicles/:id` | ✅ | ❌ |
 
 ### Réservations (`/api/reservations`)
 
-| Méthode | Route | Auth | Admin | Description |
-|---------|-------|:----:|:-----:|-------------|
-| GET | `/api/reservations` | ✅ | ❌ | Liste toutes les réservations |
-| POST | `/api/reservations` | ✅ | ✅ | Créer une réservation |
-| PUT | `/api/reservations/:id` | ✅ | ✅ | Modifier une réservation |
-| DELETE | `/api/reservations/:id` | ✅ | ✅ | Supprimer une réservation |
+| Méthode | Route | Auth | Admin |
+|---------|-------|:----:|:-----:|
+| GET | `/api/reservations` | ✅ | ❌ |
+| POST | `/api/reservations` | ✅ | ✅ |
+| PUT | `/api/reservations/:id` | ✅ | ✅ |
+| DELETE | `/api/reservations/:id` | ✅ | ✅ |
 
 ### Demandes de réservation (`/api/reservation-requests`)
 
-| Méthode | Route | Auth | Admin | Description |
-|---------|-------|:----:|:-----:|-------------|
-| GET | `/api/reservation-requests` | ✅ | ❌ | Liste toutes les demandes |
-| POST | `/api/reservation-requests` | ✅ | ❌ | Créer une demande |
-| PUT | `/api/reservation-requests/:id/approve` | ✅ | ✅ | Approuver → crée la réservation |
-| PUT | `/api/reservation-requests/:id/reject` | ✅ | ✅ | Rejeter une demande |
-| GET | `/api/reservation-requests/pending` | ✅ | ❌ | Demandes en attente |
+| Méthode | Route | Auth | Admin |
+|---------|-------|:----:|:-----:|
+| GET | `/api/reservation-requests` | ✅ | ❌ |
+| POST | `/api/reservation-requests` | ✅ | ❌ |
+| PUT | `/api/reservation-requests/:id/approve` | ✅ | ✅ |
+| PUT | `/api/reservation-requests/:id/reject` | ✅ | ✅ |
 
 ### Maintenances (`/api/maintenances`)
 
-| Méthode | Route | Auth | Admin | Description |
-|---------|-------|:----:|:-----:|-------------|
-| GET | `/api/maintenances` | ✅ | ❌ | Liste toutes les maintenances |
-| POST | `/api/maintenances` | ✅ | ❌* | Créer (*non-admin limité à status='reported') |
-| PUT | `/api/maintenances/:id` | ✅ | ❌* | Modifier (*non-admin limité à ses signalements) |
-| DELETE | `/api/maintenances/:id` | ✅ | ✅ | Supprimer (admin uniquement) |
+| Méthode | Route | Auth | Admin |
+|---------|-------|:----:|:-----:|
+| GET | `/api/maintenances` | ✅ | ❌ |
+| POST | `/api/maintenances` | ✅ | ❌* |
+| PUT | `/api/maintenances/:id` | ✅ | ❌* |
+| DELETE | `/api/maintenances/:id` | ✅ | ✅ |
 
-### Demandes d'accès (`/api/access-requests`)
-
-| Méthode | Route | Auth | Admin | Description |
-|---------|-------|:----:|:-----:|-------------|
-| POST | `/api/access-requests` | ❌ | ❌ | Créer une demande (auto-approve si email autorisé) |
-| POST | `/api/access-requests/check-email` | ❌ | ❌ | Vérifier si email autorisé |
-| GET | `/api/access-requests` | ✅ | ❌ | Lister les demandes |
-| PATCH | `/api/access-requests/:id` | ✅ | ✅ | Approuver/Rejeter |
-| GET | `/api/access-requests/count/pending` | ✅ | ❌ | Count demandes en attente |
-
-### Administration (`/api/admin/*` + `/api/users/*`)
-
-| Méthode | Route | Auth | Admin | Description |
-|---------|-------|:----:|:-----:|-------------|
-| GET | `/api/admin/authorized-emails` | ✅ | ✅ | Emails autorisés |
-| POST | `/api/admin/authorized-emails` | ✅ | ✅ | Ajouter email |
-| DELETE | `/api/admin/authorized-emails/:id` | ✅ | ✅ | Supprimer email |
-| GET | `/api/admin/users` | ✅ | ✅ | Liste utilisateurs (admin) |
-| POST | `/api/admin/reset-password` | ✅ | ✅ | Reset mot de passe |
-| GET | `/api/users` | ✅ | ✅ | Liste complète utilisateurs |
-| GET | `/api/users/names` | ✅ | ❌ | Noms des utilisateurs |
-| PATCH | `/api/users/:id` | ✅ | ✅ | Modifier utilisateur |
-| DELETE | `/api/users/:id` | ✅ | ✅ | Supprimer utilisateur |
-| PATCH | `/api/users/me` | ✅ | ❌ | Modifier son profil |
-| POST | `/api/users/me/avatar` | ✅ | ❌ | Upload son avatar |
-| DELETE | `/api/users/me/avatar` | ✅ | ❌ | Supprimer son avatar |
-| PATCH | `/api/users/:id/profile` | ✅ | ✅ | Modifier profil (admin) |
-| POST | `/api/users/:id/avatar` | ✅ | ✅ | Upload avatar (admin) |
-| DELETE | `/api/users/:id/avatar` | ✅ | ✅ | Supprimer avatar (admin) |
+> *Non-admin limité à ses propres signalements (status='reported')
 
 ### Entités CRUD (`routes.js`)
 
@@ -837,79 +519,118 @@ Classe `ApiClient` avec ~102 méthodes. Fonctionnalités :
 | `/api/locations` | ✅ | ✅ | ✅ | ✅ |
 | `/api/garages` | ✅ | ✅ | ✅ | ✅ |
 
-> Toutes nécessitent `authenticateToken`.
-
-### Configuration (`/api/config/*`)
-
-| Méthode | Route | Auth | Admin |
-|---------|-------|:----:|:-----:|
-| GET | `/api/config/:key` | ✅ | ❌ |
-| POST | `/api/config/:key` | ✅ | ❌ |
-| GET | `/api/config/google/client-id` | ✅ | ❌ |
-| GET | `/api/config/google/calendar-id` | ✅ | ❌ |
-| GET | `/api/config/google/maps-api-key` | ✅ | ❌ |
-| POST | `/api/config/google/client-id` | ✅ | ✅ |
-| POST | `/api/config/google/calendar-id` | ✅ | ✅ |
-| POST | `/api/config/google/maps-api-key` | ✅ | ✅ |
-
-### Trajets (`/api/trip-details`)
+### Personnel (`personnelRoutes.js`)
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
-| GET | `/api/trip-details/:reservationId` | ✅ | Détails trajets d'une réservation |
-| POST | `/api/trip-details` | ✅ | Créer un détail de trajet |
-| PUT | `/api/trip-details/:id` | ✅ | Modifier un trajet |
-| DELETE | `/api/trip-details/:id` | ✅ | Supprimer un trajet |
-| POST | `/api/trip-details/link` | ✅ | Lier deux trajets |
-| POST | `/api/trip-details/unlink` | ✅ | Délier un trajet |
+| GET/POST/PUT/DELETE | `/api/persons` | ✅ | CRUD personnes (avec compétences) |
+| GET/POST/PUT/DELETE | `/api/skills` | ✅ | CRUD compétences |
+| GET/POST/PUT/DELETE | `/api/availabilities` | ✅ | CRUD disponibilités |
+| GET/POST/PUT/DELETE | `/api/missions` | ✅ | CRUD missions |
+| GET/POST/PUT/DELETE | `/api/assignments` | ✅ | CRUD affectations (détection conflits) |
+| GET | `/api/personnel/planning` | ✅ | Planning global |
+
+### Congés (`leaveRoutes.js`)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|:----:|-------------|
+| GET/POST | `/api/leaves` | ✅ | Demandes de congé |
+| PUT | `/api/leaves/:id/approve` | ✅ | Approbation |
+| PUT | `/api/leaves/:id/reject` | ✅ | Refus |
+| GET | `/api/leaves/balance/:personId` | ✅ | Solde de congé |
+| GET | `/api/leaves/planning` | ✅ | Planning des congés |
+
+### Catalogue (`catalogRoutes.js`)
+
+| Méthode | Route | Auth | Permission |
+|---------|-------|:----:|:----------:|
+| GET | `/api/catalog/equipment` | ✅ | — |
+| POST/PUT/DELETE | `/api/catalog/equipment` | ✅ | `can_manage_catalog` |
+| GET | `/api/catalog/equipment/families` | ✅ | — |
+| GET | `/api/catalog/equipment/categories` | ✅ | — |
+| GET/POST/PUT/DELETE | `/api/flightcases` | ✅ | `can_manage_catalog` |
+| GET/POST/PUT/DELETE | `/api/trucks/models` | ✅ | `can_manage_trucks` |
+| GET/POST/DELETE | `/api/reservations/:id/equipment` | ✅ | — |
+| GET | `/api/reservations/:id/chargement-export` | ✅ | — |
+
+### Équipements (`equipmentRoutes.js`)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|:----:|-------------|
+| GET | `/api/equipment` | ✅ | Liste équipements (filtres: zone, état, catalogue) |
+| POST | `/api/equipment` | ✅ | Créer un équipement (UID auto, localisation multi-dépôt) |
+| PUT | `/api/equipment/:id` | ✅ | Modifier un équipement |
+| DELETE | `/api/equipment/:id` | ✅ | Supprimer un équipement |
+| GET | `/api/equipment-depot-zones` | ✅ | Zones du dépôt 1 (depot-zones.json) |
+| GET | `/api/equipment-all-depot-zones` | ✅ | Zones des 2 dépôts combinées |
+| GET | `/api/equipment-location-stats` | ✅ | Compteurs par zone (filtre ?depot=) |
+| GET/POST/PUT/DELETE | `/api/sav-tickets` | ✅ | Tickets SAV |
+| GET/POST/PUT/DELETE | `/api/equipment-lists` | ✅ | Listes d'équipements |
+
+### Communication (`communicationRoutes.js`)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|:----:|-------------|
+| GET/POST/PUT/DELETE | `/api/communication/events` | ✅ | Événements d'entreprise |
+| GET | `/api/communication/display-events` | ✅ | Événements pour affichage écran |
+| PATCH | `/api/communication/events/:id/visibility` | ✅ | Toggle visibilité |
+| GET/POST/PUT/DELETE | `/api/communication/notes` | ✅ | Notes internes |
+
+### Stock & Commandes
+
+| Méthode | Route | Auth | Description |
+|---------|-------|:----:|-------------|
+| GET/POST | `/api/stock/movements` | ✅ | Mouvements de stock |
+| GET | `/api/stock/inventory` | ✅ | Inventaire actuel |
+| GET/POST/PUT/DELETE | `/api/orders` | ✅ | Commandes fournisseurs |
+| GET/POST/PUT/DELETE | `/api/suppliers` | ✅ | Fournisseurs |
+
+### Mailing (`mailingRoutes.js`)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|:----:|-------------|
+| GET/POST/PUT/DELETE | `/api/mailing/templates` | ✅ | Templates d'email |
+| POST | `/api/mailing/send` | ✅ | Envoi de campagne |
+| GET | `/api/mailing/history` | ✅ | Historique d'envois |
+
+### Messagerie (`messagingRoutes.js`)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|:----:|-------------|
+| GET | `/api/messages/conversations` | ✅ | Liste des conversations |
+| POST | `/api/messages/conversations` | ✅ | Créer une conversation |
+| GET | `/api/messages/conversations/:id` | ✅ | Messages d'une conversation |
+| POST | `/api/messages` | ✅ | Envoyer un message |
 
 ### Fichiers & pièces jointes
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
-| POST | `/api/create-folder` | ✅ | Créer dossier dans attachments |
 | POST | `/api/upload-bl` | ✅ | Upload BL (PDF uniquement) |
 | POST | `/api/upload-attachment` | ✅ | Upload PJ (50MB max, multi-type) |
 | GET | `/api/attachments/:affaireId` | ✅ | Lister PJ d'une affaire |
-| GET | `/api/attachments-index` | ✅ | Index des affaires avec PJ |
 | DELETE | `/api/attachments/:affaireId/:filename` | ✅ | Supprimer une PJ |
 
-### Divers
+### Administration
 
-| Méthode | Route | Auth | Description |
-|---------|-------|:----:|-------------|
-| GET | `/api/pending-requests-count` | ✅ | Badge admin (interventions + réservations) |
-| GET | `/api/history/:entityType/:entityId` | ✅ | Historique des modifications |
+| Méthode | Route | Auth | Admin |
+|---------|-------|:----:|:-----:|
+| GET/POST/DELETE | `/api/admin/authorized-emails` | ✅ | ✅ |
+| GET | `/api/admin/users` | ✅ | ✅ |
+| POST | `/api/admin/reset-password` | ✅ | ✅ |
+| PATCH | `/api/users/:id` | ✅ | ✅ |
+| PATCH | `/api/users/me` | ✅ | ❌ |
 
-### Personnel (`/api/persons`, `/api/skills`, `/api/availabilities`, `/api/missions`, `/api/assignments`)
+### Codes d'erreur
 
-| Méthode | Route | Auth | Admin | Description |
-|---------|-------|:----:|:-----:|-------------|
-| GET | `/api/persons` | ✅ | ❌ | Liste toutes les personnes (avec compétences) |
-| GET | `/api/persons/:id` | ✅ | ❌ | Détail personne (compétences, dispos, affectations) |
-| POST | `/api/persons` | ✅ | ✅ | Créer une personne (avec compétences optionnelles) |
-| PUT | `/api/persons/:id` | ✅ | ✅ | Modifier une personne (avec compétences) |
-| DELETE | `/api/persons/:id` | ✅ | ✅ | Supprimer une personne |
-| GET | `/api/skills` | ✅ | ❌ | Liste toutes les compétences |
-| POST | `/api/skills` | ✅ | ✅ | Créer une compétence |
-| PUT | `/api/skills/:id` | ✅ | ✅ | Modifier une compétence |
-| DELETE | `/api/skills/:id` | ✅ | ✅ | Supprimer une compétence |
-| GET | `/api/availabilities` | ✅ | ❌ | Liste les disponibilités (filtres: person_id, start_date, end_date) |
-| POST | `/api/availabilities` | ✅ | ❌ | Créer une disponibilité |
-| PUT | `/api/availabilities/:id` | ✅ | ❌ | Modifier une disponibilité |
-| DELETE | `/api/availabilities/:id` | ✅ | ❌ | Supprimer une disponibilité |
-| GET | `/api/missions` | ✅ | ❌ | Liste les missions (filtres: start_date, end_date, status, reservation_id) |
-| GET | `/api/missions/:id` | ✅ | ❌ | Détail mission (avec affectations enrichies) |
-| POST | `/api/missions` | ✅ | ❌ | Créer une mission |
-| PUT | `/api/missions/:id` | ✅ | ❌ | Modifier une mission |
-| DELETE | `/api/missions/:id` | ✅ | ✅ | Supprimer une mission |
-| GET | `/api/assignments` | ✅ | ❌ | Liste les affectations (filtres: mission_id, person_id) |
-| POST | `/api/assignments` | ✅ | ❌ | Créer une affectation (détection conflits/indisponibilités) |
-| PUT | `/api/assignments/:id` | ✅ | ❌ | Modifier une affectation |
-| DELETE | `/api/assignments/:id` | ✅ | ❌ | Supprimer une affectation |
-| GET | `/api/personnel/planning` | ✅ | ❌ | Planning global (missions + disponibilités, filtres dates) |
-
-> **Total : ~122 routes API**
+| Code | Signification |
+|------|---------------|
+| 400 | Paramètre manquant ou invalide |
+| 401 | Token JWT manquant |
+| 403 | Permission insuffisante |
+| 404 | Ressource non trouvée |
+| 409 | Conflit (doublon référence, suppression impossible) |
+| 500 | Erreur serveur |
 
 ---
 
@@ -918,117 +639,300 @@ Classe `ApiClient` avec ~102 méthodes. Fonctionnalités :
 ### 📅 Module Calendrier
 - **Composants** : `Calendar`, `MonthSelector`, `WeekSelector`, `YearSelector`
 - **Vues** : Semaine, Mois, Année, Planning
-- **Fonctionnalités** : Drag & drop, resize, détection de chevauchement, codage couleur par véhicule
-- **Intégration Google** : Lecture événements Google Calendar, création de réservation depuis un événement Google
+- **Fonctionnalités** : Détection de chevauchement, codage couleur par véhicule
+- **Intégration Google** : Lecture événements Google Calendar, création depuis événement Google
 
 ### 🚗 Module Véhicules
 - **Composants** : `VehicleDetailsModal`, `VehiclePickerCards`, `VehicleMaintenanceModal`
-- **Fonctionnalités** : CRUD véhicules, photos, immatriculation, kilométrage, contrôles techniques (JSON array), tri par `order_index`, flag `is_location`
-- **Import** : CSV via `vehiclesCsvImport.js`
-
-### 📋 Module Réservations
-- **Composants** : `ReservationModal`, `EventDetailsModal`, `ReservationRequestsPanel`
-- **Fonctionnalités** : Création/édition/suppression par admin, demandes par utilisateurs non-admin, approbation/rejet, lien avec événements Google, tournées (multi-véhicules), affaires (numéros de dossier)
-- **Workflow non-admin** : L'utilisateur crée une `reservation_request` → l'admin approuve → devient une `reservation`
+- **Fonctionnalités** : CRUD véhicules, photos, kilométrage, contrôles techniques (JSON array), tri par `order_index`
 
 ### 🔧 Module Maintenance
 - **Composants** : `MaintenanceDialog`, `InterventionModal`, `OverdueInterventionModal`
 - **Types** : Entretien programmé, réparation, contrôle technique, révision, signalement de panne
 - **Statuts** : `reported` → `scheduled` → `in_progress` → `completed`
-- **Fonctionnalités** : Signalement rapide (non-admin), programmation complète (admin), suivi des coûts et kilométrages, immobilisation véhicule, alertes interventions en retard
-- **Transition auto** : Cron dans App.jsx met à jour les statuts en fonction des dates (toutes les heures)
+- **Transition auto** : Cron dans App.jsx met à jour les statuts en fonction des dates
 
-### 🗺️ Module Trajets
-- **Composants** : `TripDetailsModal`
-- **Fonctionnalités** : Détails aller/retour, pauses (repos, repas, technique), durées estimées, jonctions entre événements, groupement de trajets (`trip_group_id`)
-- **Intégration** : Google Maps pour les adresses, calcul d'itinéraires
+### 👷 Module Personnel
+- **Composants** : `PersonnelPanel` (4 sous-onglets), `PersonnelDetailPanel`, `AssignmentDialog`
+- **Sous-onglets** : Personnes, Compétences, Missions, Planning
+- **Fonctionnalités** : Détection conflits d'affectation, vérification indisponibilités, passage auto au statut `confirmed`
 
-### 👥 Module Utilisateurs & Auth
-- **Composants** : `LoginForm`, `AccessRequestModal`, `UserManagement`, `ChangePassword`, `ProfileEditModal`, `UserAvatar`
-- **Workflow d'inscription** :
-  1. L'admin pré-autorise un email (`authorized_emails`)
-  2. L'utilisateur demande un accès (`access_requests`)
-  3. Si email autorisé → création de mot de passe immédiate
-  4. Sinon → demande en attente → admin approuve → envoie lien Gmail → l'utilisateur crée son mot de passe
-- **Rôles** : Admin (CRUD tout), Utilisateur (lecture + demandes + signalements)
-- **Fonctionnalités** : Avatar, profil éditable, reset mot de passe, sessions actives en DB
+### 🏖️ Module Congés
+- **Backend** : `leaveRoutes.js` (~1323 lignes)
+- **Fonctionnalités** : Demandes de congé, workflow d'approbation, solde par employé, planning intégré, types de congé configurables
 
 ### 📎 Module Affaires
-- **Composants** : `AffairesPanel` (~791 lignes), `AffaireDetailPanel` (~947 lignes), `AffaireImportModal`
-- **Fonctionnalités** : Gestion des dossiers projets/affaires, recherche et filtres, pièces jointes par affaire (50MB max), import BL (PDF), import Excel, historique des modifications, liens vers réservations et missions
-- **Navigation** : Onglet dédié dans le header, bouton "Nouvelle affaire" toujours visible
-- **Formats supportés** : PDF, images (JPEG, PNG, GIF, SVG, WebP), documents (DOC, XLS, PPT, TXT, CSV, ZIP, RAR)
+- **Composants** : `AffairesPanel`, `AffaireDetailPanel`, `AffaireImportModal`, `BLImportModal`, `BLImportLocPrestaModal`
+- **Fonctionnalités** : Dossiers projets, PJ multi-format (50MB max), import BL (PDF standard + fournisseur/prestataire), import Excel, historique
 
 ### 💬 Module Messagerie
-- **Composants** : `MessagingPanel` (lazy), `MobileMessaging`
-- **Fonctionnalités** : Conversations temps réel entre utilisateurs, notifications de nouveaux messages, historique des conversations
-- **Accès** : Icône dans le header, disponible sur desktop et mobile
+- **Composants** : `MessagingPanel`, `MobileMessaging`
+- **Fonctionnalités** : Conversations temps réel, notifications, historique
+
+### 📢 Module Communication
+- **Composants** : `CommunicationPanel`
+- **Fonctionnalités** : Événements d'entreprise (calendrier), notes internes, toggle visibilité affichage écran, endpoint `/display-events` pour écrans déportés
+
+### ✉️ Module Mailing
+- **Composants** : `MailingPanel`
+- **Backend** : `mailingRoutes.js` + `emailService.js`
+- **Fonctionnalités** : Templates d'email, envoi groupé, historique de campagnes, service nodemailer
+
+### 📊 Module Stock
+- **Composants** : `StockPanel`
+- **Fonctionnalités** : Mouvements entrées/sorties, inventaire temps réel, emplacements de stockage
+
+### 🛒 Module Commandes
+- **Composants** : `OrdersPanel`
+- **Fonctionnalités** : Gestion fournisseurs, commandes, lignes de commande, suivi de réception
 
 ### 📱 Module Mobile
-- **Composants** : `MobileApp`, `MobileHome`, `MobileLogin`, `MobilePlanning`, `MobileReservations`, `MobileMaintenances`, `MobileAvailability`, `MobilePersonnel`, `MobileMessaging`, `MobileParcDashboard`
-- **Accès** : Via `/mobile` ou QR code généré dans `MobileAccess` / `QRCodeModal`
-- **Fonctionnalités** : Planning, réservations, maintenances, disponibilité véhicules, personnel, messagerie, tableau de bord parc
-
-### 👷 Module Personnel (eM@g)
-- **Composants** : `PersonnelPanel` (~1995 lignes, 4 sous-onglets : Personnes, Compétences, Missions, Planning), `PersonnelDetailPanel`, `AssignmentDialog`
-- **Backend** : `personnelRoutes.js` (~928 lignes, 5 groupes de routes : persons, skills, availabilities, missions, assignments)
-- **Tables DB** : `persons`, `skills`, `person_skills`, `availabilities`, `missions`, `mission_assignments`
-- **Sous-onglets** :
-  - **Personnes** : Recherche/filtre par type, CRUD avec sélecteur de compétences (chips + niveaux), cartes extensibles
-  - **Compétences** : Groupées par catégorie (8 couleurs), CRUD admin, 18 compétences seed
-  - **Missions** : Filtre par statut (6 statuts), CRUD, gestion des affectations inline avec détection de conflits
-  - **Planning** : Grille 2 semaines, personnes en lignes, jours en colonnes, chips missions colorés, navigation semaine
-- **Fonctionnalités clés** :
-  - Détection automatique de conflits d'affectation (chevauchement missions)
-  - Vérification des indisponibilités lors de l'affectation
-  - Passage automatique au statut `confirmed` quand toutes les affectations sont confirmées
-  - Composant autonome (charge ses propres données via API)
+- **Composants** : `MobileApp`, `MobileHome`, `MobileLogin`, `MobilePlanning`, `MobileReservations`, `MobileMaintenances`, `MobileAvailability`, `MobilePersonnel`, `MobileMessaging`, `MobileParcDashboard` et 4 autres
+- **Accès** : Via `/mobile` ou QR code
+- **PWA** : Service Worker + manifest pour installation
 
 ### ⚙️ Module Configuration
-- **Composants** : `GoogleCalendarConfig`, `ManagementPanel` (onglets)
-- **Onglets ManagementPanel** : Véhicules, Clients, Conducteurs, Lieux, Personnel, Mon compte, Demandes, Utilisateurs, Import/Export, Config Google, Accès Mobile
+- **Composants** : `GoogleCalendarConfig`, `ManagementPanel` (multi-onglets)
+- **Onglets** : Véhicules, Clients, Conducteurs, Lieux, Personnel, Mon compte, Demandes, Utilisateurs, Import/Export, Config Google, Accès Mobile, Plan Dépôt
 - **Configuration stockée** : Google Client ID, Calendar ID, Maps API Key, adresse entreprise
 
 ---
 
-## 9. Authentification & sécurité
+## 9. Module Catalogue & Équipements
+
+### Vue d'ensemble
+
+Le module **Catalogue & Équipements** étend l'application avec :
+
+- Un **catalogue d'équipements** référençant tout le matériel (backline, audiovisuel, câbles, armoires…)
+- Des **équipements individualisés** avec UID unique, numéro de série, état, et tickets SAV
+- Des **flight-cases** (modèles de conteneurs réutilisables)
+- Des **modèles de camions** pour le chargement 3D
+- L'**association équipement ↔ réservation** pour la planification logistique
+- La **localisation multi-dépôt** avec plans interactifs SVG
+
+### Structure des fichiers
+
+```
+server/
+  catalogRoutes.js          ← Routes API (CRUD catalogue, FC, camions, résa-équip.)
+  equipmentRoutes.js        ← Routes API (CRUD équipements individuels, SAV, zones)
+src/
+  components/
+    CataloguePanel.jsx      ← Catalogue (familles, catégories, localisation)
+    EquipmentPanel.jsx       ← Équipements individualisés (UID, SAV, dépôt)
+    FlightcasePanel.jsx      ← Modèles de flight-cases
+    TruckModelPanel.jsx      ← Modèles de camions
+    ReservationEquipment.jsx ← Section matériel dans le modal réservation
+    DepotMap.jsx             ← Plan interactif SVG du dépôt
+    LocationSelector.jsx     ← Sélecteur 4 niveaux (Dépôt → Étage → Zone → Code)
+  utils/
+    deepLinking.js           ← URL builders, ouverture protocole Chargement 3D
+```
+
+### Modèle de données
+
+```
+equipment_catalog
+  └─ default_flightcase_id → flightcases.id (optionnel)
+
+equipment
+  ├─ catalog_id → equipment_catalog.id (optionnel)
+  ├─ location_depot ("1" ou "2")
+  ├─ location_zone (ex: "A1", "M1", "I3")
+  ├─ location_floor ("RDC", "MEZZ")
+  └─ location_code (code précis optionnel)
+
+equipment_to_vehicle
+  ├─ equipment_id → equipment_catalog.id
+  ├─ flightcase_id → flightcases.id (optionnel)
+  └─ reservation_id → reservations.id
+
+sav_tickets
+  └─ equipment_id → equipment.id
+```
+
+### Permissions
+
+| Permission | Accès |
+|---|---|
+| `can_manage_catalog` | CRUD catalogue + flight-cases |
+| `can_manage_trucks` | CRUD modèles de camions |
+
+Les admins (`is_admin = 1`) ont tous les droits. Les routes GET ne nécessitent que `authenticateToken`.
+
+---
+
+## 10. Localisation multi-dépôt
+
+### Architecture
+
+L'application gère **2 dépôts physiques** avec un système de localisation structuré en 4 niveaux :
+
+```
+Dépôt (1 ou 2) → Étage (RDC / Mezzanine / Extérieur) → Zone (A1, M1, I3…) → Code (optionnel)
+```
+
+### Dépôts configurés
+
+| Dépôt | Nom | Fichier JSON | Dimensions SVG |
+|-------|-----|-------------|----------------|
+| **1** | Événementiel | `public/depot-zones.json` | 770 × 560 |
+| **2** | Structure | `public/depot2-zones.json` | 770 × 510 |
+
+### Dépôt 1 — Événementiel
+
+| Étage | Zones | Description |
+|-------|-------|-------------|
+| **RDC** | A1–A5, B1–B4, C1–C6, D1–D4, QUAI1–3 | Stockage principal |
+| **Mezzanine** | E1–E3, F1–F8, G1–G3, H1–H3 + locaux | Stockage complémentaire |
+| **Extérieur** | I1 (Parking EST), I2 (Parking NORD), I3 (Arrière OUEST) | Zones extérieures |
+
+### Dépôt 2 — Structure
+
+| Étage | Zones | Description |
+|-------|-------|-------------|
+| **RDC** | J1–J5, K1–K4, L1–L2, N, QUAI1–2 | Stockage structure |
+| **Mezzanine** | M1 | Mezzanine structure |
+
+### Composants frontend
+
+- **`DepotMap.jsx`** : Plan interactif SVG avec zoom/pan, tooltip, recherche, compteurs d'équipements par zone, dimensions dynamiques depuis le JSON
+- **`LocationSelector.jsx`** : Sélecteur en cascade à 4 niveaux (Dépôt → Étage → Zone → Code), auto-remplissage de l'étage depuis la zone, compatible mono et multi-dépôt
+
+### API
+
+| Route | Description |
+|-------|-------------|
+| `GET /api/equipment-depot-zones` | Zones du dépôt 1 |
+| `GET /api/equipment-all-depot-zones` | Zones des 2 dépôts combinées |
+| `GET /api/equipment-location-stats?depot=` | Compteurs par zone (filtre par dépôt) |
+
+### Migration de données
+
+Au démarrage, `database.js` exécute une migration automatique qui :
+1. Parse les anciennes valeurs texte `location` (ex: `"Entrepôt 1 : D2"`)
+2. Extrait dépôt, zone et étage via regex + mapping Set
+3. Peuple `location_depot`, `location_zone`, `location_floor`
+4. Cas spécial : `"Entrepôt 2 : M"` → zone `M1`, étage `MEZZ`
+5. Migration idempotente (safe re-run)
+
+---
+
+## 11. Deep Linking — Chargement 3D
+
+### Principe
+
+Le deep linking permet l'ouverture croisée entre eM@g (web) et Chargement 3D (app desktop/web) via des URL construites dynamiquement.
+
+### Protocole `chargement3d://`
+
+| Action | URL |
+|--------|-----|
+| Charger réservation | `chargement3d://load?reservation=<id>&source=emag` |
+| Prévisualiser équipement | `chargement3d://preview?equipment=<ref>&dimensions=LxWxH` |
+| Charger modèle camion | `chargement3d://truck?model=<id>&source=emag` |
+
+### Module utilitaire (`deepLinking.js`)
+
+```js
+// Construire des URL Chargement 3D
+buildChargementUrlForReservation(reservationId)
+buildChargementUrlForEquipment(reference, dimensions)
+buildChargementUrlForTruck(modelId)
+
+// Ouvrir dans Chargement 3D (avec détection fallback)
+await openInChargement(url)
+
+// Construire des URL eM@g (pour Chargement 3D → eM@g)
+buildEmagReservationUrl(reservationId)
+buildEmagCatalogUrl(reference)
+
+// Parser les liens entrants
+parseIncomingDeepLink()
+// → { type: 'reservation', id: '123' } ou null
+
+// Utilitaires
+formatDimensions({ length, width, height }) // → "100 × 50 × 30 mm"
+calculateVolume({ length, width, height })   // → 0.15 (m³)
+```
+
+### API d'export
+
+`GET /api/reservations/:id/chargement-export` — Retourne les items avec dimensions parsées + résumé (poids, volume, quantité).
+
+---
+
+## 12. Synchronisation inventaire
+
+### Script `scripts/sync_inventory_to_catalog.js`
+
+Import CSV/XLSX → table `equipment_catalog`. Exécution manuelle, idempotent (upsert par référence).
+
+```bash
+node scripts/sync_inventory_to_catalog.js chemin/vers/inventaire.csv
+node scripts/sync_inventory_to_catalog.js chemin/vers/inventaire.xlsx
+```
+
+### Colonnes reconnues (FR/EN, insensible à la casse)
+
+| Colonne CSV/XLSX | Champ DB | Obligatoire |
+|---|---|---|
+| `reference` / `ref` / `code` | `reference` | Non |
+| `name` / `nom` / `designation` / `libellé` | `name` | **Oui** |
+| `family` / `famille` / `type` | `family` | Non |
+| `subfamily` / `sous_famille` | `subfamily` | Non |
+| `category` / `catégorie` | `category` | Non |
+| `weight` / `poids` | `weight` | Non |
+| `length` / `longueur` | `dimensions.length` | Non |
+| `width` / `largeur` | `dimensions.width` | Non |
+| `height` / `hauteur` | `dimensions.height` | Non |
+
+### Logique
+
+1. **Détection auto des colonnes** depuis les en-têtes
+2. **Upsert par référence** — existant = mise à jour, nouveau = insertion
+3. **Sans référence** — toujours inséré (pas de dé-duplication)
+4. **Dimensions** — JSON si au moins une dimension présente
+5. **Flight-case auto** — Association par catégorie (micro, console, enceinte…)
+6. **Transaction SQLite** — Rollback complet en cas d'erreur
+
+---
+
+## 13. Authentification & sécurité
 
 ### Flux d'authentification
 
 ```
 ┌──────────┐    POST /auth/login     ┌──────────┐
 │ Frontend │ ──────────────────────▶  │ Backend  │
-│          │                          │          │
 │          │  ◀── JWT + user info ──  │  bcrypt  │
-│          │                          │  verify  │
-│ localStorage                        │          │
-│  ├─ token                           │ active_  │
-│  └─ user                            │ sessions │
+│ localStorage                        │ active_  │
+│  ├─ token                           │ sessions │
+│  └─ user                            │          │
 └──────────┘                          └──────────┘
-     │                                     │
      │  Authorization: Bearer <jwt>        │
      │ ──────────────────────────────────▶  │
-     │  (chaque requête authentifiée)       │
 ```
 
 ### Mesures de sécurité
 
 | Mesure | Implémentation |
 |--------|---------------|
-| **Hashage** | bcrypt (password_hash) |
-| **JWT** | Secret via `JWT_SECRET` env var, expiration configurable |
-| **Sessions** | Stockées en DB (`active_sessions`), invalidation au logout |
+| **Hashage** | bcrypt (12 rounds) |
+| **JWT** | Secret via env var, expiration 30 jours |
+| **Sessions** | Stockées en DB, invalidation au logout |
 | **Rate limiting** | Auth: 20 req/15min, API: 200 req/min |
 | **CORS** | Whitelist stricte |
 | **Path traversal** | `sanitizePath()` sur tous les uploads |
-| **Validation** | `isValidAffaireId()` regex, validation email |
-| **Uploads** | Multer avec filtres (type, taille), avatars 5MB/images, PJ 50MB |
+| **Validation** | Regex sur IDs, validation email |
+| **Uploads** | Multer avec filtres (type, taille), 50MB max |
 | **Console stripping** | `console.log/debug/info` supprimés en production (esbuild) |
 | **Admin guard** | Middleware `requireAdmin` sur routes sensibles |
 
 ---
 
-## 10. Déploiement & infrastructure
+## 14. Déploiement & infrastructure
 
 ### Environnement de production
 
@@ -1054,160 +958,102 @@ Classe `ApiClient` avec ~102 méthodes. Fonctionnalités :
 2. npm run build
 3. Si échec → restaure dist-backup/ (zero-downtime)
 4. Vérifie dist/index.html existe
-5. pm2 restart vehicules (frontend)
-6. pm2 restart vehicules-backend (backend)
-7. Nettoyage backup
+5. pm2 restart vehicules + vehicules-backend
+6. Nettoyage backup
 ```
-
-**Commande** : `npm run deploy`
 
 ### Environnement de développement
 
 | Composant | Commande | Port |
 |-----------|----------|------|
 | Frontend | `npm run dev` | 5174 |
-| Backend | `cd server && npm start` | 3002 |
+| Backend | `cd server && npm start` | 3003 |
 
-Le proxy Vite en dev redirige `/api` → `http://localhost:3002`.
+Le proxy Vite en dev redirige `/api` → `http://localhost:3003`.
 
 ### Backup
 
 - Script : `server/backup-database.sh`
-- Cron PM2 : toutes les 6 heures (via `post_update`)
+- Cron PM2 : toutes les 6 heures
 - Dossier : `server/backups/`
 
 ---
 
-## 11. Conventions de code
+## 15. Conventions de code
 
 ### Nommage
 
 | Contexte | Convention | Exemple |
 |----------|------------|---------|
-| **Composants React** | PascalCase | `ReservationModal`, `VehicleDetailsModal` |
-| **Fichiers composants** | PascalCase.jsx + .css | `MaintenanceDialog.jsx`, `MaintenanceDialog.css` |
-| **Hooks** | camelCase avec préfixe `use` | `useAutocomplete`, `useGooglePlacesAutocomplete` |
-| **Utilitaires** | camelCase.js | `dateUtils.js`, `vehicleUtils.js` |
-| **Variables JS** | camelCase | `currentUser`, `isAuthenticated` |
-| **Colonnes DB** | snake_case | `vehicle_id`, `created_at`, `is_admin` |
-| **Routes API** | kebab-case | `/api/access-requests`, `/api/trip-details` |
-| **CSS classes** | kebab-case | `.management-panel`, `.tab-button`, `.error-message` |
-| **Constantes** | UPPER_SNAKE_CASE | `STORES`, `API_URL` |
+| **Composants React** | PascalCase | `ReservationModal`, `DepotMap` |
+| **Fichiers composants** | PascalCase.jsx + .css | `EquipmentPanel.jsx` |
+| **Hooks** | camelCase avec préfixe `use` | `useAutocomplete` |
+| **Utilitaires** | camelCase.js | `deepLinking.js` |
+| **Variables JS** | camelCase | `currentUser` |
+| **Colonnes DB** | snake_case | `location_depot` |
+| **Routes API** | kebab-case | `/api/equipment-all-depot-zones` |
+| **CSS classes** | kebab-case | `.depot-map-container` |
 
 ### Conversion automatique
 
 Le client API (`api.js`) convertit transparemment :
-- **Requêtes** (frontend → backend) : `camelCase` → `snake_case`
-- **Réponses** (backend → frontend) : `snake_case` → `camelCase`
+- **Requêtes** : `camelCase` → `snake_case`
+- **Réponses** : `snake_case` → `camelCase`
 
-### Structure des composants
+### ESLint / Prettier
 
-```jsx
-// 1. Imports
-import React, { useState, useEffect } from 'react';
-import { Icon } from 'lucide-react';
-import api from '../utils/api';
-import './Component.css';
-
-// 2. Composant (function déclaration ou const)
-function MyComponent({ prop1, prop2, onAction }) {
-  // 3. States
-  const [data, setData] = useState(null);
-
-  // 4. Effects
-  useEffect(() => { /* ... */ }, []);
-
-  // 5. Handlers
-  const handleClick = () => { /* ... */ };
-
-  // 6. Render
-  return (
-    <div className="my-component">
-      {/* JSX */}
-    </div>
-  );
-}
-
-// 7. Export
-export default MyComponent;
-```
-
-### Structure CSS
-
-- **Un fichier CSS par composant** (même nom)
-- **Classes préfixées** par le nom du composant (ex: `.management-panel`, `.management-tabs`)
-- **Variables CSS** pour les couleurs dynamiques (`--tab-color`)
-- **Animations** via `@keyframes` dans le même fichier
-
-### ESLint — Règles principales
-
-| Règle | Valeur |
-|-------|--------|
-| `react/prop-types` | off |
-| `no-unused-vars` | warn (ignore `_` préfixés) |
-| `no-console` | warn (autorise `warn`, `error`) |
-| `react-hooks/rules-of-hooks` | error |
-| `react-hooks/exhaustive-deps` | warn |
-
-### Prettier — Formatage
-
-| Option | Valeur |
-|--------|--------|
-| Guillemets | Simple (`'`) |
-| Point-virgule | Oui |
-| Virgule finale | Partout (`all`) |
-| Largeur | 100 caractères |
-| Indentation | 2 espaces |
-| Fin de ligne | LF |
+- Guillemets simples, point-virgule, virgule finale partout
+- Indentation 2 espaces, largeur 100 caractères, fin de ligne LF
 
 ---
 
-## 12. Diagramme des relations
+## 16. Diagramme des relations
 
 ```
-users ──────────┬──< active_sessions (user_id)
-                ├──< access_requests (reviewed_by)
-                ├──< vehicles (created_by, modified_by)
-                ├──< reservations (created_by, modified_by)
-                ├──< reservation_requests (requested_by, reviewed_by)
-                ├──< clients (created_by, modified_by)
-                ├──< drivers (created_by, modified_by)
-                ├──< locations (created_by, modified_by)
-                ├──< garages (created_by, modified_by)
-                ├──< maintenances (reported_by, created_by, modified_by)
-                ├──< config (modified_by)
-                └──< modification_history (user_id)
+users ──────────┬──< active_sessions
+                ├──< vehicles, reservations, maintenances
+                ├──< clients, drivers, locations, garages
+                ├──< access_requests, modification_history
+                └──< config
 
-vehicles ───────┬──< reservations (vehicle_id, ON DELETE CASCADE)
-                ├──< maintenances (vehicle_id, ON DELETE CASCADE)
-                └──< reservation_requests (vehicle_id, ON DELETE CASCADE)
+vehicles ───────┬──< reservations (ON DELETE CASCADE)
+                ├──< maintenances (ON DELETE CASCADE)
+                └──< reservation_requests (ON DELETE CASCADE)
 
-garages ────────┬──< maintenances (garage_id)
+reservations ───┬──< trip_details → trip_pauses
+                ├──< missions → mission_assignments
+                └──< equipment_to_vehicle
 
-reservations ───┬──< trip_details (reservation_id)
-                └──< missions (reservation_id)
+persons ────────┬──< person_skills (← skills)
+                ├──< availabilities
+                ├──< mission_assignments (← missions)
+                └──< leave_requests, leave_balances
 
-trip_details ───┬──< trip_pauses (trip_detail_id)
+equipment_catalog ──< equipment (catalog_id)
+                  └─ default_flightcase_id → flightcases
 
-persons ────────┬──< person_skills (person_id, ON DELETE CASCADE)
-                ├──< availabilities (person_id, ON DELETE CASCADE)
-                └──< mission_assignments (person_id, ON DELETE CASCADE)
+equipment ──────┬──< sav_tickets
+                └──< equipment_list_items (← equipment_lists)
 
-skills ─────────┬──< person_skills (skill_id, ON DELETE CASCADE)
+orders ─────────┬──< order_items
+                └─ supplier_id → suppliers
 
-missions ───────┬──< mission_assignments (mission_id, ON DELETE CASCADE)
+communication_events, communication_notes
+mail_templates → mail_campaigns → mail_recipients, mail_sends
+conversations → conversation_participants, messages
 ```
 
 ### Résumé chiffré
 
 | Métrique | Valeur |
 |----------|--------|
-| Tables DB | 27 |
-| Routes API | ~122 (65 server + 30 routes + 27 personnel) |
-| Composants React | 43 (desktop) + 10 (mobile) |
-| Utilitaires | 12 |
-| Hooks custom | 4 |
-| Méthodes API client | ~102 |
-| Fichiers source (src/) | ~121 |
-| Code splitting (lazy) | 8 composants |
+| Tables DB | 56 |
+| Routes API | ~267 |
+| Composants React (desktop) | 79 |
+| Composants React (mobile) | 14 |
+| Utilitaires | 13 |
+| Hooks custom | 7 |
+| Méthodes API client | ~242 |
+| Code splitting (lazy) | ~15 composants |
 | Stores IndexedDB | 12 |
+| Fichiers routes backend | 11 |

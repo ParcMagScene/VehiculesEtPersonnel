@@ -150,7 +150,7 @@ function App() {
   const [tabPrefs, setTabPrefs] = useState({ tabOrder: null, hiddenTabs: [] }); // Préférences onglets
   const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
   const { toastRef, toast } = useFeedback();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { theme, toggleTheme, isDark, palette, setPalette } = useTheme();
 
   // Raccourcis clavier globaux avec détection OS
   useKeyboardShortcuts({
@@ -1187,6 +1187,7 @@ function App() {
         }>
           <CommunicationPanel
             currentUser={currentUser}
+            googleEvents={allGoogleEvents}
           />
         </Suspense>
       )}
@@ -1359,6 +1360,10 @@ function App() {
         <UserPreferencesModal
           isOpen={showPreferences}
           onClose={() => setShowPreferences(false)}
+          palette={palette}
+          onPaletteChange={setPalette}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
           onPreferencesChange={(prefs) => {
             // Mettre à jour les préférences de notification en temps réel
             userPrefsRef.current = {

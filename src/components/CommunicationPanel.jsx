@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User,
   Edit2, Trash2, Filter, Sun, Moon as MoonIcon, MessageSquare,
   Briefcase, ArrowUpDown, RefreshCw, CalendarDays, LayoutList,
-  Eye, EyeOff
+  Eye, EyeOff, Tv2
 } from 'lucide-react';
 import api from '../utils/api';
 import { formatDateFr, formatDateSimple as formatDateShort } from '../utils/formatUtils';
@@ -15,6 +15,7 @@ import './CommunicationPanel.css';
 const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
 const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
 const EventTaskModal = lazy(() => import('./EventTaskModal'));
+const DisplayDashboardPanel = lazy(() => import('./DisplayDashboard/DisplayDashboardPanel'));
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {
@@ -840,6 +841,7 @@ function CommunicationPanel({ currentUser, googleEvents = [] }) {
   const subTabs = [
     { id: 'display', label: 'Affichage dynamique', icon: Monitor, count: stats?.displayEventsTotal || 0 },
     { id: 'tasks', label: 'Planification', icon: ClipboardList, count: stats?.tasksPending || 0 },
+    { id: 'dashboard', label: 'Dashboard Écrans', icon: Tv2 },
   ];
 
   return (
@@ -893,6 +895,11 @@ function CommunicationPanel({ currentUser, googleEvents = [] }) {
         {activeSubTab === 'tasks' && (
           <Suspense fallback={null}>
             <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} googleEvents={googleEvents} />
+          </Suspense>
+        )}
+        {activeSubTab === 'dashboard' && (
+          <Suspense fallback={null}>
+            <DisplayDashboardPanel currentUser={currentUser} />
           </Suspense>
         )}
 

@@ -131,7 +131,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
       return;
     }
     try {
-      const results = await api.getCatalogEquipment({ search: query, limit: 200 });
+      const results = await api.getEquipment({ search: query, limit: 200 });
       const items = Array.isArray(results) ? results : (results?.items || results?.data || []);
       const zoneMap = {};
       items.forEach(item => {
@@ -180,7 +180,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
 
     // Charger les équipements de la zone en background
     try {
-      const results = await api.getCatalogEquipment({ 
+      const results = await api.getEquipment({ 
         location_zone: zone.id, limit: 8 
       });
       const items = Array.isArray(results) ? results : (results?.items || results?.data || []);

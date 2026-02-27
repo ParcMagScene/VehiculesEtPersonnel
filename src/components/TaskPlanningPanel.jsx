@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
-  CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye
+  CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, Settings
 } from 'lucide-react';
 import api from '../utils/api';
 import { formatDateFr } from '../utils/formatUtils';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from '../hooks/useToast';
+import EventTaskModal from './EventTaskModal';
 import './TaskPlanningPanel.css';
 
 const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
@@ -116,6 +117,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
   const [assigningEventId, setAssigningEventId] = useState(null);
   // RDV detail expansion
   const [expandedRdv, setExpandedRdv] = useState(null);
+  // EventTaskModal
+  const [eventTaskModalEvent, setEventTaskModalEvent] = useState(null);
 
   // Semaine : 7 jours à partir du lundi
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
@@ -195,21 +198,35 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     return groups;
   }, [unlinkedEvents]);
 
-  // Filtrer les événements Google Calendar dont le titre contient "rdv"
-  const googleRdvEvents = useMemo(() => {
+  // Tous les événements Google Calendar pour la semaine en cours
+  const weekGoogleEvents = useMemo(() => {
     if (!googleEvents || googleEvents.length === 0) return [];
     return googleEvents.filter(ev => {
-      const summary = ev.summary || '';
-      if (!/rdv/i.test(summary)) return false;
-      // Filtrer par date sélectionnée (ou semaine)
       const evDate = ev.start?.dateTime || ev.start?.date || '';
       const evDateStr = evDate.slice(0, 10);
-      if (viewMode === 'week') {
-        return weekDays.includes(evDateStr);
-      }
-      return evDateStr === selectedDate;
+      return weekDays.includes(evDateStr);
     });
-  }, [googleEvents, selectedDate, viewMode, weekDays]);
+  }, [googleEvents, weekDays]);
+
+  // Événements Google pour le jour sélectionné
+  const dayGoogleEvents = useMemo(() => {
+    if (!googleEvents || googleEvents.length === 0) return [];
+    return googleEvents.filter(ev => {
+      const evDate = ev.start?.dateTime || ev.start?.date || '';
+      return evDate.slice(0, 10) === selectedDate;
+    });
+  }, [googleEvents, selectedDate]);
+
+  // IDs Google event qui ont déjà des tâches créées
+  const processedGoogleIds = useMemo(() =>
+    new Set(tasks.filter(t => t.source_type === 'google_event' && t.source_id).map(t => t.source_id)),
+    [tasks]
+  );
+
+  // googleRdvEvents = tous les events Google du jour/semaine (plus de filtre "rdv")
+  const googleRdvEvents = useMemo(() => {
+    return viewMode === 'week' ? weekGoogleEvents : dayGoogleEvents;
+  }, [viewMode, weekGoogleEvents, dayGoogleEvents]);
 
   // Affaires groupées par section de préparation
   const affairesBySection = useMemo(() => {
@@ -331,9 +348,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
   const renderTaskRow = (task) => {
     const isDone = task.status === 'done';
     const isProgress = task.status === 'in_progress';
+    const isGoogle = task.source_type === 'google_event';
 
     return (
-      <div key={task.id} className="task-row">
+      <div key={task.id} className={`task-row ${isGoogle ? 'google-task-row' : ''}`}>
         <button
           className={`task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           onClick={() => cycleStatus(task)}
@@ -344,8 +362,20 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         </button>
 
         <div className="task-info">
-          <div className={`task-title ${isDone ? 'done' : ''}`}>{task.title}</div>
+          <div className={`task-title ${isDone ? 'done' : ''}`}>
+            {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
+            {task.title}
+          </div>
           <div className="task-meta">
+            {task.time && (
+              <span><Clock size={11} /> {task.time}{task.end_time ? ` → ${task.end_time}` : ''}</span>
+            )}
+            {task.affaire_num && (
+              <span><Briefcase size={11} /> {task.affaire_num}</span>
+            )}
+            {task.google_event_title && (
+              <span><Calendar size={11} /> {task.google_event_title}</span>
+            )}
             {task.eventType && (
               <span><Briefcase size={11} /> {task.eventType}</span>
             )}
@@ -363,6 +393,18 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         )}
 
         <div className="task-actions">
+          {isGoogle && task.source_id && (
+            <button
+              className="edit"
+              onClick={() => {
+                const ev = googleEvents.find(e => e.id === task.source_id);
+                if (ev) setEventTaskModalEvent(ev);
+              }}
+              title="Modifier les tâches de cet événement"
+            >
+              <Edit2 size={14} />
+            </button>
+          )}
           <button className="delete" onClick={() => handleDelete(task.id)} title="Supprimer">
             <Trash2 size={14} />
           </button>
@@ -455,26 +497,31 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     );
   };
 
-  // Carte RDV Google Calendar
+  // Carte Google Calendar — cliquable pour ouvrir EventTaskModal
   const renderGoogleRdvRow = (event) => {
-    const summary = event.summary || 'RDV';
+    const summary = event.summary || 'Événement';
     const startDT = event.start?.dateTime || event.start?.date || '';
     const endDT = event.end?.dateTime || event.end?.date || '';
     const timeStr = startDT.includes('T')
       ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
       : 'Journée entière';
     const location = event.location || '';
-    const description = event.description || '';
-    const affaireNum = event.affaire || '';
+    const affaireNum = (summary.match(/AF\d{4,}/i) || [''])[0];
+    const isProcessed = processedGoogleIds.has(event.id);
     const isExpanded = expandedRdv === `gcal-${event.id}`;
     return (
-      <div key={`gcal-rdv-${event.id}`} className="task-row rdv-row google-rdv-row">
-        <span className="display-event-icon" style={{ color: 'var(--theme-primary)' }}>
+      <div
+        key={`gcal-rdv-${event.id}`}
+        className={`task-row rdv-row google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
+        onClick={() => setEventTaskModalEvent(event)}
+        style={{ cursor: 'pointer' }}
+      >
+        <span className="display-event-icon" style={{ color: isProcessed ? '#10b981' : '#3b82f6' }}>
           <Calendar size={14} />
         </span>
         <div className="task-info">
           <div className="task-title">
-            📅 {affaireNum && <span className="affaire-tag">{affaireNum}</span>} {summary}
+            {affaireNum && <span className="affaire-tag">{affaireNum}</span>} {summary}
           </div>
           <div className="task-meta">
             <span><Clock size={11} /> {timeStr}</span>
@@ -482,18 +529,21 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
           </div>
         </div>
         <div className="task-actions rdv-actions">
+          <span className={`google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
+            {isProcessed ? '✓ Planifié' : '⚙ Définir'}
+          </span>
           <span className="google-badge" title="Google Calendar">G</span>
-          <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : `gcal-${event.id}`)} title="Voir détails">
+          <button className="btn-rdv-view" onClick={(e) => { e.stopPropagation(); setExpandedRdv(isExpanded ? null : `gcal-${event.id}`); }} title="Voir détails">
             <Eye size={14} />
           </button>
         </div>
         {isExpanded && (
-          <div className="rdv-detail-card">
+          <div className="rdv-detail-card" onClick={e => e.stopPropagation()}>
             <div className="rdv-detail-row"><strong>Titre :</strong> {summary}</div>
             {affaireNum && <div className="rdv-detail-row"><strong>Affaire :</strong> {affaireNum}</div>}
             <div className="rdv-detail-row"><strong>Horaire :</strong> {timeStr}</div>
             {location && <div className="rdv-detail-row"><strong>Lieu :</strong> {location}</div>}
-            {description && <div className="rdv-detail-row"><strong>Description :</strong> {description.slice(0, 200)}{description.length > 200 ? '…' : ''}</div>}
+            {event.description && <div className="rdv-detail-row"><strong>Description :</strong> {event.description.slice(0, 200)}{event.description.length > 200 ? '…' : ''}</div>}
           </div>
         )}
       </div>
@@ -619,7 +669,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
   const weekGrouped = useMemo(() => {
     if (viewMode !== 'week') return {};
     const map = {};
-    weekDays.forEach(d => { map[d] = { tasks: [], events: [], affaires: [] }; });
+    weekDays.forEach(d => { map[d] = { tasks: [], events: [], affaires: [], googleEvents: [] }; });
     tasks.forEach(t => {
       const d = t.date;
       if (map[d]) map[d].tasks.push(t);
@@ -636,8 +686,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         }
       });
     });
+    // Ajouter les événements Google
+    weekGoogleEvents.forEach(ev => {
+      const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
+      if (map[evDate]) map[evDate].googleEvents.push(ev);
+    });
     return map;
-  }, [tasks, unlinkedEvents, affaires, weekDays, viewMode]);
+  }, [tasks, unlinkedEvents, affaires, weekDays, viewMode, weekGoogleEvents]);
 
   // ── Vue semaine : mini-carte tâche ──
   const renderWeekTaskCard = (task) => {
@@ -697,6 +752,30 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
       >
         <Briefcase size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
         <span className="week-event-title">{typeInfo.emoji} {affaire.client || affaire.numeroAffaire}</span>
+      </div>
+    );
+  };
+
+  // ── Vue semaine : mini-carte Google Calendar ──
+  const renderWeekGoogleCard = (event) => {
+    const summary = event.summary || 'Événement';
+    const isProcessed = processedGoogleIds.has(event.id);
+    const startDT = event.start?.dateTime || event.start?.date || '';
+    const timeStr = startDT.includes('T')
+      ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    return (
+      <div
+        key={`wg-${event.id}`}
+        className={`week-event-card week-google-event-card ${isProcessed ? 'processed' : 'pending'}`}
+        style={{ borderLeftColor: isProcessed ? '#10b981' : '#4285f4', cursor: 'pointer' }}
+        title={summary}
+        onClick={() => setEventTaskModalEvent(event)}
+      >
+        <Calendar size={10} style={{ color: '#4285f4', flexShrink: 0 }} />
+        <span className="week-event-title">{summary.slice(0, 20)}{summary.length > 20 ? '…' : ''}</span>
+        {timeStr && <span className="week-google-time">{timeStr}</span>}
+        <span className={`week-google-status ${isProcessed ? 'done' : ''}`}>{isProcessed ? '✓' : '⚙'}</span>
       </div>
     );
   };
@@ -761,14 +840,48 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
       ) : viewMode === 'week' ? (
         /* ═══ VUE SEMAINE ═══ */
         <div className="week-view-container">
+          {/* Google Events Week Strip */}
+          {weekGoogleEvents.length > 0 && (
+            <div className="google-events-week-strip">
+              <div className="gew-header">
+                <Calendar size={14} /> Événements Google de la semaine
+                <span className="gew-count">{weekGoogleEvents.length}</span>
+                <span className="gew-hint">Cliquez pour définir les tâches</span>
+              </div>
+              <div className="gew-list">
+                {weekGoogleEvents.map(ev => {
+                  const summary = ev.summary || 'Événement';
+                  const startDT = ev.start?.dateTime || ev.start?.date || '';
+                  const evDate = startDT.slice(0, 10);
+                  const timeStr = startDT.includes('T')
+                    ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                    : '';
+                  const isProcessed = processedGoogleIds.has(ev.id);
+                  const dayLabel = new Date(evDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+                  return (
+                    <div
+                      key={`gew-${ev.id}`}
+                      className={`gew-card ${isProcessed ? 'processed' : 'pending'}`}
+                      onClick={() => setEventTaskModalEvent(ev)}
+                    >
+                      <div className="gew-card-day">{dayLabel}</div>
+                      <div className="gew-card-title">{summary.slice(0, 30)}{summary.length > 30 ? '…' : ''}</div>
+                      {timeStr && <div className="gew-card-time">{timeStr}</div>}
+                      <span className={`gew-status ${isProcessed ? 'done' : ''}`}>{isProcessed ? '✓' : '⚙'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="week-grid">
             {weekDays.map(dayStr => {
-              const dayData = weekGrouped[dayStr] || { tasks: [], events: [], affaires: [] };
+              const dayData = weekGrouped[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
               const isToday = dayStr === todayStr();
               const dayDate = new Date(dayStr + 'T00:00:00');
               const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
               const dayDone = dayData.tasks.filter(t => t.status === 'done').length;
-              const totalItems = dayData.tasks.length + dayData.events.length + dayData.affaires.length;
+              const totalItems = dayData.tasks.length + dayData.events.length + dayData.affaires.length + dayData.googleEvents.length;
 
               return (
                 <div key={dayStr} className={`week-day-column ${isToday ? 'today' : ''}`}>
@@ -785,6 +898,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
                       <div className="week-empty">—</div>
                     ) : (
                       <>
+                        {dayData.googleEvents.map(renderWeekGoogleCard)}
                         {dayData.affaires.map(renderWeekAffaireCard)}
                         {dayData.events.map(renderWeekEventCard)}
                         {dayData.tasks.map(renderWeekTaskCard)}
@@ -815,6 +929,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
             onClose={() => setShowPdfExport(false)}
           />
         </Suspense>
+      )}
+      {eventTaskModalEvent && (
+        <EventTaskModal
+          event={eventTaskModalEvent}
+          existingTasks={tasks.filter(t => t.source_type === 'google_event' && t.source_id === eventTaskModalEvent.id)}
+          onSave={() => { setEventTaskModalEvent(null); loadTasks(); }}
+          onDelete={() => { setEventTaskModalEvent(null); loadTasks(); }}
+          onClose={() => setEventTaskModalEvent(null)}
+        />
       )}
     </div>
   );

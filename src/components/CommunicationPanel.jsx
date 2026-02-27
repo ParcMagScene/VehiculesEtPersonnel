@@ -57,10 +57,21 @@ const AFFAIRE_TYPE_INFO = {
   'Installation':  { label: 'Installation',  emoji: '⚙️', color: '#10b981' },
 };
 
+const TASK_SECTION_INFO = {
+  prep_locations:     { label: 'Prép. Locations',     emoji: '🏗️', color: '#3b82f6' },
+  prep_prestations:   { label: 'Prép. Prestations',   emoji: '🎭', color: '#f59e0b' },
+  prep_ventes:        { label: 'Prép. Ventes',         emoji: '💰', color: '#8b5cf6' },
+  prep_installations: { label: 'Prép. Installations',  emoji: '⚙️', color: '#10b981' },
+  taches_prioritaires:{ label: 'Tâches prioritaires',  emoji: '⚡', color: '#ef4444' },
+  taches_secondaires: { label: 'Tâches secondaires',   emoji: '📋', color: '#64748b' },
+  rdv:                { label: 'Rendez-vous',           emoji: '📅', color: '#06b6d4' },
+};
+
 function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshKey }) {
   const toast = useToast();
   const [events, setEvents] = useState([]);
   const [affaires, setAffaires] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [viewMode, setViewMode] = useState('day');
@@ -93,12 +104,21 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
         affaireParams.date = selectedDate;
       }
       if (typeFilter) params.type = typeFilter;
-      const [data, affairesData] = await Promise.all([
+      const taskParams = {};
+      if (viewMode === 'week') {
+        taskParams.dateFrom = weekDays[0];
+        taskParams.dateTo = weekDays[6];
+      } else {
+        taskParams.date = selectedDate;
+      }
+      const [data, affairesData, tasksData] = await Promise.all([
         api.getDisplayEvents(params),
         api.getPlanningAffaires(affaireParams),
+        api.getTasks(taskParams),
       ]);
       setEvents(data);
       setAffaires(Array.isArray(affairesData) ? affairesData : []);
+      setTasks(Array.isArray(tasksData) ? tasksData : []);
     } catch (err) {
       toast.error('Erreur chargement événements : ' + err.message);
     } finally {
@@ -135,13 +155,33 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     return list;
   }, [affaires, searchTerm]);
 
-  // Grouper par période
+  // Filtrer tâches par recherche
+  const filteredTasks = useMemo(() => {
+    let list = tasks;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter(t =>
+        (t.label || '').toLowerCase().includes(q) ||
+        (t.google_event_title || '').toLowerCase().includes(q) ||
+        (t.affaire_num || '').toLowerCase().includes(q) ||
+        (t.person_first_name || '').toLowerCase().includes(q) ||
+        (t.person_last_name || '').toLowerCase().includes(q) ||
+        (t.notes || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [tasks, searchTerm]);
+
+  // Grouper par période (événements + tâches)
   const grouped = useMemo(() => {
     const am = filteredEvents.filter(e => e.period === 'AM');
     const pm = filteredEvents.filter(e => e.period === 'PM');
     const other = filteredEvents.filter(e => e.period !== 'AM' && e.period !== 'PM');
-    return { am, pm, other };
-  }, [filteredEvents]);
+    const tasksAm = filteredTasks.filter(t => t.period === 'AM');
+    const tasksPm = filteredTasks.filter(t => t.period === 'PM');
+    const tasksOther = filteredTasks.filter(t => t.period !== 'AM' && t.period !== 'PM');
+    return { am, pm, other, tasksAm, tasksPm, tasksOther };
+  }, [filteredEvents, filteredTasks]);
 
   // Grouper affaires par type
   const affairesByType = useMemo(() => {
@@ -154,11 +194,11 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     return groups;
   }, [filteredAffaires]);
 
-  // Grouper par jour (vue semaine) — événements + affaires
+  // Grouper par jour (vue semaine) — événements + affaires + tâches
   const weekGroupedDisplay = useMemo(() => {
     if (viewMode !== 'week') return {};
     const map = {};
-    weekDays.forEach(d => { map[d] = { events: [], affaires: [] }; });
+    weekDays.forEach(d => { map[d] = { events: [], affaires: [], tasks: [] }; });
     filteredEvents.forEach(ev => {
       const d = ev.date;
       if (map[d]) map[d].events.push(ev);
@@ -171,8 +211,13 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
         }
       });
     });
+    // Ajouter les tâches
+    filteredTasks.forEach(t => {
+      const d = t.date;
+      if (map[d]) map[d].tasks.push(t);
+    });
     return map;
-  }, [filteredEvents, filteredAffaires, weekDays, viewMode]);
+  }, [filteredEvents, filteredAffaires, filteredTasks, weekDays, viewMode]);
 
   const handleDelete = async (id) => {
     setConfirmDialog({
@@ -267,12 +312,61 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     );
   };
 
-  const renderPeriodGroup = (title, icon, events) => {
-    if (events.length === 0) return null;
+  const renderTaskCard = (task) => {
+    const secInfo = TASK_SECTION_INFO[task.section] || { label: task.section, emoji: '📋', color: 'var(--theme-text-secondary)' };
+    const isGoogle = task.source_type === 'google_event';
+    return (
+      <div key={`task-${task.id}`} className={`event-card task-card ${isGoogle ? 'google-sourced' : ''}`}>
+        <div className="type-stripe" style={{ background: secInfo.color }} />
+        <div className="card-body">
+          <div className="card-top-row">
+            <span
+              className="event-type-badge"
+              style={{ background: secInfo.color + '18', color: secInfo.color }}
+            >
+              {secInfo.emoji} {task.label || secInfo.label}
+            </span>
+            {isGoogle && <span className="dd-google-badge">G</span>}
+            {task.affaire_num && (
+              <span className="event-affaire">
+                <Briefcase size={13} /> {task.affaire_num}
+              </span>
+            )}
+            <span className={`task-status-chip ${task.status || 'pending'}`}>
+              {task.status === 'done' ? '✓' : task.status === 'in_progress' ? '▶' : '○'}
+            </span>
+          </div>
+          <div className="event-details">
+            {(task.person_first_name || task.person_last_name) && (
+              <span><User size={13} /> {task.person_first_name} {task.person_last_name}</span>
+            )}
+            {task.time && (
+              <span><Clock size={13} /> {task.time}{task.end_time ? ` → ${task.end_time}` : ''}</span>
+            )}
+          </div>
+          {task.google_event_title && (
+            <div className="event-comment">
+              <Calendar size={12} /> {task.google_event_title}
+            </div>
+          )}
+          {task.notes && (
+            <div className="event-comment">
+              <MessageSquare size={12} /> {task.notes}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPeriodGroup = (title, icon, events, periodTasks = []) => {
+    if (events.length === 0 && periodTasks.length === 0) return null;
+    const total = events.length + periodTasks.length;
     return (
       <div className="period-group">
-        <h3>{icon} {title} — {events.length} événement{events.length > 1 ? 's' : ''}</h3>
+        <h3>{icon} {title} — {total} élément{total > 1 ? 's' : ''}</h3>
         {events.map(renderEventCard)}
+        {periodTasks.map(renderTaskCard)}
       </div>
     );
   };
@@ -399,8 +493,8 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
           <div className="dd-week-container">
             <div className="dd-week-grid">
               {weekDays.map(dayStr => {
-                const dayData = weekGroupedDisplay[dayStr] || { events: [], affaires: [] };
-                const totalItems = dayData.events.length + dayData.affaires.length;
+                const dayData = weekGroupedDisplay[dayStr] || { events: [], affaires: [], tasks: [] };
+                const totalItems = dayData.events.length + dayData.affaires.length + dayData.tasks.length;
                 const isToday = dayStr === todayStr();
                 const dayDate = new Date(dayStr + 'T00:00:00');
                 const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
@@ -449,6 +543,20 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
                               </div>
                             );
                           })}
+                          {dayData.tasks.map(t => {
+                            const si = TASK_SECTION_INFO[t.section] || { label: t.section, emoji: '📋', color: 'var(--theme-text-secondary)' };
+                            const isGoogle = t.source_type === 'google_event';
+                            return (
+                              <div key={`wt-${t.id}`} className={`dd-week-card task-week-card ${isGoogle ? 'google-sourced' : ''}`} style={{ borderLeftColor: si.color }}>
+                                <div className="dd-week-card-top">
+                                  <span className="dd-week-type" style={{ color: si.color }}>{si.emoji} {t.label || si.label}</span>
+                                  {isGoogle && <span className="dd-google-badge-sm">G</span>}
+                                </div>
+                                {t.time && <div className="dd-week-time"><Clock size={10} /> {t.time}{t.end_time ? ` → ${t.end_time}` : ''}</div>}
+                                {t.affaire_num && <div className="dd-week-affaire"><Briefcase size={10} /> {t.affaire_num}</div>}
+                              </div>
+                            );
+                          })}
                         </>
                       )}
                     </div>
@@ -457,7 +565,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
               })}
             </div>
           </div>
-        ) : filteredEvents.length === 0 && filteredAffaires.length === 0 ? (
+        ) : filteredEvents.length === 0 && filteredAffaires.length === 0 && filteredTasks.length === 0 ? (
           <div className="events-empty">
             <Calendar size={48} />
             <p>Aucun événement ni affaire pour le {formatDateShort(selectedDate)}</p>
@@ -473,10 +581,10 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
           <>
             {/* Affaires groupées par type */}
             {Object.entries(affairesByType).map(([type, affs]) => renderAffaireTypeGroup(type, affs))}
-            {/* Événements groupés par période */}
-            {renderPeriodGroup('Matin', '🌅', grouped.am)}
-            {renderPeriodGroup('Après-midi', '☀️', grouped.pm)}
-            {renderPeriodGroup('Non spécifié', '📌', grouped.other)}
+            {/* Événements + tâches groupés par période */}
+            {renderPeriodGroup('Matin', '🌅', grouped.am, grouped.tasksAm)}
+            {renderPeriodGroup('Après-midi', '☀️', grouped.pm, grouped.tasksPm)}
+            {renderPeriodGroup('Non spécifié', '📌', grouped.other, grouped.tasksOther)}
           </>
         )}
       </div>

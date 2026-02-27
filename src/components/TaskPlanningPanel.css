@@ -835,3 +835,232 @@
 .task-planning-panel .assign-option.unassign:hover {
   background: rgba(239, 68, 68, 0.06);
 }
+
+
+/* ═══════════════════════════════════════════════
+   NOUVEAU : Bandeau Google Events de la semaine
+   ═══════════════════════════════════════════════ */
+
+.google-events-week-strip {
+  border-bottom: 1px solid var(--theme-border);
+  background: var(--theme-bg-card);
+}
+
+.gews-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--theme-text-primary);
+}
+
+.gews-count {
+  background: var(--theme-primary);
+  color: white;
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.gews-hint {
+  font-size: 0.72rem;
+  color: var(--theme-text-secondary);
+  font-weight: 400;
+  margin-left: auto;
+  font-style: italic;
+}
+
+.gews-list {
+  padding: 4px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ═══ Carte Google Event (vue liste) ═══ */
+
+.google-event-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-primary);
+}
+
+.google-event-card:hover {
+  background: var(--theme-bg-hover);
+  border-color: var(--theme-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.google-event-card.processed {
+  border-left: 3px solid #059669;
+  opacity: 0.85;
+}
+
+.google-event-card.pending {
+  border-left: 3px solid var(--theme-primary);
+}
+
+.gev-left {
+  flex-shrink: 0;
+}
+
+.gev-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.gev-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gev-affaire-tag {
+  font-size: 0.7rem;
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.gev-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.gev-meta span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.74rem;
+  color: var(--theme-text-secondary);
+}
+
+.gev-right {
+  flex-shrink: 0;
+}
+
+.gev-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.gev-status.done {
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+}
+
+.gev-status.pending {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--theme-primary);
+}
+
+/* ═══ Google Event Card compacte (vue semaine) ═══ */
+
+.week-google-event-card {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: all 0.12s;
+  border-left: 2px solid var(--theme-primary);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.week-google-event-card.processed {
+  border-left-color: #059669;
+  background: rgba(5, 150, 105, 0.06);
+}
+
+.week-google-event-card:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.week-google-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  color: var(--theme-text-primary);
+}
+
+.week-google-check {
+  color: #059669;
+  flex-shrink: 0;
+}
+
+/* ═══ Google task badge ═══ */
+
+.google-mini-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: rgba(66, 133, 244, 0.15);
+  color: #4285f4;
+  font-size: 0.65rem;
+  font-weight: 800;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.google-mini-badge.sm {
+  width: 13px;
+  height: 13px;
+  font-size: 0.55rem;
+  margin-right: 2px;
+}
+
+/* Google-sourced task row highlight */
+.google-task-row {
+  border-left: 2px solid #4285f4;
+}
+
+.task-row .task-actions .edit {
+  color: var(--theme-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.task-row .task-actions .edit:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--theme-primary);
+}
+

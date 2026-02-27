@@ -215,6 +215,7 @@
   flex: 1;
   padding: 1rem;
   overflow-y: auto;
+  padding-bottom: calc(1rem + 64px); /* Espace pour la bottom nav */
 }
 
 /* Loading */
@@ -342,5 +343,209 @@
   height: 200px;
   color: var(--theme-text-secondary);
   font-size: 0.95rem;
+}
+
+/* ═══════════════════════════════════════════════
+   Bottom Navigation Bar
+   ═══════════════════════════════════════════════ */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--theme-bg-card);
+  border-top: 1px solid var(--theme-border-light);
+  z-index: 90;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px 10px;
+  border: none;
+  background: none;
+  color: var(--theme-text-muted);
+  font-size: 0.65rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  min-height: 56px;
+}
+
+.bottom-nav-item.active {
+  color: var(--theme-primary);
+  font-weight: 700;
+}
+
+.bottom-nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 25%;
+  right: 25%;
+  height: 3px;
+  background: var(--theme-primary);
+  border-radius: 0 0 3px 3px;
+}
+
+.bottom-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: var(--theme-danger);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════
+   Theme Panel (inside menu)
+   ═══════════════════════════════════════════════ */
+.menu-theme-panel {
+  padding: 12px 1.5rem 16px;
+  border-top: 1px solid var(--theme-border-light);
+  background: var(--theme-bg-secondary);
+}
+
+.menu-theme-mode {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.menu-theme-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: 2px solid var(--theme-border);
+  border-radius: 10px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-theme-mode-btn.active {
+  background: var(--theme-primary);
+  color: white;
+  border-color: var(--theme-primary);
+}
+
+.menu-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.menu-palette-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 2px solid var(--theme-border);
+  border-radius: 10px;
+  background: var(--theme-bg-card);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-palette-btn.active {
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 1px var(--theme-primary);
+}
+
+.menu-palette-btn span {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--theme-text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-palette-preview {
+  width: 28px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* ═══════════════════════════════════════════════
+   Lisibilité améliorée — Responsive mobile
+   ═══════════════════════════════════════════════ */
+
+/* Meilleurs touch targets (44px minimum) */
+.menu-nav button {
+  min-height: 48px;
+}
+
+.mobile-back-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Texte plus grand et plus lisible sur petit écran */
+@media (max-width: 380px) {
+  .mobile-header h1 {
+    font-size: 1.1rem;
+  }
+  
+  .mobile-content {
+    padding: 0.75rem;
+    padding-bottom: calc(0.75rem + 64px);
+  }
+  
+  .menu-content {
+    width: 260px;
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.6rem;
+  }
+}
+
+/* Amélioration contraste mode sombre */
+[data-theme="dark"] .mobile-bottom-nav {
+  background: var(--theme-bg-card);
+  border-top-color: var(--theme-border-medium);
+}
+
+[data-theme="dark"] .bottom-nav-item {
+  color: var(--theme-text-gray);
+}
+
+[data-theme="dark"] .bottom-nav-item.active {
+  color: var(--theme-primary-light, var(--theme-primary));
+}
+
+/* Toast ajusté pour bottom nav */
+.mobile-msg-toast {
+  bottom: 76px;
 }
 

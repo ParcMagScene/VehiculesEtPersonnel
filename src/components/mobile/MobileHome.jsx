@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, Users, MessageSquare, ChevronRight, Car, Settings, AlertCircle, Calendar, Package, ShoppingCart } from 'lucide-react';
+import { Truck, Users, MessageSquare, ChevronRight, Car, Settings, AlertCircle, Calendar, Package, ShoppingCart, MapPin, Palmtree } from 'lucide-react';
 import api from '../../utils/api';
 import './MobileHome.css';
 
@@ -130,6 +130,28 @@ function MobileHome({ vehicles, reservations, maintenances, onNavigate, currentU
           <div className="module-info">
             <h3>Commandes</h3>
             <p>Bons de commande et devis</p>
+          </div>
+          <ChevronRight size={20} className="module-chevron" />
+        </div>
+
+        <div className="module-card location" onClick={() => onNavigate('location')}>
+          <div className="module-icon">
+            <MapPin size={32} />
+          </div>
+          <div className="module-info">
+            <h3>Localisation</h3>
+            <p>Plan du dépôt et zones</p>
+          </div>
+          <ChevronRight size={20} className="module-chevron" />
+        </div>
+
+        <div className="module-card leaves" onClick={() => onNavigate('leaves')}>
+          <div className="module-icon">
+            <Palmtree size={32} />
+          </div>
+          <div className="module-info">
+            <h3>Congés</h3>
+            <p>Demandes et soldes de congés</p>
           </div>
           <ChevronRight size={20} className="module-chevron" />
         </div>

@@ -1178,6 +1178,12 @@ class ApiClient {
   async deleteOrder(id) {
     return this.request(`/orders/${id}`, { method: 'DELETE' });
   }
+  async generateOrdersFromBL(data) {
+    return this.request('/orders/generate-from-bl', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async addItemsToOrder(orderId, items) {
+    return this.request(`/orders/${orderId}/add-items`, { method: 'POST', body: JSON.stringify({ items }) });
+  }
 
   // Devis
   async getQuotes(params = {}) {

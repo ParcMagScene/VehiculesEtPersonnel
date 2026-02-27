@@ -1128,6 +1128,36 @@
   opacity: 0.8;
 }
 
+/* Bouton génération commandes */
+.generate-orders-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 16px;
+  border: 1px dashed var(--theme-border);
+  border-radius: 8px;
+  background: var(--theme-bg-primary);
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.generate-orders-btn:hover:not(:disabled) {
+  background: #8b5cf6;
+  color: white;
+  border-color: #8b5cf6;
+  border-style: solid;
+}
+
+.generate-orders-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ═══ BL / BP Imports liés ═══ */
 
 .bl-imports-list {

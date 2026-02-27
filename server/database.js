@@ -1807,14 +1807,17 @@ function initializeDatabase() {
         date TEXT NOT NULL,
         period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
         time TEXT,
-        section TEXT CHECK(section IN (
+        end_time TEXT,
+        section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
           'prep_locations', 'prep_prestations', 'prep_ventes',
           'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
         )),
         title TEXT,
         notes TEXT DEFAULT '',
-        source_type TEXT DEFAULT 'display_event' CHECK(source_type IN ('display_event', 'manual', 'google_event')),
+        source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event')),
         source_id TEXT,
+        google_event_title TEXT,
+        affaire_num TEXT,
         status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
         created_by INTEGER REFERENCES users(id),
         created_at TEXT DEFAULT (datetime('now')),
@@ -1842,6 +1845,21 @@ function initializeDatabase() {
     if (!taCols.find(c => c.name === 'visible')) {
       db.exec('ALTER TABLE task_assignments ADD COLUMN visible INTEGER DEFAULT 1');
       logger.info('✅ Colonne visible ajoutée à task_assignments');
+    }
+
+    // Migration : colonnes enrichies pour task_assignments (end_time, google_event_title, affaire_num)
+    const taColNames = taCols.map(c => c.name);
+    if (!taColNames.includes('end_time')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN end_time TEXT');
+      logger.info('  + task_assignments.end_time');
+    }
+    if (!taColNames.includes('google_event_title')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN google_event_title TEXT');
+      logger.info('  + task_assignments.google_event_title');
+    }
+    if (!taColNames.includes('affaire_num')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN affaire_num TEXT');
+      logger.info('  + task_assignments.affaire_num');
     }
 
     // Migration : colonnes enrichies pour bl_imports (Phase 5)

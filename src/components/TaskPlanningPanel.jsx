@@ -151,11 +151,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     }
   }, [selectedDate, viewMode, weekDays, toast]);
 
-  // Load persons for assignment
+  // Load persons for assignment (permanents uniquement)
   const loadPersons = useCallback(async () => {
     try {
       const data = await api.getPersons();
-      setPersons(Array.isArray(data) ? data : []);
+      // Filtrer pour ne garder que les permanents actifs
+      const permanents = (Array.isArray(data) ? data : []).filter(
+        p => p.type === 'permanent' && p.status !== 'inactive'
+      );
+      setPersons(permanents);
     } catch {
       setPersons([]);
     }
@@ -219,7 +223,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
 
   // IDs Google event qui ont déjà des tâches créées
   const processedGoogleIds = useMemo(() =>
-    new Set(tasks.filter(t => t.source_type === 'google_event' && t.source_id).map(t => t.source_id)),
+    new Set(tasks.filter(t => t.sourceType === 'google_event' && t.sourceId).map(t => t.sourceId)),
     [tasks]
   );
 
@@ -381,7 +385,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
   const renderTaskRow = (task) => {
     const isDone = task.status === 'done';
     const isProgress = task.status === 'in_progress';
-    const isGoogle = task.source_type === 'google_event';
+    const isGoogle = task.sourceType === 'google_event';
     const isHidden = task.visible === 0;
     const dateBadge = getDateBadge(task.date);
 
@@ -436,11 +440,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
           >
             {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
-          {isGoogle && task.source_id && (
+          {isGoogle && task.sourceId && (
             <button
               className="edit"
               onClick={() => {
-                const ev = googleEvents.find(e => e.id === task.source_id);
+                const ev = googleEvents.find(e => e.id === task.sourceId);
                 if (ev) setEventTaskModalEvent(ev);
               }}
               title="Modifier les tâches de cet événement"
@@ -838,10 +842,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
               }}
             />
             <select value={newTaskPerson} onChange={e => setNewTaskPerson(e.target.value)}>
-              <option value="">— Personne —</option>
+              <option value="">— Responsable —</option>
               {persons.map(p => (
                 <option key={p.id} value={p.id}>
-                  {p.firstName || p.prenom} {p.lastName || p.nom}
+                  {p.firstName} {p.lastName}
                 </option>
               ))}
             </select>
@@ -980,7 +984,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
       {eventTaskModalEvent && (
         <EventTaskModal
           event={eventTaskModalEvent}
-          existingTasks={tasks.filter(t => t.source_type === 'google_event' && t.source_id === eventTaskModalEvent.id)}
+          existingTasks={tasks.filter(t => t.sourceType === 'google_event' && t.sourceId === eventTaskModalEvent.id)}
           onSave={() => { setEventTaskModalEvent(null); loadTasks(); }}
           onDelete={() => { setEventTaskModalEvent(null); loadTasks(); }}
           onClose={() => setEventTaskModalEvent(null)}

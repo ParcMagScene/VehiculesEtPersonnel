@@ -59,16 +59,16 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     TASK_STEPS.forEach(step => {
       // Chercher si une tâche existe déjà pour cette étape
       const existing = existingTasks.find(t =>
-        t.source_id === event?.id && t.section?.includes(step.key)
+        t.sourceId === event?.id && t.section?.includes(step.key)
       ) || existingTasks.find(t =>
-        t.source_id === event?.id && (t.title || '').toLowerCase().includes(step.label.toLowerCase())
+        t.sourceId === event?.id && (t.title || '').toLowerCase().includes(step.label.toLowerCase())
       );
 
       initial[step.key] = {
         enabled: !!existing,
         date: existing?.date || eventInfo.startDate || '',
         time: existing?.time || '',
-        endTime: existing?.end_time || '',
+        endTime: existing?.endTime || '',
         period: existing?.period || (step.key === 'preparation' || step.key === 'chargement' ? 'AM' : 'PM'),
         notes: existing?.notes || '',
         taskId: existing?.id || null,
@@ -77,7 +77,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     return initial;
   });
 
-  const hasExistingTasks = existingTasks.filter(t => t.source_id === event?.id).length > 0;
+  const hasExistingTasks = existingTasks.filter(t => t.sourceId === event?.id).length > 0;
 
   const toggleStep = (key) => {
     setSteps(prev => ({

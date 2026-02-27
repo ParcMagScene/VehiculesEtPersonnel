@@ -124,6 +124,98 @@
   height: 100%;
 }
 
+/* ── Events Overview (au-dessus de la toolbar) ── */
+.dd-events-overview {
+  padding: 10px 20px 8px;
+  border-bottom: 1px solid var(--theme-border);
+  background: var(--theme-bg-secondary, #f8fafc);
+}
+.dd-events-overview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  margin: 0 0 6px;
+}
+.dd-events-count {
+  background: var(--theme-primary, #3b82f6);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dd-events-empty {
+  color: var(--theme-text-muted, #94a3b8);
+  font-size: 0.8rem;
+  padding: 4px 0;
+}
+.dd-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.dd-evt-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  font-size: 0.78rem;
+  background: var(--theme-card-bg, #fff);
+  transition: background 0.15s;
+}
+.dd-evt-mini:hover {
+  background: var(--theme-hover-bg, #eef2f7);
+}
+.dd-evt-mini.google {
+  border-left-color: #4285f4;
+}
+.dd-evt-mini-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--theme-text-primary);
+}
+.dd-evt-mini-time {
+  font-size: 0.7rem;
+  color: var(--theme-text-secondary, #64748b);
+  flex-shrink: 0;
+}
+.dd-evt-mini-date {
+  font-size: 0.65rem;
+  color: var(--theme-text-muted, #94a3b8);
+  flex-shrink: 0;
+  text-transform: capitalize;
+}
+.dd-evt-mini-status {
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+.dd-evt-mini-status.done { color: #10b981; }
+.dd-evt-mini-status.in_progress { color: #f59e0b; }
+.dd-evt-mini-status.pending { color: var(--theme-text-muted, #94a3b8); }
+.dd-evt-mini-affnum {
+  font-size: 0.65rem;
+  color: var(--theme-text-secondary, #64748b);
+  flex-shrink: 0;
+}
+
+/* Google cards in week view */
+.dd-week-card.google-week-card {
+  background: rgba(66, 133, 244, 0.06);
+}
+
 .dynamic-display-panel .toolbar {
   display: flex;
   align-items: center;

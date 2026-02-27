@@ -15,7 +15,7 @@ const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
 // ═══ Constantes ═══
 const SECTIONS = {
-  rdv:                { label: 'RDV du jour',         emoji: '📅', color: '#059669' },
+  rdv:                { label: 'Événements du jour',  emoji: '📅', color: '#059669' },
   prep_locations:     { label: 'Prépa Locations',    emoji: '📦', color: '#3b82f6' },
   prep_prestations:   { label: 'Prépa Prestations',  emoji: '🎤', color: '#f59e0b' },
   prep_ventes:        { label: 'Prépa Ventes',       emoji: '🏷️', color: '#10b981' },

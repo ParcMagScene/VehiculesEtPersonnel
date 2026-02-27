@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Search, Plus, Edit2, Trash2, Filter, X, Check, ChevronDown, ChevronRight,
   Building2, Users2, UserCheck, Phone, Mail, Globe, MapPin, FileText,
@@ -63,102 +63,115 @@ function AnnuairePanel({ currentUser }) {
   const [refData, setRefData] = useState([]);
   const [showRefForm, setShowRefForm] = useState(false);
   const [editingRef, setEditingRef] = useState(null);
+  // Compteurs de version pour déclencher un refresh après CRUD
+  const [dataVersion, setDataVersion] = useState(0);
+  const [refVersion, setRefVersion] = useState(0);
+  // Ref pour le toast (éviter les dépendances instables dans les effets)
+  const toastRef = useRef(toast);
+  useEffect(() => { toastRef.current = toast; });
 
-  // ═══ Chargement initial ═══
-  useEffect(() => {
-    loadLookups();
-    loadStats();
-  }, []);
-
-  useEffect(() => {
-    setPage(1);
-    setSearchTerm('');
-    setTypeFilter('');
-    setSectorFilter('');
-    setSelectedItem(null);
-    setShowForm(false);
-    if (activeTab === 'referentiels') {
-      loadRefData();
-    } else {
-      loadData();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab !== 'referentiels') {
-      loadData();
-    }
-  }, [page, searchTerm, typeFilter, sectorFilter]);
-
-  const loadLookups = async () => {
+  // ═══ Fonctions stables de chargement (lookups/stats) ═══
+  const loadLookups = useCallback(async () => {
     try {
       const refs = await api.getAnnuaireRefAll();
       setLookups(refs);
     } catch (e) {
       console.error('Erreur chargement référentiels:', e);
     }
-  };
+  }, []);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const s = await api.getAnnuaireStats();
       setStats(s);
     } catch (e) {
       console.error('Erreur chargement stats:', e);
     }
-  };
+  }, []);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = { page, limit: 50, search: searchTerm || undefined };
-      if (typeFilter) params.type = typeFilter;
-      if (sectorFilter) params.activity_sector = sectorFilter;
-
-      let result;
-      switch (activeTab) {
-        case 'clients':
-          result = await api.getAnnuaireClients(params);
-          break;
-        case 'suppliers':
-          result = await api.getAnnuaireSuppliers(params);
-          break;
-        case 'prestataires':
-          result = await api.getAnnuairePrestataires(params);
-          break;
-        case 'contacts':
-          if (contactParentType && contactParentId) {
-            params[`${contactParentType}_id`] = contactParentId;
-          }
-          result = await api.getAnnuaireContacts(params);
-          break;
-        default:
-          result = { data: [], total: 0 };
-      }
-      setData(result.data || []);
-      setTotal(result.total || 0);
-    } catch (e) {
-      toast?.error('Erreur de chargement');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, page, searchTerm, typeFilter, sectorFilter, contactParentType, contactParentId]);
-
-  const loadRefData = async () => {
-    setLoading(true);
-    try {
-      const d = await api.getAnnuaireRef(refTab);
-      setRefData(d);
-    } catch (e) {
-      toast?.error('Erreur chargement référentiels');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // ═══ Chargement initial ═══
   useEffect(() => {
-    if (activeTab === 'referentiels') loadRefData();
-  }, [refTab]);
+    loadLookups();
+    loadStats();
+  }, [loadLookups, loadStats]);
+
+  // ═══ Changement d'onglet (reset des filtres, batché avec React 18) ═══
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+    setPage(1);
+    setSearchTerm('');
+    setTypeFilter('');
+    setSectorFilter('');
+    setSelectedItem(null);
+    setShowForm(false);
+  }, []);
+
+  // ═══ Chargement des données (liste) — un seul effet propre ═══
+  useEffect(() => {
+    if (activeTab === 'referentiels') return;
+
+    let cancelled = false;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const params = { page, limit: 50 };
+        if (searchTerm) params.search = searchTerm;
+        if (typeFilter) params.type = typeFilter;
+        if (sectorFilter) params.activity_sector = sectorFilter;
+        if (activeTab === 'contacts' && contactParentType && contactParentId) {
+          params[`${contactParentType}_id`] = contactParentId;
+        }
+
+        let result;
+        switch (activeTab) {
+          case 'clients':
+            result = await api.getAnnuaireClients(params);
+            break;
+          case 'suppliers':
+            result = await api.getAnnuaireSuppliers(params);
+            break;
+          case 'prestataires':
+            result = await api.getAnnuairePrestataires(params);
+            break;
+          case 'contacts':
+            result = await api.getAnnuaireContacts(params);
+            break;
+          default:
+            result = { data: [], total: 0 };
+        }
+        if (!cancelled) {
+          setData(result.data || []);
+          setTotal(result.total || 0);
+        }
+      } catch (e) {
+        if (!cancelled) toastRef.current?.error('Erreur de chargement');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchData();
+    return () => { cancelled = true; };
+  }, [activeTab, page, searchTerm, typeFilter, sectorFilter, contactParentType, contactParentId, dataVersion]);
+
+  // ═══ Chargement référentiels ═══
+  useEffect(() => {
+    if (activeTab !== 'referentiels') return;
+
+    let cancelled = false;
+    const fetchRefData = async () => {
+      setLoading(true);
+      try {
+        const d = await api.getAnnuaireRef(refTab);
+        if (!cancelled) setRefData(d);
+      } catch (e) {
+        if (!cancelled) toastRef.current?.error('Erreur chargement référentiels');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchRefData();
+    return () => { cancelled = true; };
+  }, [activeTab, refTab, refVersion]);
 
   // ═══ CRUD handlers ═══
   const handleSave = async (formData) => {
@@ -181,7 +194,7 @@ function AnnuairePanel({ currentUser }) {
       toast?.success(isEdit ? 'Modifié avec succès' : 'Créé avec succès');
       setShowForm(false);
       setEditingItem(null);
-      loadData();
+      setDataVersion(v => v + 1);
       loadStats();
     } catch (e) {
       toast?.error(e.message || 'Erreur lors de la sauvegarde');
@@ -201,7 +214,7 @@ function AnnuairePanel({ currentUser }) {
             case 'contacts': await api.deleteAnnuaireContact(item.id); break;
           }
           toast?.success('Supprimé');
-          loadData();
+          setDataVersion(v => v + 1);
           loadStats();
         } catch (e) {
           toast?.error(e.message || 'Erreur');
@@ -216,7 +229,7 @@ function AnnuairePanel({ currentUser }) {
     try {
       const result = type === 'clients' ? await api.importClientsCsv() : await api.importSuppliersCsv();
       toast?.success(`Import terminé : ${result.imported} importés, ${result.skipped} ignorés, ${result.errors} erreurs`);
-      loadData();
+      setDataVersion(v => v + 1);
       loadStats();
     } catch (e) {
       toast?.error('Erreur import CSV');
@@ -233,7 +246,7 @@ function AnnuairePanel({ currentUser }) {
       toast?.success('Référentiel sauvegardé');
       setShowRefForm(false);
       setEditingRef(null);
-      loadRefData();
+      setRefVersion(v => v + 1);
       loadLookups();
     } catch (e) {
       toast?.error(e.message || 'Erreur');
@@ -248,7 +261,7 @@ function AnnuairePanel({ currentUser }) {
         try {
           await api.deleteAnnuaireRef(refTab, item.id);
           toast?.success('Supprimé');
-          loadRefData();
+          setRefVersion(v => v + 1);
           loadLookups();
         } catch (e) {
           toast?.error('Erreur');
@@ -293,7 +306,7 @@ function AnnuairePanel({ currentUser }) {
               <button
                 key={tab.id}
                 className={`annuaire-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 style={activeTab === tab.id ? { borderBottomColor: tab.color } : {}}
               >
                 <Icon size={16} />
@@ -380,7 +393,7 @@ function AnnuairePanel({ currentUser }) {
             onBack={() => setSelectedItem(null)}
             onEdit={(item) => { setEditingItem(item); setShowForm(true); setSelectedItem(null); }}
             onAddContact={(parentType, parentId) => {
-              setActiveTab('contacts');
+              handleTabChange('contacts');
               setContactParentType(parentType);
               setContactParentId(parentId);
               setTimeout(() => { setEditingItem(null); setShowForm(true); }, 100);
@@ -552,26 +565,27 @@ function DetailView({ item, entityType, lookups, getLookupName, currentUser, onB
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDetail();
-  }, [item.id, entityType]);
-
-  const loadDetail = async () => {
-    setLoading(true);
-    try {
-      let d;
-      switch (entityType) {
-        case 'clients': d = await api.getAnnuaireClient(item.id); break;
-        case 'suppliers': d = await api.getAnnuaireSupplier(item.id); break;
-        case 'prestataires': d = await api.getAnnuairePrestataire(item.id); break;
-        default: d = item;
+    let cancelled = false;
+    const fetchDetail = async () => {
+      setLoading(true);
+      try {
+        let d;
+        switch (entityType) {
+          case 'clients': d = await api.getAnnuaireClient(item.id); break;
+          case 'suppliers': d = await api.getAnnuaireSupplier(item.id); break;
+          case 'prestataires': d = await api.getAnnuairePrestataire(item.id); break;
+          default: d = item;
+        }
+        if (!cancelled) setDetail(d);
+      } catch (e) {
+        if (!cancelled) toast?.error('Erreur chargement détail');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setDetail(d);
-    } catch (e) {
-      toast?.error('Erreur chargement détail');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    fetchDetail();
+    return () => { cancelled = true; };
+  }, [item.id, entityType, item, toast]);
 
   if (loading || !detail) return <div className="annuaire-loading"><div className="loading-spinner" /></div>;
 

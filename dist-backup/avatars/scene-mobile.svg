@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="16" fill="#ede9fe"/>
+  <!-- Plateau remorque -->
+  <rect x="12" y="48" width="80" height="24" rx="3" fill="#7c3aed"/>
+  <!-- Structure scène déployée -->
+  <rect x="16" y="30" width="72" height="18" rx="2" fill="#8b5cf6"/>
+  <line x1="20" y1="48" x2="20" y2="30" stroke="#5b21b6" stroke-width="2"/>
+  <line x1="84" y1="48" x2="84" y2="30" stroke="#5b21b6" stroke-width="2"/>
+  <!-- Toit scène -->
+  <path d="M14 30 L52 20 L88 30 Z" fill="#a78bfa"/>
+  <!-- Châssis -->
+  <rect x="10" y="72" width="84" height="4" rx="2" fill="#3b0764"/>
+  <!-- Timon (barre d'attelage) -->
+  <line x1="92" y1="62" x2="108" y2="62" stroke="#5b21b6" stroke-width="3"/>
+  <circle cx="108" cy="62" r="3" fill="#3b0764"/>
+  <!-- Roues -->
+  <circle cx="28" cy="80" r="7" fill="#3b0764"/>
+  <circle cx="28" cy="80" r="3" fill="#ddd6fe"/>
+  <circle cx="68" cy="80" r="7" fill="#3b0764"/>
+  <circle cx="68" cy="80" r="3" fill="#ddd6fe"/>
+  <!-- Ligne sol -->
+  <line x1="10" y1="88" x2="110" y2="88" stroke="#c4b5fd" stroke-width="1.5"/>
+</svg>

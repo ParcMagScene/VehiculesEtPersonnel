@@ -37,7 +37,7 @@ import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from 
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
 import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAssignmentsRoutes, setupSavTicketsRoutes, setupEquipmentListsRoutes } from './equipmentRoutes.js';
-import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes } from './ordersRoutes.js';
+import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes, setupMaterialRequestsRoutes, setupSupplierDocumentsRoutes } from './ordersRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, setupReservationEquipmentRoutes } from './catalogRoutes.js';
@@ -2359,6 +2359,8 @@ setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
 setupSuppliersRoutes(app, authenticateToken, requireAdmin);
 setupOrdersRoutes(app, authenticateToken, requireAdmin);
 setupQuotesRoutes(app, authenticateToken, requireAdmin);
+setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin);
+setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Catalogue Matériel + Flight-Cases + Modèles Camions + Deep Linking
 setupCatalogRoutes(app, authenticateToken, requireCatalogAccess);

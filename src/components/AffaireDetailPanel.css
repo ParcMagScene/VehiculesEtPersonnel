@@ -1255,3 +1255,28 @@
   background: var(--theme-danger-bg);
   color: var(--theme-danger-text);
 }
+
+.bl-import-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--theme-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  opacity: 0;
+}
+
+.bl-import-card:hover .bl-import-delete-btn {
+  opacity: 1;
+}
+
+.bl-import-delete-btn:hover {
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+}

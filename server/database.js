@@ -2412,6 +2412,110 @@ try {
   logger.warn('⚠️ Migration order_items sources:', error.message);
 }
 
+// ═══ Migration : material_requests — table de demandes de matériel ═══
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS material_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    article TEXT NOT NULL,
+    supplier_id INTEGER,
+    supplier_name TEXT,
+    quantity REAL DEFAULT 1,
+    priority TEXT DEFAULT 'normal' CHECK(priority IN ('low','normal','high','urgent')),
+    affaire_id TEXT,
+    destination TEXT DEFAULT 'Stock Mag Scène',
+    destination_other TEXT,
+    status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected','ordered')),
+    order_id INTEGER,
+    requested_by INTEGER,
+    requested_by_name TEXT,
+    approved_by INTEGER,
+    approved_by_name TEXT,
+    approved_at TEXT,
+    rejection_reason TEXT,
+    notes TEXT,
+    ref_code TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_material_requests_status ON material_requests(status)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_material_requests_requested_by ON material_requests(requested_by)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_material_requests_affaire ON material_requests(affaire_id)');
+  logger.info('✅ Table material_requests vérifiée/créée');
+} catch (error) {
+  logger.warn('⚠️ Migration material_requests:', error.message);
+}
+
+// ═══ Migration : supplier_documents — table pour documents fournisseurs ═══
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS supplier_documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    supplier_id INTEGER NOT NULL,
+    order_id INTEGER,
+    doc_type TEXT NOT NULL CHECK(doc_type IN ('acknowledgment','delivery_note','quote','invoice')),
+    filename TEXT NOT NULL,
+    file_path TEXT,
+    mime_type TEXT,
+    parsed_data TEXT,
+    notes TEXT,
+    created_by INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+  )`);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_documents_supplier ON supplier_documents(supplier_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_documents_order ON supplier_documents(order_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_documents_type ON supplier_documents(doc_type)');
+  logger.info('✅ Table supplier_documents vérifiée/créée');
+} catch (error) {
+  logger.warn('⚠️ Migration supplier_documents:', error.message);
+}
+
+// ═══ Migration : order_items — colonnes received_date, delivery_note_id ═══
+try {
+  const oiCols2 = db.prepare("PRAGMA table_info(order_items)").all().map(c => c.name);
+  if (!oiCols2.includes('received_date')) {
+    db.prepare("ALTER TABLE order_items ADD COLUMN received_date TEXT").run();
+    logger.info('✅ Migration: colonne received_date ajoutée à order_items');
+  }
+  if (!oiCols2.includes('delivery_note_id')) {
+    db.prepare("ALTER TABLE order_items ADD COLUMN delivery_note_id INTEGER").run();
+    logger.info('✅ Migration: colonne delivery_note_id ajoutée à order_items');
+  }
+} catch (error) {
+  logger.warn('⚠️ Migration order_items delivery:', error.message);
+}
+
+// ═══ Migration : orders — colonnes workflow_status, completion_notified ═══
+try {
+  const orderCols = db.prepare("PRAGMA table_info(orders)").all().map(c => c.name);
+  if (!orderCols.includes('completion_notified')) {
+    db.prepare("ALTER TABLE orders ADD COLUMN completion_notified INTEGER DEFAULT 0").run();
+    logger.info('✅ Migration: colonne completion_notified ajoutée à orders');
+  }
+} catch (error) {
+  logger.warn('⚠️ Migration orders workflow:', error.message);
+}
+
+// ═══ Migration : completion_alerts — table pour alertes de complétion ═══
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS completion_alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_type TEXT NOT NULL CHECK(entity_type IN ('order','affaire')),
+    entity_id TEXT NOT NULL,
+    entity_reference TEXT,
+    alert_type TEXT DEFAULT 'completion',
+    message TEXT,
+    recipient_id INTEGER,
+    recipient_name TEXT,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_completion_alerts_recipient ON completion_alerts(recipient_id, is_read)');
+  logger.info('✅ Table completion_alerts vérifiée/créée');
+} catch (error) {
+  logger.warn('⚠️ Migration completion_alerts:', error.message);
+}
+
 // Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
   try {

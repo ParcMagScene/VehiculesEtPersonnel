@@ -37,6 +37,7 @@ const CommunicationPanel = lazy(() => import('./components/CommunicationPanel'))
 // const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/MailingPanel'));
+const AnnuairePanel = lazy(() => import('./components/AnnuairePanel'));
 // const ReportsPanel = lazy(() => import('./components/ReportsPanel'));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
@@ -1176,6 +1177,17 @@ function App() {
             currentUser={currentUser}
             googleEvents={allGoogleEvents}
           />
+        </Suspense>
+      )}
+
+      {activeModule === 'annuaire' && (
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement de l'Annuaire...</p>
+          </div>
+        }>
+          <AnnuairePanel currentUser={currentUser} />
         </Suspense>
       )}
 

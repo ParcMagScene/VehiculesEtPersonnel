@@ -1493,6 +1493,113 @@ class ApiClient {
       body: JSON.stringify({ person_id: personId }),
     });
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MODULE ANNUAIRE
+  // ═══════════════════════════════════════════════════════════════
+
+  // --- Clients (enrichi) ---
+  async getAnnuaireClients(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/annuaire/clients${qs ? '?' + qs : ''}`);
+  }
+  async getAnnuaireClient(id) {
+    return this.request(`/annuaire/clients/${id}`);
+  }
+  async createAnnuaireClient(data) {
+    return this.request('/annuaire/clients', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateAnnuaireClient(id, data) {
+    return this.request(`/annuaire/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteAnnuaireClient(id) {
+    return this.request(`/annuaire/clients/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Fournisseurs (enrichi) ---
+  async getAnnuaireSuppliers(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/annuaire/suppliers${qs ? '?' + qs : ''}`);
+  }
+  async getAnnuaireSupplier(id) {
+    return this.request(`/annuaire/suppliers/${id}`);
+  }
+  async createAnnuaireSupplier(data) {
+    return this.request('/annuaire/suppliers', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateAnnuaireSupplier(id, data) {
+    return this.request(`/annuaire/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteAnnuaireSupplier(id) {
+    return this.request(`/annuaire/suppliers/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Prestataires ---
+  async getAnnuairePrestataires(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/annuaire/prestataires${qs ? '?' + qs : ''}`);
+  }
+  async getAnnuairePrestataire(id) {
+    return this.request(`/annuaire/prestataires/${id}`);
+  }
+  async createAnnuairePrestataire(data) {
+    return this.request('/annuaire/prestataires', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateAnnuairePrestataire(id, data) {
+    return this.request(`/annuaire/prestataires/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteAnnuairePrestataire(id) {
+    return this.request(`/annuaire/prestataires/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Contacts ---
+  async getAnnuaireContacts(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/annuaire/contacts${qs ? '?' + qs : ''}`);
+  }
+  async createAnnuaireContact(data) {
+    return this.request('/annuaire/contacts', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateAnnuaireContact(id, data) {
+    return this.request(`/annuaire/contacts/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteAnnuaireContact(id) {
+    return this.request(`/annuaire/contacts/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Référentiels ---
+  async getAnnuaireRefAll() {
+    return this.request('/annuaire/ref/all');
+  }
+  async getAnnuaireRef(slug, params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/annuaire/ref/${slug}${qs ? '?' + qs : ''}`);
+  }
+  async createAnnuaireRef(slug, data) {
+    return this.request(`/annuaire/ref/${slug}`, { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateAnnuaireRef(slug, id, data) {
+    return this.request(`/annuaire/ref/${slug}/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteAnnuaireRef(slug, id) {
+    return this.request(`/annuaire/ref/${slug}/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Recherche globale & Stats ---
+  async searchAnnuaire(query) {
+    return this.request(`/annuaire/search?q=${encodeURIComponent(query)}`);
+  }
+  async getAnnuaireStats() {
+    return this.request('/annuaire/stats');
+  }
+
+  // --- Import CSV ---
+  async importClientsCsv() {
+    return this.request('/annuaire/import/clients-csv', { method: 'POST' });
+  }
+  async importSuppliersCsv() {
+    return this.request('/annuaire/import/suppliers-csv', { method: 'POST' });
+  }
 }
 
 export const api = new ApiClient();

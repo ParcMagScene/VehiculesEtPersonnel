@@ -352,10 +352,6 @@
     flex-wrap: wrap;
     gap: 6px;
   }
-
-  .task-planning-panel .week-grid {
-    grid-template-columns: 1fr !important;
-  }
 }
 
 /* ═══ Toggle Jour / Semaine ═══ */
@@ -393,142 +389,6 @@
   background: var(--theme-bg-tertiary);
 }
 
-/* ═══ VUE SEMAINE ═══ */
-.task-planning-panel .week-view-container {
-  flex: 1;
-  overflow: auto;
-  padding: 16px 24px;
-}
-
-.task-planning-panel .week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  min-height: 300px;
-}
-
-.task-planning-panel .week-day-column {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--theme-border);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--theme-bg-card);
-}
-
-.task-planning-panel .week-day-column.today {
-  border-color: var(--theme-primary);
-  box-shadow: 0 0 0 1px var(--theme-primary);
-}
-
-.task-planning-panel .week-day-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  background: var(--theme-bg-secondary);
-  border-bottom: 1px solid var(--theme-border);
-}
-
-.task-planning-panel .week-day-column.today .week-day-header {
-  background: rgba(99, 102, 241, 0.08);
-}
-
-.task-planning-panel .week-day-label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--theme-text-primary);
-  text-transform: capitalize;
-}
-
-.task-planning-panel .week-day-count {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--theme-text-secondary);
-  padding: 1px 6px;
-  border-radius: 8px;
-  background: var(--theme-bg-card);
-}
-
-.task-planning-panel .week-day-tasks {
-  flex: 1;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 60px;
-}
-
-.task-planning-panel .week-empty {
-  text-align: center;
-  color: var(--theme-text-secondary);
-  opacity: 0.4;
-  padding: 16px 0;
-  font-size: 0.85rem;
-}
-
-/* Week task card */
-.task-planning-panel .week-task-card {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 7px;
-  border-radius: 6px;
-  border-left: 3px solid var(--theme-primary);
-  background: var(--theme-bg-secondary);
-  font-size: 0.75rem;
-  transition: background 0.1s;
-  cursor: default;
-}
-
-.task-planning-panel .week-task-card:hover {
-  background: var(--theme-bg-tertiary);
-}
-
-.task-planning-panel .week-task-card.done {
-  opacity: 0.55;
-}
-
-.task-planning-panel .week-task-card.in-progress {
-  background: rgba(245, 158, 11, 0.06);
-}
-
-.task-planning-panel .task-status-btn.mini {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  border-width: 1.5px;
-}
-
-.task-planning-panel .week-task-title {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 600;
-  color: var(--theme-text-primary);
-}
-
-.task-planning-panel .week-task-title.done {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-.task-planning-panel .week-task-person {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--theme-primary);
-  font-size: 0.65rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* ═══ Display event rows in planning ═══ */
 .task-planning-panel .display-event-row {
   background: rgba(99, 102, 241, 0.04);
@@ -546,61 +406,36 @@
   flex-shrink: 0;
 }
 
-/* Week view: display event mini-card */
-.task-planning-panel .week-event-card {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  border-left: 3px solid;
+/* ═══ Visibility toggle + hidden-display ═══ */
+.task-planning-panel .task-row.hidden-display {
+  opacity: 0.45;
+}
+
+.task-planning-panel .task-actions .toggle-visible {
+  color: var(--theme-text-secondary);
+}
+
+.task-planning-panel .task-actions .toggle-visible.off {
+  color: var(--theme-text-tertiary, #9ca3af);
+  opacity: 0.6;
+}
+
+.task-planning-panel .task-actions .toggle-visible:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--theme-primary);
+}
+
+/* ═══ Date badge for week mode ═══ */
+.task-planning-panel .date-badge {
+  display: inline-block;
+  padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(99, 102, 241, 0.06);
-  font-size: 0.75rem;
-  transition: background 0.1s;
-}
-
-.task-planning-panel .week-event-card:hover {
-  background: rgba(99, 102, 241, 0.12);
-}
-
-.task-planning-panel .week-event-title {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 600;
-  color: var(--theme-text-primary);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--theme-primary);
   font-size: 0.72rem;
-}
-
-.task-planning-panel .week-event-del {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: none;
-  border-radius: 3px;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  opacity: 0;
-  transition: all 0.15s;
-}
-
-.task-planning-panel .week-event-card:hover .week-event-del {
-  opacity: 1;
-}
-
-.task-planning-panel .week-event-del:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-/* ═══ Week affaire cards ═══ */
-.task-planning-panel .week-affaire-card {
-  background: rgba(99, 102, 241, 0.06);
+  font-weight: 600;
+  margin-right: 6px;
+  text-transform: capitalize;
 }
 
 /* ═══ Affaire rows in sections ═══ */
@@ -812,131 +647,6 @@
 }
 
 
-/* ═══════════════════════════════════════════════
-   Bandeau Google Events de la semaine
-   ═══════════════════════════════════════════════ */
-
-.google-events-week-strip {
-  border-bottom: 1px solid var(--theme-border);
-  background: var(--theme-bg-card);
-  margin-bottom: 12px;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.gew-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px 6px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--theme-text-primary);
-}
-
-.gew-count {
-  background: var(--theme-primary);
-  color: white;
-  font-size: 0.7rem;
-  padding: 1px 7px;
-  border-radius: 10px;
-  font-weight: 700;
-}
-
-.gew-hint {
-  font-size: 0.72rem;
-  color: var(--theme-text-secondary);
-  font-weight: 400;
-  margin-left: auto;
-  font-style: italic;
-}
-
-.gew-list {
-  padding: 4px 16px 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-/* ═══ Carte Google Event dans le bandeau semaine ═══ */
-
-.gew-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-  border: 1px solid var(--theme-border);
-  background: var(--theme-bg-primary);
-  flex: 0 0 auto;
-  min-width: 180px;
-  max-width: 280px;
-}
-
-.gew-card:hover {
-  background: var(--theme-bg-hover);
-  border-color: var(--theme-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.gew-card.processed {
-  border-left: 3px solid #059669;
-  opacity: 0.85;
-}
-
-.gew-card.pending {
-  border-left: 3px solid var(--theme-primary);
-}
-
-.gew-card-day {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--theme-text-secondary);
-  text-transform: capitalize;
-  flex-shrink: 0;
-  min-width: 50px;
-}
-
-.gew-card-title {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--theme-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.gew-card-time {
-  font-size: 0.72rem;
-  color: var(--theme-text-secondary);
-  flex-shrink: 0;
-}
-
-.gew-status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  font-size: 0.7rem;
-  font-weight: 700;
-  flex-shrink: 0;
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--theme-primary);
-}
-
-.gew-status.done {
-  background: rgba(5, 150, 105, 0.12);
-  color: #059669;
-}
-
 /* ═══ Google status badge (vue jour, dans les rdv rows) ═══ */
 
 .google-status-badge {
@@ -958,46 +668,6 @@
 .google-status-badge.pending {
   background: rgba(59, 130, 246, 0.1);
   color: var(--theme-primary);
-}
-
-/* ═══ Google Event Card compacte (vue semaine colonnes) ═══ */
-
-.week-google-event-card {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.72rem;
-  transition: all 0.12s;
-  border-left: 2px solid var(--theme-primary);
-  background: rgba(59, 130, 246, 0.06);
-}
-
-.week-google-event-card.processed {
-  border-left-color: #059669;
-  background: rgba(5, 150, 105, 0.06);
-}
-
-.week-google-event-card:hover {
-  background: rgba(59, 130, 246, 0.12);
-}
-
-.week-google-time {
-  font-size: 0.68rem;
-  color: var(--theme-text-secondary);
-  flex-shrink: 0;
-}
-
-.week-google-status {
-  flex-shrink: 0;
-  font-size: 0.72rem;
-  color: var(--theme-text-secondary);
-}
-
-.week-google-status.done {
-  color: #059669;
 }
 
 /* ═══ Google task badge ═══ */

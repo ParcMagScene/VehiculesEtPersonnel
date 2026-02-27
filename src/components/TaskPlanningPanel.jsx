@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
-  CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, Settings
+  CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings
 } from 'lucide-react';
 import api from '../utils/api';
 import { formatDateFr } from '../utils/formatUtils';
@@ -349,9 +349,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     const isDone = task.status === 'done';
     const isProgress = task.status === 'in_progress';
     const isGoogle = task.source_type === 'google_event';
+    const isHidden = task.visible === 0;
+    const dateBadge = getDateBadge(task.date);
 
     return (
-      <div key={task.id} className={`task-row ${isGoogle ? 'google-task-row' : ''}`}>
+      <div key={task.id} className={`task-row ${isGoogle ? 'google-task-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
         <button
           className={`task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           onClick={() => cycleStatus(task)}
@@ -364,6 +366,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         <div className="task-info">
           <div className={`task-title ${isDone ? 'done' : ''}`}>
             {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
+            {dateBadge && <span className="date-badge">{dateBadge}</span>}
             {task.title}
           </div>
           <div className="task-meta">
@@ -393,6 +396,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         )}
 
         <div className="task-actions">
+          <button
+            className={`toggle-visible ${isHidden ? 'off' : ''}`}
+            onClick={() => handleToggleTaskVisible(task)}
+            title={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}
+          >
+            {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
           {isGoogle && task.source_id && (
             <button
               className="edit"
@@ -416,14 +426,17 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
   const renderDisplayEventRow = (event) => {
     const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
     const isPrep = event.type === 'preparation';
+    const isHidden = event.visible === 0;
+    const dateBadge = getDateBadge(event.date);
     return (
-      <div key={`de-${event.id}`} className="task-row display-event-row">
+      <div key={`de-${event.id}`} className={`task-row display-event-row ${isHidden ? 'hidden-display' : ''}`}>
         <span className="display-event-icon" style={{ color: typeInfo.color }}>
           <Monitor size={14} />
         </span>
         <div className="task-info">
           <div className="task-title">
-            {typeInfo.emoji} {typeInfo.label}
+            {typeInfo.emoji} {dateBadge && <span className="date-badge">{dateBadge}</span>}
+            {typeInfo.label}
             {event.client ? ` — ${event.client}` : ''}
             {event.affaireId ? ` (${event.affaireId})` : ''}
           </div>
@@ -466,6 +479,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         )}
 
         <div className="task-actions">
+          <button
+            className={`toggle-visible ${isHidden ? 'off' : ''}`}
+            onClick={() => handleToggleDisplayEventVisible(event)}
+            title={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}
+          >
+            {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
           <button className="delete" onClick={() => handleDeleteDisplayEvent(event.id)} title="Retirer">
             <Trash2 size={14} />
           </button>
@@ -665,119 +685,31 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter(t => t.status === 'done').length;
 
-  // ── Groupement par jour (vue semaine) ──
-  const weekGrouped = useMemo(() => {
-    if (viewMode !== 'week') return {};
-    const map = {};
-    weekDays.forEach(d => { map[d] = { tasks: [], events: [], affaires: [], googleEvents: [] }; });
-    tasks.forEach(t => {
-      const d = t.date;
-      if (map[d]) map[d].tasks.push(t);
-    });
-    unlinkedEvents.forEach(ev => {
-      const d = ev.date;
-      if (map[d]) map[d].events.push(ev);
-    });
-    // Ajouter les affaires à chaque jour où elles sont actives
-    affaires.forEach(a => {
-      weekDays.forEach(d => {
-        if (a.dateDebut && a.dateDebut <= d && (!a.dateFin || a.dateFin === '' || a.dateFin >= d)) {
-          if (map[d]) map[d].affaires.push(a);
-        }
-      });
-    });
-    // Ajouter les événements Google
-    weekGoogleEvents.forEach(ev => {
-      const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
-      if (map[evDate]) map[evDate].googleEvents.push(ev);
-    });
-    return map;
-  }, [tasks, unlinkedEvents, affaires, weekDays, viewMode, weekGoogleEvents]);
-
-  // ── Vue semaine : mini-carte tâche ──
-  const renderWeekTaskCard = (task) => {
-    const isDone = task.status === 'done';
-    const isProgress = task.status === 'in_progress';
-    const sectionInfo = SECTIONS[task.section] || SECTIONS.manual;
-    return (
-      <div
-        key={task.id}
-        className={`week-task-card ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''}`}
-        style={{ borderLeftColor: sectionInfo.color }}
-        title={`${task.title}${task.personFirstName ? ` — ${task.personFirstName}` : ''}`}
-      >
-        <button
-          className={`task-status-btn mini ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
-          onClick={() => cycleStatus(task)}
-        >
-          {isDone && <Check size={10} />}
-          {isProgress && <Clock size={10} />}
-        </button>
-        <span className={`week-task-title ${isDone ? 'done' : ''}`}>{task.title}</span>
-        {(task.personFirstName || task.personLastName) && (
-          <span className="week-task-person">{task.personFirstName?.charAt(0)}{task.personLastName?.charAt(0)}</span>
-        )}
-      </div>
-    );
+  // Toggle la visibilité d'une tâche sur l'affichage dynamique
+  const handleToggleTaskVisible = async (task) => {
+    try {
+      await api.toggleTaskVisibility(task.id);
+      loadTasks();
+    } catch (err) {
+      toast.error('Erreur toggle visibilité');
+    }
   };
 
-  // ── Vue semaine : mini-carte événement d'affichage ──
-  const renderWeekEventCard = (event) => {
-    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
-    return (
-      <div
-        key={`de-${event.id}`}
-        className="week-event-card"
-        style={{ borderLeftColor: typeInfo.color }}
-        title={`${typeInfo.label}${event.client ? ` — ${event.client}` : ''}`}
-      >
-        <Monitor size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
-        <span className="week-event-title">{typeInfo.emoji} {event.client || typeInfo.label}</span>
-        <button className="week-event-del" onClick={() => handleDeleteDisplayEvent(event.id)} title="Retirer">
-          <Trash2 size={10} />
-        </button>
-      </div>
-    );
+  // Toggle la visibilité d'un événement d'affichage
+  const handleToggleDisplayEventVisible = async (event) => {
+    try {
+      await api.toggleDisplayEventVisibility(event.id);
+      loadTasks();
+    } catch (err) {
+      toast.error('Erreur toggle visibilité');
+    }
   };
 
-  // ── Vue semaine : mini-carte affaire ──
-  const renderWeekAffaireCard = (affaire) => {
-    const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
-    return (
-      <div
-        key={`wa-${affaire.numeroAffaire}`}
-        className="week-event-card week-affaire-card"
-        style={{ borderLeftColor: typeInfo.color }}
-        title={`${typeInfo.label} ${affaire.numeroAffaire}${affaire.client ? ` — ${affaire.client}` : ''}`}
-      >
-        <Briefcase size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
-        <span className="week-event-title">{typeInfo.emoji} {affaire.client || affaire.numeroAffaire}</span>
-      </div>
-    );
-  };
-
-  // ── Vue semaine : mini-carte Google Calendar ──
-  const renderWeekGoogleCard = (event) => {
-    const summary = event.summary || 'Événement';
-    const isProcessed = processedGoogleIds.has(event.id);
-    const startDT = event.start?.dateTime || event.start?.date || '';
-    const timeStr = startDT.includes('T')
-      ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      : '';
-    return (
-      <div
-        key={`wg-${event.id}`}
-        className={`week-event-card week-google-event-card ${isProcessed ? 'processed' : 'pending'}`}
-        style={{ borderLeftColor: isProcessed ? '#10b981' : '#4285f4', cursor: 'pointer' }}
-        title={summary}
-        onClick={() => setEventTaskModalEvent(event)}
-      >
-        <Calendar size={10} style={{ color: '#4285f4', flexShrink: 0 }} />
-        <span className="week-event-title">{summary.slice(0, 20)}{summary.length > 20 ? '…' : ''}</span>
-        {timeStr && <span className="week-google-time">{timeStr}</span>}
-        <span className={`week-google-status ${isProcessed ? 'done' : ''}`}>{isProcessed ? '✓' : '⚙'}</span>
-      </div>
-    );
+  // Format date court pour le mode semaine
+  const getDateBadge = (dateStr) => {
+    if (viewMode !== 'week' || !dateStr) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
   };
 
   return (
@@ -829,7 +761,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         </div>
       </div>
 
-      {/* Contenu */}
+      {/* Contenu — même layout sections pour Jour et Semaine */}
       {loading ? (
         <div className="sections-container">
           <div className="empty-state">
@@ -837,81 +769,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
             <p>Chargement…</p>
           </div>
         </div>
-      ) : viewMode === 'week' ? (
-        /* ═══ VUE SEMAINE ═══ */
-        <div className="week-view-container">
-          {/* Google Events Week Strip */}
-          {weekGoogleEvents.length > 0 && (
-            <div className="google-events-week-strip">
-              <div className="gew-header">
-                <Calendar size={14} /> Événements Google de la semaine
-                <span className="gew-count">{weekGoogleEvents.length}</span>
-                <span className="gew-hint">Cliquez pour définir les tâches</span>
-              </div>
-              <div className="gew-list">
-                {weekGoogleEvents.map(ev => {
-                  const summary = ev.summary || 'Événement';
-                  const startDT = ev.start?.dateTime || ev.start?.date || '';
-                  const evDate = startDT.slice(0, 10);
-                  const timeStr = startDT.includes('T')
-                    ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-                    : '';
-                  const isProcessed = processedGoogleIds.has(ev.id);
-                  const dayLabel = new Date(evDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
-                  return (
-                    <div
-                      key={`gew-${ev.id}`}
-                      className={`gew-card ${isProcessed ? 'processed' : 'pending'}`}
-                      onClick={() => setEventTaskModalEvent(ev)}
-                    >
-                      <div className="gew-card-day">{dayLabel}</div>
-                      <div className="gew-card-title">{summary.slice(0, 30)}{summary.length > 30 ? '…' : ''}</div>
-                      {timeStr && <div className="gew-card-time">{timeStr}</div>}
-                      <span className={`gew-status ${isProcessed ? 'done' : ''}`}>{isProcessed ? '✓' : '⚙'}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          <div className="week-grid">
-            {weekDays.map(dayStr => {
-              const dayData = weekGrouped[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
-              const isToday = dayStr === todayStr();
-              const dayDate = new Date(dayStr + 'T00:00:00');
-              const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
-              const dayDone = dayData.tasks.filter(t => t.status === 'done').length;
-              const totalItems = dayData.tasks.length + dayData.events.length + dayData.affaires.length + dayData.googleEvents.length;
-
-              return (
-                <div key={dayStr} className={`week-day-column ${isToday ? 'today' : ''}`}>
-                  <div className="week-day-header">
-                    <span className="week-day-label">{dayLabel}</span>
-                    {totalItems > 0 && (
-                      <span className="week-day-count">
-                        {dayDone}/{totalItems}
-                      </span>
-                    )}
-                  </div>
-                  <div className="week-day-tasks">
-                    {totalItems === 0 ? (
-                      <div className="week-empty">—</div>
-                    ) : (
-                      <>
-                        {dayData.googleEvents.map(renderWeekGoogleCard)}
-                        {dayData.affaires.map(renderWeekAffaireCard)}
-                        {dayData.events.map(renderWeekEventCard)}
-                        {dayData.tasks.map(renderWeekTaskCard)}
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       ) : (
-        /* ═══ VUE JOUR ═══ */
         <div className="sections-container">
           {Object.keys(SECTIONS).map(renderSection)}
         </div>

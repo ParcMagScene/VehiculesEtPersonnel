@@ -1829,6 +1829,13 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
 
+    // Migration : ajout colonne visible si absente
+    const taCols = db.pragma('table_info(task_assignments)');
+    if (!taCols.find(c => c.name === 'visible')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN visible INTEGER DEFAULT 1');
+      logger.info('✅ Colonne visible ajoutée à task_assignments');
+    }
+
     // Migration : colonnes enrichies pour bl_imports (Phase 5)
     const blCols = db.prepare("PRAGMA table_info(bl_imports)").all().map(c => c.name);
     if (!blCols.includes('affaire_type')) {

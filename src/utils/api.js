@@ -1428,6 +1428,17 @@ class ApiClient {
   async deleteTasksBySource(sourceId) {
     return this.request(`/communication/tasks/by-source/${sourceId}`, { method: 'DELETE' });
   }
+  async toggleTaskVisibility(id) {
+    return this.request(`/communication/tasks/${id}/toggle-visible`, { method: 'PATCH' });
+  }
+  async createDisplayEventsBatch(events) {
+    const results = [];
+    for (const ev of events) {
+      const created = await this.request('/communication/display-events', { method: 'POST', body: JSON.stringify(ev) });
+      results.push(created);
+    }
+    return results;
+  }
 
   // --- Stats Communication ---
   async getCommunicationStats() {

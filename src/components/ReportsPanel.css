@@ -53,7 +53,7 @@
 }
 .rp-btn:hover {
   background: var(--theme-bg-hover, #f1f5f9);
-  border-color: var(--theme-border-hover, var(--theme-bg-muted));
+  border-color: var(--theme-border-medium);
 }
 .rp-btn-icon {
   padding: 8px;

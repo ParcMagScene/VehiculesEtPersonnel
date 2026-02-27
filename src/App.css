@@ -1577,10 +1577,6 @@
     max-width: none;
   }
 
-  .management-button span,
-  .settings-button span {
-    /* ne rien cacher encore */
-  }
 }
 
 /* Petits écrans et mobiles */

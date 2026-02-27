@@ -313,24 +313,7 @@
   gap: 10px;
 }
 
-.personnel-edit-modal .close-button {
-  background: var(--close-btn-bg);
-  border: 1px solid var(--close-btn-border);
-  color: var(--close-btn-color);
-  width: var(--close-btn-size);
-  height: var(--close-btn-size);
-  border-radius: var(--close-btn-radius);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-}
-
-.personnel-edit-modal .close-button:hover {
-  background: var(--close-btn-hover-bg);
-  border-color: var(--close-btn-hover-border);
-}
+/* .personnel-edit-modal .close-button base + hover → .shared-close-btn (theme.css) */
 
 .personnel-edit-form-body {
   padding: 24px;
@@ -1727,18 +1710,6 @@
 .pp-assignment-day-stripe {
   height: 100%;
   flex-shrink: 0;
-}
-
-.pp-assignment-day-stripe.off {
-  /* Couleur inline légère (même teinte que ON mais très transparente) */
-}
-
-.pp-assignment-day-stripe.on {
-  /* La couleur de fond est appliquée inline — opacity forte */
-}
-
-.pp-assignment-day-stripe.we.off {
-  /* Couleur inline légère — pas de hachures */
 }
 
 .pp-assignment-day-stripe.we.on {

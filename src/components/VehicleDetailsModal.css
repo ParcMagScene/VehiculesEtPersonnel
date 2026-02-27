@@ -1,11 +1,7 @@
 /* Modal Fiche Détaillée Véhicule */
 .vd-overlay {
-  position: fixed;
-  inset: 0;
+  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: rgba(15, 23, 42, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 2000;
   padding: 1rem;
   backdrop-filter: blur(4px);
@@ -99,24 +95,7 @@
   flex-wrap: wrap;
 }
 
-.vehicle-details-modal .modal-header .close-button {
-  background: var(--close-btn-bg);
-  border: 1px solid var(--close-btn-border);
-  color: var(--close-btn-color);
-  width: var(--close-btn-size);
-  height: var(--close-btn-size);
-  border-radius: var(--close-btn-radius);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-}
-
-.vehicle-details-modal .modal-header .close-button:hover {
-  background: var(--close-btn-hover-bg);
-  border-color: var(--close-btn-hover-border);
-}
+/* .vehicle-details-modal .close-button base + hover → .shared-close-btn (theme.css) */
 
 .vehicle-details-modal .modal-body {
   overflow-y: auto;
@@ -151,23 +130,7 @@
   margin-bottom: 24px;
 }
 
-.vehicle-details-modal .info-section h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 12px 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--theme-primary-dark);
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--theme-bg-indigo-light);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.vehicle-details-modal .info-section h3 svg {
-  color: var(--theme-primary);
-}
+/* .vehicle-details-modal .info-section h3 + svg → .shared-section-title (theme.css) */
 
 .vehicle-details-modal .info-container {
   display: flex;
@@ -205,10 +168,6 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.vehicle-details-modal .info-item:hover {
-  /* flat style, pas d'effet hover */
 }
 
 .vehicle-details-modal .info-item.full-width {

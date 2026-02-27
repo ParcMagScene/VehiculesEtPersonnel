@@ -1375,7 +1375,7 @@ const ManagementPanel = ({
                                             <span style={{ 
                                               marginLeft: '8px', 
                                               padding: '2px 8px', 
-                                              background: 'var(--theme-gradient-primary)', 
+                                              background: 'var(--theme-gradient)', 
                                               color: 'var(--theme-text-inverse)', 
                                               borderRadius: '4px', 
                                               fontSize: '0.75rem',

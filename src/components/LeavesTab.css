@@ -190,7 +190,7 @@
 }
 .lt-kpi-detail {
   font-size: 0.72rem;
-  color: var(--theme-text-tertiary, #94a3b8);
+  color: var(--theme-text-muted);
 }
 .lt-kpi-action {
   display: flex;
@@ -260,7 +260,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--theme-text-tertiary, #94a3b8);
+  color: var(--theme-text-muted);
   font-size: 0.85rem;
   padding: 8px 0;
 }
@@ -411,7 +411,7 @@
 }
 .lt-month-label {
   font-size: 0.6rem;
-  color: var(--theme-text-tertiary, #94a3b8);
+  color: var(--theme-text-muted);
   margin-top: 4px;
   text-transform: uppercase;
 }
@@ -430,7 +430,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--theme-text-tertiary, #94a3b8);
+  color: var(--theme-text-muted);
   letter-spacing: 0.5px;
 }
 .lt-balances-row {
@@ -510,7 +510,7 @@
   transition: all 0.15s;
 }
 .lt-request-card:hover {
-  border-color: var(--theme-border-hover, var(--theme-bg-muted));
+  border-color: var(--theme-border-medium);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 .lt-request-card.pending { border-left: 3px solid #f59e0b; }
@@ -540,7 +540,7 @@
 }
 .lt-card-person {
   font-size: 0.72rem;
-  color: var(--theme-text-tertiary, #94a3b8);
+  color: var(--theme-text-muted);
 }
 .lt-card-center {
   flex: 1;
@@ -655,7 +655,7 @@
   align-items: center;
   gap: 12px;
   padding: 48px 20px;
-  color: var(--theme-text-tertiary, #94a3b8);
+  color: var(--theme-text-muted);
   text-align: center;
 }
 .lt-empty p {

@@ -3,57 +3,11 @@
    Pattern identique à AffaireSlidePanel
    ═══════════════════════════════════════ */
 
-.personnel-slide-panel {
-  width: 0;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--theme-bg-page);
-  border-left: 0px solid var(--theme-border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease;
-  opacity: 0;
-  border-radius: 10px 0 0 10px;
-}
-
-.personnel-slide-panel > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.25s ease;
-}
+/* Base, > *, .open (common), .open > *, .closing, .closing > * → .shared-slide-panel (theme.css) */
 
 .personnel-slide-panel.open {
   width: 360px;
   min-width: 360px;
-  border-left: 1px solid var(--theme-border);
-  opacity: 1;
-  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
-}
-
-.personnel-slide-panel.open > * {
-  transform: translateX(0);
-  opacity: 1;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.35s ease 0.05s;
-}
-
-.personnel-slide-panel.closing {
-  width: 0;
-  min-width: 0;
-  border-left: 0px solid var(--theme-border);
-  opacity: 0;
-}
-
-.personnel-slide-panel.closing > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.2s ease;
 }
 
 /* ═══ Header ═══ */
@@ -149,23 +103,7 @@
   margin-bottom: 16px;
 }
 
-.pdp-section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--theme-primary-dark);
-  margin: 0 0 12px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--theme-bg-indigo-light);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.pdp-section-title svg {
-  color: var(--theme-primary);
-}
+/* .pdp-section-title + svg → .shared-section-title (theme.css) */
 
 /* Identité */
 .pdp-identity {

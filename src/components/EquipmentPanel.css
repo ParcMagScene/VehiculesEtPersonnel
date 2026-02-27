@@ -982,12 +982,8 @@
 
 /* ═══ MODALS ═══ */
 .eq-modal-overlay {
-  position: fixed;
-  inset: 0;
+  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
 }
@@ -1696,57 +1692,11 @@
    VOLET LATÉRAL (SLIDE PANEL) – clic simple
    Aligné sur le style AffaireSlidePanel
    ═══════════════════════════════════════════════════ */
-.eq-slide-panel {
-  width: 0;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--theme-bg-page);
-  border-left: 0px solid var(--theme-border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease;
-  opacity: 0;
-  border-radius: 10px 0 0 10px;
-}
-
-.eq-slide-panel > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.25s ease;
-}
+/* Base, > *, .open (common), .open > *, .closing, .closing > * → .shared-slide-panel (theme.css) */
 
 .eq-slide-panel.open {
   width: 400px;
   min-width: 400px;
-  border-left: 1px solid var(--theme-border);
-  opacity: 1;
-  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
-}
-
-.eq-slide-panel.open > * {
-  transform: translateX(0);
-  opacity: 1;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.35s ease 0.05s;
-}
-
-.eq-slide-panel.closing {
-  width: 0;
-  min-width: 0;
-  border-left: 0px solid var(--theme-border);
-  opacity: 0;
-}
-
-.eq-slide-panel.closing > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.2s ease;
 }
 
 /* header – gradient du thème */
@@ -1956,23 +1906,8 @@
   text-overflow: ellipsis;
 }
 
-.eq-dialog-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--close-btn-size);
-  height: var(--close-btn-size);
-  border-radius: var(--close-btn-radius);
-  border: 1px solid var(--close-btn-border);
-  background: var(--close-btn-bg);
-  color: var(--close-btn-color);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
+/* .eq-dialog-close base + hover (common) → .shared-close-btn (theme.css) */
 .eq-dialog-close:hover {
-  background: var(--close-btn-hover-bg);
-  border-color: var(--close-btn-hover-border);
   color: var(--theme-text-inverse);
 }
 

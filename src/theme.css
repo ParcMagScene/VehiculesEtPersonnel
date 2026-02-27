@@ -661,4 +661,155 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ═══════════════════════════════════════════════════════
+   Shared Utility Classes
+   ═══════════════════════════════════════════════════════ */
 
+/* ─── Pattern A: Slide Panel ─── */
+.shared-slide-panel,
+.personnel-slide-panel,
+.affaire-slide-panel,
+.eq-slide-panel,
+.vehicle-slide-panel {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--theme-bg-page);
+  border-left: 0px solid var(--theme-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+  opacity: 0;
+  border-radius: 10px 0 0 10px;
+}
+
+.shared-slide-panel > *,
+.personnel-slide-panel > *,
+.affaire-slide-panel > *,
+.eq-slide-panel > *,
+.vehicle-slide-panel > * {
+  transform: translateX(60px);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease;
+}
+
+.shared-slide-panel.open,
+.personnel-slide-panel.open,
+.affaire-slide-panel.open,
+.eq-slide-panel.open,
+.vehicle-slide-panel.open {
+  border-left: 1px solid var(--theme-border);
+  opacity: 1;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
+}
+
+.shared-slide-panel.open > *,
+.personnel-slide-panel.open > *,
+.affaire-slide-panel.open > *,
+.eq-slide-panel.open > *,
+.vehicle-slide-panel.open > * {
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s ease 0.05s;
+}
+
+.shared-slide-panel.closing,
+.personnel-slide-panel.closing,
+.affaire-slide-panel.closing,
+.eq-slide-panel.closing,
+.vehicle-slide-panel.closing {
+  width: 0;
+  min-width: 0;
+  border-left: 0px solid var(--theme-border);
+  opacity: 0;
+}
+
+.shared-slide-panel.closing > *,
+.personnel-slide-panel.closing > *,
+.affaire-slide-panel.closing > *,
+.eq-slide-panel.closing > *,
+.vehicle-slide-panel.closing > * {
+  transform: translateX(60px);
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease;
+}
+
+/* ─── Pattern B: Close Button ─── */
+.shared-close-btn,
+.dialog-close,
+.vehicle-details-modal .modal-header .close-button,
+.personnel-edit-modal .close-button,
+.eq-dialog-close,
+.intervention-modal .close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  border-radius: var(--close-btn-radius);
+  border: 1px solid var(--close-btn-border);
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.shared-close-btn:hover,
+.dialog-close:hover,
+.vehicle-details-modal .modal-header .close-button:hover,
+.personnel-edit-modal .close-button:hover,
+.eq-dialog-close:hover,
+.intervention-modal .close-button:hover {
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
+}
+
+/* ─── Pattern C: Section Title ─── */
+.shared-section-title,
+.pdp-section-title,
+.detail-section-title,
+.vehicle-details-modal .info-section h3,
+.vdp-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--theme-primary-dark);
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--theme-bg-indigo-light);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.shared-section-title svg,
+.pdp-section-title svg,
+.detail-section-title svg,
+.vehicle-details-modal .info-section h3 svg,
+.vdp-section-title svg {
+  color: var(--theme-primary);
+}
+
+/* ─── Pattern D: Overlay ─── */
+.shared-overlay,
+.vd-overlay,
+.help-overlay,
+.prefs-overlay,
+.bl-import-overlay,
+.display-dialog-overlay,
+.mr-overlay,
+.eq-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -5,7 +5,7 @@ import {
   isSameMonth, isSameDay, isWeekend, isBefore, isAfter, parseISO
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, X, AlertTriangle, Check, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, AlertTriangle, Check, Clock, CalendarPlus, Briefcase, User } from 'lucide-react';
 import api from '../utils/api';
 import { PERIOD_MENU_ITEMS } from './PersonnelContextMenu';
 import './PeriodCalendarModal.css';
@@ -29,6 +29,14 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   const [error, setError] = useState(null);
   const [successCount, setSuccessCount] = useState(0);
   const [savedRanges, setSavedRanges] = useState([]);
+
+  // ═══ RDV-specific state ═══
+  const isRdv = periodType === 'rdv';
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('10:00');
+  const [rdvCategory, setRdvCategory] = useState('pro'); // 'pro' | 'perso'
+  const [syncGoogle, setSyncGoogle] = useState(true);
+  const [googleSynced, setGoogleSynced] = useState(false);
 
   const periodInfo = PERIOD_MENU_ITEMS.find(p => p.type === periodType) || PERIOD_MENU_ITEMS[0];
 
@@ -110,6 +118,70 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
     return Math.max(0, days);
   }, [startDate, endDate, startPeriod, endPeriod]);
 
+  // ═══ Google Calendar sync for RDV ═══
+  const createGoogleCalendarEvent = async (dateStr, endDateStr) => {
+    try {
+      const token = localStorage.getItem('google_access_token');
+      if (!token) return null;
+
+      // Retrieve calendarConfig from IndexedDB
+      let calendarId = 'primary';
+      try {
+        const dbRequest = indexedDB.open('vehicules_personnel_db', 1);
+        calendarId = await new Promise((resolve) => {
+          dbRequest.onsuccess = (e) => {
+            const idb = e.target.result;
+            if (!idb.objectStoreNames.contains('calendarConfig')) return resolve('primary');
+            const tx = idb.transaction('calendarConfig', 'readonly');
+            const store = tx.objectStore('calendarConfig');
+            const getReq = store.get('calendarConfig');
+            getReq.onsuccess = () => {
+              const cfg = getReq.result;
+              resolve(cfg?.calendarId || 'primary');
+            };
+            getReq.onerror = () => resolve('primary');
+          };
+          dbRequest.onerror = () => resolve('primary');
+        });
+      } catch { /* fallback to primary */ }
+
+      const categoryLabel = rdvCategory === 'pro' ? '🏢 Pro' : '🏠 Perso';
+      const summary = `${categoryLabel} — RDV ${person.firstName} ${person.lastName || ''}`.trim();
+      const description = reason ? `Motif : ${reason}` : '';
+
+      const eventData = {
+        summary,
+        description,
+        start: { dateTime: `${dateStr}T${startTime}:00`, timeZone: 'Europe/Paris' },
+        end: { dateTime: `${endDateStr}T${endTime}:00`, timeZone: 'Europe/Paris' },
+        colorId: rdvCategory === 'pro' ? '9' : '2', // Blueberry / Sage
+      };
+
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(eventData),
+        }
+      );
+
+      if (!response.ok) {
+        console.warn('Google Calendar sync failed:', response.status);
+        return null;
+      }
+
+      const created = await response.json();
+      return created.id; // google_event_id
+    } catch (err) {
+      console.warn('Google Calendar sync error:', err);
+      return null;
+    }
+  };
+
   // Soumission
   const handleSubmit = async () => {
     if (!startDate || submitting) return;
@@ -123,15 +195,32 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
       // Pour les autres types : toujours auto-approuvé
       const source = periodInfo.requiresApproval && !isAdmin ? 'request' : 'admin';
 
+      const dateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(end, 'yyyy-MM-dd');
+
+      // Google Calendar sync for RDV
+      let googleEventId = null;
+      if (isRdv && syncGoogle) {
+        googleEventId = await createGoogleCalendarEvent(dateStr, endDateStr);
+        if (googleEventId) setGoogleSynced(true);
+      }
+
       await api.createAvailability({
         person_id: person.id,
-        start_date: format(startDate, 'yyyy-MM-dd'),
-        end_date: format(end, 'yyyy-MM-dd'),
-        start_period: startPeriod,
-        end_period: endPeriod,
+        start_date: dateStr,
+        end_date: endDateStr,
+        start_period: isRdv ? 'AM' : startPeriod,
+        end_period: isRdv ? 'PM' : endPeriod,
         type: periodType,
         reason: reason.trim() || undefined,
         source,
+        // RDV-specific fields
+        ...(isRdv ? {
+          start_time: startTime,
+          end_time: endTime,
+          rdv_category: rdvCategory,
+          google_event_id: googleEventId || undefined,
+        } : {}),
       });
 
       if (onCreated) onCreated();
@@ -146,6 +235,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
       setEndPeriod('PM');
       setReason('');
       setConflicts([]);
+      setGoogleSynced(false);
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Erreur lors de la création');
     } finally {
@@ -233,35 +323,101 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
           {/* Options demi-journées */}
           {startDate && (
             <div className="pcm-options">
-              <div className="pcm-option-row">
-                <label>Début :</label>
-                <div className="pcm-period-toggle">
-                  <button className={startPeriod === 'AM' ? 'active' : ''} onClick={() => setStartPeriod('AM')}>
-                    Matin
-                  </button>
-                  <button className={startPeriod === 'PM' ? 'active' : ''} onClick={() => setStartPeriod('PM')}>
-                    Après-midi
-                  </button>
-                </div>
-                <span className="pcm-date-display">{format(startDate, 'dd MMM yyyy', { locale: fr })}</span>
-              </div>
-              <div className="pcm-option-row">
-                <label>Fin :</label>
-                <div className="pcm-period-toggle">
-                  <button className={endPeriod === 'AM' ? 'active' : ''} onClick={() => setEndPeriod('AM')}>
-                    Matin
-                  </button>
-                  <button className={endPeriod === 'PM' ? 'active' : ''} onClick={() => setEndPeriod('PM')}>
-                    Journée entière
-                  </button>
-                </div>
-                <span className="pcm-date-display">
-                  {endDate ? format(endDate, 'dd MMM yyyy', { locale: fr }) : format(startDate, 'dd MMM yyyy', { locale: fr })}
-                </span>
-              </div>
+              {/* ═══ RDV : Horaires précis ═══ */}
+              {isRdv ? (
+                <>
+                  <div className="pcm-option-row pcm-rdv-times">
+                    <label><Clock size={14} /> Horaires :</label>
+                    <div className="pcm-time-inputs">
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="pcm-time-input"
+                      />
+                      <span className="pcm-time-sep">→</span>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="pcm-time-input"
+                      />
+                    </div>
+                    <span className="pcm-date-display">{format(startDate, 'dd MMM yyyy', { locale: fr })}</span>
+                  </div>
+
+                  {/* Pro / Perso toggle */}
+                  <div className="pcm-option-row pcm-rdv-category">
+                    <label>Type :</label>
+                    <div className="pcm-category-toggle">
+                      <button
+                        className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
+                        onClick={() => setRdvCategory('pro')}
+                      >
+                        <Briefcase size={14} /> Pro
+                      </button>
+                      <button
+                        className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
+                        onClick={() => setRdvCategory('perso')}
+                      >
+                        <User size={14} /> Perso
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Google Calendar sync toggle */}
+                  <div className="pcm-option-row pcm-google-sync">
+                    <label className="pcm-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={syncGoogle}
+                        onChange={(e) => setSyncGoogle(e.target.checked)}
+                      />
+                      <CalendarPlus size={14} />
+                      <span>Synchroniser Google Agenda</span>
+                    </label>
+                    {!localStorage.getItem('google_access_token') && syncGoogle && (
+                      <span className="pcm-google-warn">⚠ Non connecté à Google</span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="pcm-option-row">
+                    <label>Début :</label>
+                    <div className="pcm-period-toggle">
+                      <button className={startPeriod === 'AM' ? 'active' : ''} onClick={() => setStartPeriod('AM')}>
+                        Matin
+                      </button>
+                      <button className={startPeriod === 'PM' ? 'active' : ''} onClick={() => setStartPeriod('PM')}>
+                        Après-midi
+                      </button>
+                    </div>
+                    <span className="pcm-date-display">{format(startDate, 'dd MMM yyyy', { locale: fr })}</span>
+                  </div>
+                  <div className="pcm-option-row">
+                    <label>Fin :</label>
+                    <div className="pcm-period-toggle">
+                      <button className={endPeriod === 'AM' ? 'active' : ''} onClick={() => setEndPeriod('AM')}>
+                        Matin
+                      </button>
+                      <button className={endPeriod === 'PM' ? 'active' : ''} onClick={() => setEndPeriod('PM')}>
+                        Journée entière
+                      </button>
+                    </div>
+                    <span className="pcm-date-display">
+                      {endDate ? format(endDate, 'dd MMM yyyy', { locale: fr }) : format(startDate, 'dd MMM yyyy', { locale: fr })}
+                    </span>
+                  </div>
+                </>
+              )}
 
               <div className="pcm-days-count" style={{ color: periodInfo.color }}>
-                {selectedDays} jour{selectedDays > 1 ? 's' : ''} ouvré{selectedDays > 1 ? 's' : ''}
+                {isRdv ? (
+                  <>{startTime} — {endTime}</>
+                ) : (
+                  <>{selectedDays} jour{selectedDays > 1 ? 's' : ''} ouvré{selectedDays > 1 ? 's' : ''}</>
+                )}
               </div>
 
               {/* Motif */}
@@ -306,7 +462,11 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
           {successCount > 0 && !startDate && (
             <div className="pcm-success-banner" style={{ borderColor: periodInfo.color }}>
               <Check size={16} style={{ color: periodInfo.color }} />
-              <span>{successCount} période{successCount > 1 ? 's' : ''} enregistrée{successCount > 1 ? 's' : ''} — sélectionnez de nouvelles dates ou fermez</span>
+              <span>
+                {successCount} période{successCount > 1 ? 's' : ''} enregistrée{successCount > 1 ? 's' : ''}
+                {googleSynced && ' — synchronisé avec Google Agenda ✓'}
+                {' — sélectionnez de nouvelles dates ou fermez'}
+              </span>
             </div>
           )}
         </div>

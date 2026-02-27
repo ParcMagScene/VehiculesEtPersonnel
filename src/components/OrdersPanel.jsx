@@ -539,6 +539,31 @@ const SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
 const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChange }) => {
   const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
   const items = order.items || [];
+
+  // Group items by source (affaire or requester)
+  const groupedItems = useMemo(() => {
+    const hasSourceInfo = items.some(it => it.source_affaire_id || it.source_requester_name);
+    if (!hasSourceInfo) return null; // No grouping needed
+
+    const groups = {};
+    for (const item of items) {
+      let key, label;
+      if (item.source_type === 'personnel' && item.source_requester_name) {
+        key = `personnel-${item.source_requester_id || item.source_requester_name}`;
+        label = `👤 ${item.source_requester_name}`;
+      } else if (item.source_affaire_id) {
+        key = `affaire-${item.source_affaire_id}`;
+        label = `📋 Affaire ${item.source_affaire_id}`;
+      } else {
+        key = '_other';
+        label = '📦 Autres articles';
+      }
+      if (!groups[key]) groups[key] = { label, items: [] };
+      groups[key].items.push(item);
+    }
+    return groups;
+  }, [items]);
+
   return (
     <div className="order-detail">
       <div className="order-detail-header">
@@ -548,6 +573,7 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
           <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
             {status.icon} {status.label}
           </span>
+          {groupedItems && <span className="grouped-badge">Commande groupée</span>}
         </div>
         <div className="order-detail-actions">
           {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
@@ -585,23 +611,53 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
       <div className="detail-section">
         <h3>Lignes de commande ({items.length})</h3>
         {items.length > 0 ? (
-          <table className="items-table">
-            <thead>
-              <tr><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr>
-            </thead>
-            <tbody>
-              {items.map(item => (
-                <tr key={item.id}>
-                  <td>{item.designation}</td>
-                  <td className="center">{item.quantity}</td>
-                  <td className="center">{item.unit}</td>
-                  <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
-                  <td className="amount">{formatCurrency(item.total_ht)}</td>
-                  <td className="center">{item.received_qty || 0}</td>
-                </tr>
+          groupedItems ? (
+            /* ═══ Grouped display by affaire/requester ═══ */
+            <div className="grouped-items-container">
+              {Object.entries(groupedItems).map(([key, group]) => (
+                <div key={key} className="grouped-items-section">
+                  <div className="grouped-items-header">{group.label} <span className="grouped-count">{group.items.length}</span></div>
+                  <table className="items-table">
+                    <thead>
+                      <tr><th>Réf</th><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr>
+                    </thead>
+                    <tbody>
+                      {group.items.map(item => (
+                        <tr key={item.id}>
+                          <td className="ref-code">{item.ref_code || '—'}</td>
+                          <td>{item.designation}</td>
+                          <td className="center">{item.quantity}</td>
+                          <td className="center">{item.unit}</td>
+                          <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
+                          <td className="amount">{formatCurrency(item.total_ht)}</td>
+                          <td className="center">{item.received_qty || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          ) : (
+            /* ═══ Simple flat display ═══ */
+            <table className="items-table">
+              <thead>
+                <tr><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr>
+              </thead>
+              <tbody>
+                {items.map(item => (
+                  <tr key={item.id}>
+                    <td>{item.designation}</td>
+                    <td className="center">{item.quantity}</td>
+                    <td className="center">{item.unit}</td>
+                    <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
+                    <td className="amount">{formatCurrency(item.total_ht)}</td>
+                    <td className="center">{item.received_qty || 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
         ) : <p className="no-items">Aucune ligne</p>}
       </div>
     </div>
@@ -776,6 +832,7 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
                 </select>
                 <input type="number" placeholder="P.U. HT" value={item.unit_price_ht} onChange={(e) => updateItem(idx, 'unit_price_ht', parseFloat(e.target.value) || 0)} step="0.01" className="item-price" />
                 <span className="item-total">{formatCurrency((item.quantity || 0) * (item.unit_price_ht || 0))}</span>
+                <input type="text" placeholder="Affaire / Demandeur" value={item.source_affaire_id || ''} onChange={(e) => updateItem(idx, 'source_affaire_id', e.target.value)} className="item-source" title="Affaire ou demandeur source" />
                 {form.items.length > 1 && (
                   <button type="button" className="remove-item-btn" onClick={() => removeItem(idx)}><X size={14} /></button>
                 )}

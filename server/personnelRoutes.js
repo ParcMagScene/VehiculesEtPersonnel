@@ -681,8 +681,9 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
 
       const result = db.prepare(`
         INSERT INTO availabilities (person_id, start_date, end_date, start_period, end_period,
-          type, reason, source, is_recurring, recurrence_rule, status, approved_by, approved_at, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          type, reason, source, is_recurring, recurrence_rule, status, approved_by, approved_at, created_by,
+          start_time, end_time, rdv_category, google_event_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         a.person_id, a.start_date, a.end_date,
         a.start_period || 'AM', a.end_period || 'PM',
@@ -691,6 +692,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
         a.recurrence_rule ? JSON.stringify(a.recurrence_rule) : null,
         status, approvedBy, approvedAt,
         req.user.id,
+        a.start_time || null, a.end_time || null,
+        a.rdv_category || null, a.google_event_id || null,
       );
 
       const created = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(result.lastInsertRowid);
@@ -712,7 +715,8 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
         UPDATE availabilities SET
           start_date = ?, end_date = ?, start_period = ?, end_period = ?,
           type = ?, reason = ?, source = ?,
-          is_recurring = ?, recurrence_rule = ?
+          is_recurring = ?, recurrence_rule = ?,
+          start_time = ?, end_time = ?, rdv_category = ?, google_event_id = ?
         WHERE id = ?
       `).run(
         a.start_date || existing.start_date,
@@ -724,6 +728,10 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
         a.source || existing.source,
         a.is_recurring !== undefined ? (a.is_recurring ? 1 : 0) : existing.is_recurring,
         a.recurrence_rule ? JSON.stringify(a.recurrence_rule) : existing.recurrence_rule,
+        a.start_time !== undefined ? a.start_time : (existing.start_time || null),
+        a.end_time !== undefined ? a.end_time : (existing.end_time || null),
+        a.rdv_category !== undefined ? a.rdv_category : (existing.rdv_category || null),
+        a.google_event_id !== undefined ? a.google_event_id : (existing.google_event_id || null),
         req.params.id,
       );
 

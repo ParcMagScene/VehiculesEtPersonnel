@@ -242,12 +242,14 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         const orderId = result.lastInsertRowid;
 
         const insertItem = db.prepare(
-          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes, source_affaire_id, source_requester_id, source_requester_name, source_type, ref_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         for (const item of items) {
           const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
           insertItem.run(orderId, item.designation.trim(), item.quantity || 1, item.unit || 'u',
-            item.unit_price_ht || 0, item.tva_rate || tva_rate, itemTotal, item.notes || null);
+            item.unit_price_ht || 0, item.tva_rate || tva_rate, itemTotal, item.notes || null,
+            item.source_affaire_id || null, item.source_requester_id || null,
+            item.source_requester_name || null, item.source_type || null, item.ref_code || null);
         }
 
         addToHistory('order', orderId, 'create', JSON.stringify({ reference, type, status }), req.user.id, req.user.name);
@@ -318,12 +320,14 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         if (items) {
           db.prepare('DELETE FROM order_items WHERE order_id = ?').run(req.params.id);
           const insertItem = db.prepare(
-            'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, received_qty, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, received_qty, notes, source_affaire_id, source_requester_id, source_requester_name, source_type, ref_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           );
           for (const item of items) {
             const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
             insertItem.run(req.params.id, item.designation.trim(), item.quantity || 1, item.unit || 'u',
-              item.unit_price_ht || 0, item.tva_rate || finalTvaRate, itemTotal, item.received_qty || 0, item.notes || null);
+              item.unit_price_ht || 0, item.tva_rate || finalTvaRate, itemTotal, item.received_qty || 0, item.notes || null,
+              item.source_affaire_id || null, item.source_requester_id || null,
+              item.source_requester_name || null, item.source_type || null, item.ref_code || null);
           }
         }
 
@@ -629,6 +633,171 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       });
       deleteQuote();
       res.json({ success: true });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // Générer des commandes groupées depuis les articles BL d'une affaire
+  // Les articles sont répartis par fournisseur → 1 commande par fournisseur
+  // ═══════════════════════════════════════════════════════════════
+  app.post('/api/orders/generate-from-bl', authenticateToken, (req, res) => {
+    try {
+      const { affaire_id, affaire_reference, items = [] } = req.body;
+      if (!affaire_id || items.length === 0) {
+        return res.status(400).json({ error: 'affaire_id et items sont requis' });
+      }
+
+      // Group items by fournisseur
+      const bySupplier = {};
+      for (const item of items) {
+        const fournisseur = (item.fournisseur || 'INCONNU').trim().toUpperCase();
+        if (!bySupplier[fournisseur]) bySupplier[fournisseur] = [];
+        bySupplier[fournisseur].push(item);
+      }
+
+      const generateOrders = db.transaction(() => {
+        const createdOrders = [];
+
+        for (const [supplierName, supplierItems] of Object.entries(bySupplier)) {
+          // Find or create supplier
+          let supplier = db.prepare('SELECT id FROM suppliers WHERE UPPER(name) = ?').get(supplierName);
+          if (!supplier) {
+            const result = db.prepare('INSERT INTO suppliers (name) VALUES (?)').run(supplierName);
+            supplier = { id: result.lastInsertRowid };
+            logger.info(`✅ Fournisseur auto-créé: ${supplierName}`);
+          }
+
+          // Generate order reference
+          const reference = generateReference('BC');
+
+          // Calculate total
+          let total_ht = 0;
+          for (const item of supplierItems) {
+            total_ht += (item.quantity || 1) * (item.unit_price_ht || 0);
+          }
+          const total_ttc = total_ht * 1.2; // TVA 20%
+
+          const orderResult = db.prepare(`
+            INSERT INTO orders (reference, type, affaire_id, supplier_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by)
+            VALUES (?, 'purchase', ?, ?, 'draft', ?, ?, 20, ?, ?, ?)
+          `).run(
+            reference, affaire_id, supplier.id,
+            new Date().toISOString().slice(0, 10),
+            total_ht, total_ttc,
+            `Généré depuis BL affaire ${affaire_reference || affaire_id}`,
+            req.user.id
+          );
+
+          const orderId = orderResult.lastInsertRowid;
+
+          // Insert items with source tracking
+          const insertItem = db.prepare(`
+            INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, ref_code, source_affaire_id, source_type)
+            VALUES (?, ?, ?, 'u', ?, 20, ?, ?, ?, 'affaire')
+          `);
+          for (const item of supplierItems) {
+            const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
+            insertItem.run(
+              orderId,
+              item.description || item.designation || '—',
+              item.quantity || 1,
+              item.unit_price_ht || 0,
+              itemTotal,
+              item.code || null,
+              affaire_id
+            );
+          }
+
+          addToHistory('order', orderId, 'create', JSON.stringify({
+            reference, type: 'purchase', status: 'draft',
+            generated_from: 'bl', affaire_id, supplier: supplierName,
+            item_count: supplierItems.length
+          }), req.user.id, req.user.name);
+
+          createdOrders.push({
+            id: orderId,
+            reference,
+            supplier_name: supplierName,
+            supplier_id: supplier.id,
+            item_count: supplierItems.length,
+            total_ht,
+          });
+        }
+
+        return createdOrders;
+      });
+
+      const orders = generateOrders();
+      res.status(201).json({
+        success: true,
+        message: `${orders.length} commande${orders.length > 1 ? 's' : ''} créée${orders.length > 1 ? 's' : ''}`,
+        orders,
+      });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // Ajouter des articles à une commande existante (commande groupée)
+  // Permet d'enrichir une commande avec des items d'autres affaires ou demandeurs
+  // ═══════════════════════════════════════════════════════════════
+  app.post('/api/orders/:id/add-items', authenticateToken, (req, res) => {
+    try {
+      const { items = [] } = req.body;
+      const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+      if (!order) return res.status(404).json({ error: 'Commande non trouvée' });
+
+      if (items.length === 0) {
+        return res.status(400).json({ error: 'Aucun article à ajouter' });
+      }
+
+      const addItems = db.transaction(() => {
+        const insertItem = db.prepare(`
+          INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht,
+            ref_code, source_affaire_id, source_requester_id, source_requester_name, source_type)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        let addedTotal = 0;
+        for (const item of items) {
+          const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
+          addedTotal += itemTotal;
+          insertItem.run(
+            order.id,
+            item.designation || '—',
+            item.quantity || 1,
+            item.unit || 'u',
+            item.unit_price_ht || 0,
+            item.tva_rate || 20,
+            itemTotal,
+            item.ref_code || null,
+            item.source_affaire_id || null,
+            item.source_requester_id || null,
+            item.source_requester_name || null,
+            item.source_type || 'affaire'
+          );
+        }
+
+        // Update order totals
+        const newTotal = (order.total_ht || 0) + addedTotal;
+        const newTtc = newTotal * (1 + (order.tva_rate || 20) / 100);
+        db.prepare('UPDATE orders SET total_ht = ?, total_ttc = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(newTotal, newTtc, order.id);
+
+        addToHistory('order', order.id, 'add_items', JSON.stringify({
+          count: items.length, added_total: addedTotal
+        }), req.user.id, req.user.name);
+      });
+
+      addItems();
+      const updatedOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+      const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(req.params.id);
+      res.json({ ...updatedOrder, items: orderItems });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });

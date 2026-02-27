@@ -69,6 +69,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   const [selectedPersonId, setSelectedPersonId] = useState('');
   const [missionTitle, setMissionTitle] = useState('');
   const [actionFeedback, setActionFeedback] = useState(null);
+  const [generatingOrders, setGeneratingOrders] = useState(false);
   const fileInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
 
@@ -344,6 +345,35 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     };
     loadArticles();
   }, [affaire.numeroAffaire, showArticles, linkedBLImports]);
+
+  // ═══ Générer commandes depuis articles BL ═══
+  const handleGenerateOrders = async () => {
+    if (blArticles.length === 0 || generatingOrders) return;
+    const fournisseurs = [...new Set(blArticles.map(a => a.fournisseur).filter(Boolean))];
+    if (fournisseurs.length === 0) {
+      showFeedback('⚠ Aucun fournisseur identifié dans les articles');
+      return;
+    }
+    if (!window.confirm(
+      `Générer ${fournisseurs.length} commande${fournisseurs.length > 1 ? 's' : ''} ` +
+      `(${fournisseurs.join(', ')}) pour ${blArticles.length} article${blArticles.length > 1 ? 's' : ''} ?`
+    )) return;
+
+    setGeneratingOrders(true);
+    try {
+      const result = await api.generateOrdersFromBL({
+        affaire_id: affaire.numeroAffaire,
+        affaire_reference: affaire.reference || affaire.numeroAffaire,
+        items: blArticles,
+      });
+      showFeedback(`✅ ${result.message} — ${result.orders.map(o => o.reference).join(', ')}`, 5000);
+      if (onDataChanged) onDataChanged();
+    } catch (err) {
+      showFeedback(`❌ Erreur : ${err.message || 'Erreur serveur'}`);
+    } finally {
+      setGeneratingOrders(false);
+    }
+  };
 
   // ═══ Articles BP (Location / Prestation) — liaison catalogue ═══
   const [bpItems, setBpItems] = useState({ items: [], total: 0, matched: 0, unmatched: 0 });
@@ -826,6 +856,17 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                   return <span className="articles-fournisseurs">{fournisseurs.length} fournisseur{fournisseurs.length > 1 ? 's' : ''} : {fournisseurs.join(', ')}</span>;
                 })()}
               </div>
+              {/* Bouton générer commandes (Vente uniquement) */}
+              {affaire.type === 'Vente' && editable && blArticles.some(a => a.fournisseur) && (
+                <button
+                  className="generate-orders-btn"
+                  onClick={handleGenerateOrders}
+                  disabled={generatingOrders}
+                >
+                  <Briefcase size={14} />
+                  {generatingOrders ? 'Génération…' : 'Générer les commandes par fournisseur'}
+                </button>
+              )}
             </div>
           )}
         </section>

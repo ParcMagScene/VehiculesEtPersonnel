@@ -2362,6 +2362,56 @@ try {
   // Colonne déjà existante
 }
 
+// ═══ Migration : RDV avec horaires précis, catégorie Pro/Perso, et sync Google Calendar ═══
+try {
+  const availCols = db.prepare("PRAGMA table_info(availabilities)").all().map(c => c.name);
+  if (!availCols.includes('start_time')) {
+    db.prepare("ALTER TABLE availabilities ADD COLUMN start_time TEXT").run();
+    logger.info('✅ Migration: colonne start_time ajoutée à availabilities');
+  }
+  if (!availCols.includes('end_time')) {
+    db.prepare("ALTER TABLE availabilities ADD COLUMN end_time TEXT").run();
+    logger.info('✅ Migration: colonne end_time ajoutée à availabilities');
+  }
+  if (!availCols.includes('rdv_category')) {
+    db.prepare("ALTER TABLE availabilities ADD COLUMN rdv_category TEXT").run();
+    logger.info('✅ Migration: colonne rdv_category ajoutée à availabilities');
+  }
+  if (!availCols.includes('google_event_id')) {
+    db.prepare("ALTER TABLE availabilities ADD COLUMN google_event_id TEXT").run();
+    logger.info('✅ Migration: colonne google_event_id ajoutée à availabilities');
+  }
+} catch (error) {
+  logger.warn('⚠️ Migration RDV horaires:', error.message);
+}
+
+// ═══ Migration : order_items — colonnes source_affaire_id, source_requester_id, source_requester_name ═══
+try {
+  const oiCols = db.prepare("PRAGMA table_info(order_items)").all().map(c => c.name);
+  if (!oiCols.includes('source_affaire_id')) {
+    db.prepare("ALTER TABLE order_items ADD COLUMN source_affaire_id TEXT").run();
+    logger.info('✅ Migration: colonne source_affaire_id ajoutée à order_items');
+  }
+  if (!oiCols.includes('source_requester_id')) {
+    db.prepare("ALTER TABLE order_items ADD COLUMN source_requester_id INTEGER").run();
+    logger.info('✅ Migration: colonne source_requester_id ajoutée à order_items');
+  }
+  if (!oiCols.includes('source_requester_name')) {
+    db.prepare("ALTER TABLE order_items ADD COLUMN source_requester_name TEXT").run();
+    logger.info('✅ Migration: colonne source_requester_name ajoutée à order_items');
+  }
+  if (!oiCols.includes('source_type')) {
+    db.prepare("ALTER TABLE order_items ADD COLUMN source_type TEXT DEFAULT 'affaire'").run();
+    logger.info('✅ Migration: colonne source_type ajoutée à order_items');
+  }
+  if (!oiCols.includes('ref_code')) {
+    db.prepare("ALTER TABLE order_items ADD COLUMN ref_code TEXT").run();
+    logger.info('✅ Migration: colonne ref_code ajoutée à order_items');
+  }
+} catch (error) {
+  logger.warn('⚠️ Migration order_items sources:', error.message);
+}
+
 // Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
   try {

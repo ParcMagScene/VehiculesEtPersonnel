@@ -23,11 +23,6 @@
   animation: slideUp 0.25s ease;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
 .prefs-header {
   display: flex;
   align-items: center;

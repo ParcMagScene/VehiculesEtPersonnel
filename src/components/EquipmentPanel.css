@@ -626,34 +626,6 @@
   gap: 16px;
 }
 
-.eq-detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.eq-back-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1px solid var(--theme-border);
-  border-radius: 6px;
-  background: var(--theme-bg-card);
-  font-size: 12px;
-  color: var(--theme-text-subtle);
-  cursor: pointer;
-}
-
-.eq-back-btn:hover { background: var(--theme-border-light); }
-
-.eq-detail-actions {
-  display: flex;
-  gap: 6px;
-}
-
 .eq-btn-secondary {
   display: flex;
   align-items: center;
@@ -1208,10 +1180,7 @@
   .eq-tabs { gap: 0; }
   .eq-tab { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
   .eq-stat-value { font-size: 1rem; }
-  .eq-card { padding: 0.75rem; }
   .eq-card-header h4 { font-size: 0.85rem; }
-  .eq-modal-content { margin: 0.5rem; max-height: 95vh; }
-  .eq-ticket-card { padding: 0.75rem; }
 }
 
 /* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */
@@ -1383,13 +1352,6 @@
   font-size: 0.88rem;
   color: var(--theme-text-secondary);
   line-height: 1.5;
-}
-
-.eq-management-categories {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 12px;
 }
 
 /* ═══ Arborescence catégories (accordéon 3 niveaux) ═══ */
@@ -2306,45 +2268,10 @@
 }
 
 /* GESTION — Médias */
-.eq-mgmt-media-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 12px;
-}
-
 .eq-mgmt-media-col h4 {
   margin: 0 0 10px;
   font-size: 14px;
   font-weight: 600;
-}
-
-.eq-mgmt-media-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.eq-mgmt-media-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--theme-bg-page);
-  border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 11px;
-  color: var(--theme-text-secondary);
-}
-
-.eq-mgmt-media-item img {
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  object-fit: cover;
 }
 
 .eq-mgmt-media-legend {
@@ -2417,10 +2344,6 @@
     width: 100%;
     height: auto;
     max-height: 200px;
-  }
-
-  .eq-mgmt-media-grid {
-    grid-template-columns: 1fr;
   }
 
   .eq-table-uid, .eq-table-thumb {

@@ -237,10 +237,6 @@
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 /* Badge messagerie dans le menu */
 .menu-nav button .menu-badge {
   margin-left: auto;

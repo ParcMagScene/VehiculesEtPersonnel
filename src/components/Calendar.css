@@ -462,23 +462,6 @@
   min-height: 60px;
 }
 
-.day-view .reservation-block {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.85rem;
-}
-
-.day-view .reservation-block .block-client {
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.day-view .reservation-block .block-driver,
-.day-view .reservation-block .block-details {
-  font-size: 0.8rem;
-  white-space: normal;
-  overflow: visible;
-}
-
 /* En-tête */
 .calendar-header {
   display: grid;
@@ -539,10 +522,6 @@
   position: relative !important;
   left: auto !important;
   right: auto !important;
-}
-
-.calendar-body {
-  display: contents;
 }
 
 .vehicle-row {
@@ -629,10 +608,6 @@
 }
 
 /* Corps */
-.calendar-body {
-  display: contents;
-}
-
 .vehicle-row {
   display: contents;
 }
@@ -1088,17 +1063,6 @@
   animation: pulse 2s infinite;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
 .client-name {
   font-weight: 600;
   font-size: 0.9rem;
@@ -1106,20 +1070,11 @@
   width: 100%;
 }
 
-.driver-name,
 .location-name {
   font-size: 0.75rem;
   opacity: 0.9;
   text-align: center;
   width: 100%;
-}
-
-.reservation-count {
-  background: rgba(255, 255, 255, 0.3);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
 }
 
 /* Aperçu du redimensionnement */

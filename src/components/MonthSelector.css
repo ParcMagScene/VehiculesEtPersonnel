@@ -14,15 +14,6 @@
   animation: fadeIn 0.2s ease-out;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 .month-selector-modal {
   background: var(--theme-bg-card);
   border-radius: 1rem;
@@ -34,17 +25,6 @@
   animation: slideUp 0.3s ease-out;
   position: relative;
   z-index: 1;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(30px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
 }
 
 .month-selector-header {

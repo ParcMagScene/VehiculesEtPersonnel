@@ -28,12 +28,6 @@
   margin: 0 auto 1rem;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .loading-container p {
   color: var(--theme-text-gray);
   font-size: 1rem;
@@ -293,22 +287,6 @@
   border-color: #f87171;
 }
 
-.conflict-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: var(--theme-danger-dark);
-  color: var(--theme-text-inverse);
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  animation: pulse 2s infinite;
-}
-
 /* Badge de notification unifié */
 .notification-badge.unified {
   position: relative;
@@ -445,17 +423,6 @@
   }
   50% {
     transform: translateY(-3px);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.9;
   }
 }
 
@@ -1001,26 +968,6 @@
   border-radius: 4px;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
 .header-controls {
   display: flex;
   gap: 1rem;
@@ -1154,248 +1101,6 @@
 .current-date.clickable:hover {
   background: var(--theme-bg-hover);
   color: var(--theme-primary);
-}
-
-/* ═══ Contrôles Affaires dans Header ═══ */
-
-.affaires-header-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
-
-.affaires-header-divider {
-  width: 1px;
-  height: 24px;
-  background: var(--theme-border);
-  flex-shrink: 0;
-}
-
-/* Recherche */
-.affaires-header-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--theme-border-light);
-  border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  padding: 0 10px;
-  height: 34px;
-  min-width: 150px;
-  max-width: 260px;
-  flex: 1;
-  transition: all 0.2s;
-}
-
-.affaires-header-search:focus-within {
-  background: var(--theme-bg-card);
-  border-color: var(--theme-primary);
-  box-shadow: var(--focus-ring);
-}
-
-.affaires-header-search svg {
-  color: var(--theme-text-muted);
-  flex-shrink: 0;
-}
-
-.affaires-header-search input {
-  background: none;
-  border: none;
-  outline: none;
-  color: var(--theme-text-primary);
-  font-size: 13px;
-  width: 100%;
-  padding: 0;
-}
-
-.affaires-header-search input::placeholder {
-  color: var(--theme-text-muted);
-}
-
-.affaires-header-search .search-clear {
-  background: none;
-  border: none;
-  color: var(--theme-text-muted);
-  cursor: pointer;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.affaires-header-search .search-clear:hover {
-  color: var(--theme-text-dark);
-  background: var(--theme-border);
-}
-
-/* Boutons période rapide */
-.affaires-period-buttons {
-  display: flex;
-  gap: 4px;
-  background: var(--theme-border-light);
-  border-radius: 8px;
-  padding: 3px;
-  flex-shrink: 0;
-}
-
-.affaires-period-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--theme-text-secondary);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.affaires-period-btn:hover {
-  background: var(--theme-border);
-  color: var(--theme-text-dark);
-}
-
-.affaires-period-btn.active {
-  background: var(--theme-gradient);
-  color: var(--theme-text-inverse);
-  box-shadow: var(--btn-primary-shadow);
-}
-
-.affaires-period-btn.active svg {
-  color: var(--theme-text-inverse);
-}
-
-/* Select type */
-.affaires-header-select {
-  background: var(--theme-border-light);
-  border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  color: var(--theme-text-dark);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 0 10px;
-  height: 34px;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.affaires-header-select:hover,
-.affaires-header-select:focus {
-  background: var(--theme-bg-card);
-  border-color: var(--theme-text-muted);
-}
-
-.affaires-header-select option {
-  background: var(--theme-bg-card);
-  color: var(--theme-text-primary);
-}
-
-/* Groupe dates avec labels */
-.affaires-header-date-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.affaires-date-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--theme-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.affaires-header-date {
-  background: var(--theme-border-light);
-  border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  color: var(--theme-text-dark);
-  font-size: 12px;
-  padding: 0 8px;
-  height: 34px;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s;
-}
-
-.affaires-header-date:hover,
-.affaires-header-date:focus {
-  background: var(--theme-bg-card);
-  border-color: var(--theme-primary);
-  box-shadow: var(--focus-ring);
-}
-
-/* Bouton réinitialiser */
-.affaires-header-clear {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--theme-danger-bg);
-  border: 1px solid var(--btn-danger-hover-bg);
-  border-radius: 8px;
-  color: var(--theme-danger-dark);
-  cursor: pointer;
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.affaires-header-clear:hover {
-  background: var(--btn-danger-bg);
-  color: var(--theme-danger-text-alt);
-  border-color: #f87171;
-}
-
-/* Groupe période + toggle glissant */
-.affaires-period-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* Toggle checkbox (Glissant / Archivées) */
-.affaires-toggle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  user-select: none;
-  flex-shrink: 0;
-}
-
-.affaires-toggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--theme-indigo);
-  cursor: pointer;
-  margin: 0;
-  border-radius: 3px;
-}
-
-.affaires-toggle-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--theme-text-secondary);
-  white-space: nowrap;
-  letter-spacing: 0.2px;
-}
-
-.affaires-toggle:hover .affaires-toggle-label {
-  color: var(--theme-text-dark);
 }
 
 /* ═══ Bouton "Nouvelle affaire" dans le header ═══ */
@@ -1876,16 +1581,6 @@
   .settings-button span {
     /* ne rien cacher encore */
   }
-
-  /* Affaires */
-  .affaires-header-controls {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .affaires-header-search {
-    min-width: 120px;
-  }
 }
 
 /* Petits écrans et mobiles */
@@ -2013,28 +1708,6 @@
   .help-trigger-btn span {
     display: none;
   }
-
-  /* Affaires */
-  .affaires-header-controls {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
-  }
-
-  .affaires-header-divider {
-    display: none;
-  }
-
-  .affaires-header-search {
-    width: 100%;
-    max-width: 100%;
-    min-width: unset;
-  }
-
-  .affaires-period-group {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
 }
 
 /* Très petits écrans */
@@ -2108,15 +1781,6 @@
     width: 34px;
     height: 34px;
   }
-
-  .affaires-period-btn {
-    padding: 4px 8px;
-    font-size: 11px;
-  }
-
-  .affaires-period-btn span {
-    display: none;
-  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2160,30 +1824,6 @@
 [data-theme="dark"] .current-date.clickable:hover {
   background: var(--theme-bg-tertiary);
   border-color: var(--theme-border-muted);
-}
-
-[data-theme="dark"] .affaires-header-search:focus-within {
-  background: var(--theme-bg-card);
-  border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
-}
-
-[data-theme="dark"] .affaires-header-select:hover,
-[data-theme="dark"] .affaires-header-select:focus {
-  background: var(--theme-bg-card);
-  border-color: var(--theme-border-muted);
-}
-
-[data-theme="dark"] .affaires-header-select option {
-  background: var(--theme-bg-card);
-  color: var(--theme-text-primary);
-}
-
-[data-theme="dark"] .affaires-header-date:hover,
-[data-theme="dark"] .affaires-header-date:focus {
-  background: var(--theme-bg-card);
-  border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
 }
 
 [data-theme="dark"] .notification-item.reservation-request.has-conflict {

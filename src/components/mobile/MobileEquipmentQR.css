@@ -56,7 +56,6 @@
   color: var(--theme-text-secondary);
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }
 
 /* ── Header — gradient comme MobileApp ── */

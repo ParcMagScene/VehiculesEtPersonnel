@@ -44,6 +44,7 @@ import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, set
 import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockStatsRoutes } from './stockRoutes.js';
 import { setupCommunicationRoutes } from './communicationRoutes.js';
+import { setupAnnuaireClientsRoutes, setupAnnuaireSuppliersRoutes, setupAnnuairePrestatairesRoutes, setupAnnuaireContactsRoutes, setupAnnuaireLookupsRoutes, setupAnnuaireSearchRoutes, setupAnnuaireImportRoutes } from './annuaireRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated, alertMaintenanceCreated } from './emailService.js';
 import logger from "./logger.js";
 
@@ -2372,6 +2373,15 @@ setupStockStatsRoutes(app, authenticateToken);
 
 // Routes Module Communication (Affichage dynamique + Planification + Import BL)
 setupCommunicationRoutes(app, authenticateToken, requireAdmin);
+
+// Routes Module Annuaire (Clients enrichis, Fournisseurs enrichis, Prestataires, Contacts, Référentiels, Import CSV)
+setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmin);
+setupAnnuairePrestatairesRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireSearchRoutes(app, authenticateToken);
+setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin);
 
 // ============ PROFIL UTILISATEUR ============
 

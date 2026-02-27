@@ -1930,6 +1930,245 @@ function initializeDatabase() {
     logger.warn('⚠️ Migration bp_items:', error.message);
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // Module Annuaire — Enrichissement Clients / Fournisseurs / Prestataires / Contacts
+  // ═══════════════════════════════════════════════════════════════
+  try {
+    // --- Tables de référence (lookup) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_legal_structures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_service_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_activity_sectors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_contact_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1
+      )
+    `);
+
+    // --- Table prestataires ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS prestataires (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code_libre TEXT UNIQUE,
+        name TEXT NOT NULL,
+        legal_structure TEXT,
+        siret TEXT,
+        tva_intra TEXT,
+        address TEXT,
+        postal_code TEXT,
+        city TEXT,
+        country TEXT DEFAULT 'France',
+        phone TEXT,
+        phone2 TEXT,
+        email TEXT,
+        website TEXT,
+        activity_sector TEXT,
+        service_types TEXT,
+        notes TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        modified_by INTEGER,
+        modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id),
+        FOREIGN KEY (modified_by) REFERENCES users(id)
+      )
+    `);
+
+    // --- Table contacts (multi-entité) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_contacts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id INTEGER,
+        supplier_id INTEGER,
+        prestataire_id INTEGER,
+        first_name TEXT,
+        last_name TEXT NOT NULL,
+        job_title TEXT,
+        category TEXT,
+        email TEXT,
+        phone TEXT,
+        phone2 TEXT,
+        is_primary INTEGER DEFAULT 0,
+        notes TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        modified_by INTEGER,
+        modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE,
+        FOREIGN KEY (prestataire_id) REFERENCES prestataires(id) ON DELETE CASCADE,
+        FOREIGN KEY (created_by) REFERENCES users(id),
+        FOREIGN KEY (modified_by) REFERENCES users(id)
+      )
+    `);
+
+    db.exec('CREATE INDEX IF NOT EXISTS idx_contacts_client ON annuaire_contacts(client_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_contacts_supplier ON annuaire_contacts(supplier_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_contacts_prestataire ON annuaire_contacts(prestataire_id)');
+
+    logger.info('  ✅ Tables Annuaire (lookup + prestataires + contacts)');
+
+    // --- Migration : enrichir la table clients ---
+    const clientCols = db.pragma('table_info(clients)').map(c => c.name);
+    const clientNewCols = {
+      code_libre: 'TEXT UNIQUE',
+      postal_code: 'TEXT',
+      city: 'TEXT',
+      country: "TEXT DEFAULT 'France'",
+      type: "TEXT DEFAULT 'client'",
+      legal_structure: 'TEXT',
+      siret: 'TEXT',
+      tva_intra: 'TEXT',
+      website: 'TEXT',
+      phone2: 'TEXT',
+      activity_sector: 'TEXT',
+      service_types: 'TEXT',
+      notes: 'TEXT',
+      is_active: 'INTEGER DEFAULT 1'
+    };
+    for (const [col, def] of Object.entries(clientNewCols)) {
+      if (!clientCols.includes(col)) {
+        db.exec(`ALTER TABLE clients ADD COLUMN ${col} ${def}`);
+        logger.info(`  + clients.${col}`);
+      }
+    }
+
+    // --- Migration : enrichir la table suppliers ---
+    const supplierCols = db.pragma('table_info(suppliers)').map(c => c.name);
+    const supplierNewCols = {
+      code_libre: 'TEXT UNIQUE',
+      postal_code: 'TEXT',
+      city: 'TEXT',
+      country: "TEXT DEFAULT 'France'",
+      type: "TEXT DEFAULT 'fournisseur'",
+      legal_structure: 'TEXT',
+      siret: 'TEXT',
+      tva_intra: 'TEXT',
+      website: 'TEXT',
+      phone2: 'TEXT',
+      activity_sector: 'TEXT',
+      service_types: 'TEXT',
+      is_active: 'INTEGER DEFAULT 1',
+      created_by: 'INTEGER',
+      modified_by: 'INTEGER',
+      modified_at: 'DATETIME'
+    };
+    for (const [col, def] of Object.entries(supplierNewCols)) {
+      if (!supplierCols.includes(col)) {
+        db.exec(`ALTER TABLE suppliers ADD COLUMN ${col} ${def}`);
+        logger.info(`  + suppliers.${col}`);
+      }
+    }
+
+    // --- Seed lookup tables (si vides) ---
+    const lsCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_legal_structures').get();
+    if (lsCount.c === 0) {
+      const ins = db.prepare('INSERT INTO annuaire_legal_structures (code, name, sort_order) VALUES (?, ?, ?)');
+      const structures = [
+        ['EI', 'Entreprise Individuelle'], ['EIRL', 'EIRL'], ['EURL', 'EURL'],
+        ['SARL', 'SARL'], ['SAS', 'SAS'], ['SASU', 'SASU'], ['SA', 'SA'],
+        ['SNC', 'SNC'], ['SCS', 'SCS'], ['SCA', 'SCA'],
+        ['SCOP', 'SCOP'], ['SCI', 'SCI'], ['SCM', 'SCM'],
+        ['SEL', 'SEL (Société d\'exercice libéral)'],
+        ['ASSO', 'Association loi 1901'], ['GIE', 'GIE'],
+        ['EPIC', 'EPIC'], ['EPA', 'EPA'],
+        ['AE', 'Auto-entrepreneur / Micro-entreprise'],
+        ['PL', 'Profession libérale'], ['COOP', 'Coopérative'],
+        ['FNDN', 'Fondation'], ['AUTRE', 'Autre']
+      ];
+      structures.forEach(([code, name], i) => ins.run(code, name, i + 1));
+      logger.info('  ✅ Seed: annuaire_legal_structures (' + structures.length + ')');
+    }
+
+    const stCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_service_types').get();
+    if (stCount.c === 0) {
+      const ins = db.prepare('INSERT INTO annuaire_service_types (code, name, sort_order) VALUES (?, ?, ?)');
+      const services = [
+        ['SON', 'Sonorisation'], ['LUM', 'Éclairage / Lumière'], ['VID', 'Vidéo / Projection'],
+        ['SCENE', 'Scénographie / Décor'], ['STRUCT', 'Structure / Gril / Pont'],
+        ['ENERG', 'Énergie / Groupe électrogène'], ['TRANSP', 'Transport / Logistique'],
+        ['LEVAG', 'Levage / Nacelle'], ['SECU', 'Sécurité / Gardiennage'],
+        ['BARR', 'Barrières / Clôtures'], ['TRIB', 'Tribunes / Gradins'],
+        ['MOB', 'Mobilier événementiel'], ['TENT', 'Tente / Chapiteau'],
+        ['SANIT', 'Sanitaires / WC'], ['TRAIT', 'Traiteur / Restauration'],
+        ['COMM', 'Communication / Signalétique'], ['PRINT', 'Impression / Sérigraphie'],
+        ['PHOTO', 'Photo / Vidéo (captation)'], ['ARTIS', 'Artiste / Intermittent'],
+        ['TECHN', 'Technicien spécialisé'], ['FORM', 'Formation / Conseil'],
+        ['ADMIN', 'Administratif / Juridique'], ['AUTRE', 'Autre']
+      ];
+      services.forEach(([code, name], i) => ins.run(code, name, i + 1));
+      logger.info('  ✅ Seed: annuaire_service_types (' + services.length + ')');
+    }
+
+    const asCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_activity_sectors').get();
+    if (asCount.c === 0) {
+      const ins = db.prepare('INSERT INTO annuaire_activity_sectors (code, name, sort_order) VALUES (?, ?, ?)');
+      const sectors = [
+        ['SPEC', 'Spectacle vivant'], ['MUSIC', 'Musique / Concert'], ['FEST', 'Festivals'],
+        ['CORP', 'Événementiel corporate'], ['SPORT', 'Événement sportif'],
+        ['EXPO', 'Exposition / Salon'], ['CINE', 'Cinéma / Audiovisuel'],
+        ['THEATRE', 'Théâtre'], ['COLLECT', 'Collectivités / Institutionnel'],
+        ['INDUS', 'Industrie'], ['BTP', 'BTP / Construction'],
+        ['AUTO', 'Automobile'], ['AGRI', 'Agriculture'],
+        ['SANTE', 'Santé'], ['EDUC', 'Éducation / Formation'],
+        ['AUTRE', 'Autre']
+      ];
+      sectors.forEach(([code, name], i) => ins.run(code, name, i + 1));
+      logger.info('  ✅ Seed: annuaire_activity_sectors (' + sectors.length + ')');
+    }
+
+    const ccCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_contact_categories').get();
+    if (ccCount.c === 0) {
+      const ins = db.prepare('INSERT INTO annuaire_contact_categories (code, name, sort_order) VALUES (?, ?, ?)');
+      const categories = [
+        ['DIR', 'Direction / Gérant'], ['COMM', 'Commercial'],
+        ['TECH', 'Technique / Régisseur'], ['ADMIN', 'Administratif'],
+        ['COMPTA', 'Comptabilité'], ['ACHAT', 'Achats'],
+        ['LOGIST', 'Logistique / Livraison'], ['SAV', 'SAV / Support'],
+        ['RH', 'Ressources humaines'], ['PROD', 'Production / Planning'],
+        ['JURIDI', 'Juridique'], ['AUTRE', 'Autre']
+      ];
+      categories.forEach(([code, name], i) => ins.run(code, name, i + 1));
+      logger.info('  ✅ Seed: annuaire_contact_categories (' + categories.length + ')');
+    }
+
+    logger.info('  ✅ Module Annuaire initialisé');
+  } catch (error) {
+    logger.warn('⚠️ Migration Annuaire:', error.message);
+  }
+
   logger.info('✅ Base de données initialisée');
 }
 

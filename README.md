@@ -53,6 +53,7 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 - **Événements** : Agenda d'entreprise, affichage écran (toggle visibilité)
 - **Notes internes** : Partage d'informations
 - **Mailing** : Templates, envoi groupé, historique
+- **Dashboard Écrans** : Gestion d'écrans d'affichage dynamique (playlists, médias, messages, templates, logs)
 
 ### 💬 Messagerie
 - **Conversations** : Temps réel entre utilisateurs

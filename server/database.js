@@ -1931,6 +1931,156 @@ function initializeDatabase() {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // Module Dashboard — Affichage Dynamique (écrans, playlists, médias…)
+  // ═══════════════════════════════════════════════════════════════
+  try {
+    // --- Écrans physiques ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_screens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        location TEXT,
+        resolution TEXT DEFAULT '1920x1080',
+        orientation TEXT DEFAULT 'landscape' CHECK(orientation IN ('landscape','portrait')),
+        status TEXT DEFAULT 'offline' CHECK(status IN ('online','offline','maintenance')),
+        playlist_id INTEGER,
+        config TEXT DEFAULT '{}',
+        last_heartbeat TEXT,
+        token TEXT UNIQUE,
+        is_active INTEGER DEFAULT 1,
+        created_by INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER,
+        modified_at TEXT,
+        FOREIGN KEY (created_by) REFERENCES users(id),
+        FOREIGN KEY (modified_by) REFERENCES users(id)
+      )
+    `);
+
+    // --- Playlists ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_playlists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        transition TEXT DEFAULT 'fade' CHECK(transition IN ('fade','slide','none')),
+        default_duration INTEGER DEFAULT 10,
+        is_active INTEGER DEFAULT 1,
+        created_by INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER,
+        modified_at TEXT,
+        FOREIGN KEY (created_by) REFERENCES users(id),
+        FOREIGN KEY (modified_by) REFERENCES users(id)
+      )
+    `);
+
+    // --- Items d'une playlist (contenus ordonnés) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_playlist_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        playlist_id INTEGER NOT NULL,
+        item_type TEXT NOT NULL CHECK(item_type IN ('media','message','template','url','event')),
+        item_id INTEGER,
+        url TEXT,
+        duration INTEGER DEFAULT 10,
+        sort_order INTEGER DEFAULT 0,
+        config TEXT DEFAULT '{}',
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (playlist_id) REFERENCES display_playlists(id) ON DELETE CASCADE
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_dpi_playlist ON display_playlist_items(playlist_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_dpi_sort ON display_playlist_items(playlist_id, sort_order)');
+
+    // --- Templates de mise en page ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT DEFAULT 'general',
+        description TEXT,
+        layout TEXT NOT NULL DEFAULT '{}',
+        thumbnail TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_by INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER,
+        modified_at TEXT,
+        FOREIGN KEY (created_by) REFERENCES users(id),
+        FOREIGN KEY (modified_by) REFERENCES users(id)
+      )
+    `);
+
+    // --- Messages / annonces ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        body TEXT,
+        priority TEXT DEFAULT 'normal' CHECK(priority IN ('low','normal','high','urgent')),
+        style TEXT DEFAULT '{}',
+        template_id INTEGER,
+        date_start TEXT,
+        date_end TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_by INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER,
+        modified_at TEXT,
+        FOREIGN KEY (template_id) REFERENCES display_templates(id) ON DELETE SET NULL,
+        FOREIGN KEY (created_by) REFERENCES users(id),
+        FOREIGN KEY (modified_by) REFERENCES users(id)
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_dm_active ON display_messages(is_active, date_start, date_end)');
+
+    // --- Médias uploadés ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_media (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filename TEXT NOT NULL,
+        original_name TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        file_size INTEGER DEFAULT 0,
+        media_type TEXT DEFAULT 'image' CHECK(media_type IN ('image','video')),
+        width INTEGER,
+        height INTEGER,
+        duration_seconds REAL,
+        thumbnail_path TEXT,
+        tags TEXT DEFAULT '[]',
+        is_active INTEGER DEFAULT 1,
+        created_by INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_dmed_type ON display_media(media_type)');
+
+    // --- Logs d'activité ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        screen_id INTEGER,
+        action TEXT NOT NULL,
+        details TEXT DEFAULT '{}',
+        user_id INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (screen_id) REFERENCES display_screens(id) ON DELETE SET NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_dlog_screen ON display_logs(screen_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_dlog_date ON display_logs(created_at)');
+
+    logger.info('  ✅ Module Dashboard (écrans, playlists, médias, messages, templates, logs)');
+  } catch (error) {
+    logger.warn('⚠️ Migration Dashboard:', error.message);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Module Annuaire — Enrichissement Clients / Fournisseurs / Prestataires / Contacts
   // ═══════════════════════════════════════════════════════════════
   try {
@@ -2043,7 +2193,7 @@ function initializeDatabase() {
     // --- Migration : enrichir la table clients ---
     const clientCols = db.pragma('table_info(clients)').map(c => c.name);
     const clientNewCols = {
-      code_libre: 'TEXT UNIQUE',
+      code_libre: 'TEXT',
       postal_code: 'TEXT',
       city: 'TEXT',
       country: "TEXT DEFAULT 'France'",
@@ -2064,11 +2214,13 @@ function initializeDatabase() {
         logger.info(`  + clients.${col}`);
       }
     }
+    // UNIQUE index séparé (ALTER TABLE ADD COLUMN ne supporte pas UNIQUE)
+    try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_code_libre ON clients(code_libre)'); } catch(_) {}
 
     // --- Migration : enrichir la table suppliers ---
     const supplierCols = db.pragma('table_info(suppliers)').map(c => c.name);
     const supplierNewCols = {
-      code_libre: 'TEXT UNIQUE',
+      code_libre: 'TEXT',
       postal_code: 'TEXT',
       city: 'TEXT',
       country: "TEXT DEFAULT 'France'",
@@ -2091,6 +2243,8 @@ function initializeDatabase() {
         logger.info(`  + suppliers.${col}`);
       }
     }
+    // UNIQUE index séparé (ALTER TABLE ADD COLUMN ne supporte pas UNIQUE)
+    try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_suppliers_code_libre ON suppliers(code_libre)'); } catch(_) {}
 
     // --- Seed lookup tables (si vides) ---
     const lsCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_legal_structures').get();

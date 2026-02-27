@@ -1600,6 +1600,111 @@ class ApiClient {
   async importSuppliersCsv() {
     return this.request('/annuaire/import/suppliers-csv', { method: 'POST' });
   }
+
+  // ============ DISPLAY — Dashboard Affichage Dynamique ============
+
+  // --- Écrans ---
+  async getDisplayScreens() {
+    return this.request('/display/screens');
+  }
+  async getDisplayScreen(id) {
+    return this.request(`/display/screens/${id}`);
+  }
+  async createDisplayScreen(data) {
+    return this.request('/display/screens', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateDisplayScreen(id, data) {
+    return this.request(`/display/screens/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteDisplayScreen(id) {
+    return this.request(`/display/screens/${id}`, { method: 'DELETE' });
+  }
+  async heartbeatDisplayScreen(id) {
+    return this.request(`/display/screens/${id}/heartbeat`, { method: 'PATCH' });
+  }
+
+  // --- Playlists ---
+  async getDisplayPlaylists() {
+    return this.request('/display/playlists');
+  }
+  async getDisplayPlaylist(id) {
+    return this.request(`/display/playlists/${id}`);
+  }
+  async createDisplayPlaylist(data) {
+    return this.request('/display/playlists', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateDisplayPlaylist(id, data) {
+    return this.request(`/display/playlists/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteDisplayPlaylist(id) {
+    return this.request(`/display/playlists/${id}`, { method: 'DELETE' });
+  }
+  async updateDisplayPlaylistItems(id, items) {
+    return this.request(`/display/playlists/${id}/items`, { method: 'PUT', body: JSON.stringify({ items }) });
+  }
+
+  // --- Médias ---
+  async getDisplayMedia(params) {
+    const query = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request(`/display/media${query}`);
+  }
+  async uploadDisplayMedia(formData) {
+    const headers = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    const response = await fetch(`${API_URL}/display/media`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || `Erreur ${response.status}`);
+    }
+    return response.json();
+  }
+  async deleteDisplayMedia(id) {
+    return this.request(`/display/media/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Messages ---
+  async getDisplayMessages(params) {
+    const query = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request(`/display/messages${query}`);
+  }
+  async createDisplayMessage(data) {
+    return this.request('/display/messages', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateDisplayMessage(id, data) {
+    return this.request(`/display/messages/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteDisplayMessage(id) {
+    return this.request(`/display/messages/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Templates ---
+  async getDisplayTemplates() {
+    return this.request('/display/templates');
+  }
+  async createDisplayTemplate(data) {
+    return this.request('/display/templates', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateDisplayTemplate(id, data) {
+    return this.request(`/display/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteDisplayTemplate(id) {
+    return this.request(`/display/templates/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Logs ---
+  async getDisplayLogs(params) {
+    const query = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request(`/display/logs${query}`);
+  }
+
+  // --- Stats ---
+  async getDisplayStats() {
+    return this.request('/display/stats');
+  }
 }
 
 export const api = new ApiClient();

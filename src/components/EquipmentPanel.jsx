@@ -1024,6 +1024,28 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
           </div>
         </div>
       )}
+
+      {/* Modal Plan dépôt (ouvert depuis un clic sur une zone) */}
+      {depotMapModalZone && modalDepotData && (
+        <div className="eq-depot-map-modal-overlay" onClick={() => setDepotMapModalZone(null)}>
+          <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="eq-depot-map-modal-header">
+              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone}</h3>
+              <button className="eq-dialog-close" onClick={() => setDepotMapModalZone(null)} title="Fermer"><X size={20} /></button>
+            </div>
+            <div className="eq-depot-map-modal-body">
+              <DepotMap
+                zones={modalDepotData}
+                stats={locationStats}
+                selectedZone={depotMapModalZone}
+                focusZoneId={depotMapModalZone}
+                onZoneSelect={(zoneId) => {}}
+                onZoneFilter={() => {}}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1319,27 +1341,6 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
         </div>
       )}
 
-      {/* Modal Plan dépôt (ouvert depuis un clic sur une zone) */}
-      {depotMapModalZone && modalDepotData && (
-        <div className="eq-depot-map-modal-overlay" onClick={() => setDepotMapModalZone(null)}>
-          <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="eq-depot-map-modal-header">
-              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone}</h3>
-              <button className="eq-dialog-close" onClick={() => setDepotMapModalZone(null)} title="Fermer"><X size={20} /></button>
-            </div>
-            <div className="eq-depot-map-modal-body">
-              <DepotMap
-                zones={modalDepotData}
-                stats={locationStats}
-                selectedZone={depotMapModalZone}
-                focusZoneId={depotMapModalZone}
-                onZoneSelect={(zoneId) => {}}
-                onZoneFilter={() => {}}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -767,7 +767,7 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
   const types = entityType === 'clients' ? CLIENT_TYPES : entityType === 'suppliers' ? SUPPLIER_TYPES : [];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="annuaire-form-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{isEdit ? 'Modifier' : 'Nouveau'} {
@@ -1043,7 +1043,7 @@ function RefFormModal({ item, onSave, onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="annuaire-form-modal small" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{item ? 'Modifier' : 'Ajouter'}</h3>

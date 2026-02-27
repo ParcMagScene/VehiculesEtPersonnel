@@ -88,7 +88,7 @@ export default function BLBatchAnalysis({ onClose }) {
   })() : null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         className="modal-content"
         style={{ maxWidth: 800, maxHeight: '90vh', overflow: 'auto' }}

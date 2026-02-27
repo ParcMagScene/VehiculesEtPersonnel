@@ -196,7 +196,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
   };
 
   return (
-    <div className="lvp-overlay" onClick={onClose}>
+    <div className="lvp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="lvp-panel" onClick={e => e.stopPropagation()}>
         {/* En-tête */}
         <div className="lvp-header">

@@ -178,7 +178,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
 
             {/* Vehicle picker modal */}
             {showVehiclePicker && (
-              <div className="vehicle-picker-overlay" onClick={() => setShowVehiclePicker(false)}>
+              <div className="vehicle-picker-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowVehiclePicker(false)}>
                 <div className="vehicle-picker-modal" onClick={e => e.stopPropagation()}>
                   <div className="vehicle-picker-modal-header">
                     <h3>Choisir un véhicule</h3>

@@ -137,7 +137,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
   if (!isOpen) return null;
 
   return (
-    <div className="prefs-overlay" onClick={(e) => { if (e.target === e.currentTarget) handleSafeClose(); }}>
+    <div className="prefs-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) handleSafeClose(); }}>
       <div className="prefs-modal">
         <div className="prefs-header">
           <h3><Settings size={18} /> Préférences</h3>

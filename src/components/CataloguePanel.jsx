@@ -334,7 +334,7 @@ export default function CataloguePanel({ currentUser }) {
 
       {/* Modal Plan dépôt (ouvert depuis un clic sur une zone) */}
       {depotMapModalZone && modalDepotData && (
-        <div className="eq-depot-map-modal-overlay" onClick={() => setDepotMapModalZone(null)}>
+        <div className="eq-depot-map-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setDepotMapModalZone(null)}>
           <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
             <div className="eq-depot-map-modal-header">
               <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone.zoneId}{depotMapModalZone.equipmentName ? ` · ${depotMapModalZone.equipmentName}` : ''}</h3>
@@ -411,7 +411,7 @@ function CatalogFormModal({ item, flightcases, depotZones, allDepotZones, onSave
   const update = (key, value) => setForm(f => ({ ...f, [key]: value }));
 
   return (
-    <div className="catalog-modal-overlay" onClick={onClose}>
+    <div className="catalog-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="catalog-modal" onClick={(e) => e.stopPropagation()}>
         <div className="catalog-modal-header">
           <h3><Package size={20} /> {item ? 'Modifier l\'équipement' : 'Nouvel équipement'}</h3>

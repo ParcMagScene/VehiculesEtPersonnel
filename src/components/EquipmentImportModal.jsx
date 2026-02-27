@@ -149,7 +149,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
   };
 
   return (
-    <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eq-modal eq-import-modal">
         <div className="eq-modal-header">
           <h3><Upload size={18} /> Import CSV Matériel</h3>

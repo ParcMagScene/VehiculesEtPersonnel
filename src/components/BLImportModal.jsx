@@ -267,7 +267,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
   };
 
   return (
-    <div className="bl-import-overlay" onClick={onClose}>
+    <div className="bl-import-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bl-import-modal" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">

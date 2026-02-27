@@ -156,7 +156,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   return (
-    <div className="pcm-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="pcm-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pcm-modal">
         {/* Header */}
         <div className="pcm-header" style={{ background: periodInfo.color }}>

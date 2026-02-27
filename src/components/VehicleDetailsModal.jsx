@@ -166,7 +166,7 @@ const VehicleDetailsModal = ({
   };
 
   return (
-    <div className="vd-overlay" onClick={onClose}>
+    <div className="vd-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="vehicle-details-modal" onClick={(e) => e.stopPropagation()}>
         {/* En-tête */}
         <div className="modal-header">

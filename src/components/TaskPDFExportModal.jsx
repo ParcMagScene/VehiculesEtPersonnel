@@ -307,7 +307,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
   };
 
   return (
-    <div className="pdf-export-overlay" onClick={onClose}>
+    <div className="pdf-export-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="pdf-export-modal" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="pdf-export-header">

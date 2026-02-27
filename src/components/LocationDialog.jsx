@@ -397,7 +397,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   };
 
   return (
-    <div className="location-dialog-overlay" onClick={(e) => {
+    <div className="location-dialog-overlay" onMouseDown={(e) => {
       // Fermer seulement si on clique sur l'overlay, pas sur le contenu
       if (e.target === e.currentTarget) {
         handleSafeClose();

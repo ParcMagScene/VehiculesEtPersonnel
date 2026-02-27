@@ -48,7 +48,7 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
   };
 
   const getAvatarColor = (name) => {
-    if (!name) return '#94a3b8';
+    if (!name) return 'var(--theme-text-muted)';
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
@@ -121,9 +121,9 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
             onClick={() => handleSelect('')}
           >
             <div className="driver-select-option-avatar">
-              <User size={16} style={{ color: '#94a3b8' }} />
+              <User size={16} style={{ color: 'var(--theme-text-muted)' }} />
             </div>
-            <span className="driver-select-option-label" style={{ color: '#94a3b8' }}>
+            <span className="driver-select-option-label" style={{ color: 'var(--theme-text-muted)' }}>
               Aucun conducteur
             </span>
           </div>

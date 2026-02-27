@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════
+   LocationSelector.css — Styles auto-contenus pour le sélecteur
+   de localisation dépôt (Dépôt → Étage → Zone → Code)
+   ═══════════════════════════════════════════════════════════ */
+
+.location-selector {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  background: var(--theme-bg-secondary);
+}
+
+.location-selector-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.location-selector-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.location-selector-fields.has-depot {
+  grid-template-columns: 1.2fr 0.8fr 1fr 0.8fr;
+}
+
+/* ─── Form groups inside selector ─── */
+.location-form-group {
+  margin-bottom: 0;
+}
+
+.location-form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.location-form-group select {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.location-form-group select:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.location-form-group select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Preview zone couleur ─── */
+.location-selector-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-left: 3px solid var(--theme-primary);
+  font-size: 0.8rem;
+  color: var(--theme-text-muted);
+  background: var(--theme-bg-secondary);
+  border-radius: 0 6px 6px 0;
+}
+
+.location-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.location-depot-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--theme-text-primary);
+  color: #f97316;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.location-floor-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--theme-text-primary);
+  color: #a78bfa;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.location-code-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--theme-text-primary);
+  color: #60a5fa;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+@media (max-width: 640px) {
+  .location-selector-fields,
+  .location-selector-fields.has-depot {
+    grid-template-columns: 1fr;
+  }
+}

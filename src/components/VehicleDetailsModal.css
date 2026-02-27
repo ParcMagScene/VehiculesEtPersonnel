@@ -1,11 +1,7 @@
 /* Modal Fiche Détaillée Véhicule */
 .vd-overlay {
-  position: fixed;
-  inset: 0;
+  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: rgba(15, 23, 42, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 2000;
   padding: 1rem;
   backdrop-filter: blur(4px);
@@ -31,11 +27,6 @@
   position: relative;
   z-index: 1;
   animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .vehicle-details-modal .modal-header {
@@ -104,24 +95,7 @@
   flex-wrap: wrap;
 }
 
-.vehicle-details-modal .modal-header .close-button {
-  background: var(--close-btn-bg);
-  border: 1px solid var(--close-btn-border);
-  color: var(--close-btn-color);
-  width: var(--close-btn-size);
-  height: var(--close-btn-size);
-  border-radius: var(--close-btn-radius);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-}
-
-.vehicle-details-modal .modal-header .close-button:hover {
-  background: var(--close-btn-hover-bg);
-  border-color: var(--close-btn-hover-border);
-}
+/* .vehicle-details-modal .close-button base + hover → .shared-close-btn (theme.css) */
 
 .vehicle-details-modal .modal-body {
   overflow-y: auto;
@@ -143,7 +117,7 @@
 }
 
 .vehicle-details-modal .modal-body::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--theme-bg-muted);
   border-radius: 3px;
 }
 
@@ -156,28 +130,12 @@
   margin-bottom: 24px;
 }
 
-.vehicle-details-modal .info-section h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 12px 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--theme-primary-dark);
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--theme-bg-indigo-light);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.vehicle-details-modal .info-section h3 svg {
-  color: var(--theme-primary);
-}
+/* .vehicle-details-modal .info-section h3 + svg → .shared-section-title (theme.css) */
 
 .vehicle-details-modal .info-container {
   display: flex;
   gap: 20px;
-  background: white;
+  background: var(--theme-bg-card);
   padding: 14px 16px;
   border-radius: 10px;
   border: 1px solid var(--theme-border);
@@ -190,7 +148,7 @@
   border-radius: 8px;
   overflow: hidden;
   border: 2px solid var(--theme-border-medium);
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .vehicle-details-modal .vehicle-photo-container img {
@@ -210,10 +168,6 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.vehicle-details-modal .info-item:hover {
-  /* flat style, pas d'effet hover */
 }
 
 .vehicle-details-modal .info-item.full-width {
@@ -236,7 +190,7 @@
 /* Kilométrage intégré dans la grille */
 .vehicle-details-modal .info-item-km {
   grid-column: 1 / -1;
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #dbeafe 60%, var(--theme-bg-indigo-light) 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg-strong) 60%, var(--theme-bg-indigo-light) 100%);
   border: 1px solid var(--theme-info-border);
   border-radius: 10px;
   padding: 14px 18px;
@@ -254,7 +208,7 @@
 .vehicle-details-modal .info-value-km {
   font-size: 22px !important;
   font-weight: 700 !important;
-  color: #1e3a5f !important;
+  color: var(--theme-text-dark) !important;
   letter-spacing: -0.3px;
 }
 
@@ -294,14 +248,14 @@
 
 .vehicle-details-modal .tag-km {
   background: var(--theme-info-bg);
-  color: #1d4ed8;
+  color: var(--theme-info-text);
   border: 1px solid var(--theme-info-border);
 }
 
 .vehicle-details-modal .tag-cost {
   background: var(--theme-success-bg);
-  color: #15803d;
-  border: 1px solid #bbf7d0;
+  color: var(--theme-success-text-alt);
+  border: 1px solid var(--theme-success-border);
 }
 
 /* Boutons d'action */
@@ -330,7 +284,7 @@
 
 .vehicle-details-modal .schedule-btn {
   background: var(--btn-success-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .vehicle-details-modal .schedule-btn:hover {
@@ -360,7 +314,7 @@
 
 .vehicle-details-modal .breakdown-btn {
   background: var(--theme-danger-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .vehicle-details-modal .breakdown-btn:hover {
@@ -398,7 +352,7 @@
 }
 
 .vehicle-details-modal .maintenance-item {
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
   border-radius: 10px;
   padding: 16px;
@@ -410,41 +364,41 @@
 /* Couleurs de fond selon le statut */
 .vehicle-details-modal .maintenance-item.status-scheduled,
 .vehicle-details-modal .maintenance-item.status-planned {
-  background: linear-gradient(to right, var(--theme-info-bg), white);
+  background: linear-gradient(to right, var(--theme-info-bg), var(--theme-bg-card));
   border-left-color: var(--theme-info);
 }
 
 .vehicle-details-modal .maintenance-item.status-completed,
 .vehicle-details-modal .maintenance-item.status-COMPLETED {
-  background: linear-gradient(to right, var(--theme-success-bg), white);
+  background: linear-gradient(to right, var(--theme-success-bg), var(--theme-bg-card));
   border-left-color: var(--theme-success-alt);
 }
 
 .vehicle-details-modal .maintenance-item.status-reported {
-  background: linear-gradient(to right, var(--theme-danger-bg), white);
+  background: linear-gradient(to right, var(--theme-danger-bg), var(--theme-bg-card));
   border-left-color: var(--theme-danger);
 }
 
 .vehicle-details-modal .maintenance-item.status-pending,
 .vehicle-details-modal .maintenance-item.status-PENDING {
-  background: linear-gradient(to right, #faf5ff, white);
+  background: linear-gradient(to right, var(--theme-purple-bg), var(--theme-bg-card));
   border-left-color: var(--theme-primary-light);
 }
 
 .vehicle-details-modal .maintenance-item.status-in-progress,
 .vehicle-details-modal .maintenance-item.status-in_progress,
 .vehicle-details-modal .maintenance-item.status-IN_PROGRESS {
-  background: linear-gradient(to right, var(--theme-warning-bg), white);
+  background: linear-gradient(to right, var(--theme-warning-bg), var(--theme-bg-card));
   border-left-color: var(--theme-warning);
 }
 
 .vehicle-details-modal .maintenance-item.status-cancelled {
-  background: linear-gradient(to right, var(--theme-bg-tertiary), white);
+  background: linear-gradient(to right, var(--theme-bg-tertiary), var(--theme-bg-card));
   border-left-color: var(--theme-text-gray);
 }
 
 .vehicle-details-modal .maintenance-item.status-rescheduled {
-  background: linear-gradient(to right, #fff7ed, white);
+  background: linear-gradient(to right, var(--theme-orange-bg, #fff7ed), var(--theme-bg-card));
   border-left-color: #f97316;
 }
 
@@ -498,38 +452,38 @@
 }
 
 .vehicle-details-modal .status-planned {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-dark);
 }
 
 .vehicle-details-modal .status-in-progress {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
 }
 
 .vehicle-details-modal .status-completed {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
 }
 
 .vehicle-details-modal .status-pending {
-  background: #faf5ff;
+  background: var(--theme-purple-bg);
   color: var(--theme-primary-dark);
 }
 
 .vehicle-details-modal .status-reported {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
 }
 
 .vehicle-details-modal .status-cancelled {
   background: var(--theme-bg-tertiary);
-  color: #4b5563;
+  color: var(--theme-text-subtle);
 }
 
 .vehicle-details-modal .status-rescheduled {
-  background: #ffedd5;
-  color: #9a3412;
+  background: var(--theme-warning-bg);
+  color: var(--theme-orange-text);
 }
 
 .vehicle-details-modal .maintenance-date {
@@ -541,7 +495,7 @@
 .vehicle-details-modal .maintenance-description {
   margin-top: 8px;
   font-size: 14px;
-  color: #4b5563;
+  color: var(--theme-text-subtle);
   line-height: 1.5;
 }
 
@@ -567,7 +521,7 @@
 .vehicle-details-modal .empty-history {
   text-align: center;
   padding: 40px 20px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   background: var(--theme-bg-secondary);
   border-radius: 8px;
   border: 1px dashed var(--theme-border-muted);
@@ -608,7 +562,7 @@
 }
 
 .vehicle-details-modal .deadline-item {
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
   border-radius: 10px;
   padding: 16px;
@@ -647,24 +601,24 @@
 }
 
 .vehicle-details-modal .deadline-expired {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
   animation: pulse-red 2s ease-in-out infinite;
 }
 
 .vehicle-details-modal .deadline-warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
 }
 
 .vehicle-details-modal .deadline-ok {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
 }
 
 .vehicle-details-modal .deadline-pending {
   background: var(--theme-bg-indigo-light);
-  color: #3730a3;
+  color: var(--theme-info-text-alt);
   font-style: italic;
 }
 
@@ -713,7 +667,7 @@
   border-radius: 8px;
   font-size: 13px;
   line-height: 1.4;
-  color: #1e40af;
+  color: var(--theme-info-dark);
 }
 
 .vehicle-details-modal .ct-periodicity-icon {
@@ -723,11 +677,11 @@
 }
 
 .vehicle-details-modal .ct-periodicity-text {
-  color: #1e3a5f;
+  color: var(--theme-text-dark);
 }
 
 .vehicle-details-modal .ct-periodicity-text strong {
-  color: #1e40af;
+  color: var(--theme-info-dark);
 }
 
 .vehicle-details-modal .empty-deadlines {

@@ -32,12 +32,12 @@ const AffairesPanel = lazy(() => import('./components/AffairesPanel'));
 const EquipmentPanel = lazy(() => import('./components/EquipmentPanel'));
 const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
 const CataloguePanel = lazy(() => import('./components/CataloguePanel'));
-const TruckModelPanel = lazy(() => import('./components/TruckModelPanel'));
 const StockPanel = lazy(() => import('./components/StockPanel'));
-const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
+const CommunicationPanel = lazy(() => import('./components/CommunicationPanel'));
+// const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
 const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/MailingPanel'));
-const ReportsPanel = lazy(() => import('./components/ReportsPanel'));
+// const ReportsPanel = lazy(() => import('./components/ReportsPanel'));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
 
@@ -149,7 +149,7 @@ function App() {
   const [tabPrefs, setTabPrefs] = useState({ tabOrder: null, hiddenTabs: [] }); // Préférences onglets
   const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
   const { toastRef, toast } = useFeedback();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { theme, toggleTheme, isDark, palette, setPalette } = useTheme();
 
   // Raccourcis clavier globaux avec détection OS
   useKeyboardShortcuts({
@@ -159,7 +159,6 @@ function App() {
     mod_equipment: () => { setActiveModule('equipment'); setShowManagement(false); setShowSettings(false); },
     mod_orders: () => { setActiveModule('orders'); setShowManagement(false); setShowSettings(false); },
     mod_catalog: () => { setActiveModule('catalog'); setShowManagement(false); setShowSettings(false); },
-    mod_trucks: () => { setActiveModule('trucks'); setShowManagement(false); setShowSettings(false); },
     open_messaging: () => setShowMessaging(v => !v),
     open_help: () => setShowHelp(v => !v),
     open_preferences: () => setShowPreferences(true),
@@ -686,7 +685,8 @@ function App() {
       // Appliquer les préférences utilisateur au login
       try {
         const prefs = await api.getPreferences();
-        if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
+        if (prefs.defaultModule && prefs.defaultModule !== 'trucks') setActiveModule(prefs.defaultModule);
+        if (prefs.defaultModule === 'trucks') setActiveModule('vehicles');
         if (prefs.defaultView) setView(prefs.defaultView);
         // Stocker les préférences de notification pour le polling
         userPrefsRef.current = {
@@ -695,11 +695,12 @@ function App() {
         };
         // Appliquer le volume
         setVolume((prefs.soundVolume ?? 70) / 100);
-        // Charger les préférences d'onglets
-        setTabPrefs({
-          tabOrder: prefs.tabOrder || null,
-          hiddenTabs: prefs.hiddenTabs || [],
-        });
+        // Migration préférences onglets : nettoyer les modules supprimés, ajouter les nouveaux
+        const VALID_TABS = ['vehicles','personnel','affaires','equipment','orders','catalog','stock','communication'];
+        let tabOrder = (prefs.tabOrder || VALID_TABS).filter(id => VALID_TABS.includes(id));
+        VALID_TABS.forEach(id => { if (!tabOrder.includes(id)) tabOrder.push(id); });
+        const hiddenTabs = (prefs.hiddenTabs || []).filter(id => VALID_TABS.includes(id));
+        setTabPrefs({ tabOrder, hiddenTabs });
         // Demander la permission navigateur si notifications activées
         if (prefs.notificationsEnabled !== false) {
           requestNotificationPermission();
@@ -925,7 +926,7 @@ function App() {
         </div>
       )}
       
-      {activeModule !== 'dashboard' && activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'trucks' && activeModule !== 'stock' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'stock' && activeModule !== 'communication' && (
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}
@@ -992,27 +993,7 @@ function App() {
       />
       )}
 
-      {activeModule === 'dashboard' && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du tableau de bord...</p>
-          </div>
-        }>
-          <DashboardPanel
-            vehicles={vehicles}
-            reservations={reservations}
-            maintenances={maintenances}
-            persons={persons}
-            currentUser={currentUser}
-            onNavigateToModule={(mod) => {
-              setActiveModule(mod);
-              setShowManagement(false);
-              setShowSettings(false);
-            }}
-          />
-        </Suspense>
-      )}
+
 
       {activeModule === 'vehicles' && (
         <>
@@ -1171,19 +1152,6 @@ function App() {
         </Suspense>
       )}
 
-      {activeModule === 'trucks' && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement des modèles de camions...</p>
-          </div>
-        }>
-          <TruckModelPanel
-            currentUser={currentUser}
-          />
-        </Suspense>
-      )}
-
       {activeModule === 'stock' && (
         <Suspense fallback={
           <div className="loading-overlay">
@@ -1197,18 +1165,21 @@ function App() {
         </Suspense>
       )}
 
-      {activeModule === 'reports' && (
+      {activeModule === 'communication' && (
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
-            <p>Chargement des rapports...</p>
+            <p>Chargement du module Communication...</p>
           </div>
         }>
-          <ReportsPanel
+          <CommunicationPanel
             currentUser={currentUser}
+            googleEvents={allGoogleEvents}
           />
         </Suspense>
       )}
+
+
 
       {showManagement && (
         <Suspense fallback={
@@ -1376,6 +1347,10 @@ function App() {
         <UserPreferencesModal
           isOpen={showPreferences}
           onClose={() => setShowPreferences(false)}
+          palette={palette}
+          onPaletteChange={setPalette}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
           onPreferencesChange={(prefs) => {
             // Mettre à jour les préférences de notification en temps réel
             userPrefsRef.current = {
@@ -1384,10 +1359,13 @@ function App() {
             };
             // Volume
             setVolume((prefs.soundVolume ?? 70) / 100);
-            // Mettre à jour les préférences d'onglets
+            // Migration préférences onglets
+            const VT = ['vehicles','personnel','affaires','equipment','orders','catalog','stock','communication'];
+            let to = (prefs.tabOrder || VT).filter(id => VT.includes(id));
+            VT.forEach(id => { if (!to.includes(id)) to.push(id); });
             setTabPrefs({
-              tabOrder: prefs.tabOrder || null,
-              hiddenTabs: prefs.hiddenTabs || [],
+              tabOrder: to,
+              hiddenTabs: (prefs.hiddenTabs || []).filter(id => VT.includes(id)),
             });
             // Demander la permission si notifications activées
             if (prefs.notificationsEnabled !== false) {

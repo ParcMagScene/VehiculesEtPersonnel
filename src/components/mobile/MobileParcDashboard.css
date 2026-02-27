@@ -10,7 +10,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
 }
 
@@ -43,7 +43,7 @@
 }
 
 .mparc-stat {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   padding: 16px;
   display: flex;
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px;
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: 16px;
   margin-bottom: 8px;
@@ -120,10 +120,10 @@
   flex-shrink: 0;
 }
 
-.mparc-nav-icon.blue { background: #dbeafe; color: var(--theme-info-dark); }
-.mparc-nav-icon.green { background: #d1fae5; color: #059669; }
-.mparc-nav-icon.indigo { background: var(--theme-bg-indigo-light); color: #4f46e5; }
-.mparc-nav-icon.amber { background: #fef3c7; color: var(--theme-warning-dark); }
+.mparc-nav-icon.blue { background: var(--theme-info-bg-strong); color: var(--theme-info-dark); }
+.mparc-nav-icon.green { background: var(--btn-success-bg); color: var(--btn-success-color); }
+.mparc-nav-icon.indigo { background: var(--theme-bg-indigo-light); color: var(--theme-primary-dark); }
+.mparc-nav-icon.amber { background: var(--btn-warning-bg); color: var(--theme-warning-dark); }
 
 .mparc-nav-info {
   flex: 1;
@@ -161,7 +161,7 @@
 }
 
 .mparc-upcoming-list {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -183,7 +183,7 @@
 .mparc-upcoming-icon {
   width: 36px;
   height: 36px;
-  background: #ede9fe;
+  background: var(--theme-purple-bg);
   color: var(--theme-primary);
   border-radius: 8px;
   display: flex;

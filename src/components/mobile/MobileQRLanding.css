@@ -3,7 +3,7 @@
 .qr-landing {
   min-height: 100vh;
   min-height: 100dvh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, var(--theme-text-primary) 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,7 +17,7 @@
 }
 
 .qr-landing-card {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   width: 100%;
@@ -36,7 +36,7 @@
   background: linear-gradient(135deg, #1e3a5f, var(--theme-info-dark));
   padding: 28px 24px 24px;
   text-align: center;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .qr-landing-logo {
@@ -164,7 +164,7 @@
 /* Bouton "Aller au matériel" — accent bleu */
 .qr-landing-btn-equipment {
   background: linear-gradient(135deg, var(--theme-info-dark), #1d4ed8);
-  color: white;
+  color: var(--theme-text-inverse);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 

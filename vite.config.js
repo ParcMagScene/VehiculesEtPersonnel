@@ -7,6 +7,21 @@ export default defineConfig({
     // Supprimer console.log et debugger en production
     minify: 'esbuild',
     target: 'es2020',
+    // Source maps pour le debugging production
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Isoler les grosses librairies dans des chunks séparés
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-pdf': ['pdfjs-dist'],
+          'vendor-xlsx': ['xlsx'],
+          'vendor-dates': ['date-fns'],
+          'vendor-icons': ['lucide-react'],
+          'vendor-qr': ['qrcode.react'],
+        },
+      },
+    },
   },
   esbuild: {
     // En build de production, supprimer les console.log/debug (garder console.error/warn)

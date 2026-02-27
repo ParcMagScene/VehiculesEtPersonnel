@@ -394,7 +394,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
               </div>
               <div className="lt-stats-grid">
                 {stats.byType && Object.entries(stats.byType).map(([type, count]) => {
-                  const cfg = LEAVE_TYPE_LABELS[type] || { label: type, icon: '📋', color: '#6b7280' };
+                  const cfg = LEAVE_TYPE_LABELS[type] || { label: type, icon: '📋', color: 'var(--theme-text-gray)' };
                   return (
                     <div key={type} className="lt-stat-card">
                       <span className="lt-stat-icon">{cfg.icon}</span>

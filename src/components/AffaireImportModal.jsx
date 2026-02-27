@@ -859,7 +859,7 @@ const AffaireImportModal = ({
               <p className="warning-text">
                 ⚠️ Le BL <strong>{replaceConfirm.numeroAffaire}</strong> existe déjà pour cet événement
               </p>
-              <p style={{ marginBottom: '16px', color: '#666' }}>
+              <p style={{ marginBottom: '16px', color: 'var(--theme-text-secondary)' }}>
                 Que souhaitez-vous faire ?
               </p>
               <div className="button-group">
@@ -870,8 +870,8 @@ const AffaireImportModal = ({
                   className="btn-add" 
                   onClick={() => handleConfirmReplace('add')}
                   style={{
-                    background: '#10b981',
-                    color: 'white'
+                    background: 'var(--theme-success)',
+                    color: 'var(--theme-text-inverse)'
                   }}
                 >
                   ➕ Ajouter comme nouvelle affaire
@@ -883,7 +883,7 @@ const AffaireImportModal = ({
                   🔄 Remplacer les données existantes
                 </button>
               </div>
-              <p style={{ fontSize: '12px', color: '#888', marginTop: '12px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--theme-text-muted)', marginTop: '12px' }}>
                 <strong>Ajouter :</strong> Crée une nouvelle affaire avec ce BL, liée à cet événement<br/>
                 <strong>Remplacer :</strong> Met à jour les données de l'affaire existante avec ce BL
               </p>
@@ -896,14 +896,14 @@ const AffaireImportModal = ({
               {/* Informations de l'événement Google */}
               {event && (
                 <div className="event-info" style={{
-                  background: '#f0f9ff',
+                  background: 'var(--theme-info-bg)',
                   padding: '12px',
                   borderRadius: '6px',
                   marginBottom: '20px',
                   fontSize: '14px',
-                  border: '1px solid #bfdbfe'
+                  border: '1px solid var(--theme-info-border)'
                 }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1e40af' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--theme-info-text)' }}>
                     📅 Événement Google Calendar
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -1110,7 +1110,7 @@ const AffaireImportModal = ({
                     value={formData.dateDebut}
                     onChange={(e) => setFormData(prev => ({ ...prev, dateDebut: e.target.value }))}
                   />
-                  <small style={{ color: '#6b7280', fontSize: '12px' }}>
+                  <small style={{ color: 'var(--theme-text-gray)', fontSize: '12px' }}>
                     Date de la prestation (doit être dans la période de l'événement)
                   </small>
                 </div>
@@ -1168,7 +1168,7 @@ const AffaireImportModal = ({
           {/* Étape 4: Upload BL additionnel */}
           {step === 'upload-additional' && !isProcessing && (
             <div className="upload-additional-step">
-              <p style={{ marginBottom: '20px', color: '#64748b' }}>
+              <p style={{ marginBottom: '20px', color: 'var(--theme-text-secondary)' }}>
                 Ajoutez des BL supplémentaires sans analyse automatique
               </p>
               <div 

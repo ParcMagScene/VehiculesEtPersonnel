@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,7 +82,7 @@
 }
 
 .qr-code-container {
-  background: white;
+  background: var(--theme-bg-card);
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -135,7 +135,7 @@
 
 .qr-url-display {
   padding: 10px 12px;
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 6px;
   border: 1px solid var(--theme-border-muted);
   font-family: 'Monaco', 'Menlo', monospace;
@@ -157,7 +157,7 @@
   margin: 0 0 12px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #1e40af;
+  color: var(--theme-info-dark);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -171,7 +171,7 @@
 
 .qr-legend li {
   padding: 6px 0;
-  color: #1e3a8a;
+  color: var(--theme-info-dark);
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -210,7 +210,7 @@
 /* Styles d'impression */
 @media print {
   .qr-modal-overlay {
-    background: white;
+    background: var(--theme-bg-card);
   }
 
   .qr-modal {

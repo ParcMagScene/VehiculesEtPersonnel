@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Calendar, MapPin, Save, Clock, Type, AlignLeft } from 'lucide-react';
 import './GoogleEventFormModal.css';
 import { useToast } from '../hooks/useToast';
+import AddressAutocomplete from './AddressAutocomplete';
 
 function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDate }) {
   const toast = useToast();
@@ -212,10 +213,9 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
             {/* Lieu */}
             <div className="event-form-field">
               <label><MapPin size={15} /> Lieu</label>
-              <input
-                type="text"
+              <AddressAutocomplete
                 value={formData.location}
-                onChange={e => handleChange('location', e.target.value)}
+                onChange={val => handleChange('location', val)}
                 placeholder="Adresse ou lieu"
               />
             </div>

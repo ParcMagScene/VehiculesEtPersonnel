@@ -100,7 +100,7 @@ export default function TruckModelPanel({ currentUser }) {
 
       <div className="catalog-toolbar">
         <div className="search-input" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <Search size={16} style={{ position: 'absolute', left: '0.75rem', color: '#94a3b8' }} />
+          <Search size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--theme-text-muted)' }} />
           <input
             type="text"
             placeholder="Rechercher…"

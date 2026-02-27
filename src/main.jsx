@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './theme.css'
+import './theme-palettes.css'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

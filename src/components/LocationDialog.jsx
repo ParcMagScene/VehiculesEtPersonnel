@@ -159,7 +159,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           input.placeholder = 'Rechercher une adresse...';
           input.className = 'autocomplete-input';
           input.id = 'address-autocomplete-input';
-          input.style.cssText = 'width: 100%; padding: 0.75rem; border: 2px solid #3b82f6; border-radius: 8px; font-size: 1rem; display: block; box-sizing: border-box; margin-bottom: 0.5rem; background: white; color: black; font-family: inherit;';
+          input.style.cssText = 'width: 100%; padding: 0.75rem; border: 2px solid #3b82f6; border-radius: 8px; font-size: 1rem; display: block; box-sizing: border-box; margin-bottom: 0.5rem; background: var(--theme-bg-card); color: var(--theme-text-primary); font-family: inherit;';
           addressAutocompleteContainerRef.current.appendChild(input);
         }
         

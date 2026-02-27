@@ -12,7 +12,7 @@
 }
 
 .user-management-section {
-  background: white;
+  background: var(--theme-bg-card);
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -21,23 +21,12 @@
 
 .access-requests-section {
   border-left: 4px solid var(--theme-warning);
-  background: linear-gradient(135deg, var(--theme-warning-bg) 0%, #fef3c7 100%);
+  background: linear-gradient(135deg, var(--theme-warning-bg) 0%, var(--theme-warning-bg) 100%);
 }
 
 .notification-icon {
   color: var(--theme-warning);
   animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.1);
-  }
 }
 
 .requests-list {
@@ -48,7 +37,7 @@
 }
 
 .request-card {
-  background: white;
+  background: var(--theme-bg-card);
   padding: 1rem;
   border-radius: 8px;
   display: flex;
@@ -101,7 +90,7 @@
 
 .btn-approve {
   background: var(--btn-success-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .btn-approve:hover {
@@ -122,17 +111,17 @@
 
 
 .status-badge.approved {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
 }
 
 .status-badge.rejected {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
 }
 
 .user-management-section {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
@@ -224,13 +213,13 @@
 }
 
 .status-badge.activated {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
 }
 
 .status-badge.pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
 }
 
 .role-badge {
@@ -245,8 +234,8 @@
 }
 
 .role-badge.admin {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-dark);
 }
 
 .role-badge.user {
@@ -274,7 +263,7 @@
 }
 
 .btn-icon.btn-danger:hover {
-  background: #fee2e2;
+  background: var(--theme-danger-bg);
 }
 
 .btn-icon.btn-warning {
@@ -282,7 +271,7 @@
 }
 
 .btn-icon.btn-warning:hover {
-  background: #fef3c7;
+  background: var(--theme-warning-bg);
 }
 
 .btn-icon.btn-primary {
@@ -290,7 +279,7 @@
 }
 
 .btn-icon.btn-primary:hover {
-  background: #dbeafe;
+  background: var(--theme-info-bg-strong);
 }
 
 .btn-icon:disabled {
@@ -348,7 +337,7 @@
 .no-data {
   text-align: center;
   padding: 40px 20px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-size: 14px;
 }
 
@@ -417,7 +406,7 @@
 
 .all-permissions-label {
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-style: italic;
 }
 
@@ -440,7 +429,7 @@
 /* ========== MODAL D'APPROBATION ========== */
 
 .approve-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   width: 90%;
   max-width: 480px;
@@ -462,7 +451,7 @@
   margin: 0;
   font-size: 1.2rem;
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .approve-modal-body {
@@ -539,7 +528,7 @@
   margin-left: 28px;
   margin-top: 4px;
   font-size: 0.8rem;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-weight: 400;
 }
 
@@ -560,18 +549,18 @@
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 500;
-  color: #059669;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
+  color: var(--btn-success-color);
+  background: var(--theme-success-bg);
+  border: 1px solid var(--btn-success-hover-bg);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 }
 .btn-create-personnel:hover {
-  background: #d1fae5;
-  border-color: #6ee7b7;
-  color: #047857;
+  background: var(--btn-success-bg);
+  border-color: var(--theme-success-border);
+  color: var(--theme-success-text);
 }
 
 /* Badge personnel existant */
@@ -589,24 +578,24 @@
   white-space: nowrap;
 }
 .personnel-linked-badge svg {
-  color: #059669;
+  color: var(--btn-success-color);
 }
 .personnel-linked-badge.clickable {
   cursor: pointer;
   transition: all 0.15s;
 }
 .personnel-linked-badge.clickable:hover {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
-  color: #059669;
+  background: var(--theme-success-bg);
+  border-color: var(--btn-success-hover-bg);
+  color: var(--btn-success-color);
 }
 .personnel-linked-badge.clickable:hover svg {
-  color: #047857;
+  color: var(--theme-success-text);
 }
 
 /* ===== Modal création personnel ===== */
 .create-personnel-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   width: 480px;
   max-width: 95vw;
@@ -628,7 +617,7 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .create-personnel-modal-body {
@@ -699,12 +688,12 @@
   transition: all 0.15s;
 }
 .personnel-type-card:hover {
-  border-color: #a7f3d0;
-  background: #ecfdf5;
+  border-color: var(--btn-success-hover-bg);
+  background: var(--theme-success-bg);
 }
 .personnel-type-card.active {
   border-color: var(--theme-success-alt);
-  background: #ecfdf5;
+  background: var(--theme-success-bg);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 .personnel-type-icon {
@@ -735,8 +724,8 @@
   transition: all 0.15s;
 }
 .contract-type-option:hover {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
+  background: var(--theme-success-bg);
+  border-color: var(--btn-success-hover-bg);
 }
 .contract-type-option input[type="radio"] {
   accent-color: var(--theme-success-alt);

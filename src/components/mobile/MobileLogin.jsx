@@ -65,7 +65,7 @@ function MobileLogin({ onLogin }) {
           <h1>Connexion eM@g</h1>
           <p>{mode === 'register' ? 'Créer un compte' : 'Connectez-vous pour continuer'}</p>
           {mode === 'register' && (
-            <small style={{ color: '#6b7280', fontSize: '12px', display: 'block', marginTop: '8px' }}>
+            <small style={{ color: 'var(--theme-text-gray)', fontSize: '12px', display: 'block', marginTop: '8px' }}>
               ⚠️ Email autorisé requis
             </small>
           )}
@@ -181,11 +181,11 @@ function MobileLogin({ onLogin }) {
       {showResetPassword && (
         <div className="mobile-modal-overlay" onClick={() => setShowResetPassword(false)}>
           <div className="mobile-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="mobile-modal-header" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+            <div className="mobile-modal-header" style={{ background: 'var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706))' }}>
               <h3>🔑 Réinitialiser le mot de passe</h3>
             </div>
             <div className="mobile-modal-body">
-              <p style={{ marginBottom: '16px', color: '#374151', fontSize: '14px' }}>
+              <p style={{ marginBottom: '16px', color: 'var(--theme-text-body)', fontSize: '14px' }}>
                 Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
               </p>
               

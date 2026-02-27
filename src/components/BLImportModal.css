@@ -1,0 +1,438 @@
+/* ═══ BLImportModal ═══ */
+.bl-import-overlay {
+  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
+  background: var(--theme-overlay);
+  z-index: 10000;
+  animation: fadeIn 0.15s ease;
+}
+
+.bl-import-modal {
+  background: var(--theme-bg-card);
+  border-radius: 14px;
+  width: 94%;
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+}
+
+.bl-import-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.bl-import-modal .modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+
+.bl-import-modal .modal-header h3 svg {
+  color: var(--theme-primary);
+}
+
+.bl-import-modal .modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bl-import-modal .modal-close:hover {
+  background: var(--theme-bg-tertiary);
+}
+
+.bl-import-modal .modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* Drop zone */
+.bl-import-modal .drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  border: 2px dashed var(--theme-border);
+  border-radius: 12px;
+  background: var(--theme-bg-tertiary);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.bl-import-modal .drop-zone:hover,
+.bl-import-modal .drop-zone.drag-over {
+  border-color: var(--theme-primary);
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.bl-import-modal .drop-zone svg {
+  margin-bottom: 12px;
+  color: var(--theme-text-secondary);
+}
+
+.bl-import-modal .drop-zone .drop-text {
+  font-size: 0.9rem;
+  color: var(--theme-text-secondary);
+  margin-bottom: 8px;
+}
+
+.bl-import-modal .drop-zone .drop-text strong {
+  color: var(--theme-primary);
+}
+
+.bl-import-modal .drop-zone .drop-hint {
+  font-size: 0.78rem;
+  color: var(--theme-text-muted);
+}
+
+/* File preview */
+.bl-import-modal .file-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--theme-border);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  background: var(--theme-bg-tertiary);
+}
+
+.bl-import-modal .file-preview .file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.bl-import-modal .file-preview .file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bl-import-modal .file-preview .file-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--theme-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bl-import-modal .file-preview .file-size {
+  font-size: 0.78rem;
+  color: var(--theme-text-secondary);
+}
+
+.bl-import-modal .file-preview .file-remove {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bl-import-modal .file-preview .file-remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Parse results */
+.bl-import-modal .parse-results {
+  margin-top: 16px;
+}
+
+.bl-import-modal .parse-results h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  margin: 0 0 12px;
+  color: var(--theme-text-primary);
+}
+
+.bl-import-modal .parsed-field {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--theme-border);
+  font-size: 0.85rem;
+}
+
+.bl-import-modal .parsed-field .field-label {
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.bl-import-modal .parsed-field .field-value {
+  color: var(--theme-text-primary);
+}
+
+.bl-import-modal .parsed-items {
+  margin-top: 12px;
+}
+
+.bl-import-modal .parsed-items h5 {
+  font-size: 0.82rem;
+  color: var(--theme-text-secondary);
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bl-import-modal .parsed-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--theme-bg-tertiary);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+}
+
+.bl-import-modal .parsed-item .item-qty {
+  font-weight: 700;
+  color: var(--theme-primary);
+  min-width: 30px;
+}
+
+.bl-import-modal .parsed-item .item-desc {
+  flex: 1;
+  color: var(--theme-text-primary);
+}
+
+/* Status badges */
+.bl-import-modal .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.bl-import-modal .status-badge.success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.bl-import-modal .status-badge.warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.bl-import-modal .status-badge.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+/* Affaire association */
+.bl-import-modal .affaire-section {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--theme-border);
+  border-radius: 10px;
+  background: var(--theme-bg-tertiary);
+}
+
+.bl-import-modal .affaire-section label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  margin-bottom: 8px;
+}
+
+.bl-import-modal .affaire-section input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  font-size: 0.88rem;
+}
+
+.bl-import-modal .affaire-section input:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+}
+
+/* Progress bar */
+.bl-import-modal .progress-bar {
+  height: 4px;
+  background: var(--theme-bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.bl-import-modal .progress-bar .progress-fill {
+  height: 100%;
+  background: var(--theme-primary);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+/* Footer */
+.bl-import-modal .modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--theme-border);
+}
+
+.bl-import-modal .modal-footer .footer-left {
+  font-size: 0.8rem;
+  color: var(--theme-text-secondary);
+}
+
+.bl-import-modal .modal-footer .footer-right {
+  display: flex;
+  gap: 8px;
+}
+
+.bl-import-modal .btn-secondary {
+  padding: 8px 20px;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.bl-import-modal .btn-secondary:hover {
+  background: var(--theme-bg-tertiary);
+}
+
+.bl-import-modal .btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 24px;
+  border: none;
+  border-radius: 8px;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.bl-import-modal .btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.bl-import-modal .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bl-import-modal .btn-generate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--theme-success);
+  color: var(--theme-text-inverse);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.bl-import-modal .btn-generate:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.bl-import-modal .btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Raw text toggle */
+.bl-import-modal .raw-text-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--theme-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.bl-import-modal .raw-text-block {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--theme-bg-tertiary);
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--theme-text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .bl-import-modal {
+    width: 98%;
+    max-height: 95vh;
+  }
+}
+
+/* AddressAutocomplete inside BL Import Modal */
+.bl-import-modal .address-autocomplete-wrapper {
+  flex: 1;
+}
+
+.bl-import-modal .bl-address-input {
+  padding: 3px 8px !important;
+  border-radius: 5px !important;
+  font-size: 0.82rem !important;
+}

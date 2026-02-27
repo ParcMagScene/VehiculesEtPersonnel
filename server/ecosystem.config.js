@@ -14,10 +14,17 @@ export default {
       env: {
         NODE_ENV: "production"
       },
+      // Logs structurés
+      error_file: "/Users/reunion/eM@g/server/logs/backend-error.log",
+      out_file: "/Users/reunion/eM@g/server/logs/backend-out.log",
+      merge_logs: true,
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
       // Sauvegarde automatique toutes les 6 heures
       cron_restart: "0 */6 * * *",
       // Script à exécuter après le redémarrage
-      post_update: ["./backup-database.sh"]
+      post_update: ["./backup-database.sh"],
+      // Graceful shutdown
+      shutdown_with_message: true,
     },
     {
       name: "vehicules",

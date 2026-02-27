@@ -1045,8 +1045,12 @@ class ApiClient {
     return this.request('/equipment/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
   }
 
-  async importSavTicketsCsv(data, mode = 'import', manualLinks = null) {
-    return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks }) });
+  async importSavTicketsCsv(data, mode = 'import', manualLinks = null, skipDuplicates = false) {
+    return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks, skipDuplicates }) });
+  }
+
+  async removeSavDuplicates() {
+    return this.request('/sav-tickets/duplicates', { method: 'DELETE' });
   }
 
   async getUnlinkedSavTickets() {
@@ -1110,6 +1114,29 @@ class ApiClient {
   }
   async getEquipmentPhotos() {
     return this.request('/equipment-photos');
+  }
+  async uploadEquipmentPhotos(files) {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append('photos', file);
+    }
+    const token = localStorage.getItem('auth_token');
+    const res = await fetch(`${this.baseUrl}/equipment-photos/upload`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Erreur upload');
+    }
+    return res.json();
+  }
+  async deleteEquipmentPhoto(filename) {
+    return this.request(`/equipment-photos/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+  }
+  async renameEquipmentPhoto(oldName, newName) {
+    return this.request('/equipment-photos/rename', { method: 'PUT', body: JSON.stringify({ oldName, newName }) });
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1191,6 +1218,9 @@ class ApiClient {
   async getCatalogCategories() {
     return this.request('/catalog/equipment/categories');
   }
+  async matchCatalogReferences(references) {
+    return this.request('/catalog/equipment/match-references', { method: 'POST', body: JSON.stringify({ references }) });
+  }
   async createCatalogEquipment(data) {
     return this.request('/catalog/equipment', { method: 'POST', body: JSON.stringify(data) });
   }
@@ -1210,11 +1240,14 @@ class ApiClient {
   }
 
   // Zones dépôt pour matériel inventaire
-  async getEquipmentDepotZones() {
-    return this.request('/equipment-depot-zones');
+  async getEquipmentDepotZones(depot = 1) {
+    return this.request(`/equipment-depot-zones?depot=${depot}`);
   }
-  async getEquipmentLocationStats() {
-    return this.request('/equipment-location-stats');
+  async getAllDepotZones() {
+    return this.request('/equipment-all-depot-zones');
+  }
+  async getEquipmentLocationStats(depot = null) {
+    return this.request(`/equipment-location-stats${depot ? `?depot=${depot}` : ''}`);
   }
 
   // Flight-cases
@@ -1305,6 +1338,160 @@ class ApiClient {
   }
   async getStockStats() {
     return this.request('/stock/stats');
+  }
+
+  // ============ COMMUNICATION ============
+
+  // --- Affichage dynamique (display events) ---
+  async getDisplayEvents(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/display-events${qs ? '?' + qs : ''}`);
+  }
+  async getDisplayEvent(id) {
+    return this.request(`/communication/display-events/${id}`);
+  }
+  async createDisplayEvent(data) {
+    return this.request('/communication/display-events', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateDisplayEvent(id, data) {
+    return this.request(`/communication/display-events/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteDisplayEvent(id) {
+    return this.request(`/communication/display-events/${id}`, { method: 'DELETE' });
+  }
+  async toggleDisplayEventVisibility(id) {
+    return this.request(`/communication/display-events/${id}/toggle-visible`, { method: 'PATCH' });
+  }
+
+  // --- Import BL ---
+  async getBLImports(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/bl-imports${qs ? '?' + qs : ''}`);
+  }
+  async getBLImport(id) {
+    return this.request(`/communication/bl-imports/${id}`);
+  }
+  async uploadBLImport(formData) {
+    // Utilise fetch directement car multipart/form-data (pas JSON)
+    const headers = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    const response = await fetch(`${API_URL}/communication/bl-imports`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Erreur upload BL');
+    }
+    const data = await response.json();
+    return toCamelCase(data);
+  }
+  async deleteBLImport(id) {
+    return this.request(`/communication/bl-imports/${id}`, { method: 'DELETE' });
+  }
+
+  // --- Articles BP (liaison catalogue) ---
+  async getBPItems(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/bp-items${qs ? '?' + qs : ''}`);
+  }
+  async matchBPItem(id, equipmentCatalogId) {
+    return this.request(`/communication/bp-items/${id}/match`, {
+      method: 'PUT',
+      body: JSON.stringify({ equipment_catalog_id: equipmentCatalogId }),
+    });
+  }
+
+  // --- Tâches / Planning ---
+  async getTasks(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/tasks${qs ? '?' + qs : ''}`);
+  }
+  async getTask(id) {
+    return this.request(`/communication/tasks/${id}`);
+  }
+  async createTask(data) {
+    return this.request('/communication/tasks', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateTask(id, data) {
+    return this.request(`/communication/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteTask(id) {
+    return this.request(`/communication/tasks/${id}`, { method: 'DELETE' });
+  }
+  async createTasksBatch(tasks) {
+    return this.request('/communication/tasks/batch', { method: 'POST', body: JSON.stringify({ tasks }) });
+  }
+  async deleteTasksBySource(sourceId) {
+    return this.request(`/communication/tasks/by-source/${sourceId}`, { method: 'DELETE' });
+  }
+  async toggleTaskVisibility(id) {
+    return this.request(`/communication/tasks/${id}/toggle-visible`, { method: 'PATCH' });
+  }
+  async createDisplayEventsBatch(events) {
+    const results = [];
+    for (const ev of events) {
+      const created = await this.request('/communication/display-events', { method: 'POST', body: JSON.stringify(ev) });
+      results.push(created);
+    }
+    return results;
+  }
+
+  // --- Stats Communication ---
+  async getCommunicationStats() {
+    return this.request('/communication/stats');
+  }
+
+  // --- Export PDF tâches ---
+  async exportTasksPdf(date, taskIds, affaireIds, eventIds, gcalEvents) {
+    const token = localStorage.getItem('auth_token');
+    let url = `${API_URL}/communication/tasks/export-pdf?date=${date}`;
+    if (taskIds && taskIds.length > 0) {
+      url += `&taskIds=${taskIds.join(',')}`;
+    }
+    if (affaireIds && affaireIds.length > 0) {
+      url += `&affaireIds=${affaireIds.join(',')}`;
+    }
+    if (eventIds && eventIds.length > 0) {
+      url += `&eventIds=${eventIds.join(',')}`;
+    }
+    const body = (gcalEvents && gcalEvents.length > 0) ? JSON.stringify({ gcalEvents }) : undefined;
+    const resp = await fetch(url, {
+      method: body ? 'POST' : 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body } : {}),
+    });
+    if (!resp.ok) throw new Error('Erreur export PDF');
+    return resp.blob();
+  }
+
+  // --- Affaires pour planning ---
+  async getPlanningAffaires(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/planning-affaires${qs ? '?' + qs : ''}`);
+  }
+
+  // --- Masquer/réafficher une affaire de la planification ---
+  async hidePlanningAffaire(numeroAffaire) {
+    return this.request(`/communication/planning-hidden-affaires/${encodeURIComponent(numeroAffaire)}`, { method: 'POST' });
+  }
+
+  async unhidePlanningAffaire(numeroAffaire) {
+    return this.request(`/communication/planning-hidden-affaires/${encodeURIComponent(numeroAffaire)}`, { method: 'DELETE' });
+  }
+
+  // --- Affecter personnel à un événement d'affichage ---
+  async assignDisplayEvent(id, personId) {
+    return this.request(`/communication/display-events/${id}/assign`, {
+      method: 'PUT',
+      body: JSON.stringify({ person_id: personId }),
+    });
   }
 }
 

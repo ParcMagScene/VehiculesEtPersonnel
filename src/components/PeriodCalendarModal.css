@@ -5,7 +5,7 @@
 .pcm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--theme-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -14,13 +14,8 @@
   animation: fadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .pcm-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   width: 420px;
   max-width: 95vw;
@@ -43,7 +38,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .pcm-header-info {
@@ -75,7 +70,7 @@
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.15);
-  color: white;
+  color: var(--theme-text-inverse);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -117,7 +112,7 @@
   width: 32px;
   height: 32px;
   border: 1px solid var(--theme-border);
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 8px;
   cursor: pointer;
   color: var(--theme-text-secondary);
@@ -126,7 +121,7 @@
 
 .pcm-nav-btn:hover {
   background: var(--theme-border-light);
-  border-color: #cbd5e1;
+  border-color: var(--theme-border);
 }
 
 .pcm-cal-grid {
@@ -166,7 +161,8 @@
 }
 
 .pcm-cal-day.other-month {
-  color: #cbd5e1;
+  color: var(--theme-text-muted);
+  opacity: 0.5;
 }
 
 .pcm-cal-day.weekend {
@@ -185,14 +181,14 @@
 
 .pcm-cal-day.range-start {
   background: var(--range-color, var(--theme-info));
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 700;
   border-radius: 8px 0 0 8px;
 }
 
 .pcm-cal-day.range-end {
   background: var(--range-color, var(--theme-info));
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 700;
   border-radius: 0 8px 8px 0;
 }
@@ -229,7 +225,7 @@
 .pcm-cal-day.saved.range-start,
 .pcm-cal-day.saved.range-end {
   background: var(--range-color, var(--theme-info));
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 /* ── Options ── */
@@ -275,7 +271,7 @@
 
 .pcm-period-toggle button.active {
   background: var(--theme-info);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .pcm-date-display {
@@ -322,12 +318,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #fef3c7;
+  background: var(--theme-warning-bg);
   border: 1px solid #fcd34d;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
-  color: #92400e;
+  color: var(--theme-warning-text);
 }
 
 .pcm-approval-notice {
@@ -340,7 +336,7 @@
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
-  color: #1e40af;
+  color: var(--theme-info-dark);
 }
 
 .pcm-error {
@@ -349,7 +345,7 @@
   gap: 8px;
   padding: 8px 12px;
   background: var(--theme-danger-bg);
-  border: 1px solid #fecaca;
+  border: 1px solid var(--btn-danger-hover-bg);
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
@@ -363,11 +359,11 @@
   padding: 10px 14px;
   margin: 0 20px 12px;
   background: var(--theme-success-bg);
-  border: 1px solid #bbf7d0;
+  border: 1px solid var(--theme-success-border);
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
-  color: #15803d;
+  color: var(--theme-success-text-alt);
   animation: fadeIn 0.2s ease;
 }
 
@@ -384,7 +380,7 @@
 .pcm-btn-cancel {
   padding: 8px 16px;
   border: 1px solid var(--theme-border);
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -395,7 +391,7 @@
 
 .pcm-btn-cancel:hover {
   background: var(--theme-bg-page);
-  border-color: #cbd5e1;
+  border-color: var(--theme-border);
 }
 
 .pcm-btn-submit {
@@ -407,7 +403,7 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
   cursor: pointer;
   transition: all 0.15s;
 }

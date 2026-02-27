@@ -43,7 +43,7 @@
   align-items: center;
   padding: 20px 24px;
   background: var(--theme-danger-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
   border-radius: var(--modal-header-border-radius);
 }
 
@@ -89,7 +89,7 @@
 }
 
 .overdue-intervention-modal-content::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--theme-bg-muted);
   border-radius: 3px;
 }
 
@@ -111,7 +111,7 @@
 }
 
 .intervention-description {
-  color: #4b5563;
+  color: var(--theme-text-subtle);
   font-size: 15px;
   margin: 0 0 8px 0;
   line-height: 1.5;
@@ -147,7 +147,7 @@
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .action-button.completed {
@@ -157,7 +157,7 @@
 
 .action-button.completed:hover {
   background: var(--theme-success);
-  color: white;
+  color: var(--theme-text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
@@ -169,7 +169,7 @@
 
 .action-button.not-completed:hover {
   background: var(--theme-danger);
-  color: white;
+  color: var(--theme-text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
@@ -181,7 +181,7 @@
 
 .action-button.reschedule:hover {
   background: var(--btn-warning-color, var(--theme-warning-dark));
-  color: white;
+  color: var(--theme-text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }
@@ -193,7 +193,7 @@
 
 .action-button.pending:hover {
   background: var(--theme-primary-light);
-  color: white;
+  color: var(--theme-text-inverse);
   transform: translateY(-2px);
   box-shadow: var(--btn-primary-hover-shadow);
 }

@@ -1,6 +1,6 @@
-# 🚛 eM@g — Gestion de Flotte & Personnel
+# 🚛 eM@g — Gestion de Flotte, Personnel & Équipements
 
-Application web de **gestion de flotte de véhicules et de planning du personnel** pour Mag Scène (entreprise de prestations événementielles à La Réunion).
+Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour Mag Scène (entreprise de prestations événementielles à La Réunion).
 
 ## ✨ Fonctionnalités
 
@@ -22,18 +22,37 @@ Application web de **gestion de flotte de véhicules et de planning du personnel
 - **Types** : Entretien programmé, réparation, contrôle technique, révision, signalement de panne
 - **Workflow** : `reported` → `scheduled` → `in_progress` → `completed`
 - **Signalement rapide** : Même pour les utilisateurs non-admin
-- **Alertes** : Interventions en retard
 
-### 👷 Personnel
+### 👷 Personnel & Congés
 - **Personnes** : Recherche, filtres par type, compétences avec niveaux
 - **Compétences** : 8 catégories (Son, Lumière, Vidéo, Régie, Transport, Structure, Électricité, Autre)
 - **Missions** : 6 statuts, gestion des affectations avec détection de conflits
 - **Planning** : Grille semaine, personnes en lignes, jours en colonnes
+- **Congés** : Demandes, approbation, solde, planning intégré
 
 ### 📎 Affaires
 - **Dossiers projets** : Création, recherche, filtres
 - **Pièces jointes** : Upload multi-format (PDF, images, documents) jusqu'à 50 MB
-- **Import** : BL (PDF), fichiers Excel
+- **Import** : BL (PDF), fichiers Excel, BL fournisseur/prestataire
+
+### 📦 Catalogue & Équipements
+- **Catalogue d'équipements** : Matériel, câbles, armoires… avec familles et catégories
+- **Matériel individualisé** : UID unique, numéro de série, état, SAV
+- **Localisation multi-dépôt** : 2 dépôts (Événementiel / Structure) avec plans interactifs SVG
+- **Zones par étage** : RDC, Mezzanine, Extérieur — sélection en cascade (Dépôt → Étage → Zone → Code)
+- **Flight-cases** : Modèles de conteneurs réutilisables
+- **Modèles de camions** : Dimensions cargo, hayons, chargement 3D
+- **Deep linking** : Intégration bidirectionnelle avec application Chargement 3D
+
+### 📊 Stock & Commandes
+- **Suivi de stock** : Mouvements entrées/sorties, inventaire
+- **Commandes fournisseurs** : Création, suivi, réception
+- **Bons de commande** : Génération et gestion
+
+### 📢 Communication & Mailing
+- **Événements** : Agenda d'entreprise, affichage écran (toggle visibilité)
+- **Notes internes** : Partage d'informations
+- **Mailing** : Templates, envoi groupé, historique
 
 ### 💬 Messagerie
 - **Conversations** : Temps réel entre utilisateurs
@@ -43,6 +62,7 @@ Application web de **gestion de flotte de véhicules et de planning du personnel
 - **Interface dédiée** : Planning, réservations, maintenances, personnel, messagerie
 - **QR Code** : Accès rapide par véhicule
 - **Tableau de bord** : Vue synthétique du parc
+- **PWA** : Installation possible en mode hors ligne
 
 ### 👥 Utilisateurs
 - **Inscription par invitation** : Emails pré-autorisés
@@ -96,15 +116,15 @@ cp server/.env.example server/.env
 ### Lancement en développement
 
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 — Backend (port 3003)
 cd server && npm start
 
-# Terminal 2 — Frontend
+# Terminal 2 — Frontend (port 5174)
 npm run dev
 ```
 
 - **Frontend** : http://localhost:5174
-- **Backend API** : http://localhost:3002
+- **Backend API** : http://localhost:3003
 
 ### Déploiement production
 
@@ -126,25 +146,24 @@ Le script `scripts/safe-deploy.sh` effectue :
 eM@g/
 ├── index.html              # Point d'entrée HTML (SPA)
 ├── package.json            # Dépendances frontend
-├── vite.config.js          # Configuration Vite (proxy /api → :3002)
+├── vite.config.js          # Configuration Vite (proxy /api → :3003)
 ├── src/
 │   ├── main.jsx            # Point d'entrée React
-│   ├── App.jsx             # Composant racine (~1248 lignes)
-│   ├── App.css             # Styles globaux
-│   ├── theme.css           # Variables de thème
-│   ├── components/         # 43 composants React desktop
-│   │   └── mobile/         # 10 composants mobile
-│   ├── hooks/              # 4 hooks custom
-│   └── utils/              # 12 utilitaires (API client, dates, import, etc.)
+│   ├── App.jsx             # Composant racine (~1401 lignes)
+│   ├── components/         # 79 composants React desktop
+│   │   └── mobile/         # 14 composants mobile
+│   ├── hooks/              # 7 hooks custom
+│   └── utils/              # 13 utilitaires (API client, dates, import, etc.)
 ├── server/
-│   ├── server.js           # Express (~2545 lignes, 65 routes)
-│   ├── routes.js           # Routes secondaires (~641 lignes, 30 routes)
-│   ├── personnelRoutes.js  # Routes personnel (~928 lignes, 27 routes)
-│   ├── database.js         # SQLite 27 tables (~966 lignes)
-│   └── migrations/         # 9 fichiers SQL
+│   ├── server.js           # Express (~2835 lignes)
+│   ├── database.js         # SQLite 56 tables (~1915 lignes)
+│   ├── 10 fichiers routes  # ~7 000 lignes de routes API
+│   ├── emailService.js     # Service d'envoi d'emails
+│   └── migrations/         # 16 fichiers SQL
 ├── public/
+│   ├── depot-zones.json    # Plan dépôt 1 (Événementiel)
+│   ├── depot2-zones.json   # Plan dépôt 2 (Structure)
 │   ├── Photos/             # Photos des véhicules
-│   ├── Logos/              # Logos de l'application
 │   └── attachments/        # Pièces jointes par affaire
 └── scripts/                # Scripts de déploiement et développement
 ```
@@ -159,13 +178,13 @@ eM@g/
 
 ### Développement
 - **Frontend** : http://localhost:5174
-- **Backend** : http://localhost:3002
+- **Backend** : http://localhost:3003
 
 ---
 
 ## 📖 Documentation
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — Architecture technique complète (schéma DB, routes API, composants)
+- [ARCHITECTURE.md](ARCHITECTURE.md) — Architecture technique complète (DB, API, composants, catalogue, deep linking, dépôts)
 - [SECURITY.md](SECURITY.md) — Politique de sécurité et vulnérabilités connues
 - [GUIDE_DEMARRAGE_RAPIDE.md](GUIDE_DEMARRAGE_RAPIDE.md) — Guide utilisateur
 
@@ -174,11 +193,12 @@ eM@g/
 ## 📝 Commandes disponibles
 
 ```bash
-npm run dev        # Serveur de développement (Vite)
-npm run build      # Build de production
-npm run preview    # Prévisualiser le build
-npm run deploy     # Build + déploiement PM2
-npm run lint       # Vérification du code (ESLint)
+npm run dev          # Serveur de développement (Vite)
+npm run build        # Build de production
+npm run preview      # Prévisualiser le build
+npm run deploy       # Build + déploiement PM2
+npm run lint         # Vérification du code (ESLint)
+npm run dev:start    # Démarre backend + frontend en dev
 ```
 
 ---

@@ -37,11 +37,11 @@
   padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid var(--border-light, #e0e0e0);
-  background: var(--bg-card, #fff);
+  background: var(--theme-bg-card);
   cursor: pointer;
   transition: all 0.15s ease;
   font-size: 0.8rem;
-  color: var(--text-secondary, #666);
+  color: var(--theme-text-secondary);
   min-width: 80px;
 }
 
@@ -50,7 +50,7 @@
 }
 
 .pi-collision-stat.active {
-  border-color: var(--primary, var(--theme-info));
+  border-color: var(--theme-primary);
   background: rgba(59, 130, 246, 0.08);
 }
 
@@ -84,7 +84,7 @@
   cursor: pointer;
   font-weight: 500;
   font-size: 0.85rem;
-  color: var(--text-secondary, #666);
+  color: var(--theme-text-secondary);
   padding: 6px 8px;
   border-radius: 6px;
   transition: background 0.15s ease;
@@ -123,7 +123,7 @@
 
 .pi-action-badge.create {
   background: rgba(16, 185, 129, 0.12);
-  color: #059669;
+  color: var(--btn-success-color);
 }
 
 .pi-action-badge.update {
@@ -153,7 +153,7 @@
 
 .pi-type-intermittent {
   background: rgba(139, 92, 246, 0.12);
-  color: #7c3aed;
+  color: var(--theme-purple-accent);
 }
 
 .pi-type-autoentrepreneur {
@@ -164,12 +164,12 @@
 /* ---------- COLLISION MATCH ---------- */
 .pi-collision-match {
   font-size: 0.82rem;
-  color: var(--text-primary, #333);
+  color: var(--theme-text-primary);
 }
 
 .pi-collision-via {
   font-size: 0.72rem;
-  color: var(--text-secondary, #999);
+  color: var(--theme-text-secondary);
   margin-left: 4px;
 }
 
@@ -184,14 +184,14 @@
 
 .pi-analyze-hint {
   font-size: 0.8rem;
-  color: var(--text-secondary, #999);
+  color: var(--theme-text-secondary);
 }
 
 /* ---------- DARK MODE ---------- */
 [data-theme="dark"] .pi-collision-stat {
-  border-color: var(--border-dark, #3a3a3a);
-  background: var(--bg-card-dark, #2a2a2a);
-  color: var(--text-secondary-dark, #aaa);
+  border-color: var(--theme-border);
+  background: var(--theme-bg-secondary);
+  color: var(--theme-text-primary);
 }
 
 [data-theme="dark"] .pi-collision-stat:hover {
@@ -203,7 +203,7 @@
 }
 
 [data-theme="dark"] .pi-collision-header {
-  color: var(--text-secondary-dark, #aaa);
+  color: var(--theme-text-dark);
 }
 
 [data-theme="dark"] .pi-collision-header:hover {
@@ -215,7 +215,7 @@
 }
 
 [data-theme="dark"] .pi-collision-match {
-  color: var(--text-primary-dark, #ddd);
+  color: var(--theme-text-heading);
 }
 
 [data-theme="dark"] .pi-action-badge.create {

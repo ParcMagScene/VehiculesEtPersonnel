@@ -65,21 +65,43 @@
   --theme-info: #3b82f6;
   --theme-info-dark: #2563eb;
   --theme-info-bg: #eff6ff;
+  --theme-info-bg-strong: #dbeafe;
   --theme-info-border: #bfdbfe;
+  --theme-info-text: #1d4ed8;
+  --theme-info-text-alt: #4338ca;
   
   /* ─── Warning / Orange ─── */
   --theme-warning: #f59e0b;
   --theme-warning-dark: #d97706;
   --theme-warning-bg: #fffbeb;
+  --theme-warning-text: #92400e;
+  --theme-warning-text-alt: #78350f;
+  --theme-warning-border: #fed7aa;
   
   /* ─── Succès — étendus ─── */
   --theme-success-alt: #10b981;
   --theme-success-bg: #f0fdf4;
+  --theme-success-bg-strong: #dcfce7;
   --theme-success-border: #86efac;
+  --theme-success-text: #065f46;
+  --theme-success-text-alt: #166534;
   
   /* ─── Danger — étendus ─── */
   --theme-danger-bg: #fef2f2;
   --theme-danger-border: #fca5a5;
+  --theme-danger-text: #991b1b;
+  --theme-danger-text-alt: #b91c1c;
+
+  /* ─── Orange ─── */
+  --theme-orange-bg: #fff7ed;
+  --theme-orange-text: #9a3412;
+
+  /* ─── Violet/Purple ─── */
+  --theme-purple-bg: #faf5ff;
+  --theme-purple-bg-strong: #ddd6fe;
+  --theme-purple-border: #d8b4fe;
+  --theme-purple-accent: #c4b5fd;
+  --theme-purple-text: #6d28d9;
   
   /* ─── Bordures ─── */
   --theme-border: #e2e8f0;
@@ -89,6 +111,8 @@
   /* ─── Fonds ─── */
   --theme-bg-page: #f8fafc;
   --theme-bg-card: white;
+  --theme-bg-card-translucent: rgba(255, 255, 255, 0.95);
+  --theme-bg-muted: #cbd5e1;
   --theme-bg-hover: #eef2ff;
   --theme-bg-indigo-light: #e0e7ff;
   --theme-bg-indigo-lighter: #c7d2fe;
@@ -166,6 +190,36 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.2s ease;
   --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ─── Alias courts → Variables thème ───
+     Ces alias sont utilisés dans les CSS de composants
+     et pointent vers les --theme-* correspondantes.
+     En dark mode, les --theme-* sont redéfinies → les alias
+     prennent automatiquement les bonnes valeurs.
+     ────────────────────────────────────────── */
+  
+  /* Alias court → --theme-* (utilisés dans le codebase) */
+  --bg-primary: var(--theme-bg-card);
+  --bg-secondary: var(--theme-bg-secondary);
+  --bg-tertiary: var(--theme-bg-tertiary);
+  --bg-card-dark: var(--theme-bg-dark);
+  --bg-hover: var(--theme-bg-hover);
+  --hover-bg: var(--theme-bg-hover);
+  --text-primary: var(--theme-text-primary);
+  --text-primary-dark: var(--theme-text-heading);
+  --text-secondary: var(--theme-text-secondary);
+  --text-secondary-dark: var(--theme-text-dark);
+  --text-tertiary: var(--theme-text-muted);
+  --border-color: var(--theme-border);
+  --border-light: var(--theme-border-light);
+  --border-dark: var(--theme-border-medium);
+  --border-primary: var(--theme-primary);
+  --primary: var(--theme-primary);
+  --primary-color: var(--theme-primary);
+  --sec-bg: transparent;
+  --sec-border: var(--theme-border);
+  --sec-color: var(--theme-info);
+  --sec-text: var(--theme-text-primary);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -183,7 +237,7 @@
   --theme-indigo: #818cf8;
   
   /* ─── Dégradés ─── */
-  --theme-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --theme-gradient: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
   --theme-gradient-reverse: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   --theme-gradient-subtle: linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%);
   --theme-gradient-alt: linear-gradient(135deg, #818cf8, #a78bfa);
@@ -193,13 +247,29 @@
   --theme-danger-dark: #ef4444;
   --theme-danger-bg: #451a1a;
   --theme-danger-border: #991b1b;
+  --theme-danger-text: #fca5a5;
+  --theme-danger-text-alt: #f87171;
+  
+  /* ─── Orange ─── */
+  --theme-orange-bg: #431407;
+  --theme-orange-text: #fdba74;
+
+  /* ─── Violet/Purple ─── */
+  --theme-purple-bg: #2e1065;
+  --theme-purple-bg-strong: #3b0764;
+  --theme-purple-border: #581c87;
+  --theme-purple-accent: #7c3aed;
+  --theme-purple-text: #a78bfa;
   
   /* ─── Succès ─── */
   --theme-success: #4ade80;
   --theme-success-dark: #22c55e;
   --theme-success-alt: #34d399;
   --theme-success-bg: #14261a;
+  --theme-success-bg-strong: #14532d;
   --theme-success-border: #166534;
+  --theme-success-text: #86efac;
+  --theme-success-text-alt: #4ade80;
   
   /* ─── Texte ─── */
   --theme-text-primary: #f1f5f9;
@@ -222,6 +292,7 @@
   /* ─── Fonds ─── */
   --theme-bg-page: #0f172a;
   --theme-bg-card: #1e293b;
+  --theme-bg-muted: #475569;
   --theme-bg-secondary: #1e293b;
   --theme-bg-tertiary: #334155;
   --theme-bg-hover: #2d3554;
@@ -229,17 +300,24 @@
   --theme-bg-darker: #020617;
   --theme-bg-indigo-light: #1e1b4b;
   --theme-bg-indigo-lighter: #312e81;
+  --theme-bg-card-translucent: rgba(30, 41, 59, 0.95);
   
   /* ─── Info / Bleu ─── */
   --theme-info: #60a5fa;
   --theme-info-dark: #3b82f6;
   --theme-info-bg: #172554;
+  --theme-info-bg-strong: #1e3a5f;
   --theme-info-border: #1e40af;
+  --theme-info-text: #93c5fd;
+  --theme-info-text-alt: #60a5fa;
   
   /* ─── Warning / Orange ─── */
   --theme-warning: #fbbf24;
   --theme-warning-dark: #f59e0b;
   --theme-warning-bg: #451a03;
+  --theme-warning-text: #fde68a;
+  --theme-warning-text-alt: #fbbf24;
+  --theme-warning-border: #92400e;
   
   /* ─── Overlay ─── */
   --theme-overlay: rgba(0, 0, 0, 0.7);
@@ -311,19 +389,6 @@
 
 .theme-modal-header h3 {
   font-size: 16px;
-}
-
-/* Badge semi-transparent dans header */
-.theme-header-badge {
-  padding: 3px 12px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
 }
 
 /* Bouton close standard */
@@ -431,148 +496,7 @@
   border-color: var(--btn-secondary-hover-border-color);
 }
 
-/* Bouton danger (supprimer) */
-.theme-btn-danger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: var(--btn-danger-border);
-  border-radius: var(--btn-radius);
-  background: var(--btn-danger-bg);
-  color: var(--btn-danger-color);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
 
-.theme-btn-danger:hover {
-  background: var(--btn-danger-hover-bg);
-}
-
-/* Bouton danger rempli (variante forte) */
-.theme-btn-danger-filled {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: none;
-  border-radius: var(--btn-radius);
-  background: var(--btn-danger-filled-bg);
-  color: var(--btn-danger-filled-color);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
-
-.theme-btn-danger-filled:hover {
-  background: var(--theme-danger-dark);
-}
-
-/* Bouton succès (terminé / valider) */
-.theme-btn-success {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: var(--btn-success-border);
-  border-radius: var(--btn-radius);
-  background: var(--btn-success-bg);
-  color: var(--btn-success-color);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
-
-.theme-btn-success:hover {
-  background: var(--btn-success-hover-bg);
-}
-
-/* Bouton warning (reporter / en attente) */
-.theme-btn-warning {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: var(--btn-warning-border);
-  border-radius: var(--btn-radius);
-  background: var(--btn-warning-bg);
-  color: var(--btn-warning-color);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
-
-.theme-btn-warning:hover {
-  background: var(--btn-warning-hover-bg);
-}
-
-/* Bouton outline (variante contour) */
-.theme-btn-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: 2px solid var(--theme-primary);
-  border-radius: var(--btn-radius);
-  background: white;
-  color: var(--theme-primary);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
-
-.theme-btn-outline:hover {
-  background: var(--theme-bg-hover);
-}
-
-/* Petit bouton icône (éditer/supprimer dans listes) */
-.theme-btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--theme-text-muted);
-  cursor: pointer;
-  transition: var(--btn-transition);
-}
-
-.theme-btn-icon:hover {
-  background: var(--theme-bg-hover);
-  color: var(--theme-primary);
-}
-
-.theme-btn-icon.danger:hover {
-  background: #fef2f2;
-  color: var(--theme-danger);
-}
-
-/* Input focus style */
-.theme-input:focus {
-  outline: none;
-  border-color: var(--focus-border);
-  box-shadow: var(--focus-ring);
-}
 
 /* ═══════════════════════════════════════════════════════
    TOOLTIP UNIFIÉ
@@ -684,51 +608,20 @@
   visibility: visible;
 }
 
-/* ─── Scrollbar unifiée ─── */
-.emag-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
 
-.emag-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
-}
-
-.emag-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.emag-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
 
 /* ═══════════════════════════════════════════════════════════════
-   Animations centralisées (P4)
+   Animations centralisées
    ═══════════════════════════════════════════════════════════════ */
-
-/* Transition douce pour changement de module */
-@keyframes moduleTransition {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.module-enter {
-  animation: moduleTransition 0.25s ease both;
-}
 
 /* Micro-interaction boutons — press effect global */
 .theme-btn-primary:active,
-.theme-btn-secondary:active,
-.theme-btn-danger:active,
-.theme-btn-success:active,
-.theme-btn-warning:active,
-.theme-btn-outline:active,
-.theme-btn-icon:active {
+.theme-btn-secondary:active {
   transform: scale(0.97);
 }
 
-/* Overlay fade centralisé réutilisable */
+/* --- Keyframes réutilisables (centralisées ici, retirées des fichiers composants) --- */
+
 @keyframes overlayIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -739,12 +632,184 @@
   to { opacity: 0; }
 }
 
-/* Card hover lift */
-.card-hover-lift {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.card-hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover, 0 8px 25px rgba(0, 0, 0, 0.1));
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Shared Utility Classes
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Pattern A: Slide Panel ─── */
+.shared-slide-panel,
+.personnel-slide-panel,
+.affaire-slide-panel,
+.eq-slide-panel,
+.vehicle-slide-panel {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--theme-bg-page);
+  border-left: 0px solid var(--theme-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+  opacity: 0;
+  border-radius: 10px 0 0 10px;
+}
+
+.shared-slide-panel > *,
+.personnel-slide-panel > *,
+.affaire-slide-panel > *,
+.eq-slide-panel > *,
+.vehicle-slide-panel > * {
+  transform: translateX(60px);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease;
+}
+
+.shared-slide-panel.open,
+.personnel-slide-panel.open,
+.affaire-slide-panel.open,
+.eq-slide-panel.open,
+.vehicle-slide-panel.open {
+  border-left: 1px solid var(--theme-border);
+  opacity: 1;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
+}
+
+.shared-slide-panel.open > *,
+.personnel-slide-panel.open > *,
+.affaire-slide-panel.open > *,
+.eq-slide-panel.open > *,
+.vehicle-slide-panel.open > * {
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s ease 0.05s;
+}
+
+.shared-slide-panel.closing,
+.personnel-slide-panel.closing,
+.affaire-slide-panel.closing,
+.eq-slide-panel.closing,
+.vehicle-slide-panel.closing {
+  width: 0;
+  min-width: 0;
+  border-left: 0px solid var(--theme-border);
+  opacity: 0;
+}
+
+.shared-slide-panel.closing > *,
+.personnel-slide-panel.closing > *,
+.affaire-slide-panel.closing > *,
+.eq-slide-panel.closing > *,
+.vehicle-slide-panel.closing > * {
+  transform: translateX(60px);
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease;
+}
+
+/* ─── Pattern B: Close Button ─── */
+.shared-close-btn,
+.dialog-close,
+.vehicle-details-modal .modal-header .close-button,
+.personnel-edit-modal .close-button,
+.eq-dialog-close,
+.intervention-modal .close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  border-radius: var(--close-btn-radius);
+  border: 1px solid var(--close-btn-border);
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.shared-close-btn:hover,
+.dialog-close:hover,
+.vehicle-details-modal .modal-header .close-button:hover,
+.personnel-edit-modal .close-button:hover,
+.eq-dialog-close:hover,
+.intervention-modal .close-button:hover {
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
+}
+
+/* ─── Pattern C: Section Title ─── */
+.shared-section-title,
+.pdp-section-title,
+.detail-section-title,
+.vehicle-details-modal .info-section h3,
+.vdp-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--theme-primary-dark);
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--theme-bg-indigo-light);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.shared-section-title svg,
+.pdp-section-title svg,
+.detail-section-title svg,
+.vehicle-details-modal .info-section h3 svg,
+.vdp-section-title svg {
+  color: var(--theme-primary);
+}
+
+/* ─── Pattern D: Overlay ─── */
+.shared-overlay,
+.vd-overlay,
+.help-overlay,
+.prefs-overlay,
+.bl-import-overlay,
+.display-dialog-overlay,
+.mr-overlay,
+.eq-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

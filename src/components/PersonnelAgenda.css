@@ -13,7 +13,7 @@
 .agenda-sidebar {
   width: 260px;
   flex-shrink: 0;
-  background: white;
+  background: var(--theme-bg-card);
   border-right: 2px solid var(--theme-border-medium);
   display: flex;
   flex-direction: column;
@@ -73,7 +73,7 @@
 }
 
 .agenda-person-item.active {
-  background: #eff6ff;
+  background: var(--theme-info-bg);
   border-right: 3px solid var(--theme-info);
 }
 
@@ -82,7 +82,7 @@
   height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  color: white;
+  color: var(--theme-text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -150,7 +150,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 2px solid var(--theme-border-medium);
   gap: 12px;
   flex-wrap: wrap;
@@ -178,7 +178,7 @@
   height: 32px;
   border-radius: 6px;
   border: 1px solid var(--theme-border-medium);
-  background: white;
+  background: var(--theme-bg-card);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -205,7 +205,7 @@
   padding: 6px 14px;
   border-radius: 6px;
   border: 1px solid var(--theme-border-medium);
-  background: white;
+  background: var(--theme-bg-card);
   font-size: 13px;
   cursor: pointer;
   color: var(--theme-text-gray);
@@ -214,7 +214,7 @@
 
 .agenda-today-btn:hover {
   background: var(--theme-info);
-  color: white;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-info);
 }
 
@@ -243,7 +243,7 @@
 }
 
 .agenda-view-toggle button.active {
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--theme-info);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   font-weight: 600;
@@ -264,11 +264,6 @@
 
 .agenda-loading .spinning {
   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 /* ══ VUE SEMAINE ══ */
@@ -323,7 +318,7 @@
 
 .today-badge {
   background: var(--theme-info);
-  color: white !important;
+  color: var(--theme-text-inverse) !important;
   border-radius: 50%;
   width: 28px;
   height: 28px;
@@ -347,7 +342,7 @@
   flex-direction: column;
   gap: 6px;
   min-height: 150px;
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .agenda-week-day:last-child {
@@ -462,7 +457,7 @@
   border-bottom: 1px solid var(--theme-border-medium);
   padding: 4px;
   min-height: 90px;
-  background: white;
+  background: var(--theme-bg-card);
   display: flex;
   flex-direction: column;
 }
@@ -517,7 +512,7 @@
 
 .month-event-label {
   font-size: 11px;
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -574,7 +569,7 @@
 
   .agenda-person-item.active {
     border-right: none;
-    background: #dbeafe;
+    background: var(--theme-info-bg-strong);
     border-radius: 8px;
   }
 

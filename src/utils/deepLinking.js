@@ -27,19 +27,7 @@ export function buildChargementUrlForTruck(truckModelCode) {
   return `${CHARGEMENT_BASE_URL}?truck_model=${encodeURIComponent(truckModelCode)}`;
 }
 
-/**
- * Génère un lien eM@g pour une réservation (deeplink retour depuis Chargement)
- */
-export function buildEmagReservationUrl(reservationId) {
-  return `${EMAG_BASE_URL}/reservation/${encodeURIComponent(reservationId)}`;
-}
-
-/**
- * Génère un lien eM@g pour un équipement catalogue
- */
-export function buildEmagCatalogUrl(reference) {
-  return `${EMAG_BASE_URL}/catalog/${encodeURIComponent(reference)}`;
-}
+// buildEmagReservationUrl et buildEmagCatalogUrl — retirés (non utilisés)
 
 /**
  * Ouvre le lien Chargement 3D
@@ -78,39 +66,7 @@ export function openInChargement(url) {
   link.click();
 }
 
-/**
- * Parse les paramètres de deep link entrant (depuis Chargement → eM@g)
- * Retourne { type: 'reservation'|'catalog', id: string } ou null
- */
-export function parseIncomingDeepLink() {
-  const path = window.location.pathname;
-  const hash = window.location.hash;
-
-  // /reservation/:id
-  const resMatch = path.match(/\/reservation\/([^/]+)/);
-  if (resMatch) {
-    return { type: 'reservation', id: decodeURIComponent(resMatch[1]) };
-  }
-
-  // /catalog/:reference
-  const catMatch = path.match(/\/catalog\/([^/]+)/);
-  if (catMatch) {
-    return { type: 'catalog', reference: decodeURIComponent(catMatch[1]) };
-  }
-
-  // Hash-based fallback: #/reservation/:id or #/catalog/:ref
-  const hashResMatch = hash.match(/#\/reservation\/([^/]+)/);
-  if (hashResMatch) {
-    return { type: 'reservation', id: decodeURIComponent(hashResMatch[1]) };
-  }
-
-  const hashCatMatch = hash.match(/#\/catalog\/([^/]+)/);
-  if (hashCatMatch) {
-    return { type: 'catalog', reference: decodeURIComponent(hashCatMatch[1]) };
-  }
-
-  return null;
-}
+// parseIncomingDeepLink — retirée (non utilisée)
 
 /**
  * Formatter les dimensions (JSON) en string lisible
@@ -131,18 +87,4 @@ export function formatDimensions(dimensionsJson) {
   }
 }
 
-/**
- * Calculer le volume en m³ à partir de dimensions JSON
- */
-export function calculateVolume(dimensionsJson) {
-  if (!dimensionsJson) return 0;
-  try {
-    const dims = typeof dimensionsJson === 'string' ? JSON.parse(dimensionsJson) : dimensionsJson;
-    const w = dims.w || dims.length || 0;
-    const h = dims.h || dims.height || 0;
-    const d = dims.d || dims.width || 0;
-    return (w * h * d) / 1000000; // cm³ → m³
-  } catch {
-    return 0;
-  }
-}
+// calculateVolume — retirée (non utilisée)

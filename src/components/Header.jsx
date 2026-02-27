@@ -279,7 +279,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         
         {/* Popup des notifications */}
         {showNotificationsPopup && (
-          <div className="notifications-popup-overlay" onClick={() => setShowNotificationsPopup(false)}>
+          <div className="notifications-popup-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowNotificationsPopup(false)}>
             <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
               <div className="notifications-popup-header">
                 <h3><Bell size={20} strokeWidth={2.5} className="popup-icon" /> {
@@ -697,7 +697,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
 
         {/* Popup des demandes de réservation */}
         {showRequestsPopup && (
-          <div className="notifications-popup-overlay" onClick={() => setShowRequestsPopup(false)}>
+          <div className="notifications-popup-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowRequestsPopup(false)}>
             <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
               <div className="notifications-popup-header">
                 <h3><CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" /> Demandes de réservation</h3>
@@ -1046,7 +1046,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
 
                 {showUserMenu && (
                   <>
-                    <div className="user-menu-overlay" onClick={() => setShowUserMenu(false)} />
+                    <div className="user-menu-overlay" onMouseDown={() => setShowUserMenu(false)} />
                     <div className="user-menu-dropdown">
                       <div className="user-menu-header">
                         <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size={40} />

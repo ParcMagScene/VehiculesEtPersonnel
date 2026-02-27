@@ -350,7 +350,7 @@ function MobileApp({ onSwitchToDesktop }) {
 
       {/* Menu latéral */}
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-        <div className="menu-overlay" onClick={() => setMenuOpen(false)}></div>
+        <div className="menu-overlay" onMouseDown={() => setMenuOpen(false)}></div>
         <div className="menu-content">
           <div className="menu-user">
             <div className="menu-avatar">{currentUser?.name?.charAt(0)}</div>

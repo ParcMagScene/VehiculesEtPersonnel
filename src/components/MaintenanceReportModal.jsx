@@ -176,7 +176,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="mr-overlay" onClick={onClose}>
+    <div className="mr-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="mr-modal" onClick={e => e.stopPropagation()}>
         <div className="mr-header">
           <h2><FileText size={20} /> Rapport Maintenance Matériel</h2>

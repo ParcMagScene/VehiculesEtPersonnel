@@ -7,7 +7,7 @@ import './ConfirmDialog.css';
  */
 const UnsavedChangesDialog = ({ onCancel, onDiscard, onSave }) => {
   return (
-    <div className="confirm-dialog-overlay" onClick={onCancel} style={{ zIndex: 11000 }}>
+    <div className="confirm-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCancel()} style={{ zIndex: 11000 }}>
       <div className="confirm-dialog unsaved-changes-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="unsaved-icon">⚠️</div>
         <p className="confirm-dialog-message">

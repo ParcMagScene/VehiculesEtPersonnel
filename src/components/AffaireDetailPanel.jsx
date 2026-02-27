@@ -1184,7 +1184,7 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
   const typeInfo = getTypeInfo(affaire.type);
 
   return (
-    <div className={`affaire-dialog-overlay ${isClosing ? 'closing' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+    <div className={`affaire-dialog-overlay ${isClosing ? 'closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
       <div className={`affaire-dialog ${isClosing ? 'closing' : ''}`}>
         <div className="dialog-header">
           <div className="dialog-title-row">

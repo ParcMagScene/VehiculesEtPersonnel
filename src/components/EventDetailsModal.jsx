@@ -326,7 +326,7 @@ function EventDetailsModal({
     : event.end?.date ? formatDate(event.end.date) : '';
 
   return (
-    <div className="event-details-overlay" onClick={onClose}>
+    <div className="event-details-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="event-details-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="event-details-header">
@@ -720,7 +720,7 @@ function EventDetailsModal({
 
       {/* Modal d'aperçu de fichier */}
       {previewFile && (
-        <div className="modal-overlay" onClick={() => setPreviewFile(null)}>
+        <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setPreviewFile(null)}>
           <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
             <div className="preview-header">
               <h3>{previewFile.name}</h3>
@@ -761,7 +761,7 @@ function EventDetailsModal({
 
       {/* Modal de vue dossier virtuel */}
       {showFolderView && (
-        <div className="modal-overlay" onClick={() => setShowFolderView(false)}>
+        <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowFolderView(false)}>
           <div className="folder-view-modal" onClick={(e) => e.stopPropagation()}>
             <div className="folder-header">
               <h3>

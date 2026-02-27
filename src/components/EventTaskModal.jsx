@@ -210,7 +210,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
   };
 
   return (
-    <div className="etm-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="etm-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="etm-modal">
         {/* Header */}
         <div className="etm-header">

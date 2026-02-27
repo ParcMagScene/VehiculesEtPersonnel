@@ -117,7 +117,7 @@ const LeaveRequestsPanel = ({
   };
 
   return (
-    <div className="lrp-overlay" onClick={onClose}>
+    <div className="lrp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="lrp-panel" onClick={e => e.stopPropagation()}>
         {/* En-tête */}
         <div className="lrp-header">

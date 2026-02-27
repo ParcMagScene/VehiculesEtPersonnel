@@ -237,7 +237,7 @@ function TruckModelFormModal({ item, onSave, onClose }) {
   const update = (key, value) => setForm(f => ({ ...f, [key]: value }));
 
   return (
-    <div className="catalog-modal-overlay" onClick={onClose}>
+    <div className="catalog-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="catalog-modal" onClick={(e) => e.stopPropagation()}>
         <div className="catalog-modal-header">
           <h3><Truck size={20} /> {item ? 'Modifier le modèle' : 'Nouveau modèle'}</h3>

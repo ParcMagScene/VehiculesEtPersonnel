@@ -256,7 +256,7 @@ export default function MailingPanel({ isOpen, onClose }) {
   const smtpConfigured = emailConfig?.smtp_host && emailConfig?.enabled;
 
   return (
-    <div className="mailing-overlay" onClick={(e) => e.target.className === 'mailing-overlay' && onClose()}>
+    <div className="mailing-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="mailing-panel">
         {/* Header */}
         <div className="mailing-header">
@@ -448,7 +448,7 @@ export default function MailingPanel({ isOpen, onClose }) {
 
               {/* Preview modal */}
               {showPreview && (
-                <div className="mailing-preview-overlay" onClick={() => setShowPreview(false)}>
+                <div className="mailing-preview-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowPreview(false)}>
                   <div className="mailing-preview-modal" onClick={e => e.stopPropagation()}>
                     <div className="mailing-preview-header">
                       <h3>Prévisualisation</h3>

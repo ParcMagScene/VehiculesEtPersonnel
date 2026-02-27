@@ -930,7 +930,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 
       {/* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */}
       {showManagement && (
-        <div className="eq-management-overlay" onClick={onCloseManagement}>
+        <div className="eq-management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement()}>
           <div className="eq-management-panel" onClick={(e) => e.stopPropagation()}>
             <div className="eq-management-header">
               <h2><Package size={22} /> Gestion du Matériel</h2>
@@ -1028,7 +1028,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 
       {/* Modal Plan dépôt (ouvert depuis un clic sur une zone) */}
       {depotMapModalZone && modalDepotData && (
-        <div className="eq-depot-map-modal-overlay" onClick={() => setDepotMapModalZone(null)}>
+        <div className="eq-depot-map-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setDepotMapModalZone(null)}>
           <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
             <div className="eq-depot-map-modal-header">
               <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone.zoneId}{depotMapModalZone.equipmentName ? ` · ${depotMapModalZone.equipmentName}` : ''}</h3>
@@ -1331,7 +1331,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
 
       {/* Modal de prévisualisation plein écran */}
       {previewPhoto && (
-        <div className="eq-media-preview-overlay" onClick={() => setPreviewPhoto(null)}>
+        <div className="eq-media-preview-overlay" onMouseDown={(e) => e.target === e.currentTarget && setPreviewPhoto(null)}>
           <div className="eq-media-preview-content" onClick={(e) => e.stopPropagation()}>
             <button className="eq-media-preview-close" onClick={() => setPreviewPhoto(null)}><X size={22} /></button>
             <img
@@ -1799,7 +1799,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
 
   return (
-    <div className={`eq-dialog-overlay ${isClosing ? 'closing' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+    <div className={`eq-dialog-overlay ${isClosing ? 'closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
       <div className={`eq-dialog ${isClosing ? 'closing' : ''}`}>
         <div className="eq-dialog-header">
           <div className="eq-dialog-title-row">
@@ -1969,7 +1969,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, depotZones, allDepotZon
   };
 
   return (
-    <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eq-modal">
         <div className="eq-modal-header">
           <h3>{eq ? '✏️ Modifier l\'équipement' : '➕ Nouveau matériel'}</h3>
@@ -2102,7 +2102,7 @@ const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, 
   };
 
   return (
-    <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eq-modal">
         <div className="eq-modal-header">
           <h3>{ticket ? '✏️ Modifier le ticket' : '🔧 Nouveau ticket SAV'}</h3>
@@ -2196,7 +2196,7 @@ const AssignModal = ({ equipment: eq, persons, onSave, onClose }) => {
   };
 
   return (
-    <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eq-modal eq-modal-sm">
         <div className="eq-modal-header">
           <h3>👤 Attribuer : {cleanName(eq.name)}</h3>
@@ -2331,7 +2331,7 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
   const tech = t.assignedTo ? persons.find(p => p.id === t.assignedTo) : null;
 
   return (
-    <div className={`eq-dialog-overlay ${isClosing ? 'closing' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+    <div className={`eq-dialog-overlay ${isClosing ? 'closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
       <div className={`eq-dialog ${isClosing ? 'closing' : ''}`} style={{ maxWidth: 600 }}>
         <div className="eq-dialog-header">
           <div className="eq-dialog-title-row">

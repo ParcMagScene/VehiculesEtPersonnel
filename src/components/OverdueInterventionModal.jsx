@@ -52,7 +52,7 @@ const OverdueInterventionModal = ({
   };
 
   return (
-    <div className="overdue-intervention-modal-overlay" onClick={onClose}>
+    <div className="overdue-intervention-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="overdue-intervention-modal" onClick={(e) => e.stopPropagation()}>
         <div className="overdue-intervention-modal-header">
           <h2>Intervention en retard</h2>

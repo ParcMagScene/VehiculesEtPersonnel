@@ -149,7 +149,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
   }, [preview, manualLinks]);
 
   return (
-    <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eq-modal eq-import-modal" style={{ maxWidth: 800 }}>
         <div className="eq-modal-header">
           <h3><Upload size={18} /> Import Interventions SAV</h3>

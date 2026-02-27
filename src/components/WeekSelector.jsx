@@ -55,7 +55,7 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
   const currentWeekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
 
   return (
-    <div className="week-selector-overlay" onClick={onClose}>
+    <div className="week-selector-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="week-selector-modal" onClick={(e) => e.stopPropagation()}>
         <div className="week-selector-header">
           <h3>Sélectionner une semaine - {format(currentDate, 'MMMM yyyy', { locale: fr })}</h3>

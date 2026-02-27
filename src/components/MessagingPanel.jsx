@@ -399,7 +399,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
 
       {/* Modal nouvelle conversation */}
       {showNewConv && (
-        <div className="msg-new-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowNewConv(false); }}>
+        <div className="msg-new-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowNewConv(false); }}>
           <div className="msg-new-modal">
             <h4>Nouveau message</h4>
             <div className="msg-user-list">

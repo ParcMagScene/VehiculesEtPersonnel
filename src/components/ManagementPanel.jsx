@@ -661,7 +661,7 @@ const ManagementPanel = ({
   // Si gestion personnel, déléguer entièrement à PersonnelPanel
   if (panelType === 'management' && activeModule === 'personnel') {
     return (
-      <div className="management-overlay" onClick={onClose}>
+      <div className="management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
         <div className="management-panel" onClick={(e) => e.stopPropagation()}>
           <div className="management-header">
             <h2>{panelTitle}</h2>
@@ -676,7 +676,7 @@ const ManagementPanel = ({
   }
 
   return (
-    <div className="management-overlay" onClick={onClose}>
+    <div className="management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="management-panel" onClick={(e) => e.stopPropagation()}>
         <div className="management-header">
           <h2>{panelTitle}</h2>

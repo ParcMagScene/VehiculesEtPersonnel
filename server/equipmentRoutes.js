@@ -105,7 +105,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/equipment
   app.get('/api/equipment', authenticateToken, (req, res) => {
     try {
-      const { status, category_id, search } = req.query;
+      const { status, category_id, search, location_zone, location_depot, limit } = req.query;
       let sql = `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color,
                u.name as created_by_name
@@ -118,13 +118,16 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       if (status) { sql += ' AND e.status = ?'; params.push(status); }
       if (category_id) { sql += ' AND e.category_id = ?'; params.push(category_id); }
+      if (location_zone) { sql += ' AND e.location_zone = ?'; params.push(location_zone); }
+      if (location_depot) { sql += ' AND e.location_depot = ?'; params.push(location_depot); }
       if (search) {
-        sql += ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ?)';
+        sql += ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ? OR e.location LIKE ? OR e.location_zone LIKE ?)';
         const like = `%${search}%`;
-        params.push(like, like, like);
+        params.push(like, like, like, like, like);
       }
       
       sql += ' ORDER BY e.name';
+      if (limit) { sql += ' LIMIT ?'; params.push(parseInt(limit, 10)); }
       const equipment = db.prepare(sql).all(...params);
       
       // Enrichir avec le dernier assignment actif — requête unique au lieu de N+1

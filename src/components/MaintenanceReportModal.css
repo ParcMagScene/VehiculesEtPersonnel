@@ -1,12 +1,8 @@
 /* ═══ Maintenance Report Modal ═══ */
 
 .mr-overlay {
-  position: fixed;
-  inset: 0;
+  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 1200;
   animation: mr-fadeIn 0.2s ease;
 }

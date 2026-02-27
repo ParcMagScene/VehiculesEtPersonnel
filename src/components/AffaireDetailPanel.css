@@ -17,23 +17,7 @@
   background: var(--theme-bg-card);
 }
 
-.detail-section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--theme-primary-dark);
-  margin: 0 0 12px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--theme-bg-indigo-light);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.detail-section-title svg {
-  color: var(--theme-primary);
-}
+/* .detail-section-title + svg → .shared-section-title (theme.css) */
 
 .section-count {
   background: var(--theme-primary);
@@ -493,57 +477,11 @@
    Dans le flux, compresse le tableau
    ═══════════════════════════════════════ */
 
-.affaire-slide-panel {
-  width: 0;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--theme-bg-page);
-  border-left: 0px solid var(--theme-border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease;
-  opacity: 0;
-  border-radius: 10px 0 0 10px;
-}
-
-.affaire-slide-panel > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.25s ease;
-}
+/* Base, > *, .open (common), .open > *, .closing, .closing > * → .shared-slide-panel (theme.css) */
 
 .affaire-slide-panel.open {
   width: 400px;
   min-width: 400px;
-  border-left: 1px solid var(--theme-border);
-  opacity: 1;
-  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
-}
-
-.affaire-slide-panel.open > * {
-  transform: translateX(0);
-  opacity: 1;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.35s ease 0.05s;
-}
-
-.affaire-slide-panel.closing {
-  width: 0;
-  min-width: 0;
-  border-left: 0px solid var(--theme-border);
-  opacity: 0;
-}
-
-.affaire-slide-panel.closing > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.2s ease;
 }
 
 .slide-panel-header {
@@ -707,23 +645,8 @@
   color: rgba(255, 255, 255, 0.85);
 }
 
-.dialog-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--close-btn-size);
-  height: var(--close-btn-size);
-  border-radius: var(--close-btn-radius);
-  border: 1px solid var(--close-btn-border);
-  background: var(--close-btn-bg);
-  color: var(--close-btn-color);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
+/* .dialog-close base + hover (common) → .shared-close-btn (theme.css) */
 .dialog-close:hover {
-  background: var(--close-btn-hover-bg);
-  border-color: var(--close-btn-hover-border);
   color: var(--theme-text-inverse);
 }
 

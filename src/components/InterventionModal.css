@@ -40,24 +40,7 @@
   margin-top: 2px;
 }
 
-.intervention-modal .close-button {
-  background: var(--close-btn-bg);
-  border: 1px solid var(--close-btn-border);
-  color: var(--close-btn-color);
-  width: var(--close-btn-size);
-  height: var(--close-btn-size);
-  border-radius: var(--close-btn-radius);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-}
-
-.intervention-modal .close-button:hover {
-  background: var(--close-btn-hover-bg);
-  border-color: var(--close-btn-hover-border);
-}
+/* .intervention-modal .close-button base + hover → .shared-close-btn (theme.css) */
 
 .intervention-form {
   padding: 24px;

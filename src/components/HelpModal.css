@@ -1,12 +1,8 @@
 /* ═══ Module d'aide — Redesign P4 ═══ */
 .help-overlay {
-  position: fixed;
-  inset: 0;
+  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay-dark);
   z-index: 3000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   animation: helpFadeIn 0.2s ease;
   backdrop-filter: blur(4px);
 }

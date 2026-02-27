@@ -366,7 +366,7 @@ const LoginForm = ({ onLogin }) => {
         {showResetPassword && (
           <div className="login-overlay" onClick={() => setShowResetPassword(false)}>
             <div className="login-modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header" style={{ background: 'linear-gradient(135deg, var(--theme-accent), var(--theme-accent-dark, #d97706))' }}>
+              <div className="modal-header" style={{ background: 'var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706))' }}>
                 <h3>🔑 Réinitialiser le mot de passe</h3>
               </div>
               <div className="modal-body">

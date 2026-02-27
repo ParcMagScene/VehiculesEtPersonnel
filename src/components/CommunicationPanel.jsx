@@ -67,7 +67,7 @@ const TASK_SECTION_INFO = {
   rdv:                { label: 'Rendez-vous',           emoji: '📅', color: '#06b6d4' },
 };
 
-function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshKey }) {
+function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshKey, googleEvents = [] }) {
   const toast = useToast();
   const [events, setEvents] = useState([]);
   const [affaires, setAffaires] = useState([]);
@@ -88,6 +88,21 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     const monday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   }, [selectedDate]);
+
+  // ── Google Calendar events filtrés jour/semaine ──
+  const filteredGoogleEvents = useMemo(() => {
+    if (!googleEvents || googleEvents.length === 0) return [];
+    if (viewMode === 'week') {
+      return googleEvents.filter(ev => {
+        const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
+        return weekDays.includes(evDate);
+      });
+    }
+    return googleEvents.filter(ev => {
+      const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
+      return evDate === selectedDate;
+    });
+  }, [googleEvents, viewMode, weekDays, selectedDate]);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -198,7 +213,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
   const weekGroupedDisplay = useMemo(() => {
     if (viewMode !== 'week') return {};
     const map = {};
-    weekDays.forEach(d => { map[d] = { events: [], affaires: [], tasks: [] }; });
+    weekDays.forEach(d => { map[d] = { events: [], affaires: [], tasks: [], googleEvents: [] }; });
     filteredEvents.forEach(ev => {
       const d = ev.date;
       if (map[d]) map[d].events.push(ev);
@@ -216,8 +231,16 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
       const d = t.date;
       if (map[d]) map[d].tasks.push(t);
     });
+    // Ajouter les Google events
+    filteredGoogleEvents.forEach(ev => {
+      const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
+      if (map[evDate]) {
+        if (!map[evDate].googleEvents) map[evDate].googleEvents = [];
+        map[evDate].googleEvents.push(ev);
+      }
+    });
     return map;
-  }, [filteredEvents, filteredAffaires, filteredTasks, weekDays, viewMode]);
+  }, [filteredEvents, filteredAffaires, filteredTasks, filteredGoogleEvents, weekDays, viewMode]);
 
   const handleDelete = async (id) => {
     setConfirmDialog({
@@ -415,8 +438,89 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     );
   };
 
+  // Nombre total d'éléments planifiés visibles
+  const visibleTasks = useMemo(() => filteredTasks.filter(t => t.visible !== 0), [filteredTasks]);
+  const visibleEvents = useMemo(() => filteredEvents.filter(e => e.visible !== 0), [filteredEvents]);
+  const allPlanningItems = visibleEvents.length + visibleTasks.length + filteredGoogleEvents.length + filteredAffaires.length;
+
+  const renderGoogleEventMini = (ev) => {
+    const summary = ev.summary || 'Événement';
+    const startDT = ev.start?.dateTime || ev.start?.date || '';
+    const timeStr = startDT.includes('T')
+      ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    const dateStr = startDT.slice(0, 10);
+    const showDate = viewMode === 'week';
+    return (
+      <div key={`gev-${ev.id}`} className="dd-evt-mini google">
+        <Calendar size={13} style={{ color: '#4285f4', flexShrink: 0 }} />
+        <span className="dd-evt-mini-title">{summary}</span>
+        {timeStr && <span className="dd-evt-mini-time">{timeStr}</span>}
+        {showDate && <span className="dd-evt-mini-date">{new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</span>}
+      </div>
+    );
+  };
+
+  const renderVisibleEventMini = (ev) => {
+    const typeInfo = EVENT_TYPES[ev.type] || { label: ev.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
+    const showDate = viewMode === 'week';
+    return (
+      <div key={`dev-${ev.id}`} className="dd-evt-mini display" style={{ borderLeftColor: typeInfo.color }}>
+        <Monitor size={13} style={{ color: typeInfo.color, flexShrink: 0 }} />
+        <span className="dd-evt-mini-title">{typeInfo.emoji} {ev.client || typeInfo.label}</span>
+        {ev.time && <span className="dd-evt-mini-time">{ev.time}</span>}
+        {showDate && ev.date && <span className="dd-evt-mini-date">{new Date(ev.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</span>}
+      </div>
+    );
+  };
+
+  const renderVisibleTaskMini = (t) => {
+    const secInfo = TASK_SECTION_INFO[t.section] || { label: t.section, emoji: '📋', color: 'var(--theme-text-secondary)' };
+    const showDate = viewMode === 'week';
+    return (
+      <div key={`dtk-${t.id}`} className="dd-evt-mini task" style={{ borderLeftColor: secInfo.color }}>
+        <ClipboardList size={13} style={{ color: secInfo.color, flexShrink: 0 }} />
+        <span className="dd-evt-mini-title">{secInfo.emoji} {t.label || secInfo.label}</span>
+        <span className={`dd-evt-mini-status ${t.status || 'pending'}`}>
+          {t.status === 'done' ? '✓' : t.status === 'in_progress' ? '▶' : '○'}
+        </span>
+        {showDate && t.date && <span className="dd-evt-mini-date">{new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}</span>}
+      </div>
+    );
+  };
+
+  const renderAffaireMini = (a) => {
+    const typeInfo = AFFAIRE_TYPE_INFO[a.type] || { label: 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+    return (
+      <div key={`daf-${a.numeroAffaire || a.id}`} className="dd-evt-mini affaire" style={{ borderLeftColor: typeInfo.color }}>
+        <Briefcase size={13} style={{ color: typeInfo.color, flexShrink: 0 }} />
+        <span className="dd-evt-mini-title">{typeInfo.emoji} {a.client || a.numeroAffaire}</span>
+        <span className="dd-evt-mini-affnum">{a.numeroAffaire}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="dynamic-display-panel">
+      {/* ══ Section Événements du jour / de la semaine ══ */}
+      <div className="dd-events-overview">
+        <h3 className="dd-events-overview-title">
+          <Calendar size={18} />
+          {viewMode === 'week' ? 'Événements de la semaine' : 'Événements du jour'}
+          {allPlanningItems > 0 && <span className="dd-events-count">{allPlanningItems}</span>}
+        </h3>
+        {allPlanningItems === 0 ? (
+          <div className="dd-events-empty">Aucun événement</div>
+        ) : (
+          <div className="dd-events-list">
+            {filteredGoogleEvents.map(renderGoogleEventMini)}
+            {filteredAffaires.map(renderAffaireMini)}
+            {visibleEvents.map(renderVisibleEventMini)}
+            {visibleTasks.map(renderVisibleTaskMini)}
+          </div>
+        )}
+      </div>
+
       {/* Toolbar */}
       <div className="toolbar">
         <div className="toolbar-left">
@@ -493,8 +597,8 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
           <div className="dd-week-container">
             <div className="dd-week-grid">
               {weekDays.map(dayStr => {
-                const dayData = weekGroupedDisplay[dayStr] || { events: [], affaires: [], tasks: [] };
-                const totalItems = dayData.events.length + dayData.affaires.length + dayData.tasks.length;
+                const dayData = weekGroupedDisplay[dayStr] || { events: [], affaires: [], tasks: [], googleEvents: [] };
+                const totalItems = dayData.events.length + dayData.affaires.length + dayData.tasks.length + (dayData.googleEvents?.length || 0);
                 const isToday = dayStr === todayStr();
                 const dayDate = new Date(dayStr + 'T00:00:00');
                 const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
@@ -510,6 +614,19 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
                         <div className="dd-week-empty">—</div>
                       ) : (
                         <>
+                          {(dayData.googleEvents || []).map(gev => {
+                            const summary = gev.summary || 'Événement';
+                            const startDT = gev.start?.dateTime || gev.start?.date || '';
+                            const timeStr = startDT.includes('T') ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+                            return (
+                              <div key={`wg-${gev.id}`} className="dd-week-card google-week-card" style={{ borderLeftColor: '#4285f4' }}>
+                                <div className="dd-week-card-top">
+                                  <span className="dd-week-type" style={{ color: '#4285f4' }}><Calendar size={10} /> {summary.slice(0, 20)}{summary.length > 20 ? '…' : ''}</span>
+                                </div>
+                                {timeStr && <div className="dd-week-time"><Clock size={10} /> {timeStr}</div>}
+                              </div>
+                            );
+                          })}
                           {dayData.affaires.map(a => {
                             const ti = AFFAIRE_TYPE_INFO[a.type] || { label: 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
                             return (
@@ -673,6 +790,7 @@ function CommunicationPanel({ currentUser, googleEvents = [] }) {
             onEditEvent={handleEditEvent}
             onCreateEvent={handleCreateEvent}
             refreshKey={displayRefreshKey}
+            googleEvents={googleEvents}
           />
         )}
         {activeSubTab === 'tasks' && (

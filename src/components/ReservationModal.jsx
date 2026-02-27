@@ -887,7 +887,7 @@ const ReservationModal = ({
               {isReadOnly ? '📋 Détails de la réservation' : (formData.prestationName || (currentUser?.isAdmin ? 'Nouvelle réservation' : 'Nouvelle demande'))} {formData.isTournee && '🚐'}
             </h2>
             {(formData.date || formData.endDate) && (
-              <div style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.875rem', color: 'var(--theme-text-inverse)', marginTop: '0.25rem' }}>
                 {formData.date && format(new Date(formData.date + 'T00:00:00'), 'dd MMMM yyyy', { locale: fr })}
                 {formData.endDate && formData.endDate !== formData.date && (
                   <> → {format(new Date(formData.endDate + 'T00:00:00'), 'dd MMMM yyyy', { locale: fr })}</>
@@ -927,7 +927,7 @@ const ReservationModal = ({
               style={{ margin: 0, cursor: isReadOnly ? 'default' : 'pointer' }}
               disabled={isReadOnly}
             />
-            <span style={{ fontWeight: '500', color: 'rgba(255, 255, 255, 0.95)' }}>🚐 Tournée</span>
+            <span style={{ fontWeight: '500', color: 'var(--theme-text-inverse)' }}>🚐 Tournée</span>
           </label>
           <button className="close-button" onClick={handleSafeClose} aria-label="Fermer la fenêtre">
             <X size={24} />
@@ -1043,7 +1043,7 @@ const ReservationModal = ({
                       <select
                         value={locationTypeFilter}
                         onChange={(e) => setLocationTypeFilter(e.target.value)}
-                        style={{ fontSize: '0.85rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
+                        style={{ fontSize: '0.85rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--theme-border)' }}
                       >
                         <option value="">Tous les types</option>
                         {locationTypes.map(t => (
@@ -1084,8 +1084,8 @@ const ReservationModal = ({
                             right: 0,
                             maxHeight: '200px',
                             overflowY: 'auto',
-                            backgroundColor: 'white',
-                            border: '1px solid #d1d5db',
+                            backgroundColor: 'var(--theme-bg-card)',
+                            border: '1px solid var(--theme-border)',
                             borderRadius: '0 0 6px 6px',
                             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                             zIndex: 100,
@@ -1103,18 +1103,18 @@ const ReservationModal = ({
                               style={{
                                 padding: '8px 12px',
                                 cursor: 'pointer',
-                                borderBottom: '1px solid #f3f4f6',
+                                borderBottom: '1px solid var(--theme-border-light)',
                                 fontSize: '0.9rem',
                               }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f4ff'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--theme-bg-hover)'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--theme-bg-card)'}
                             >
                               <div style={{ fontWeight: 500 }}>{location.name}</div>
                               {location.address && (
-                                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{location.address}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--theme-text-gray)' }}>{location.address}</div>
                               )}
                               {location.type && (
-                                <div style={{ fontSize: '0.75rem', color: '#9ca3af', fontStyle: 'italic' }}>{location.type}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--theme-text-muted)', fontStyle: 'italic' }}>{location.type}</div>
                               )}
                             </div>
                           ))}
@@ -1128,8 +1128,8 @@ const ReservationModal = ({
                       title="Créer ou rechercher un lieu avec Google Maps"
                       style={{
                         padding: '0 12px',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
+                        backgroundColor: 'var(--theme-primary)',
+                        color: 'var(--theme-text-inverse)',
                         border: 'none',
                         borderRadius: '4px',
                         cursor: 'pointer',
@@ -1491,7 +1491,7 @@ const ReservationModal = ({
                     key={eventId}
                     className={`event-card-with-trip ${isInGroup ? 'in-group' : ''}`}
                     style={{ 
-                      backgroundColor: hasTripDetails ? '#ecfdf5' : getEventColor(event) + '20',
+                      backgroundColor: hasTripDetails ? 'var(--theme-success-bg)' : getEventColor(event) + '20',
                       padding: '0.75rem',
                       borderRadius: isInGroup ? '0' : '0.375rem',
                       border: hasTripDetails ? '2px solid #10b981' : '1px solid ' + getEventColor(event) + '40',
@@ -1518,13 +1518,13 @@ const ReservationModal = ({
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         gap: '0.5rem', marginBottom: '0.375rem'
                       }}>
-                        <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '500' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--theme-text-gray)', fontWeight: '500' }}>
                           📅 {dateRange}
                         </span>
                         {event.affaire && (
                           <span style={{ 
-                            fontSize: '0.75rem', fontWeight: '600', color: '#6366f1',
-                            backgroundColor: '#eef2ff', padding: '0.125rem 0.5rem', borderRadius: '0.25rem',
+                            fontSize: '0.75rem', fontWeight: '600', color: 'var(--theme-primary)',
+                            backgroundColor: 'var(--theme-bg-indigo-lighter)', padding: '0.125rem 0.5rem', borderRadius: '0.25rem',
                             display: 'flex', alignItems: 'center', gap: '0.25rem'
                           }}>
                             {affairesWithAttachments.includes(event.affaire) && (
@@ -1537,11 +1537,11 @@ const ReservationModal = ({
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: '500', marginBottom: '0.375rem' }}>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--theme-text-heading)', fontWeight: '500', marginBottom: '0.375rem' }}>
                         {cleanTitle}
                       </div>
                       {event.location && (
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--theme-text-gray)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           📍 {event.location}
                         </div>
                       )}
@@ -1691,14 +1691,14 @@ const ReservationModal = ({
               return (
                 <div className="linked-events-display" style={{ 
                   marginTop: '1rem', padding: '1rem',
-                  backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb'
+                  backgroundColor: 'var(--theme-bg-secondary)', borderRadius: '0.5rem', border: '1px solid var(--theme-border)'
                 }}>
                   <div style={{ 
-                    fontWeight: '600', fontSize: '0.875rem', color: '#374151',
+                    fontWeight: '600', fontSize: '0.875rem', color: 'var(--theme-text-body)',
                     marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
                   }}>
                     <span>🗓️ Événements liés à cette tournée</span>
-                    <span style={{ fontWeight: 'normal', color: '#6b7280', fontSize: '0.8rem' }}>
+                    <span style={{ fontWeight: 'normal', color: 'var(--theme-text-gray)', fontSize: '0.8rem' }}>
                       ({formData.linkedEventIds.length})
                     </span>
                   </div>
@@ -1784,7 +1784,7 @@ const ReservationModal = ({
           {isEdit && reservation?.id && (
             <>
               <div className="form-divider" />
-              <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center', color: '#6b7280' }}>Chargement matériel...</div>}>
+              <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-gray)' }}>Chargement matériel...</div>}>
                 <ReservationEquipment
                   reservationId={reservation.id}
                   currentUser={currentUser}

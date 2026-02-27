@@ -9,7 +9,7 @@
 /* Header */
 .mobile-header {
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
   padding: 1rem;
   display: flex;
   align-items: center;
@@ -29,7 +29,7 @@
 .menu-toggle {
   background: rgba(255, 255, 255, 0.2);
   border: none;
-  color: white;
+  color: var(--theme-text-inverse);
   padding: 0.5rem;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -77,7 +77,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--theme-overlay);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -93,7 +93,7 @@
   bottom: 0;
   width: 280px;
   max-width: 85vw;
-  background: white;
+  background: var(--theme-bg-card);
   transform: translateX(-100%);
   transition: transform 0.3s;
   display: flex;
@@ -108,7 +108,7 @@
 .menu-user {
   padding: 2rem 1.5rem;
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -176,7 +176,7 @@
 }
 
 .menu-nav button.active {
-  background: #ede9fe;
+  background: var(--theme-purple-bg);
   color: var(--theme-primary);
   font-weight: 600;
   border-left: 3px solid var(--theme-primary);
@@ -237,15 +237,11 @@
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 /* Badge messagerie dans le menu */
 .menu-nav button .menu-badge {
   margin-left: auto;
   background: var(--theme-danger);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 11px;
   font-weight: 700;
   min-width: 20px;
@@ -269,8 +265,8 @@
   bottom: 20px;
   left: 16px;
   right: 16px;
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
-  color: white;
+  background: linear-gradient(135deg, var(--theme-purple-accent), #6d28d9);
+  color: var(--theme-text-inverse);
   padding: 14px 18px;
   border-radius: 12px;
   display: flex;
@@ -302,7 +298,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
   flex-shrink: 0;
 }

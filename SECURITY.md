@@ -4,7 +4,7 @@
 
 | Version | Support Sécurité |
 | ------- | ---------------- |
-| 1.0.x   | ✅ Support actif |
+| 2.x     | ✅ Support actif |
 
 ---
 
@@ -17,86 +17,101 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 #### 📦 Dépendances avec Vulnérabilités
 
 ##### 1. xlsx (Haute Priorité)
-- **Version actuelle:** 0.18.5
-- **Vulnérabilités:**
-  - **GHSA-4r6h-8v6p-xvw6** - Prototype Pollution
-  - **GHSA-5pgg-2g8v-p4x9** - Regular Expression Denial of Service (ReDoS)
-- **Sévérité:** HIGH
-- **Impact:** 
+- **Version actuelle :** 0.18.5
+- **Vulnérabilités :**
+  - **GHSA-4r6h-8v6p-xvw6** — Prototype Pollution
+  - **GHSA-5pgg-2g8v-p4x9** — Regular Expression Denial of Service (ReDoS)
+- **Sévérité :** HIGH
+- **Impact :**
   - Exploitable uniquement si l'utilisateur importe un fichier Excel malveillant
-  - L'application n'accepte des imports Excel que depuis des utilisateurs authentifiés
-- **Mitigation actuelle:**
-  - ⚠️ Pas de patch disponible (dépendance maintenue mais pas de fix)
-  - Limitation de l'import Excel aux administrateurs uniquement
+  - L'application n'accepte les imports que depuis des utilisateurs authentifiés
+- **Mitigation actuelle :**
+  - ⚠️ Pas de patch disponible
+  - Limitation de l'import aux administrateurs uniquement
   - Validation côté serveur des fichiers importés
-- **Roadmap:**
-  - **Court terme:** Documenter le risque dans la formation utilisateurs
-  - **Moyen terme:** Évaluer migration vers `exceljs` ou `xlsx-populate`
-  - **Date cible:** Q2 2026
+- **Roadmap :** Évaluer migration vers `exceljs` — cible Q2 2026
 
 ##### 2. esbuild/vite (Priorité Modérée)
-- **Versions actuelles:** esbuild <=0.24.2, vite 5.2.0
-- **Vulnérabilité:**
-  - **GHSA-67mh-4wv8-2f99** - SSRF sur serveur de développement
-- **Sévérité:** MODERATE
-- **Impact:**
+- **Versions actuelles :** esbuild ≤0.24.2, vite 5.2.0
+- **Vulnérabilité :**
+  - **GHSA-67mh-4wv8-2f99** — SSRF sur serveur de développement
+- **Sévérité :** MODERATE
+- **Impact :**
   - ⚠️ Exploitable UNIQUEMENT en mode développement local
   - **Aucun risque en production** (build statique)
-- **Mitigation:**
-  - Serveur de développement utilisé uniquement sur réseau local privé
-  - Serveur de production sert des fichiers statiques (pas de dev server)
-- **Roadmap:**
-  - Migration vers Vite 7.x planifiée pour Q2 2026
-  - Nécessite tests de compatibilité (breaking changes)
+- **Mitigation :** Serveur dev uniquement sur réseau local privé
+- **Roadmap :** Migration vers Vite 7.x planifiée Q2 2026
 
 ---
 
 ## 🔐 Pratiques de Sécurité Implémentées
 
-### Backend (Node.js/Express + SQLite)
+### Backend (Node.js / Express + SQLite)
 
 ✅ **Requêtes SQL Préparées**
-- 100% des requêtes utilisent des prepared statements
+- 100 % des requêtes utilisent des prepared statements (better-sqlite3)
 - Protection contre SQL Injection garantie
-- Audit: 100% conforme
 
 ✅ **Authentification JWT**
-- Tokens expirés après 30 jours
-- Hash bcrypt pour les mots de passe (12 rounds)
-- Validation côté serveur sur toutes les routes protégées
+- Tokens expirés après 30 jours (`JWT_EXPIRY_DAYS` configurable)
+- Hash bcrypt (12 rounds) pour les mots de passe
+- Sessions enregistrées en DB (`active_sessions`) → invalidation au logout
+- Middleware `authenticateToken` sur toutes les routes protégées
+
+✅ **Rate Limiting**
+- Auth : 20 requêtes / 15 minutes
+- API : 200 requêtes / minute
+- Implémenté via `express-rate-limit`
 
 ✅ **Validation des Entrées**
-- Validation des types de données
+- Validation des types de données sur toutes les routes POST/PUT
+- Regex sur IDs (format attendu)
+- Validation des emails
 - Génération automatique d'ID si manquant
-- Sanitization des inputs utilisateur
+
+✅ **Protection des Fichiers**
+- `sanitizePath()` sur tous les uploads (anti path-traversal)
+- Multer avec filtres : types MIME autorisés, taille max 50 MB
+- Dossiers d'upload séparés par contexte (attachments, avatars, messaging-uploads, photos)
+
+✅ **Console Stripping**
+- En production, `console.log`, `console.debug` et `console.info` sont supprimés par esbuild
+- Seuls `console.warn` et `console.error` sont préservés
 
 ### Frontend (React + Vite)
 
 ✅ **Protection XSS**
 - Aucun usage de `dangerouslySetInnerHTML`
 - React échappe automatiquement tout le contenu JSX
-- Audit: 0 occurrence trouvée
 
-✅ **Stockage Sécurisé**
-- Tokens JWT stockés en localStorage (acceptable pour usage LAN interne)
-- Tokens Google Calendar expirés après 60 minutes
+✅ **Stockage Tokens**
+- JWT stocké en localStorage (acceptable pour usage LAN interne)
+- Auto-logout sur erreur 401/403 (sauf endpoints d'auth)
 - Pas de refresh token persisté
 
-⚠️ **Limitations Connues**
-- LocalStorage vulnérable aux attaques XSS
-- Acceptable pour usage réseau local privé
-- Pour usage internet public: migrer vers httpOnly cookies
+⚠️ **Limitation connue**
+- LocalStorage vulnérable aux attaques XSS. Acceptable en réseau local privé.
+- Pour exposition internet publique : migrer vers httpOnly cookies.
 
 ### Réseau
 
 ✅ **Configuration CORS**
-- Origines autorisées configurables
+- Whitelist stricte : `magsav.duckdns.org`, `localhost:5174`, `localhost:4173`, IP locale
 - Headers sécurisés
-- Validation des requêtes cross-origin
 
 ⚠️ **HTTPS**
-- Actuellement HTTP uniquement (réseau local)
-- Pour exposition internet: implémenter HTTPS avec Let's Encrypt
+- Actuellement HTTP (réseau local)
+- Pour exposition internet : implémenter HTTPS avec Let's Encrypt
+
+### Permissions Granulaires
+
+| Permission | Portée |
+|------------|--------|
+| `is_admin` | Accès complet (réservations, véhicules, utilisateurs, maintenances) |
+| `can_manage_catalog` | CRUD catalogue équipements + flight-cases |
+| `can_manage_trucks` | CRUD modèles de camions |
+
+Les routes GET ne nécessitent que l'authentification. Les routes de modification vérifient les permissions spécifiques via middleware.
 
 ---
 
@@ -105,70 +120,34 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 ### Audit Régulier
 
 ```bash
-# Vérifier les vulnérabilités
-npm audit
-
-# Format JSON pour analyse
-npm audit --json
-
-# Vérifier uniquement production
-npm audit --production
+npm audit                    # Vérifier les vulnérabilités
+npm audit --json             # Format JSON pour analyse
+npm audit --production       # Production uniquement
 ```
 
 ### Mise à Jour Sécurisée
 
 ```bash
-# 1. Sauvegarder l'état actuel
+# 1. Branche dédiée
 git checkout -b security-update-$(date +%Y%m%d)
 npm list --depth=0 > package-versions-backup.txt
 
-# 2. Mettre à jour les patches mineurs (safe)
+# 2. Patches mineurs (safe)
 npm update
 
-# 3. Tester l'application
+# 3. Vérifier le build
 npm run build
-npm run preview
-# Tester manuellement toutes les fonctionnalités critiques
 
-# 4. Vérifier les vulnérabilités restantes
+# 4. Tester l'application (fonctionnalités critiques)
+
+# 5. Audit résiduel
 npm audit
 
-# 5. Si OK, commit et merge
+# 6. Commit & merge
 git add package.json package-lock.json
 git commit -m "Security: Mise à jour des dépendances"
-git checkout main
-git merge security-update-$(date +%Y%m%d)
+git checkout main && git merge security-update-$(date +%Y%m%d)
 ```
-
-### Gestion des Breaking Changes
-
-Pour les mises à jour majeures (ex: Vite 5 → 7):
-
-1. **Créer une branche dédiée**
-   ```bash
-   git checkout -b upgrade-vite-7
-   ```
-
-2. **Lire le changelog et migration guide**
-   - https://vitejs.dev/guide/migration.html
-
-3. **Mise à jour progressive**
-   ```bash
-   npm install vite@7 --save-dev
-   npm install @vitejs/plugin-react@latest --save-dev
-   ```
-
-4. **Tests complets**
-   - Build production
-   - Test de toutes les routes
-   - Vérification du code splitting
-   - Performance benchmarking
-
-5. **Rollback si nécessaire**
-   ```bash
-   git checkout main
-   git branch -D upgrade-vite-7
-   ```
 
 ---
 
@@ -176,15 +155,14 @@ Pour les mises à jour majeures (ex: Vite 5 → 7):
 
 ### Contact
 
-Si vous découvrez une vulnérabilité de sécurité, **ne créez PAS d'issue publique**.
+**Ne créez PAS d'issue publique** pour les vulnérabilités.
 
-Contactez:
-- **Email:** admin@magsav.com
-- **Délai de réponse:** 48 heures maximum
+- **Email :** admin@magsav.com
+- **Délai de réponse :** 48 heures maximum
 
 ### Informations à Fournir
 
-- Description détaillée de la vulnérabilité
+- Description détaillée
 - Étapes de reproduction
 - Impact potentiel
 - Version affectée
@@ -192,74 +170,47 @@ Contactez:
 
 ### Processus de Traitement
 
-1. **Accusé de réception** - 48h
-2. **Évaluation de la gravité** - 1 semaine
-3. **Développement du patch** - 2-4 semaines selon gravité
-4. **Publication du fix** - Avec mention de crédit (si souhaité)
-5. **Divulgation publique** - 30 jours après le patch
-
----
-
-## 📚 Ressources Sécurité
-
-### Outils d'Audit
-
-- **npm audit** - Audit des dépendances Node.js
-- **Snyk** - Monitoring continu des vulnérabilités
-- **OWASP ZAP** - Tests de pénétration web
-- **SQLMap** - Tests SQL injection
-
-### Bonnes Pratiques
-
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
-- [React Security Best Practices](https://snyk.io/blog/10-react-security-best-practices/)
-
-### Monitoring
-
-- Logs serveur: `/server/logs/`
-- Logs PM2: `pm2 logs`
-- Erreurs frontend: DevTools Console (en développement)
+1. **Accusé de réception** — 48 h
+2. **Évaluation de la gravité** — 1 semaine
+3. **Développement du patch** — 2-4 semaines selon gravité
+4. **Publication du fix** — avec mention de crédit (si souhaité)
+5. **Divulgation publique** — 30 jours après le patch
 
 ---
 
 ## 🔄 Historique des Mises à Jour Sécurité
 
+### 2026-02-26
+- ✅ Mise à jour SECURITY.md (nouvelles permissions, rate limiting, sanitizePath)
+- ✅ 56 tables DB, 267 routes API documentées
+
 ### 2026-02-08
-- ✅ Audit complet réalisé
-- ✅ Documentation SECURITY.md créée
+- ✅ Audit complet, SECURITY.md créé
 - ✅ Identification de 3 vulnérabilités (1 high, 2 moderate)
 - ✅ Plan de mitigation établi
 
 ### 2026-02-04
 - ✅ Correction vulnérabilité ID null (réservations)
 - ✅ Validation serveur renforcée
-- ✅ Protection contre suppression d'objets null
 
 ---
 
 ## ⚖️ Responsabilités
 
-### Mainteneur
-- Monitoring mensuel des vulnérabilités
-- Application des patches critiques sous 7 jours
-- Documentation des risques connus
-
-### Utilisateurs
-- Signalement rapide de comportements suspects
-- Respect des bonnes pratiques (mots de passe forts)
-- Mise à jour de leurs clients (navigateurs)
+| Rôle | Responsabilité |
+|------|---------------|
+| **Mainteneur** | Monitoring mensuel, patches critiques sous 7 jours, documentation des risques |
+| **Utilisateurs** | Signalement rapide, mots de passe forts, mise à jour navigateurs |
 
 ---
 
 ## 📞 Support
 
-Pour toute question concernant la sécurité:
-- 📧 Email: admin@magsav.com
-- 📖 Documentation: `/AUDIT_COMPLET_2026.md`
-- 🔧 Issues: GitHub (pour questions non-sensibles uniquement)
+- 📧 Email : admin@magsav.com
+- 📖 Documentation : `ARCHITECTURE.md` (section sécurité)
+- 🔧 Issues : GitHub (questions non-sensibles uniquement)
 
 ---
 
-**Dernière mise à jour:** 13 février 2026  
-**Prochaine révision:** Mensuelle
+**Dernière mise à jour :** 26 février 2026
+**Prochaine révision :** Mensuelle

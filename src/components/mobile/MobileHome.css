@@ -27,7 +27,7 @@
 }
 
 .module-card {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -77,22 +77,22 @@
 }
 
 .module-card.parc .module-icon {
-  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-  color: #059669;
+  background: linear-gradient(135deg, var(--btn-success-bg), var(--btn-success-hover-bg));
+  color: var(--btn-success-color);
 }
 
 .module-card.personnel .module-icon {
-  background: linear-gradient(135deg, #dbeafe, var(--theme-info-border));
+  background: linear-gradient(135deg, var(--theme-info-bg-strong), var(--theme-info-border));
   color: var(--theme-info-dark);
 }
 
 .module-card.messaging .module-icon {
-  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
-  color: #7c3aed;
+  background: linear-gradient(135deg, var(--theme-purple-bg), var(--theme-purple-bg-strong));
+  color: var(--theme-purple-accent);
 }
 
 .module-card.equipment .module-icon {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  background: linear-gradient(135deg, var(--btn-warning-bg), var(--btn-warning-hover-bg));
   color: var(--theme-warning-dark);
 }
 
@@ -106,7 +106,7 @@
   top: -6px;
   right: -6px;
   background: var(--theme-danger);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 0.65rem;
   font-weight: 700;
   min-width: 18px;
@@ -116,7 +116,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  border: 2px solid white;
+  border: 2px solid var(--theme-bg-card);
   animation: badge-pulse 2s ease-in-out infinite;
 }
 
@@ -172,11 +172,11 @@
 
 .module-stat-item.warning {
   color: var(--theme-warning);
-  background: #fef3c7;
+  background: var(--theme-warning-bg);
 }
 
 .module-stat-item.highlight {
-  color: #7c3aed;
-  background: #ede9fe;
+  color: var(--theme-purple-accent);
+  background: var(--theme-purple-bg);
   font-weight: 600;
 }

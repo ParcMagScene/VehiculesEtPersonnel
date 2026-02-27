@@ -3,57 +3,11 @@
    Pattern identique à AffaireSlidePanel
    ═══════════════════════════════════════ */
 
-.personnel-slide-panel {
-  width: 0;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--theme-bg-page);
-  border-left: 0px solid var(--theme-border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease;
-  opacity: 0;
-  border-radius: 10px 0 0 10px;
-}
-
-.personnel-slide-panel > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.25s ease;
-}
+/* Base, > *, .open (common), .open > *, .closing, .closing > * → .shared-slide-panel (theme.css) */
 
 .personnel-slide-panel.open {
   width: 360px;
   min-width: 360px;
-  border-left: 1px solid var(--theme-border);
-  opacity: 1;
-  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
-}
-
-.personnel-slide-panel.open > * {
-  transform: translateX(0);
-  opacity: 1;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.35s ease 0.05s;
-}
-
-.personnel-slide-panel.closing {
-  width: 0;
-  min-width: 0;
-  border-left: 0px solid var(--theme-border);
-  opacity: 0;
-}
-
-.personnel-slide-panel.closing > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.2s ease;
 }
 
 /* ═══ Header ═══ */
@@ -85,7 +39,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .pdp-slide-title-info {
@@ -95,7 +49,7 @@
 .pdp-slide-name {
   font-size: 15px;
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -115,7 +69,7 @@
   font-size: 10px;
   font-weight: 600;
   background: rgba(255,255,255,0.2);
-  color: white;
+  color: var(--theme-text-inverse);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -140,7 +94,7 @@
   background: var(--theme-border-light);
 }
 .pdp-slide-body::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--theme-bg-muted);
   border-radius: 3px;
 }
 
@@ -149,23 +103,7 @@
   margin-bottom: 16px;
 }
 
-.pdp-section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--theme-primary-dark);
-  margin: 0 0 12px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--theme-bg-indigo-light);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.pdp-section-title svg {
-  color: var(--theme-primary);
-}
+/* .pdp-section-title + svg → .shared-section-title (theme.css) */
 
 /* Identité */
 .pdp-identity {
@@ -173,7 +111,7 @@
   align-items: center;
   gap: 14px;
   padding: 12px;
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 10px;
   border: 1px solid var(--theme-border);
 }
@@ -187,7 +125,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .pdp-identity-info {
@@ -218,21 +156,21 @@
 }
 
 .pdp-type-badge.type-permanent {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-dark);
 }
 
 .pdp-type-badge.type-contractuel {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
 }
 
-.pdp-type-badge.type-intermittent { background: #fef3c7; color: #92400e; }
-.pdp-type-badge.type-CDD { background: var(--theme-bg-indigo-light); color: #3730a3; }
-.pdp-type-badge.type-freelance { background: var(--theme-success-bg); color: #166534; }
-.pdp-type-badge.type-prestataire { background: #fce7f3; color: #9d174d; }
-.pdp-type-badge.type-auto-entrepreneur { background: #fff7ed; color: #9a3412; }
-.pdp-type-badge.type-entreprise { background: #f5f3ff; color: var(--theme-primary-dark); }
+.pdp-type-badge.type-intermittent { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
+.pdp-type-badge.type-CDD { background: var(--theme-bg-indigo-light); color: var(--theme-info-text-alt); }
+.pdp-type-badge.type-freelance { background: var(--theme-success-bg); color: var(--theme-success-text-alt); }
+.pdp-type-badge.type-prestataire { background: var(--theme-danger-bg); color: var(--theme-danger-text); }
+.pdp-type-badge.type-auto-entrepreneur { background: var(--theme-warning-bg); color: var(--theme-orange-text); }
+.pdp-type-badge.type-entreprise { background: var(--theme-purple-bg); color: var(--theme-primary-dark); }
 
 .pdp-inactive-badge {
   background: var(--theme-bg-tertiary) !important;
@@ -255,7 +193,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
   font-size: 13px;
@@ -267,7 +205,7 @@
 
 .pdp-contact-item:hover {
   border-color: var(--theme-primary);
-  background: #f8f7ff;
+  background: var(--theme-purple-bg);
   color: var(--theme-primary-dark);
 }
 
@@ -291,7 +229,7 @@
   border-radius: 14px;
   font-size: 11px;
   font-weight: 600;
-  background: color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 12%, white);
+  background: color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 12%, var(--theme-bg-card));
   color: var(--chip-color, var(--theme-text-gray));
   border: 1px solid color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 25%, transparent);
 }
@@ -314,10 +252,10 @@
   gap: 8px;
   padding: 10px 12px;
   background: var(--theme-success-bg);
-  border: 1px solid #bbf7d0;
+  border: 1px solid var(--theme-success-border);
   border-radius: 8px;
   font-size: 12px;
-  color: #166534;
+  color: var(--theme-success-text-alt);
   font-weight: 500;
 }
 
@@ -329,11 +267,11 @@
 /* Notes */
 .pdp-notes {
   padding: 10px 12px;
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
   font-size: 13px;
-  color: #4b5563;
+  color: var(--theme-text-subtle);
   line-height: 1.5;
   white-space: pre-wrap;
 }
@@ -343,7 +281,7 @@
   padding: 12px 16px;
   border-top: 1px solid var(--theme-border);
   flex-shrink: 0;
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .pdp-slide-edit-btn {
@@ -356,7 +294,7 @@
   border: none;
   border-radius: 8px;
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -386,7 +324,7 @@
 
 .pdp-absence-add-btn:hover {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-primary);
 }
 

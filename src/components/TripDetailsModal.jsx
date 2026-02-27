@@ -671,7 +671,7 @@ const TripDetailsModal = ({
 
   // Style pour les champs sauvegardés
   const savedFieldStyle = isSaved ? {
-    background: '#ecfdf5',
+    background: 'var(--theme-success-bg)',
     borderColor: '#10b981',
     borderWidth: '2px'
   } : {};
@@ -924,13 +924,13 @@ const TripDetailsModal = ({
                       background: vehicle.type?.toUpperCase().includes('PL') || 
                                  vehicle.type?.toUpperCase().includes('PORTEUR') ||
                                  vehicle.type?.toUpperCase().includes('SEMI') 
-                        ? '#fef3c7' 
-                        : '#dbeafe',
+                        ? 'var(--btn-warning-bg)' 
+                        : 'var(--theme-info-bg-strong)',
                       color: vehicle.type?.toUpperCase().includes('PL') || 
                              vehicle.type?.toUpperCase().includes('PORTEUR') ||
                              vehicle.type?.toUpperCase().includes('SEMI')
-                        ? '#92400e'
-                        : '#1e40af',
+                        ? 'var(--theme-warning-text)'
+                        : 'var(--theme-info-text)',
                       borderRadius: '0.25rem',
                       fontSize: '0.75rem',
                       fontWeight: '600'
@@ -949,13 +949,13 @@ const TripDetailsModal = ({
                 background: vehicle.type?.toUpperCase().includes('PL') || 
                            vehicle.type?.toUpperCase().includes('PORTEUR') ||
                            vehicle.type?.toUpperCase().includes('SEMI') 
-                  ? '#fef3c7' 
-                  : '#dbeafe',
+                  ? 'var(--btn-warning-bg)' 
+                  : 'var(--theme-info-bg-strong)',
                 color: vehicle.type?.toUpperCase().includes('PL') || 
                        vehicle.type?.toUpperCase().includes('PORTEUR') ||
                        vehicle.type?.toUpperCase().includes('SEMI')
-                  ? '#92400e'
-                  : '#1e40af',
+                  ? 'var(--theme-warning-text)'
+                  : 'var(--theme-info-text)',
                 borderRadius: '0.25rem',
                 fontSize: '0.75rem',
                 fontWeight: '600',
@@ -969,13 +969,13 @@ const TripDetailsModal = ({
           {isSaved && (
             <div style={{
               padding: '0.5rem 0.75rem',
-              background: '#ecfdf5',
+              background: 'var(--theme-success-bg)',
               border: '2px solid #10b981',
               borderRadius: '0.375rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              color: '#065f46',
+              color: 'var(--theme-success-text)',
               fontWeight: '600',
               fontSize: '0.75rem',
               whiteSpace: 'nowrap',
@@ -1130,8 +1130,8 @@ const TripDetailsModal = ({
             {/* Pauses ALLER */}
             {pauses.filter(p => p.pauseType === 'outbound').map(pause => {
               const pauseStyle = pausesWithValidatedLocation.has(pause.id) ? {
-                background: '#eff6ff',
-                borderColor: '#3b82f6',
+                background: 'var(--theme-info-bg)',
+                borderColor: 'var(--theme-primary)',
                 borderWidth: '2px'
               } : {};
               
@@ -1326,8 +1326,8 @@ const TripDetailsModal = ({
             {/* Pauses RETOUR */}
             {pauses.filter(p => p.pauseType === 'return').map(pause => {
               const pauseStyle = pausesWithValidatedLocation.has(pause.id) ? {
-                background: '#eff6ff',
-                borderColor: '#3b82f6',
+                background: 'var(--theme-info-bg)',
+                borderColor: 'var(--theme-primary)',
                 borderWidth: '2px'
               } : {};
               

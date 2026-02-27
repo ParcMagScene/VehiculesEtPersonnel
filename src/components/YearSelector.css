@@ -15,7 +15,7 @@
 }
 
 .year-selector-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 1rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   max-width: 600px;
@@ -34,7 +34,7 @@
   padding: 1.5rem 2rem;
   border-bottom: 2px solid var(--theme-border-medium);
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
   border-radius: 0.98rem 0.98rem 0 0;
 }
 
@@ -81,7 +81,7 @@
 
 .year-item.today {
   background: linear-gradient(135deg, var(--theme-info) 0%, var(--theme-info-dark) 100%);
-  color: white;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-info);
   font-weight: 700;
 }
@@ -117,15 +117,6 @@
   box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
 @media (max-width: 768px) {
   .year-selector-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -149,22 +140,3 @@
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}

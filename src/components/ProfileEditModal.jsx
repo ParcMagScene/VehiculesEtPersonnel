@@ -124,16 +124,16 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex',
+      background: 'var(--theme-overlay)', backdropFilter: 'blur(4px)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', zIndex: 10000
     }}>
       <div style={{
-        background: 'white', borderRadius: '16px', width: '400px', maxWidth: '95vw',
+        background: 'var(--theme-bg-card)', borderRadius: '16px', width: '400px', maxWidth: '95vw',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden'
       }}>
         {/* Header */}
         <div className="theme-modal-header" style={{ borderRadius: '16px 16px 0 0' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--theme-text-inverse)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <User size={20} /> {isAdminMode ? `Modifier ${editedUser.name}` : 'Mon profil'}
           </h3>
           <button onClick={onClose} className="theme-close-btn">
@@ -149,7 +149,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" style={{
                   width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover',
-                  border: '3px solid #3b82f6'
+                  border: '3px solid var(--theme-primary)'
                 }} />
               ) : (
                 <UserAvatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
@@ -161,7 +161,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
                 style={{
                   position: 'absolute', bottom: '0', right: '0',
                   width: '34px', height: '34px', borderRadius: '50%',
-                  background: '#3b82f6', color: 'white', border: '3px solid white',
+                  background: 'var(--theme-primary)', color: 'var(--theme-text-inverse)', border: '3px solid var(--theme-bg-card)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: uploading ? 'wait' : 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
                 }}
@@ -179,7 +179,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
             />
 
             {uploading && (
-              <div style={{ fontSize: '13px', color: '#3b82f6' }}>Upload en cours...</div>
+              <div style={{ fontSize: '13px', color: 'var(--theme-primary)' }}>Upload en cours...</div>
             )}
 
             {editedUser.avatar && !uploading && (
@@ -200,7 +200,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
           <div style={{ marginBottom: '16px' }}>
             <label style={{
               display: 'block', fontSize: '14px', fontWeight: 600,
-              color: '#374151', marginBottom: '6px'
+              color: 'var(--theme-text-body)', marginBottom: '6px'
             }}>
               Nom
             </label>
@@ -210,12 +210,12 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
               onChange={(e) => setName(e.target.value)}
               placeholder="Votre nom"
               style={{
-                width: '100%', padding: '10px 14px', border: '1px solid #d1d5db',
+                width: '100%', padding: '10px 14px', border: '1px solid var(--theme-border)',
                 borderRadius: '8px', fontSize: '15px', outline: 'none',
                 transition: 'border-color 0.2s', boxSizing: 'border-box'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              onFocus={(e) => e.target.style.borderColor = 'var(--theme-primary)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--theme-border-medium)'}
             />
           </div>
 
@@ -223,13 +223,13 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
           <div style={{ marginBottom: '20px' }}>
             <label style={{
               display: 'block', fontSize: '14px', fontWeight: 600,
-              color: '#374151', marginBottom: '6px'
+              color: 'var(--theme-text-body)', marginBottom: '6px'
             }}>
               Email
             </label>
             <div style={{
-              padding: '10px 14px', background: '#f3f4f6', borderRadius: '8px',
-              fontSize: '15px', color: '#6b7280'
+              padding: '10px 14px', background: 'var(--theme-bg-tertiary)', borderRadius: '8px',
+              fontSize: '15px', color: 'var(--theme-text-gray)'
             }}>
               {editedUser.email}
             </div>
@@ -237,7 +237,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
 
           {error && (
             <div style={{
-              padding: '10px 14px', background: '#fef2f2', color: '#dc2626',
+              padding: '10px 14px', background: 'var(--theme-danger-bg)', color: '#dc2626',
               borderRadius: '8px', fontSize: '13px', marginBottom: '16px'
             }}>
               {error}

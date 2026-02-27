@@ -181,7 +181,7 @@ function MobilePlanning({
       case 'completed':
       case 'COMPLETED': return '#10b981';
       case 'rescheduled': return '#f97316';
-      default: return '#6b7280';
+      default: return 'var(--theme-text-gray)';
     }
   };
 

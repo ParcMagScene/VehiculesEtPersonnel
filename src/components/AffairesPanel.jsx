@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2 } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -8,6 +8,10 @@ import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
 import MonthSelector from './MonthSelector';
 import WeekSelector from './WeekSelector';
 import './AffairesPanel.css';
+
+const BLImportModal = lazy(() => import('./BLImportModal'));
+const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
+const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 
 const AFFAIRE_TYPES = [
   { value: 'Prestation', label: 'Prestation', color: '#3b82f6', icon: '🎭' },
@@ -88,6 +92,12 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const [selectedAffaire, setSelectedAffaire] = useState(null);
   const [dialogAffaire, setDialogAffaire] = useState(null);
   const clickTimerRef = useRef(null);
+
+  // BL Import modal
+  const [showBLImport, setShowBLImport] = useState(false);
+  const [showBLImportLocPresta, setShowBLImportLocPresta] = useState(false);
+  const [blImportAffaireId, setBlImportAffaireId] = useState(null);
+  const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
 
   // Timeline / frise chronologique
   const timelineRef = useRef(null);
@@ -460,9 +470,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     const archiveThreshold = oneWeekAgo.toISOString().slice(0, 10);
 
     // Marquer les affaires archivées (terminées depuis + d'1 semaine)
+    // N'archiver que si une date_fin explicite est définie et dépassée
     result = result.map(a => {
-      const fin = a.dateFin || a.dateDebut || '';
-      const isArchived = fin && fin < archiveThreshold;
+      const isArchived = a.dateFin ? a.dateFin < archiveThreshold : false;
       return { ...a, isArchived };
     });
 
@@ -866,6 +876,36 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
             <span>Archivées</span>
           </label>
+
+          <div className="affaires-tb-divider" />
+
+          {/* Import BL — dynamique selon le filtre type actif */}
+          {(!filterType || filterType === 'Vente' || filterType === 'Installation') && (
+            <button
+              className="affaires-tb-bl-import-btn"
+              onClick={() => { setBlImportAffaireId(null); setShowBLImport(true); }}
+              title="Importer un BL Vente / Installation"
+            >
+              <FileText size={14} /> BL Vente
+            </button>
+          )}
+          {(!filterType || filterType === 'Location' || filterType === 'Prestation') && (
+            <button
+              className="affaires-tb-bl-import-btn loc-presta"
+              onClick={() => { setBlImportAffaireId(null); setShowBLImportLocPresta(true); }}
+              title="Importer un Bon de Préparation (Location / Prestation)"
+            >
+              <FileText size={14} /> BP Loc/Presta
+            </button>
+          )}
+          <button
+            className="affaires-tb-bl-import-btn"
+            onClick={() => setShowBatchAnalysis(true)}
+            title="Analyse batch des BL PDF"
+            style={{ gap: 4 }}
+          >
+            <BarChart2 size={14} /> Analyse batch
+          </button>
         </div>
       </div>
 
@@ -985,6 +1025,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           onClose={() => setSelectedAffaire(null)}
           onOpenDialog={(aff) => { setSelectedAffaire(null); setDialogAffaire(aff); }}
           onNavigateToEntity={onNavigateToEntity}
+          onRefresh={handleRefresh}
         />
       </div>
 
@@ -1050,6 +1091,35 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           onClose={() => setShowWeekSelector(false)}
           reservations={reservations}
         />
+      )}
+
+      {/* BL Import Modal */}
+      {showBLImport && (
+        <Suspense fallback={null}>
+          <BLImportModal
+            onClose={() => { setShowBLImport(false); setBlImportAffaireId(null); }}
+            onImported={() => { setShowBLImport(false); setBlImportAffaireId(null); handleRefresh(); }}
+            defaultAffaireId={blImportAffaireId}
+          />
+        </Suspense>
+      )}
+
+      {/* BL Import Loc/Presta Modal */}
+      {showBLImportLocPresta && (
+        <Suspense fallback={null}>
+          <BLImportLocPrestaModal
+            onClose={() => { setShowBLImportLocPresta(false); setBlImportAffaireId(null); }}
+            onImported={() => { setShowBLImportLocPresta(false); setBlImportAffaireId(null); handleRefresh(); }}
+            defaultAffaireId={blImportAffaireId}
+          />
+        </Suspense>
+      )}
+
+      {/* Batch Analysis Modal */}
+      {showBatchAnalysis && (
+        <Suspense fallback={null}>
+          <BLBatchAnalysis onClose={() => setShowBatchAnalysis(false)} />
+        </Suspense>
       )}
     </div>
   );

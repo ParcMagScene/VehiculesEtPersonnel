@@ -14,10 +14,10 @@ import './PersonnelAgenda.css';
 
 // Couleurs par type d'événement
 const EVENT_COLORS = {
-  mission: { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af' },
-  leave: { bg: '#d1fae5', border: '#10b981', text: '#065f46' },
-  unavailability: { bg: '#fee2e2', border: '#ef4444', text: '#991b1b' },
-  google: { bg: '#fef3c7', border: '#f59e0b', text: '#92400e' },
+  mission: { bg: 'var(--theme-info-bg-strong)', border: '#3b82f6', text: 'var(--theme-info-text)' },
+  leave: { bg: 'var(--theme-success-bg-strong)', border: '#10b981', text: 'var(--theme-success-text)' },
+  unavailability: { bg: 'var(--btn-danger-bg)', border: '#ef4444', text: 'var(--theme-danger-text)' },
+  google: { bg: 'var(--btn-warning-bg)', border: '#f59e0b', text: 'var(--theme-warning-text)' },
 };
 
 const MISSION_TYPE_LABELS = {

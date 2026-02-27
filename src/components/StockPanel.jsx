@@ -4,6 +4,7 @@ import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, Filter,
   RotateCcw, Layers, Tag, MapPin, Euro, Hash, X, Check, ChevronDown,
   Archive, Eye, FolderOpen } from 'lucide-react';
 import api from '../utils/api';
+import { formatCurrency, formatDateTime as formatDate, formatDateSimple as formatDateShort } from '../utils/formatUtils';
 import ConfirmDialog from './ConfirmDialog';
 import './StockPanel.css';
 import { useToast } from '../hooks/useToast';
@@ -24,21 +25,6 @@ const CATEGORY_COLORS = [
 ];
 
 const CATEGORY_ICONS = ['📦', '🔧', '⚡', '🔩', '🛠️', '📐', '🧰', '💡', '🔌', '🧲', '🪛', '⛓️'];
-
-const formatCurrency = (amount) => {
-  if (!amount && amount !== 0) return '—';
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
-
-const formatDateShort = (dateStr) => {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-};
 
 // ═══ Composant Principal ═══
 function StockPanel({ currentUser }) {
@@ -323,28 +309,28 @@ function DashboardView({ stats, items, onSelectItem }) {
       {/* KPIs */}
       <div className="stock-kpis">
         <div className="stock-kpi">
-          <div className="kpi-icon" style={{ background: '#dbeafe' }}><Package size={20} color="#3b82f6" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--theme-info-bg-strong)' }}><Package size={20} color="#3b82f6" /></div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.totalItems}</span>
             <span className="kpi-label">Articles actifs</span>
           </div>
         </div>
         <div className="stock-kpi">
-          <div className="kpi-icon" style={{ background: '#dcfce7' }}><Euro size={20} color="#10b981" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--theme-success-bg-strong)' }}><Euro size={20} color="#10b981" /></div>
           <div className="kpi-info">
             <span className="kpi-value">{formatCurrency(stats.totalValue)}</span>
             <span className="kpi-label">Valeur du stock</span>
           </div>
         </div>
         <div className="stock-kpi warning">
-          <div className="kpi-icon" style={{ background: '#fef3c7' }}><AlertTriangle size={20} color="#f59e0b" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--btn-warning-bg)' }}><AlertTriangle size={20} color="#f59e0b" /></div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.lowStockCount}</span>
             <span className="kpi-label">Stock bas</span>
           </div>
         </div>
         <div className="stock-kpi danger">
-          <div className="kpi-icon" style={{ background: '#fee2e2' }}><Archive size={20} color="#ef4444" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--btn-danger-bg)' }}><Archive size={20} color="#ef4444" /></div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.outOfStockCount}</span>
             <span className="kpi-label">Rupture</span>

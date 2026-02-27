@@ -4,9 +4,11 @@
 // ============================================================
 
 import db, { addToHistory } from './database.js';
-import { readFileSync, readdirSync } from 'fs';
-import { join, dirname } from 'path';
+import { readFileSync, readdirSync, existsSync, unlinkSync, mkdirSync, renameSync } from 'fs';
+import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
+import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,7 +23,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       const categories = db.prepare('SELECT * FROM equipment_categories ORDER BY level, name').all();
       res.json(categories);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -43,7 +45,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       }));
       res.json(tree);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -60,7 +62,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       
       res.json({ id: result.lastInsertRowid, name, icon, color, description, parent_id, level });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -74,7 +76,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       ).run(name, icon, color, description, parent_id || null, level || 'category', req.params.id);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -90,7 +92,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       db.prepare('DELETE FROM equipment_categories WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -103,7 +105,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/equipment
   app.get('/api/equipment', authenticateToken, (req, res) => {
     try {
-      const { status, category_id, search } = req.query;
+      const { status, category_id, search, location_zone, location_depot, limit } = req.query;
       let sql = `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color,
                u.name as created_by_name
@@ -116,13 +118,16 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       if (status) { sql += ' AND e.status = ?'; params.push(status); }
       if (category_id) { sql += ' AND e.category_id = ?'; params.push(category_id); }
+      if (location_zone) { sql += ' AND e.location_zone = ?'; params.push(location_zone); }
+      if (location_depot) { sql += ' AND e.location_depot = ?'; params.push(location_depot); }
       if (search) {
-        sql += ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ?)';
+        sql += ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ? OR e.location LIKE ? OR e.location_zone LIKE ?)';
         const like = `%${search}%`;
-        params.push(like, like, like);
+        params.push(like, like, like, like, like);
       }
       
       sql += ' ORDER BY e.name';
+      if (limit) { sql += ' LIMIT ?'; params.push(parseInt(limit, 10)); }
       const equipment = db.prepare(sql).all(...params);
       
       // Enrichir avec le dernier assignment actif — requête unique au lieu de N+1
@@ -145,7 +150,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       res.json(equipment);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -184,7 +189,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       res.json(eq);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -192,13 +197,13 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/equipment
   app.post('/api/equipment', authenticateToken, (req, res) => {
     try {
-      const { name, reference, serial_number, category_id, status, location, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
+      const { name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
       if (!name) return res.status(400).json({ error: 'Nom requis' });
       
       const result = db.prepare(`
-        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(name, reference, serial_number, category_id, status || 'available', location, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity || 1, req.user.id);
+        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(name, reference, serial_number, category_id, status || 'available', location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity || 1, req.user.id);
       
       // Générer l'UID unique basé sur l'ID
       const uid = 'EMAG-' + String(result.lastInsertRowid).padStart(5, '0');
@@ -209,7 +214,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       const created = db.prepare('SELECT * FROM equipment WHERE id = ?').get(result.lastInsertRowid);
       res.json(created);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -217,18 +222,18 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   // PUT /api/equipment/:id
   app.put('/api/equipment/:id', authenticateToken, (req, res) => {
     try {
-      const { name, reference, serial_number, category_id, status, location, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
+      const { name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
       
       db.prepare(`
-        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, stock_quantity = ?, updated_at = CURRENT_TIMESTAMP
+        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, stock_quantity = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(name, reference, serial_number, category_id, status, location, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, req.params.id);
+      `).run(name, reference, serial_number, category_id, status, location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, req.params.id);
       
       addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
       
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -245,7 +250,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -315,7 +320,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         created
       });
     } catch (error) {
-      console.error('Erreur sérialisation:', error);
+      logger.error('Erreur sérialisation:', error);
       res.status(500).json({ error: 'Erreur serveur lors de la sérialisation' });
     }
   });
@@ -473,8 +478,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         message: `Import terminé : ${created} équipement(s) créé(s), ${skipped} ignoré(s), ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
       });
     } catch (error) {
-      console.error('Erreur import CSV:', error);
-      console.error(error);
+      logger.error('Erreur import CSV:', error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -505,7 +510,7 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       
       res.json(db.prepare(sql).all(...params));
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -526,7 +531,7 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -548,7 +553,7 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -582,7 +587,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       
       res.json(db.prepare(sql).all(...params));
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -600,7 +605,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       };
       res.json(stats);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -641,7 +646,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       const rows = db.prepare(sql).all(...params);
       res.json(rows);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -679,7 +684,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -706,7 +711,31 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // DELETE /api/sav-tickets/duplicates — Supprimer les doublons existants (garder le plus ancien)
+  // NOTE: route spécifique AVANT la route paramétrique /:id
+  app.delete('/api/sav-tickets/duplicates', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      // Doublons = même title (N° intervention + nom article)
+      const dupes = db.prepare(`
+        SELECT id FROM sav_tickets WHERE id NOT IN (
+          SELECT MIN(id) FROM sav_tickets GROUP BY LOWER(TRIM(title))
+        )
+      `).all();
+      if (dupes.length === 0) {
+        return res.json({ removed: 0, message: 'Aucun doublon trouvé' });
+      }
+      const ids = dupes.map(d => d.id);
+      const placeholders = ids.map(() => '?').join(',');
+      db.prepare(`DELETE FROM sav_tickets WHERE id IN (${placeholders})`).run(...ids);
+      addToHistory('sav_tickets', null, 'remove_duplicates', { removed: ids.length }, req.user.id, req.user.name);
+      res.json({ removed: ids.length, message: `${ids.length} doublon(s) supprimé(s)` });
+    } catch (error) {
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -720,7 +749,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       if (ticket) refreshEquipmentStatus(ticket.equipment_id);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -856,6 +885,19 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
         };
       });
 
+      // Détection des doublons — par N° intervention (extrait du title)
+      const existingTitles = new Set(
+        db.prepare('SELECT title FROM sav_tickets').all().map(t => t.title.trim().toLowerCase())
+      );
+      const duplicates = [];
+      for (const row of processed) {
+        const title = `${(row.intervention || '').trim()} — ${(row.nom_article || '').trim()}`;
+        if (existingTitles.has(title.trim().toLowerCase())) {
+          row._isDuplicate = true;
+          duplicates.push({ index: processed.indexOf(row), intervention: row.intervention, nom: row.nom_article });
+        }
+      }
+
       if (mode === 'preview') {
         const statusCounts = {};
         for (const row of processed) {
@@ -871,6 +913,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
           matched,
           unmatched,
           unmatchedItems, // liste complète pour UI
+          duplicatesCount: duplicates.length,
+          duplicates: duplicates.slice(0, 20),
           statusCounts,
           totalCost,
           existingTickets: db.prepare('SELECT COUNT(*) as c FROM sav_tickets').get().c,
@@ -885,20 +929,28 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
             startDate: r._startDate,
             endDate: r._endDate,
             matched: !!r._equipmentId,
+            isDuplicate: !!r._isDuplicate,
           })),
         });
       }
 
       // Mode import réel — importer TOUT (liées et non liées)
+      const { skipDuplicates } = req.body;
       const insertTicket = db.prepare(`
         INSERT INTO sav_tickets (equipment_id, type, priority, status, title, description, cost, import_code, import_serial, import_name, created_at, resolved_at, updated_at)
         VALUES (?, 'reparation', 'medium', ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `);
 
-      let created = 0, createdLinked = 0, createdUnlinked = 0;
+      let created = 0, createdLinked = 0, createdUnlinked = 0, skippedDuplicates = 0;
 
       const importAll = db.transaction(() => {
         for (const row of processed) {
+          // Ignorer les doublons si demandé
+          if (skipDuplicates && row._isDuplicate) {
+            skippedDuplicates++;
+            continue;
+          }
+
           const title = `${(row.intervention || '').trim()} — ${(row.nom_article || '').trim()}`;
           const description = [
             row.code_article ? `Code article: ${row.code_article}` : '',
@@ -935,19 +987,20 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
         refreshEquipmentStatus(eqId);
       }
 
-      addToHistory('sav_tickets', null, 'import_csv', { created, createdLinked, createdUnlinked, total: data.length }, req.user.id, req.user.name);
+      addToHistory('sav_tickets', null, 'import_csv', { created, createdLinked, createdUnlinked, skippedDuplicates, total: data.length }, req.user.id, req.user.name);
 
       res.json({
         success: true,
         created,
         createdLinked,
         createdUnlinked,
+        skippedDuplicates,
         total: data.length,
-        message: `Import terminé : ${createdLinked} intervention(s) liée(s), ${createdUnlinked} non liée(s) à traiter`,
+        message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}`,
       });
     } catch (error) {
-      console.error('Erreur import CSV interventions:', error);
-      console.error(error);
+      logger.error('Erreur import CSV interventions:', error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -962,7 +1015,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       `).all();
       res.json(tickets);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -979,14 +1032,14 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       db.prepare('UPDATE sav_tickets SET equipment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(equipment_id, req.params.id);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 }
 
 // ═══ LISTES FAVORIS / SURVEILLANCE ═══
-export function setupEquipmentListsRoutes(app, authenticateToken) {
+export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) {
 
   // GET /api/equipment-lists — Listes de l'utilisateur courant
   app.get('/api/equipment-lists', authenticateToken, (req, res) => {
@@ -1002,7 +1055,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       `).all(req.user.id);
       res.json(lists);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -1017,7 +1070,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       db.prepare('INSERT OR IGNORE INTO equipment_lists (equipment_id, user_id, list_type) VALUES (?, ?, ?)').run(equipment_id, req.user.id, list_type);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -1031,7 +1084,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       db.prepare('DELETE FROM equipment_lists WHERE equipment_id = ? AND user_id = ? AND list_type = ?').run(equipment_id, req.user.id, list_type);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -1062,7 +1115,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       
       res.json(eq);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -1086,19 +1139,126 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
       
       res.json({ photos, logos });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
 
-  // ═══ GET /api/equipment-depot-zones — Zones de dépôt (depot-zones.json) ═══
+  // ═══ UPLOAD PHOTO MATÉRIEL ═══
+  const photosDir = join(process.cwd(), '..', 'public', 'Photos', 'Matériel');
+  if (!existsSync(photosDir)) mkdirSync(photosDir, { recursive: true });
+  
+  const photoStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, photosDir),
+    filename: (req, file, cb) => {
+      // Utiliser le nom original nettoyé (garder l'extension)
+      const ext = extname(file.originalname).toLowerCase();
+      const baseName = file.originalname.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_\-().]/g, '_');
+      // Éviter les doublons : ajouter un suffixe si le fichier existe déjà
+      let finalName = baseName + ext;
+      let counter = 1;
+      while (existsSync(join(photosDir, finalName))) {
+        finalName = `${baseName}_${counter}${ext}`;
+        counter++;
+      }
+      cb(null, finalName);
+    },
+  });
+  
+  const uploadPhoto = multer({
+    storage: photoStorage,
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+    fileFilter: (req, file, cb) => {
+      if (/\.(jpg|jpeg|png|gif|webp|avif|svg)$/i.test(file.originalname)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Format non supporté. Formats acceptés : jpg, png, gif, webp, avif, svg'));
+      }
+    },
+  });
+
+  // POST /api/equipment-photos/upload — Upload une ou plusieurs photos
+  app.post('/api/equipment-photos/upload', authenticateToken, uploadPhoto.array('photos', 20), (req, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'Aucun fichier reçu' });
+      }
+      const uploaded = req.files.map(f => f.filename);
+      res.json({ success: true, uploaded, count: uploaded.length });
+    } catch (error) {
+      logger.error('POST /api/equipment-photos/upload error:', error);
+      res.status(500).json({ error: 'Erreur lors de l\'upload' });
+    }
+  });
+
+  // DELETE /api/equipment-photos/:filename — Supprimer une photo
+  app.delete('/api/equipment-photos/:filename', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const filename = decodeURIComponent(req.params.filename);
+      // Sécurité : interdire les chemins relatifs
+      if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+        return res.status(400).json({ error: 'Nom de fichier invalide' });
+      }
+      const filePath = join(photosDir, filename);
+      if (!existsSync(filePath)) {
+        return res.status(404).json({ error: 'Photo introuvable' });
+      }
+      unlinkSync(filePath);
+      // Nettoyer le champ photo en DB si un équipement pointait vers ce fichier
+      db.prepare("UPDATE equipment SET photo = NULL WHERE photo LIKE ?").run(`%${filename}%`);
+      res.json({ success: true, deleted: filename });
+    } catch (error) {
+      logger.error('DELETE /api/equipment-photos error:', error);
+      res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
+  });
+
+  // PUT /api/equipment-photos/rename — Renommer une photo
+  app.put('/api/equipment-photos/rename', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { oldName, newName } = req.body;
+      if (!oldName || !newName) return res.status(400).json({ error: 'oldName et newName requis' });
+      if (oldName.includes('/') || newName.includes('/') || oldName.includes('..') || newName.includes('..')) {
+        return res.status(400).json({ error: 'Nom de fichier invalide' });
+      }
+      const oldPath = join(photosDir, oldName);
+      const newPath = join(photosDir, newName);
+      if (!existsSync(oldPath)) return res.status(404).json({ error: 'Photo source introuvable' });
+      if (existsSync(newPath)) return res.status(409).json({ error: 'Un fichier avec ce nom existe déjà' });
+      
+      renameSync(oldPath, newPath);
+      // Mettre à jour le champ photo en DB
+      db.prepare("UPDATE equipment SET photo = REPLACE(photo, ?, ?) WHERE photo LIKE ?").run(oldName, newName, `%${oldName}%`);
+      res.json({ success: true, oldName, newName });
+    } catch (error) {
+      logger.error('PUT /api/equipment-photos/rename error:', error);
+      res.status(500).json({ error: 'Erreur lors du renommage' });
+    }
+  });
+
+  // ═══ GET /api/equipment-all-depot-zones — Toutes les zones des deux dépôts ═══
+  app.get('/api/equipment-all-depot-zones', authenticateToken, (req, res) => {
+    try {
+      const depot1 = JSON.parse(readFileSync(join(__dirname, '..', 'public', 'depot-zones.json'), 'utf-8'));
+      const depot2 = JSON.parse(readFileSync(join(__dirname, '..', 'public', 'depot2-zones.json'), 'utf-8'));
+      res.json({ depots: [ { id: '1', ...depot1 }, { id: '2', ...depot2 } ] });
+    } catch (error) {
+      logger.error('GET /api/equipment-all-depot-zones error:', error);
+      res.status(500).json({ error: 'Erreur chargement zones dépôt' });
+    }
+  });
+
+  // ═══ GET /api/equipment-depot-zones — Zones de dépôt (depot-zones.json / depot2-zones.json) ═══
+  // ?depot=1 (défaut) ou ?depot=2
   app.get('/api/equipment-depot-zones', authenticateToken, (req, res) => {
     try {
-      const zonesPath = join(__dirname, '..', 'public', 'depot-zones.json');
+      const depotId = parseInt(req.query.depot, 10) || 1;
+      const filename = depotId === 2 ? 'depot2-zones.json' : 'depot-zones.json';
+      const zonesPath = join(__dirname, '..', 'public', filename);
       const data = JSON.parse(readFileSync(zonesPath, 'utf-8'));
       res.json(data);
     } catch (error) {
-      console.error('GET /api/equipment-depot-zones error:', error);
+      logger.error('GET /api/equipment-depot-zones error:', error);
       res.status(500).json({ error: 'Erreur chargement zones dépôt' });
     }
   });
@@ -1106,13 +1266,19 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
   // ═══ GET /api/equipment-location-stats — Stats localisation par zone ═══
   app.get('/api/equipment-location-stats', authenticateToken, (req, res) => {
     try {
-      const stats = db.prepare(`
-        SELECT location_zone, location_floor, COUNT(*) as count
+      const depot = req.query.depot || null;
+      let statsQuery = `
+        SELECT location_depot, location_zone, location_floor, COUNT(*) as count
         FROM equipment
         WHERE location_zone IS NOT NULL AND location_zone != ''
-        GROUP BY location_zone, location_floor
-        ORDER BY location_zone
-      `).all();
+      `;
+      const params = [];
+      if (depot) {
+        statsQuery += ' AND location_depot = ?';
+        params.push(depot);
+      }
+      statsQuery += ' GROUP BY location_depot, location_zone, location_floor ORDER BY location_depot, location_zone';
+      const stats = db.prepare(statsQuery).all(...params);
 
       const unlocated = db.prepare(
         "SELECT COUNT(*) as count FROM equipment WHERE location_zone IS NULL OR location_zone = ''"
@@ -1120,7 +1286,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken) {
 
       res.json({ stats, unlocated: unlocated.count });
     } catch (error) {
-      console.error('GET /api/equipment-location-stats error:', error);
+      logger.error('GET /api/equipment-location-stats error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });

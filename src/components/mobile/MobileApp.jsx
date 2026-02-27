@@ -251,7 +251,7 @@ function MobileApp({ onSwitchToDesktop }) {
                   position: 'absolute',
                   top: '50px',
                   right: 0,
-                  background: 'white',
+                  background: 'var(--theme-bg-card)',
                   borderRadius: '8px',
                   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
                   overflow: 'hidden',
@@ -261,11 +261,11 @@ function MobileApp({ onSwitchToDesktop }) {
               >
                 <div style={{
                   padding: '12px 16px',
-                  borderBottom: '1px solid #e5e7eb',
-                  background: '#f9fafb'
+                  borderBottom: '1px solid var(--theme-border)',
+                  background: 'var(--theme-bg-secondary)'
                 }}>
-                  <div style={{ fontWeight: 600, color: '#1f2937' }}>{currentUser?.name}</div>
-                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                  <div style={{ fontWeight: 600, color: 'var(--theme-text-primary)' }}>{currentUser?.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--theme-text-gray)', marginTop: '2px' }}>
                     {currentUser?.email}
                   </div>
                 </div>
@@ -279,18 +279,18 @@ function MobileApp({ onSwitchToDesktop }) {
                     width: '100%',
                     padding: '12px 16px',
                     border: 'none',
-                    background: 'white',
+                    background: 'var(--theme-bg-card)',
                     textAlign: 'left',
                     cursor: 'pointer',
                     fontSize: '14px',
-                    color: '#374151',
+                    color: 'var(--theme-text-body)',
                     transition: 'background 0.2s',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px'
                   }}
-                  onTouchStart={(e) => e.currentTarget.style.background = '#f9fafb'}
-                  onTouchEnd={(e) => e.currentTarget.style.background = 'white'}
+                  onTouchStart={(e) => e.currentTarget.style.background = 'var(--theme-bg-secondary)'}
+                  onTouchEnd={(e) => e.currentTarget.style.background = 'var(--theme-bg-card)'}
                 >
                   <LayoutGrid size={16} />
                   Changer d'utilisateur
@@ -305,7 +305,7 @@ function MobileApp({ onSwitchToDesktop }) {
                     width: '100%',
                     padding: '12px 16px',
                     border: 'none',
-                    background: 'white',
+                    background: 'var(--theme-bg-card)',
                     textAlign: 'left',
                     cursor: 'pointer',
                     fontSize: '14px',
@@ -316,8 +316,8 @@ function MobileApp({ onSwitchToDesktop }) {
                     gap: '10px',
                     fontWeight: 500
                   }}
-                  onTouchStart={(e) => e.currentTarget.style.background = '#fef2f2'}
-                  onTouchEnd={(e) => e.currentTarget.style.background = 'white'}
+                  onTouchStart={(e) => e.currentTarget.style.background = 'var(--theme-danger-bg, #fef2f2)'}
+                  onTouchEnd={(e) => e.currentTarget.style.background = 'var(--theme-bg-card)'}
                 >
                   <LogOut size={16} />
                   Se déconnecter
@@ -329,16 +329,16 @@ function MobileApp({ onSwitchToDesktop }) {
                     width: '100%',
                     padding: '12px 16px',
                     border: 'none',
-                    borderTop: '1px solid #e5e7eb',
-                    background: '#f9fafb',
+                    borderTop: '1px solid var(--theme-border)',
+                    background: 'var(--theme-bg-secondary)',
                     textAlign: 'center',
                     cursor: 'pointer',
                     fontSize: '13px',
-                    color: '#6b7280',
+                    color: 'var(--theme-text-gray)',
                     transition: 'background 0.2s'
                   }}
-                  onTouchStart={(e) => e.currentTarget.style.background = '#f3f4f6'}
-                  onTouchEnd={(e) => e.currentTarget.style.background = '#f9fafb'}
+                  onTouchStart={(e) => e.currentTarget.style.background = 'var(--theme-bg-tertiary)'}
+                  onTouchEnd={(e) => e.currentTarget.style.background = 'var(--theme-bg-secondary)'}
                 >
                   Annuler
                 </button>

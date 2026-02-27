@@ -4,18 +4,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--theme-overlay);
   backdrop-filter: blur(4px);  isolation: isolate;  display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   padding: 20px;
   animation: overlayFadeIn 0.2s ease-out;
-}
-
-@keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .event-details-modal {
@@ -28,11 +23,6 @@
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* Header */
@@ -112,7 +102,7 @@
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--theme-bg-muted);
   border-radius: 3px;
 }
 
@@ -237,7 +227,7 @@ section h3 {
 
 .event-details-modal .reservation-dates {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
@@ -251,7 +241,7 @@ section h3 {
 }
 
 .event-details-modal .drive-links-section .section-header h3 {
-  color: #7c3aed;
+  color: var(--theme-purple-accent);
 }
 
 .event-details-modal .btn-add-drive-link {
@@ -266,7 +256,7 @@ section h3 {
   cursor: pointer;
   transition: var(--btn-transition);
   background: var(--theme-primary-light);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .event-details-modal .btn-add-drive-link:hover {
@@ -277,8 +267,8 @@ section h3 {
 
 /* Drive link edit form */
 .event-details-modal .drive-link-edit-form {
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
+  background: var(--theme-purple-bg);
+  border: 1px solid var(--theme-purple-bg-strong);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 10px;
@@ -295,8 +285,8 @@ section h3 {
 
 .event-details-modal .drive-link-edit-form .drive-link-input {
   flex: 1;
-  border: 1px solid #c4b5fd;
-  background: white;
+  border: 1px solid var(--theme-purple-accent);
+  background: var(--theme-bg-card);
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 13px;
@@ -332,15 +322,15 @@ section h3 {
   justify-content: space-between;
   gap: 8px;
   padding: 10px 14px;
-  background: #f5f3ff;
-  border: 1px solid #ede9fe;
+  background: var(--theme-purple-bg);
+  border: 1px solid var(--theme-purple-bg);
   border-radius: 8px;
   transition: all 0.2s;
 }
 
 .event-details-modal .drive-link-item:hover {
-  background: #ede9fe;
-  border-color: #ddd6fe;
+  background: var(--theme-purple-bg);
+  border-color: var(--theme-purple-bg-strong);
 }
 
 .event-details-modal .drive-link-url {
@@ -348,7 +338,7 @@ section h3 {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #7c3aed;
+  color: var(--theme-purple-accent);
   text-decoration: none;
   flex: 1;
   min-width: 0;
@@ -356,7 +346,7 @@ section h3 {
 }
 
 .event-details-modal .drive-link-url:hover {
-  color: #6d28d9;
+  color: var(--theme-purple-text);
 }
 
 .event-details-modal .drive-link-text {
@@ -382,51 +372,23 @@ section h3 {
   cursor: pointer;
   transition: all 0.15s;
   background: transparent;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   padding: 0;
 }
 
 .event-details-modal .drive-link-item-edit:hover {
-  background: #ddd6fe;
-  color: #7c3aed;
+  background: var(--theme-purple-bg-strong);
+  color: var(--theme-purple-accent);
 }
 
 .event-details-modal .drive-link-item-delete:hover {
-  background: #fee2e2;
+  background: var(--theme-danger-bg);
   color: var(--theme-danger);
 }
 
 .event-details-modal .drive-link-item-delete:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* ============ (Legacy) Drive link inline edit ============ */
-.event-details-modal .drive-link-edit-inline {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.event-details-modal .drive-link-edit-inline .drive-link-input {
-  border: 1px solid var(--theme-bg-indigo-lighter);
-  background: white;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 13px;
-  color: var(--theme-text-dark);
-  outline: none;
-  min-width: 200px;
-  width: 260px;
-}
-
-.event-details-modal .drive-link-edit-inline .drive-link-input:focus {
-  border-color: var(--theme-primary);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-}
-
-.event-details-modal .drive-link-edit-inline .drive-link-input::placeholder {
-  color: var(--theme-text-muted);
 }
 
 .event-details-modal .drive-link-btn {
@@ -444,7 +406,7 @@ section h3 {
 
 .event-details-modal .drive-link-save {
   background: var(--theme-success);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .event-details-modal .drive-link-save:hover {
@@ -468,7 +430,7 @@ section h3 {
 
 .event-details-modal .btn-edit-reservation {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   width: 36px;
   height: 36px;
@@ -517,7 +479,7 @@ section h3 {
 
 .event-details-modal .file-size {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
@@ -531,14 +493,14 @@ section h3 {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   cursor: pointer;
   transition: all 0.2s;
   padding: 0;
 }
 
 .event-details-modal .btn-delete-attachment:hover {
-  background: #fee2e2;
+  background: var(--theme-danger-bg);
   color: var(--theme-danger);
 }
 
@@ -546,7 +508,7 @@ section h3 {
 .event-details-modal .empty-state {
   padding: 32px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   background: var(--theme-bg-secondary);
   border-radius: 8px;
   border: 2px dashed var(--theme-border-medium);
@@ -580,8 +542,7 @@ section h3 {
 
 .event-details-modal .btn-import-bl,
 .event-details-modal .btn-add-reservation,
-.event-details-modal .btn-open-folder,
-.event-details-modal .btn-drive-link {
+.event-details-modal .btn-open-folder {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -596,7 +557,7 @@ section h3 {
 
 .event-details-modal .btn-import-bl {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .event-details-modal .btn-import-bl:hover {
@@ -607,7 +568,7 @@ section h3 {
 
 .event-details-modal .btn-add-reservation {
   background: var(--theme-success);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .event-details-modal .btn-add-reservation:hover {
@@ -618,7 +579,7 @@ section h3 {
 
 .event-details-modal .btn-open-folder {
   background: var(--theme-warning);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .event-details-modal .btn-open-folder:hover:not(:disabled) {
@@ -631,17 +592,6 @@ section h3 {
   background: var(--btn-secondary-bg);
   color: var(--theme-text-muted);
   cursor: not-allowed;
-}
-
-.event-details-modal .btn-drive-link {
-  background: var(--theme-primary-light);
-  color: white;
-}
-
-.event-details-modal .btn-drive-link:hover {
-  background: var(--theme-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 /* Footer */
@@ -662,7 +612,7 @@ section h3 {
 
 .event-details-modal .btn-secondary {
   padding: var(--btn-padding);
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   border: 2px solid var(--theme-border);
   border-radius: var(--btn-radius);
@@ -683,7 +633,7 @@ section h3 {
   gap: 6px;
   padding: var(--btn-padding);
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -705,7 +655,7 @@ section h3 {
   gap: 6px;
   padding: var(--btn-padding);
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -720,13 +670,55 @@ section h3 {
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
 }
 
+.event-details-modal .btn-bl-import {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--btn-padding);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--theme-primary);
+  border: 1px solid var(--theme-primary);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+}
+
+.event-details-modal .btn-bl-import:hover {
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  transform: translateY(-1px);
+}
+
+.event-details-modal .btn-display-event {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--btn-padding);
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border: 1px solid #10b981;
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+}
+
+.event-details-modal .btn-display-event:hover {
+  background: #10b981;
+  color: var(--theme-text-inverse);
+  transform: translateY(-1px);
+}
+
 .event-details-modal .btn-danger {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: var(--btn-padding);
   background: var(--theme-danger);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -777,7 +769,7 @@ section h3 {
 
 /* Modal d'aperçu de fichier */
 .event-details-modal .preview-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 12px;
   width: 90vw;
   max-width: 1200px;
@@ -854,7 +846,7 @@ section h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .event-details-modal .file-info {
@@ -864,7 +856,7 @@ section h3 {
 
 /* Modal de vue dossier */
 .event-details-modal .folder-view-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 12px;
   width: 90vw;
   max-width: 1000px;
@@ -881,7 +873,7 @@ section h3 {
   justify-content: space-between;
   align-items: center;
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
   border-radius: 12px 12px 0 0;
 }
 
@@ -919,7 +911,7 @@ section h3 {
 }
 
 .event-details-modal .folder-file-card {
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
   padding: 16px;
@@ -951,7 +943,7 @@ section h3 {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   transition: all 0.2s;
   opacity: 0;
   padding: 0;
@@ -1013,7 +1005,7 @@ section h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 0 0 12px 12px;
 }
 

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Container, Boxes } from 'lucide-react';
+import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Boxes, Sun, Moon, Radio } from 'lucide-react';
 import api from '../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, getVolume, SOUND_TYPES } from '../utils/notificationSound';
+import { PALETTES } from '../hooks/useTheme';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './UserPreferencesModal.css';
 import { useToast } from '../hooks/useToast';
@@ -13,9 +14,11 @@ const ALL_MODULES = [
   { id: 'equipment', label: 'Matériel', icon: Package },
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
   { id: 'catalog', label: 'Catalogue', icon: BookOpen },
-  { id: 'trucks', label: 'Camions', icon: Container },
   { id: 'stock', label: 'Stock', icon: Boxes },
+  { id: 'communication', label: 'Communication', icon: Radio },
 ];
+
+const VALID_MODULE_IDS = new Set(ALL_MODULES.map(m => m.id));
 
 const DEFAULT_TAB_ORDER = ALL_MODULES.map(m => m.id);
 const DEFAULT_HIDDEN_TABS = [];
@@ -32,7 +35,7 @@ const DEFAULT_PREFS = {
   hiddenTabs: DEFAULT_HIDDEN_TABS,
 };
 
-const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
+const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, onPaletteChange, isDark, onToggleTheme }) => {
   const toast = useToast();
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [saving, setSaving] = useState(false);
@@ -55,6 +58,15 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
       try {
         const data = await api.getPreferences();
         const merged = { ...DEFAULT_PREFS, ...data };
+        // Migration : synchroniser tabOrder avec les modules actuels
+        let order = merged.tabOrder || DEFAULT_TAB_ORDER;
+        // Retirer les modules supprimés
+        order = order.filter(id => VALID_MODULE_IDS.has(id));
+        // Ajouter les nouveaux modules absents
+        ALL_MODULES.forEach(m => { if (!order.includes(m.id)) order.push(m.id); });
+        merged.tabOrder = order;
+        // Nettoyer hiddenTabs des modules supprimés
+        merged.hiddenTabs = (merged.hiddenTabs || []).filter(id => VALID_MODULE_IDS.has(id));
         setPrefs(merged);
         setOriginalPrefs(merged);
         setHasChanges(false);
@@ -151,6 +163,9 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
                 <option value="affaires">Affaires</option>
                 <option value="equipment">Matériel</option>
                 <option value="orders">Commandes</option>
+                <option value="catalog">Catalogue</option>
+                <option value="stock">Stock</option>
+                <option value="communication">Communication</option>
               </select>
             </div>
 
@@ -235,20 +250,55 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange }) => {
           <div className="prefs-section">
             <div className="prefs-section-title">Apparence</div>
 
+            {/* Mode clair / sombre */}
             <div className="prefs-field">
               <span className="prefs-field-label">
-                <Palette size={14} /> Couleur d'accent
+                {isDark ? <Moon size={14} /> : <Sun size={14} />} Mode sombre
               </span>
-              <select
-                className="prefs-select"
-                value={prefs.colorTheme}
-                onChange={(e) => updatePref('colorTheme', e.target.value)}
-              >
-                <option value="default">Violet (défaut)</option>
-                <option value="blue">Bleu</option>
-                <option value="green">Vert</option>
-                <option value="orange">Orange</option>
-              </select>
+              <label className="prefs-toggle">
+                <input
+                  type="checkbox"
+                  checked={isDark}
+                  onChange={() => onToggleTheme && onToggleTheme()}
+                />
+                <span className="prefs-toggle-slider" />
+              </label>
+            </div>
+
+            {/* Sélecteur de palette */}
+            <div className="prefs-field prefs-palette-section">
+              <span className="prefs-field-label">
+                <Palette size={14} /> Palette de couleurs
+              </span>
+              <div className="prefs-palette-grid">
+                {PALETTES.map((p) => {
+                  const colors = isDark ? p.darkColors : p.colors;
+                  const isActive = palette === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      className={`prefs-palette-card${isActive ? ' active' : ''}`}
+                      onClick={() => onPaletteChange && onPaletteChange(p.id)}
+                      title={p.description}
+                    >
+                      <div className="prefs-palette-preview" style={{ background: colors.bg }}>
+                        <div className="prefs-palette-swatches">
+                          <span className="prefs-palette-swatch" style={{ background: colors.primary }} />
+                          <span className="prefs-palette-swatch" style={{ background: colors.secondary }} />
+                          <span className="prefs-palette-swatch" style={{ background: colors.accent }} />
+                        </div>
+                        <div className="prefs-palette-mini-card" style={{ background: colors.card, borderColor: colors.primary + '33' }}>
+                          <div className="prefs-palette-mini-bar" style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` }} />
+                        </div>
+                      </div>
+                      <div className="prefs-palette-info">
+                        <span className="prefs-palette-name">{p.name}</span>
+                        {isActive && <Check size={12} className="prefs-palette-check" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

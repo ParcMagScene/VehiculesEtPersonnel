@@ -12,15 +12,15 @@ const envFile = isDev ? '.env.development' : '.env';
 dotenv.config({ path: _join(__serverDir, envFile) });
 
 if (isDev) {
-  console.log('');
-  console.log('═══════════════════════════════════════════');
-  console.log('  🔧 MODE DÉVELOPPEMENT — Serveur isolé');
-  console.log(`  📄 Env: ${envFile}`);
-  console.log(`  🔌 Port: ${process.env.PORT || 3003}`);
-  console.log(`  💾 DB: ${process.env.DB_PATH || 'vehicules-dev.db'}`);
-  console.log('  ⚠️  La production n\'est PAS affectée');
-  console.log('═══════════════════════════════════════════');
-  console.log('');
+  logger.info('');
+  logger.info('═══════════════════════════════════════════');
+  logger.info('  🔧 MODE DÉVELOPPEMENT — Serveur isolé');
+  logger.info(`  📄 Env: ${envFile}`);
+  logger.info(`  🔌 Port: ${process.env.PORT || 3003}`);
+  logger.info(`  💾 DB: ${process.env.DB_PATH || 'vehicules-dev.db'}`);
+  logger.info('  ⚠️  La production n\'est PAS affectée');
+  logger.info('═══════════════════════════════════════════');
+  logger.info('');
 }
 
 import express from 'express';
@@ -28,6 +28,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -42,7 +43,9 @@ import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, setupReservationEquipmentRoutes } from './catalogRoutes.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockStatsRoutes } from './stockRoutes.js';
+import { setupCommunicationRoutes } from './communicationRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
+import logger from "./logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,15 +56,28 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
 
 if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHANGEZ_CETTE_CLE') {
-  console.warn('⚠️  ATTENTION: JWT_SECRET par défaut détecté ! Créez un fichier server/.env avec un secret sécurisé.');
+  logger.warn('⚠️  ATTENTION: JWT_SECRET par défaut détecté ! Créez un fichier server/.env avec un secret sécurisé.');
 }
 
 // CORS — restriction aux domaines autorisés
+
+// Headers de sécurité HTTP
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://magsav.duckdns.org,http://magsav.duckdns.org:4173,http://magsav.duckdns.org,http://192.168.205.75:4173,http://localhost:5174,http://localhost:4173')
   .split(',')
   .map(s => s.trim());
 
-console.log('🌐 Origines CORS autorisées:', allowedOrigins);
+logger.info('🌐 Origines CORS autorisées:', allowedOrigins);
 
 app.use(cors({
   origin: function(origin, callback) {
@@ -70,7 +86,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    console.error(`❌ CORS bloqué pour origin: "${origin}" — Autorisées: ${allowedOrigins.join(', ')}`);
+    logger.error(`❌ CORS bloqué pour origin: "${origin}" — Autorisées: ${allowedOrigins.join(', ')}`);
     return callback(new Error('CORS non autorisé'), false);
   },
   credentials: true
@@ -244,10 +260,10 @@ app.post('/api/auth/register', async (req, res) => {
       
       if (!hasIsAdminColumn) {
         db.prepare("ALTER TABLE authorized_emails ADD COLUMN is_admin INTEGER DEFAULT 0").run();
-        console.log('✅ Colonne is_admin ajoutée à authorized_emails');
+        logger.info('✅ Colonne is_admin ajoutée à authorized_emails');
       }
     } catch (error) {
-      console.log('Info: Colonne is_admin déjà présente');
+      logger.info('Info: Colonne is_admin déjà présente');
     }
     
     // Vérifier si l'email est autorisé
@@ -269,11 +285,11 @@ app.post('/api/auth/register', async (req, res) => {
     const updateStmt = db.prepare('UPDATE authorized_emails SET status = ?, activated_at = CURRENT_TIMESTAMP WHERE email = ?');
     updateStmt.run('activated', email);
     
-    console.log('✅ Nouvel utilisateur enregistré');
+    logger.info('✅ Nouvel utilisateur enregistré');
     
     res.json({ id: result.lastInsertRowid, email, name, isAdmin: isAdmin === 1 });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(400).json({ error: 'Erreur lors de l\'inscription' });
   }
 });
@@ -291,7 +307,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       // Marquer le compte pour réinitialisation et fermer les sessions
       db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?').run(user.id);
       db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
-      console.log('🔑 Mot de passe oublié demandé');
+      logger.info('🔑 Mot de passe oublié demandé');
     }
 
     // Toujours retourner le même message (ne pas révéler si l'email existe)
@@ -299,7 +315,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       message: 'Si cette adresse correspond à un compte, il a été préparé pour une réinitialisation. Reconnectez-vous pour définir un nouveau mot de passe.'
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -347,18 +363,18 @@ app.post('/api/auth/self-reset-password', async (req, res) => {
       { expiresIn: `${JWT_EXPIRY_DAYS}d` }
     );
 
-    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
     const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     db.prepare('INSERT INTO active_sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)').run(user.id, tokenHash, expiresAt);
 
-    console.log('🔑 Mot de passe réinitialisé (self-service)');
+    logger.info('🔑 Mot de passe réinitialisé (self-service)');
 
     res.json({
       token,
       user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms }
     });
   } catch (error) {
-    console.error('Erreur self-reset-password:', error);
+    logger.error('Erreur self-reset-password:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -391,7 +407,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
     
-    console.log('✅ Authentification réussie');
+    logger.info('✅ Authentification réussie');
     
     // Vérifier que l'email est autorisé
     const authorizedEmailStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = \'activated\'');
@@ -419,7 +435,7 @@ app.post('/api/auth/login', async (req, res) => {
     try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
 
     // Enregistrer la session
-    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
     const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const insertSessionStmt = db.prepare(`
       INSERT INTO active_sessions (user_id, token_hash, expires_at)
@@ -429,7 +445,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms } });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -473,7 +489,7 @@ app.post('/api/auth/force-login', async (req, res) => {
     );
     
     // Enregistrer la nouvelle session
-    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
     const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const insertSessionStmt = db.prepare(`
       INSERT INTO active_sessions (user_id, token_hash, expires_at)
@@ -487,8 +503,7 @@ app.post('/api/auth/force-login', async (req, res) => {
       message: 'Toutes les autres sessions ont été fermées'
     });
   } catch (error) {
-    console.error('Erreur force-login:', error);
-    console.error(error);
+    logger.error('Erreur force-login:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -503,19 +518,18 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
     const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
     const result = deleteSessionsStmt.run(userId);
     
-    console.log(`🚪 Déconnexion: ${result.changes} session(s) fermée(s)`);
+    logger.info(`🚪 Déconnexion: ${result.changes} session(s) fermée(s)`);
     
     res.json({ message: 'Déconnexion réussie', sessionsClosed: result.changes });
   } catch (error) {
-    console.error('Erreur logout:', error);
-    console.error(error);
+    logger.error('Erreur logout:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
-// Liste des utilisateurs (pour le sélecteur de connexion) - endpoint public
-// Ne retourne que les infos nécessaires au sélecteur (pas de rôle admin)
-app.get('/api/auth/users', (req, res) => {
+// Liste des utilisateurs (pour le sélecteur de connexion)
+// Authentifié pour éviter l'énumération publique des utilisateurs
+app.get('/api/auth/users', authenticateToken, (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, email, name, avatar FROM users ORDER BY name');
     const users = stmt.all();
@@ -526,7 +540,7 @@ app.get('/api/auth/users', (req, res) => {
       avatar: u.avatar || null
     })));
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -563,12 +577,12 @@ app.get('/api/vehicles', authenticateToken, (req, res) => {
     
     res.json(mappedVehicles);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
-app.post('/api/vehicles', authenticateToken, (req, res) => {
+app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
   try {
     const vehicle = req.body;
     const stmt = db.prepare(`
@@ -614,12 +628,12 @@ app.post('/api/vehicles', authenticateToken, (req, res) => {
     
     res.json(mappedVehicle);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
-app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
+app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
     const vehicle = req.body;
     
@@ -684,7 +698,7 @@ app.put('/api/vehicles/:id', authenticateToken, (req, res) => {
     
     res.json(mappedVehicle);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -698,7 +712,7 @@ app.delete('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -748,7 +762,7 @@ app.get('/api/reservations', authenticateToken, (req, res) => {
     
     res.json(mappedReservations);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -760,7 +774,7 @@ app.post('/api/reservations', authenticateToken, requireAdmin, (req, res) => {
     // Générer un ID côté serveur si non fourni ou invalide
     if (!reservation.id || reservation.id === 'null' || reservation.id === null) {
       reservation.id = `${Date.now()}.${Math.random()}`;
-      console.log('⚠️ ID manquant, génération côté serveur:', reservation.id);
+      logger.info('⚠️ ID manquant, génération côté serveur:', reservation.id);
     }
     
     const stmt = db.prepare(`
@@ -831,9 +845,13 @@ app.post('/api/reservations', authenticateToken, requireAdmin, (req, res) => {
       googleDriveLink: createdReservation.google_drive_link || ''
     };
     
+    // Alerte email aux admins
+    alertReservationCreated(db, mappedReservation, req.user.name)
+      .catch(err => logger.warn('Email alerte réservation échoué:', err.message));
+    
     res.json(mappedReservation);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -879,7 +897,7 @@ app.put('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) => 
     
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -913,7 +931,7 @@ app.patch('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) =
     const updatedLinks = parseDriveLinks(linksToStore);
     res.json({ success: true, googleDriveLinks: updatedLinks, googleDriveLink: linksToStore });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -927,7 +945,7 @@ app.delete('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) 
     
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -936,16 +954,28 @@ app.delete('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) 
 
 app.get('/api/reservation-requests', authenticateToken, (req, res) => {
   try {
-    const stmt = db.prepare(`
-      SELECT rr.*, u.name as requester_name, u.email as requester_email
-      FROM reservation_requests rr
-      LEFT JOIN users u ON rr.requested_by = u.id
-      ORDER BY rr.requested_at DESC
-    `);
-    const requests = stmt.all();
+    // Admins see all requests, regular users see only their own
+    const isAdmin = req.user && req.user.isAdmin;
+    let requests;
+    if (isAdmin) {
+      requests = db.prepare(`
+        SELECT rr.*, u.name as requester_name, u.email as requester_email
+        FROM reservation_requests rr
+        LEFT JOIN users u ON rr.requested_by = u.id
+        ORDER BY rr.requested_at DESC
+      `).all();
+    } else {
+      requests = db.prepare(`
+        SELECT rr.*, u.name as requester_name, u.email as requester_email
+        FROM reservation_requests rr
+        LEFT JOIN users u ON rr.requested_by = u.id
+        WHERE rr.requested_by = ?
+        ORDER BY rr.requested_at DESC
+      `).all(req.user.id);
+    }
     res.json(requests);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -976,7 +1006,7 @@ app.post('/api/reservation-requests', authenticateToken, (req, res) => {
     
     res.json({ success: true, id: request.id });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1035,7 +1065,7 @@ app.put('/api/reservation-requests/:id/approve', authenticateToken, (req, res) =
     
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1061,7 +1091,7 @@ app.put('/api/reservation-requests/:id/reject', authenticateToken, (req, res) =>
     
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1106,7 +1136,7 @@ app.get('/api/maintenances', authenticateToken, (req, res) => {
     
     res.json(mappedMaintenances);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1193,7 +1223,7 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
     
     res.json({ success: true, id: maintenance.id });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1288,7 +1318,7 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
         try {
           controles = vehicle.controles_techniques ? JSON.parse(vehicle.controles_techniques) : [];
         } catch (e) {
-          console.error('Erreur parsing controles_techniques:', e);
+          logger.error('Erreur parsing controles_techniques:', e);
           controles = [];
         }
         
@@ -1324,7 +1354,7 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
           const updateStmt = db.prepare('UPDATE vehicles SET controles_techniques = ? WHERE id = ?');
           updateStmt.run(JSON.stringify(controles), vehicleId);
           
-          console.log(`✅ Deadline CT ${controlType} mise à jour pour véhicule ${vehicleId}: ${newDeadline}`);
+          logger.info(`✅ Deadline CT ${controlType} mise à jour pour véhicule ${vehicleId}: ${newDeadline}`);
         }
       }
     }
@@ -1355,7 +1385,7 @@ app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1369,7 +1399,7 @@ app.delete('/api/maintenances/:id', authenticateToken, requireMaintenanceAccess,
     
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1381,7 +1411,7 @@ app.get('/api/history/:entityType/:entityId', authenticateToken, (req, res) => {
     const history = getHistory(req.params.entityType, req.params.entityId);
     res.json(history);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1397,7 +1427,7 @@ app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (re
     stmt.run(passwordHash, userId);
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1420,7 +1450,7 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1483,7 +1513,7 @@ app.post('/api/access-requests', async (req, res) => {
       id: result.lastInsertRowid 
     });
   } catch (error) {
-    console.error('Erreur création demande d\'accès:', error);
+    logger.error('Erreur création demande d\'accès:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1541,7 +1571,7 @@ app.get('/api/access-requests', authenticateToken, requireAdmin, (req, res) => {
     const requests = stmt.all();
     res.json(requests);
   } catch (error) {
-    console.error('Erreur récupération demandes:', error);
+    logger.error('Erreur récupération demandes:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1584,10 +1614,10 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
         
         if (!hasIsAdminColumn) {
           db.prepare("ALTER TABLE authorized_emails ADD COLUMN is_admin INTEGER DEFAULT 0").run();
-          console.log('✅ Colonne is_admin ajoutée à authorized_emails');
+          logger.info('✅ Colonne is_admin ajoutée à authorized_emails');
         }
       } catch (error) {
-        console.log('Info: Colonne is_admin déjà présente ou erreur:', error.message);
+        logger.info('Info: Colonne is_admin déjà présente ou erreur:', error.message);
       }
 
       const authStmt = db.prepare(`
@@ -1598,9 +1628,9 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
       
       try {
         authStmt.run(request.email, is_admin ? 1 : 0);
-        console.log('✅ Email autorisé');
+        logger.info('✅ Email autorisé');
       } catch (error) {
-        console.error('Erreur ajout email autorisé:', error);
+        logger.error('Erreur ajout email autorisé:', error);
       }
     }
 
@@ -1613,7 +1643,7 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
       }
     });
   } catch (error) {
-    console.error('Erreur traitement demande:', error);
+    logger.error('Erreur traitement demande:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1625,7 +1655,7 @@ app.get('/api/access-requests/count/pending', authenticateToken, requireAdmin, (
     const result = stmt.get('pending');
     res.json({ count: result.count });
   } catch (error) {
-    console.error('Erreur comptage demandes:', error);
+    logger.error('Erreur comptage demandes:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1645,7 +1675,7 @@ app.get('/api/pending-requests-count', authenticateToken, requireAdmin, (req, re
       total: interventionResult.count + reservationResult.count
     });
   } catch (error) {
-    console.error('Erreur comptage demandes:', error);
+    logger.error('Erreur comptage demandes:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1664,7 +1694,7 @@ app.get('/api/reservation-requests/pending', authenticateToken, requireAdmin, (r
     const requests = stmt.all();
     res.json(requests);
   } catch (error) {
-    console.error('Erreur récupération demandes:', error);
+    logger.error('Erreur récupération demandes:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1678,7 +1708,7 @@ app.get('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) =>
     const emails = stmt.all();
     res.json(emails);
   } catch (error) {
-    console.error('Erreur récupération emails:', error);
+    logger.error('Erreur récupération emails:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1705,7 +1735,7 @@ app.post('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) =
     
     res.json({ id: result.lastInsertRowid, email, status: 'pending' });
   } catch (error) {
-    console.error('Erreur ajout email:', error);
+    logger.error('Erreur ajout email:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1718,7 +1748,7 @@ app.delete('/api/authorized-emails/:id', authenticateToken, requireAdmin, (req, 
     stmt.run(id);
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur suppression email:', error);
+    logger.error('Erreur suppression email:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1732,7 +1762,7 @@ app.get('/api/users/names', authenticateToken, (req, res) => {
     const users = stmt.all();
     res.json(users);
   } catch (error) {
-    console.error('Erreur récupération noms utilisateurs:', error);
+    logger.error('Erreur récupération noms utilisateurs:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1752,7 +1782,7 @@ app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
       };
     }));
   } catch (error) {
-    console.error('Erreur récupération utilisateurs:', error);
+    logger.error('Erreur récupération utilisateurs:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1770,7 +1800,7 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
       // Invalider toutes les sessions de cet utilisateur pour qu'il se reconnecte avec le nouveau statut
       const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
       const result = deleteSessionsStmt.run(id);
-      console.log(`🔄 Statut admin modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
+      logger.info(`🔄 Statut admin modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
     }
 
     if (permissions !== undefined) {
@@ -1778,7 +1808,7 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
       db.prepare('UPDATE users SET permissions = ? WHERE id = ?').run(permStr, id);
       // Invalider les sessions pour forcer un re-login avec les nouvelles permissions
       db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(id);
-      console.log(`🔐 Permissions modifiées pour user ${id}`);
+      logger.info(`🔐 Permissions modifiées pour user ${id}`);
     }
     
     if (newPassword) {
@@ -1789,12 +1819,12 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
       // Invalider toutes les sessions lors du changement de mot de passe
       const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
       const result = deleteSessionsStmt.run(id);
-      console.log(`🔑 Mot de passe modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
+      logger.info(`🔑 Mot de passe modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
     }
     
     res.json({ success: true, message: 'Utilisateur mis à jour. Les sessions actives ont été fermées.' });
   } catch (error) {
-    console.error('Erreur mise à jour utilisateur:', error);
+    logger.error('Erreur mise à jour utilisateur:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1816,7 +1846,7 @@ app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req,
     const userStmt = db.prepare('SELECT email FROM users WHERE id = ?');
     const user = userStmt.get(id);
     
-    console.log(`🔄 Réinitialisation demandée pour user ${id}`);
+    logger.info(`🔄 Réinitialisation demandée pour user ${id}`);
     
     res.json({ 
       success: true, 
@@ -1824,7 +1854,7 @@ app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req,
       email: user?.email
     });
   } catch (error) {
-    console.error('Erreur demande réinitialisation:', error);
+    logger.error('Erreur demande réinitialisation:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1846,7 +1876,7 @@ app.post('/api/auth/check-reset', async (req, res) => {
       user: { id: user.id, email: user.email, name: user.name }
     });
   } catch (error) {
-    console.error('Erreur check reset:', error);
+    logger.error('Erreur check reset:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1892,7 +1922,7 @@ app.post('/api/auth/set-new-password', async (req, res) => {
     );
     
     // Enregistrer la session
-    const tokenHash = Buffer.from(token).toString('base64').substring(0, 50);
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
     const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const insertSessionStmt = db.prepare(`
       INSERT INTO active_sessions (user_id, token_hash, expires_at)
@@ -1900,7 +1930,7 @@ app.post('/api/auth/set-new-password', async (req, res) => {
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
     
-    console.log('✅ Nouveau mot de passe défini');
+    logger.info('✅ Nouveau mot de passe défini');
     
     res.json({ 
       success: true,
@@ -1909,7 +1939,7 @@ app.post('/api/auth/set-new-password', async (req, res) => {
       message: 'Mot de passe défini avec succès'
     });
   } catch (error) {
-    console.error('Erreur définition mot de passe:', error);
+    logger.error('Erreur définition mot de passe:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -1972,7 +2002,7 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur suppression utilisateur:', error);
+    logger.error('Erreur suppression utilisateur:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -1998,7 +2028,7 @@ app.get('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
     }
     res.json(config || {});
   } catch (error) {
-    console.error('Erreur lecture config email:', error);
+    logger.error('Erreur lecture config email:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2032,7 +2062,7 @@ app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
 
     res.json({ success: true, message: 'Configuration email mise à jour' });
   } catch (error) {
-    console.error('Erreur mise à jour config email:', error);
+    logger.error('Erreur mise à jour config email:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2062,7 +2092,7 @@ app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, 
 
     res.json({ success: true, message: `Email de test envoyé à ${req.user.email}` });
   } catch (error) {
-    console.error('Erreur test email:', error);
+    logger.error('Erreur test email:', error);
     res.status(500).json({ error: 'Erreur lors du test SMTP' });
   }
 });
@@ -2179,8 +2209,7 @@ app.get('/api/affaires', authenticateToken, (req, res) => {
 
     res.json(enriched);
   } catch (error) {
-    console.error('Erreur GET /api/affaires:', error);
-    console.error(error);
+    logger.error('Erreur GET /api/affaires:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2201,8 +2230,7 @@ app.get('/api/affaires/personnel-counts', authenticateToken, (req, res) => {
     }
     res.json(counts);
   } catch (error) {
-    console.error('Erreur GET /api/affaires/personnel-counts:', error);
-    console.error(error);
+    logger.error('Erreur GET /api/affaires/personnel-counts:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2252,8 +2280,7 @@ app.post('/api/affaires', authenticateToken, (req, res) => {
       res.status(201).json(created);
     }
   } catch (error) {
-    console.error('Erreur POST /api/affaires:', error);
-    console.error(error);
+    logger.error('Erreur POST /api/affaires:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2281,8 +2308,7 @@ app.put('/api/affaires/:id', authenticateToken, (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Affaire non trouvée' });
     res.json(updated);
   } catch (error) {
-    console.error('Erreur PUT /api/affaires:', error);
-    console.error(error);
+    logger.error('Erreur PUT /api/affaires:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2296,8 +2322,7 @@ app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
     db.prepare('DELETE FROM affaires WHERE id = ?').run(id);
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur DELETE /api/affaires:', error);
-    console.error(error);
+    logger.error('Erreur DELETE /api/affaires:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2317,7 +2342,7 @@ setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentAssignmentsRoutes(app, authenticateToken);
 setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess);
-setupEquipmentListsRoutes(app, authenticateToken);
+setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Commandes & Ventes
 setupSuppliersRoutes(app, authenticateToken, requireAdmin);
@@ -2333,8 +2358,11 @@ setupReservationEquipmentRoutes(app, authenticateToken);
 // Routes Module Stock & Pièces
 setupStockCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupStockItemsRoutes(app, authenticateToken, requireAdmin);
-setupStockMovementsRoutes(app, authenticateToken);
+setupStockMovementsRoutes(app, authenticateToken, requireAdmin);
 setupStockStatsRoutes(app, authenticateToken);
+
+// Routes Module Communication (Affichage dynamique + Planification + Import BL)
+setupCommunicationRoutes(app, authenticateToken, requireAdmin);
 
 // ============ PROFIL UTILISATEUR ============
 
@@ -2376,7 +2404,7 @@ app.patch('/api/users/me', authenticateToken, (req, res) => {
     const user = { id: updated.id, email: updated.email, name: updated.name, isAdmin: updated.is_admin === 1, avatar: updated.avatar || null };
     res.json({ success: true, user });
   } catch (error) {
-    console.error('Erreur mise à jour profil:', error);
+    logger.error('Erreur mise à jour profil:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2391,10 +2419,10 @@ app.post('/api/users/me/avatar', authenticateToken, uploadAvatar.single('avatar'
     db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatarUrl, req.user.id);
     const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(req.user.id);
     const user = { id: updated.id, email: updated.email, name: updated.name, isAdmin: updated.is_admin === 1, avatar: updated.avatar || null };
-    console.log(`\uD83D\uDCF7 Avatar mis à jour pour ${updated.name}: ${avatarUrl}`);
+    logger.info(`\uD83D\uDCF7 Avatar mis à jour pour ${updated.name}: ${avatarUrl}`);
     res.json({ success: true, user, avatarUrl });
   } catch (error) {
-    console.error('Erreur upload avatar:', error);
+    logger.error('Erreur upload avatar:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2410,7 +2438,7 @@ app.delete('/api/users/me/avatar', authenticateToken, (req, res) => {
     db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(req.user.id);
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur suppression avatar:', error);
+    logger.error('Erreur suppression avatar:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2422,7 +2450,7 @@ app.get('/api/users/me/preferences', authenticateToken, (req, res) => {
     const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
     res.json(prefs);
   } catch (error) {
-    console.error('Erreur récupération préférences:', error);
+    logger.error('Erreur récupération préférences:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2434,7 +2462,7 @@ app.put('/api/users/me/preferences', authenticateToken, (req, res) => {
     db.prepare('UPDATE users SET preferences = ? WHERE id = ?').run(prefs, req.user.id);
     res.json(req.body);
   } catch (error) {
-    console.error('Erreur sauvegarde préférences:', error);
+    logger.error('Erreur sauvegarde préférences:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2455,10 +2483,10 @@ app.patch('/api/users/:id/profile', authenticateToken, requireAdmin, (req, res) 
     db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), id);
     const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(id);
     const user = { id: updated.id, email: updated.email, name: updated.name, isAdmin: updated.is_admin === 1, avatar: updated.avatar || null };
-    console.log(`✏️ Admin ${req.user.id} a modifié le nom de user ${id} → ${name.trim()}`);
+    logger.info(`✏️ Admin ${req.user.id} a modifié le nom de user ${id} → ${name.trim()}`);
     res.json({ success: true, user });
   } catch (error) {
-    console.error('Erreur mise à jour profil utilisateur:', error);
+    logger.error('Erreur mise à jour profil utilisateur:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2476,10 +2504,10 @@ app.post('/api/users/:id/avatar', authenticateToken, requireAdmin, uploadAvatar.
     db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatarUrl, id);
     const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(id);
     const user = { id: updated.id, email: updated.email, name: updated.name, isAdmin: updated.is_admin === 1, avatar: updated.avatar || null };
-    console.log(`📷 Admin ${req.user.id} a modifié l'avatar de user ${id}: ${avatarUrl}`);
+    logger.info(`📷 Admin ${req.user.id} a modifié l'avatar de user ${id}: ${avatarUrl}`);
     res.json({ success: true, user, avatarUrl });
   } catch (error) {
-    console.error('Erreur upload avatar utilisateur:', error);
+    logger.error('Erreur upload avatar utilisateur:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2496,10 +2524,10 @@ app.delete('/api/users/:id/avatar', authenticateToken, requireAdmin, (req, res) 
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
     db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(id);
-    console.log(`🗑️ Admin ${req.user.id} a supprimé l'avatar de user ${id}`);
+    logger.info(`🗑️ Admin ${req.user.id} a supprimé l'avatar de user ${id}`);
     res.json({ success: true });
   } catch (error) {
-    console.error('Erreur suppression avatar utilisateur:', error);
+    logger.error('Erreur suppression avatar utilisateur:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -2524,7 +2552,7 @@ app.post('/api/create-folder', authenticateToken, (req, res) => {
     
     res.json({ success: true, path: safePath });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2582,7 +2610,7 @@ const uploadAttachment = multer({
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(null, true); // Accepter quand même pour ne pas bloquer des types inconnus
+      cb(new Error(`Type de fichier non autorisé : ${file.mimetype}`));
     }
   }
 });
@@ -2628,8 +2656,8 @@ app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), (req, res) =
       filename: originalName
     });
   } catch (error) {
-    console.error('❌ Erreur upload BL:', error);
-    console.error(error);
+    logger.error('❌ Erreur upload BL:', error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2681,7 +2709,7 @@ app.post('/api/upload-attachment', authenticateToken, (req, res) => {
         url: `/attachments/${req.body.affaireId}/${originalName}`
       });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -2732,8 +2760,7 @@ app.get('/api/attachments/:affaireId', authenticateToken, (req, res) => {
     
     res.json({ files });
   } catch (error) {
-    console.error('Erreur liste fichiers:', error);
-    console.error(error);
+    logger.error('Erreur liste fichiers:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2759,8 +2786,7 @@ app.get('/api/attachments-index', authenticateToken, (req, res) => {
     });
     res.json({ affaires, counts });
   } catch (error) {
-    console.error('Erreur attachments-index:', error);
-    console.error(error);
+    logger.error('Erreur attachments-index:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
@@ -2788,30 +2814,59 @@ app.delete('/api/attachments/:affaireId/:filename', authenticateToken, requireAd
     
     res.json({ success: true, message: `${filename} supprimé` });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
-  console.log(`📡 Accessible depuis le réseau sur http://192.168.205.75:${PORT}`);
+  logger.info(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
+  logger.info(`📡 Accessible depuis le réseau sur http://192.168.205.75:${PORT}`);
   // Initialiser le service email
   initEmailTransporter(db);
+  // Lancer le nettoyage périodique des fichiers TEMP
+  cleanTempFiles();
+  setInterval(cleanTempFiles, 6 * 60 * 60 * 1000); // toutes les 6h
 });
+
+/**
+ * Nettoyage des fichiers temporaires > 24h dans /attachments/TEMP/
+ */
+function cleanTempFiles() {
+  const tempDir = path.join(__dirname, '..', 'public', 'attachments', 'TEMP');
+  try {
+    if (!fs.existsSync(tempDir)) return;
+    const files = fs.readdirSync(tempDir);
+    const maxAge = 24 * 60 * 60 * 1000; // 24h
+    let removed = 0;
+    for (const file of files) {
+      const filePath = path.join(tempDir, file);
+      try {
+        const stat = fs.statSync(filePath);
+        if (Date.now() - stat.mtimeMs > maxAge) {
+          fs.unlinkSync(filePath);
+          removed++;
+        }
+      } catch { /* ignore */ }
+    }
+    if (removed > 0) logger.info(`🧹 TEMP cleanup: ${removed} fichier(s) supprimé(s)`);
+  } catch (err) {
+    logger.error('Erreur nettoyage TEMP:', err.message);
+  }
+}
 
 // Gestion de l'arrêt propre du serveur
 function gracefulShutdown(signal) {
-  console.log(`\n⚠️  Signal ${signal} reçu - Arrêt en cours...`);
+  logger.info(`\n⚠️  Signal ${signal} reçu - Arrêt en cours...`);
   
   // Faire un dernier checkpoint de la base de données
-  console.log('💾 Sauvegarde finale de la base de données...');
+  logger.info('💾 Sauvegarde finale de la base de données...');
   checkpointDatabase();
   
   // Fermer proprement la base de données
   closeDatabase();
   
-  console.log('✅ Arrêt propre terminé');
+  logger.info('✅ Arrêt propre terminé');
   process.exit(0);
 }
 
@@ -2821,11 +2876,11 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Gestion des erreurs non capturées
 process.on('uncaughtException', (error) => {
-  console.error('❌ Exception non capturée:', error);
+  logger.error('❌ Exception non capturée:', error);
   gracefulShutdown('uncaughtException');
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Promesse rejetée non gérée:', reason);
+  logger.error('❌ Promesse rejetée non gérée:', reason);
   gracefulShutdown('unhandledRejection');
 });

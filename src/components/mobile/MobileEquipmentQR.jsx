@@ -12,7 +12,7 @@ const EQUIPMENT_STATUS = {
   available: { label: 'Disponible', color: '#10b981', icon: '✅' },
   in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
   maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
-  retired: { label: 'Réformé', color: '#6b7280', icon: '⛔' },
+  retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 
 const SAV_STATUS = {
@@ -20,7 +20,7 @@ const SAV_STATUS = {
   in_progress: { label: 'En cours', color: '#f59e0b' },
   waiting_parts: { label: 'Attente pièces', color: '#8b5cf6' },
   resolved: { label: 'Résolu', color: '#10b981' },
-  closed: { label: 'Clôturé', color: '#6b7280' },
+  closed: { label: 'Clôturé', color: 'var(--theme-text-gray)' },
 };
 
 const safeDate = (d) => {

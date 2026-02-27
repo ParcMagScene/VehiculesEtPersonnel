@@ -178,11 +178,11 @@ const LoginForm = ({ onLogin }) => {
                 onClick={() => setShowUserList(!showUserList)}
                 style={{
                   position: 'relative',
-                  border: '1px solid #d1d5db',
+                  border: '1px solid var(--theme-border)',
                   borderRadius: '8px',
                   padding: '12px',
                   cursor: 'pointer',
-                  background: 'white',
+                  background: 'var(--theme-bg-card)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between'
@@ -192,17 +192,17 @@ const LoginForm = ({ onLogin }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <UserAvatar name={selectedUser.name} avatar={selectedUser.avatar} size={40} gradient={false} />
                     <div>
-                      <div style={{ fontWeight: '500', color: '#111827' }}>{selectedUser.name}</div>
-                      <div style={{ fontSize: '13px', color: '#6b7280' }}>{selectedUser.email}</div>
+                      <div style={{ fontWeight: '500', color: 'var(--theme-text-heading)' }}>{selectedUser.name}</div>
+                      <div style={{ fontSize: '13px', color: 'var(--theme-text-gray)' }}>{selectedUser.email}</div>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#9ca3af' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--theme-text-muted)' }}>
                     <User size={24} />
                     <span>Choisir un utilisateur</span>
                   </div>
                 )}
-                <ChevronDown size={20} style={{ color: '#6b7280' }} />
+                <ChevronDown size={20} style={{ color: 'var(--theme-text-gray)' }} />
 
                 {showUserList && (
                   <div 
@@ -212,8 +212,8 @@ const LoginForm = ({ onLogin }) => {
                       top: 'calc(100% + 4px)',
                       left: 0,
                       right: 0,
-                      background: 'white',
-                      border: '1px solid #d1d5db',
+                      background: 'var(--theme-bg-card)',
+                      border: '1px solid var(--theme-border)',
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                       maxHeight: '300px',
@@ -233,15 +233,15 @@ const LoginForm = ({ onLogin }) => {
                           alignItems: 'center',
                           gap: '12px',
                           transition: 'background 0.2s',
-                          borderBottom: '1px solid #f3f4f6'
+                          borderBottom: '1px solid var(--theme-border)'
                         }}
-                        onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                        onMouseEnter={(e) => e.target.style.background = 'var(--theme-bg-secondary)'}
                         onMouseLeave={(e) => e.target.style.background = 'white'}
                       >
                         <UserAvatar name={user.name} avatar={user.avatar} size={40} gradient={false} />
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: '500', color: '#111827' }}>{user.name}</div>
-                          <div style={{ fontSize: '13px', color: '#6b7280' }}>{user.email}</div>
+                          <div style={{ fontWeight: '500', color: 'var(--theme-text-heading)' }}>{user.name}</div>
+                          <div style={{ fontSize: '13px', color: 'var(--theme-text-gray)' }}>{user.email}</div>
                         </div>
                       </div>
                     ))}
@@ -321,10 +321,10 @@ const LoginForm = ({ onLogin }) => {
                 <h3>⚠️ Session déjà active</h3>
               </div>
               <div className="modal-body">
-                <p style={{ marginBottom: '16px', color: '#374151' }}>
+                <p style={{ marginBottom: '16px', color: 'var(--theme-text-body)' }}>
                   Une session est déjà ouverte avec ces identifiants sur un autre appareil ou navigateur.
                 </p>
-                <p style={{ marginBottom: '24px', color: '#6b7280', fontSize: '14px' }}>
+                <p style={{ marginBottom: '24px', color: 'var(--theme-text-gray)', fontSize: '14px' }}>
                   Vous pouvez :<br/>
                   • <strong>Fermer les autres sessions</strong> et vous connecter ici (recommandé)<br/>
                   • Annuler et vous déconnecter de l'autre appareil d'abord
@@ -366,11 +366,11 @@ const LoginForm = ({ onLogin }) => {
         {showResetPassword && (
           <div className="login-overlay" onClick={() => setShowResetPassword(false)}>
             <div className="login-modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+              <div className="modal-header" style={{ background: 'var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706))' }}>
                 <h3>🔑 Réinitialiser le mot de passe</h3>
               </div>
               <div className="modal-body">
-                <p style={{ marginBottom: '16px', color: '#374151' }}>
+                <p style={{ marginBottom: '16px', color: 'var(--theme-text-body)' }}>
                   Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
                 </p>
                 
@@ -387,7 +387,7 @@ const LoginForm = ({ onLogin }) => {
                       placeholder="email@exemple.com"
                       required
                       autoFocus
-                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                     />
                   </div>
 
@@ -402,7 +402,7 @@ const LoginForm = ({ onLogin }) => {
                       onChange={(e) => setResetFormName(e.target.value)}
                       placeholder="Prénom Nom"
                       required
-                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                     />
                   </div>
 
@@ -418,7 +418,7 @@ const LoginForm = ({ onLogin }) => {
                       placeholder="Entrez votre nouveau mot de passe"
                       minLength={6}
                       required
-                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                     />
                   </div>
 
@@ -434,7 +434,7 @@ const LoginForm = ({ onLogin }) => {
                       placeholder="Confirmez votre nouveau mot de passe"
                       minLength={6}
                       required
-                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                      style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                     />
                   </div>
 

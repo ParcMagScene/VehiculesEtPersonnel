@@ -3,7 +3,7 @@
 // Table de tous les équipements avec filtres, recherche, CRUD, deep link 3D
 // ============================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Package, Search, Plus, Edit2, Trash2, Box, X, ChevronLeft, ChevronRight, MapPin, Map } from 'lucide-react';
 import api from '../utils/api';
 import { formatDimensions, buildChargementUrlForEquipment, openInChargement } from '../utils/deepLinking';
@@ -31,8 +31,22 @@ export default function CataloguePanel({ currentUser }) {
   const [zoneFilter, setZoneFilter] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [depotZones, setDepotZones] = useState(null);
+  const [allDepotZones, setAllDepotZones] = useState(null);
   const [locationStats, setLocationStats] = useState(null);
   const [selectedMapZone, setSelectedMapZone] = useState(null);
+  const [depotMapModalZone, setDepotMapModalZone] = useState(null);
+
+  // Trouver le bon dépôt pour la zone cliquée
+  const modalDepotData = useMemo(() => {
+    if (!depotMapModalZone) return null;
+    if (allDepotZones?.depots) {
+      for (const depot of allDepotZones.depots) {
+        if (depot.zones?.find(z => z.id === depotMapModalZone || z.codes?.includes(depotMapModalZone))) return depot;
+      }
+    }
+    if (depotZones?.zones?.find(z => z.id === depotMapModalZone || z.codes?.includes(depotMapModalZone))) return depotZones;
+    return depotZones || (allDepotZones?.depots?.[0]) || null;
+  }, [depotMapModalZone, depotZones, allDepotZones]);
 
   const isAdmin = currentUser?.isAdmin;
   const canWrite = isAdmin || currentUser?.permissions?.can_manage_catalog === true;
@@ -41,18 +55,20 @@ export default function CataloguePanel({ currentUser }) {
   useEffect(() => {
     const loadFilters = async () => {
       try {
-        const [fam, cat, fc, zones, locStats] = await Promise.all([
+        const [fam, cat, fc, zones, locStats, allZones] = await Promise.all([
           api.getCatalogFamilies(),
           api.getCatalogCategories(),
           api.getFlightcases(),
           api.getDepotZones(),
           api.getLocationStats(),
+          api.getAllDepotZones().catch(() => null),
         ]);
         setFamilies(fam || []);
         setCategories(cat || []);
         setFlightcases(fc || []);
         setDepotZones(zones || null);
         setLocationStats(locStats || null);
+        setAllDepotZones(allZones || null);
       } catch (e) {
         console.error('Erreur chargement filtres catalogue:', e);
       }
@@ -176,7 +192,7 @@ export default function CataloguePanel({ currentUser }) {
       {/* Toolbar */}
       <div className="catalog-toolbar">
         <div className="search-input" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <Search size={16} style={{ position: 'absolute', left: '0.75rem', color: '#94a3b8' }} />
+          <Search size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--theme-text-muted)' }} />
           <input
             type="text"
             placeholder="Rechercher par nom, référence..."
@@ -204,10 +220,12 @@ export default function CataloguePanel({ currentUser }) {
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
 
-        {depotZones && (
+        {(depotZones || allDepotZones) && (
           <select value={zoneFilter} onChange={(e) => { setZoneFilter(e.target.value); setSelectedMapZone(e.target.value || null); setPage(0); }}>
             <option value="">Toutes les zones</option>
-            {depotZones.zones.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
+            {allDepotZones?.depots ? allDepotZones.depots.flatMap(depot => 
+              (depot.zones || []).map(z => <option key={`${depot.depotId}-${z.id}`} value={z.id}>{depot.name ? `D${depot.depotId} — ` : ''}{z.label}</option>)
+            ) : depotZones?.zones?.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
           </select>
         )}
 
@@ -254,13 +272,13 @@ export default function CataloguePanel({ currentUser }) {
                     <td className="td-weight">{item.weight ? `${item.weight} kg` : '—'}</td>
                     <td className="td-zone">
                       {item.location_zone ? (
-                        <span className="catalog-badge catalog-badge-zone" title={`${item.location_zone} ${item.location_code || ''} (${item.location_floor || ''})`}>
+                        <span className="catalog-badge catalog-badge-zone catalog-zone-clickable" title="Voir sur le plan" onClick={(e) => { e.stopPropagation(); setDepotMapModalZone(item.location_zone); }} style={{ cursor: 'pointer' }}>
                           <MapPin size={12} />
                           {item.location_zone}
                           {item.location_code && <span className="zone-code-sm">{item.location_code}</span>}
                         </span>
                       ) : (
-                        <span style={{ color: '#64748b', fontSize: '0.8rem' }}>—</span>
+                        <span style={{ color: 'var(--theme-text-secondary)', fontSize: '0.8rem' }}>—</span>
                       )}
                     </td>
                     <td className="td-actions">
@@ -290,7 +308,7 @@ export default function CataloguePanel({ currentUser }) {
               <button className="catalog-btn catalog-btn-secondary catalog-btn-sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>
                 <ChevronLeft size={16} /> Préc.
               </button>
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--theme-text-secondary)' }}>
                 Page {page + 1} / {totalPages}
               </span>
               <button className="catalog-btn catalog-btn-secondary catalog-btn-sm" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>
@@ -307,16 +325,39 @@ export default function CataloguePanel({ currentUser }) {
           item={editItem}
           flightcases={flightcases}
           depotZones={depotZones}
+          allDepotZones={allDepotZones}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditItem(null); }}
         />
+      )}
+
+      {/* Modal Plan dépôt (ouvert depuis un clic sur une zone) */}
+      {depotMapModalZone && modalDepotData && (
+        <div className="eq-depot-map-modal-overlay" onClick={() => setDepotMapModalZone(null)}>
+          <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="eq-depot-map-modal-header">
+              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone}</h3>
+              <button className="eq-dialog-close" onClick={() => setDepotMapModalZone(null)} title="Fermer"><X size={20} /></button>
+            </div>
+            <div className="eq-depot-map-modal-body">
+              <DepotMap
+                zones={modalDepotData}
+                stats={locationStats}
+                selectedZone={depotMapModalZone}
+                focusZoneId={depotMapModalZone}
+                onZoneSelect={() => {}}
+                onZoneFilter={() => {}}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
 // ─── Modal de création / édition ───
-function CatalogFormModal({ item, flightcases, depotZones, onSave, onClose }) {
+function CatalogFormModal({ item, flightcases, depotZones, allDepotZones, onSave, onClose }) {
   const [form, setForm] = useState({
     reference: item?.reference || '',
     name: item?.name || '',
@@ -328,6 +369,7 @@ function CatalogFormModal({ item, flightcases, depotZones, onSave, onClose }) {
     dimW: '',
     dimH: '',
     dimD: '',
+    location_depot: item?.location_depot || '',
     location_zone: item?.location_zone || '',
     location_code: item?.location_code || '',
     location_floor: item?.location_floor || '',
@@ -356,6 +398,7 @@ function CatalogFormModal({ item, flightcases, depotZones, onSave, onClose }) {
       dimensions: (form.dimW && form.dimH && form.dimD)
         ? { w: parseFloat(form.dimW), h: parseFloat(form.dimH), d: parseFloat(form.dimD) }
         : null,
+      location_depot: form.location_depot || null,
       location_zone: form.location_zone || null,
       location_code: form.location_code || null,
       location_floor: form.location_floor || null,
@@ -432,16 +475,19 @@ function CatalogFormModal({ item, flightcases, depotZones, onSave, onClose }) {
             </div>
 
             {/* Localisation dépôt */}
-            {depotZones && (
+            {(depotZones || allDepotZones) && (
               <LocationSelector
                 zones={depotZones}
+                depots={allDepotZones}
                 value={{
+                  location_depot: form.location_depot,
                   location_zone: form.location_zone,
                   location_code: form.location_code,
                   location_floor: form.location_floor,
                 }}
                 onChange={(loc) => setForm(f => ({
                   ...f,
+                  location_depot: loc.location_depot || '',
                   location_zone: loc.location_zone || '',
                   location_code: loc.location_code || '',
                   location_floor: loc.location_floor || '',

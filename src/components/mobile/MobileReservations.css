@@ -11,7 +11,7 @@
 
 .mobile-reservations .back-button,
 .mobile-reservations .add-button {
-  background: white;
+  background: var(--theme-bg-card);
   border: none;
   width: 40px;
   height: 40px;
@@ -40,13 +40,13 @@
 
 .mobile-reservations .add-button {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
-  color: white;
+  color: var(--theme-text-inverse);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 /* ═══ FORMULAIRE ═══ */
 .mobile-reservations .reservation-form {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -77,7 +77,7 @@
   font-size: 1rem;
   font-family: inherit;
   box-shadow: none;
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
@@ -104,7 +104,7 @@
   border-radius: 12px;
   font-size: 0.875rem;
   margin-bottom: 16px;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--btn-danger-hover-bg);
   font-weight: 500;
 }
 
@@ -133,7 +133,7 @@
 
 .mobile-reservations .btn-submit {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
-  color: white;
+  color: var(--theme-text-inverse);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
@@ -156,7 +156,7 @@
   padding: 12px 16px;
   border: 2px solid var(--theme-border);
   border-radius: 14px;
-  background: white;
+  background: var(--theme-bg-card);
   cursor: pointer;
   font-family: inherit;
   font-size: 15px;
@@ -173,7 +173,7 @@
 
 .vehicle-picker-btn.selected {
   border-color: var(--theme-primary);
-  background: #fafaff;
+  background: var(--theme-bg-page);
 }
 
 .vehicle-picker-placeholder {
@@ -229,7 +229,7 @@
   right: 0;
   bottom: 0;
   z-index: 500;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: flex-end;
   animation: vp-overlay-in 0.2s ease;
@@ -241,7 +241,7 @@
 }
 
 .vehicle-picker-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 20px 20px 0 0;
   width: 100%;
   max-height: 80vh;
@@ -299,7 +299,7 @@
   width: 100%;
   padding: 12px 14px;
   border: none;
-  background: white;
+  background: var(--theme-bg-card);
   cursor: pointer;
   text-align: left;
   border-radius: 14px;
@@ -355,7 +355,7 @@
 .vp-brand {
   font-size: 11px;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--theme-primary);
   background: var(--theme-bg-hover);
   padding: 1px 8px;
   border-radius: 6px;
@@ -364,8 +364,8 @@
 .vp-type {
   font-size: 11px;
   font-weight: 500;
-  color: #059669;
-  background: #ecfdf5;
+  color: var(--btn-success-color);
+  background: var(--theme-success-bg);
   padding: 1px 8px;
   border-radius: 6px;
 }
@@ -405,7 +405,7 @@
 }
 
 .mobile-reservations .reservation-card {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -503,7 +503,7 @@
 .mobile-reservations .empty-state {
   text-align: center;
   padding: 48px 24px;
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--theme-border);
@@ -522,7 +522,7 @@
 
 .mobile-reservations .btn-primary {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   padding: 14px 24px;
   border-radius: 14px;

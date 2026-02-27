@@ -11,7 +11,7 @@ const getInitials = (name) => {
 
 // Générer une couleur unique basée sur le nom
 const getColorFromName = (name) => {
-  if (!name) return '#6b7280';
+  if (!name) return 'var(--theme-text-gray)';
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -84,7 +84,7 @@ const UserAvatar = ({ name, avatar, size = 40, gradient = true, style = {} }) =>
         minWidth: `${size}px`,
         borderRadius: '50%',
         ...bgStyle,
-        color: 'white',
+        color: 'var(--theme-text-inverse)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

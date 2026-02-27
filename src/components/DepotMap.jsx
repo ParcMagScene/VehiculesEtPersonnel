@@ -9,13 +9,16 @@ import { MapPin, Layers, BarChart3, Search, ZoomIn, ZoomOut, Maximize2 } from 'l
 import api from '../utils/api';
 import './DepotMap.css';
 
-const SVG_WIDTH = 770;
-const SVG_HEIGHT = 510;
+const DEFAULT_SVG_WIDTH = 770;
+const DEFAULT_SVG_HEIGHT = 510;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.3;
 
-export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZoneFilter }) {
+export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZoneFilter, focusZoneId }) {
+  // Dimensions dynamiques depuis le JSON (chaque dépôt peut avoir ses propres dimensions)
+  const SVG_WIDTH = zones?.svgWidth || DEFAULT_SVG_WIDTH;
+  const SVG_HEIGHT = zones?.svgHeight || DEFAULT_SVG_HEIGHT;
   const [activeFloor, setActiveFloor] = useState('RDC');
   const [hoveredZone, setHoveredZone] = useState(null);
   
@@ -25,6 +28,24 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const svgRef = useRef(null);
+
+  // Auto-focus on a zone when focusZoneId is set
+  useEffect(() => {
+    if (focusZoneId && zones?.zones) {
+      const zone = zones.zones.find(z => z.id === focusZoneId || z.codes?.includes(focusZoneId));
+      if (zone) {
+        if (zone.floor) setActiveFloor(zone.floor);
+        // Zoom to zone with slight delay for rendering
+        setTimeout(() => {
+          const { x, y, width, height } = zone.bbox;
+          const centerX = x + width / 2 - SVG_WIDTH / 2;
+          const centerY = y + height / 2 - SVG_HEIGHT / 2;
+          setZoom(2.5);
+          setPan({ x: -centerX, y: -centerY });
+        }, 100);
+      }
+    }
+  }, [focusZoneId, zones]);
 
   // Recherche d'équipement
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,8 +131,8 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
       return;
     }
     try {
-      const results = await api.getCatalogEquipment({ search: query, limit: 200 });
-      const items = results?.data || results || [];
+      const results = await api.getEquipment({ search: query, limit: 200 });
+      const items = Array.isArray(results) ? results : (results?.items || results?.data || []);
       const zoneMap = {};
       items.forEach(item => {
         const zone = item.location_zone || item.locationZone;
@@ -159,10 +180,10 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
 
     // Charger les équipements de la zone en background
     try {
-      const results = await api.getCatalogEquipment({ 
+      const results = await api.getEquipment({ 
         location_zone: zone.id, limit: 8 
       });
-      const items = results?.data || results || [];
+      const items = Array.isArray(results) ? results : (results?.items || results?.data || []);
       setTooltip(prev => prev?.zone?.id === zone.id 
         ? { ...prev, items: items.slice(0, 8), loading: false }
         : prev
@@ -262,10 +283,10 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           <rect x="0" y="0" width={SVG_WIDTH} height={SVG_HEIGHT} rx="8" fill="#1e1e2e" stroke="#334155" strokeWidth="2" />
 
           {/* Grille deco */}
-          {Array.from({ length: 11 }, (_, i) => (
+          {Array.from({ length: Math.floor(SVG_WIDTH / 77) + 1 }, (_, i) => (
             <line key={`gv-${i}`} x1={i * 77} y1="0" x2={i * 77} y2={SVG_HEIGHT} stroke="#ffffff08" strokeWidth="0.5" />
           ))}
-          {Array.from({ length: 8 }, (_, i) => (
+          {Array.from({ length: Math.floor(SVG_HEIGHT / 73) + 1 }, (_, i) => (
             <line key={`gh-${i}`} x1="0" y1={i * 73} x2={SVG_WIDTH} y2={i * 73} stroke="#ffffff08" strokeWidth="0.5" />
           ))}
 

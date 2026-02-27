@@ -62,7 +62,7 @@ const SKILL_CATEGORIES = [
   { value: 'régie', label: 'Régie', color: '#f97316' },
   { value: 'conduite', label: 'Conduite', color: '#06b6d4' },
   { value: 'logistique', label: 'Logistique', color: '#10b981' },
-  { value: 'autre', label: 'Autre', color: '#6b7280' },
+  { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
 
 const SKILL_LEVELS = [
@@ -85,11 +85,11 @@ const POSITION_CATEGORIES = [
   { value: 'logistique', label: 'Logistique & Transport', color: '#10b981' },
   { value: 'captation', label: 'Audiovisuel & Captation', color: '#6366f1' },
   { value: 'production', label: 'Production & Coordination', color: '#78716c' },
-  { value: 'autre', label: 'Autre', color: '#6b7280' },
+  { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
 
 const getCategoryColor = (category) => {
-  return SKILL_CATEGORIES.find(c => c.value === category)?.color || '#6b7280';
+  return SKILL_CATEGORIES.find(c => c.value === category)?.color || 'var(--theme-text-gray)';
 };
 
 // ═══════════════════════════════════════
@@ -372,7 +372,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
                   <div className="skills-selector">
                     {positions.map(pos => {
                       const selected = editForm.defaultPositions.includes(pos.name);
-                      const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || '#6b7280';
+                      const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || 'var(--theme-text-gray)';
                       return (
                         <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
                           <button type="button" className="skill-toggle" onClick={() => setEditForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
@@ -703,7 +703,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                             <div className="pp-postes-chips">
                               {postes.slice(0, 2).map((name, i) => {
                                 const posObj = positions.find(p => p.name === name);
-                                const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || '#6b7280';
+                                const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || 'var(--theme-text-gray)';
                                 return <span key={i} className="skill-chip-mini" style={{ '--chip-color': catColor }}>{name}</span>;
                               })}
                               {postes.length > 2 && <span className="skill-more">+{postes.length - 2}</span>}
@@ -928,7 +928,7 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
               <div className="skills-selector">
                 {positions.map(pos => {
                   const selected = form.defaultPositions.includes(pos.name);
-                  const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || '#6b7280';
+                  const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || 'var(--theme-text-gray)';
                   return (
                     <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
                       <button type="button" className="skill-toggle" onClick={() => setForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
@@ -1477,7 +1477,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   // Index des absences (availabilities) par personne + jour (pour colorer les slots)
   // LEAVE_TYPE_COLORS : couleur de fond des cellules pour chaque type d'absence
   const LEAVE_TYPE_COLORS = {
-    unavailable: '#94a3b8',  // gris-bleu
+    unavailable: 'var(--theme-text-muted)',  // gris-bleu
     conge_paye: '#60a5fa',   // bleu
     rtt: '#a78bfa',          // violet
     maladie: '#f87171',      // rouge
@@ -1488,7 +1488,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
     examen: '#10b981',       // vert
     rdv: '#06b6d4',          // cyan
     repos: '#fbbf24',        // jaune
-    autre: '#9ca3af',        // gris
+    autre: 'var(--theme-text-muted)',        // gris
   };
   const LEAVE_TYPE_LABELS = {
     unavailable: 'Indisponible',
@@ -1793,9 +1793,9 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
     switch (status) {
       case 'confirmed': return '#10b981';
       case 'option': return '#f59e0b';
-      case 'proposed': return '#6b7280';
+      case 'proposed': return 'var(--theme-text-gray)';
       case 'refused': return '#ef4444';
-      case 'cancelled': return '#9ca3af';
+      case 'cancelled': return 'var(--theme-text-muted)';
       default: return '#667eea';
     }
   };
@@ -1855,7 +1855,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           const absenceKey = `${person.id}_${slotIndex}`;
           const absence = absenceSlots[absenceKey];
           const hasAbsence = !!absence;
-          const absenceColor = hasAbsence ? LEAVE_TYPE_COLORS[absence.type] || '#94a3b8' : null;
+          const absenceColor = hasAbsence ? LEAVE_TYPE_COLORS[absence.type] || 'var(--theme-text-muted)' : null;
           const absenceLabel = hasAbsence ? LEAVE_TYPE_LABELS[absence.type] || '' : '';
           const absenceTooltip = hasAbsence
             ? `${absenceLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === 'pending' ? ' (en attente)' : ''}`

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map } from 'lucide-react';
+import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../utils/api';
+import { safeDate } from '../utils/formatUtils';
 import EquipmentImportModal from './EquipmentImportModal';
 import SavImportModal from './SavImportModal';
 import EquipmentLabelPrint from './EquipmentLabelPrint';
@@ -14,27 +15,11 @@ import './EquipmentPanel.css';
 import { useToast } from '../hooks/useToast';
 
 // ═══ CONSTANTES ═══
-const safeDate = (d) => {
-  if (!d) return '—';
-  try {
-    const s = String(d).trim();
-    // Format yyyy-MM-dd ou yyyy-MM-dd HH:mm:ss
-    const m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-    // Format dd/MM/yyyy
-    const m2 = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    if (m2) return `${m2[1]}/${m2[2]}/${m2[3]}`;
-    const dt = new Date(s);
-    if (isNaN(dt.getTime())) return '—';
-    return dt.toLocaleDateString('fr-FR');
-  } catch { return '—'; }
-};
-
 const EQUIPMENT_STATUS = {
   available: { label: 'Disponible', color: '#10b981', icon: '✅' },
   in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
   maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
-  retired: { label: 'Réformé', color: '#6b7280', icon: '⛔' },
+  retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 
 const SAV_STATUS = {
@@ -42,11 +27,11 @@ const SAV_STATUS = {
   in_progress: { label: 'En cours', color: '#f59e0b' },
   waiting_parts: { label: 'Attente pièces', color: '#8b5cf6' },
   resolved: { label: 'Résolu', color: '#10b981' },
-  closed: { label: 'Clôturé', color: '#6b7280' },
+  closed: { label: 'Clôturé', color: 'var(--theme-text-gray)' },
 };
 
 const SAV_PRIORITY = {
-  low: { label: 'Basse', color: '#6b7280' },
+  low: { label: 'Basse', color: 'var(--theme-text-gray)' },
   medium: { label: 'Moyenne', color: '#f59e0b' },
   high: { label: 'Haute', color: '#ef4444' },
   urgent: { label: 'Urgente', color: '#dc2626' },
@@ -201,7 +186,7 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
               <div key={fam.id} className={`eq-cascade-item ${isHovered ? 'hovered' : ''} ${value === `family:${fam.id}` ? 'selected' : ''}`}
                 onMouseEnter={() => { setHoveredFamily(fam.id); setHoveredSub(null); cancelClose(); }}
                 onClick={() => handleSelect(`family:${fam.id}`)}>
-                <span className="eq-cascade-icon" style={{ color: fam.color || '#6b7280' }}>{fam.icon || '📦'}</span>
+                <span className="eq-cascade-icon" style={{ color: fam.color || 'var(--theme-text-gray)' }}>{fam.icon || '📦'}</span>
                 <span className="eq-cascade-label">{fam.name}</span>
                 {subs.length > 0 && <ChevronRight size={12} className="eq-cascade-sub-arrow" />}
                 {isHovered && subs.length > 0 && (
@@ -282,7 +267,7 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
           <div key={fam.id} className={`eq-cat-family ${isOpen ? 'open' : ''}`}>
             <button className="eq-cat-family-btn" onClick={() => toggleFamily(fam.id)}>
               <ChevronRight size={14} className={`eq-cat-chevron ${isOpen ? 'rotated' : ''}`} />
-              <span className="eq-cat-family-icon" style={{ color: fam.color || '#6b7280' }}>{fam.icon || '📦'}</span>
+              <span className="eq-cat-family-icon" style={{ color: fam.color || 'var(--theme-text-gray)' }}>{fam.icon || '📦'}</span>
               <span className="eq-cat-family-name">{fam.name}</span>
               <span className="eq-cat-badge-sub">{subs.length} sous-fam.</span>
               <span className="eq-cat-badge-count">{famCount} éq.</span>
@@ -373,9 +358,26 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [equipmentLists, setEquipmentLists] = useState([]);
   const [listFilter, setListFilter] = useState(''); // '' | 'favorite' | 'watch'
   const [depotZones, setDepotZones] = useState(null);
+  const [allDepotZones, setAllDepotZones] = useState(null);
   const [locationStats, setLocationStats] = useState(null);
   const [filterZone, setFilterZone] = useState('');
   const [showDepotMap, setShowDepotMap] = useState(false);
+  const [depotMapModalZone, setDepotMapModalZone] = useState(null); // zone ID to focus in modal
+
+  // Trouver le bon dépôt pour la zone cliquée (dépôt 1 ou 2)
+  const modalDepotData = useMemo(() => {
+    if (!depotMapModalZone) return null;
+    // Chercher dans allDepotZones (contient tous les dépôts)
+    if (allDepotZones?.depots) {
+      for (const depot of allDepotZones.depots) {
+        if (depot.zones?.find(z => z.id === depotMapModalZone || z.codes?.includes(depotMapModalZone))) return depot;
+      }
+    }
+    // Fallback: dépôt 1
+    if (depotZones?.zones?.find(z => z.id === depotMapModalZone || z.codes?.includes(depotMapModalZone))) return depotZones;
+    // Dernier recours: retourner le premier dépôt disponible
+    return depotZones || (allDepotZones?.depots?.[0]) || null;
+  }, [depotMapModalZone, depotZones, allDepotZones]);
 
   const isAdmin = currentUser?.isAdmin === true;
   const canManageEquipmentMaintenance = isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance === true;
@@ -384,7 +386,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [eqData, catData, ticketData, persData, photosData, listsData, zonesData, locStatsData] = await Promise.all([
+      const [eqData, catData, ticketData, persData, photosData, listsData, zonesData, locStatsData, allZonesData] = await Promise.all([
         api.getEquipment(),
         api.getEquipmentCategories(),
         api.getSavTickets(),
@@ -393,6 +395,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         api.getEquipmentLists().catch(() => []),
         api.getEquipmentDepotZones().catch(() => null),
         api.getEquipmentLocationStats().catch(() => null),
+        api.getAllDepotZones().catch(() => null),
       ]);
       setEquipment(eqData);
       setCategories(catData);
@@ -403,6 +406,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
       setEquipmentLists(listsData);
       setDepotZones(zonesData);
       setLocationStats(locStatsData);
+      setAllDepotZones(allZonesData);
       setError(null);
     } catch (err) {
       console.error('Erreur chargement matériel:', err);
@@ -661,7 +665,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 <select className="eq-filter eq-zone-filter" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} title="Filtrer par zone dépôt">
                   <option value="">Toutes zones</option>
                   <option value="_none">📍 Sans zone</option>
-                  {depotZones.zones.map(z => <option key={z.id} value={z.id}>📍 {z.label}</option>)}
+                  {allDepotZones?.depots ? allDepotZones.depots.map(d => (
+                    <optgroup key={d.id} label={d.name || `Dépôt ${d.id}`}>
+                      {d.zones.map(z => <option key={`${d.id}-${z.id}`} value={z.id}>📍 {z.label}</option>)}
+                    </optgroup>
+                  )) : depotZones.zones.map(z => <option key={z.id} value={z.id}>📍 {z.label}</option>)}
                 </select>
               )}
               {depotZones && (
@@ -719,12 +727,14 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             <EquipmentGrid
               equipment={filteredEquipment}
               depotZones={depotZones}
+              allDepotZones={allDepotZones}
               selectedId={selectedEquipment?.id}
               photosList={photosList}
               logosList={logosList}
               favoriteIds={favoriteIds}
               watchIds={watchIds}
               onToggleList={toggleList}
+              onOpenDepotMap={(zoneId) => setDepotMapModalZone(zoneId)}
               onSelect={(eq) => {
                 clearTimeout(clickTimerRef.current);
                 clickTimerRef.current = setTimeout(() => {
@@ -793,6 +803,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
             onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
             isAdmin={isAdmin}
+            onOpenDepotMap={(zoneId) => setDepotMapModalZone(zoneId)}
           />
         )}
 
@@ -804,6 +815,12 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             persons={persons}
             onClose={() => setSelectedTicket(null)}
             onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
+            onDelete={async (id) => {
+              if (!confirm('Supprimer ce ticket ?')) return;
+              await api.deleteSavTicket(id);
+              setSelectedTicket(null);
+              loadData();
+            }}
             onOpenDialog={(t) => { setSelectedTicket(null); setDialogTicket(t); }}
             onOpenEquipmentDialog={(eq) => { setSelectedTicket(null); setDialogEquipment(eq); }}
           />
@@ -832,6 +849,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
         onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
         onSerialize={handleSerializeEquipment}
+        onOpenDepotMap={(zoneId) => setDepotMapModalZone(zoneId)}
       />
 
       {/* Dialog SAV (double-clic) */}
@@ -857,6 +875,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
           equipment={editingEquipment}
           categories={categories}
           depotZones={depotZones}
+          allDepotZones={allDepotZones}
           onSave={handleSaveEquipment}
           onClose={() => { setShowEquipmentModal(false); setEditingEquipment(null); }}
         />
@@ -994,49 +1013,35 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
 
               {/* Onglet Médias */}
               {mgmtTab === 'media' && (
-                <div className="eq-management-section">
-                  <h3><ImageIcon size={18} /> Médias ({photosList.length} photos, {logosList.length} logos)</h3>
-                  <p>Les photos de <code>public/Photos/Matériel/</code> et les logos de <code>public/Logos/</code> sont automatiquement associés aux équipements par correspondance de nom.</p>
-                  <div className="eq-mgmt-media-grid">
-                    <div className="eq-mgmt-media-col">
-                      <h4>📸 Photos matériel ({photosList.length})</h4>
-                      <div className="eq-mgmt-media-list">
-                        {photosList.slice(0, 20).map(p => (
-                          <div key={p} className="eq-mgmt-media-item">
-                            <img src={`/Photos/Matériel/${p}`} alt={p} />
-                            <span title={p}>{p.length > 25 ? p.slice(0, 22) + '...' : p}</span>
-                          </div>
-                        ))}
-                        {photosList.length > 20 && <p className="eq-detail-empty">+ {photosList.length - 20} autres photos...</p>}
-                        {photosList.length === 0 && <p className="eq-detail-empty">Aucune photo dans Photos/Matériel/</p>}
-                      </div>
-                    </div>
-                    <div className="eq-mgmt-media-col">
-                      <h4>🏷️ Logos marques ({logosList.length})</h4>
-                      <div className="eq-mgmt-media-list">
-                        {logosList.map(l => (
-                          <div key={l} className="eq-mgmt-media-item">
-                            <img src={`/Logos/${l}`} alt={l} />
-                            <span title={l}>{l.length > 25 ? l.slice(0, 22) + '...' : l}</span>
-                          </div>
-                        ))}
-                        {logosList.length === 0 && <p className="eq-detail-empty">Aucun logo dans Logos/</p>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="eq-mgmt-media-legend">
-                    <h4><QrCode size={16} /> UID & QR Codes</h4>
-                    <p>Chaque équipement possède un UID unique (EMAG-XXXXX) et un QR Code qui renvoie vers l'interface mobile. Le QR Code est accessible depuis la fiche de chaque équipement.</p>
-                    <div className="eq-mgmt-uid-example">
-                      <QRCodeSVG value={`${APP_BASE_URL}/#/mobile/equipment/EMAG-00001`} size={80} level="M" includeMargin />
-                      <div>
-                        <code>EMAG-00001</code>
-                        <span>→ Menu mobile : Fiche, Défaut, SAV, Intervention</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <EquipmentMediaManager
+                  photosList={photosList}
+                  logosList={logosList}
+                  equipment={equipment}
+                  onRefresh={loadData}
+                />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Plan dépôt (ouvert depuis un clic sur une zone) */}
+      {depotMapModalZone && modalDepotData && (
+        <div className="eq-depot-map-modal-overlay" onClick={() => setDepotMapModalZone(null)}>
+          <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="eq-depot-map-modal-header">
+              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone}</h3>
+              <button className="eq-dialog-close" onClick={() => setDepotMapModalZone(null)} title="Fermer"><X size={20} /></button>
+            </div>
+            <div className="eq-depot-map-modal-body">
+              <DepotMap
+                zones={modalDepotData}
+                stats={locationStats}
+                selectedZone={depotMapModalZone}
+                focusZoneId={depotMapModalZone}
+                onZoneSelect={(zoneId) => {}}
+                onZoneFilter={() => {}}
+              />
             </div>
           </div>
         </div>
@@ -1045,8 +1050,303 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   );
 };
 
+// ═══ GESTIONNAIRE DE MÉDIAS ÉQUIPEMENT ═══
+const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) => {
+  const toast = useToast();
+  const fileInputRef = useRef(null);
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [renamingPhoto, setRenamingPhoto] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [linkingPhoto, setLinkingPhoto] = useState(null);
+  const [linkSearch, setLinkSearch] = useState('');
+
+  // Filtrer les photos par recherche
+  const filteredPhotos = useMemo(() => {
+    if (!mediaSearch.trim()) return photosList;
+    const q = mediaSearch.toLowerCase();
+    return photosList.filter(p => p.toLowerCase().includes(q));
+  }, [photosList, mediaSearch]);
+
+  // Associer chaque photo à l'équipement correspondant
+  const photoEquipmentMap = useMemo(() => {
+    const map = {};
+    for (const photo of photosList) {
+      const match = equipment.find(eq => matchPhotoToEquipment([photo], eq));
+      if (match) map[photo] = match;
+    }
+    return map;
+  }, [photosList, equipment]);
+
+  // Upload handler
+  const handleUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const result = await api.uploadEquipmentPhotos(Array.from(files));
+      toast.success(`${result.count} photo(s) uploadée(s)`);
+      // Recharger les données pour avoir la liste à jour
+      onRefresh();
+    } catch (err) {
+      toast.error('Erreur upload : ' + (err.message || 'inconnu'));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // Delete handler
+  const handleDelete = async (filename) => {
+    if (!confirm(`Supprimer la photo "${filename}" ?\nCette action est irréversible.`)) return;
+    try {
+      await api.deleteEquipmentPhoto(filename);
+      toast.success(`Photo "${filename}" supprimée`);
+      onRefresh();
+    } catch (err) {
+      toast.error('Erreur suppression : ' + (err.message || 'inconnu'));
+    }
+  };
+
+  // Rename handler
+  const handleRename = async () => {
+    if (!renamingPhoto || !renameValue.trim()) return;
+    const ext = renamingPhoto.split('.').pop();
+    const newName = renameValue.trim().endsWith(`.${ext}`) ? renameValue.trim() : `${renameValue.trim()}.${ext}`;
+    if (newName === renamingPhoto) { setRenamingPhoto(null); return; }
+    try {
+      await api.renameEquipmentPhoto(renamingPhoto, newName);
+      toast.success(`Renommé : ${newName}`);
+      setRenamingPhoto(null);
+      setRenameValue('');
+      onRefresh();
+    } catch (err) {
+      toast.error('Erreur renommage : ' + (err.message || 'inconnu'));
+    }
+  };
+
+  // Manual link handler — associate a photo to an equipment by updating its `photo` field
+  const handleManualLink = async (photoFilename, eq) => {
+    try {
+      await api.updateEquipment(eq.id, { photo: photoFilename });
+      toast.success(`Photo associée à ${cleanName(eq.name)}`);
+      setLinkingPhoto(null);
+      setLinkSearch('');
+      onRefresh();
+    } catch (err) {
+      toast.error('Erreur association : ' + (err.message || 'inconnu'));
+    }
+  };
+
+  // Filtered equipment for manual link
+  const linkFilteredEquipment = useMemo(() => {
+    if (!linkSearch.trim()) return equipment.slice(0, 20);
+    const q = linkSearch.toLowerCase();
+    return equipment.filter(eq =>
+      (eq.name || '').toLowerCase().includes(q) ||
+      (eq.reference || '').toLowerCase().includes(q)
+    ).slice(0, 20);
+  }, [equipment, linkSearch]);
+
+  // Drag & Drop
+  const handleDragOver = (e) => { e.preventDefault(); setDragOver(true); };
+  const handleDragLeave = () => setDragOver(false);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = e.dataTransfer?.files;
+    if (files?.length) handleUpload(files);
+  };
+
+  return (
+    <div className="eq-management-section eq-media-manager">
+      <div className="eq-media-header">
+        <h3><ImageIcon size={18} /> Gestion des Médias</h3>
+        <div className="eq-media-counts">
+          <span className="eq-media-count-badge">📸 {photosList.length} photos</span>
+          <span className="eq-media-count-badge">🏷️ {logosList.length} logos</span>
+        </div>
+      </div>
+
+      {/* Barre d'actions */}
+      <div className="eq-media-toolbar">
+        <div className="eq-media-search">
+          <Search size={14} />
+          <input
+            type="text"
+            placeholder="Rechercher une photo..."
+            value={mediaSearch}
+            onChange={(e) => setMediaSearch(e.target.value)}
+          />
+          {mediaSearch && <button className="eq-media-search-clear" onClick={() => setMediaSearch('')}><X size={12} /></button>}
+        </div>
+        <button className="eq-btn-save" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Upload size={16} /> {uploading ? 'Upload...' : 'Ajouter des photos'}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          style={{ display: 'none' }}
+          onChange={(e) => handleUpload(e.target.files)}
+        />
+      </div>
+
+      {/* Zone de drop */}
+      <div
+        className={`eq-media-dropzone ${dragOver ? 'drag-over' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <Upload size={24} />
+        <span>Glissez-déposez des images ici ou cliquez pour sélectionner</span>
+        <small>JPG, PNG, WebP, AVIF, SVG — Max 20 MB par fichier</small>
+      </div>
+
+      {/* Grille des photos */}
+      <div className="eq-media-section">
+        <h4>📸 Photos matériel ({filteredPhotos.length}{mediaSearch ? ` / ${photosList.length}` : ''})</h4>
+        {filteredPhotos.length === 0 ? (
+          <p className="eq-detail-empty">{mediaSearch ? 'Aucune photo correspondante' : 'Aucune photo dans Photos/Matériel/'}</p>
+        ) : (
+          <div className="eq-media-photo-grid">
+            {filteredPhotos.map(p => {
+              const linkedEq = photoEquipmentMap[p];
+              return (
+                <div key={p} className={`eq-media-card ${linkedEq ? 'linked' : ''}`}>
+                  <div className="eq-media-card-img" onClick={() => setPreviewPhoto(p)}>
+                    <img src={`/Photos/Matériel/${p}`} alt={p} loading="lazy" />
+                    <div className="eq-media-card-zoom"><ZoomIn size={16} /></div>
+                  </div>
+                  <div className="eq-media-card-info">
+                    {renamingPhoto === p ? (
+                      <div style={{ display: 'flex', gap: 3, width: '100%' }}>
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={e => setRenameValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setRenamingPhoto(null); }}
+                          style={{ flex: 1, fontSize: 11, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--theme-border-medium)', minWidth: 0 }}
+                          autoFocus
+                        />
+                        <button onClick={handleRename} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--theme-primary)', color: 'var(--theme-text-inverse)', border: 'none', cursor: 'pointer' }}>OK</button>
+                      </div>
+                    ) : (
+                      <span className="eq-media-card-name" title={p}>{p.length > 20 ? p.slice(0, 17) + '...' : p}</span>
+                    )}
+                    {linkedEq ? (
+                      <span className="eq-media-card-link" title={`Associé à : ${cleanName(linkedEq.name)}`}>
+                        <Link2 size={10} /> {cleanName(linkedEq.name).slice(0, 18)}
+                      </span>
+                    ) : linkingPhoto === p ? (
+                      <div className="eq-media-link-picker" style={{ width: '100%' }}>
+                        <input
+                          type="text"
+                          placeholder="Rechercher équipement..."
+                          value={linkSearch}
+                          onChange={e => setLinkSearch(e.target.value)}
+                          style={{ width: '100%', fontSize: 10, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--theme-border-medium)', marginBottom: 3 }}
+                          autoFocus
+                        />
+                        <div style={{ maxHeight: 100, overflowY: 'auto', fontSize: 10 }}>
+                          {linkFilteredEquipment.map(eq => (
+                            <div
+                              key={eq.id}
+                              onClick={() => handleManualLink(p, eq)}
+                              style={{ padding: '3px 4px', cursor: 'pointer', borderRadius: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              onMouseEnter={e => e.target.style.background = 'var(--theme-bg-tertiary)'}
+                              onMouseLeave={e => e.target.style.background = 'transparent'}
+                            >
+                              {eq.reference ? `${eq.reference} — ` : ''}{cleanName(eq.name)}
+                            </div>
+                          ))}
+                          {linkFilteredEquipment.length === 0 && <div style={{ padding: 4, opacity: 0.5 }}>Aucun résultat</div>}
+                        </div>
+                        <button onClick={() => { setLinkingPhoto(null); setLinkSearch(''); }} style={{ fontSize: 9, padding: '1px 6px', marginTop: 2, borderRadius: 3, background: 'var(--theme-bg-tertiary)', border: '1px solid var(--theme-border-medium)', cursor: 'pointer' }}>Annuler</button>
+                      </div>
+                    ) : (
+                      <span className="eq-media-card-nolink" onClick={() => setLinkingPhoto(p)} style={{ cursor: 'pointer' }} title="Cliquer pour associer manuellement">
+                        Non associé
+                      </span>
+                    )}
+                  </div>
+                  <div className="eq-media-card-actions" style={{ display: 'flex', gap: 2 }}>
+                    <button className="eq-media-card-action-btn" onClick={() => { setRenamingPhoto(p); setRenameValue(p.replace(/\.[^.]+$/, '')); }} title="Renommer">
+                      <Edit2 size={12} />
+                    </button>
+                    <button className="eq-media-card-action-btn" onClick={() => setLinkingPhoto(linkingPhoto === p ? null : p)} title="Associer manuellement">
+                      <Link2 size={12} />
+                    </button>
+                    <button className="eq-media-card-delete" onClick={() => handleDelete(p)} title="Supprimer cette photo">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Section Logos (lecture seule) */}
+      <div className="eq-media-section">
+        <h4>🏷️ Logos marques ({logosList.length})</h4>
+        {logosList.length === 0 ? (
+          <p className="eq-detail-empty">Aucun logo dans Logos/</p>
+        ) : (
+          <div className="eq-media-photo-grid">
+            {logosList.map(l => (
+              <div key={l} className="eq-media-card logo-card">
+                <div className="eq-media-card-img" onClick={() => setPreviewPhoto({ src: `/Logos/${l}`, name: l })}>
+                  <img src={`/Logos/${l}`} alt={l} loading="lazy" />
+                  <div className="eq-media-card-zoom"><ZoomIn size={16} /></div>
+                </div>
+                <div className="eq-media-card-info">
+                  <span className="eq-media-card-name" title={l}>{l.length > 20 ? l.slice(0, 17) + '...' : l}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* QR Code section */}
+      <div className="eq-mgmt-media-legend">
+        <h4><QrCode size={16} /> UID & QR Codes</h4>
+        <p>Chaque équipement possède un UID unique (EMAG-XXXXX) et un QR Code qui renvoie vers l'interface mobile.</p>
+        <div className="eq-mgmt-uid-example">
+          <QRCodeSVG value={`${APP_BASE_URL}/#/mobile/equipment/EMAG-00001`} size={80} level="M" includeMargin />
+          <div>
+            <code>EMAG-00001</code>
+            <span>→ Menu mobile : Fiche, Défaut, SAV, Intervention</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de prévisualisation plein écran */}
+      {previewPhoto && (
+        <div className="eq-media-preview-overlay" onClick={() => setPreviewPhoto(null)}>
+          <div className="eq-media-preview-content" onClick={(e) => e.stopPropagation()}>
+            <button className="eq-media-preview-close" onClick={() => setPreviewPhoto(null)}><X size={22} /></button>
+            <img
+              src={typeof previewPhoto === 'string' ? `/Photos/Matériel/${previewPhoto}` : previewPhoto.src}
+              alt={typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}
+            />
+            <span className="eq-media-preview-name">{typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}</span>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
 // ═══ LISTE D'ÉQUIPEMENTS (tableau) ═══
-const EquipmentGrid = ({ equipment, depotZones, selectedId, photosList, logosList, favoriteIds, watchIds, onToggleList, onSelect, onDoubleClick }) => {
+const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photosList, logosList, favoriteIds, watchIds, onToggleList, onSelect, onDoubleClick, onOpenDepotMap }) => {
   if (equipment.length === 0) {
     return (
       <div className="eq-empty">
@@ -1116,15 +1416,30 @@ const EquipmentGrid = ({ equipment, depotZones, selectedId, photosList, logosLis
                 <td className="eq-table-qty">{eq.stockQuantity || 1}</td>
                 <td>{(() => {
                   const zoneId = eq.location_zone || eq.locationZone;
-                  if (zoneId && depotZones) {
-                    const z = depotZones.zones?.find(zn => zn.id === zoneId);
+                  if (zoneId) {
+                    // Chercher la zone dans tous les dépôts
+                    let z = null;
+                    if (depotZones?.zones) z = depotZones.zones.find(zn => zn.id === zoneId || zn.codes?.includes(zoneId));
+                    if (!z && allDepotZones?.depots) {
+                      for (const depot of allDepotZones.depots) {
+                        z = depot.zones?.find(zn => zn.id === zoneId || zn.codes?.includes(zoneId));
+                        if (z) break;
+                      }
+                    }
                     if (z) return (
-                      <span className="eq-zone-badge" style={{ background: z.color, color: z.textColor || '#fff' }}>
+                      <span className="eq-zone-badge eq-zone-clickable" style={{ background: z.color, color: z.textColor || '#fff' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId); }} title="Voir sur le plan">
+                        <MapPin size={11} />
                         {z.label}
                         {(eq.location_code || eq.locationCode) && <span className="eq-zone-code">{eq.location_code || eq.locationCode}</span>}
                       </span>
                     );
-                    return zoneId;
+                    // Zone non trouvée dans les JSON mais présente en base → quand même cliquable
+                    return (
+                      <span className="eq-zone-badge eq-zone-clickable" style={{ background: 'var(--theme-text-secondary)', color: 'var(--theme-text-inverse)' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId); }} title="Voir sur le plan">
+                        <MapPin size={11} />
+                        {zoneId}
+                      </span>
+                    );
                   }
                   return eq.location || '—';
                 })()}</td>
@@ -1148,7 +1463,7 @@ const EquipmentGrid = ({ equipment, depotZones, selectedId, photosList, logosLis
 };
 
 // ═══ CONTENU DÉTAIL PARTAGÉ ═══
-const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, onSerialize, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, categories: catList }) => {
+const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, onSerialize, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, onOpenDepotMap, categories: catList }) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
@@ -1237,10 +1552,17 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
           )}
           {(eq.brand) && <div className="eq-detail-field"><span>🏭</span><span>Marque</span><strong>{eq.brand}</strong></div>}
           {(eq.stockQuantity || eq.stock_quantity) > 1 && <div className="eq-detail-field"><Package size={14} /><span>Quantité</span><strong>{eq.stockQuantity || eq.stock_quantity}</strong></div>}
-          {(eq.location_zone || eq.locationZone) && (
-            <div className="eq-detail-field"><MapPin size={14} /><span>Zone dépôt</span><strong>{eq.location_zone || eq.locationZone}{(eq.location_code || eq.locationCode) ? ` — ${eq.location_code || eq.locationCode}` : ''}{(eq.location_floor || eq.locationFloor) ? ` (${eq.location_floor || eq.locationFloor})` : ''}</strong></div>
+          {(eq.location_zone || eq.locationZone || eq.location) && (
+            <div className="eq-detail-field">
+              <MapPin size={14} /><span>Zone dépôt</span>
+              <strong>{(eq.location_zone || eq.locationZone) ? `${(eq.location_depot || eq.locationDepot) ? `D${eq.location_depot || eq.locationDepot} — ` : ''}${eq.location_zone || eq.locationZone}${(eq.location_code || eq.locationCode) ? ` — ${eq.location_code || eq.locationCode}` : ''}${(eq.location_floor || eq.locationFloor) ? ` (${eq.location_floor || eq.locationFloor})` : ''}` : eq.location}</strong>
+              {(eq.location_zone || eq.locationZone) && onOpenDepotMap && (
+                <button className="eq-zone-map-btn" onClick={(e) => { e.stopPropagation(); onOpenDepotMap(eq.location_zone || eq.locationZone); }} title="Voir sur le plan">
+                  <Map size={13} /> Plan
+                </button>
+              )}
+            </div>
           )}
-          {eq.location && <div className="eq-detail-field"><MapPin size={14} /><span>Localisation</span><strong>{eq.location}</strong></div>}
           {(eq.purchaseDate || eq.purchase_date) && <div className="eq-detail-field"><Calendar size={14} /><span>Achat</span><strong>{safeDate(eq.purchaseDate || eq.purchase_date)}</strong></div>}
           {(eq.purchasePrice || eq.purchase_price) && <div className="eq-detail-field"><DollarSign size={14} /><span>Prix</span><strong>{parseFloat(eq.purchasePrice || eq.purchase_price).toFixed(2)} €</strong></div>}
           {(eq.warrantyEnd || eq.warranty_end) && <div className="eq-detail-field"><CheckCircle size={14} /><span>Garantie</span><strong>jusqu'au {safeDate(eq.warrantyEnd || eq.warranty_end)}</strong></div>}
@@ -1373,7 +1695,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
 };
 
 // ═══ VOLET LATÉRAL (clic simple) ═══
-const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, onEdit, onAssign, onReturn, onPrintLabel, onPrintSheet, isAdmin }) => {
+const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, onEdit, onAssign, onReturn, onPrintLabel, onPrintSheet, isAdmin, onOpenDepotMap }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -1431,7 +1753,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
         </button>
       </div>
       <div className="eq-slide-body">
-        <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} onReturn={onReturn} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} categories={categories} />
+        <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} onReturn={onReturn} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} onOpenDepotMap={onOpenDepotMap} categories={categories} />
       </div>
       <div className="eq-slide-footer">
         {onPrintLabel && (
@@ -1453,7 +1775,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
 };
 
 // ═══ MODAL DÉTAIL COMPLET (double-clic) ═══
-const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet, onSerialize }) => {
+const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet, onSerialize, onOpenDepotMap }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -1504,6 +1826,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             watchIds={watchIds}
             onToggleList={onToggleList}
             onOpenTicketDialog={onOpenTicketDialog}
+            onOpenDepotMap={onOpenDepotMap}
             onPrintLabel={onPrintLabel}
             onPrintSheet={onPrintSheet}
             onSerialize={onSerialize}
@@ -1552,7 +1875,7 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
                 <td><span className="eq-pri-dot" style={{ background: pri.color }} title={pri.label} /></td>
                 <td className="eq-ticket-title-cell">{t.title}</td>
                 <td>
-                  <span className="eq-ticket-eq">{t.categoryIcon} {t.equipmentName || <em style={{ color: '#9ca3af' }}>Non lié</em>}</span>
+                  <span className="eq-ticket-eq">{t.categoryIcon} {t.equipmentName || <em style={{ color: 'var(--theme-text-muted)' }}>Non lié</em>}</span>
                 </td>
                 <td>{SAV_TYPES[t.type] || t.type}</td>
                 <td><span className="eq-status-badge" style={{ background: tst.color }}>{tst.label}</span></td>
@@ -1561,8 +1884,8 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
                 <td>{t.cost != null ? `${parseFloat(t.cost).toFixed(2)} €` : '—'}</td>
                 <td>
                   <div className="eq-table-actions">
-                    <button onClick={() => onEdit(t)} title="Modifier"><Edit2 size={14} /></button>
-                    <button onClick={() => onDelete(t.id)} title="Supprimer" className="eq-btn-danger-sm"><Trash2 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(t); }} title="Modifier"><Edit2 size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} title="Supprimer" className="eq-btn-danger-sm"><Trash2 size={14} /></button>
                   </div>
                 </td>
               </tr>
@@ -1575,7 +1898,7 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
 };
 
 // ═══ MODAL FORMULAIRE ÉQUIPEMENT ═══
-const EquipmentFormModal = ({ equipment: eq, categories, depotZones, onSave, onClose }) => {
+const EquipmentFormModal = ({ equipment: eq, categories, depotZones, allDepotZones, onSave, onClose }) => {
   // Hiérarchie des catégories
   const families = useMemo(() => categories.filter(c => c.level === 'family'), [categories]);
   const subfamilies = useMemo(() => categories.filter(c => c.level === 'subfamily'), [categories]);
@@ -1603,6 +1926,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, depotZones, onSave, onC
     category_id: parents.categoryId || (eq?.category_id ? String(eq.category_id) : ''),
     status: eq?.status || 'available',
     location: eq?.location || '',
+    location_depot: eq?.location_depot || eq?.locationDepot || '',
     location_zone: eq?.location_zone || eq?.locationZone || '',
     location_code: eq?.location_code || eq?.locationCode || '',
     location_floor: eq?.location_floor || eq?.locationFloor || '',
@@ -1635,6 +1959,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, depotZones, onSave, onC
       category_id: resolvedCategoryId ? parseInt(resolvedCategoryId) : null,
       purchase_price: form.purchase_price ? parseFloat(form.purchase_price) : null,
       stock_quantity: form.stock_quantity ? parseInt(form.stock_quantity) : 1,
+      location_depot: form.location_depot || null,
       location_zone: form.location_zone || null,
       location_code: form.location_code || null,
       location_floor: form.location_floor || null,
@@ -1701,17 +2026,20 @@ const EquipmentFormModal = ({ equipment: eq, categories, depotZones, onSave, onC
               <label>Localisation / Zone</label>
               <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ex: Dépôt A, Étagère 3" />
             </div>
-            {depotZones && (
+            {(depotZones || allDepotZones) && (
               <div className="eq-form-field eq-form-full">
                 <LocationSelector
                   zones={depotZones}
+                  depots={allDepotZones}
                   value={{
+                    location_depot: form.location_depot,
                     location_zone: form.location_zone,
                     location_code: form.location_code,
                     location_floor: form.location_floor,
                   }}
                   onChange={(loc) => setForm(f => ({
                     ...f,
+                    location_depot: loc.location_depot || '',
                     location_zone: loc.location_zone || '',
                     location_code: loc.location_code || '',
                     location_floor: loc.location_floor || '',
@@ -1905,7 +2233,7 @@ const AssignModal = ({ equipment: eq, persons, onSave, onClose }) => {
 };
 
 // ═══ VOLET LATÉRAL SAV (clic simple) ═══
-const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDialog, onOpenEquipmentDialog }) => {
+const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onDelete, onOpenDialog, onOpenEquipmentDialog }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -1968,6 +2296,7 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onOpenDial
         <button className="eq-slide-open-btn" onClick={() => onOpenDialog(t)} style={{ flex: 1 }}>
           <ExternalLink size={14} /> Fiche complète
         </button>
+        {onDelete && <button className="eq-btn-danger-sm" onClick={() => onDelete(t.id)} title="Supprimer" style={{ padding: '6px 10px' }}><Trash2 size={14} /></button>}
       </div>
     </div>
   );

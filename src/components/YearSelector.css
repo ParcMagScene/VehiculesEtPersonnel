@@ -117,15 +117,6 @@
   box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
 @media (max-width: 768px) {
   .year-selector-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -149,22 +140,3 @@
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}

@@ -391,19 +391,6 @@
   font-size: 16px;
 }
 
-/* Badge semi-transparent dans header */
-.theme-header-badge {
-  padding: 3px 12px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
 /* Bouton close standard */
 .theme-close-btn {
   display: flex;
@@ -509,148 +496,7 @@
   border-color: var(--btn-secondary-hover-border-color);
 }
 
-/* Bouton danger (supprimer) */
-.theme-btn-danger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: var(--btn-danger-border);
-  border-radius: var(--btn-radius);
-  background: var(--btn-danger-bg);
-  color: var(--btn-danger-color);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
 
-.theme-btn-danger:hover {
-  background: var(--btn-danger-hover-bg);
-}
-
-/* Bouton danger rempli (variante forte) */
-.theme-btn-danger-filled {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: none;
-  border-radius: var(--btn-radius);
-  background: var(--btn-danger-filled-bg);
-  color: var(--btn-danger-filled-color);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
-
-.theme-btn-danger-filled:hover {
-  background: var(--theme-danger-dark);
-}
-
-/* Bouton succès (terminé / valider) */
-.theme-btn-success {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: var(--btn-success-border);
-  border-radius: var(--btn-radius);
-  background: var(--btn-success-bg);
-  color: var(--btn-success-color);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
-
-.theme-btn-success:hover {
-  background: var(--btn-success-hover-bg);
-}
-
-/* Bouton warning (reporter / en attente) */
-.theme-btn-warning {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: var(--btn-warning-border);
-  border-radius: var(--btn-radius);
-  background: var(--btn-warning-bg);
-  color: var(--btn-warning-color);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
-
-.theme-btn-warning:hover {
-  background: var(--btn-warning-hover-bg);
-}
-
-/* Bouton outline (variante contour) */
-.theme-btn-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: var(--btn-padding);
-  border: 2px solid var(--theme-primary);
-  border-radius: var(--btn-radius);
-  background: var(--theme-bg-card);
-  color: var(--theme-primary);
-  font-size: var(--btn-font-size);
-  font-weight: var(--btn-font-weight);
-  cursor: pointer;
-  transition: var(--btn-transition);
-  height: var(--btn-height);
-}
-
-.theme-btn-outline:hover {
-  background: var(--theme-bg-hover);
-}
-
-/* Petit bouton icône (éditer/supprimer dans listes) */
-.theme-btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--theme-text-muted);
-  cursor: pointer;
-  transition: var(--btn-transition);
-}
-
-.theme-btn-icon:hover {
-  background: var(--theme-bg-hover);
-  color: var(--theme-primary);
-}
-
-.theme-btn-icon.danger:hover {
-  background: var(--theme-danger-bg);
-  color: var(--theme-danger);
-}
-
-/* Input focus style */
-.theme-input:focus {
-  outline: none;
-  border-color: var(--focus-border);
-  box-shadow: var(--focus-ring);
-}
 
 /* ═══════════════════════════════════════════════════════
    TOOLTIP UNIFIÉ
@@ -762,51 +608,20 @@
   visibility: visible;
 }
 
-/* ─── Scrollbar unifiée ─── */
-.emag-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
 
-.emag-scrollbar::-webkit-scrollbar-track {
-  background: var(--theme-bg-secondary);
-  border-radius: 3px;
-}
-
-.emag-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.emag-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
 
 /* ═══════════════════════════════════════════════════════════════
-   Animations centralisées (P4)
+   Animations centralisées
    ═══════════════════════════════════════════════════════════════ */
-
-/* Transition douce pour changement de module */
-@keyframes moduleTransition {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.module-enter {
-  animation: moduleTransition 0.25s ease both;
-}
 
 /* Micro-interaction boutons — press effect global */
 .theme-btn-primary:active,
-.theme-btn-secondary:active,
-.theme-btn-danger:active,
-.theme-btn-success:active,
-.theme-btn-warning:active,
-.theme-btn-outline:active,
-.theme-btn-icon:active {
+.theme-btn-secondary:active {
   transform: scale(0.97);
 }
 
-/* Overlay fade centralisé réutilisable */
+/* --- Keyframes réutilisables (centralisées ici, retirées des fichiers composants) --- */
+
 @keyframes overlayIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -817,12 +632,33 @@
   to { opacity: 0; }
 }
 
-/* Card hover lift */
-.card-hover-lift {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.card-hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover, 0 8px 25px rgba(0, 0, 0, 0.1));
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+

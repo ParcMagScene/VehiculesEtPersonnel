@@ -15,11 +15,6 @@
   animation: overlayFadeIn 0.2s ease-out;
 }
 
-@keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .maintenance-dialog {
   background: var(--theme-bg-page);
   border-radius: 16px;
@@ -32,11 +27,6 @@
   animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   z-index: 1;
-}
-
-@keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .maintenance-dialog-header {
@@ -703,11 +693,6 @@
   animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @keyframes popIn {
   from {
     opacity: 0;
@@ -839,31 +824,6 @@
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
-/* Section de changement de statut */
-.status-change-section {
-  margin-top: 12px;
-  padding: 12px 16px;
-  background: var(--theme-bg-secondary);
-  border-radius: 10px;
-  border: 1px solid var(--theme-border-medium);
-}
-
-.status-change-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--theme-text-gray);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-buttons-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .status-btn {
   padding: 5px 10px;
   border: 2px solid transparent;
@@ -884,48 +844,6 @@
   opacity: 1;
   box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
   font-weight: 700;
-}
-
-.status-btn-scheduled {
-  background: var(--theme-info-bg-strong);
-  color: var(--theme-info-dark);
-  border-color: var(--theme-info-border);
-}
-
-.status-btn-in_progress {
-  background: var(--theme-warning-bg);
-  color: var(--theme-warning-text);
-  border-color: var(--theme-warning-border, #fcd34d);
-}
-
-.status-btn-completed {
-  background: var(--btn-success-bg);
-  color: var(--theme-success-text);
-  border-color: var(--theme-success-border);
-}
-
-.status-btn-pending {
-  background: var(--theme-purple-bg);
-  color: var(--theme-primary-dark);
-  border-color: var(--theme-purple-accent);
-}
-
-.status-btn-reported {
-  background: var(--theme-danger-bg);
-  color: var(--theme-danger-text);
-  border-color: var(--theme-danger-border);
-}
-
-.status-btn-rescheduled {
-  background: var(--theme-orange-bg);
-  color: var(--theme-orange-text);
-  border-color: var(--theme-warning-border);
-}
-
-.status-btn-cancelled {
-  background: var(--theme-bg-tertiary);
-  color: var(--theme-text-body);
-  border-color: var(--theme-border-muted);
 }
 
 /* Champ motif pour changement de statut */
@@ -1133,40 +1051,6 @@
 [data-theme="dark"] .conflict-list {
   background: var(--theme-warning-bg);
   border-color: var(--theme-warning);
-}
-
-[data-theme="dark"] .status-btn-scheduled {
-  background: rgba(59, 130, 246, 0.15);
-  color: var(--theme-info);
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-[data-theme="dark"] .status-btn-in_progress {
-  background: rgba(245, 158, 11, 0.15);
-  color: var(--theme-warning);
-  border-color: rgba(245, 158, 11, 0.3);
-}
-
-[data-theme="dark"] .status-btn-completed {
-  background: rgba(34, 197, 94, 0.15);
-  color: var(--theme-success);
-  border-color: rgba(34, 197, 94, 0.3);
-}
-
-[data-theme="dark"] .status-btn-pending {
-  background: rgba(139, 92, 246, 0.15);
-  border-color: rgba(139, 92, 246, 0.3);
-}
-
-[data-theme="dark"] .status-btn-reported {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--theme-danger);
-}
-
-[data-theme="dark"] .status-btn-rescheduled {
-  background: rgba(249, 115, 22, 0.15);
-  color: #fb923c;
-  border-color: rgba(249, 115, 22, 0.3);
 }
 
 [data-theme="dark"] .status-reason-field textarea {

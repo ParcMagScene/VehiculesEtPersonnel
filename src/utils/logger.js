@@ -126,31 +126,6 @@ export const oauthLogger = {
   success: (...args) => logger.log('✅', ...args),
 };
 
-/**
- * Helper pour les logs API
- */
-export const apiLogger = {
-  request: (method, url, data) => {
-    logger.groupCollapsed(`📡 ${method} ${url}`);
-    if (data) logger.log('Données:', data);
-    logger.groupEnd();
-  },
-  response: (status, data) => {
-    logger.log(`✅ ${status}`, data);
-  },
-  error: (error) => {
-    logger.error('❌ Erreur API:', error);
-  }
-};
-
-/**
- * Helper pour les logs de données
- */
-export const dataLogger = {
-  save: (type, data) => logger.log(`💾 Sauvegarde ${type}:`, data),
-  load: (type, count) => logger.log(`📥 Chargement ${type}:`, count, 'éléments'),
-  update: (type, id) => logger.log(`🔄 Mise à jour ${type}:`, id),
-  delete: (type, id) => logger.log(`🗑️ Suppression ${type}:`, id),
-};
+// apiLogger et dataLogger — retirés (non utilisés)
 
 export default logger;

@@ -237,12 +237,6 @@
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .processing-indicator p {
   color: var(--theme-text-gray);
   font-size: 1rem;

@@ -1,4 +1,5 @@
 import db, { addToHistory } from './database.js';
+import logger from './logger.js';
 
 // ═══════════════════════════════════════════════════════════════
 // Transitions de statut autorisées
@@ -44,7 +45,7 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
       const suppliers = db.prepare(query).all(...params);
       res.json(suppliers);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -60,7 +61,7 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
       const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(result.lastInsertRowid);
       res.status(201).json(supplier);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -75,7 +76,7 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
       const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(req.params.id);
       res.json(supplier);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -90,7 +91,7 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
       db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -139,7 +140,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       const orders = db.prepare(query).all(...params);
       res.json(orders);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -168,7 +169,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       };
       res.json(stats);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -189,7 +190,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       const items = db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(req.params.id);
       res.json({ ...order, items });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -258,7 +259,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderId);
       res.status(201).json({ ...order, items: orderItems });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -334,7 +335,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(req.params.id);
       res.json({ ...order, items: orderItems });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -359,7 +360,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       deleteOrder();
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -404,7 +405,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       const quotes = db.prepare(query).all(...params);
       res.json(quotes);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -420,7 +421,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       const items = db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY id ASC').all(req.params.id);
       res.json({ ...quote, items });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -475,7 +476,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       const quoteItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ?').all(quoteId);
       res.status(201).json({ ...quote, items: quoteItems });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -552,7 +553,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       const quoteItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ?').all(req.params.id);
       res.json({ ...quote, items: quoteItems });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -605,7 +606,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderId);
       res.status(201).json({ ...order, items: orderItems });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -629,7 +630,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       deleteQuote();
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });

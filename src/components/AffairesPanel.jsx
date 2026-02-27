@@ -10,6 +10,7 @@ import WeekSelector from './WeekSelector';
 import './AffairesPanel.css';
 
 const BLImportModal = lazy(() => import('./BLImportModal'));
+const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 
 const AFFAIRE_TYPES = [
@@ -94,6 +95,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
   // BL Import modal
   const [showBLImport, setShowBLImport] = useState(false);
+  const [showBLImportLocPresta, setShowBLImportLocPresta] = useState(false);
   const [blImportAffaireId, setBlImportAffaireId] = useState(null);
   const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
 
@@ -468,9 +470,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     const archiveThreshold = oneWeekAgo.toISOString().slice(0, 10);
 
     // Marquer les affaires archivées (terminées depuis + d'1 semaine)
+    // N'archiver que si une date_fin explicite est définie et dépassée
     result = result.map(a => {
-      const fin = a.dateFin || a.dateDebut || '';
-      const isArchived = fin && fin < archiveThreshold;
+      const isArchived = a.dateFin ? a.dateFin < archiveThreshold : false;
       return { ...a, isArchived };
     });
 
@@ -877,14 +879,25 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           <div className="affaires-tb-divider" />
 
-          {/* Import BL */}
-          <button
-            className="affaires-tb-bl-import-btn"
-            onClick={() => { setBlImportAffaireId(null); setShowBLImport(true); }}
-            title="Importer un BL Mag Scène"
-          >
-            <FileText size={14} /> Import BL
-          </button>
+          {/* Import BL — dynamique selon le filtre type actif */}
+          {(!filterType || filterType === 'Vente' || filterType === 'Installation') && (
+            <button
+              className="affaires-tb-bl-import-btn"
+              onClick={() => { setBlImportAffaireId(null); setShowBLImport(true); }}
+              title="Importer un BL Vente / Installation"
+            >
+              <FileText size={14} /> BL Vente
+            </button>
+          )}
+          {(!filterType || filterType === 'Location' || filterType === 'Prestation') && (
+            <button
+              className="affaires-tb-bl-import-btn loc-presta"
+              onClick={() => { setBlImportAffaireId(null); setShowBLImportLocPresta(true); }}
+              title="Importer un Bon de Préparation (Location / Prestation)"
+            >
+              <FileText size={14} /> BP Loc/Presta
+            </button>
+          )}
           <button
             className="affaires-tb-bl-import-btn"
             onClick={() => setShowBatchAnalysis(true)}
@@ -1086,6 +1099,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           <BLImportModal
             onClose={() => { setShowBLImport(false); setBlImportAffaireId(null); }}
             onImported={() => { setShowBLImport(false); setBlImportAffaireId(null); handleRefresh(); }}
+            defaultAffaireId={blImportAffaireId}
+          />
+        </Suspense>
+      )}
+
+      {/* BL Import Loc/Presta Modal */}
+      {showBLImportLocPresta && (
+        <Suspense fallback={null}>
+          <BLImportLocPrestaModal
+            onClose={() => { setShowBLImportLocPresta(false); setBlImportAffaireId(null); }}
+            onImported={() => { setShowBLImportLocPresta(false); setBlImportAffaireId(null); handleRefresh(); }}
             defaultAffaireId={blImportAffaireId}
           />
         </Suspense>

@@ -9,6 +9,7 @@
   flex-direction: column;
   height: calc(100dvh - 70px);
   overflow: hidden;
+  background: var(--theme-bg-page);
 }
 
 .affaires-loading {
@@ -29,7 +30,7 @@
   gap: 8px;
   padding: 10px 16px;
   background: var(--theme-danger-bg);
-  border: 1px solid #fecaca;
+  border: 1px solid var(--btn-danger-hover-bg);
   border-radius: 8px;
   color: var(--theme-danger-dark);
   font-size: 13px;
@@ -39,7 +40,7 @@
 .affaires-error button {
   margin-left: auto;
   background: var(--theme-danger-dark);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 6px;
   padding: 4px 12px;
@@ -53,7 +54,7 @@
   gap: 8px;
   padding: 8px 16px;
   background: var(--theme-warning-bg);
-  border: 1px solid #fed7aa;
+  border: 1px solid var(--theme-warning-border);
   border-radius: 8px;
   color: var(--theme-warning-dark);
   font-size: 13px;
@@ -65,8 +66,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 16px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: var(--theme-info-bg);
+  border: 1px solid var(--theme-info-border);
   border-radius: 8px;
   color: #0284c7;
   font-size: 12px;
@@ -106,7 +107,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: 8px;
   padding: 0 10px;
@@ -118,7 +119,7 @@
 }
 
 .affaires-tb-search:focus-within {
-  border-color: var(--theme-primary, var(--theme-primary));
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
 }
 
@@ -190,7 +191,7 @@
 
 .affaires-type-btn.active {
   background: var(--type-color, var(--theme-info));
-  color: white;
+  color: var(--theme-text-inverse);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
@@ -238,7 +239,7 @@
 
 .affaires-tb-view-btn.active {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
-  color: white;
+  color: var(--theme-text-inverse);
   box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
 }
 
@@ -249,7 +250,7 @@
   padding: 4px 8px;
   border: 1px solid var(--theme-border);
   border-radius: 6px;
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--theme-text-subtle);
   font-size: 12px;
   font-weight: 500;
@@ -284,7 +285,7 @@
 
 .affaires-tb-date-label:hover {
   background: var(--theme-border-light);
-  color: var(--theme-primary, var(--theme-primary));
+  color: var(--theme-primary);
 }
 
 .affaires-tb-toggle {
@@ -299,7 +300,7 @@
 .affaires-tb-toggle input[type="checkbox"] {
   width: 14px;
   height: 14px;
-  accent-color: var(--theme-indigo, var(--theme-primary));
+  accent-color: var(--theme-primary);
   cursor: pointer;
   margin: 0;
 }
@@ -321,10 +322,10 @@
   align-items: center;
   gap: 5px;
   padding: 5px 12px;
-  border: 1px solid var(--accent-color, #6366f1);
+  border: 1px solid var(--theme-primary);
   border-radius: 6px;
   background: rgba(99, 102, 241, 0.06);
-  color: var(--accent-color, #6366f1);
+  color: var(--theme-primary);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -333,7 +334,18 @@
 }
 
 .affaires-tb-bl-import-btn:hover {
-  background: var(--accent-color, #6366f1);
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+}
+
+.affaires-tb-bl-import-btn.loc-presta {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.06);
+  color: #f59e0b;
+}
+
+.affaires-tb-bl-import-btn.loc-presta:hover {
+  background: #f59e0b;
   color: #fff;
 }
 
@@ -384,7 +396,7 @@
   gap: 6px;
   padding: 6px 12px;
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%));
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 8px;
   font-size: 12px;
@@ -547,7 +559,7 @@
   white-space: nowrap;
   text-align: center;
   margin-top: 1px;
-  background: white;
+  background: var(--theme-bg-card);
   padding: 0 4px;
   border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -568,7 +580,7 @@
 
 .affaire-row.highlighted .ar-client,
 .affaire-row.highlighted .ar-titre {
-  color: #1e1b4b;
+  color: var(--theme-indigo);
 }
 
 /* Ligne sélectionnée (clic simple) */
@@ -605,7 +617,7 @@
   min-height: 0;
   border: 1px solid var(--theme-border);
   border-radius: 10px;
-  background: white;
+  background: var(--theme-bg-card);
   transition: flex 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -642,7 +654,7 @@
   border-bottom: 2px solid var(--theme-border);
   font-size: 11px;
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   position: sticky;
@@ -737,7 +749,7 @@
 }
 
 .affaire-row.status-active:hover {
-  background: #dcfce7;
+  background: var(--theme-success-bg-strong);
 }
 
 .affaire-row.status-upcoming:hover {
@@ -760,7 +772,7 @@
 }
 
 .status-dot.past {
-  background: #cbd5e1;
+  background: var(--theme-border);
 }
 
 .status-dot.upcoming {
@@ -770,7 +782,7 @@
 
 .status-dot.archived {
   background: var(--theme-text-muted);
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--theme-border);
   width: 6px;
   height: 6px;
 }
@@ -802,7 +814,7 @@
 .affaire-type-tag {
   padding: 2px 8px;
   border-radius: 20px;
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -876,7 +888,7 @@
 }
 
 .file-badge {
-  background: #dcfce7;
+  background: var(--theme-success-bg-strong);
   color: var(--theme-success-dark);
 }
 
@@ -1018,7 +1030,7 @@
   height: 52px;
   border-radius: 50%;
   background: var(--theme-gradient-alt);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   cursor: pointer;
   display: flex;

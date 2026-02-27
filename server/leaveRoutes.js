@@ -7,6 +7,7 @@ import db, { addToHistory } from './database.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -245,7 +246,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       }
       res.json(holidays);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -260,7 +261,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         .run(date, name, year);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -271,7 +272,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       db.prepare('DELETE FROM public_holidays WHERE id = ? AND is_custom = 1').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -338,7 +339,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         referencePeriod: getReferencePeriod(startDate),
       });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -475,8 +476,8 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.status(201).json(created);
     } catch (error) {
-      console.error('Erreur POST /api/leaves:', error);
-      console.error(error);
+      logger.error('Erreur POST /api/leaves:', error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -506,7 +507,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(requests);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -539,7 +540,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const requests = db.prepare(sql).all(...params);
       res.json(requests);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -557,7 +558,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       `).all();
       res.json(requests);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -568,7 +569,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const result = db.prepare('SELECT COUNT(*) as count FROM leave_requests WHERE status = ?').get('pending');
       res.json({ count: result.count });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -613,7 +614,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(request);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -728,8 +729,8 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(updated);
     } catch (error) {
-      console.error('Erreur PUT /api/leaves/:id/decision:', error);
-      console.error(error);
+      logger.error('Erreur PUT /api/leaves/:id/decision:', error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -781,7 +782,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const updated = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
       res.json(updated);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -842,7 +843,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json({ success: true, message: 'Demande annulée' });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -889,7 +890,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json({ success: true, path: `/leave-justifications/${safeName}` });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -918,7 +919,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(balances);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -946,7 +947,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(getOrCreateBalance(personId, year));
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -987,8 +988,8 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         filename: `conge_${request.first_name}_${request.last_name}_${request.start_date}.pdf`,
       });
     } catch (error) {
-      console.error('Erreur PDF:', error);
-      console.error(error);
+      logger.error('Erreur PDF:', error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -1027,7 +1028,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(stats);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -1065,7 +1066,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       res.json(conflicts);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -1094,7 +1095,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       `).all(req.params.id);
       res.json(history);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });

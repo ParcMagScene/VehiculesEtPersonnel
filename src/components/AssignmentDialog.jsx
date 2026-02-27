@@ -23,7 +23,7 @@ const POSITION_CATEGORIES = [
   { value: 'logistique', label: 'Logistique', color: '#10b981' },
   { value: 'captation', label: 'Captation', color: '#6366f1' },
   { value: 'production', label: 'Production', color: '#78716c' },
-  { value: 'autre', label: 'Autre', color: '#6b7280' },
+  { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
 
 /** Composant autonome : sélecteur multi-postes avec dropdown */
@@ -80,7 +80,7 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
           <div className="asd-position-tags">
             {selectedPositions.map(name => {
               const posObj = positions.find(p => p.name === name);
-              const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || '#6b7280';
+              const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || 'var(--theme-text-gray)';
               return (
                 <span
                   key={name}
@@ -118,10 +118,10 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
           <div className="asd-position-list">
             {commonPositions.length > 0 && (
               <div className="asd-position-group">
-                <div className="asd-position-group-label" style={{ color: '#d97706' }}>⭐ Courants</div>
+                <div className="asd-position-group-label" style={{ color: 'var(--theme-warning, #d97706)' }}>⭐ Courants</div>
                 {commonPositions.map(p => {
                   const checked = selectedPositions.includes(p.name);
-                  const catColor = POSITION_CATEGORIES.find(c => c.value === p.category)?.color || '#6b7280';
+                  const catColor = POSITION_CATEGORIES.find(c => c.value === p.category)?.color || 'var(--theme-text-gray)';
                   return (
                     <div
                       key={`c-${p.id}`}
@@ -179,7 +179,7 @@ const SKILL_CATEGORIES = [
   { value: 'régie', label: 'Régie', color: '#f97316' },
   { value: 'conduite', label: 'Conduite', color: '#06b6d4' },
   { value: 'logistique', label: 'Logistique', color: '#10b981' },
-  { value: 'autre', label: 'Autre', color: '#6b7280' },
+  { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
 
 /**
@@ -914,7 +914,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                               <div
                                 key={s.id}
                                 className={`asd-skill-checkbox${checked ? ' checked' : ''}`}
-                                style={{ '--skill-color': catInfo?.color || '#6b7280' }}
+                                style={{ '--skill-color': catInfo?.color || 'var(--theme-text-gray)' }}
                                 onClick={() => {
                                   setSelectedSkillIds(prev =>
                                     prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]
@@ -956,7 +956,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                   {[
                     { value: 'confirmed', label: 'Confirmé', color: '#10b981' },
                     { value: 'option', label: 'Option', color: '#f59e0b' },
-                    { value: 'proposed', label: 'Proposé', color: '#6b7280' },
+                    { value: 'proposed', label: 'Proposé', color: 'var(--theme-text-gray)' },
                   ].map(opt => (
                     <button
                       key={opt.value}

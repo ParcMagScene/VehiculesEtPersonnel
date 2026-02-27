@@ -22,11 +22,17 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       const isDev = import.meta.env.DEV;
       
+      const bg = 'var(--theme-danger-bg, #fef2f2)';
+      const textColor = 'var(--theme-danger-text, #991b1b)';
+      const mutedColor = 'var(--theme-text-gray, #6b7280)';
+      const preBg = 'var(--theme-bg-secondary, #fdd)';
+      const btnBg = 'var(--theme-danger, #dc2626)';
+      
       return (
         <div style={{
           padding: '40px',
-          background: '#fef2f2',
-          color: '#991b1b',
+          background: bg,
+          color: textColor,
           fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
           fontSize: '14px',
           overflow: 'auto',
@@ -37,15 +43,15 @@ class ErrorBoundary extends React.Component {
           justifyContent: 'center'
         }}>
           <h1 style={{fontSize: '24px', marginBottom: '12px'}}>Une erreur est survenue</h1>
-          <p style={{color: '#6b7280', marginBottom: '20px', textAlign: 'center'}}>
+          <p style={{color: mutedColor, marginBottom: '20px', textAlign: 'center'}}>
             L'application a rencontré un problème inattendu.
           </p>
           {isDev && (
             <>
-              <pre style={{background: '#fdd', padding: '10px', overflow: 'auto', maxWidth: '90%', marginBottom: '10px', borderRadius: '6px', fontSize: '12px'}}>
+              <pre style={{background: preBg, padding: '10px', overflow: 'auto', maxWidth: '90%', marginBottom: '10px', borderRadius: '6px', fontSize: '12px'}}>
                 {this.state.error && this.state.error.toString()}
               </pre>
-              <pre style={{background: '#fdd', padding: '10px', overflow: 'auto', maxWidth: '90%', fontSize: '11px', borderRadius: '6px'}}>
+              <pre style={{background: preBg, padding: '10px', overflow: 'auto', maxWidth: '90%', fontSize: '11px', borderRadius: '6px'}}>
                 {this.state.errorInfo && this.state.errorInfo.componentStack}
               </pre>
             </>
@@ -55,8 +61,8 @@ class ErrorBoundary extends React.Component {
             style={{
               marginTop: '20px',
               padding: '10px 24px',
-              background: '#dc2626',
-              color: 'white',
+              background: btnBg,
+              color: 'var(--theme-text-inverse, white)',
               border: 'none',
               borderRadius: '8px',
               fontSize: '16px',

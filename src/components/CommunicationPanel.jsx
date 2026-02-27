@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
-  Radio, Monitor, ClipboardList, FileText, Plus, Search,
+  Radio, Monitor, ClipboardList, Plus, Search,
   ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User,
   Edit2, Trash2, Filter, Sun, Moon as MoonIcon, MessageSquare,
-  Briefcase, ArrowUpDown, RefreshCw, CalendarDays, LayoutList
+  Briefcase, ArrowUpDown, RefreshCw, CalendarDays, LayoutList,
+  Eye, EyeOff
 } from 'lucide-react';
 import api from '../utils/api';
+import { formatDateFr, formatDateSimple as formatDateShort } from '../utils/formatUtils';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from '../hooks/useToast';
 import './CommunicationPanel.css';
 
 const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
-const BLImportModal = lazy(() => import('./BLImportModal'));
 const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
 
 // ═══ Constantes ═══
@@ -36,18 +37,6 @@ const PERIODS = {
   PM: { label: 'Après-midi', icon: '☀️' },
 };
 
-const formatDateFr = (dateStr) => {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-};
-
-const formatDateShort = (dateStr) => {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
-
 const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -60,9 +49,18 @@ const addDays = (dateStr, n) => {
 };
 
 // ═══ Sous-panneau : Affichage Dynamique ═══
+
+const AFFAIRE_TYPE_INFO = {
+  'Prestation':    { label: 'Prestation',    emoji: '🎭', color: '#f59e0b' },
+  'Location':      { label: 'Location',      emoji: '🏗️', color: '#3b82f6' },
+  'Vente':         { label: 'Vente',         emoji: '💰', color: '#8b5cf6' },
+  'Installation':  { label: 'Installation',  emoji: '⚙️', color: '#10b981' },
+};
+
 function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshKey }) {
   const toast = useToast();
   const [events, setEvents] = useState([]);
+  const [affaires, setAffaires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [viewMode, setViewMode] = useState('day');
@@ -84,15 +82,23 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     setLoading(true);
     try {
       const params = {};
+      const affaireParams = {};
       if (viewMode === 'week') {
         params.dateFrom = weekDays[0];
         params.dateTo = weekDays[6];
+        affaireParams.dateFrom = weekDays[0];
+        affaireParams.dateTo = weekDays[6];
       } else {
         params.date = selectedDate;
+        affaireParams.date = selectedDate;
       }
       if (typeFilter) params.type = typeFilter;
-      const data = await api.getDisplayEvents(params);
+      const [data, affairesData] = await Promise.all([
+        api.getDisplayEvents(params),
+        api.getPlanningAffaires(affaireParams),
+      ]);
       setEvents(data);
+      setAffaires(Array.isArray(affairesData) ? affairesData : []);
     } catch (err) {
       toast.error('Erreur chargement événements : ' + err.message);
     } finally {
@@ -114,6 +120,21 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     );
   }, [events, searchTerm]);
 
+  // Filtrer affaires par recherche
+  const filteredAffaires = useMemo(() => {
+    let list = affaires;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter(a =>
+        (a.numeroAffaire || '').toLowerCase().includes(q) ||
+        (a.client || '').toLowerCase().includes(q) ||
+        (a.adresseLivraison || '').toLowerCase().includes(q) ||
+        (a.titre || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [affaires, searchTerm]);
+
   // Grouper par période
   const grouped = useMemo(() => {
     const am = filteredEvents.filter(e => e.period === 'AM');
@@ -122,17 +143,36 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     return { am, pm, other };
   }, [filteredEvents]);
 
-  // Grouper par jour (vue semaine)
+  // Grouper affaires par type
+  const affairesByType = useMemo(() => {
+    const groups = {};
+    filteredAffaires.forEach(a => {
+      const t = a.type || 'Autre';
+      if (!groups[t]) groups[t] = [];
+      groups[t].push(a);
+    });
+    return groups;
+  }, [filteredAffaires]);
+
+  // Grouper par jour (vue semaine) — événements + affaires
   const weekGroupedDisplay = useMemo(() => {
     if (viewMode !== 'week') return {};
     const map = {};
-    weekDays.forEach(d => { map[d] = []; });
+    weekDays.forEach(d => { map[d] = { events: [], affaires: [] }; });
     filteredEvents.forEach(ev => {
       const d = ev.date;
-      if (map[d]) map[d].push(ev);
+      if (map[d]) map[d].events.push(ev);
+    });
+    // Ajouter les affaires à chaque jour où elles sont actives
+    filteredAffaires.forEach(a => {
+      weekDays.forEach(d => {
+        if (a.dateDebut && a.dateDebut <= d && (!a.dateFin || a.dateFin === '' || a.dateFin >= d)) {
+          map[d].affaires.push(a);
+        }
+      });
     });
     return map;
-  }, [filteredEvents, weekDays, viewMode]);
+  }, [filteredEvents, filteredAffaires, weekDays, viewMode]);
 
   const handleDelete = async (id) => {
     setConfirmDialog({
@@ -152,12 +192,22 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     });
   };
 
+  const handleToggleVisible = async (eventId) => {
+    try {
+      const updated = await api.toggleDisplayEventVisibility(eventId);
+      setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
+    } catch (err) {
+      toast.error('Erreur bascule visibilité : ' + err.message);
+    }
+  };
+
   const renderEventCard = (event) => {
-    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, color: '#64748b', emoji: '📌' };
+    const typeInfo = EVENT_TYPES[event.type] || { label: event.type, color: 'var(--theme-text-secondary)', emoji: '📌' };
     const catInfo = EVENT_CATEGORIES[event.category] || null;
+    const isHidden = event.visible === 0;
 
     return (
-      <div key={event.id} className="event-card">
+      <div key={event.id} className={`event-card ${isHidden ? 'event-hidden' : ''}`}>
         <div className="type-stripe" style={{ background: typeInfo.color }} />
         <div className="card-body">
           <div className="card-top-row">
@@ -177,6 +227,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
                 {catInfo.label}
               </span>
             )}
+            {isHidden && <span className="event-hidden-badge">Masqué</span>}
           </div>
           <div className="event-details">
             {event.client && <span><User size={13} /> {event.client}</span>}
@@ -190,6 +241,13 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
           )}
         </div>
         <div className="card-actions">
+          <button
+            className={`toggle-visible ${isHidden ? 'hidden-state' : ''}`}
+            title={isHidden ? 'Rendre visible' : 'Masquer de l\'affichage'}
+            onClick={() => handleToggleVisible(event.id)}
+          >
+            {isHidden ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
           <button
             className="edit"
             title="Modifier"
@@ -215,6 +273,50 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
       <div className="period-group">
         <h3>{icon} {title} — {events.length} événement{events.length > 1 ? 's' : ''}</h3>
         {events.map(renderEventCard)}
+      </div>
+    );
+  };
+
+  const renderAffaireCard = (affaire) => {
+    const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+    return (
+      <div key={`aff-${affaire.numeroAffaire || affaire.id}`} className="event-card affaire-card">
+        <div className="type-stripe" style={{ background: typeInfo.color }} />
+        <div className="card-body">
+          <div className="card-top-row">
+            <span className="event-type-badge" style={{ background: typeInfo.color + '18', color: typeInfo.color }}>
+              {typeInfo.emoji} {typeInfo.label}
+            </span>
+            <span className="event-affaire">
+              <Briefcase size={13} /> {affaire.numeroAffaire}
+            </span>
+          </div>
+          <div className="event-details">
+            {affaire.client && <span><User size={13} /> {affaire.client}</span>}
+            {affaire.adresseLivraison && <span><MapPin size={13} /> {affaire.adresseLivraison.split('\n')[0]}</span>}
+            {affaire.interlocuteur && <span><User size={12} /> {affaire.interlocuteur}</span>}
+          </div>
+          {affaire.titre && (
+            <div className="event-comment">
+              <MessageSquare size={12} /> {affaire.titre.slice(0, 60)}{affaire.titre.length > 60 ? '…' : ''}
+            </div>
+          )}
+          <div className="affaire-meta-row">
+            {affaire.blCount > 0 && <span className="affaire-badge bl">📄 {affaire.blCount} BL</span>}
+            {affaire.eventsCount > 0 && <span className="affaire-badge events">📅 {affaire.eventsCount} évén.</span>}
+            {affaire.dateDebut && <span className="affaire-badge date">📆 {new Date(affaire.dateDebut + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAffaireTypeGroup = (type, affs) => {
+    const typeInfo = AFFAIRE_TYPE_INFO[type] || { label: type, emoji: '📋', color: 'var(--theme-text-secondary)' };
+    return (
+      <div key={`aff-type-${type}`} className="period-group affaire-type-group">
+        <h3 style={{ color: typeInfo.color }}>{typeInfo.emoji} {type} — {affs.length} affaire{affs.length > 1 ? 's' : ''}</h3>
+        {affs.map(renderAffaireCard)}
       </div>
     );
   };
@@ -297,7 +399,8 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
           <div className="dd-week-container">
             <div className="dd-week-grid">
               {weekDays.map(dayStr => {
-                const dayEvents = weekGroupedDisplay[dayStr] || [];
+                const dayData = weekGroupedDisplay[dayStr] || { events: [], affaires: [] };
+                const totalItems = dayData.events.length + dayData.affaires.length;
                 const isToday = dayStr === todayStr();
                 const dayDate = new Date(dayStr + 'T00:00:00');
                 const dayLabel = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
@@ -306,26 +409,47 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
                   <div key={dayStr} className={`dd-week-column ${isToday ? 'today' : ''}`}>
                     <div className="dd-week-header">
                       <span className="dd-week-label">{dayLabel}</span>
-                      {dayEvents.length > 0 && <span className="dd-week-count">{dayEvents.length}</span>}
+                      {totalItems > 0 && <span className="dd-week-count">{totalItems}</span>}
                     </div>
                     <div className="dd-week-events">
-                      {dayEvents.length === 0 ? (
+                      {totalItems === 0 ? (
                         <div className="dd-week-empty">—</div>
                       ) : (
-                        dayEvents.map(ev => {
-                          const typeInfo = EVENT_TYPES[ev.type] || { label: ev.type, emoji: '📌', color: '#64748b' };
-                          return (
-                            <div key={ev.id} className="dd-week-card" style={{ borderLeftColor: typeInfo.color }}>
-                              <div className="dd-week-card-top">
-                                <span className="dd-week-type" style={{ color: typeInfo.color }}>{typeInfo.emoji} {typeInfo.label}</span>
-                                <button className="dd-week-del" onClick={() => handleDelete(ev.id)} title="Supprimer"><Trash2 size={11} /></button>
+                        <>
+                          {dayData.affaires.map(a => {
+                            const ti = AFFAIRE_TYPE_INFO[a.type] || { label: 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+                            return (
+                              <div key={`wa-${a.numeroAffaire || a.id}`} className="dd-week-card affaire-week-card" style={{ borderLeftColor: ti.color }}>
+                                <div className="dd-week-card-top">
+                                  <span className="dd-week-type" style={{ color: ti.color }}>{ti.emoji} {a.type}</span>
+                                </div>
+                                {a.client && <div className="dd-week-client">{a.client}</div>}
+                                <div className="dd-week-affaire"><Briefcase size={10} /> {a.numeroAffaire}</div>
                               </div>
-                              {ev.client && <div className="dd-week-client">{ev.client}</div>}
-                              {ev.affaireId && <div className="dd-week-affaire"><Briefcase size={10} /> {ev.affaireId}</div>}
-                              {ev.location && <div className="dd-week-location"><MapPin size={10} /> {ev.location}</div>}
-                            </div>
-                          );
-                        })
+                            );
+                          })}
+                          {dayData.events.map(ev => {
+                            const typeInfo = EVENT_TYPES[ev.type] || { label: ev.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
+                            const isHidden = ev.visible === 0;
+                            return (
+                              <div key={ev.id} className={`dd-week-card ${isHidden ? 'event-hidden' : ''}`} style={{ borderLeftColor: typeInfo.color }}>
+                                <div className="dd-week-card-top">
+                                  <span className="dd-week-type" style={{ color: typeInfo.color }}>{typeInfo.emoji} {typeInfo.label}</span>
+                                  <div className="dd-week-card-actions">
+                                    <button className={`dd-week-toggle ${isHidden ? 'hidden-state' : ''}`} onClick={() => handleToggleVisible(ev.id)} title={isHidden ? 'Rendre visible' : 'Masquer'}>
+                                      {isHidden ? <EyeOff size={11} /> : <Eye size={11} />}
+                                    </button>
+                                    <button className="dd-week-edit" onClick={() => onEditEvent(ev)} title="Modifier"><Edit2 size={11} /></button>
+                                    <button className="dd-week-del" onClick={() => handleDelete(ev.id)} title="Supprimer"><Trash2 size={11} /></button>
+                                  </div>
+                                </div>
+                                {ev.client && <div className="dd-week-client">{ev.client}</div>}
+                                {ev.affaireId && <div className="dd-week-affaire"><Briefcase size={10} /> {ev.affaireId}</div>}
+                                {ev.location && <div className="dd-week-location"><MapPin size={10} /> {ev.location}</div>}
+                              </div>
+                            );
+                          })}
+                        </>
                       )}
                     </div>
                   </div>
@@ -333,10 +457,10 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
               })}
             </div>
           </div>
-        ) : filteredEvents.length === 0 ? (
+        ) : filteredEvents.length === 0 && filteredAffaires.length === 0 ? (
           <div className="events-empty">
             <Calendar size={48} />
-            <p>Aucun événement pour le {formatDateShort(selectedDate)}</p>
+            <p>Aucun événement ni affaire pour le {formatDateShort(selectedDate)}</p>
             <button
               className="btn-add-event"
               style={{ marginTop: 16 }}
@@ -347,6 +471,9 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
           </div>
         ) : (
           <>
+            {/* Affaires groupées par type */}
+            {Object.entries(affairesByType).map(([type, affs]) => renderAffaireTypeGroup(type, affs))}
+            {/* Événements groupés par période */}
             {renderPeriodGroup('Matin', '🌅', grouped.am)}
             {renderPeriodGroup('Après-midi', '☀️', grouped.pm)}
             {renderPeriodGroup('Non spécifié', '📌', grouped.other)}
@@ -359,141 +486,9 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
   );
 }
 
-// ═══ Sous-panneau : Import BL ═══
-function BLImportSubPanel({ onRefresh }) {
-  const toast = useToast();
-  const [imports, setImports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
-
-  const loadImports = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api.getBLImports();
-      setImports(data);
-    } catch (err) {
-      toast.error('Erreur chargement imports BL');
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => { loadImports(); }, [loadImports]);
-
-  const handleDelete = (id) => {
-    setConfirmDialog({
-      title: 'Supprimer l\'import',
-      message: 'Voulez-vous vraiment supprimer cet import BL ?',
-      onConfirm: async () => {
-        try {
-          await api.deleteBLImport(id);
-          toast.success('Import supprimé');
-          loadImports();
-          onRefresh?.();
-        } catch (err) {
-          toast.error('Erreur suppression');
-        }
-        setConfirmDialog(null);
-      },
-      onCancel: () => setConfirmDialog(null),
-    });
-  };
-
-  const statusLabels = { pending: '⏳ En attente', validated: '✅ Validé', rejected: '❌ Rejeté' };
-
-  return (
-    <div style={{ padding: '16px 24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>
-          <FileText size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
-          Imports de Bons de Livraison
-        </h3>
-        <button className="btn-add-event" style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-          border: 'none', borderRadius: 8, background: 'var(--accent-color, #6366f1)',
-          color: 'white', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer'
-        }} onClick={() => setShowImportModal(true)}>
-          <Plus size={16} /> Importer un BL
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="events-empty">
-          <RefreshCw size={32} className="spin" />
-          <p>Chargement…</p>
-        </div>
-      ) : imports.length === 0 ? (
-        <div className="bl-import-placeholder">
-          <FileText size={48} />
-          <h3>Aucun import BL</h3>
-          <p>Importez un bon de livraison PDF pour commencer</p>
-          <button
-            className="btn-add-event"
-            style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 6,
-              padding: '8px 16px', border: 'none', borderRadius: 8,
-              background: 'var(--accent-color, #6366f1)', color: 'white',
-              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
-            onClick={() => setShowImportModal(true)}
-          >
-            <Plus size={16} /> Premier import
-          </button>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {imports.map(bl => (
-            <div key={bl.id} className="event-card" style={{ border: '1px solid var(--border-color, #e2e8f0)', borderRadius: 10, overflow: 'hidden' }}>
-              <div className="type-stripe" style={{ background: bl.status === 'validated' ? '#10b981' : bl.status === 'rejected' ? '#ef4444' : '#f59e0b', width: 5 }} />
-              <div className="card-body" style={{ padding: '12px 16px', flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>
-                    {bl.filename || 'Import BL'}
-                  </span>
-                  {bl.affaireId && (
-                    <span style={{ fontSize: '0.8rem', color: 'var(--accent-color)', fontWeight: 600 }}>
-                      <Briefcase size={13} /> {bl.affaireId}
-                    </span>
-                  )}
-                  <span style={{
-                    fontSize: '0.75rem', padding: '2px 8px', borderRadius: 8,
-                    background: 'var(--bg-tertiary)', color: 'var(--text-secondary)'
-                  }}>
-                    {statusLabels[bl.status] || bl.status}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-                  Importé le {new Date(bl.createdAt).toLocaleDateString('fr-FR')}
-                </div>
-              </div>
-              <div className="card-actions" style={{ padding: 8 }}>
-                <button className="delete" onClick={() => handleDelete(bl.id)} title="Supprimer"
-                  style={{ width: 30, height: 30, border: 'none', borderRadius: 6, background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {showImportModal && (
-        <Suspense fallback={null}>
-          <BLImportModal
-            onClose={() => setShowImportModal(false)}
-            onImported={() => {
-              loadImports();
-              onRefresh?.();
-            }}
-          />
-        </Suspense>
-      )}
-      {confirmDialog && <ConfirmDialog {...confirmDialog} />}
-    </div>
-  );
-}
 
 // ═══ Composant Principal ═══
-function CommunicationPanel({ currentUser }) {
+function CommunicationPanel({ currentUser, googleEvents = [] }) {
   const toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('display');
   const [stats, setStats] = useState(null);
@@ -523,7 +518,6 @@ function CommunicationPanel({ currentUser }) {
   const subTabs = [
     { id: 'display', label: 'Affichage dynamique', icon: Monitor, count: stats?.displayEventsTotal || 0 },
     { id: 'tasks', label: 'Planification', icon: ClipboardList, count: stats?.tasksPending || 0 },
-    { id: 'bl', label: 'Import BL', icon: FileText, count: stats?.blImportsTotal || 0 },
   ];
 
   return (
@@ -575,17 +569,10 @@ function CommunicationPanel({ currentUser }) {
         )}
         {activeSubTab === 'tasks' && (
           <Suspense fallback={null}>
-            <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} />
+            <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} googleEvents={googleEvents} />
           </Suspense>
         )}
-        {activeSubTab === 'bl' && (
-          <BLImportSubPanel
-            onRefresh={() => {
-              setDisplayRefreshKey(k => k + 1);
-              api.getCommunicationStats().then(setStats).catch(() => null);
-            }}
-          />
-        )}
+
       </div>
 
       {/* Event Dialog */}

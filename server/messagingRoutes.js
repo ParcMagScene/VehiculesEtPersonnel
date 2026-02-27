@@ -2,6 +2,7 @@ import db from './database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs';
+import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,7 +65,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       res.json(result);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -109,7 +110,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       res.json({ id: convId, success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -165,7 +166,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       res.json(result);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -208,7 +209,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
         attachments: [],
       });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -279,7 +280,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
         }],
       });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -292,7 +293,52 @@ export function setupMessagingRoutes(app, authenticateToken) {
       ).run(req.params.id, req.user.id);
       res.json({ success: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // PUT /api/messaging/messages/:id — Modifier un message (auteur uniquement)
+  app.put('/api/messaging/messages/:id', authenticateToken, (req, res) => {
+    try {
+      const { content } = req.body;
+      if (!content || !content.trim()) {
+        return res.status(400).json({ error: 'Contenu requis' });
+      }
+
+      const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
+      if (!message) return res.status(404).json({ error: 'Message non trouvé' });
+      if (message.sender_id !== req.user.id) {
+        return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres messages' });
+      }
+
+      db.prepare('UPDATE messages SET content = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .run(content.trim(), req.params.id);
+
+      const updated = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
+      res.json(updated);
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // DELETE /api/messaging/messages/:id — Supprimer un message (auteur ou admin)
+  app.delete('/api/messaging/messages/:id', authenticateToken, (req, res) => {
+    try {
+      const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
+      if (!message) return res.status(404).json({ error: 'Message non trouvé' });
+      if (message.sender_id !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ error: 'Non autorisé' });
+      }
+
+      // Supprimer les pièces jointes associées
+      db.prepare('DELETE FROM message_attachments WHERE message_id = ?').run(req.params.id);
+      db.prepare('DELETE FROM messages WHERE id = ?').run(req.params.id);
+
+      res.json({ message: 'Message supprimé' });
+    } catch (error) {
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -315,7 +361,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       res.json({ unread: result.total_unread });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });

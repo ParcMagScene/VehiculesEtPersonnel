@@ -3,9 +3,13 @@
   "short_name": "eM@g",
   "description": "Gestion du parc Mag Scène",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
+  "lang": "fr-FR",
   "background_color": "#ffffff",
   "theme_color": "#1e3a5f",
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "/icon-192x192.png",

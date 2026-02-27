@@ -14,7 +14,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
 }
 
@@ -29,7 +29,7 @@
 
 .mmsg-total-badge {
   background: var(--theme-danger);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 0.7rem;
   font-weight: 700;
   min-width: 20px;
@@ -58,7 +58,7 @@
 .mmsg-new-btn {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   border: none;
-  color: white;
+  color: var(--theme-text-inverse);
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -87,7 +87,7 @@
 
 .mmsg-start-btn {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   padding: 10px 24px;
   border-radius: 20px;
@@ -108,7 +108,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-bg-tertiary);
   cursor: pointer;
   transition: background 0.15s;
@@ -119,7 +119,7 @@
 }
 
 .mmsg-conv-item.unread {
-  background: #f0f4ff;
+  background: var(--theme-info-bg);
 }
 
 .mmsg-conv-avatar {
@@ -129,7 +129,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 600;
   font-size: 0.85rem;
   flex-shrink: 0;
@@ -179,7 +179,7 @@
 
 .mmsg-badge {
   background: var(--theme-danger);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 0.65rem;
   font-weight: 700;
   min-width: 18px;
@@ -198,7 +198,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
 }
 
@@ -209,7 +209,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 600;
   font-size: 0.75rem;
   flex-shrink: 0;
@@ -279,12 +279,12 @@
 
 .mmsg-bubble-wrap.sent .mmsg-bubble {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
-  color: white;
+  color: var(--theme-text-inverse);
   border-bottom-right-radius: 4px;
 }
 
 .mmsg-bubble-wrap.received .mmsg-bubble {
-  background: white;
+  background: var(--theme-bg-card);
   color: var(--theme-bg-dark);
   border-bottom-left-radius: 4px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.06);
@@ -322,7 +322,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: white;
+  background: var(--theme-bg-card);
   border-top: 1px solid var(--theme-border-medium);
 }
 
@@ -347,13 +347,13 @@
 
 .mmsg-input:focus {
   border-color: var(--theme-primary);
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .mmsg-send {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   border: none;
-  color: white;
+  color: var(--theme-text-inverse);
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -372,7 +372,7 @@
 .mmsg-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: var(--theme-overlay);
   z-index: 500;
   display: flex;
   align-items: flex-end;
@@ -380,7 +380,7 @@
 }
 
 .mmsg-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px 16px 0 0;
   width: 100%;
   max-height: 70vh;
@@ -426,7 +426,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 600;
   font-size: 0.8rem;
 }
@@ -447,7 +447,7 @@
   padding: 12px;
   border: 1px solid var(--theme-border-muted);
   border-radius: 10px;
-  background: white;
+  background: var(--theme-bg-card);
   font-size: 0.9rem;
   cursor: pointer;
 }
@@ -458,7 +458,7 @@
   border: none;
   border-radius: 10px;
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;

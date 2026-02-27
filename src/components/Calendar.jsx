@@ -554,19 +554,19 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
 const getMaintenanceStatusStyle = (status, hasConflict) => {
   // Les interventions terminées ou annulées ne montrent pas les conflits
   if (hasConflict && status !== 'completed' && status !== 'cancelled') {
-    return { bg: '#fee2e2', border: '2px solid #dc2626', icon: '⚠️' };
+    return { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger-dark)', icon: '⚠️' };
   }
   const styles = {
-    scheduled:   { bg: '#dbeafe', border: '2px dashed #3b82f6', icon: '📅' },
-    completed:   { bg: '#d1fae5', border: '2px solid #10b981', icon: '✅' },
-    reported:    { bg: '#fee2e2', border: '2px solid #ef4444', icon: '⚠️' },
-    pending:     { bg: '#ede9fe', border: '2px dashed #8b5cf6', icon: '📝' },
-    in_progress: { bg: '#fef3c7', border: '2px solid #f59e0b', icon: '🔧' },
-    IN_PROGRESS: { bg: '#fef3c7', border: '2px solid #f59e0b', icon: '🔧' },
-    cancelled:   { bg: '#f3f4f6', border: '2px dashed #6b7280', icon: '❌' },
-    rescheduled: { bg: '#ffedd5', border: '2px dashed #f97316', icon: '🔄' },
+    scheduled:   { bg: 'var(--theme-info-bg)', border: '2px dashed var(--theme-info)', icon: '📅' },
+    completed:   { bg: 'var(--theme-success-bg)', border: '2px solid var(--theme-success-alt)', icon: '✅' },
+    reported:    { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger)', icon: '⚠️' },
+    pending:     { bg: 'var(--theme-purple-bg)', border: '2px dashed var(--theme-primary-light)', icon: '📝' },
+    in_progress: { bg: 'var(--theme-warning-bg)', border: '2px solid var(--theme-warning)', icon: '🔧' },
+    IN_PROGRESS: { bg: 'var(--theme-warning-bg)', border: '2px solid var(--theme-warning)', icon: '🔧' },
+    cancelled:   { bg: 'var(--theme-bg-tertiary)', border: '2px dashed var(--theme-text-gray)', icon: '❌' },
+    rescheduled: { bg: 'var(--theme-orange-bg, #ffedd5)', border: '2px dashed var(--theme-warning, #f97316)', icon: '🔄' },
   };
-  return styles[status] || { bg: '#f3f4f6', border: '2px dashed #6b7280', icon: '🔧' };
+  return styles[status] || { bg: 'var(--theme-bg-tertiary)', border: '2px dashed var(--theme-text-gray)', icon: '🔧' };
 };
 
 const Calendar = ({
@@ -2329,7 +2329,7 @@ const Calendar = ({
                           style={{
                             backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
                             border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
-                            color: '#1f2937', position: 'relative',
+                            color: 'var(--theme-text-primary)', position: 'relative',
                           }}
                         >
                           {/* Pastille utilisateur créateur */}
@@ -2522,7 +2522,7 @@ const Calendar = ({
                           style={{
                             backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
                             border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
-                            color: '#1f2937', position: 'relative',
+                            color: 'var(--theme-text-primary)', position: 'relative',
                           }}
                         >
                           {/* Pastille utilisateur créateur */}

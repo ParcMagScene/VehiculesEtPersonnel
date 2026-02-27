@@ -1374,27 +1374,27 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         style={{
           width: '100%',
           height: '12px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'var(--theme-gradient)',
           cursor: 'ns-resize',
           display: displayMode === 'compact' ? 'flex' : 'none',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          borderTop: '1px solid #cbd5e0',
-          borderBottom: '2px solid #3b82f6',
+          borderTop: '1px solid var(--theme-border)',
+          borderBottom: '2px solid var(--theme-info)',
           transition: 'background 0.2s',
           userSelect: 'none',
           position: 'relative',
           zIndex: 200,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)';
+          e.currentTarget.style.filter = 'brightness(1.15)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+          e.currentTarget.style.filter = '';
         }}
       >
-        <div style={{ color: 'white', fontSize: '12px', lineHeight: 1, letterSpacing: '-2px', fontWeight: 'bold', pointerEvents: 'none' }}>⋮⋮⋮</div>
+        <div style={{ color: 'var(--theme-text-inverse)', fontSize: '12px', lineHeight: 1, letterSpacing: '-2px', fontWeight: 'bold', pointerEvents: 'none' }}>⋮⋮⋮</div>
       </div>
     </div>
     

@@ -1,4 +1,5 @@
 import React from 'react';
+import { safeDate } from '../utils/formatUtils';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -12,26 +13,12 @@ const APP_BASE_URL = (() => {
   return 'http://magsav.duckdns.org:4173';
 })();
 
-const safeDate = (d) => {
-  if (!d) return '—';
-  try {
-    const s = String(d).trim();
-    const m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-    const m2 = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    if (m2) return `${m2[1]}/${m2[2]}/${m2[3]}`;
-    const dt = new Date(s);
-    if (isNaN(dt.getTime())) return '—';
-    return dt.toLocaleDateString('fr-FR');
-  } catch { return '—'; }
-};
-
 const SAV_STATUS = {
   open: { label: 'Ouvert', color: '#3b82f6' },
   in_progress: { label: 'En cours', color: '#f59e0b' },
   waiting_parts: { label: 'Attente pièces', color: '#8b5cf6' },
   resolved: { label: 'Résolu', color: '#10b981' },
-  closed: { label: 'Clôturé', color: '#6b7280' },
+  closed: { label: 'Clôturé', color: 'var(--theme-text-gray)' },
 };
 
 const SAV_TYPES = {
@@ -42,7 +29,7 @@ const SAV_TYPES = {
 };
 
 const SAV_PRIORITY = {
-  low: { label: 'Basse', color: '#6b7280' },
+  low: { label: 'Basse', color: 'var(--theme-text-gray)' },
   medium: { label: 'Moyenne', color: '#f59e0b' },
   high: { label: 'Haute', color: '#ef4444' },
   urgent: { label: 'Urgente', color: '#dc2626' },
@@ -52,7 +39,7 @@ const EQUIPMENT_STATUS = {
   available: { label: 'Disponible', color: '#10b981', icon: '✅' },
   in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
   maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
-  retired: { label: 'Réformé', color: '#6b7280', icon: '⛔' },
+  retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 
 export function printEquipmentSheet(eq, photosList = [], logosList = []) {

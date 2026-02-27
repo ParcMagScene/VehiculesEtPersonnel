@@ -37,7 +37,7 @@
 
 .confirm-dialog-message {
   font-size: 15px;
-  color: #1a1a2e;
+  color: var(--theme-text-heading);
   margin: 0 0 20px 0;
   line-height: 1.5;
   white-space: pre-line;
@@ -125,4 +125,9 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* ═══ DARK THEME ═══ */
+[data-theme="dark"] .confirm-dialog-message {
+  color: var(--theme-text-primary);
 }

@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,7 +77,7 @@
 .close-button:hover {
   background: var(--close-btn-hover-bg);
   border-color: var(--close-btn-hover-border);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .affaire-modal-body {
@@ -116,7 +116,7 @@
 
 /* Zone de drop */
 .drop-zone {
-  border: 3px dashed #cbd5e1;
+  border: 3px dashed var(--theme-border);
   border-radius: 12px;
   padding: 60px 40px;
   text-align: center;
@@ -157,7 +157,7 @@
 
 .browse-button {
   padding: 12px 32px;
-  background: white;
+  background: var(--theme-bg-card);
   border: 2px solid var(--theme-primary);
   color: var(--theme-primary);
   border-radius: var(--btn-radius);
@@ -169,7 +169,7 @@
 
 .browse-button:hover {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 /* Indicateur de traitement */
@@ -185,7 +185,7 @@
 .btn-view-pdf {
   padding: 8px 16px;
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: 0.9rem;
@@ -252,20 +252,20 @@
 /* Confirmation de remplacement */
 .replace-confirm {
   padding: 20px;
-  background: #fef3c7;
+  background: var(--theme-warning-bg);
   border: 2px solid #fbbf24;
   border-radius: 8px;
   text-align: center;
 }
 
 .warning-text {
-  color: #92400e;
+  color: var(--theme-warning-text);
   font-weight: 600;
   margin: 0 0 12px 0;
 }
 
 .replace-confirm p {
-  color: #78350f;
+  color: var(--theme-warning-text-alt);
   margin: 0 0 20px 0;
 }
 
@@ -283,9 +283,9 @@
 }
 
 .pdf-indicator {
-  background: #d1fae5;
+  background: var(--btn-success-bg);
   border: 1px solid var(--theme-success-alt);
-  color: #065f46;
+  color: var(--theme-success-text);
   padding: 12px 16px;
   border-radius: 8px;
   font-weight: 500;
@@ -315,7 +315,7 @@
   font-size: 13px;
   font-family: inherit;
   color: var(--theme-text-dark);
-  background: white;
+  background: var(--theme-bg-card);
   transition: border-color 0.15s;
 }
 
@@ -429,8 +429,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: var(--theme-bg-card, #f8fafc);
-  border: 1px solid var(--theme-border, #e2e8f0);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   margin-bottom: 16px;
 }
@@ -454,7 +454,7 @@
 
 .doc-confidence {
   font-size: 13px;
-  color: var(--theme-text-secondary, #64748b);
+  color: var(--theme-text-secondary);
 }
 
 .confidence-label {
@@ -464,20 +464,20 @@
 
 /* Batch browse button */
 .batch-browse {
-  background: var(--theme-bg-card, #f1f5f9) !important;
-  color: var(--theme-text-primary, #334155) !important;
-  border: 1px solid var(--theme-border, #cbd5e1) !important;
+  background: var(--theme-bg-tertiary) !important;
+  color: var(--theme-text-primary) !important;
+  border: 1px solid var(--theme-border) !important;
 }
 
 .batch-browse:hover {
-  background: var(--theme-bg-hover, #e2e8f0) !important;
+  background: var(--theme-bg-hover) !important;
 }
 
 /* Batch progress bar */
 .batch-progress-bar {
   width: 100%;
   height: 6px;
-  background: var(--theme-bg-card, #e2e8f0);
+  background: var(--theme-border);
   border-radius: 3px;
   margin-top: 10px;
   overflow: hidden;
@@ -485,7 +485,7 @@
 
 .batch-progress-fill {
   height: 100%;
-  background: var(--btn-primary-bg, #3b82f6);
+  background: var(--btn-primary-bg);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
@@ -506,23 +506,23 @@
 .batch-results-header h3 {
   margin: 0;
   font-size: 16px;
-  color: var(--theme-text-primary, #1e293b);
+  color: var(--theme-text-primary);
 }
 
 .btn-reset-batch {
   background: none;
-  border: 1px solid var(--theme-border, #cbd5e1);
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 13px;
   cursor: pointer;
-  color: var(--theme-text-secondary, #64748b);
+  color: var(--theme-text-secondary);
   transition: all 0.15s;
 }
 
 .btn-reset-batch:hover {
-  background: var(--theme-bg-hover, #f1f5f9);
-  color: var(--theme-text-primary, #334155);
+  background: var(--theme-bg-hover);
+  color: var(--theme-text-primary);
 }
 
 .batch-results-list {
@@ -539,27 +539,27 @@
   align-items: center;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--theme-border, #e2e8f0);
-  background: var(--theme-bg-card, #fff);
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-card);
   cursor: pointer;
   transition: all 0.15s;
   gap: 10px;
 }
 
 .batch-result-item:hover:not(.error) {
-  border-color: var(--btn-primary-bg, #3b82f6);
-  background: var(--theme-bg-hover, #f0f9ff);
+  border-color: var(--btn-primary-bg);
+  background: var(--theme-bg-hover);
 }
 
 .batch-result-item.selected {
-  border-color: var(--btn-primary-bg, #3b82f6);
+  border-color: var(--btn-primary-bg);
   background: rgba(59, 130, 246, 0.08);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .batch-result-item.error {
   border-color: #fca5a5;
-  background: #fef2f2;
+  background: var(--theme-danger-bg);
   cursor: default;
   opacity: 0.7;
 }
@@ -580,7 +580,7 @@
 .batch-result-name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--theme-text-primary, #1e293b);
+  color: var(--theme-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -595,13 +595,13 @@
 
 .batch-result-fields {
   font-size: 11px;
-  color: var(--theme-text-secondary, #94a3b8);
+  color: var(--theme-text-muted);
 }
 
 .batch-result-affaire {
   font-size: 11px;
   font-weight: 600;
-  color: var(--btn-primary-bg, #3b82f6);
+  color: var(--btn-primary-bg);
   background: rgba(59, 130, 246, 0.08);
   padding: 2px 6px;
   border-radius: 4px;
@@ -616,7 +616,7 @@
 .pdf-preview-container {
   width: 100%;
   height: 350px;
-  border: 1px solid var(--theme-border, #e2e8f0);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 16px;

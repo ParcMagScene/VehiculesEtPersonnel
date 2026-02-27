@@ -91,7 +91,7 @@
 .vdp-slide-name {
   font-size: 15px;
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -111,7 +111,7 @@
   font-size: 11px;
   font-weight: 700;
   background: rgba(255,255,255,0.2);
-  color: white;
+  color: var(--theme-text-inverse);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -138,7 +138,7 @@
   background: var(--theme-border-light);
 }
 .vdp-slide-body::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--theme-bg-muted);
   border-radius: 3px;
 }
 
@@ -171,7 +171,7 @@
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--theme-border);
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .vdp-photo {
@@ -222,7 +222,7 @@
 /* Kilomètrage */
 .vdp-km-card {
   margin-top: 10px;
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #dbeafe 60%, var(--theme-bg-indigo-light) 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg-strong) 60%, var(--theme-bg-indigo-light) 100%);
   border: 1px solid var(--theme-info-border);
   border-radius: 10px;
   padding: 10px 14px;
@@ -242,7 +242,7 @@
 .vdp-km-value {
   font-size: 20px;
   font-weight: 700;
-  color: #1e3a5f;
+  color: var(--theme-text-dark);
   margin-top: 2px;
 }
 
@@ -283,7 +283,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .vdp-action-btn:hover {
@@ -318,7 +318,7 @@
 }
 
 .vdp-ct-item {
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: 10px;
   padding: 10px 12px;
@@ -348,19 +348,19 @@
 }
 
 .vdp-ct-badge.deadline-expired {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
   animation: pulse-red 2s ease-in-out infinite;
 }
 
 .vdp-ct-badge.deadline-warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
 }
 
 .vdp-ct-badge.deadline-ok {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
 }
 
 @keyframes pulse-red {
@@ -387,7 +387,7 @@
 }
 
 .vdp-intervention-item {
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: 10px;
   padding: 10px 12px;
@@ -398,27 +398,27 @@
 .vdp-intervention-item.status-planned,
 .vdp-intervention-item.status-scheduled {
   border-left-color: var(--theme-info);
-  background: linear-gradient(to right, var(--theme-info-bg), white);
+  background: linear-gradient(to right, var(--theme-info-bg), var(--theme-bg-card));
 }
 .vdp-intervention-item.status-completed,
 .vdp-intervention-item.status-COMPLETED {
   border-left-color: var(--theme-success-alt);
-  background: linear-gradient(to right, var(--theme-success-bg), white);
+  background: linear-gradient(to right, var(--theme-success-bg), var(--theme-bg-card));
 }
 .vdp-intervention-item.status-reported {
   border-left-color: var(--theme-danger);
-  background: linear-gradient(to right, var(--theme-danger-bg), white);
+  background: linear-gradient(to right, var(--theme-danger-bg), var(--theme-bg-card));
 }
 .vdp-intervention-item.status-pending,
 .vdp-intervention-item.status-PENDING {
   border-left-color: var(--theme-primary-light);
-  background: linear-gradient(to right, #faf5ff, white);
+  background: linear-gradient(to right, var(--theme-purple-bg), var(--theme-bg-card));
 }
 .vdp-intervention-item.status-in-progress,
 .vdp-intervention-item.status-in_progress,
 .vdp-intervention-item.status-IN_PROGRESS {
   border-left-color: var(--theme-warning);
-  background: linear-gradient(to right, var(--theme-warning-bg), white);
+  background: linear-gradient(to right, var(--theme-warning-bg), var(--theme-bg-card));
 }
 .vdp-intervention-item.status-cancelled {
   border-left-color: var(--theme-text-gray);
@@ -449,13 +449,13 @@
   letter-spacing: 0.3px;
 }
 
-.vdp-status-badge.status-planned { background: #dbeafe; color: #1e40af; }
-.vdp-status-badge.status-in-progress { background: #fef3c7; color: #92400e; }
-.vdp-status-badge.status-completed { background: #d1fae5; color: #065f46; }
-.vdp-status-badge.status-pending { background: #faf5ff; color: var(--theme-primary-dark); }
-.vdp-status-badge.status-reported { background: #fee2e2; color: #991b1b; }
-.vdp-status-badge.status-cancelled { background: var(--theme-bg-tertiary); color: #4b5563; }
-.vdp-status-badge.status-rescheduled { background: #ffedd5; color: #9a3412; }
+.vdp-status-badge.status-planned { background: var(--theme-info-bg-strong); color: var(--theme-info-dark); }
+.vdp-status-badge.status-in-progress { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
+.vdp-status-badge.status-completed { background: var(--btn-success-bg); color: var(--theme-success-text); }
+.vdp-status-badge.status-pending { background: var(--theme-purple-bg); color: var(--theme-primary-dark); }
+.vdp-status-badge.status-reported { background: var(--theme-danger-bg); color: var(--theme-danger-text); }
+.vdp-status-badge.status-cancelled { background: var(--theme-bg-tertiary); color: var(--theme-text-subtle); }
+.vdp-status-badge.status-rescheduled { background: var(--theme-warning-bg); color: #9a3412; }
 
 .vdp-intervention-date {
   font-size: 11px;
@@ -465,7 +465,7 @@
 
 .vdp-intervention-desc {
   font-size: 12px;
-  color: #4b5563;
+  color: var(--theme-text-subtle);
   line-height: 1.4;
   margin-bottom: 6px;
 }
@@ -486,14 +486,14 @@
   font-weight: 700;
 }
 
-.vdp-tag-km { background: var(--theme-info-bg); color: #1d4ed8; border: 1px solid var(--theme-info-border); }
-.vdp-tag-cost { background: var(--theme-success-bg); color: #15803d; border: 1px solid #bbf7d0; }
+.vdp-tag-km { background: var(--theme-info-bg); color: var(--theme-info-text); border: 1px solid var(--theme-info-border); }
+.vdp-tag-cost { background: var(--theme-success-bg); color: #15803d; border: 1px solid var(--theme-success-border); }
 .vdp-tag-garage { background: var(--theme-bg-page); color: var(--theme-text-subtle); border: 1px solid var(--theme-border); }
 
 .vdp-empty {
   text-align: center;
   padding: 20px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-size: 12px;
   background: var(--theme-bg-secondary);
   border-radius: 8px;
@@ -506,7 +506,7 @@
   padding: 12px 16px;
   border-top: 1px solid var(--theme-border);
   flex-shrink: 0;
-  background: white;
+  background: var(--theme-bg-card);
 }
 
 .vdp-slide-open-btn {
@@ -519,7 +519,7 @@
   border: none;
   border-radius: 8px;
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

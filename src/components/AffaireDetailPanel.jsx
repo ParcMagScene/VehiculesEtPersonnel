@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle } from 'lucide-react';
+import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash } from 'lucide-react';
 import api, { getApiUrl } from '../utils/api';
 import { formatPhoneDisplay } from './PhoneInput';
 import { format } from 'date-fns';
@@ -10,6 +10,7 @@ import './AffaireDetailPanel.css';
 const ReservationModal = lazy(() => import('./ReservationModal'));
 const EventDetailsModal = lazy(() => import('./EventDetailsModal'));
 const BLImportModal = lazy(() => import('./BLImportModal'));
+const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
 
 const API_BASE_URL = getApiUrl();
@@ -298,6 +299,78 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     }
     return Array.from(personMap.values());
   }, [linkedMissions]);
+
+  // ═══ BL imports liés à l'affaire ═══
+  const [linkedBLImports, setLinkedBLImports] = useState([]);
+  useEffect(() => {
+    if (!affaire.numeroAffaire) { setLinkedBLImports([]); return; }
+    const loadBLImports = async () => {
+      try {
+        const imports = await api.getBLImports({ affaire_id: affaire.numeroAffaire });
+        setLinkedBLImports(Array.isArray(imports) ? imports : []);
+      } catch {
+        setLinkedBLImports([]);
+      }
+    };
+    loadBLImports();
+  }, [affaire.numeroAffaire]);
+
+  // ═══ Articles BL (Vente / Installation) ═══
+  const [blArticles, setBlArticles] = useState([]);
+  const showArticles = affaire.type === 'Vente' || affaire.type === 'Installation';
+  useEffect(() => {
+    if (!affaire.numeroAffaire || !showArticles) { setBlArticles([]); return; }
+    const loadArticles = async () => {
+      try {
+        const allItems = [];
+        const seen = new Set();
+        for (const bl of linkedBLImports) {
+          let pd = bl.parsedData || bl.parsed_data;
+          if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { continue; } }
+          if (pd?.items && Array.isArray(pd.items)) {
+            for (const item of pd.items) {
+              const key = `${item.code || ''}|${item.description || ''}|${item.quantity || ''}`;
+              if (!seen.has(key)) {
+                seen.add(key);
+                allItems.push({ ...item, blFilename: bl.filename });
+              }
+            }
+          }
+        }
+        setBlArticles(allItems);
+      } catch {
+        setBlArticles([]);
+      }
+    };
+    loadArticles();
+  }, [affaire.numeroAffaire, showArticles, linkedBLImports]);
+
+  // ═══ Articles BP (Location / Prestation) — liaison catalogue ═══
+  const [bpItems, setBpItems] = useState({ items: [], total: 0, matched: 0, unmatched: 0 });
+  const showBPArticles = affaire.type === 'Location' || affaire.type === 'Prestation';
+  useEffect(() => {
+    if (!affaire.numeroAffaire || !showBPArticles) { setBpItems({ items: [], total: 0, matched: 0, unmatched: 0 }); return; }
+    const loadBPItems = async () => {
+      try {
+        const data = await api.getBPItems({ affaire_id: affaire.numeroAffaire });
+        setBpItems(data || { items: [], total: 0, matched: 0, unmatched: 0 });
+      } catch {
+        setBpItems({ items: [], total: 0, matched: 0, unmatched: 0 });
+      }
+    };
+    loadBPItems();
+  }, [affaire.numeroAffaire, showBPArticles, linkedBLImports]);
+
+  // Regrouper les articles BP par section
+  const bpItemsBySection = useMemo(() => {
+    const sections = {};
+    for (const item of (bpItems.items || [])) {
+      const sec = item.section || 'Autre';
+      if (!sections[sec]) sections[sec] = [];
+      sections[sec].push(item);
+    }
+    return sections;
+  }, [bpItems.items]);
 
   // Pièces jointes locales
   const [attachmentFiles, setAttachmentFiles] = useState([]);
@@ -711,6 +784,164 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         })()}
       </section>
 
+      {/* ═══ Section 5 : Articles (Vente / Installation) ═══ */}
+      {showArticles && (
+        <section className="detail-section">
+          <h3 className="detail-section-title">
+            <Package size={15} /> Articles
+            <span className="section-count">{blArticles.length}</span>
+          </h3>
+          {blArticles.length === 0 ? (
+            <p className="detail-empty">Aucun article — importez un BL pour alimenter cette liste</p>
+          ) : (
+            <div className="articles-table-wrapper">
+              <table className="articles-table">
+                <thead>
+                  <tr>
+                    <th className="art-col-code">Réf.</th>
+                    <th className="art-col-desc">Désignation</th>
+                    <th className="art-col-qty">Qté</th>
+                    <th className="art-col-fournisseur">Fournisseur</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blArticles.map((item, i) => (
+                    <tr key={i} className={item.code === 'VTE' || item.code === 'LOC' ? 'article-row highlight' : 'article-row'}>
+                      <td className="art-code">
+                        <Hash size={11} />
+                        <span>{item.code || '—'}</span>
+                      </td>
+                      <td className="art-desc">{item.description || '—'}</td>
+                      <td className="art-qty">{item.quantity ?? '—'}</td>
+                      <td className="art-fournisseur">{item.fournisseur || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="articles-summary">
+                <span>{blArticles.length} article{blArticles.length > 1 ? 's' : ''}</span>
+                {(() => {
+                  const fournisseurs = [...new Set(blArticles.map(a => a.fournisseur).filter(Boolean))];
+                  if (fournisseurs.length === 0) return null;
+                  return <span className="articles-fournisseurs">{fournisseurs.length} fournisseur{fournisseurs.length > 1 ? 's' : ''} : {fournisseurs.join(', ')}</span>;
+                })()}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ═══ Section 5b : Articles BP (Location / Prestation) ═══ */}
+      {showBPArticles && bpItems.total > 0 && (
+        <section className="detail-section">
+          <h3 className="detail-section-title">
+            <Package size={15} /> Matériel BP
+            <span className="section-count">{bpItems.total}</span>
+            <span className="bp-match-badge" style={{
+              marginLeft: 8, fontSize: 11, padding: '2px 8px', borderRadius: 10,
+              background: bpItems.unmatched === 0 ? 'var(--theme-success-bg-strong)' : 'var(--btn-warning-bg)',
+              color: bpItems.unmatched === 0 ? 'var(--theme-success-text-alt)' : 'var(--theme-warning-text)'
+            }}>
+              {bpItems.matched}/{bpItems.total} liés au catalogue
+            </span>
+          </h3>
+          <div className="bp-items-wrapper">
+            {Object.entries(bpItemsBySection).map(([section, items]) => (
+              <div key={section} className="bp-section-group">
+                <div className="bp-section-title" style={{
+                  fontSize: 12, fontWeight: 600, padding: '6px 10px',
+                  background: 'var(--theme-bg-tertiary)', borderRadius: 6, marginBottom: 6,
+                  color: 'var(--theme-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px'
+                }}>
+                  {section} <span style={{ fontWeight: 400, opacity: 0.7 }}>({items.length})</span>
+                </div>
+                <table className="articles-table">
+                  <thead>
+                    <tr>
+                      <th className="art-col-code">Réf.</th>
+                      <th className="art-col-desc">Désignation</th>
+                      <th className="art-col-qty">Qté</th>
+                      <th style={{ width: 100 }}>Catalogue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.id} className="article-row">
+                        <td className="art-code">
+                          <Hash size={11} />
+                          <span>{item.reference || '—'}</span>
+                        </td>
+                        <td className="art-desc">{item.description || '—'}</td>
+                        <td className="art-qty">{item.quantity ?? '—'}</td>
+                        <td>
+                          {item.matchStatus === 'matched' || item.matchStatus === 'manual' ? (
+                            <span title={item.catalogName || item.catalogReference} style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 3,
+                              fontSize: 11, color: 'var(--theme-success-text-alt)', fontWeight: 500
+                            }}>
+                              <LinkIcon size={11} /> {item.catalogReference || 'Lié'}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, color: '#d97706' }}>Non lié</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+            <div className="articles-summary">
+              <span>{bpItems.total} article{bpItems.total > 1 ? 's' : ''}</span>
+              <span>{bpItems.matched} lié{bpItems.matched > 1 ? 's' : ''} au catalogue</span>
+              {bpItems.unmatched > 0 && (
+                <span style={{ color: '#d97706' }}>
+                  <AlertCircle size={12} style={{ verticalAlign: -1 }} /> {bpItems.unmatched} non lié{bpItems.unmatched > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ Section 6 : BL / BP importés ═══ */}
+      {linkedBLImports.length > 0 && (
+        <section className="detail-section">
+          <h3 className="detail-section-title">
+            <FileText size={15} /> BL / BP importés
+            <span className="section-count">{linkedBLImports.length}</span>
+          </h3>
+          <div className="bl-imports-list">
+            {linkedBLImports.map(bl => {
+              let pd = bl.parsedData || bl.parsed_data;
+              if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = null; } }
+              const sectionsCount = pd?.sections?.length || 0;
+              const itemsCount = pd?.items?.length || 0;
+              const docLabel = pd?.docTypeLabel || (bl.affaireType === 'Vente' ? 'BL Vente' : 'Bon de Préparation');
+              return (
+                <div key={bl.id} className="bl-import-card">
+                  <div className="bl-import-icon">
+                    <FileText size={16} />
+                  </div>
+                  <div className="bl-import-info">
+                    <div className="bl-import-filename">{bl.filename || 'Import'}</div>
+                    <div className="bl-import-meta">
+                      <span className="bl-import-type-badge">{docLabel}</span>
+                      {sectionsCount > 0 && <span>{sectionsCount} section{sectionsCount > 1 ? 's' : ''}</span>}
+                      {itemsCount > 0 && <span>{itemsCount} article{itemsCount > 1 ? 's' : ''}</span>}
+                      {bl.createdAt && <span><Clock size={11} /> {new Date(bl.createdAt).toLocaleDateString('fr-FR')}</span>}
+                    </div>
+                  </div>
+                  <div className={`bl-import-status ${bl.status || 'pending'}`}>
+                    {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ═══ Modal de réservation (création) ═══ */}
       {showReservationModal && (
         <Suspense fallback={<div className="action-loading">Chargement...</div>}>
@@ -875,12 +1106,21 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
       </div>
       {showBLImport && (
         <Suspense fallback={null}>
-          <BLImportModal
-            onClose={() => setShowBLImport(false)}
-            onImported={() => { setShowBLImport(false); if (onRefresh) onRefresh(); }}
-            defaultAffaireId={currentAffaire.numeroAffaire}
-            defaultAffaireType={currentAffaire.type}
-          />
+          {['Location', 'Prestation'].includes(currentAffaire.type) ? (
+            <BLImportLocPrestaModal
+              onClose={() => setShowBLImport(false)}
+              onImported={() => { setShowBLImport(false); if (onRefresh) onRefresh(); }}
+              defaultAffaireId={currentAffaire.numeroAffaire}
+              defaultAffaireType={currentAffaire.type}
+            />
+          ) : (
+            <BLImportModal
+              onClose={() => setShowBLImport(false)}
+              onImported={() => { setShowBLImport(false); if (onRefresh) onRefresh(); }}
+              defaultAffaireId={currentAffaire.numeroAffaire}
+              defaultAffaireType={currentAffaire.type}
+            />
+          )}
         </Suspense>
       )}
       {showDisplayDialog && (
@@ -971,12 +1211,21 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
 
       {showBLImport && (
         <Suspense fallback={null}>
-          <BLImportModal
-            onClose={() => setShowBLImport(false)}
-            onImported={() => { setShowBLImport(false); handleDataChanged(); }}
-            defaultAffaireId={affaire.numeroAffaire}
-            defaultAffaireType={affaire.type}
-          />
+          {['Location', 'Prestation'].includes(affaire.type) ? (
+            <BLImportLocPrestaModal
+              onClose={() => setShowBLImport(false)}
+              onImported={() => { setShowBLImport(false); handleDataChanged(); }}
+              defaultAffaireId={affaire.numeroAffaire}
+              defaultAffaireType={affaire.type}
+            />
+          ) : (
+            <BLImportModal
+              onClose={() => setShowBLImport(false)}
+              onImported={() => { setShowBLImport(false); handleDataChanged(); }}
+              defaultAffaireId={affaire.numeroAffaire}
+              defaultAffaireType={affaire.type}
+            />
+          )}
         </Suspense>
       )}
       {showDisplayDialog && (

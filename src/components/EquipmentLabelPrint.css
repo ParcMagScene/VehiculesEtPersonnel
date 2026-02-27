@@ -20,7 +20,7 @@
 }
 
 .elp-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   width: 480px;
   max-width: 95vw;
@@ -43,8 +43,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
+  background: var(--theme-gradient);
+  color: var(--theme-text-inverse);
 }
 
 .elp-header-title {
@@ -64,7 +64,7 @@
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.15);
-  color: white;
+  color: var(--theme-text-inverse);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -99,10 +99,10 @@
 }
 
 .elp-label-preview {
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed var(--theme-border);
   border-radius: 4px;
   padding: 6px;
-  background: #fafafa;
+  background: var(--theme-bg-secondary);
   display: flex;
   align-items: center;
   transition: all 0.2s;
@@ -191,7 +191,7 @@
 .elp-format-btn {
   padding: 6px 12px;
   border: 1px solid var(--theme-border);
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
@@ -202,13 +202,13 @@
 
 .elp-format-btn:hover {
   background: var(--theme-bg-page);
-  border-color: #cbd5e1;
+  border-color: var(--theme-border);
 }
 
 .elp-format-btn.active {
-  background: #6366f1;
-  color: white;
-  border-color: #6366f1;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  border-color: var(--theme-primary);
 }
 
 .elp-custom-size {
@@ -241,8 +241,8 @@
 }
 
 .elp-field-inline input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 10%, transparent);
 }
 
 /* Footer */
@@ -258,7 +258,7 @@
 .elp-btn-cancel {
   padding: 8px 16px;
   border: 1px solid var(--theme-border);
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -277,17 +277,17 @@
   gap: 8px;
   padding: 8px 20px;
   border: none;
-  background: #6366f1;
+  background: var(--theme-primary);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 700;
-  color: white;
+  color: var(--theme-text-inverse);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .elp-btn-print:hover {
-  background: #4f46e5;
+  background: var(--theme-primary-dark);
 }
 
 /* Toggle group */
@@ -302,7 +302,7 @@
 .elp-toggle-btn {
   padding: 5px 14px;
   border: none;
-  background: white;
+  background: var(--theme-bg-card);
   font-size: 12px;
   font-weight: 600;
   color: var(--theme-text-secondary);
@@ -320,8 +320,8 @@
 }
 
 .elp-toggle-btn.active {
-  background: #6366f1;
-  color: white;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
 }
 
 /* Bouton export */
@@ -330,12 +330,12 @@
   align-items: center;
   gap: 6px;
   padding: 8px 18px;
-  border: 1px solid #6366f1;
-  background: white;
+  border: 1px solid var(--theme-primary);
+  background: var(--theme-bg-card);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 700;
-  color: #6366f1;
+  color: var(--theme-primary);
   cursor: pointer;
   transition: all 0.15s;
 }

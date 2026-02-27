@@ -1,0 +1,198 @@
+{
+  "version": "2.0",
+  "name": "Mag Scène — Dépôt 2 (Structure)",
+  "depotId": "2",
+  "svgWidth": 770,
+  "svgHeight": 510,
+  "floors": [
+    { "id": "RDC", "label": "Rez-de-chaussée", "order": 0 },
+    { "id": "MEZZ", "label": "Mezzanine", "order": 1 }
+  ],
+  "categories": [
+    { "id": "structure", "label": "Structure / Praticables", "color": "#22c55e" },
+    { "id": "moteurs", "label": "Moteurs / Ponts", "color": "#3b82f6" },
+    { "id": "cablage", "label": "Câblage", "color": "#06b6d4" },
+    { "id": "tournees", "label": "Tournées", "color": "#a855f7" },
+    { "id": "reserves", "label": "Réserves (Son/Lights)", "color": "#eab308" },
+    { "id": "livraisons", "label": "Quais", "color": "#f97316" },
+    { "id": "divers", "label": "Divers", "color": "#94a3b8" }
+  ],
+  "zones": [
+    {
+      "id": "K4",
+      "label": "K4",
+      "description": "Praticables / Cales",
+      "category": "structure",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["K4"],
+      "bbox": { "x": 10, "y": 10, "width": 135, "height": 100 }
+    },
+    {
+      "id": "L2",
+      "label": "L2",
+      "description": "Tournées / Stockage",
+      "category": "tournees",
+      "color": "#a855f7",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["L2"],
+      "bbox": { "x": 155, "y": 10, "width": 250, "height": 80 }
+    },
+    {
+      "id": "QUAI2",
+      "label": "Quai 2",
+      "description": "Quai de chargement haut",
+      "category": "livraisons",
+      "color": "#f97316",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["QUAI2"],
+      "bbox": { "x": 630, "y": 10, "width": 130, "height": 185 }
+    },
+    {
+      "id": "M1",
+      "label": "M1",
+      "description": "Moteurs",
+      "category": "moteurs",
+      "color": "#3b82f6",
+      "textColor": "#ffffff",
+      "floor": "MEZZ",
+      "codes": ["M1"],
+      "bbox": { "x": 10, "y": 10, "width": 750, "height": 490 }
+    },
+    {
+      "id": "TOURNEES",
+      "label": "Tournées",
+      "description": "Zone de préparation tournées",
+      "category": "tournees",
+      "color": "#a855f7",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["TOURNEES"],
+      "bbox": { "x": 120, "y": 100, "width": 150, "height": 60 }
+    },
+    {
+      "id": "L1",
+      "label": "L1",
+      "description": "Réserves Son / Lights",
+      "category": "reserves",
+      "color": "#eab308",
+      "textColor": "#1a1a2e",
+      "floor": "RDC",
+      "codes": ["L1"],
+      "bbox": { "x": 280, "y": 100, "width": 190, "height": 100 }
+    },
+    {
+      "id": "K3",
+      "label": "K3",
+      "description": "Structure / Ponts",
+      "category": "structure",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["K3"],
+      "bbox": { "x": 490, "y": 10, "width": 125, "height": 185 }
+    },
+    {
+      "id": "J5",
+      "label": "J5",
+      "description": "Passages de câbles",
+      "category": "cablage",
+      "color": "#06b6d4",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["J5"],
+      "bbox": { "x": 10, "y": 210, "width": 100, "height": 58 }
+    },
+    {
+      "id": "WC",
+      "label": "WC",
+      "description": "Sanitaires",
+      "category": "divers",
+      "color": "#64748b",
+      "textColor": "#e2e8f0",
+      "floor": "RDC",
+      "codes": ["WC"],
+      "bbox": { "x": 10, "y": 275, "width": 55, "height": 40 }
+    },
+    {
+      "id": "J4",
+      "label": "J4",
+      "description": "Ponts / Structure",
+      "category": "moteurs",
+      "color": "#3b82f6",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["J4"],
+      "bbox": { "x": 10, "y": 323, "width": 100, "height": 78 }
+    },
+    {
+      "id": "J3",
+      "label": "J3",
+      "description": "Ponts / Structure",
+      "category": "structure",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["J3"],
+      "bbox": { "x": 10, "y": 410, "width": 100, "height": 90 }
+    },
+    {
+      "id": "J2",
+      "label": "J2",
+      "description": "Structure mixte",
+      "category": "structure",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["J2"],
+      "bbox": { "x": 120, "y": 380, "width": 120, "height": 120 }
+    },
+    {
+      "id": "K1",
+      "label": "K1",
+      "description": "Praticables / Structure",
+      "category": "structure",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["K1"],
+      "bbox": { "x": 260, "y": 220, "width": 200, "height": 200 }
+    },
+    {
+      "id": "J1",
+      "label": "J1",
+      "description": "Praticables / Cales",
+      "category": "structure",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["J1"],
+      "bbox": { "x": 260, "y": 430, "width": 200, "height": 70 }
+    },
+    {
+      "id": "K2",
+      "label": "K2",
+      "description": "Structure / Stockage",
+      "category": "structure",
+      "color": "#22c55e",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["K2"],
+      "bbox": { "x": 480, "y": 220, "width": 130, "height": 185 }
+    },
+    {
+      "id": "QUAI1",
+      "label": "Quai 1",
+      "description": "Quai de chargement bas",
+      "category": "livraisons",
+      "color": "#f97316",
+      "textColor": "#ffffff",
+      "floor": "RDC",
+      "codes": ["QUAI1"],
+      "bbox": { "x": 630, "y": 220, "width": 130, "height": 185 }
+    }
+  ]
+}

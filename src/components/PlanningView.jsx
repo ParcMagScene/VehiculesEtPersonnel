@@ -110,7 +110,7 @@ function PlanningView({
       case 'pending': return '#8b5cf6';
       case 'completed': return '#10b981';
       case 'rescheduled': return '#f97316';
-      default: return '#6b7280';
+      default: return 'var(--theme-text-gray)';
     }
   };
 
@@ -122,7 +122,7 @@ function PlanningView({
       case 'installation': return '#8b5cf6';
       case 'maintenance': return '#f59e0b';
       case 'depannage': return '#ef4444';
-      default: return '#6b7280';
+      default: return 'var(--theme-text-gray)';
     }
   };
 

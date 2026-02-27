@@ -1,50 +1,87 @@
 // ============================================================
-// LocationSelector.jsx — Sélecteur cascadé Zone → Code → Étage
-// Pour le formulaire d'édition/création d'équipement catalogue
+// LocationSelector.jsx — Sélecteur cascadé Dépôt → Étage → Zone → Code
+// Pour le formulaire d'édition/création d'équipement
+// Supporte un ou plusieurs dépôts
 // ============================================================
 
 import React, { useMemo } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Warehouse } from 'lucide-react';
+import './LocationSelector.css';
 
-export default function LocationSelector({ zones, value, onChange }) {
-  // value = { location_zone, location_code, location_floor }
+export default function LocationSelector({ zones, depots, value, onChange }) {
+  // value = { location_depot, location_zone, location_code, location_floor }
+  // zones = données d'un seul dépôt (rétrocompat)
+  // depots = { depots: [{ id, name, floors, zones, categories }, ...] }
+  const depot = value?.location_depot || '';
   const zone = value?.location_zone || '';
   const code = value?.location_code || '';
   const floor = value?.location_floor || '';
 
+  // Liste des dépôts disponibles
+  const depotList = useMemo(() => {
+    if (depots?.depots) return depots.depots;
+    if (zones) return [{ id: zones.depotId || '1', name: zones.name || 'Dépôt', ...zones }];
+    return [];
+  }, [depots, zones]);
+
+  // Dépôt actuellement sélectionné
+  const selectedDepot = useMemo(() => {
+    if (!depot) return null;
+    return depotList.find(d => d.id === depot) || null;
+  }, [depotList, depot]);
+
+  // Étages du dépôt sélectionné
+  const floors = useMemo(() => {
+    return selectedDepot?.floors || [];
+  }, [selectedDepot]);
+
+  // Zones groupées par étage dans le dépôt sélectionné
+  const zonesByFloor = useMemo(() => {
+    if (!selectedDepot?.zones) return {};
+    const grouped = {};
+    selectedDepot.zones.forEach(z => {
+      if (!grouped[z.floor]) grouped[z.floor] = [];
+      grouped[z.floor].push(z);
+    });
+    return grouped;
+  }, [selectedDepot]);
+
   // Zone sélectionnée
   const selectedZone = useMemo(() => {
-    if (!zones?.zones || !zone) return null;
-    return zones.zones.find(z => z.id === zone);
-  }, [zones, zone]);
+    if (!selectedDepot?.zones || !zone) return null;
+    return selectedDepot.zones.find(z => z.id === zone);
+  }, [selectedDepot, zone]);
 
   // Codes disponibles pour la zone sélectionnée
   const availableCodes = useMemo(() => {
     return selectedZone?.codes || [];
   }, [selectedZone]);
 
-  // Étages uniques
-  const floors = useMemo(() => {
-    return zones?.floors || [];
-  }, [zones]);
-
-  // Zones groupées par étage
-  const zonesByFloor = useMemo(() => {
-    if (!zones?.zones) return {};
-    const grouped = {};
-    zones.zones.forEach(z => {
-      if (!grouped[z.floor]) grouped[z.floor] = [];
-      grouped[z.floor].push(z);
+  const handleDepotChange = (newDepotId) => {
+    onChange({
+      location_depot: newDepotId || null,
+      location_zone: null,
+      location_code: null,
+      location_floor: null,
     });
-    return grouped;
-  }, [zones]);
+  };
+
+  const handleFloorChange = (newFloor) => {
+    onChange({
+      location_depot: depot || null,
+      location_zone: null,
+      location_code: null,
+      location_floor: newFloor || null,
+    });
+  };
 
   const handleZoneChange = (newZoneId) => {
-    const zoneObj = zones?.zones?.find(z => z.id === newZoneId);
+    const zoneObj = selectedDepot?.zones?.find(z => z.id === newZoneId);
     onChange({
+      location_depot: depot || null,
       location_zone: newZoneId || null,
       location_code: null,
-      location_floor: zoneObj?.floor || null,
+      location_floor: zoneObj?.floor || floor || null,
     });
   };
 
@@ -55,14 +92,7 @@ export default function LocationSelector({ zones, value, onChange }) {
     });
   };
 
-  const handleFloorChange = (newFloor) => {
-    // Si on change d'étage, on reset la zone et le code
-    onChange({
-      location_zone: null,
-      location_code: null,
-      location_floor: newFloor || null,
-    });
-  };
+  const hasMultipleDepots = depotList.length > 1;
 
   return (
     <div className="location-selector">
@@ -70,13 +100,30 @@ export default function LocationSelector({ zones, value, onChange }) {
         <MapPin size={14} />
         <span>Localisation dépôt</span>
       </div>
-      <div className="location-selector-fields">
+      <div className={`location-selector-fields ${hasMultipleDepots ? 'has-depot' : ''}`}>
+        {/* Dépôt */}
+        {hasMultipleDepots && (
+          <div className="location-form-group">
+            <label><Warehouse size={12} /> Dépôt</label>
+            <select
+              value={depot}
+              onChange={(e) => handleDepotChange(e.target.value)}
+            >
+              <option value="">— Aucun —</option>
+              {depotList.map(d => (
+                <option key={d.id} value={d.id}>{d.name || `Dépôt ${d.id}`}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Étage */}
-        <div className="catalog-form-group">
+        <div className="location-form-group">
           <label>Étage</label>
           <select
             value={floor}
             onChange={(e) => handleFloorChange(e.target.value)}
+            disabled={hasMultipleDepots && !depot}
           >
             <option value="">— Aucun —</option>
             {floors.map(f => (
@@ -86,11 +133,12 @@ export default function LocationSelector({ zones, value, onChange }) {
         </div>
 
         {/* Zone */}
-        <div className="catalog-form-group">
+        <div className="location-form-group">
           <label>Zone</label>
           <select
             value={zone}
             onChange={(e) => handleZoneChange(e.target.value)}
+            disabled={hasMultipleDepots && !depot}
           >
             <option value="">— Aucune —</option>
             {floor && zonesByFloor[floor]?.map(z => (
@@ -98,7 +146,7 @@ export default function LocationSelector({ zones, value, onChange }) {
                 {z.label}
               </option>
             ))}
-            {!floor && zones?.zones?.map(z => (
+            {!floor && selectedDepot?.zones?.map(z => (
               <option key={z.id} value={z.id}>
                 [{z.floor}] {z.label}
               </option>
@@ -107,7 +155,7 @@ export default function LocationSelector({ zones, value, onChange }) {
         </div>
 
         {/* Code emplacement */}
-        <div className="catalog-form-group">
+        <div className="location-form-group">
           <label>Code emplacement</label>
           <select
             value={code}
@@ -126,7 +174,9 @@ export default function LocationSelector({ zones, value, onChange }) {
       {selectedZone && (
         <div className="location-selector-preview" style={{ borderLeftColor: selectedZone.color }}>
           <span className="location-dot" style={{ backgroundColor: selectedZone.color }} />
+          {selectedDepot && <span className="location-depot-badge">D{depot}</span>}
           <span>{selectedZone.label}</span>
+          {floor && <span className="location-floor-badge">{floor}</span>}
           {code && <span className="location-code-badge">{code}</span>}
         </div>
       )}

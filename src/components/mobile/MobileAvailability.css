@@ -10,7 +10,7 @@
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
   position: sticky;
   top: 0;
@@ -47,7 +47,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
   gap: 16px;
 }
@@ -104,7 +104,7 @@
   margin: 12px 16px;
   padding: 10px 16px;
   background: var(--theme-info);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -123,7 +123,7 @@
   display: flex;
   gap: 12px;
   padding: 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
 }
 
@@ -138,11 +138,11 @@
 }
 
 .availability-stats .stat.available {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  background: linear-gradient(135deg, var(--btn-success-bg) 0%, var(--btn-success-hover-bg) 100%);
 }
 
 .availability-stats .stat.total {
-  background: linear-gradient(135deg, #dbeafe 0%, var(--theme-info-border) 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
 }
 
 .stat-value {
@@ -166,7 +166,7 @@
 .empty-state {
   text-align: center;
   padding: 48px 24px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
 }
 
 .empty-state svg {
@@ -180,7 +180,7 @@
 }
 
 .vehicle-card {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 12px;
@@ -221,7 +221,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   background: var(--theme-bg-tertiary);
 }
 
@@ -266,8 +266,8 @@
 .vehicle-type-tag {
   font-size: 11px;
   font-weight: 500;
-  color: #059669;
-  background: #ecfdf5;
+  color: var(--btn-success-color);
+  background: var(--theme-success-bg);
   padding: 1px 6px;
   border-radius: 4px;
 }
@@ -281,7 +281,7 @@
 .reserve-button {
   padding: 10px 16px;
   background: var(--theme-info);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -302,7 +302,7 @@
 /* Véhicules occupés */
 .unavailable-section {
   padding: 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-top: 1px solid var(--theme-border-medium);
 }
 

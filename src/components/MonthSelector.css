@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -24,7 +24,7 @@
 }
 
 .month-selector-modal {
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 1rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   max-width: 900px;
@@ -54,7 +54,7 @@
   padding: 1.5rem 2rem;
   border-bottom: 2px solid var(--theme-border-medium);
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
   border-radius: 0.98rem 0.98rem 0 0;
 }
 
@@ -68,7 +68,7 @@
   background: rgba(255, 255, 255, 0.2);
   border: none;
   border-radius: 0.5rem;
-  color: white;
+  color: var(--theme-text-inverse);
   cursor: pointer;
   padding: 0.5rem;
   display: flex;
@@ -125,7 +125,7 @@
 
 .month-selector-day {
   aspect-ratio: 1;
-  background: white;
+  background: var(--theme-bg-card);
   border-radius: 2px;
   display: flex;
   align-items: center;

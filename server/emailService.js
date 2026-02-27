@@ -40,6 +40,13 @@ export function initEmailTransporter(db) {
 }
 
 /**
+ * Retourne le transporteur et la config pour usage externe
+ */
+export function getTransporter() {
+  return { transporter, emailConfig };
+}
+
+/**
  * Envoie un email
  */
 async function sendEmail({ to, subject, html, text }) {
@@ -76,7 +83,7 @@ async function sendEmail({ to, subject, html, text }) {
 function getAdminEmails(db) {
   try {
     const admins = db.prepare(
-      "SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != ''"
+      "SELECT email FROM users WHERE is_admin = 1 AND email IS NOT NULL AND email != ''"
     ).all();
     return admins.map(a => a.email);
   } catch {
@@ -210,6 +217,7 @@ export async function alertOverdueIntervention(db, intervention, vehicleName) {
 
 export default {
   initEmailTransporter,
+  getTransporter: () => ({ transporter, emailConfig }),
   alertAccessRequest,
   alertReservationCreated,
   alertAssignmentCreated,

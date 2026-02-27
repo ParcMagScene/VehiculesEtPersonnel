@@ -28,7 +28,7 @@
 
 .phone-prefix-btn:hover {
   background: var(--theme-bg-tertiary);
-  border-color: #9ca3af;
+  border-color: var(--theme-text-muted);
 }
 
 .phone-prefix-btn:disabled {
@@ -50,7 +50,7 @@
 
 .phone-prefix-arrow {
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   margin-left: 2px;
 }
 
@@ -66,7 +66,7 @@
 }
 
 .phone-local-input:focus {
-  border-color: var(--primary, #6366f1);
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
@@ -76,7 +76,7 @@
   top: 100%;
   left: 0;
   z-index: 1000;
-  background: #fff;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -97,7 +97,7 @@
 }
 
 .phone-dropdown-search::placeholder {
-  color: #9ca3af;
+  color: var(--theme-text-muted);
 }
 
 .phone-dropdown-list {
@@ -146,24 +146,24 @@
 
 /* ===== Dark Mode ===== */
 [data-theme="dark"] .phone-prefix-btn {
-  background: var(--theme-text-primary);
-  border-color: var(--theme-text-subtle);
-  color: var(--theme-border);
+  background: var(--theme-bg-card);
+  border-color: var(--theme-border);
+  color: var(--theme-text-secondary);
 }
 
 [data-theme="dark"] .phone-prefix-btn:hover {
-  background: var(--theme-text-dark);
-  border-color: var(--theme-text-secondary);
+  background: var(--theme-bg-tertiary);
+  border-color: var(--theme-border-medium);
 }
 
 [data-theme="dark"] .phone-prefix-code {
-  color: #cbd5e1;
+  color: var(--theme-text-muted);
 }
 
 [data-theme="dark"] .phone-local-input {
-  background: var(--theme-text-primary);
-  border-color: var(--theme-text-subtle);
-  color: var(--theme-border);
+  background: var(--theme-bg-card);
+  border-color: var(--theme-border);
+  color: var(--theme-text-primary);
 }
 
 [data-theme="dark"] .phone-local-input:focus {
@@ -172,23 +172,23 @@
 }
 
 [data-theme="dark"] .phone-dropdown {
-  background: var(--theme-text-primary);
-  border-color: var(--theme-text-subtle);
+  background: var(--theme-bg-card);
+  border-color: var(--theme-border);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .phone-dropdown-search {
-  background: var(--theme-text-primary);
-  color: var(--theme-border);
-  border-bottom-color: var(--theme-text-dark);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  border-bottom-color: var(--theme-border);
 }
 
 [data-theme="dark"] .phone-dropdown-item {
-  color: var(--theme-border);
+  color: var(--theme-text-secondary);
 }
 
 [data-theme="dark"] .phone-dropdown-item:hover {
-  background: var(--theme-text-dark);
+  background: var(--theme-bg-hover);
 }
 
 [data-theme="dark"] .phone-dropdown-item.active {
@@ -196,7 +196,7 @@
 }
 
 [data-theme="dark"] .phone-dropdown-label {
-  color: var(--theme-border);
+  color: var(--theme-text-secondary);
 }
 
 [data-theme="dark"] .phone-dropdown-code {

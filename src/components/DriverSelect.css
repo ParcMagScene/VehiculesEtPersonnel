@@ -15,29 +15,29 @@
   width: 100%;
   min-height: 38px;
   padding: 6px 10px;
-  background: white;
-  border: 1px solid var(--border-color, var(--theme-border-muted));
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
-  color: var(--text-primary, var(--theme-text-primary));
+  color: var(--theme-text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
   text-align: left;
   gap: 8px;
 }
 
 .driver-select-trigger:hover {
-  border-color: var(--primary-color, var(--theme-info-dark));
+  border-color: var(--theme-primary);
 }
 
 .driver-select-trigger.open {
-  border-color: var(--primary-color, var(--theme-info-dark));
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .driver-select-trigger:focus {
   outline: none;
-  border-color: var(--primary-color, var(--theme-info-dark));
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
@@ -59,7 +59,7 @@
 
 .driver-select-skill {
   font-size: 0.75rem;
-  color: var(--text-secondary, var(--theme-text-secondary));
+  color: var(--theme-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -92,7 +92,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 600;
   flex-shrink: 0;
   letter-spacing: 0.5px;
@@ -104,8 +104,8 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid var(--border-color, var(--theme-border-muted));
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   z-index: 1000;
@@ -164,7 +164,7 @@
 .driver-select-option-name {
   font-size: 0.88rem;
   font-weight: 500;
-  color: var(--text-primary, var(--theme-text-primary));
+  color: var(--theme-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -176,14 +176,14 @@
 
 .driver-select-option-skill {
   font-size: 0.72rem;
-  color: var(--text-secondary, var(--theme-text-secondary));
+  color: var(--theme-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .driver-select-check {
-  color: var(--primary-color, var(--theme-info-dark));
+  color: var(--theme-primary);
   flex-shrink: 0;
 }
 
@@ -204,7 +204,7 @@
 }
 
 .driver-select-dropdown::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--theme-bg-muted);
   border-radius: 3px;
 }
 

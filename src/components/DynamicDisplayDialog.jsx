@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Monitor, X, Save, Briefcase, MapPin, User, Clock, MessageSquare, Calendar } from 'lucide-react';
+import { Monitor, X, Save, Briefcase, MapPin, User, Clock, MessageSquare, Calendar, ExternalLink } from 'lucide-react';
 import api from '../utils/api';
 import { useToast } from '../hooks/useToast';
+import AddressAutocomplete from './AddressAutocomplete';
 import './DynamicDisplayDialog.css';
 
 // ═══ Constantes ═══
@@ -44,6 +45,7 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
     client: '',
     location: '',
   });
+  const [locationCoords, setLocationCoords] = useState(null);
 
   // Init from existing event
   useEffect(() => {
@@ -289,12 +291,35 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
           {/* Lieu */}
           <div className="form-group" style={{ marginBottom: 16 }}>
             <label><MapPin size={12} /> Lieu</label>
-            <input
-              type="text"
-              value={form.location}
-              onChange={e => updateField('location', e.target.value)}
-              placeholder="Dépôt Locmat, salle des fêtes..."
-            />
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <AddressAutocomplete
+                value={form.location}
+                onChange={v => updateField('location', v)}
+                placeholder="Dépôt Locmat, salle des fêtes..."
+                onPlaceSelect={(place) => {
+                  if (place?.geometry?.location) {
+                    setLocationCoords({
+                      lat: place.geometry.location.lat(),
+                      lng: place.geometry.location.lng(),
+                    });
+                  }
+                }}
+              />
+              {(locationCoords || form.location) && (
+                <a
+                  href={locationCoords
+                    ? `https://www.google.com/maps/search/?api=1&query=${locationCoords.lat},${locationCoords.lng}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.location)}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Ouvrir dans Google Maps"
+                  style={{ color: 'var(--theme-primary)', flexShrink: 0 }}
+                >
+                  <ExternalLink size={16} />
+                </a>
+              )}
+            </div>
           </div>
 
           {/* Commentaire */}

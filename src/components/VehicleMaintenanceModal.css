@@ -66,7 +66,7 @@
   padding: 3px 10px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 500;
 }
 
@@ -111,7 +111,7 @@
 }
 
 .maintenance-form::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--theme-bg-muted);
   border-radius: 3px;
 }
 
@@ -155,7 +155,7 @@
   border-radius: 7px;
   font-size: 13px;
   color: var(--theme-text-dark);
-  background: white;
+  background: var(--theme-bg-card);
   transition: border-color 0.15s;
 }
 
@@ -199,7 +199,7 @@
   top: 50%;
   transform: translateY(-50%);
   background: linear-gradient(135deg, var(--theme-success-alt) 0%, #059669 100%);
-  color: white;
+  color: var(--theme-text-inverse);
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.875rem;
@@ -359,8 +359,8 @@
 }
 
 .info-message {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-dark);
   padding: 1rem;
   border-radius: 6px;
   font-size: 0.875rem;
@@ -368,7 +368,7 @@
 }
 
 .vehicle-maintenance-modal .form-group select option:disabled {
-  color: #9ca3af;
+  color: var(--theme-text-muted);
   font-style: italic;
 }
 

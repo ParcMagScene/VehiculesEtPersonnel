@@ -1,40 +1,113 @@
 import { useState, useEffect, useCallback } from 'react';
 
 /**
- * Hook pour la gestion du thème (light/dark) avec persistance localStorage.
+ * Hook pour la gestion du thème eM@g (mode + palette).
  * 
- * Priorité :
- * 1. localStorage ('emag-theme')
- * 2. Préférence système (prefers-color-scheme)
- * 3. Fallback: 'light'
+ * Deux axes indépendants :
+ *   • mode    : 'light' | 'dark'       → data-theme="light|dark"
+ *   • palette : 'default' | 'flat-*'   → data-palette="..."
+ * 
+ * Persistance :
+ *   1. localStorage ('emag-theme', 'emag-palette')
+ *   2. API préférences (via le composant UserPreferencesModal)
+ * 
+ * Priorité mode :
+ *   1. localStorage ('emag-theme')
+ *   2. Préférence système (prefers-color-scheme)
+ *   3. Fallback: 'light'
  * 
  * Usage:
- *   const { theme, toggleTheme, setTheme } = useTheme();
+ *   const { theme, palette, toggleTheme, setTheme, setPalette, isDark } = useTheme();
  */
+
+export const PALETTES = [
+  {
+    id: 'default',
+    name: 'Violet (défaut)',
+    description: 'Thème violet classique eM@g',
+    colors: { primary: '#667eea', secondary: '#764ba2', accent: '#a855f7', bg: '#f8fafc', card: '#ffffff' },
+    darkColors: { primary: '#818cf8', secondary: '#a78bfa', accent: '#c084fc', bg: '#0f172a', card: '#1e293b' },
+  },
+  {
+    id: 'flat-pastel',
+    name: 'Flat Pastel',
+    description: 'Tons doux et chaleureux',
+    colors: { primary: '#7b8fb2', secondary: '#a08db8', accent: '#d4849a', bg: '#f6f2ed', card: '#fffdfb' },
+    darkColors: { primary: '#99aed0', secondary: '#bca8d4', accent: '#e0a0b2', bg: '#151820', card: '#1e2230' },
+  },
+  {
+    id: 'flat-material',
+    name: 'Flat Material',
+    description: 'Google Material Design',
+    colors: { primary: '#1976d2', secondary: '#455a64', accent: '#ff6d00', bg: '#fafafa', card: '#ffffff' },
+    darkColors: { primary: '#64b5f6', secondary: '#90a4ae', accent: '#ffab40', bg: '#121212', card: '#1e1e1e' },
+  },
+  {
+    id: 'flat-minimal',
+    name: 'Flat Minimal',
+    description: 'Monochrome épuré, accent rouge',
+    colors: { primary: '#37474f', secondary: '#78909c', accent: '#d32f2f', bg: '#f5f5f5', card: '#ffffff' },
+    darkColors: { primary: '#b0bec5', secondary: '#78909c', accent: '#ef5350', bg: '#0a0a0a', card: '#141414' },
+  },
+  {
+    id: 'flat-neon-soft',
+    name: 'Flat Néon',
+    description: 'Cyberpunk adouci',
+    colors: { primary: '#00acc1', secondary: '#7b1fa2', accent: '#76ff03', bg: '#f2f8fa', card: '#ffffff' },
+    darkColors: { primary: '#4dd0e1', secondary: '#ce93d8', accent: '#b9f6ca', bg: '#0d1117', card: '#161b22' },
+  },
+  {
+    id: 'flat-warm',
+    name: 'Flat Warm',
+    description: 'Terracotta et tons chauds',
+    colors: { primary: '#bf6530', secondary: '#795548', accent: '#c0a030', bg: '#faf6f1', card: '#fffdfb' },
+    darkColors: { primary: '#e09060', secondary: '#a1887f', accent: '#d4b640', bg: '#1a1410', card: '#251e18' },
+  },
+  {
+    id: 'flat-cold',
+    name: 'Flat Cold',
+    description: 'Acier bleu, tons froids',
+    colors: { primary: '#0277bd', secondary: '#455a64', accent: '#00bcd4', bg: '#f0f5f8', card: '#ffffff' },
+    darkColors: { primary: '#4fc3f7', secondary: '#78909c', accent: '#4dd0e1', bg: '#0a1929', card: '#132f4c' },
+  },
+];
+
 export function useTheme() {
+  // ─── Mode (light/dark) ───
   const [theme, setThemeState] = useState(() => {
-    // 1. Vérifier localStorage
     const saved = localStorage.getItem('emag-theme');
     if (saved === 'dark' || saved === 'light') return saved;
-    
-    // 2. Vérifier la préférence système
     if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) return 'dark';
-    
-    // 3. Fallback
     return 'light';
   });
 
-  // Appliquer le thème au DOM
+  // ─── Palette ───
+  const [palette, setPaletteState] = useState(() => {
+    const saved = localStorage.getItem('emag-palette');
+    if (saved && PALETTES.some(p => p.id === saved)) return saved;
+    return 'default';
+  });
+
+  // Appliquer le mode au DOM
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('emag-theme', theme);
   }, [theme]);
 
+  // Appliquer la palette au DOM
+  useEffect(() => {
+    if (palette === 'default') {
+      document.documentElement.removeAttribute('data-palette');
+    } else {
+      document.documentElement.setAttribute('data-palette', palette);
+    }
+    localStorage.setItem('emag-palette', palette);
+  }, [palette]);
+
   // Écouter les changements de préférence système
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e) => {
-      // Ne changer que si l'utilisateur n'a pas explicitement choisi
       const saved = localStorage.getItem('emag-theme');
       if (!saved) {
         setThemeState(e.matches ? 'dark' : 'light');
@@ -52,9 +125,15 @@ export function useTheme() {
     setThemeState(prev => prev === 'dark' ? 'light' : 'dark');
   }, []);
 
+  const setPalette = useCallback((newPalette) => {
+    if (PALETTES.some(p => p.id === newPalette)) {
+      setPaletteState(newPalette);
+    }
+  }, []);
+
   const isDark = theme === 'dark';
 
-  return { theme, isDark, toggleTheme, setTheme };
+  return { theme, isDark, toggleTheme, setTheme, palette, setPalette };
 }
 
 export default useTheme;

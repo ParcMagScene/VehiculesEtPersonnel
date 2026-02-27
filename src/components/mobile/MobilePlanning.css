@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 2px solid var(--theme-border-medium);
 }
 
@@ -46,7 +46,7 @@
 
 .today-btn {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 8px;
   padding: 8px 12px;
@@ -114,7 +114,7 @@
 /* En-tête des jours - sticky */
 .mobile-days-header {
   display: flex;
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 2px solid var(--theme-border-medium);
   position: sticky;
   top: 0;
@@ -131,12 +131,12 @@
 
 .mobile-day-column.today {
   background: var(--theme-gradient);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .mobile-day-column.today .mobile-day-name,
 .mobile-day-column.today .mobile-day-date {
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .mobile-day-column:last-child {
@@ -163,7 +163,7 @@
 }
 
 .mobile-vehicle-row {
-  background: white;
+  background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
   position: relative;
 }
@@ -200,7 +200,7 @@
   font-size: 10px;
   color: var(--theme-text-gray);
   font-family: 'Monaco', monospace;
-  background: white;
+  background: var(--theme-bg-card);
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -239,7 +239,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin: 2px;
   z-index: 1;
-  color: white;
+  color: var(--theme-text-inverse);
   position: relative;
   overflow: visible;
 }
@@ -275,7 +275,7 @@
 }
 
 .mobile-reservation .mobile-item-icon {
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .mobile-item-content {
@@ -303,7 +303,7 @@
 }
 
 .mobile-reservation .mobile-item-title {
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .mobile-reservation .mobile-item-subtitle {
@@ -350,7 +350,7 @@
 }
 
 .mobile-maintenance-reported {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  background: linear-gradient(135deg, var(--btn-danger-bg) 0%, var(--btn-danger-hover-bg) 100%);
 }
 
 .mobile-maintenance-reported .mobile-item-icon {
@@ -362,7 +362,7 @@
 }
 
 .mobile-maintenance-scheduled {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, var(--btn-warning-bg) 0%, var(--btn-warning-hover-bg) 100%);
 }
 
 .mobile-maintenance-scheduled .mobile-item-icon {
@@ -374,7 +374,7 @@
 }
 
 .mobile-maintenance-in_progress {
-  background: linear-gradient(135deg, #dbeafe 0%, var(--theme-info-border) 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
 }
 
 .mobile-maintenance-in_progress .mobile-item-icon {
@@ -386,27 +386,27 @@
 }
 
 .mobile-maintenance-pending {
-  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  background: linear-gradient(135deg, var(--theme-purple-bg) 0%, var(--theme-purple-bg-strong) 100%);
 }
 
 .mobile-maintenance-pending .mobile-item-icon {
-  color: #7c3aed;
+  color: var(--theme-purple-accent);
 }
 
 .mobile-maintenance-pending .mobile-item-subtitle {
-  color: #7c3aed;
+  color: var(--theme-purple-accent);
 }
 
 .mobile-maintenance-completed {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  background: linear-gradient(135deg, var(--btn-success-bg) 0%, var(--btn-success-hover-bg) 100%);
 }
 
 .mobile-maintenance-completed .mobile-item-icon {
-  color: #059669;
+  color: var(--btn-success-color);
 }
 
 .mobile-maintenance-completed .mobile-item-subtitle {
-  color: #059669;
+  color: var(--btn-success-color);
 }
 
 /* Scrollbars */

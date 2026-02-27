@@ -3,6 +3,7 @@ import { ShoppingCart, FileText, Search, Plus, Filter, Edit2, Trash2, ArrowLeft,
   Users as UsersIcon, Package, Send, Check, X, ArrowRight, 
   Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck } from 'lucide-react';
 import api from '../utils/api';
+import { formatCurrency, formatDateSimple as formatDate } from '../utils/formatUtils';
 import ConfirmDialog from './ConfirmDialog';
 import PhoneInput, { formatPhoneDisplay } from './PhoneInput';
 import AddressAutocomplete from './AddressAutocomplete';
@@ -11,7 +12,7 @@ import { useToast } from '../hooks/useToast';
 
 // ═══ Constantes ═══
 const ORDER_STATUS = {
-  draft: { label: 'Brouillon', color: '#94a3b8', icon: '📝' },
+  draft: { label: 'Brouillon', color: 'var(--theme-text-muted)', icon: '📝' },
   sent: { label: 'Envoyée', color: '#3b82f6', icon: '📤' },
   confirmed: { label: 'Confirmée', color: '#8b5cf6', icon: '✅' },
   partial: { label: 'Reçue partiellement', color: '#f59e0b', icon: '📦' },
@@ -20,25 +21,14 @@ const ORDER_STATUS = {
 };
 
 const QUOTE_STATUS = {
-  draft: { label: 'Brouillon', color: '#94a3b8', icon: '📝' },
+  draft: { label: 'Brouillon', color: 'var(--theme-text-muted)', icon: '📝' },
   sent: { label: 'Envoyé', color: '#3b82f6', icon: '📤' },
   accepted: { label: 'Accepté', color: '#10b981', icon: '✅' },
   refused: { label: 'Refusé', color: '#ef4444', icon: '❌' },
-  expired: { label: 'Expiré', color: '#6b7280', icon: '⏰' },
+  expired: { label: 'Expiré', color: 'var(--theme-text-gray)', icon: '⏰' },
 };
 
 const UNITS = ['u', 'm', 'm²', 'm³', 'kg', 'L', 'h', 'j', 'lot', 'forfait'];
-
-// ═══ Formatage monétaire ═══
-const formatCurrency = (amount) => {
-  if (!amount && amount !== 0) return '—';
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-};
 
 // ═══ Composant Principal ═══
 function OrdersPanel({ currentUser }) {
@@ -48,6 +38,7 @@ function OrdersPanel({ currentUser }) {
   const [quotes, setQuotes] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [stats, setStats] = useState(null);
+  const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -84,6 +75,7 @@ function OrdersPanel({ currentUser }) {
       if (activeTab === 'orders' || !orders.length) promises.push(api.getOrders(params));
       if (activeTab === 'quotes' || !quotes.length) promises.push(api.getQuotes(params));
       promises.push(api.getOrdersStats());
+      if (!clients.length) promises.push(api.getClients());
 
       const results = await Promise.all(promises);
 
@@ -93,7 +85,8 @@ function OrdersPanel({ currentUser }) {
       setSuppliers(results[idx++]);
       if (activeTab === 'orders' || !orders.length) setOrders(results[idx++]);
       if (activeTab === 'quotes' || !quotes.length) setQuotes(results[idx++]);
-      setStats(results[idx]);
+      setStats(results[idx++]);
+      if (!clients.length && results[idx]) setClients(results[idx]);
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('Erreur chargement commandes:', error);
@@ -402,6 +395,7 @@ function OrdersPanel({ currentUser }) {
       {showQuoteForm && (
         <QuoteFormModal
           quote={editingQuote}
+          clients={clients}
           onSave={handleSaveQuote}
           onClose={() => { setShowQuoteForm(false); setEditingQuote(null); }}
         />
@@ -811,7 +805,7 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
 });
 
 // ═══ Formulaire Devis ═══
-const QuoteFormModal = React.memo(({ quote, onSave, onClose }) => {
+const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => {
   const itemIdCounter = useRef(0);
   const generateItemId = () => `item-${++itemIdCounter.current}`;
   const [form, setForm] = useState(() => {
@@ -855,7 +849,10 @@ const QuoteFormModal = React.memo(({ quote, onSave, onClose }) => {
           <div className="form-grid">
             <div className="form-field">
               <label>Nom client</label>
-              <input type="text" value={form.client_name} onChange={(e) => setForm(f => ({ ...f, client_name: e.target.value }))} />
+              <input type="text" value={form.client_name} onChange={(e) => setForm(f => ({ ...f, client_name: e.target.value }))} list="quote-clients-autocomplete" />
+              <datalist id="quote-clients-autocomplete">
+                {clients.map(c => <option key={c.id} value={c.name} />)}
+              </datalist>
             </div>
             <div className="form-field">
               <label>Email client</label>

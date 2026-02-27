@@ -26,12 +26,12 @@ const POSITION_CATEGORIES = [
   { value: 'logistique', label: 'Logistique & Transport', color: '#10b981' },
   { value: 'captation', label: 'Audiovisuel & Captation', color: '#6366f1' },
   { value: 'production', label: 'Production & Coordination', color: '#78716c' },
-  { value: 'autre', label: 'Autre', color: '#6b7280' },
+  { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
 
 const getCategoryColor = (category) => {
   const cat = POSITION_CATEGORIES.find(c => c.value === category);
-  return cat?.color || '#6b7280';
+  return cat?.color || 'var(--theme-text-gray)';
 };
 
 /* ═══════════════════════════════════════════════
@@ -39,9 +39,9 @@ const getCategoryColor = (category) => {
    ═══════════════════════════════════════════════ */
 
 const LEAVE_TYPE_COLORS = {
-  unavailable: '#94a3b8', conge_paye: '#60a5fa', rtt: '#a78bfa',
+  unavailable: 'var(--theme-text-muted)', conge_paye: '#60a5fa', rtt: '#a78bfa',
   maladie: '#f87171', sans_solde: '#fb923c', formation: '#34d399',
-  repos: '#fbbf24', autre: '#9ca3af',
+  repos: '#fbbf24', autre: 'var(--theme-text-muted)',
 };
 const LEAVE_TYPE_LABELS = {
   unavailable: 'Indisponible', conge_paye: 'CP', rtt: 'RTT',
@@ -118,7 +118,7 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
           <div className="pdp-chips">
             {defaultPositions.map((name, i) => {
               const posObj = positions.find(p => p.name === name);
-              const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || '#6b7280';
+              const catColor = POSITION_CATEGORIES.find(c => c.value === posObj?.category)?.color || 'var(--theme-text-gray)';
               return (
                 <span key={i} className="pdp-chip" style={{ '--chip-color': catColor }}>
                   <Briefcase size={11} /> {name}
@@ -206,10 +206,10 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
       ) : (
         <div className="pdp-absence-list">
           {sorted.map(a => {
-            const leaveColor = LEAVE_TYPE_COLORS[a.type] || '#94a3b8';
+            const leaveColor = LEAVE_TYPE_COLORS[a.type] || 'var(--theme-text-muted)';
             const leaveLabel = LEAVE_TYPE_LABELS[a.type] || a.type;
             const statusLabel = STATUS_LABELS[a.status] || a.status;
-            const statusColor = STATUS_COLORS[a.status] || '#94a3b8';
+            const statusColor = STATUS_COLORS[a.status] || 'var(--theme-text-muted)';
             const start = new Date(a.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
             const end = new Date(a.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
             return (

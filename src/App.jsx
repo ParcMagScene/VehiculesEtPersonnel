@@ -926,7 +926,7 @@ function App() {
         </div>
       )}
       
-      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'trucks' && activeModule !== 'stock' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'trucks' && activeModule !== 'stock' && activeModule !== 'communication' && (
       <GoogleCalendarBanner 
         calendarConfig={calendarConfig} 
         view={view}

@@ -1105,3 +1105,82 @@ src/hooks/useTheme.js  (139 lignes) — Hook React, PALETTES, persistance
 - ✅ Configuration Vite non altérée
 - ✅ Aucun changement de dépendances
 - ✅ Branche `dev` uniquement
+
+---
+
+## Session 18 — Nettoyage code mort & factorisation
+
+**Date** : Continuation session 18
+**Commit** : `e68c9c3` — 28 fichiers, +73/−1630 lignes
+
+### Fichiers JS supprimés
+
+| Fichier | Raison |
+|---------|--------|
+| `src/utils/vehiclesCsvImport.js` | Jamais importé |
+| `src/utils/excelImport.js` | Jamais importé |
+
+### Exports JS morts nettoyés
+
+| Fichier | Exports supprimés |
+|---------|-------------------|
+| `src/utils/deepLinking.js` | `buildEmagReservationUrl`, `buildEmagCatalogUrl`, `parseIncomingDeepLink`, `calculateVolume` |
+| `src/utils/logger.js` | `apiLogger`, `dataLogger` |
+
+### Classes CSS mortes supprimées
+
+| Fichier | Classes | Lignes économisées |
+|---------|---------|-------------------|
+| `src/theme.css` | 11 classes utilitaires + `@keyframes moduleTransition` | ~194 |
+| `src/components/PersonnelPanel.css` | 22 classes (missions, assignments) | 200 |
+| `src/components/EquipmentPanel.css` | 10 classes (eq-detail, eq-card, eq-modal) | 78 |
+| `src/App.css` | 14 classes (affaires-header, conflict-badge) | ~290 |
+| `src/components/Calendar.css` | 7 classes (reservation-block, calendar-body) | 35 |
+| `src/components/ReservationModal.css` | 11 classes (affaires-manager, tournee-toggle) | 205 |
+| `src/components/MaintenanceDialog.css` | 10 classes (status-btn-*, status-change) | 102 |
+| `src/components/EventDetailsModal.css` | 2 classes (btn-drive-link, drive-link-edit) | 41 |
+| `src/components/AffaireDetailPanel.css` | 5 classes (calendar-link, status-*) | 17 |
+| **Total** | **92 classes mortes** | **~1162 lignes** |
+
+### Factorisation @keyframes
+
+6 animations centralisées dans `theme.css` :
+- `overlayFadeIn`, `modalSlideUp`, `fadeIn`, `spin`, `pulse`, `slideUp`
+
+**36 @keyframes dupliqués supprimés** de 22 fichiers CSS :
+
+| Animation | Fichiers nettoyés | Doublons retirés |
+|-----------|-------------------|------------------|
+| `pulse` | 16 fichiers | 16 |
+| `spin` | 8 fichiers | 8 |
+| `fadeIn` | 7 fichiers | 7 |
+| `overlayFadeIn` | 6 fichiers | 6 |
+| `modalSlideUp` | 6 fichiers | 6 |
+| `slideUp` | 4 fichiers | 4 |
+
+### Impact build
+
+| Métrique | Avant session 18 | Après session 18 |
+|----------|-------------------|------------------|
+| Build time | 3.54s | 4.91s |
+| Erreurs | 0 | 0 |
+| Modules | 2489 | 2489 |
+| CSS index.css | 149.15 KB | 139.36 KB |
+| **CSS économisé** | — | **~10 KB** |
+| **Lignes supprimées** | — | **~1630** |
+
+### Récapitulatif global (sessions 13-18)
+
+| Métrique | Valeur |
+|----------|--------|
+| Classes CSS mortes supprimées | 92 |
+| Fichiers JS morts supprimés | 2 |
+| Exports JS morts nettoyés | 6 |
+| @keyframes dupliqués supprimés | 36 |
+| Couleurs hardcodées migrées | ~1200+ |
+| Variables CSS créées/migrées | ~800+ |
+| Inversions text↔bg corrigées | ~90 |
+| Palettes thème créées | 6 × 2 modes |
+| Lignes nettes supprimées | ~7800+ |
+| Fichiers modifiés total | 240+ |
+| Erreurs build | **0** |

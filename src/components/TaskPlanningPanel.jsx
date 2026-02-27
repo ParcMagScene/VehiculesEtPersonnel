@@ -228,6 +228,39 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     return viewMode === 'week' ? weekGoogleEvents : dayGoogleEvents;
   }, [viewMode, weekGoogleEvents, dayGoogleEvents]);
 
+  // ── Groupement par jour pour la vue semaine ──
+  const weekGroupedByDay = useMemo(() => {
+    if (viewMode !== 'week') return null;
+    const map = {};
+    weekDays.forEach(d => {
+      map[d] = { tasks: [], events: [], affaires: [], googleEvents: [] };
+    });
+    // Tâches
+    tasks.forEach(t => {
+      if (map[t.date]) map[t.date].tasks.push(t);
+    });
+    // Événements d'affichage non liés
+    unlinkedEvents.forEach(ev => {
+      if (map[ev.date]) map[ev.date].events.push(ev);
+    });
+    // Affaires : actives sur chaque jour de la semaine
+    affaires.forEach(a => {
+      const debut = a.dateDebut || a.date_debut || '';
+      const fin = a.dateFin || a.date_fin || '';
+      weekDays.forEach(d => {
+        if (debut && debut <= d && (!fin || fin === '' || fin >= d)) {
+          if (map[d]) map[d].affaires.push(a);
+        }
+      });
+    });
+    // Google events
+    weekGoogleEvents.forEach(ev => {
+      const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
+      if (map[evDate]) map[evDate].googleEvents.push(ev);
+    });
+    return map;
+  }, [viewMode, weekDays, tasks, unlinkedEvents, affaires, weekGoogleEvents]);
+
   // Affaires groupées par section de préparation
   const affairesBySection = useMemo(() => {
     const groups = {};
@@ -637,6 +670,132 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     );
   };
 
+  // ── Rendu compact d'une mini-carte pour la vue semaine ──
+  const renderWeekMiniCard = (item, type) => {
+    if (type === 'task') {
+      const isDone = item.status === 'done';
+      const isProgress = item.status === 'in_progress';
+      const sectionInfo = SECTIONS[item.section] || SECTIONS.manual;
+      return (
+        <div
+          key={`wt-${item.id}`}
+          className={`wk-card wk-task ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''} ${item.visible === 0 ? 'hidden-display' : ''}`}
+          style={{ borderLeftColor: sectionInfo.color }}
+        >
+          <button
+            className={`wk-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+            onClick={() => cycleStatus(item)}
+          >
+            {isDone && <Check size={10} />}
+            {isProgress && <Clock size={10} />}
+          </button>
+          <span className={`wk-title ${isDone ? 'done' : ''}`} title={item.title}>{item.title}</span>
+          {(item.personFirstName) && (
+            <span className="wk-person">{item.personFirstName?.charAt(0)}{item.personLastName?.charAt(0)}</span>
+          )}
+          <div className="wk-actions">
+            <button onClick={() => handleToggleTaskVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
+              {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
+            </button>
+            <button className="del" onClick={() => handleDelete(item.id)} title="Supprimer">
+              <Trash2 size={10} />
+            </button>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'event') {
+      const typeInfo = EVENT_TYPES[item.type] || { label: item.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
+      return (
+        <div
+          key={`we-${item.id}`}
+          className={`wk-card wk-event ${item.visible === 0 ? 'hidden-display' : ''}`}
+          style={{ borderLeftColor: typeInfo.color }}
+        >
+          <Monitor size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
+          <span className="wk-title" title={`${typeInfo.label}${item.client ? ' — ' + item.client : ''}`}>
+            {typeInfo.emoji} {item.client || typeInfo.label}
+          </span>
+          <div className="wk-actions">
+            <button onClick={() => handleToggleDisplayEventVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
+              {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
+            </button>
+            <button className="del" onClick={() => handleDeleteDisplayEvent(item.id)} title="Retirer">
+              <Trash2 size={10} />
+            </button>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'affaire') {
+      const typeInfo = AFFAIRE_TYPE_INFO[item.type] || { label: 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+      return (
+        <div
+          key={`wa-${item.numeroAffaire}`}
+          className="wk-card wk-affaire"
+          style={{ borderLeftColor: typeInfo.color }}
+        >
+          <Briefcase size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
+          <span className="wk-title" title={`${item.numeroAffaire}${item.client ? ' — ' + item.client : ''}`}>
+            {typeInfo.emoji} {item.client || item.numeroAffaire}
+          </span>
+          <div className="wk-actions">
+            <button className="del" onClick={() => handleHideAffaire(item)} title="Retirer">
+              <X size={10} />
+            </button>
+          </div>
+        </div>
+      );
+    }
+    if (type === 'google') {
+      const summary = item.summary || 'Événement';
+      const isProcessed = processedGoogleIds.has(item.id);
+      const startDT = item.start?.dateTime || item.start?.date || '';
+      const timeStr = startDT.includes('T')
+        ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        : '';
+      return (
+        <div
+          key={`wg-${item.id}`}
+          className={`wk-card wk-google ${isProcessed ? 'processed' : 'pending'}`}
+          style={{ borderLeftColor: isProcessed ? '#10b981' : '#4285f4', cursor: 'pointer' }}
+          onClick={() => setEventTaskModalEvent(item)}
+        >
+          <Calendar size={10} style={{ color: '#4285f4', flexShrink: 0 }} />
+          <span className="wk-title" title={summary}>{summary.slice(0, 22)}{summary.length > 22 ? '…' : ''}</span>
+          {timeStr && <span className="wk-time">{timeStr}</span>}
+          <span className={`wk-status-dot ${isProcessed ? 'done' : ''}`}>{isProcessed ? '✓' : '⚙'}</span>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // ── Colonne d'un jour dans la vue semaine ──
+  const renderWeekDayColumn = (dayStr) => {
+    const dayData = weekGroupedByDay?.[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
+    const d = new Date(dayStr + 'T00:00:00');
+    const dayLabel = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+    const isToday = dayStr === todayStr();
+    const totalItems = dayData.tasks.length + dayData.events.length + dayData.affaires.length + dayData.googleEvents.length;
+
+    return (
+      <div key={dayStr} className={`wk-day-col ${isToday ? 'today' : ''}`}>
+        <div className="wk-day-header">
+          <span className="wk-day-label">{dayLabel}</span>
+          {totalItems > 0 && <span className="wk-day-count">{totalItems}</span>}
+        </div>
+        <div className="wk-day-body">
+          {totalItems === 0 && <div className="wk-empty">—</div>}
+          {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
+          {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
+          {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
+          {dayData.tasks.map(t => renderWeekMiniCard(t, 'task'))}
+        </div>
+      </div>
+    );
+  };
+
   const renderSection = (sectionKey) => {
     const info = SECTIONS[sectionKey];
     const sectionTasks = grouped[sectionKey] || [];
@@ -787,13 +946,17 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         </div>
       </div>
 
-      {/* Contenu — même layout sections pour Jour et Semaine */}
+      {/* Contenu */}
       {loading ? (
         <div className="sections-container">
           <div className="empty-state">
             <ClipboardList size={48} />
             <p>Chargement…</p>
           </div>
+        </div>
+      ) : viewMode === 'week' ? (
+        <div className="wk-day-grid">
+          {weekDays.map(d => renderWeekDayColumn(d))}
         </div>
       ) : (
         <div className="sections-container">

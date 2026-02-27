@@ -708,3 +708,203 @@
   color: var(--theme-primary);
 }
 
+/* ═══════════════════════════════════════════
+   WEEK DAY GRID
+   ═══════════════════════════════════════════ */
+.wk-day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 8px;
+  overflow-x: auto;
+  min-height: 200px;
+}
+.wk-day-col {
+  background: var(--theme-card-bg, #fff);
+  border: 1px solid var(--theme-border-color, #e2e8f0);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 130px;
+}
+.wk-day-col.today {
+  border-color: var(--theme-primary, #3b82f6);
+  box-shadow: 0 0 0 1px var(--theme-primary, #3b82f6);
+}
+.wk-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: var(--theme-bg-secondary, #f8fafc);
+  border-bottom: 1px solid var(--theme-border-color, #e2e8f0);
+  border-radius: 8px 8px 0 0;
+}
+.wk-day-col.today .wk-day-header {
+  background: var(--theme-primary, #3b82f6);
+  color: #fff;
+}
+.wk-day-count {
+  background: var(--theme-primary, #3b82f6);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wk-day-col.today .wk-day-count {
+  background: #fff;
+  color: var(--theme-primary, #3b82f6);
+}
+.wk-day-body {
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 55vh;
+}
+.wk-empty {
+  color: var(--theme-text-muted, #94a3b8);
+  text-align: center;
+  padding: 12px 0;
+  font-size: 0.8rem;
+}
+
+/* ── Mini-cartes ── */
+.wk-card {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 5px;
+  border-radius: 5px;
+  border-left: 3px solid transparent;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  background: var(--theme-bg-secondary, #f8fafc);
+  transition: background 0.15s;
+}
+.wk-card:hover {
+  background: var(--theme-hover-bg, #eef2f7);
+}
+.wk-card.hidden-display {
+  opacity: 0.45;
+}
+.wk-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wk-title.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.wk-person {
+  font-size: 0.6rem;
+  font-weight: 600;
+  background: var(--theme-primary, #3b82f6);
+  color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.wk-time {
+  font-size: 0.6rem;
+  color: var(--theme-text-secondary, #64748b);
+  flex-shrink: 0;
+}
+.wk-status {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--theme-border-color, #cbd5e1);
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+.wk-status.done {
+  background: #10b981;
+  border-color: #10b981;
+  color: #fff;
+}
+.wk-status.in-progress {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #fff;
+}
+.wk-status-dot {
+  font-size: 0.6rem;
+  flex-shrink: 0;
+}
+.wk-status-dot.done {
+  color: #10b981;
+}
+.wk-actions {
+  display: flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.wk-card:hover .wk-actions {
+  opacity: 1;
+}
+.wk-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  color: var(--theme-text-secondary, #64748b);
+  display: flex;
+  align-items: center;
+}
+.wk-actions button:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--theme-primary, #3b82f6);
+}
+.wk-actions button.del:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* ── Google cards ── */
+.wk-card.wk-google.pending {
+  background: rgba(66, 133, 244, 0.06);
+}
+.wk-card.wk-google.processed {
+  background: rgba(16, 185, 129, 0.06);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .wk-day-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .wk-day-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .wk-day-grid {
+    grid-template-columns: 1fr;
+  }
+}

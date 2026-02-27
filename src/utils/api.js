@@ -1711,6 +1711,76 @@ class ApiClient {
   async getDisplayStats() {
     return this.request('/display/stats');
   }
+
+  // ═══ Demandes de matériel ═══
+  async getMaterialRequests(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/material-requests?${query}`);
+  }
+
+  async getMaterialRequestsStats() {
+    return this.request('/material-requests/stats');
+  }
+
+  async createMaterialRequest(data) {
+    return this.request('/material-requests', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateMaterialRequest(id, data) {
+    return this.request(`/material-requests/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async deleteMaterialRequest(id) {
+    return this.request(`/material-requests/${id}`, { method: 'DELETE' });
+  }
+
+  async validateMaterialRequest(id, action, rejection_reason = null) {
+    return this.request(`/material-requests/${id}/validate`, { method: 'POST', body: JSON.stringify({ action, rejection_reason }) });
+  }
+
+  async batchValidateMaterialRequests(request_ids, action) {
+    return this.request('/material-requests/batch-validate', { method: 'POST', body: JSON.stringify({ request_ids, action }) });
+  }
+
+  // ═══ Documents fournisseurs ═══
+  async getSupplierDocuments(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/supplier-documents?${query}`);
+  }
+
+  async uploadSupplierDocument(data) {
+    return this.request('/supplier-documents', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async deleteSupplierDocument(id) {
+    return this.request(`/supplier-documents/${id}`, { method: 'DELETE' });
+  }
+
+  // ═══ Fournisseurs enrichis ═══
+  async getSuppliersWithOrders(includeArchived = false) {
+    return this.request(`/suppliers/with-orders?include_archived=${includeArchived}`);
+  }
+
+  async getSupplierOrders(supplierId, includeArchived = false) {
+    return this.request(`/suppliers/${supplierId}/orders?include_archived=${includeArchived}`);
+  }
+
+  async getSupplierFullDetail(supplierId) {
+    return this.request(`/suppliers/${supplierId}/full-detail`);
+  }
+
+  // ═══ Alertes de complétion ═══
+  async getCompletionAlerts(unreadOnly = false) {
+    return this.request(`/completion-alerts?unread_only=${unreadOnly}`);
+  }
+
+  async markAlertRead(id) {
+    return this.request(`/completion-alerts/${id}/read`, { method: 'PUT' });
+  }
+
+  async markAllAlertsRead() {
+    return this.request('/completion-alerts/mark-all-read', { method: 'PUT' });
+  }
 }
 
 export const api = new ApiClient();

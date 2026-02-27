@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShoppingCart, FileText, Search, Plus, Filter, Edit2, Trash2, ArrowLeft, 
   Users as UsersIcon, Package, Send, Check, X, ArrowRight, 
-  Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck } from 'lucide-react';
+  Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck,
+  ClipboardList, Bell, Eye, CheckCircle, Clock, Archive, 
+  FileDown, Receipt, Layers, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 import { formatCurrency, formatDateSimple as formatDate } from '../utils/formatUtils';
 import ConfirmDialog from './ConfirmDialog';
@@ -30,6 +32,29 @@ const QUOTE_STATUS = {
 
 const UNITS = ['u', 'm', 'm²', 'm³', 'kg', 'L', 'h', 'j', 'lot', 'forfait'];
 
+const REQUEST_STATUS = {
+  pending: { label: 'En attente', color: '#f59e0b', icon: '⏳' },
+  approved: { label: 'Validée', color: '#10b981', icon: '✅' },
+  rejected: { label: 'Refusée', color: '#ef4444', icon: '❌' },
+  ordered: { label: 'Commandée', color: '#3b82f6', icon: '📦' },
+};
+
+const REQUEST_PRIORITY = {
+  low: { label: 'Basse', color: '#6b7280', icon: '🔵' },
+  normal: { label: 'Normale', color: '#3b82f6', icon: '🟢' },
+  high: { label: 'Haute', color: '#f59e0b', icon: '🟡' },
+  urgent: { label: 'Urgente', color: '#ef4444', icon: '🔴' },
+};
+
+const DESTINATIONS = ['SAV', 'Pièces', 'Stock Mag Scène', 'Autre'];
+
+const DOC_TYPES = {
+  acknowledgment: { label: 'Accusé de commande', icon: '📋' },
+  delivery_note: { label: 'BL fournisseur', icon: '📦' },
+  quote: { label: 'Devis fournisseur', icon: '📄' },
+  invoice: { label: 'Facture fournisseur', icon: '🧾' },
+};
+
 // ═══ Composant Principal ═══
 function OrdersPanel({ currentUser }) {
   const toast = useToast();
@@ -54,6 +79,20 @@ function OrdersPanel({ currentUser }) {
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
 
+  // Demandes de matériel
+  const [materialRequests, setMaterialRequests] = useState([]);
+  const [requestStats, setRequestStats] = useState(null);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+
+  // Fournisseurs enrichis
+  const [suppliersWithOrders, setSuppliersWithOrders] = useState([]);
+  const [showArchivedSuppliers, setShowArchivedSuppliers] = useState(false);
+  const [selectedSupplierPanel, setSelectedSupplierPanel] = useState(null);
+  const [supplierDetailData, setSupplierDetailData] = useState(null);
+
+  // Alertes complétion
+  const [completionAlerts, setCompletionAlerts] = useState([]);
+
   // ═══ Chargement des données ═══
   const abortRef = useRef(null);
   const debounceRef = useRef(null);
@@ -76,6 +115,10 @@ function OrdersPanel({ currentUser }) {
       if (activeTab === 'quotes' || !quotes.length) promises.push(api.getQuotes(params));
       promises.push(api.getOrdersStats());
       if (!clients.length) promises.push(api.getClients());
+      if (activeTab === 'requests') promises.push(api.getMaterialRequests(params));
+      promises.push(api.getMaterialRequestsStats());
+      if (activeTab === 'suppliers') promises.push(api.getSuppliersWithOrders(showArchivedSuppliers));
+      promises.push(api.getCompletionAlerts(true));
 
       const results = await Promise.all(promises);
 
@@ -86,7 +129,11 @@ function OrdersPanel({ currentUser }) {
       if (activeTab === 'orders' || !orders.length) setOrders(results[idx++]);
       if (activeTab === 'quotes' || !quotes.length) setQuotes(results[idx++]);
       setStats(results[idx++]);
-      if (!clients.length && results[idx]) setClients(results[idx]);
+      if (!clients.length && results[idx]) { setClients(results[idx]); idx++; } else if (!clients.length) idx++;
+      if (activeTab === 'requests') setMaterialRequests(results[idx++]); 
+      setRequestStats(results[idx++]);
+      if (activeTab === 'suppliers') setSuppliersWithOrders(results[idx++]);
+      setCompletionAlerts(results[idx] || []);
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('Erreur chargement commandes:', error);
@@ -95,7 +142,7 @@ function OrdersPanel({ currentUser }) {
       if (!controller.signal.aborted) setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, statusFilter, activeTab]);
+  }, [searchTerm, statusFilter, activeTab, showArchivedSuppliers]);
 
   // Debounce search: déclencher loadData après 300ms d'inactivité
   useEffect(() => {
@@ -248,6 +295,66 @@ function OrdersPanel({ currentUser }) {
     });
   };
 
+  // ═══ Handlers Demandes de matériel ═══
+  const handleSaveRequest = async (data) => {
+    try {
+      await api.createMaterialRequest(data);
+      setShowRequestModal(false);
+      toast.success('Demande créée avec succès');
+      loadData();
+    } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
+  const handleValidateRequest = async (request, action, reason = null) => {
+    try {
+      const result = await api.validateMaterialRequest(request.id, action, reason);
+      if (result.action === 'approved') {
+        toast.success(`Demande approuvée → commande ${result.order?.orderRef || ''}`);
+      } else {
+        toast.success('Demande refusée');
+      }
+      loadData();
+    } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
+  const handleDeleteRequest = (request) => {
+    setConfirmDialog({
+      title: 'Supprimer la demande',
+      message: `Supprimer la demande "${request.article}" ?`,
+      onConfirm: async () => {
+        try {
+          await api.deleteMaterialRequest(request.id);
+          loadData();
+        } catch (error) { toast.error('Erreur: ' + error.message); }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
+  };
+
+  // ═══ Handlers Fournisseurs enrichis ═══
+  const handleSupplierClick = async (supplier) => {
+    try {
+      const orders = await api.getSupplierOrders(supplier.id, showArchivedSuppliers);
+      setSelectedSupplierPanel({ ...supplier, orders });
+    } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
+  const handleSupplierDoubleClick = async (supplier) => {
+    try {
+      const detail = await api.getSupplierFullDetail(supplier.id);
+      setSupplierDetailData(detail);
+    } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
+  // ═══ Handler Alertes ═══
+  const handleMarkAlertRead = async (alertId) => {
+    try {
+      await api.markAlertRead(alertId);
+      setCompletionAlerts(prev => prev.filter(a => a.id !== alertId));
+    } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
   // ═══ Rendu du détail commande ═══
   if (selectedOrder) {
     return (
@@ -315,11 +422,42 @@ function OrdersPanel({ currentUser }) {
             <span className="stat-value">{stats.suppliers?.total || 0}</span>
             <span className="stat-label">Fournisseurs</span>
           </div>
+          {requestStats && (
+            <div className="orders-stat" style={requestStats.pending > 0 ? { borderColor: '#f59e0b' } : undefined}>
+              <ClipboardList size={16} />
+              <span className="stat-value">{requestStats.pending || 0}</span>
+              <span className="stat-label">Demandes en attente</span>
+            </div>
+          )}
           <div className="orders-stat highlight">
             <Euro size={16} />
             <span className="stat-value">{formatCurrency(stats.orders?.total_ht || 0)}</span>
             <span className="stat-label">Total commandes HT</span>
           </div>
+          {completionAlerts.length > 0 && (
+            <div className="orders-stat alert-stat" onClick={() => setActiveTab('requests')}>
+              <Bell size={16} />
+              <span className="stat-value">{completionAlerts.length}</span>
+              <span className="stat-label">Alertes</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Completion Alerts Banner */}
+      {completionAlerts.length > 0 && (
+        <div className="completion-alerts-banner">
+          <Bell size={16} />
+          <span>{completionAlerts.length} nouvelle(s) alerte(s) de réception</span>
+          <div className="alerts-preview">
+            {completionAlerts.slice(0, 3).map(alert => (
+              <div key={alert.id} className="alert-preview-item">
+                <span>{alert.message}</span>
+                <button onClick={() => handleMarkAlertRead(alert.id)}><Check size={12} /></button>
+              </div>
+            ))}
+          </div>
+          {completionAlerts.length > 3 && <span className="alerts-more">+{completionAlerts.length - 3} autres</span>}
         </div>
       )}
 
@@ -330,6 +468,10 @@ function OrdersPanel({ currentUser }) {
         </button>
         <button className={`orders-tab ${activeTab === 'quotes' ? 'active' : ''}`} onClick={() => { setActiveTab('quotes'); setStatusFilter(''); }}>
           <FileText size={16} /> Devis
+        </button>
+        <button className={`orders-tab ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => { setActiveTab('requests'); setStatusFilter(''); }}>
+          <ClipboardList size={16} /> Demandes
+          {requestStats?.pending > 0 && <span className="tab-badge">{requestStats.pending}</span>}
         </button>
         <button className={`orders-tab ${activeTab === 'suppliers' ? 'active' : ''}`} onClick={() => { setActiveTab('suppliers'); setStatusFilter(''); }}>
           <Building2 size={16} /> Fournisseurs
@@ -345,7 +487,18 @@ function OrdersPanel({ currentUser }) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        {activeTab !== 'suppliers' && (
+        {activeTab === 'requests' && (
+          <div className="orders-filter">
+            <Filter size={14} />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="">Tous les statuts</option>
+              {Object.entries(REQUEST_STATUS).map(([key, val]) => (
+                <option key={key} value={key}>{val.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {activeTab !== 'suppliers' && activeTab !== 'requests' && (
           <div className="orders-filter">
             <Filter size={14} />
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
@@ -356,13 +509,20 @@ function OrdersPanel({ currentUser }) {
             </select>
           </div>
         )}
+        {activeTab === 'suppliers' && (
+          <label className="archived-toggle">
+            <input type="checkbox" checked={showArchivedSuppliers} onChange={(e) => setShowArchivedSuppliers(e.target.checked)} />
+            <Archive size={14} /> Inclure archivées
+          </label>
+        )}
         <button className="orders-add-btn" onClick={() => {
           if (activeTab === 'orders') { setEditingOrder(null); setShowOrderForm(true); }
           else if (activeTab === 'quotes') { setEditingQuote(null); setShowQuoteForm(true); }
+          else if (activeTab === 'requests') { setShowRequestModal(true); }
           else { setEditingSupplier(null); setShowSupplierForm(true); }
         }}>
           <Plus size={16} />
-          {activeTab === 'orders' ? 'Nouvelle commande' : activeTab === 'quotes' ? 'Nouveau devis' : 'Nouveau fournisseur'}
+          {activeTab === 'orders' ? 'Nouvelle commande' : activeTab === 'quotes' ? 'Nouveau devis' : activeTab === 'requests' ? 'Nouvelle demande' : 'Nouveau fournisseur'}
         </button>
       </div>
 
@@ -377,8 +537,22 @@ function OrdersPanel({ currentUser }) {
           {activeTab === 'quotes' && (
             <QuotesList quotes={quotes} onView={handleViewQuote} onEdit={handleEditQuote} onDelete={handleDeleteQuote} onConvert={handleConvertQuote} />
           )}
+          {activeTab === 'requests' && (
+            <MaterialRequestsList 
+              requests={materialRequests} 
+              isAdmin={currentUser?.isAdmin}
+              onValidate={handleValidateRequest} 
+              onDelete={handleDeleteRequest} 
+            />
+          )}
           {activeTab === 'suppliers' && (
-            <SuppliersList suppliers={suppliers} onEdit={(s) => { setEditingSupplier(s); setShowSupplierForm(true); }} onDelete={handleDeleteSupplier} />
+            <EnhancedSuppliersList 
+              suppliers={activeTab === 'suppliers' ? suppliersWithOrders : suppliers}
+              onEdit={(s) => { setEditingSupplier(s); setShowSupplierForm(true); }} 
+              onDelete={handleDeleteSupplier}
+              onClick={handleSupplierClick}
+              onDoubleClick={handleSupplierDoubleClick}
+            />
           )}
         </>
       )}
@@ -405,6 +579,33 @@ function OrdersPanel({ currentUser }) {
           supplier={editingSupplier}
           onSave={handleSaveSupplier}
           onClose={() => { setShowSupplierForm(false); setEditingSupplier(null); }}
+        />
+      )}
+      {showRequestModal && (
+        <MaterialRequestModal 
+          suppliers={suppliers}
+          onSave={handleSaveRequest}
+          onClose={() => setShowRequestModal(false)}
+        />
+      )}
+      {selectedSupplierPanel && (
+        <SupplierPanel 
+          supplier={selectedSupplierPanel}
+          onClose={() => setSelectedSupplierPanel(null)}
+          onViewDetail={handleSupplierDoubleClick}
+          onViewOrder={handleViewOrder}
+        />
+      )}
+      {supplierDetailData && (
+        <SupplierDetailModal 
+          data={supplierDetailData}
+          onClose={() => setSupplierDetailData(null)}
+          onViewOrder={handleViewOrder}
+          onReload={async () => {
+            const detail = await api.getSupplierFullDetail(supplierDetailData.supplier.id);
+            setSupplierDetailData(detail);
+          }}
+          currentUser={currentUser}
         />
       )}
       {confirmDialog && <ConfirmDialog {...confirmDialog} />}
@@ -1038,6 +1239,479 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
           <button className="save-btn" onClick={() => onSave(form)} disabled={!form.name.trim()}>
             <Check size={16} /> {supplier ? 'Enregistrer' : 'Créer'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ═══ Liste des demandes de matériel ═══
+const MaterialRequestsList = React.memo(({ requests, isAdmin, onValidate, onDelete }) => {
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  if (!requests.length) return <div className="orders-empty"><ClipboardList size={24} /><p>Aucune demande de matériel</p></div>;
+  return (
+    <div className="orders-table-wrapper">
+      <table className="orders-table requests-table">
+        <thead>
+          <tr>
+            <th>Article</th>
+            <th>Qté</th>
+            <th>Priorité</th>
+            <th>Destination</th>
+            <th>Fournisseur</th>
+            <th>Demandeur</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {requests.map(req => {
+            const status = REQUEST_STATUS[req.status] || REQUEST_STATUS.pending;
+            const priority = REQUEST_PRIORITY[req.priority] || REQUEST_PRIORITY.normal;
+            return (
+              <React.Fragment key={req.id}>
+                <tr className={req.priority === 'urgent' ? 'urgent-row' : ''}>
+                  <td className="article-cell">
+                    <strong>{req.article}</strong>
+                    {req.ref_code && <span className="ref-small">Réf: {req.ref_code}</span>}
+                    {req.affaire_id && <span className="affaire-small">Aff: {req.affaire_id}</span>}
+                  </td>
+                  <td className="center">{req.quantity}</td>
+                  <td>
+                    <span className="priority-badge" style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
+                  </td>
+                  <td>{req.destination === 'Autre' ? req.destination_other || 'Autre' : req.destination}</td>
+                  <td>{req.supplier_name || '—'}</td>
+                  <td>{req.requested_by_name || req.requested_by_name_db || '—'}</td>
+                  <td>
+                    <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+                      {status.icon} {status.label}
+                    </span>
+                    {req.order_id && <span className="order-link-small">→ Cmd #{req.order_id}</span>}
+                  </td>
+                  <td className="actions-cell" onClick={e => e.stopPropagation()}>
+                    {isAdmin && req.status === 'pending' && (
+                      <>
+                        <button className="icon-btn success" onClick={() => onValidate(req, 'approve')} title="Approuver"><Check size={14} /></button>
+                        <button className="icon-btn danger" onClick={() => setRejectingId(req.id)} title="Refuser"><X size={14} /></button>
+                      </>
+                    )}
+                    <button className="icon-btn danger" onClick={() => onDelete(req)} title="Supprimer"><Trash2 size={14} /></button>
+                  </td>
+                </tr>
+                {rejectingId === req.id && (
+                  <tr className="reject-reason-row">
+                    <td colSpan={8}>
+                      <div className="reject-input-row">
+                        <input type="text" placeholder="Raison du refus (optionnel)" value={rejectReason}
+                          onChange={e => setRejectReason(e.target.value)} className="reject-reason-input" />
+                        <button className="save-btn small" onClick={() => { onValidate(req, 'reject', rejectReason); setRejectingId(null); setRejectReason(''); }}>Confirmer refus</button>
+                        <button className="cancel-btn small" onClick={() => { setRejectingId(null); setRejectReason(''); }}>Annuler</button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+});
+
+// ═══ Modal demande de matériel ═══
+const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
+  const [form, setForm] = useState({
+    article: '', supplier_id: '', supplier_name: '', quantity: 1,
+    priority: 'normal', affaire_id: '', destination: 'Stock Mag Scène',
+    destination_other: '', notes: '', ref_code: '',
+  });
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogResults, setCatalogResults] = useState([]);
+  const [showCatalog, setShowCatalog] = useState(false);
+
+  const searchCatalog = useCallback(async (term) => {
+    if (term.length < 2) { setCatalogResults([]); return; }
+    try {
+      const results = await api.getCatalogEquipment({ search: term, limit: 10 });
+      setCatalogResults(Array.isArray(results) ? results : results?.data || []);
+    } catch { setCatalogResults([]); }
+  }, []);
+
+  const handleCatalogSelect = (item) => {
+    setForm(f => ({
+      ...f,
+      article: item.name || item.designation || item.label || '',
+      ref_code: item.reference || item.ref_code || '',
+      supplier_name: item.supplier_name || item.brand || f.supplier_name,
+    }));
+    setShowCatalog(false);
+    setCatalogSearch('');
+  };
+
+  const handleSupplierChange = (supplierId) => {
+    const s = suppliers.find(su => su.id === parseInt(supplierId));
+    setForm(f => ({ ...f, supplier_id: supplierId, supplier_name: s ? s.name : '' }));
+  };
+
+  return (
+    <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="order-form-modal material-request-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2><ClipboardList size={20} /> Nouvelle demande de matériel</h2>
+          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+        </div>
+        <div className="modal-body">
+          <div className="form-grid">
+            <div className="form-field full-width">
+              <label>Article *</label>
+              <div className="article-input-group">
+                <input type="text" value={form.article} onChange={e => setForm(f => ({ ...f, article: e.target.value }))} 
+                  placeholder="Nom de l'article" />
+                <button type="button" className="catalog-search-btn" onClick={() => setShowCatalog(!showCatalog)} title="Chercher dans catalogue">
+                  <Layers size={14} /> Catalogue
+                </button>
+              </div>
+              {showCatalog && (
+                <div className="catalog-search-panel">
+                  <input type="text" placeholder="Rechercher dans le catalogue..." value={catalogSearch}
+                    onChange={e => { setCatalogSearch(e.target.value); searchCatalog(e.target.value); }} autoFocus />
+                  {catalogResults.length > 0 && (
+                    <div className="catalog-results">
+                      {catalogResults.map((item, i) => (
+                        <div key={item.id || i} className="catalog-result-item" onClick={() => handleCatalogSelect(item)}>
+                          <strong>{item.name || item.designation}</strong>
+                          {item.reference && <span className="ref-small">Réf: {item.reference}</span>}
+                          {(item.supplier_name || item.brand) && <span className="supplier-small">{item.supplier_name || item.brand}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="form-field">
+              <label>Réf. article</label>
+              <input type="text" value={form.ref_code} onChange={e => setForm(f => ({ ...f, ref_code: e.target.value }))} placeholder="Référence" />
+            </div>
+            <div className="form-field">
+              <label>Quantité</label>
+              <input type="number" min="1" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) || 1 }))} />
+            </div>
+            <div className="form-field">
+              <label>Fournisseur (optionnel)</label>
+              <select value={form.supplier_id} onChange={e => handleSupplierChange(e.target.value)}>
+                <option value="">— Non spécifié —</option>
+                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Priorité</label>
+              <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
+                {Object.entries(REQUEST_PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Affaire (optionnel)</label>
+              <input type="text" value={form.affaire_id} onChange={e => setForm(f => ({ ...f, affaire_id: e.target.value }))} placeholder="ex: AF32844" />
+            </div>
+            <div className="form-field">
+              <label>Destination</label>
+              <select value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))}>
+                {DESTINATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            {form.destination === 'Autre' && (
+              <div className="form-field">
+                <label>Préciser la destination</label>
+                <input type="text" value={form.destination_other} onChange={e => setForm(f => ({ ...f, destination_other: e.target.value }))} placeholder="Destination..." />
+              </div>
+            )}
+            <div className="form-field full-width">
+              <label>Notes / Commentaires</label>
+              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informations supplémentaires..." />
+            </div>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="cancel-btn" onClick={onClose}>Annuler</button>
+          <button className="save-btn" onClick={() => onSave(form)} disabled={!form.article.trim()}>
+            <Check size={16} /> Créer la demande
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ═══ Liste fournisseurs enrichie (avec commandes) ═══
+const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick, onDoubleClick }) => {
+  const clickTimerRef = useRef(null);
+
+  const handleClick = (supplier) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; return; }
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      onClick(supplier);
+    }, 250);
+  };
+
+  const handleDoubleClick = (supplier) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
+    onDoubleClick(supplier);
+  };
+
+  if (!suppliers.length) return <div className="orders-empty"><Building2 size={24} /><p>Aucun fournisseur avec commandes en cours</p></div>;
+  return (
+    <div className="orders-suppliers-grid enhanced">
+      {suppliers.map(supplier => (
+        <div key={supplier.id} className="supplier-card enhanced" onClick={() => handleClick(supplier)} onDoubleClick={() => handleDoubleClick(supplier)}>
+          <div className="supplier-card-header">
+            <Building2 size={18} />
+            <h3>{supplier.name}</h3>
+            <div className="supplier-actions" onClick={e => e.stopPropagation()}>
+              <button className="icon-btn" onClick={() => onEdit(supplier)} title="Modifier"><Edit2 size={14} /></button>
+              <button className="icon-btn danger" onClick={() => onDelete(supplier)} title="Supprimer"><Trash2 size={14} /></button>
+            </div>
+          </div>
+          <div className="supplier-card-body">
+            <div className="supplier-order-info">
+              <span className="order-count-badge"><ShoppingCart size={14} /> {supplier.active_order_count || 0} commande(s)</span>
+              {supplier.total_ht > 0 && <span className="supplier-total">{formatCurrency(supplier.total_ht)} HT</span>}
+            </div>
+            {supplier.order_statuses && (
+              <div className="supplier-statuses">
+                {supplier.order_statuses.split(',').map(s => {
+                  const st = ORDER_STATUS[s.trim()];
+                  return st ? <span key={s} className="mini-status" style={{ color: st.color }}>{st.icon}</span> : null;
+                })}
+              </div>
+            )}
+            {supplier.contact_name && <div className="supplier-field"><UsersIcon size={13} /> {supplier.contact_name}</div>}
+            {supplier.email && <div className="supplier-field"><Mail size={13} /> {supplier.email}</div>}
+            {supplier.phone && <div className="supplier-field"><Phone size={13} /> {formatPhoneDisplay(supplier.phone)}</div>}
+          </div>
+          <div className="supplier-card-footer enhanced">
+            <span className="click-hint">Clic: commandes — Double clic: détail complet</span>
+            <ChevronRight size={16} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+});
+
+// ═══ Volet fournisseur (clic simple) ═══
+const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder }) => {
+  return (
+    <div className="supplier-slide-panel">
+      <div className="slide-panel-header">
+        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <h2><Building2 size={20} /> {supplier.name}</h2>
+        <button className="action-btn" onClick={() => { onClose(); onViewDetail(supplier); }}>
+          <Eye size={14} /> Détail complet
+        </button>
+      </div>
+      <div className="slide-panel-body">
+        <h3>Commandes en cours ({supplier.orders?.length || 0})</h3>
+        {!supplier.orders?.length ? (
+          <p className="no-items">Aucune commande en cours</p>
+        ) : (
+          <div className="supplier-orders-list">
+            {supplier.orders.map(order => {
+              const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
+              const completion = order.item_count > 0 ? Math.round((order.completed_items / order.item_count) * 100) : 0;
+              return (
+                <div key={order.id} className="supplier-order-card" onClick={() => { onClose(); onViewOrder(order); }}>
+                  <div className="order-card-top">
+                    <span className="order-ref"><Hash size={14} /> {order.reference}</span>
+                    <span className="status-badge small" style={{ backgroundColor: status.color + '20', color: status.color }}>
+                      {status.icon} {status.label}
+                    </span>
+                  </div>
+                  <div className="order-card-meta">
+                    <span>{formatDate(order.order_date)}</span>
+                    <span>{order.item_count} article(s)</span>
+                    <span>{formatCurrency(order.total_ht)} HT</span>
+                  </div>
+                  <div className="order-progress">
+                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${completion}%` }} /></div>
+                    <span className="progress-text">{completion}% réceptionné</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+// ═══ Modal détail fournisseur (double clic) ═══
+const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, currentUser }) => {
+  const { supplier, orders, documents, workflow } = data;
+  const [activeSection, setActiveSection] = useState('workflow');
+  const [uploadingDoc, setUploadingDoc] = useState(null);
+  const toast = useToast();
+
+  const handleUploadDoc = async (orderId, docType) => {
+    try {
+      await api.uploadSupplierDocument({
+        supplier_id: supplier.id,
+        order_id: orderId,
+        doc_type: docType,
+        filename: `${docType}-${supplier.name}-${Date.now()}`,
+      });
+      toast.success('Document enregistré');
+      setUploadingDoc(null);
+      onReload();
+    } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
+  return (
+    <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="supplier-detail-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2><Building2 size={20} /> {supplier.name} — Détail complet</h2>
+          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+        </div>
+        <div className="supplier-detail-tabs">
+          <button className={activeSection === 'workflow' ? 'active' : ''} onClick={() => setActiveSection('workflow')}>
+            <Layers size={14} /> Workflow
+          </button>
+          <button className={activeSection === 'orders' ? 'active' : ''} onClick={() => setActiveSection('orders')}>
+            <ShoppingCart size={14} /> Commandes ({orders.length})
+          </button>
+          <button className={activeSection === 'documents' ? 'active' : ''} onClick={() => setActiveSection('documents')}>
+            <FileText size={14} /> Documents ({documents.length})
+          </button>
+        </div>
+
+        <div className="modal-body supplier-detail-body">
+          {/* ═══ Section Workflow ═══ */}
+          {activeSection === 'workflow' && (
+            <div className="workflow-section">
+              {workflow.map(w => (
+                <div key={w.order_id} className="workflow-card">
+                  <div className="workflow-card-header">
+                    <Hash size={14} /> {w.reference}
+                    <span className="status-badge small" style={{ backgroundColor: (ORDER_STATUS[w.status]?.color || '#666') + '20', color: ORDER_STATUS[w.status]?.color || '#666' }}>
+                      {ORDER_STATUS[w.status]?.icon} {ORDER_STATUS[w.status]?.label || w.status}
+                    </span>
+                  </div>
+                  <div className="workflow-steps">
+                    <div className={`workflow-step ${w.steps.quote ? 'done' : ''}`}>
+                      <div className="step-icon">{w.steps.quote ? <CheckCircle size={16} /> : <Clock size={16} />}</div>
+                      <span>Devis</span>
+                    </div>
+                    <div className="workflow-arrow">→</div>
+                    <div className={`workflow-step done`}>
+                      <div className="step-icon"><CheckCircle size={16} /></div>
+                      <span>Commande</span>
+                    </div>
+                    <div className="workflow-arrow">→</div>
+                    <div className={`workflow-step ${w.steps.acknowledgment ? 'done' : ''}`}>
+                      <div className="step-icon">{w.steps.acknowledgment ? <CheckCircle size={16} /> : <Clock size={16} />}</div>
+                      <span>Accusé</span>
+                    </div>
+                    <div className="workflow-arrow">→</div>
+                    <div className={`workflow-step ${w.steps.delivery_note ? 'done' : ''}`}>
+                      <div className="step-icon">{w.steps.delivery_note ? <CheckCircle size={16} /> : <Clock size={16} />}</div>
+                      <span>BL fourni.</span>
+                    </div>
+                    <div className="workflow-arrow">→</div>
+                    <div className={`workflow-step ${w.steps.invoice ? 'done' : ''}`}>
+                      <div className="step-icon">{w.steps.invoice ? <CheckCircle size={16} /> : <Clock size={16} />}</div>
+                      <span>Facture</span>
+                    </div>
+                  </div>
+                  <div className="workflow-progress">
+                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${w.completion}%` }} /></div>
+                    <span>{w.completion}% réceptionné</span>
+                  </div>
+                  {/* Import buttons */}
+                  {currentUser?.isAdmin && (
+                    <div className="workflow-actions">
+                      {!w.steps.quote && <button className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'quote')}><FileDown size={12} /> Devis</button>}
+                      {!w.steps.acknowledgment && <button className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'acknowledgment')}><Receipt size={12} /> Accusé</button>}
+                      {!w.steps.delivery_note && <button className="doc-upload-btn accent" onClick={() => handleUploadDoc(w.order_id, 'delivery_note')}><Package size={12} /> BL fournisseur</button>}
+                      {!w.steps.invoice && <button className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'invoice')}><FileText size={12} /> Facture</button>}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {workflow.length === 0 && <p className="no-items">Aucune commande</p>}
+            </div>
+          )}
+
+          {/* ═══ Section Commandes ═══ */}
+          {activeSection === 'orders' && (
+            <div className="supplier-orders-section">
+              {orders.map(order => {
+                const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
+                return (
+                  <div key={order.id} className="supplier-order-detail-card">
+                    <div className="order-card-top">
+                      <span className="order-ref clickable" onClick={() => { onClose(); onViewOrder(order); }}>
+                        <Hash size={14} /> {order.reference}
+                      </span>
+                      <span className="status-badge small" style={{ backgroundColor: status.color + '20', color: status.color }}>
+                        {status.icon} {status.label}
+                      </span>
+                      <span>{formatDate(order.order_date)}</span>
+                      <span className="amount">{formatCurrency(order.total_ht)} HT</span>
+                    </div>
+                    {order.items?.length > 0 && (
+                      <table className="items-table compact">
+                        <thead><tr><th>Désignation</th><th>Qté</th><th>Reçu</th><th>Source</th></tr></thead>
+                        <tbody>
+                          {order.items.map(item => (
+                            <tr key={item.id} className={item.received_qty >= item.quantity ? 'received-row' : ''}>
+                              <td>{item.designation}</td>
+                              <td className="center">{item.quantity}</td>
+                              <td className="center">{item.received_qty || 0} {item.received_qty >= item.quantity && <CheckCircle size={12} className="check-green" />}</td>
+                              <td className="source-cell">{item.source_affaire_id ? `Aff: ${item.source_affaire_id}` : (item.source_requester_name || '—')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                );
+              })}
+              {orders.length === 0 && <p className="no-items">Aucune commande</p>}
+            </div>
+          )}
+
+          {/* ═══ Section Documents ═══ */}
+          {activeSection === 'documents' && (
+            <div className="supplier-docs-section">
+              {Object.entries(DOC_TYPES).map(([type, info]) => {
+                const docs = documents.filter(d => d.doc_type === type);
+                return (
+                  <div key={type} className="doc-type-group">
+                    <h4>{info.icon} {info.label} ({docs.length})</h4>
+                    {docs.length > 0 ? (
+                      <div className="doc-list">
+                        {docs.map(doc => (
+                          <div key={doc.id} className="doc-item">
+                            <span className="doc-filename">{doc.filename}</span>
+                            <span className="doc-date">{formatDate(doc.created_at)}</span>
+                            {doc.order_id && <span className="doc-order">Cmd #{doc.order_id}</span>}
+                            {doc.notes && <span className="doc-notes">{doc.notes}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : <p className="no-docs">Aucun document</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

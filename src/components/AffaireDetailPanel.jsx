@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash } from 'lucide-react';
+import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw } from 'lucide-react';
 import api, { getApiUrl } from '../utils/api';
 import { formatPhoneDisplay } from './PhoneInput';
 import { format } from 'date-fns';
@@ -372,6 +372,20 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
       showFeedback(`❌ Erreur : ${err.message || 'Erreur serveur'}`);
     } finally {
       setGeneratingOrders(false);
+    }
+  };
+
+  // ═══ Suppression d'un BL/BP importé ═══
+  const handleDeleteBL = async (bl) => {
+    const docLabel = (affaire.type === 'Location' || affaire.type === 'Prestation') ? 'BP' : 'BL';
+    if (!window.confirm(`Supprimer le ${docLabel} "${bl.filename}" ? Cette action est irréversible.`)) return;
+    try {
+      await api.deleteBLImport(bl.id);
+      setLinkedBLImports(prev => prev.filter(b => b.id !== bl.id));
+      showFeedback(`✅ ${docLabel} supprimé`);
+      if (onDataChanged) onDataChanged();
+    } catch (err) {
+      showFeedback(`❌ Erreur : ${err.message || 'Erreur serveur'}`);
     }
   };
 
@@ -976,6 +990,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                   <div className={`bl-import-status ${bl.status || 'pending'}`}>
                     {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
                   </div>
+                  {editable && (
+                    <button className="bl-import-delete-btn" onClick={() => handleDeleteBL(bl)} title="Supprimer ce BL/BP">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -1070,6 +1089,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
   const [isClosing, setIsClosing] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
   const [showDisplayDialog, setShowDisplayDialog] = useState(false);
+  const [hasBLImports, setHasBLImports] = useState(false);
   const panelRef = useRef(null);
 
   useEffect(() => {
@@ -1086,6 +1106,10 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
       api.request('/missions').then(data => {
         setMissions(Array.isArray(data) ? data : []);
       }).catch(() => setMissions([]));
+      // Check if BL/BP already imported
+      api.getBLImports({ affaire_id: affaire.numeroAffaire }).then(data => {
+        setHasBLImports(Array.isArray(data) && data.length > 0);
+      }).catch(() => setHasBLImports(false));
       return () => cancelAnimationFrame(raf);
     } else {
       setIsOpen(false);
@@ -1138,8 +1162,8 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
         <button className="slide-panel-display-btn" onClick={() => setShowDisplayDialog(true)} title="Ajouter cet événement à l'affichage dynamique">
           📺 Affichage
         </button>
-        <button className="slide-panel-bl-btn" onClick={() => setShowBLImport(true)} title="Importer un BL pour cette affaire">
-          <FileText size={14} /> Import BL
+        <button className="slide-panel-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
+          {hasBLImports ? <><RefreshCw size={14} /> MAJ BL</> : <><FileText size={14} /> Import BL</>}
         </button>
         <button className="slide-panel-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentAffaire); }}>
           <ExternalLink size={14} /> Ouvrir la fiche
@@ -1150,14 +1174,14 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
           {['Location', 'Prestation'].includes(currentAffaire.type) ? (
             <BLImportLocPrestaModal
               onClose={() => setShowBLImport(false)}
-              onImported={() => { setShowBLImport(false); if (onRefresh) onRefresh(); }}
+              onImported={() => { setShowBLImport(false); setHasBLImports(true); if (onRefresh) onRefresh(); }}
               defaultAffaireId={currentAffaire.numeroAffaire}
               defaultAffaireType={currentAffaire.type}
             />
           ) : (
             <BLImportModal
               onClose={() => setShowBLImport(false)}
-              onImported={() => { setShowBLImport(false); if (onRefresh) onRefresh(); }}
+              onImported={() => { setShowBLImport(false); setHasBLImports(true); if (onRefresh) onRefresh(); }}
               defaultAffaireId={currentAffaire.numeroAffaire}
               defaultAffaireType={currentAffaire.type}
             />
@@ -1187,6 +1211,7 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
   const [isClosing, setIsClosing] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
   const [showDisplayDialog, setShowDisplayDialog] = useState(false);
+  const [hasBLImports, setHasBLImports] = useState(false);
 
   const refreshMissions = useCallback(() => {
     if (!affaire) return;
@@ -1199,6 +1224,10 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
     if (!affaire) return;
     setIsClosing(false);
     refreshMissions();
+    // Check if BL/BP already imported
+    api.getBLImports({ affaire_id: affaire.numeroAffaire }).then(data => {
+      setHasBLImports(Array.isArray(data) && data.length > 0);
+    }).catch(() => setHasBLImports(false));
   }, [affaire, refreshMissions]);
 
   const handleDataChanged = useCallback(() => {
@@ -1237,8 +1266,8 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
             <button className="dialog-display-btn" onClick={() => setShowDisplayDialog(true)} title="Ajouter à l'affichage dynamique">
               📺 Affichage
             </button>
-            <button className="dialog-bl-btn" onClick={() => setShowBLImport(true)} title="Importer un BL pour cette affaire">
-              <FileText size={15} /> Import BL
+            <button className="dialog-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
+              {hasBLImports ? <><RefreshCw size={15} /> MAJ BL</> : <><FileText size={15} /> Import BL</>}
             </button>
             <button className="dialog-close" onClick={handleClose} title="Fermer">
               <X size={20} />
@@ -1255,14 +1284,14 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
           {['Location', 'Prestation'].includes(affaire.type) ? (
             <BLImportLocPrestaModal
               onClose={() => setShowBLImport(false)}
-              onImported={() => { setShowBLImport(false); handleDataChanged(); }}
+              onImported={() => { setShowBLImport(false); setHasBLImports(true); handleDataChanged(); }}
               defaultAffaireId={affaire.numeroAffaire}
               defaultAffaireType={affaire.type}
             />
           ) : (
             <BLImportModal
               onClose={() => setShowBLImport(false)}
-              onImported={() => { setShowBLImport(false); handleDataChanged(); }}
+              onImported={() => { setShowBLImport(false); setHasBLImports(true); handleDataChanged(); }}
               defaultAffaireId={affaire.numeroAffaire}
               defaultAffaireType={affaire.type}
             />

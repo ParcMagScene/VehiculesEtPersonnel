@@ -106,6 +106,24 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     return stepDef?.defaultSection || 'manual';
   };
 
+  // Mapping step → type d'événement d'affichage
+  const STEP_TO_DISPLAY_TYPE = {
+    preparation: 'preparation',
+    chargement: 'preparation',
+    depart: 'depart',
+    enlevement: 'enlevement',
+    retour: 'retour',
+    recuperation: 'recuperation',
+  };
+
+  // Mapping affaire type → catégorie d'affichage
+  const AFFAIRE_TYPE_TO_CATEGORY = {
+    'Location': 'location',
+    'Prestation': 'prestation',
+    'Vente': 'vente',
+    'Installation': 'installation',
+  };
+
   // ═══ Sauvegarde ═══
   const handleSave = async () => {
     if (enabledSteps.length === 0) {
@@ -120,10 +138,35 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         await api.deleteTasksBySource(event.id);
       }
 
-      // Créer les nouvelles tâches
-      const tasksToCreate = enabledSteps.map(step => {
+      // 1) Créer les événements d'affichage correspondants
+      const displayEventsToCreate = enabledSteps.map(step => {
         const s = steps[step.key];
         return {
+          affaire_id: eventInfo.affaireNum || null,
+          type: STEP_TO_DISPLAY_TYPE[step.key] || 'preparation',
+          category: AFFAIRE_TYPE_TO_CATEGORY[eventInfo.affaireType] || 'prestation',
+          date: s.date,
+          period: s.period || null,
+          time: s.time || null,
+          comment: `${step.emoji} ${step.label} — ${eventInfo.summary}${s.notes ? '\n' + s.notes : ''}`,
+          client: eventInfo.summary || '',
+          location: eventInfo.location || '',
+        };
+      });
+
+      let createdDisplayEvents = [];
+      try {
+        createdDisplayEvents = await api.createDisplayEventsBatch(displayEventsToCreate);
+      } catch (e) {
+        console.warn('Erreur création événements affichage (non bloquant):', e);
+      }
+
+      // 2) Créer les tâches, liées aux display events si possible
+      const tasksToCreate = enabledSteps.map((step, idx) => {
+        const s = steps[step.key];
+        const displayEventId = createdDisplayEvents[idx]?.id || null;
+        return {
+          display_event_id: displayEventId,
           date: s.date,
           period: s.period || null,
           time: s.time || null,

@@ -1184,6 +1184,30 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ─── PATCH /api/communication/tasks/:id/toggle-visible ───
+  // Basculer la visibilité d'une tâche (affichage écran dynamique)
+  app.patch('/api/communication/tasks/:id/toggle-visible', authenticateToken, (req, res) => {
+    try {
+      const task = db.prepare('SELECT * FROM task_assignments WHERE id = ?').get(req.params.id);
+      if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
+
+      const newVisible = (task.visible === 0) ? 1 : 0;
+      db.prepare('UPDATE task_assignments SET visible = ?, modified_by = ?, modified_at = datetime(\'now\') WHERE id = ?')
+        .run(newVisible, req.user.id, req.params.id);
+
+      const updated = db.prepare(`
+        SELECT ta.*, p.first_name AS person_first_name, p.last_name AS person_last_name
+        FROM task_assignments ta
+        LEFT JOIN persons p ON ta.person_id = p.id
+        WHERE ta.id = ?
+      `).get(req.params.id);
+      res.json(updated);
+    } catch (error) {
+      logger.error('PATCH /api/communication/tasks/:id/toggle-visible error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
   // ─── PATCH /api/communication/display-events/:id/toggle-visible ───
   // Basculer la visibilité d'un événement d'affichage
   app.patch('/api/communication/display-events/:id/toggle-visible', authenticateToken, (req, res) => {

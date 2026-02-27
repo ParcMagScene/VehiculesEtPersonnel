@@ -65,6 +65,14 @@
   border-left-color: #ec4899;
 }
 
+.module-card.location {
+  border-left-color: #06b6d4;
+}
+
+.module-card.leaves {
+  border-left-color: #10b981;
+}
+
 .module-icon {
   width: 56px;
   height: 56px;
@@ -99,6 +107,16 @@
 .module-card.orders .module-icon {
   background: linear-gradient(135deg, #fce7f3, #fbcfe8);
   color: #db2777;
+}
+
+.module-card.location .module-icon {
+  background: linear-gradient(135deg, #cffafe, #a5f3fc);
+  color: #0891b2;
+}
+
+.module-card.leaves .module-icon {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #059669;
 }
 
 .module-badge {

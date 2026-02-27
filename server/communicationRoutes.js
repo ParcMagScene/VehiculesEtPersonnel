@@ -875,7 +875,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // ─── POST /api/communication/tasks ───
   app.post('/api/communication/tasks', authenticateToken, (req, res) => {
     try {
-      const { display_event_id, person_id, date, period, time, section, title, notes, source_type, source_id, status } = req.body;
+      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status } = req.body;
 
       if (!date) {
         return res.status(400).json({ error: 'Le champ date est obligatoire' });
@@ -884,8 +884,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const id = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('hex');
 
       const stmt = db.prepare(`
-        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, section, title, notes, source_type, source_id, status, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
       stmt.run(
@@ -895,11 +895,14 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         date,
         period || null,
         time || null,
+        end_time || null,
         section || 'manual',
         title || null,
         notes || '',
         source_type || 'manual',
         source_id || null,
+        google_event_title || null,
+        affaire_num || null,
         status || 'pending',
         req.user.id
       );
@@ -924,17 +927,94 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ─── POST /api/communication/tasks/batch ───
+  // Création en lot de tâches (pour workflow événement → tâches)
+  app.post('/api/communication/tasks/batch', authenticateToken, (req, res) => {
+    try {
+      const { tasks: taskList } = req.body;
+      if (!Array.isArray(taskList) || taskList.length === 0) {
+        return res.status(400).json({ error: 'Un tableau de tâches est requis' });
+      }
+
+      const insertStmt = db.prepare(`
+        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `);
+
+      const createdIds = [];
+      const insertMany = db.transaction((items) => {
+        for (const t of items) {
+          if (!t.date) continue;
+          const id = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('hex');
+          insertStmt.run(
+            id,
+            t.display_event_id || null,
+            t.person_id || null,
+            t.date,
+            t.period || null,
+            t.time || null,
+            t.end_time || null,
+            t.section || 'manual',
+            t.title || null,
+            t.notes || '',
+            t.source_type || 'manual',
+            t.source_id || null,
+            t.google_event_title || null,
+            t.affaire_num || null,
+            t.status || 'pending',
+            req.user.id
+          );
+          createdIds.push(id);
+        }
+      });
+
+      insertMany(taskList);
+
+      // Retourner les tâches créées
+      if (createdIds.length > 0) {
+        const placeholders = createdIds.map(() => '?').join(',');
+        const created = db.prepare(`
+          SELECT ta.*, 
+                 p.first_name AS person_first_name,
+                 p.last_name AS person_last_name
+          FROM task_assignments ta
+          LEFT JOIN persons p ON ta.person_id = p.id
+          WHERE ta.id IN (${placeholders})
+          ORDER BY ta.date ASC, ta.time ASC
+        `).all(...createdIds);
+        res.status(201).json(created);
+      } else {
+        res.status(201).json([]);
+      }
+    } catch (error) {
+      logger.error('POST /api/communication/tasks/batch error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── DELETE /api/communication/tasks/by-source/:sourceId ───
+  // Supprimer toutes les tâches liées à un événement source
+  app.delete('/api/communication/tasks/by-source/:sourceId', authenticateToken, (req, res) => {
+    try {
+      const result = db.prepare("DELETE FROM task_assignments WHERE source_type = 'google_event' AND source_id = ?").run(req.params.sourceId);
+      res.json({ success: true, deleted: result.changes });
+    } catch (error) {
+      logger.error('DELETE /api/communication/tasks/by-source error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
   // ─── PUT /api/communication/tasks/:id ───
   app.put('/api/communication/tasks/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
 
-      const { display_event_id, person_id, date, period, time, section, title, notes, source_type, source_id, status } = req.body;
+      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status } = req.body;
 
       const stmt = db.prepare(`
         UPDATE task_assignments
-        SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, status = ?, modified_by = ?, modified_at = datetime('now')
+        SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, modified_by = ?, modified_at = datetime('now')
         WHERE id = ?
       `);
 
@@ -944,11 +1024,14 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         date || existing.date,
         period !== undefined ? period : existing.period,
         time !== undefined ? time : existing.time,
+        end_time !== undefined ? end_time : existing.end_time,
         section || existing.section,
         title !== undefined ? title : existing.title,
         notes !== undefined ? notes : existing.notes,
         source_type || existing.source_type,
         source_id !== undefined ? source_id : existing.source_id,
+        google_event_title !== undefined ? google_event_title : existing.google_event_title,
+        affaire_num !== undefined ? affaire_num : existing.affaire_num,
         status || existing.status,
         req.user.id,
         req.params.id

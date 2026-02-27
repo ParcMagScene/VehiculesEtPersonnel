@@ -1422,6 +1422,12 @@ class ApiClient {
   async deleteTask(id) {
     return this.request(`/communication/tasks/${id}`, { method: 'DELETE' });
   }
+  async createTasksBatch(tasks) {
+    return this.request('/communication/tasks/batch', { method: 'POST', body: JSON.stringify({ tasks }) });
+  }
+  async deleteTasksBySource(sourceId) {
+    return this.request(`/communication/tasks/by-source/${sourceId}`, { method: 'DELETE' });
+  }
 
   // --- Stats Communication ---
   async getCommunicationStats() {

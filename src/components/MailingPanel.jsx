@@ -653,9 +653,12 @@ export default function MailingPanel({ isOpen, onClose }) {
               <h4>Alertes automatiques</h4>
               {[
                 { key: 'alert_access_request', label: "Nouvelle demande d'accès" },
-                { key: 'alert_reservation', label: 'Nouvelle réservation' },
-                { key: 'alert_assignment', label: 'Nouvelle affectation' },
+                { key: 'alert_reservation', label: 'Nouvelle réservation véhicule' },
+                { key: 'alert_assignment', label: 'Nouvelle affectation personnel' },
                 { key: 'alert_overdue', label: 'Intervention en retard' },
+                { key: 'alert_leave', label: 'Demande de congé (création + décision)' },
+                { key: 'alert_sav', label: 'Nouveau ticket SAV' },
+                { key: 'alert_maintenance', label: 'Maintenance / Contrôle technique' },
               ].map(alert => (
                 <div key={alert.key} className="mailing-form-group">
                   <label className="mailing-toggle-label">

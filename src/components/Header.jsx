@@ -956,7 +956,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
             </button>
 
-            {currentUser?.role === 'admin' && (
+            {currentUser?.isAdmin && (
               <button className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing" title="Mailing">
                 <Mail size={20} />
               </button>

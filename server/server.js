@@ -44,7 +44,7 @@ import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, set
 import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockStatsRoutes } from './stockRoutes.js';
 import { setupCommunicationRoutes } from './communicationRoutes.js';
-import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
+import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated, alertMaintenanceCreated } from './emailService.js';
 import logger from "./logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1198,6 +1198,12 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
     );
     
     addToHistory('maintenance', maintenance.id, 'created', maintenance, req.user.id, req.user.name);
+
+    // Alerte email maintenance / contrôle technique
+    try {
+      const veh = db.prepare('SELECT name FROM vehicles WHERE id = ?').get(maintenance.vehicle_id);
+      alertMaintenanceCreated(db, maintenance, veh?.name || 'Véhicule inconnu', req.user.name);
+    } catch (emailErr) { logger.warn('Alerte email maintenance:', emailErr.message); }
     
     // Si un kilométrage est renseigné, mettre à jour le véhicule et ajouter un relevé dans l'historique
     if (maintenance.mileage && parseInt(maintenance.mileage) > 0) {
@@ -2037,7 +2043,8 @@ app.get('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
 app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
   try {
     const { enabled, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_pass, from_name,
-            alert_access_request, alert_reservation, alert_assignment, alert_overdue } = req.body;
+            alert_access_request, alert_reservation, alert_assignment, alert_overdue,
+            alert_leave, alert_sav, alert_maintenance } = req.body;
     
     // Si le mot de passe est masqué, ne pas le mettre à jour
     const currentConfig = db.prepare('SELECT smtp_pass FROM email_config WHERE id = 1').get();
@@ -2048,13 +2055,15 @@ app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
         enabled = ?, smtp_host = ?, smtp_port = ?, smtp_secure = ?,
         smtp_user = ?, smtp_pass = ?, from_name = ?,
         alert_access_request = ?, alert_reservation = ?, alert_assignment = ?, alert_overdue = ?,
+        alert_leave = ?, alert_sav = ?, alert_maintenance = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(
       enabled ? 1 : 0, smtp_host || '', smtp_port || 587, smtp_secure ? 1 : 0,
       smtp_user || '', finalPass, from_name || 'eM@g',
       alert_access_request !== false ? 1 : 0, alert_reservation !== false ? 1 : 0,
-      alert_assignment !== false ? 1 : 0, alert_overdue !== false ? 1 : 0
+      alert_assignment !== false ? 1 : 0, alert_overdue !== false ? 1 : 0,
+      alert_leave !== false ? 1 : 0, alert_sav !== false ? 1 : 0, alert_maintenance !== false ? 1 : 0
     );
 
     // Réinitialiser le transporteur avec la nouvelle config

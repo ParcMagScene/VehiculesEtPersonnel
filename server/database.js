@@ -1829,6 +1829,14 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
 
+    // Table planning_hidden_affaires: affaires masquées de la planification
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS planning_hidden_affaires (
+        numero_affaire TEXT PRIMARY KEY,
+        hidden_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+
     // Migration : ajout colonne visible si absente
     const taCols = db.pragma('table_info(task_assignments)');
     if (!taCols.find(c => c.name === 'visible')) {

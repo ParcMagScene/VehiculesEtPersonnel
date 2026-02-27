@@ -1477,6 +1477,15 @@ class ApiClient {
     return this.request(`/communication/planning-affaires${qs ? '?' + qs : ''}`);
   }
 
+  // --- Masquer/réafficher une affaire de la planification ---
+  async hidePlanningAffaire(numeroAffaire) {
+    return this.request(`/communication/planning-hidden-affaires/${encodeURIComponent(numeroAffaire)}`, { method: 'POST' });
+  }
+
+  async unhidePlanningAffaire(numeroAffaire) {
+    return this.request(`/communication/planning-hidden-affaires/${encodeURIComponent(numeroAffaire)}`, { method: 'DELETE' });
+  }
+
   // --- Affecter personnel à un événement d'affichage ---
   async assignDisplayEvent(id, personId) {
     return this.request(`/communication/display-events/${id}/assign`, {

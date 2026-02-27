@@ -494,9 +494,29 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     );
   };
 
+  // Masquer une affaire de la planification
+  const handleHideAffaire = (affaire) => {
+    setConfirmDialog({
+      title: 'Retirer de la planification',
+      message: `Masquer l'affaire ${affaire.numeroAffaire} de la planification ?`,
+      onConfirm: async () => {
+        try {
+          await api.hidePlanningAffaire(affaire.numeroAffaire);
+          toast.success(`${affaire.numeroAffaire} retirée`);
+          loadTasks();
+        } catch (err) {
+          toast.error('Erreur masquage affaire');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
+
   // Carte affaire dans une section
   const renderAffaireRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+    const dateBadge = getDateBadge(affaire.dateDebut || affaire.date_debut);
     return (
       <div key={`aff-${affaire.numeroAffaire}`} className="task-row affaire-row">
         <span className="display-event-icon" style={{ color: typeInfo.color }}>
@@ -504,7 +524,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         </span>
         <div className="task-info">
           <div className="task-title">
-            {typeInfo.emoji} {affaire.numeroAffaire}
+            {typeInfo.emoji} {dateBadge && <span className="date-badge">{dateBadge}</span>}
+            {affaire.numeroAffaire}
             {affaire.client ? ` — ${affaire.client}` : ''}
           </div>
           <div className="task-meta">
@@ -512,6 +533,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
             {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
             {affaire.blCount > 0 && <span>📄 {affaire.blCount} BL</span>}
           </div>
+        </div>
+        <div className="task-actions">
+          <button className="delete" onClick={() => handleHideAffaire(affaire)} title="Retirer de la planification">
+            <X size={14} />
+          </button>
         </div>
       </div>
     );

@@ -1177,9 +1177,42 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       }
 
       const affaires = db.prepare(query).all(...params);
-      res.json(affaires);
+
+      // Filtrer les affaires masquées de la planification
+      const hiddenSet = new Set(
+        db.prepare('SELECT numero_affaire FROM planning_hidden_affaires').all().map(r => r.numero_affaire)
+      );
+      const visible = affaires.filter(a => !hiddenSet.has(a.numero_affaire));
+
+      res.json(visible);
     } catch (error) {
       logger.error('GET /api/communication/planning-affaires error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── POST /api/communication/planning-hidden-affaires/:id ───
+  // Masquer une affaire de la planification
+  app.post('/api/communication/planning-hidden-affaires/:id', authenticateToken, (req, res) => {
+    try {
+      const { id } = req.params;
+      db.prepare('INSERT OR IGNORE INTO planning_hidden_affaires (numero_affaire) VALUES (?)').run(id);
+      res.json({ success: true, hidden: id });
+    } catch (error) {
+      logger.error('POST /api/communication/planning-hidden-affaires error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── DELETE /api/communication/planning-hidden-affaires/:id ───
+  // Réafficher une affaire dans la planification
+  app.delete('/api/communication/planning-hidden-affaires/:id', authenticateToken, (req, res) => {
+    try {
+      const { id } = req.params;
+      db.prepare('DELETE FROM planning_hidden_affaires WHERE numero_affaire = ?').run(id);
+      res.json({ success: true, unhidden: id });
+    } catch (error) {
+      logger.error('DELETE /api/communication/planning-hidden-affaires error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });

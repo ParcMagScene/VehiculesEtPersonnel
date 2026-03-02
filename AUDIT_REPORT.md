@@ -1073,7 +1073,7 @@ src/hooks/useTheme.js  (139 lignes) — Hook React, PALETTES, persistance
 |----------|--------|
 | Sessions de travail | 17 |
 | Fichiers CSS dans src/ | 85 |
-| Fichiers JSX dans src/ | 96 |
+| Fichiers JSX dans src/ | 118 |
 | Variables CSS `--theme-*` | 145 |
 | Palettes Flat Design | 6 (+défaut) |
 | Couleurs CSS migrées (total) | ~1200+ |

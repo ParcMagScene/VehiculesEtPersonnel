@@ -10,11 +10,13 @@ import './EventTaskModal.css';
 // ═══ Définition des étapes opérationnelles ═══
 const TASK_STEPS = [
   { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: '#6366f1', defaultSection: 'prep_locations' },
-  { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: '#f59e0b', defaultSection: 'taches_prioritaires' },
-  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: '#3b82f6', defaultSection: 'taches_prioritaires' },
-  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: '#10b981', defaultSection: 'taches_prioritaires' },
-  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: '#8b5cf6', defaultSection: 'taches_secondaires' },
-  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'taches_secondaires' },
+  { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: '#f59e0b', defaultSection: 'chargement' },
+  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: '#3b82f6', defaultSection: 'depart',       typeRestriction: 'Prestation' },
+  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: '#f97316', defaultSection: 'courses',      typeRestriction: 'Location' },
+  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: '#10b981', defaultSection: 'enlevement',   typeRestriction: 'Location' },
+  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: '#8b5cf6', defaultSection: 'retour',       typeRestriction: 'Prestation' },
+  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'recuperation', typeRestriction: 'Location' },
+  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: '#10b981', defaultSection: 'installation', typeRestriction: 'Installation' },
 ];
 
 // Mapping affaire type → section de préparation
@@ -24,6 +26,9 @@ const AFFAIRE_TYPE_SECTIONS = {
   'Vente':        'prep_ventes',
   'Installation': 'prep_installations',
 };
+
+// Filtrer les étapes selon le type d'affaire
+const getVisibleSteps = (affaireType) => TASK_STEPS.filter(s => !s.typeRestriction || s.typeRestriction === affaireType);
 
 function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }) {
   const toast = useToast();
@@ -59,16 +64,16 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     TASK_STEPS.forEach(step => {
       // Chercher si une tâche existe déjà pour cette étape
       const existing = existingTasks.find(t =>
-        t.source_id === event?.id && t.section?.includes(step.key)
+        t.sourceId === event?.id && t.section?.includes(step.key)
       ) || existingTasks.find(t =>
-        t.source_id === event?.id && (t.title || '').toLowerCase().includes(step.label.toLowerCase())
+        t.sourceId === event?.id && (t.title || '').toLowerCase().includes(step.label.toLowerCase())
       );
 
       initial[step.key] = {
         enabled: !!existing,
         date: existing?.date || eventInfo.startDate || '',
         time: existing?.time || '',
-        endTime: existing?.end_time || '',
+        endTime: existing?.endTime || '',
         period: existing?.period || (step.key === 'preparation' || step.key === 'chargement' ? 'AM' : 'PM'),
         notes: existing?.notes || '',
         taskId: existing?.id || null,
@@ -77,7 +82,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     return initial;
   });
 
-  const hasExistingTasks = existingTasks.filter(t => t.source_id === event?.id).length > 0;
+  const hasExistingTasks = existingTasks.filter(t => t.sourceId === event?.id).length > 0;
 
   const toggleStep = (key) => {
     setSteps(prev => ({
@@ -93,9 +98,11 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     }));
   };
 
+  const visibleSteps = useMemo(() => getVisibleSteps(eventInfo.affaireType), [eventInfo.affaireType]);
+
   const enabledSteps = useMemo(() =>
-    TASK_STEPS.filter(s => steps[s.key]?.enabled),
-  [steps]);
+    visibleSteps.filter(s => steps[s.key]?.enabled),
+  [steps, visibleSteps]);
 
   // Déterminer la section en fonction du type de step + affaire
   const getSectionForStep = (stepKey) => {
@@ -114,6 +121,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     enlevement: 'enlevement',
     retour: 'retour',
     recuperation: 'recuperation',
+    installation: 'installation',
   };
 
   // Mapping affaire type → catégorie d'affichage
@@ -210,7 +218,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
   };
 
   return (
-    <div className="etm-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="etm-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="etm-modal">
         {/* Header */}
         <div className="etm-header">
@@ -239,7 +247,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
 
         {/* Steps */}
         <div className="etm-steps">
-          {TASK_STEPS.map(step => {
+          {visibleSteps.map(step => {
             const s = steps[step.key];
             const Icon = step.icon;
             return (

@@ -4,6 +4,7 @@
 // ============================================================
 
 import db, { addToHistory } from './database.js';
+import { alertSavTicketCreated } from './emailService.js';
 import { readFileSync, readdirSync, existsSync, unlinkSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
@@ -681,6 +682,11 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       
       // Mettre l'équipement en maintenance
       refreshEquipmentStatus(equipment_id);
+
+      // Alerte email aux admins
+      try {
+        alertSavTicketCreated(db, { equipment_id, title, type, priority, description }, req.user.name);
+      } catch (emailErr) { logger.warn('Alerte email SAV:', emailErr.message); }
       
       res.json({ id: result.lastInsertRowid });
     } catch (error) {

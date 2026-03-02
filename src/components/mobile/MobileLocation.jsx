@@ -1,0 +1,384 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  ChevronLeft, Search, MapPin, Package, Layers, ChevronDown, ChevronUp, 
+  X, ZoomIn, ZoomOut, RotateCcw, Filter, Eye
+} from 'lucide-react';
+import api from '../../utils/api';
+import './MobileLocation.css';
+
+function MobileLocation({ onBack }) {
+  const [zones, setZones] = useState(null);
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedZone, setSelectedZone] = useState(null);
+  const [zoneEquipments, setZoneEquipments] = useState([]);
+  const [loadingEquipments, setLoadingEquipments] = useState(false);
+  const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [viewMode, setViewMode] = useState('map'); // map | list
+  const [floor, setFloor] = useState('RDC');
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [depot, setDepot] = useState(1);
+  const svgRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // Chargement des zones et stats
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [zonesData, statsData] = await Promise.all([
+        fetch(`/depot${depot === 1 ? '' : depot}-zones.json`).then(r => r.json()).catch(() => null),
+        api.getEquipmentLocationStats(depot).catch(() => []),
+      ]);
+      setZones(zonesData);
+      setStats(Array.isArray(statsData) ? statsData : statsData?.stats || []);
+    } catch (e) { console.error('Erreur chargement localisations:', e); }
+    setLoading(false);
+  }, [depot]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // Charger les équipements d'une zone sélectionnée
+  useEffect(() => {
+    if (!selectedZone) { setZoneEquipments([]); return; }
+    let cancelled = false;
+    const load = async () => {
+      setLoadingEquipments(true);
+      try {
+        const eqs = await api.getEquipment({ location_zone: selectedZone });
+        if (!cancelled) setZoneEquipments(Array.isArray(eqs) ? eqs : []);
+      } catch (e) { if (!cancelled) setZoneEquipments([]); }
+      if (!cancelled) setLoadingEquipments(false);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [selectedZone]);
+
+  // Recherche d'équipement
+  useEffect(() => {
+    if (!search.trim()) { setSearchResults(null); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const results = await api.getEquipment({ search: search.trim() });
+        const arr = Array.isArray(results) ? results : [];
+        // Grouper par zone
+        const zoneMap = {};
+        arr.forEach(eq => {
+          const z = eq.location_zone || eq.locationZone || 'non_localise';
+          if (!zoneMap[z]) zoneMap[z] = [];
+          zoneMap[z].push(eq);
+        });
+        setSearchResults({ total: arr.length, byZone: zoneMap });
+      } catch (e) { setSearchResults(null); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const getZoneCount = useCallback((zoneId) => {
+    const codes = zones?.zones?.find(z => z.id === zoneId)?.codes || [zoneId];
+    return stats.reduce((sum, s) => {
+      if (codes.includes(s.location_zone || s.locationZone)) return sum + (s.count || 0);
+      return sum;
+    }, 0);
+  }, [zones, stats]);
+
+  const totalEquipments = stats.reduce((s, st) => s + (st.count || 0), 0);
+  const unlocated = stats.find(s => (s.location_zone || s.locationZone) === '' || s.location_zone === null);
+  const unlocatedCount = unlocated?.count || 0;
+
+  const floorZones = zones?.zones?.filter(z => z.floor === floor) || [];
+  const floors = zones?.floors || [{ id: 'RDC', label: 'RDC' }];
+
+  const handleZoneClick = (zoneId) => {
+    setSelectedZone(prev => prev === zoneId ? null : zoneId);
+  };
+
+  // Zoom
+  const handleZoomIn = () => setZoom(z => Math.min(z * 1.3, 4));
+  const handleZoomOut = () => setZoom(z => Math.max(z / 1.3, 0.5));
+  const handleResetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+
+  // Touch pan (simplified)
+  const lastTouchRef = useRef(null);
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1 && zoom > 1) {
+      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 1 && lastTouchRef.current && zoom > 1) {
+      const dx = e.touches[0].clientX - lastTouchRef.current.x;
+      const dy = e.touches[0].clientY - lastTouchRef.current.y;
+      setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+  const handleTouchEnd = () => { lastTouchRef.current = null; };
+
+  if (loading) {
+    return (
+      <div className="mobile-location">
+        <div className="mobile-module-header">
+          <button className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></button>
+          <h2>📍 Localisation</h2>
+        </div>
+        <div className="mobile-module-loading">Chargement du plan...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mobile-location">
+      <div className="mobile-module-header">
+        <button className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></button>
+        <h2>📍 Localisation</h2>
+        <div className="mloc-view-toggle">
+          <button className={viewMode === 'map' ? 'active' : ''} onClick={() => setViewMode('map')}>
+            <MapPin size={16} />
+          </button>
+          <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}>
+            <Layers size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Barre de recherche */}
+      <div className="mloc-search-bar">
+        <Search size={18} />
+        <input 
+          type="text" 
+          value={search} 
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Rechercher un équipement..."
+          className="mloc-search-input"
+        />
+        {search && <button className="mloc-search-clear" onClick={() => setSearch('')}><X size={16} /></button>}
+      </div>
+
+      {/* Résultats de recherche */}
+      {searchResults && (
+        <div className="mloc-search-results">
+          <div className="mloc-search-count">{searchResults.total} résultat{searchResults.total > 1 ? 's' : ''}</div>
+          {Object.entries(searchResults.byZone).map(([zone, eqs]) => {
+            const zoneInfo = zones?.zones?.find(z => z.id === zone || z.codes?.includes(zone));
+            return (
+              <div key={zone} className="mloc-search-group">
+                <div 
+                  className="mloc-search-zone" 
+                  style={{ borderLeftColor: zoneInfo?.color || '#6b7280' }}
+                  onClick={() => { setSelectedZone(zone); setSearch(''); setSearchResults(null); }}
+                >
+                  <MapPin size={14} />
+                  <span>{zoneInfo?.label || zone || 'Non localisé'}</span>
+                  <span className="mloc-search-zone-count">{eqs.length}</span>
+                </div>
+                <div className="mloc-search-items">
+                  {eqs.slice(0, 5).map(eq => (
+                    <div key={eq.id} className="mloc-search-item">
+                      <Package size={14} />
+                      <span>{eq.name || eq.designation}</span>
+                      {eq.uid && <span className="mloc-uid">{eq.uid}</span>}
+                    </div>
+                  ))}
+                  {eqs.length > 5 && <div className="mloc-search-more">+{eqs.length - 5} autres</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Stats résumé */}
+      <div className="mloc-stats-bar">
+        <div className="mloc-stat">
+          <Package size={14} />
+          <span>{totalEquipments} localisés</span>
+        </div>
+        {unlocatedCount > 0 && (
+          <div className="mloc-stat warning">
+            <span>{unlocatedCount} non localisés</span>
+          </div>
+        )}
+      </div>
+
+      {viewMode === 'map' ? (
+        <>
+          {/* Sélecteur d'étage */}
+          {floors.length > 1 && (
+            <div className="mloc-floor-selector">
+              {floors.map(f => (
+                <button 
+                  key={f.id} 
+                  className={`mloc-floor-btn ${floor === f.id ? 'active' : ''}`}
+                  onClick={() => setFloor(f.id)}
+                >
+                  {f.label || f.id}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Plan SVG */}
+          <div 
+            className="mloc-map-container" 
+            ref={containerRef}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div className="mloc-zoom-controls">
+              <button onClick={handleZoomIn}><ZoomIn size={18} /></button>
+              <button onClick={handleZoomOut}><ZoomOut size={18} /></button>
+              <button onClick={handleResetView}><RotateCcw size={18} /></button>
+            </div>
+
+            <svg
+              ref={svgRef}
+              viewBox={`0 0 ${zones?.svgWidth || 770} ${zones?.svgHeight || 560}`}
+              className="mloc-svg"
+              style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }}
+            >
+              {/* Fond */}
+              <rect x="0" y="0" width={zones?.svgWidth || 770} height={zones?.svgHeight || 560} fill="var(--theme-bg-secondary)" rx="8" />
+              
+              {floorZones.map(zone => {
+                const count = getZoneCount(zone.id);
+                const isSelected = selectedZone === zone.id;
+                const hasSearchResult = searchResults?.byZone?.[zone.id];
+                const opacity = searchResults 
+                  ? (hasSearchResult ? 1 : 0.3) 
+                  : (isSelected ? 1 : 0.85);
+
+                return (
+                  <g key={zone.id} onClick={() => handleZoneClick(zone.id)} style={{ cursor: 'pointer' }}>
+                    {/* Zone rect */}
+                    <rect
+                      x={zone.bbox.x}
+                      y={zone.bbox.y}
+                      width={zone.bbox.width}
+                      height={zone.bbox.height}
+                      fill={zone.color || '#6b7280'}
+                      opacity={opacity}
+                      rx={4}
+                      stroke={isSelected ? '#ffffff' : 'rgba(255,255,255,0.3)'}
+                      strokeWidth={isSelected ? 3 : 1}
+                    />
+                    {/* Label */}
+                    <text
+                      x={zone.bbox.x + zone.bbox.width / 2}
+                      y={zone.bbox.y + zone.bbox.height / 2 - (count > 0 ? 4 : 0)}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill={zone.textColor || '#ffffff'}
+                      fontSize={Math.min(12, zone.bbox.width / 8)}
+                      fontWeight="600"
+                    >
+                      {zone.label}
+                    </text>
+                    {/* Count */}
+                    {count > 0 && (
+                      <text
+                        x={zone.bbox.x + zone.bbox.width / 2}
+                        y={zone.bbox.y + zone.bbox.height / 2 + 12}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill={zone.textColor || '#ffffff'}
+                        fontSize={10}
+                        opacity={0.8}
+                      >
+                        {count} éq.
+                      </text>
+                    )}
+                    {/* Badge si sélectionné */}
+                    {isSelected && (
+                      <rect
+                        x={zone.bbox.x - 2}
+                        y={zone.bbox.y - 2}
+                        width={zone.bbox.width + 4}
+                        height={zone.bbox.height + 4}
+                        fill="none"
+                        stroke="#ffffff"
+                        strokeWidth={2}
+                        strokeDasharray="6,3"
+                        rx={6}
+                        opacity={0.8}
+                      />
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+        </>
+      ) : (
+        /* Vue liste des zones */
+        <div className="mloc-zone-list">
+          {(zones?.zones || [])
+            .filter(z => {
+              const count = getZoneCount(z.id);
+              return count > 0;
+            })
+            .sort((a, b) => getZoneCount(b.id) - getZoneCount(a.id))
+            .map(zone => {
+              const count = getZoneCount(zone.id);
+              const isSelected = selectedZone === zone.id;
+              return (
+                <div 
+                  key={zone.id} 
+                  className={`mloc-zone-item ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleZoneClick(zone.id)}
+                >
+                  <div className="mloc-zone-color" style={{ background: zone.color || '#6b7280' }} />
+                  <div className="mloc-zone-info">
+                    <div className="mloc-zone-name">{zone.label}</div>
+                    <div className="mloc-zone-floor">{zone.floor} · {zone.id}</div>
+                  </div>
+                  <div className="mloc-zone-count">{count}</div>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
+      {/* Panel équipements de la zone sélectionnée */}
+      {selectedZone && (
+        <div className="mloc-equipment-panel">
+          <div className="mloc-panel-header">
+            <div>
+              <h3>
+                {zones?.zones?.find(z => z.id === selectedZone)?.label || selectedZone}
+              </h3>
+              <span className="mloc-panel-count">{zoneEquipments.length} équipement{zoneEquipments.length > 1 ? 's' : ''}</span>
+            </div>
+            <button onClick={() => setSelectedZone(null)}><X size={20} /></button>
+          </div>
+          <div className="mloc-panel-list">
+            {loadingEquipments ? (
+              <div className="mloc-panel-loading">Chargement...</div>
+            ) : zoneEquipments.length === 0 ? (
+              <div className="mloc-panel-empty">Aucun équipement dans cette zone</div>
+            ) : zoneEquipments.map(eq => (
+              <div key={eq.id} className="mloc-equipment-item">
+                <Package size={16} />
+                <div className="mloc-eq-info">
+                  <div className="mloc-eq-name">{eq.name || eq.designation}</div>
+                  <div className="mloc-eq-details">
+                    {eq.uid && <span className="mloc-uid">{eq.uid}</span>}
+                    {eq.brand && <span>{eq.brand}</span>}
+                    {eq.serial_number && <span>S/N: {eq.serial_number}</span>}
+                  </div>
+                </div>
+                <div className={`mloc-eq-status ${eq.status || 'unknown'}`}>
+                  {eq.status === 'available' ? 'Dispo' : eq.status === 'in_use' ? 'En cours' : eq.status === 'maintenance' ? 'SAV' : eq.status || '—'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default MobileLocation;

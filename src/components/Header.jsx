@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Mail, Boxes, Sun, Moon, Radio } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, BookOpen, Mail, Boxes, Sun, Moon, Radio, Building2 } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -245,6 +245,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                 { id: 'catalog', label: 'Catalogue', icon: BookOpen },
                 { id: 'stock', label: 'Stock', icon: Boxes },
                 { id: 'communication', label: 'Comm.', icon: Radio },
+                { id: 'annuaire', label: 'Annuaire', icon: Building2 },
               ];
               const hiddenTabs = tabPrefs.hiddenTabs || [];
               const tabOrder = tabPrefs.tabOrder || allTabs.map(t => t.id);
@@ -278,7 +279,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         
         {/* Popup des notifications */}
         {showNotificationsPopup && (
-          <div className="notifications-popup-overlay" onClick={() => setShowNotificationsPopup(false)}>
+          <div className="notifications-popup-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowNotificationsPopup(false)}>
             <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
               <div className="notifications-popup-header">
                 <h3><Bell size={20} strokeWidth={2.5} className="popup-icon" /> {
@@ -696,7 +697,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
 
         {/* Popup des demandes de réservation */}
         {showRequestsPopup && (
-          <div className="notifications-popup-overlay" onClick={() => setShowRequestsPopup(false)}>
+          <div className="notifications-popup-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowRequestsPopup(false)}>
             <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
               <div className="notifications-popup-header">
                 <h3><CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" /> Demandes de réservation</h3>
@@ -956,7 +957,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
             </button>
 
-            {currentUser?.role === 'admin' && (
+            {currentUser?.isAdmin && (
               <button className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing" title="Mailing">
                 <Mail size={20} />
               </button>
@@ -1045,7 +1046,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
 
                 {showUserMenu && (
                   <>
-                    <div className="user-menu-overlay" onClick={() => setShowUserMenu(false)} />
+                    <div className="user-menu-overlay" onMouseDown={() => setShowUserMenu(false)} />
                     <div className="user-menu-dropdown">
                       <div className="user-menu-header">
                         <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size={40} />

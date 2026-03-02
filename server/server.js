@@ -37,14 +37,16 @@ import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from 
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
 import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAssignmentsRoutes, setupSavTicketsRoutes, setupEquipmentListsRoutes } from './equipmentRoutes.js';
-import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes } from './ordersRoutes.js';
+import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes, setupMaterialRequestsRoutes, setupSupplierDocumentsRoutes } from './ordersRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, setupReservationEquipmentRoutes } from './catalogRoutes.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockStatsRoutes } from './stockRoutes.js';
 import { setupCommunicationRoutes } from './communicationRoutes.js';
-import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated } from './emailService.js';
+import { setupDisplayRoutes } from './displayRoutes.js';
+import { setupAnnuaireClientsRoutes, setupAnnuaireSuppliersRoutes, setupAnnuairePrestatairesRoutes, setupAnnuaireContactsRoutes, setupAnnuaireLookupsRoutes, setupAnnuaireSearchRoutes, setupAnnuaireImportRoutes } from './annuaireRoutes.js';
+import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated, alertMaintenanceCreated } from './emailService.js';
 import logger from "./logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1198,6 +1200,12 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
     );
     
     addToHistory('maintenance', maintenance.id, 'created', maintenance, req.user.id, req.user.name);
+
+    // Alerte email maintenance / contrôle technique
+    try {
+      const veh = db.prepare('SELECT name FROM vehicles WHERE id = ?').get(maintenance.vehicle_id);
+      alertMaintenanceCreated(db, maintenance, veh?.name || 'Véhicule inconnu', req.user.name);
+    } catch (emailErr) { logger.warn('Alerte email maintenance:', emailErr.message); }
     
     // Si un kilométrage est renseigné, mettre à jour le véhicule et ajouter un relevé dans l'historique
     if (maintenance.mileage && parseInt(maintenance.mileage) > 0) {
@@ -2037,7 +2045,8 @@ app.get('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
 app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
   try {
     const { enabled, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_pass, from_name,
-            alert_access_request, alert_reservation, alert_assignment, alert_overdue } = req.body;
+            alert_access_request, alert_reservation, alert_assignment, alert_overdue,
+            alert_leave, alert_sav, alert_maintenance } = req.body;
     
     // Si le mot de passe est masqué, ne pas le mettre à jour
     const currentConfig = db.prepare('SELECT smtp_pass FROM email_config WHERE id = 1').get();
@@ -2048,13 +2057,15 @@ app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
         enabled = ?, smtp_host = ?, smtp_port = ?, smtp_secure = ?,
         smtp_user = ?, smtp_pass = ?, from_name = ?,
         alert_access_request = ?, alert_reservation = ?, alert_assignment = ?, alert_overdue = ?,
+        alert_leave = ?, alert_sav = ?, alert_maintenance = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(
       enabled ? 1 : 0, smtp_host || '', smtp_port || 587, smtp_secure ? 1 : 0,
       smtp_user || '', finalPass, from_name || 'eM@g',
       alert_access_request !== false ? 1 : 0, alert_reservation !== false ? 1 : 0,
-      alert_assignment !== false ? 1 : 0, alert_overdue !== false ? 1 : 0
+      alert_assignment !== false ? 1 : 0, alert_overdue !== false ? 1 : 0,
+      alert_leave !== false ? 1 : 0, alert_sav !== false ? 1 : 0, alert_maintenance !== false ? 1 : 0
     );
 
     // Réinitialiser le transporteur avec la nouvelle config
@@ -2348,6 +2359,8 @@ setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
 setupSuppliersRoutes(app, authenticateToken, requireAdmin);
 setupOrdersRoutes(app, authenticateToken, requireAdmin);
 setupQuotesRoutes(app, authenticateToken, requireAdmin);
+setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin);
+setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Catalogue Matériel + Flight-Cases + Modèles Camions + Deep Linking
 setupCatalogRoutes(app, authenticateToken, requireCatalogAccess);
@@ -2363,6 +2376,18 @@ setupStockStatsRoutes(app, authenticateToken);
 
 // Routes Module Communication (Affichage dynamique + Planification + Import BL)
 setupCommunicationRoutes(app, authenticateToken, requireAdmin);
+
+// Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
+setupDisplayRoutes(app, authenticateToken, requireAdmin);
+
+// Routes Module Annuaire (Clients enrichis, Fournisseurs enrichis, Prestataires, Contacts, Référentiels, Import CSV)
+setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmin);
+setupAnnuairePrestatairesRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireSearchRoutes(app, authenticateToken);
+setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin);
 
 // ============ PROFIL UTILISATEUR ============
 

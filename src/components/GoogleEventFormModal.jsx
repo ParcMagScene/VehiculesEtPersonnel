@@ -130,7 +130,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
   if (!isOpen) return null;
 
   return (
-    <div className="event-form-overlay" onClick={onClose}>
+    <div className="event-form-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="event-form-modal" onClick={e => e.stopPropagation()}>
         <div className="event-form-header">
           <Calendar size={20} />

@@ -239,7 +239,7 @@ function QRCodeModal({ onClose }) {
   };
 
   return (
-    <div className="qr-modal-overlay" onClick={handleOverlayClick}>
+    <div className="qr-modal-overlay" onMouseDown={handleOverlayClick}>
       <div className="qr-modal">
         <div className="qr-modal-header no-print">
           <h2>

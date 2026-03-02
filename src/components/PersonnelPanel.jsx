@@ -281,7 +281,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
         )}
         <PlanningTab persons={persons} skills={skills} positions={positions} view={view} setView={setView} currentDate={currentDate} setCurrentDate={setCurrentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} currentUser={currentUser} />
         {editFormVisible && (
-          <div className="modal-overlay" onClick={resetEditForm}>
+          <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && resetEditForm()}>
             <div className="personnel-edit-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2><User size={20} /> {editingPersonDirect ? 'Modifier la fiche' : 'Nouvelle personne'}</h2>
@@ -837,7 +837,7 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
   };
 
   return (
-    <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eq-modal pp-form-modal">
         <div className="eq-modal-header">
           <h3>{person ? '✏️ Modifier la fiche' : '➕ Nouvelle personne'}</h3>

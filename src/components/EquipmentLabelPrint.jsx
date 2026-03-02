@@ -169,7 +169,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   const qrPreviewSize = Math.min(format.height * 2.2, 55);
 
   return (
-    <div className="elp-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="elp-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="elp-modal">
         <div className="elp-header">
           <div className="elp-header-title">

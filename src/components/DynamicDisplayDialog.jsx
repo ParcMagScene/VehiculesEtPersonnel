@@ -161,7 +161,7 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
   };
 
   return (
-    <div className="display-dialog-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
+    <div className="display-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()} onKeyDown={handleKeyDown}>
       <div className="display-dialog" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="dialog-header">

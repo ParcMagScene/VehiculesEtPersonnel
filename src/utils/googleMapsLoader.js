@@ -43,14 +43,14 @@ export const loadGoogleMapsAPI = (apiKey) => {
   return new Promise((resolve, reject) => {
     try {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=fr&loading=async`;
       script.async = true;
       script.defer = true;
 
       script.onload = () => {
         // Attendre que l'API soit complètement initialisée
         const checkApiReady = () => {
-          if (window.google?.maps?.Map && window.google?.maps?.Marker && window.google?.maps?.places?.Autocomplete) {
+          if (window.google?.maps?.Map && window.google?.maps?.places) {
             isLoaded = true;
             isLoading = false;
             
@@ -96,8 +96,7 @@ export const loadGoogleMapsAPI = (apiKey) => {
 export const isGoogleMapsLoaded = () => {
   return isLoaded && 
          window.google?.maps?.Map !== undefined &&
-         window.google?.maps?.Marker !== undefined &&
-         window.google?.maps?.places?.Autocomplete !== undefined;
+         window.google?.maps?.places !== undefined;
 };
 
 /**

@@ -343,7 +343,7 @@ const LeaveRequestForm = ({
   const currentTypeInfo = leaveTypes[leaveType];
 
   return (
-    <div className="lrf-overlay" onClick={onClose}>
+    <div className="lrf-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="lrf-modal" onClick={e => e.stopPropagation()}>
         {/* En-tête */}
         <div className="lrf-header">

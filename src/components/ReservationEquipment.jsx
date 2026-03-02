@@ -171,7 +171,7 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
   };
 
   return (
-    <div className="catalog-modal-overlay" onClick={onClose}>
+    <div className="catalog-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="catalog-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
         <div className="catalog-modal-header">
           <h3><Plus size={20} /> Ajouter du matériel</h3>

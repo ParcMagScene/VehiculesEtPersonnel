@@ -902,7 +902,7 @@ const TripDetailsModal = ({
   };
 
   return (
-    <div className="td-overlay" onClick={(e) => {
+    <div className="td-overlay" onMouseDown={(e) => {
       // Fermer uniquement si on clique sur l'overlay (arrière-plan)
       if (e.target.className === 'td-overlay') {
         handleSafeClose();

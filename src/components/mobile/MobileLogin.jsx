@@ -179,7 +179,7 @@ function MobileLogin({ onLogin }) {
 
       {/* Modal Réinitialisation directe du mot de passe */}
       {showResetPassword && (
-        <div className="mobile-modal-overlay" onClick={() => setShowResetPassword(false)}>
+        <div className="mobile-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowResetPassword(false)}>
           <div className="mobile-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-modal-header" style={{ background: 'var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706))' }}>
               <h3>🔑 Réinitialiser le mot de passe</h3>

@@ -9,26 +9,42 @@ import { formatDateFr } from '../utils/formatUtils';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from '../hooks/useToast';
 import EventTaskModal from './EventTaskModal';
+import TaskEditModal from './TaskEditModal';
 import './TaskPlanningPanel.css';
 
 const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
 // ═══ Constantes ═══
 const SECTIONS = {
-  rdv:                { label: 'Événements du jour',  emoji: '📅', color: '#059669' },
-  prep_locations:     { label: 'Prépa Locations',    emoji: '📦', color: '#3b82f6' },
-  prep_prestations:   { label: 'Prépa Prestations',  emoji: '🎤', color: '#f59e0b' },
-  prep_ventes:        { label: 'Prépa Ventes',       emoji: '🏷️', color: '#10b981' },
-  prep_installations: { label: 'Prépa Installations', emoji: '⚙️', color: '#8b5cf6' },
-  taches_prioritaires:{ label: 'Tâches Prioritaires', emoji: '🔴', color: '#ef4444' },
-  taches_secondaires: { label: 'Tâches Secondaires', emoji: '🟡', color: '#f59e0b' },
-  courses:            { label: 'Courses',             emoji: '🚗', color: '#8b5cf6' },
-  manual:             { label: 'Autres',              emoji: '📋', color: 'var(--theme-text-secondary)' },
+  rdv:                { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
+  evenements:         { label: 'Autres Événements',    emoji: '📌', color: '#64748b' },
+  // — Prioritaires & Courses en premier —
+  taches_prioritaires:{ label: 'Tâches Prioritaires',  emoji: '🔴', color: '#ef4444' },
+  courses:            { label: 'Courses',              emoji: '🚗', color: '#8b5cf6' },
+  // — Préparations —
+  prep_locations:     { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b', affaireOnly: true },
+  prep_prestations:   { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6', affaireOnly: true },
+  prep_ventes:        { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981', affaireOnly: true },
+  prep_installations: { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6', affaireOnly: true },
+  // — Autres étapes opérationnelles —
+  chargement:         { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
+  depart:             { label: 'Départ',               emoji: '🚀', color: '#3b82f6', typeRestriction: 'Prestation', affaireOnly: true },
+  enlevement:         { label: 'Enlèvement',           emoji: '🚚', color: '#10b981', typeRestriction: 'Location', affaireOnly: true },
+  retour:             { label: 'Retour',               emoji: '↩️', color: '#8b5cf6', typeRestriction: 'Prestation', affaireOnly: true },
+  recuperation:       { label: 'Récupération',         emoji: '📥', color: '#ef4444', typeRestriction: 'Location', affaireOnly: true },
+  installation:       { label: 'Installation',         emoji: '🛠️', color: '#10b981', typeRestriction: 'Installation', affaireOnly: true },
+  // — En bas —
+  taches_secondaires: { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
+  manual:             { label: 'Autres',               emoji: '📋', color: 'var(--theme-text-secondary)' },
 };
 
+// Sections événements (haut) vs opérationnelles (bas)
+const EVENT_SECTION_KEYS = ['rdv', 'evenements'];
+const OPS_SECTION_KEYS = Object.keys(SECTIONS).filter(k => !EVENT_SECTION_KEYS.includes(k));
+
 const AFFAIRE_TYPE_INFO = {
-  'Prestation':    { label: 'Prestation',    emoji: '🎭', color: '#f59e0b', section: 'prep_prestations' },
-  'Location':      { label: 'Location',      emoji: '🏗️', color: '#3b82f6', section: 'prep_locations' },
+  'Prestation':    { label: 'Prestation',    emoji: '🎭', color: '#3b82f6', section: 'prep_prestations' },
+  'Location':      { label: 'Location',      emoji: '🏗️', color: '#f59e0b', section: 'prep_locations' },
   'Vente':         { label: 'Vente',         emoji: '💰', color: '#8b5cf6', section: 'prep_ventes' },
   'Installation':  { label: 'Installation',  emoji: '⚙️', color: '#10b981', section: 'prep_installations' },
 };
@@ -52,9 +68,13 @@ const mapEventToSection = (event) => {
     if (cat === 'installation') return 'prep_installations';
     return 'prep_locations';
   }
-  if (['livraison', 'enlevement', 'depart'].includes(type)) return 'taches_prioritaires';
-  if (['retour', 'recuperation'].includes(type)) return 'taches_secondaires';
-  return 'manual';
+  if (type === 'enlevement') return 'enlevement';
+  if (type === 'depart') return 'depart';
+  if (type === 'livraison') return 'chargement';
+  if (type === 'retour') return 'retour';
+  if (type === 'recuperation') return 'recuperation';
+  if (type === 'installation') return 'installation';
+  return 'evenements';
 };
 
 const mapAffaireToSection = (affaire) => {
@@ -119,6 +139,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
   const [expandedRdv, setExpandedRdv] = useState(null);
   // EventTaskModal
   const [eventTaskModalEvent, setEventTaskModalEvent] = useState(null);
+  // TaskEditModal — édition individuelle d'une tâche
+  const [editingTask, setEditingTask] = useState(null);
 
   // Semaine : 7 jours à partir du lundi
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
@@ -151,11 +173,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     }
   }, [selectedDate, viewMode, weekDays, toast]);
 
-  // Load persons for assignment
+  // Load persons for assignment (permanents uniquement)
   const loadPersons = useCallback(async () => {
     try {
       const data = await api.getPersons();
-      setPersons(Array.isArray(data) ? data : []);
+      // Filtrer pour ne garder que les permanents actifs
+      const permanents = (Array.isArray(data) ? data : []).filter(
+        p => p.type === 'permanent' && p.status !== 'inactive'
+      );
+      setPersons(permanents);
     } catch {
       setPersons([]);
     }
@@ -219,14 +245,103 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
 
   // IDs Google event qui ont déjà des tâches créées
   const processedGoogleIds = useMemo(() =>
-    new Set(tasks.filter(t => t.source_type === 'google_event' && t.source_id).map(t => t.source_id)),
+    new Set(tasks.filter(t => t.sourceType === 'google_event' && t.sourceId).map(t => t.sourceId)),
     [tasks]
   );
 
-  // googleRdvEvents = tous les events Google du jour/semaine (plus de filtre "rdv")
-  const googleRdvEvents = useMemo(() => {
-    return viewMode === 'week' ? weekGoogleEvents : dayGoogleEvents;
-  }, [viewMode, weekGoogleEvents, dayGoogleEvents]);
+  // ── Index des affaires par numéro pour enrichir les tâches liées ──
+  const affaireByNum = useMemo(() => {
+    const map = new Map();
+    affaires.forEach(a => {
+      if (a.numeroAffaire) map.set(a.numeroAffaire.toUpperCase(), a);
+    });
+    return map;
+  }, [affaires]);
+
+  // ── Lier les événements Google aux affaires par numéro d'affaire ──
+  // Évite les doublons : un event Google portant un AF existant est masqué,
+  // et l'affaire récupère les horaires Google associés.
+  const { enrichedAffaires, filteredDayGoogleEvents, filteredWeekGoogleEvents } = useMemo(() => {
+    const affaireNumMap = new Map();
+    affaires.forEach(a => {
+      if (a.numeroAffaire) affaireNumMap.set(a.numeroAffaire.toUpperCase(), a);
+    });
+
+    const linkedByAffaire = new Map(); // affaireNum → googleEvent
+
+    const filterLinked = (events) => {
+      return events.filter(ev => {
+        const match = (ev.summary || '').match(/AF\d{4,}/i);
+        if (match) {
+          const num = match[0].toUpperCase();
+          if (affaireNumMap.has(num)) {
+            // Garder le premier événement lié (ou celui avec l'heure la plus tôt)
+            if (!linkedByAffaire.has(num)) {
+              linkedByAffaire.set(num, ev);
+            }
+            return false; // Filtrer cet événement Google (l'affaire prend le relais)
+          }
+        }
+        return true;
+      });
+    };
+
+    const fDay = filterLinked(dayGoogleEvents);
+    const fWeek = filterLinked(weekGoogleEvents);
+
+    // Enrichir les affaires avec les données de l'événement Google lié
+    const enriched = affaires.map(a => {
+      const num = (a.numeroAffaire || '').toUpperCase();
+      const gev = linkedByAffaire.get(num);
+      if (gev) {
+        const startDT = gev.start?.dateTime || '';
+        const endDT = gev.end?.dateTime || '';
+        return {
+          ...a,
+          _linkedGoogleEvent: gev,
+          _googleTime: startDT.includes('T') ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+          _googleEndTime: endDT.includes('T') ? new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+          _googleLocation: gev.location || '',
+          _googleId: gev.id,
+        };
+      }
+      return a;
+    });
+
+    return { enrichedAffaires: enriched, filteredDayGoogleEvents: fDay, filteredWeekGoogleEvents: fWeek };
+  }, [affaires, dayGoogleEvents, weekGoogleEvents]);
+
+  // Ouvrir EventTaskModal à partir d'une affaire (pseudo événement, ou Google event lié)
+  const openAffaireTaskModal = (affaire) => {
+    // Si l'affaire est liée à un événement Google, utiliser celui-ci directement
+    if (affaire._linkedGoogleEvent) {
+      setEventTaskModalEvent(affaire._linkedGoogleEvent);
+      return;
+    }
+    const pseudoEvent = {
+      id: `affaire-${affaire.id || affaire.numeroAffaire}`,
+      summary: `${affaire.type || ''} ${affaire.numeroAffaire}${affaire.client ? ' — ' + affaire.client : ''}`,
+      start: { date: affaire.dateDebut || affaire.date_debut || '' },
+      end: { date: affaire.dateFin || affaire.date_fin || '' },
+      location: affaire.adresseLivraison || '',
+      description: affaire.titre || affaire.description || '',
+    };
+    setEventTaskModalEvent(pseudoEvent);
+  };
+
+  // googleRdvEvents = événements Google NON liés à une affaire existante
+  const allGoogleEvents = useMemo(() => {
+    return viewMode === 'week' ? filteredWeekGoogleEvents : filteredDayGoogleEvents;
+  }, [viewMode, filteredWeekGoogleEvents, filteredDayGoogleEvents]);
+
+  // Séparer RDV (titre contient "rdv") des autres événements Google
+  const googleRdvEvents = useMemo(() =>
+    allGoogleEvents.filter(ev => /rdv/i.test(ev.summary || '')),
+  [allGoogleEvents]);
+
+  const googleOtherEvents = useMemo(() =>
+    allGoogleEvents.filter(ev => !/rdv/i.test(ev.summary || '')),
+  [allGoogleEvents]);
 
   // ── Groupement par jour pour la vue semaine ──
   const weekGroupedByDay = useMemo(() => {
@@ -244,7 +359,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
       if (map[ev.date]) map[ev.date].events.push(ev);
     });
     // Affaires : actives sur chaque jour de la semaine
-    affaires.forEach(a => {
+    enrichedAffaires.forEach(a => {
       const debut = a.dateDebut || a.date_debut || '';
       const fin = a.dateFin || a.date_fin || '';
       weekDays.forEach(d => {
@@ -253,19 +368,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         }
       });
     });
-    // Google events
-    weekGoogleEvents.forEach(ev => {
+    // Google events (uniquement ceux non liés à une affaire)
+    filteredWeekGoogleEvents.forEach(ev => {
       const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
       if (map[evDate]) map[evDate].googleEvents.push(ev);
     });
     return map;
-  }, [viewMode, weekDays, tasks, unlinkedEvents, affaires, weekGoogleEvents]);
+  }, [viewMode, weekDays, tasks, unlinkedEvents, enrichedAffaires, filteredWeekGoogleEvents]);
 
   // Affaires groupées par section de préparation
   const affairesBySection = useMemo(() => {
     const groups = {};
     Object.keys(SECTIONS).forEach(k => { groups[k] = []; });
-    affaires.forEach(a => {
+    enrichedAffaires.forEach(a => {
       const sec = mapAffaireToSection(a);
       if (!groups[sec]) groups[sec] = [];
       groups[sec].push(a);
@@ -276,7 +391,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
       }
     });
     return groups;
-  }, [affaires]);
+  }, [enrichedAffaires]);
 
   // Assigner un personnel à un événement d'affichage
   const handleAssignPerson = async (eventId, personId) => {
@@ -378,12 +493,84 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     setShowPdfExport(true);
   };
 
+  // Extraire un numéro d'affaire (AF suivi de chiffres) depuis un texte
+  const extractAffaireNum = (text) => {
+    if (!text) return null;
+    const match = text.match(/\bAF\s*\d{3,}/i);
+    return match ? match[0].toUpperCase().replace(/\s+/g, '') : null;
+  };
+
   const renderTaskRow = (task) => {
     const isDone = task.status === 'done';
     const isProgress = task.status === 'in_progress';
-    const isGoogle = task.source_type === 'google_event';
+    const isGoogle = task.sourceType === 'google_event';
     const isHidden = task.visible === 0;
     const dateBadge = getDateBadge(task.date);
+    const affaireNum = task.affaireNum || extractAffaireNum(task.title) || extractAffaireNum(task.googleEventTitle);
+    const sectionInfo = SECTIONS[task.section];
+
+    // --- Nettoyage du titre pour éviter les doublons ---
+    let displayTitle = task.title;
+    // 1. Retirer le suffixe " — eventSummary" (tâches Google: "emoji Label — Summary")
+    if (task.googleEventTitle) {
+      const dashIdx = displayTitle.indexOf(' — ');
+      if (dashIdx >= 0) {
+        const suffix = displayTitle.slice(dashIdx + 3).trim();
+        if (suffix.toLowerCase() === task.googleEventTitle.trim().toLowerCase()) {
+          displayTitle = displayTitle.slice(0, dashIdx).trim();
+        }
+      }
+    }
+    // 2. Retirer le label de section du titre (redondant : "📦 Chargement" dans la section Chargement, etc.)
+    if (sectionInfo?.affaireOnly) {
+      displayTitle = displayTitle
+        .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '') // retirer emoji
+        .replace(/^(Préparation|Chargement|Départ|Enlèvement|Retour|Récupération|Installation)\s*—?\s*/i, '')
+        .trim();
+      // Si le titre est vide après nettoyage, utiliser le googleEventTitle ou le client comme titre principal
+      if (!displayTitle) {
+        displayTitle = task.googleEventTitle || task.notes || '';
+      }
+    }
+    // 3. Retirer le N° d'affaire du titre (déjà affiché en badge)
+    if (affaireNum) {
+      const escaped = affaireNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      displayTitle = displayTitle.replace(new RegExp(escaped, 'gi'), '').replace(/\s{2,}/g, ' ').trim();
+    }
+
+    // 4. Enrichir avec le client/titre de l'affaire si le titre est trop générique
+    const linkedAffaire = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
+    const isGenericTitle = !displayTitle || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(displayTitle);
+    if (isGenericTitle && linkedAffaire) {
+      const client = linkedAffaire.client || '';
+      const titre = linkedAffaire.titre || linkedAffaire.eventName || '';
+      displayTitle = client || titre || displayTitle || '-';
+    }
+
+    // --- Nettoyage du sous-titre (googleEventTitle) ---
+    let cleanEventTitle = task.googleEventTitle || '';
+    if (affaireNum && cleanEventTitle) {
+      const escaped = affaireNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      cleanEventTitle = cleanEventTitle.replace(new RegExp(escaped, 'gi'), '').replace(/\s{2,}/g, ' ').trim();
+    }
+    // Si le titre affiche le client de l'affaire, montrer le titre/objet de l'affaire en sous-titre
+    if (isGenericTitle && linkedAffaire) {
+      const affaireTitre = linkedAffaire.titre || linkedAffaire.eventName || '';
+      if (affaireTitre && affaireTitre.toLowerCase() !== displayTitle.toLowerCase()) {
+        cleanEventTitle = affaireTitre;
+      }
+    }
+    // Montrer le sous-titre uniquement s'il apporte une info différente du titre
+    const showSubtitle = cleanEventTitle &&
+      cleanEventTitle.toLowerCase().replace(/\s+/g, '') !== displayTitle.toLowerCase().replace(/\s+/g, '');
+
+    // Masquer l'eventType quand il est redondant avec le nom de la section
+    const SECTION_EVENT_TYPES = {
+      prep_locations: 'preparation', prep_prestations: 'preparation', prep_ventes: 'preparation', prep_installations: 'preparation',
+      chargement: 'chargement', depart: 'depart', enlevement: 'enlevement',
+      retour: 'retour', recuperation: 'recuperation', installation: 'installation',
+    };
+    const showEventType = task.eventType && SECTION_EVENT_TYPES[task.section] !== task.eventType;
 
     return (
       <div key={task.id} className={`task-row ${isGoogle ? 'google-task-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
@@ -399,20 +586,21 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         <div className="task-info">
           <div className={`task-title ${isDone ? 'done' : ''}`}>
             {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
+            {affaireNum && <span className="affaire-num-badge" title={`Affaire ${affaireNum}`}>{affaireNum}</span>}
             {dateBadge && <span className="date-badge">{dateBadge}</span>}
-            {task.title}
+            {displayTitle}
           </div>
+          {showSubtitle && (
+            <div className="task-subtitle"><Calendar size={11} /> {cleanEventTitle}</div>
+          )}
           <div className="task-meta">
             {task.time && (
-              <span><Clock size={11} /> {task.time}{task.end_time ? ` → ${task.end_time}` : ''}</span>
+              <span><Clock size={11} /> {task.time}{task.endTime ? ` → ${task.endTime}` : ''}</span>
             )}
-            {task.affaire_num && (
-              <span><Briefcase size={11} /> {task.affaire_num}</span>
+            {!affaireNum && cleanEventTitle && (
+              <span><Calendar size={11} /> {cleanEventTitle}</span>
             )}
-            {task.google_event_title && (
-              <span><Calendar size={11} /> {task.google_event_title}</span>
-            )}
-            {task.eventType && (
+            {showEventType && (
               <span><Briefcase size={11} /> {task.eventType}</span>
             )}
             {task.notes && (
@@ -436,18 +624,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
           >
             {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
-          {isGoogle && task.source_id && (
-            <button
-              className="edit"
-              onClick={() => {
-                const ev = googleEvents.find(e => e.id === task.source_id);
-                if (ev) setEventTaskModalEvent(ev);
-              }}
-              title="Modifier les tâches de cet événement"
-            >
-              <Edit2 size={14} />
-            </button>
-          )}
+          <button
+            className="edit"
+            onClick={() => setEditingTask(task)}
+            title="Modifier cette tâche"
+          >
+            <Edit2 size={14} />
+          </button>
           <button className="delete" onClick={() => handleDelete(task.id)} title="Supprimer">
             <Trash2 size={14} />
           </button>
@@ -461,6 +644,17 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     const isPrep = event.type === 'preparation';
     const isHidden = event.visible === 0;
     const dateBadge = getDateBadge(event.date);
+
+    // Le type est redondant si on est dans une section affaireOnly (le bandeau dit déjà "Préparations X", "Chargement", etc.)
+    const section = event._section || mapEventToSection(event);
+    const sectionInfo = SECTIONS[section];
+    const isTypeRedundant = sectionInfo?.affaireOnly;
+
+    // Extraire un éventuel numéro d'affaire
+    const affaireNum = event.affaireId
+      ? (event.affaireId.match(/\bAF\s*\d{3,}/i) || [null])[0]?.toUpperCase()?.replace(/\s+/g, '')
+      : null;
+
     return (
       <div key={`de-${event.id}`} className={`task-row display-event-row ${isHidden ? 'hidden-display' : ''}`}>
         <span className="display-event-icon" style={{ color: typeInfo.color }}>
@@ -468,10 +662,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         </span>
         <div className="task-info">
           <div className="task-title">
-            {typeInfo.emoji} {dateBadge && <span className="date-badge">{dateBadge}</span>}
-            {typeInfo.label}
-            {event.client ? ` — ${event.client}` : ''}
-            {event.affaireId ? ` (${event.affaireId})` : ''}
+            {!isTypeRedundant && <>{typeInfo.emoji} </>}
+            {affaireNum && <span className="affaire-num-badge" title={`Affaire ${affaireNum}`}>{affaireNum}</span>}
+            {dateBadge && <span className="date-badge">{dateBadge}</span>}
+            {isTypeRedundant
+              ? (event.client || event.affaireId || typeInfo.label)
+              : <>{typeInfo.label}{event.client ? ` — ${event.client}` : ''}{event.affaireId && !affaireNum ? ` (${event.affaireId})` : ''}</>
+            }
           </div>
           <div className="task-meta">
             {event.location && <span><MapPin size={11} /> {event.location}</span>}
@@ -546,12 +743,20 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     });
   };
 
-  // Carte affaire dans une section
+  // Carte affaire dans une section — cliquable pour définir des tâches
   const renderAffaireRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
     const dateBadge = getDateBadge(affaire.dateDebut || affaire.date_debut);
+    const isProcessed = affaire._googleId
+      ? processedGoogleIds.has(affaire._googleId)
+      : processedGoogleIds.has(`affaire-${affaire.id || affaire.numeroAffaire}`);
     return (
-      <div key={`aff-${affaire.numeroAffaire}`} className="task-row affaire-row">
+      <div
+        key={`aff-${affaire.numeroAffaire}`}
+        className={`task-row affaire-row ${isProcessed ? 'processed' : 'pending'} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
+        onClick={() => openAffaireTaskModal(affaire)}
+        style={{ cursor: 'pointer' }}
+      >
         <span className="display-event-icon" style={{ color: typeInfo.color }}>
           <Briefcase size={14} />
         </span>
@@ -560,15 +765,26 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
             {typeInfo.emoji} {dateBadge && <span className="date-badge">{dateBadge}</span>}
             {affaire.numeroAffaire}
             {affaire.client ? ` — ${affaire.client}` : ''}
+            {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
+            {isProcessed && <span className="processed-badge" title="Tâches définies">✓</span>}
           </div>
+          {(affaire.titre || affaire.event_name) && (
+            <div className="task-subtitle">{affaire.event_name || affaire.titre}</div>
+          )}
           <div className="task-meta">
-            {affaire.adresseLivraison && <span><MapPin size={11} /> {affaire.adresseLivraison.split('\n')[0]}</span>}
+            {affaire._googleTime && (
+              <span><Clock size={11} /> {affaire._googleTime}{affaire._googleEndTime ? ` → ${affaire._googleEndTime}` : ''}</span>
+            )}
+            {(affaire._googleLocation || affaire.adresseLivraison) && (
+              <span><MapPin size={11} /> {(affaire._googleLocation || affaire.adresseLivraison).split('\n')[0]}</span>
+            )}
+            {!affaire._googleLocation && !affaire.adresseLivraison && null}
             {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
             {affaire.blCount > 0 && <span>📄 {affaire.blCount} BL</span>}
           </div>
         </div>
         <div className="task-actions">
-          <button className="delete" onClick={() => handleHideAffaire(affaire)} title="Retirer de la planification">
+          <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }} title="Retirer de la planification">
             <X size={14} />
           </button>
         </div>
@@ -642,6 +858,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
           <div className="task-title">
             {typeInfo.emoji} {affaire.numeroAffaire} — {affaire.client || 'Sans client'}
           </div>
+          {(affaire.titre || affaire.event_name) && (
+            <div className="task-subtitle">{affaire.event_name || affaire.titre}</div>
+          )}
           <div className="task-meta">
             {affaire.adresseLivraison && <span><MapPin size={11} /> {affaire.adresseLivraison.split('\n')[0]}</span>}
             {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
@@ -689,11 +908,23 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
             {isDone && <Check size={10} />}
             {isProgress && <Clock size={10} />}
           </button>
-          <span className={`wk-title ${isDone ? 'done' : ''}`} title={item.title}>{item.title}</span>
+          {(() => {
+            const an = item.affaireNum || extractAffaireNum(item.title) || extractAffaireNum(item.googleEventTitle);
+            return an ? <span className="wk-affaire-badge">{an}</span> : null;
+          })()}
+          {(() => {
+            const isP = (item.section || '').startsWith('prep_');
+            const cleaned = isP ? item.title.replace(/^🔧\s*Préparation\s*—\s*/i, '') : item.title;
+            const an = item.affaireNum || extractAffaireNum(item.title) || extractAffaireNum(item.googleEventTitle);
+            return <span className={`wk-title ${isDone ? 'done' : ''}`} title={`${an ? an + ' · ' : ''}${item.title}${item.googleEventTitle ? ' — ' + item.googleEventTitle : ''}`}>{cleaned}</span>;
+          })()}
           {(item.personFirstName) && (
             <span className="wk-person">{item.personFirstName?.charAt(0)}{item.personLastName?.charAt(0)}</span>
           )}
           <div className="wk-actions">
+            <button onClick={() => setEditingTask(item)} title="Modifier">
+              <Edit2 size={10} />
+            </button>
             <button onClick={() => handleToggleTaskVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
               {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
             </button>
@@ -729,18 +960,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     }
     if (type === 'affaire') {
       const typeInfo = AFFAIRE_TYPE_INFO[item.type] || { label: 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+      const isProcessed = item._googleId
+        ? processedGoogleIds.has(item._googleId)
+        : processedGoogleIds.has(`affaire-${item.id || item.numeroAffaire}`);
       return (
         <div
           key={`wa-${item.numeroAffaire}`}
-          className="wk-card wk-affaire"
-          style={{ borderLeftColor: typeInfo.color }}
+          className={`wk-card wk-affaire ${isProcessed ? 'processed' : 'pending'} ${item._linkedGoogleEvent ? 'google-linked' : ''}`}
+          style={{ borderLeftColor: typeInfo.color, cursor: 'pointer' }}
+          onClick={() => openAffaireTaskModal(item)}
         >
           <Briefcase size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
-          <span className="wk-title" title={`${item.numeroAffaire}${item.client ? ' — ' + item.client : ''}`}>
-            {typeInfo.emoji} {item.client || item.numeroAffaire}
+          <span className="wk-title" title={`${item.numeroAffaire}${item.client ? ' — ' + item.client : ''}${item.event_name || item.titre ? ' • ' + (item.event_name || item.titre) : ''}${item._googleTime ? ' • ' + item._googleTime : ''}`}>
+            {typeInfo.emoji} {item.client || item.numeroAffaire}{(item.event_name || item.titre) ? ` · ${(item.event_name || item.titre).slice(0, 15)}${(item.event_name || item.titre).length > 15 ? '…' : ''}` : ''}
           </span>
+          {item._googleTime && <span className="wk-time">{item._googleTime}</span>}
+          {item._linkedGoogleEvent && <span className="wk-google-badge" title="Lié Google">G</span>}
+          {isProcessed && <span className="wk-status-dot done">✓</span>}
           <div className="wk-actions">
-            <button className="del" onClick={() => handleHideAffaire(item)} title="Retirer">
+            <button className="del" onClick={(e) => { e.stopPropagation(); handleHideAffaire(item); }} title="Retirer">
               <X size={10} />
             </button>
           </div>
@@ -802,8 +1040,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     const sectionEvents = eventsBySection[sectionKey] || [];
     const sectionAffaires = affairesBySection[sectionKey] || [];
     const isRdv = sectionKey === 'rdv';
+    const isEvenements = sectionKey === 'evenements';
+    const isAffaireOnly = !!info.affaireOnly;
     const googleRdvCount = isRdv ? googleRdvEvents.length : 0;
-    const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount;
+    const googleOtherCount = isEvenements ? googleOtherEvents.length : 0;
+    const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount + googleOtherCount;
 
     return (
       <div key={sectionKey} className={`task-section ${isRdv ? 'rdv-section' : ''}`}>
@@ -815,16 +1056,45 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
           <span className="section-count">{totalCount}</span>
         </div>
 
-        {/* Section RDV : Google Calendar RDV + affaires avec "rdv" dans le titre */}
+        {/* Section RDV : Google Calendar RDV (titre contient "rdv") + affaires avec "rdv" dans le titre */}
         {isRdv && googleRdvEvents.map(renderGoogleRdvRow)}
         {isRdv && sectionAffaires.map(renderRdvRow)}
 
+        {/* Section Autres Événements : Google events sans "rdv" dans le titre */}
+        {isEvenements && googleOtherEvents.map(renderGoogleRdvRow)}
+
         {/* Sections non-RDV : affaires + événements + tâches */}
         {!isRdv && sectionAffaires.map(renderAffaireRow)}
-        {!isRdv && sectionEvents.map(renderDisplayEventRow)}
-        {sectionTasks.map(renderTaskRow)}
+        {!isRdv && (() => {
+          // Filtrer les display events redondants avec les affaires déjà affichées
+          const affaireNums = new Set(sectionAffaires.map(a => a.numeroAffaire).filter(Boolean));
+          const affaireIds = new Set(sectionAffaires.map(a => String(a.id)).filter(Boolean));
+          const filteredEvents = sectionEvents
+            .filter(ev => {
+              if (ev.affaireId && (affaireNums.has(ev.affaireId) || affaireIds.has(String(ev.affaireId)))) return false;
+              if (ev.affaire_id && (affaireNums.has(ev.affaire_id) || affaireIds.has(String(ev.affaire_id)))) return false;
+              return true;
+            });
+          // Filtrer les tâches redondantes : tâches source_type=affaire dont l'affaire est déjà visible
+          const filteredTasks = sectionTasks.filter(t => {
+            if (t.sourceType === 'affaire' && t.sourceId) {
+              if (affaireIds.has(String(t.sourceId))) return false;
+              // Vérifier aussi par numéro d'affaire
+              const taskAffNum = t.affaireNum || extractAffaireNum(t.title) || extractAffaireNum(t.googleEventTitle);
+              if (taskAffNum && affaireNums.has(taskAffNum.toUpperCase())) return false;
+            }
+            return true;
+          });
+          return (
+            <>
+              {filteredEvents.map(renderDisplayEventRow)}
+              {filteredTasks.map(renderTaskRow)}
+            </>
+          );
+        })()}
 
-        {addingSection === sectionKey ? (
+        {/* Bouton Ajouter une tâche : masqué pour les sections réservées aux affaires */}
+        {!isAffaireOnly && (addingSection === sectionKey ? (
           <div className="task-form-inline">
             <input
               type="text"
@@ -838,10 +1108,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
               }}
             />
             <select value={newTaskPerson} onChange={e => setNewTaskPerson(e.target.value)}>
-              <option value="">— Personne —</option>
+              <option value="">— Responsable —</option>
               {persons.map(p => (
                 <option key={p.id} value={p.id}>
-                  {p.firstName || p.prenom} {p.lastName || p.nom}
+                  {p.firstName} {p.lastName}
                 </option>
               ))}
             </select>
@@ -862,7 +1132,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
           }}>
             <Plus size={14} /> Ajouter une tâche
           </div>
-        )}
+        ))}
       </div>
     );
   };
@@ -960,7 +1230,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         </div>
       ) : (
         <div className="sections-container">
-          {Object.keys(SECTIONS).map(renderSection)}
+          <div className="sections-group sections-events-group">
+            {EVENT_SECTION_KEYS.map(renderSection)}
+          </div>
+          <div className="sections-divider">
+            <span>Opérations & Tâches</span>
+          </div>
+          <div className="sections-group sections-ops-group">
+            {OPS_SECTION_KEYS.map(renderSection)}
+          </div>
         </div>
       )}
 
@@ -980,10 +1258,18 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
       {eventTaskModalEvent && (
         <EventTaskModal
           event={eventTaskModalEvent}
-          existingTasks={tasks.filter(t => t.source_type === 'google_event' && t.source_id === eventTaskModalEvent.id)}
+          existingTasks={tasks.filter(t => t.sourceType === 'google_event' && t.sourceId === eventTaskModalEvent.id)}
           onSave={() => { setEventTaskModalEvent(null); loadTasks(); }}
           onDelete={() => { setEventTaskModalEvent(null); loadTasks(); }}
           onClose={() => setEventTaskModalEvent(null)}
+        />
+      )}
+      {editingTask && (
+        <TaskEditModal
+          task={editingTask}
+          persons={persons}
+          onSave={() => { setEditingTask(null); loadTasks(); }}
+          onClose={() => setEditingTask(null)}
         />
       )}
     </div>

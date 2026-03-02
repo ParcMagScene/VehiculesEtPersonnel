@@ -336,7 +336,7 @@ function MobileMessaging({ currentUser, onBack }) {
 
       {/* Modal nouvelle conversation */}
       {showNewConv && (
-        <div className="mmsg-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowNewConv(false); }}>
+        <div className="mmsg-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowNewConv(false); }}>
           <div className="mmsg-modal">
             <h3>Nouveau message</h3>
             <div className="mmsg-user-list">

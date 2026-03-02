@@ -57,11 +57,13 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 - **Planning des tâches** : Planning jour/semaine, PDF export, édition de tâches individuelles
 
 ### 📒 Annuaire
-- **Clients** : Gestion complète avec contacts multiples
-- **Fournisseurs** : Répertoire fournisseurs avec spécialités
-- **Prestataires** : Gestion des prestataires freelance
-- **Recherche unifiée** : Recherche globale sur tous les types de contacts
-- **Import** : Import CSV/Excel de contacts
+- **Clients** : Gestion complète avec contacts multiples, validation SIRET/TVA, normalisation téléphone
+- **Fournisseurs** : Répertoire fournisseurs avec spécialités, code NAF
+- **Prestataires** : Gestion des prestataires freelance, formes juridiques
+- **Contacts** : Contacts multi-entité avec catégories (Direction, Commercial, Technique…)
+- **Référentiels** : 4 tables lookup éditables (structures légales, types de prestation, secteurs, catégories contacts)
+- **Recherche unifiée** : Recherche globale cross-entité
+- **Import** : Import CSV avec UPSERT et normalisation automatique
 
 ### 💬 Messagerie
 - **Conversations** : Temps réel entre utilisateurs
@@ -165,9 +167,9 @@ eM@g/
 │   ├── hooks/              # 6 hooks custom
 │   └── utils/              # 13 utilitaires (API client ~1895 lignes, dates, import, etc.)
 ├── server/
-│   ├── server.js           # Express (~2911 lignes)
-│   ├── database.js         # SQLite 79 tables (~2818 lignes)
-│   ├── 15 fichiers routes  # ~17 765 lignes de routes API
+│   ├── server.js           # Express (~2912 lignes)
+│   ├── database.js         # SQLite 80+ tables (~2825 lignes)
+│   ├── 15 fichiers routes  # ~17 800 lignes de routes API
 │   ├── emailService.js     # Service d'envoi d'emails (~383 lignes)
 │   └── migrations/         # 17 fichiers SQL
 ├── public/

@@ -7,6 +7,7 @@ import db from './database.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import PDFDocument from 'pdfkit';
 import logger from './logger.js';
@@ -111,7 +112,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Champs obligatoires : type, category, date' });
       }
 
-      const id = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('hex');
+      const id = crypto.randomUUID().replace(/-/g, '');
 
       const stmt = db.prepare(`
         INSERT INTO dynamic_display_events (id, affaire_id, bl_import_id, type, category, date, period, time, comment, client, location, created_by, created_at)
@@ -234,7 +235,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Un fichier ou du texte extrait est requis' });
       }
 
-      const id = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('hex');
+      const id = crypto.randomUUID().replace(/-/g, '');
 
       // Extraire les métadonnées enrichies du parsed_data
       let pd = null;
@@ -1109,7 +1110,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Le champ date est obligatoire' });
       }
 
-      const id = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('hex');
+      const id = crypto.randomUUID().replace(/-/g, '');
 
       const stmt = db.prepare(`
         INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, created_by, created_at)
@@ -1173,7 +1174,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const insertMany = db.transaction((items) => {
         for (const t of items) {
           if (!t.date) continue;
-          const id = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('hex');
+          const id = crypto.randomUUID().replace(/-/g, '');
           insertStmt.run(
             id,
             t.display_event_id || null,
@@ -1496,17 +1497,11 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const event = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
       if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
 
-      // Vérifier si la colonne assigned_person_id existe, sinon la créer
-      const columns = db.pragma('table_info(dynamic_display_events)');
-      if (!columns.find(c => c.name === 'assigned_person_id')) {
-        db.exec('ALTER TABLE dynamic_display_events ADD COLUMN assigned_person_id INTEGER DEFAULT NULL');
-      }
-
       db.prepare('UPDATE dynamic_display_events SET assigned_person_id = ? WHERE id = ?')
         .run(person_id || null, req.params.id);
 
       const updated = db.prepare(`
-        SELECT de.*, p.prenom as assigned_person_first_name, p.nom as assigned_person_last_name
+        SELECT de.*, p.first_name as assigned_person_first_name, p.last_name as assigned_person_last_name
         FROM dynamic_display_events de
         LEFT JOIN persons p ON p.id = de.assigned_person_id
         WHERE de.id = ?

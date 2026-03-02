@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 import {
   X, Mail, FileText, Clock, Send, Plus, Trash2, Edit3, Eye,
   Search, ChevronDown, ChevronUp, Users, AlertTriangle, Check,
@@ -454,7 +455,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                       <h3>Prévisualisation</h3>
                       <button onClick={() => setShowPreview(false)}><X size={18} /></button>
                     </div>
-                    <div className="mailing-preview-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    <div className="mailing-preview-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }} />
                   </div>
                 </div>
               )}

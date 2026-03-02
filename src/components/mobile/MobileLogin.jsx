@@ -208,8 +208,7 @@ function MobileLogin({ onLogin }) {
                     throw new Error(data.error || 'Erreur lors de la réinitialisation');
                   }
                   const data = await response.json();
-                  localStorage.setItem('auth_token', data.token);
-                  localStorage.setItem('auth_user', JSON.stringify(data.user));
+                  api.setAuth(data.token, data.user);
                   setShowResetPassword(false);
                   onLogin(data.user);
                 } catch (err) {

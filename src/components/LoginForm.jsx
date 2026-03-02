@@ -108,9 +108,8 @@ const LoginForm = ({ onLogin }) => {
 
       const data = await response.json();
       
-      // Sauvegarder le token
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('auth_user', JSON.stringify(data.user));
+      // Sauvegarder le token via api.setAuth (synchronise le singleton)
+      api.setAuth(data.token, data.user);
       
       // Fermer le modal et informer le parent
       setShowSessionConflict(false);
@@ -148,9 +147,8 @@ const LoginForm = ({ onLogin }) => {
 
       const data = await response.json();
       
-      // Sauvegarder le token (auto-login)
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('auth_user', JSON.stringify(data.user));
+      // Sauvegarder le token via api.setAuth (synchronise le singleton)
+      api.setAuth(data.token, data.user);
       
       // Fermer le modal et recharger
       setShowResetPassword(false);

@@ -59,6 +59,7 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 - Hash bcrypt (12 rounds) pour les mots de passe
 - Sessions enregistrées en DB (`active_sessions`) → invalidation au logout
 - Middleware `authenticateToken` sur toutes les routes protégées
+- **Guard production** : le serveur refuse de démarrer si `JWT_SECRET` est la valeur par défaut en production
 
 ✅ **Rate Limiting**
 - Auth : 20 requêtes / 15 minutes
@@ -70,6 +71,8 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 - Regex sur IDs (format attendu)
 - Validation des emails
 - Génération automatique d'ID si manquant
+- **Annuaire** : validation SIRET (Luhn 14 chiffres), TVA intracommunautaire (FR + 11 chiffres), normalisation téléphone, sanitisation XSS
+- Suppression de contacts Annuaire réservée aux administrateurs (`requireAdmin`)
 
 ✅ **Protection des Fichiers**
 - `sanitizePath()` sur tous les uploads (anti path-traversal)
@@ -83,13 +86,15 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 ### Frontend (React + Vite)
 
 ✅ **Protection XSS**
-- Aucun usage de `dangerouslySetInnerHTML`
 - React échappe automatiquement tout le contenu JSX
+- `DOMPurify` appliqué sur tout `dangerouslySetInnerHTML` (MailingPanel)
+- Aucune injection HTML brute non sanitisée
 
 ✅ **Stockage Tokens**
 - JWT stocké en localStorage (acceptable pour usage LAN interne)
 - Auto-logout sur erreur 401/403 (sauf endpoints d'auth)
 - Pas de refresh token persisté
+- Toutes les écritures token passent par `api.setAuth()` (LoginForm, MobileLogin)
 
 ⚠️ **Limitation connue**
 - LocalStorage vulnérable aux attaques XSS. Acceptable en réseau local privé.
@@ -112,6 +117,7 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 | `is_admin` | Accès complet (réservations, véhicules, utilisateurs, maintenances) |
 | `can_manage_catalog` | CRUD catalogue équipements + flight-cases |
 | `can_manage_trucks` | CRUD modèles de camions |
+| `requireAdmin` (annuaire) | Suppression de contacts Annuaire |
 
 Les routes GET ne nécessitent que l'authentification. Les routes de modification vérifient les permissions spécifiques via middleware.
 
@@ -182,6 +188,18 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ## 🔄 Historique des Mises à Jour Sécurité
 
+### 2026-03-07 — Audit Complet Session 19
+- ✅ **96 problèmes identifiés** (9 critiques, 14 hauts, 38 moyens, 19 bas, 16 info)
+- ✅ **13 bugs critiques/hauts corrigés** (displayRoutes, communicationRoutes, ordersRoutes, stockRoutes, api.js, LoginForm, MobileLogin, MailingPanel)
+- ✅ Ajout `DOMPurify` pour sanitisation XSS (MailingPanel)
+- ✅ Guard JWT production (`process.exit(1)` si secret par défaut)
+- ✅ Import `crypto` + remplacement `getRandomValues` → `randomUUID()`
+- ✅ Fix race condition génération références (ORDER BY reference DESC)
+- ✅ Fix localStorage bypass → `api.setAuth()` partout
+- ✅ Enrichissement Annuaire : validation SIRET/TVA, normalisation téléphone, code NAF, sécurisation DELETE contacts
+- ✅ Migrations DB : `assigned_person_id` (display events), `naf_code` (clients/fournisseurs/prestataires)
+- ✅ 80+ tables DB, ~380+ routes API, 118 composants React
+
 ### 2026-03-02
 - ✅ Mise à jour documentation (README, ARCHITECTURE, SECURITY, GUIDE)
 - ✅ 79 tables DB, ~350+ routes API, 118 composants React documentés
@@ -220,5 +238,5 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ---
 
-**Dernière mise à jour :** 2 mars 2026
+**Dernière mise à jour :** 7 mars 2026
 **Prochaine révision :** Mensuelle

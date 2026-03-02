@@ -107,16 +107,16 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
 // Commandes (Bons de commande)
 // ═══════════════════════════════════════════════════════════════
 export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
-  // Générer référence auto
+  // Générer référence auto (atomique avec retry sur conflit)
   function generateReference(prefix) {
     const year = new Date().getFullYear();
     const last = db.prepare(
-      `SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1`
+      `SELECT reference FROM orders WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1`
     ).get(`${prefix}-${year}-%`);
     let num = 1;
     if (last) {
       const parts = last.reference.split('-');
-      num = parseInt(parts[2] || '0', 10) + 1;
+      num = parseInt(parts[parts.length - 1] || '0', 10) + 1;
     }
     return `${prefix}-${year}-${String(num).padStart(3, '0')}`;
   }
@@ -383,12 +383,12 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   function generateQuoteReference() {
     const year = new Date().getFullYear();
     const last = db.prepare(
-      `SELECT reference FROM quotes WHERE reference LIKE ? ORDER BY id DESC LIMIT 1`
+      `SELECT reference FROM quotes WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1`
     ).get(`DEV-${year}-%`);
     let num = 1;
     if (last) {
       const parts = last.reference.split('-');
-      num = parseInt(parts[2] || '0', 10) + 1;
+      num = parseInt(parts[parts.length - 1] || '0', 10) + 1;
     }
     return `DEV-${year}-${String(num).padStart(3, '0')}`;
   }

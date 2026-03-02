@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "date-fns": "^3.3.1",
+    "dompurify": "^3.3.1",
     "lucide-react": "^0.344.0",
     "pdfjs-dist": "^5.4.530",
     "qrcode.react": "^4.2.0",

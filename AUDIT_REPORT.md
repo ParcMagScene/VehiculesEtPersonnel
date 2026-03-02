@@ -1184,3 +1184,90 @@ src/hooks/useTheme.js  (139 lignes) — Hook React, PALETTES, persistance
 | Lignes nettes supprimées | ~7800+ |
 | Fichiers modifiés total | 240+ |
 | Erreurs build | **0** |
+---
+
+## Session 19 — Audit Complet & Corrections (Mars 2026)
+
+### Périmètre
+Audit exhaustif de l'ensemble du projet : backend (15 fichiers routes), frontend (118 composants React, ~1896 lignes api.js), base de données (79+ tables), 20+ modules fonctionnels.
+
+### Méthodologie
+3 audits parallèles (backend, frontend, DB/modules) → 96 problèmes identifiés → corrections appliquées par ordre de sévérité.
+
+### Bugs CRITIQUES corrigés (5)
+
+| ID | Fichier | Problème | Impact |
+|----|---------|----------|--------|
+| BUG-01 | `displayRoutes.js` | Query `display_messages` avec colonnes `content`/`status` inexistantes | **Crash TV-state garanti** |
+| BUG-02 | `communicationRoutes.js` | `p.prenom`/`p.nom` au lieu de `p.first_name`/`p.last_name` | Noms assignés toujours NULL |
+| BUG-03 | `api.js` | `this.baseUrl` inexistant dans `uploadEquipmentPhotos()` | Upload photos équipement impossible |
+| BUG-04 | `api.js` | `resetUserPassword()` appelle `/users/reset-password` (n'existe pas) | Reset admin cassé |
+| BUG-05 | `api.js` | `getReservationRequests()` définie 2 fois | Code mort confus |
+
+### Bugs HAUTS corrigés (8)
+
+| ID | Fichier | Problème | Correction |
+|----|---------|----------|------------|
+| HIGH-01 | `LoginForm.jsx` | `localStorage.setItem()` bypass `api.setAuth()` (2 occurrences) | → `api.setAuth(data.token, data.user)` |
+| HIGH-02 | `MobileLogin.jsx` | Même bypass → `api.token` reste null après reset | → `api.setAuth(data.token, data.user)` |
+| HIGH-03 | `MailingPanel.jsx` | `dangerouslySetInnerHTML` sans sanitisation (XSS) | + DOMPurify |
+| HIGH-04 | `api.js` | `localStorage.getItem('auth_token')` dans 2 fetch bruts | → `this.token` |
+| HIGH-05 | `communicationRoutes.js` | `crypto` non importé (dépend de globalThis implicite) | + `import crypto` + `crypto.randomUUID()` |
+| HIGH-06 | `server.js` | JWT_SECRET fallback hardcodé autorisé en production | + `process.exit(1)` si NODE_ENV=production |
+| HIGH-07 | `ordersRoutes.js` | Race condition génération références (`ORDER BY id DESC`) | → `ORDER BY reference DESC` |
+| HIGH-08 | `stockRoutes.js` | Même race condition | → `ORDER BY reference DESC` |
+
+### Enrichissement Annuaire
+
+| Amélioration | Détail |
+|-------------|--------|
+| Validation SIRET | Algorithme de Luhn, 14 chiffres, rejet si clé invalide |
+| Validation TVA Intra | Format FR + 11 chiffres, normalisation automatique |
+| Normalisation téléphone | Nettoyage espaces/tirets/points, ajout 0 initial, conversion +33 |
+| Colonne `naf_code` | Ajoutée aux 3 entités (clients, suppliers, prestataires) via migration idempotente |
+| Sécurité DELETE contacts | Ajout de `requireAdmin` (manquant, contrairement aux 3 autres DELETE) |
+| Validation sur 6 handlers | POST/PUT clients, POST/PUT suppliers, POST/PUT prestataires |
+
+### Migration SQL générée
+Toutes les migrations sont **idempotentes** (check `pragma table_info` avant `ALTER TABLE`), intégrées dans `database.js` :
+- `assigned_person_id` sur `dynamic_display_events`
+- `naf_code` sur `clients`, `suppliers`, `prestataires`
+
+### Problèmes identifiés non corrigés (documentation)
+
+| Sévérité | Description | Raison |
+|----------|-------------|--------|
+| CRITIQUE | Self-reset-password exploitable (email + nom seuls) | Architecture à revoir (nécessite OTP/email) |
+| HAUTE | DROP/CREATE TABLE `task_assignments` à chaque démarrage | Fonctionnel mais risqué, nécessite système de versions migrations |
+| MOYENNE | ~45 méthodes API mortes (~30% d'api.js) | Nettoyage non-urgent |
+| MOYENNE | ErrorBoundary unique pour tout le desktop | Amélioration structurelle |
+| BASSE | ~20 fichiers CSS avec couleurs hardcodées restantes | Dark mode non impacté critique |
+
+### Fichiers modifiés (Session 19)
+
+| Fichier | Type de modification |
+|---------|---------------------|
+| `server/displayRoutes.js` | Fix query display_messages colonnes |
+| `server/communicationRoutes.js` | Fix prenom/nom + import crypto + randomUUID |
+| `server/server.js` | JWT_SECRET production guard |
+| `server/database.js` | Migration assigned_person_id + naf_code (3 tables) |
+| `server/ordersRoutes.js` | Fix race condition ORDER BY reference |
+| `server/stockRoutes.js` | Fix race condition ORDER BY reference |
+| `server/annuaireRoutes.js` | Validation SIRET/TVA + normalisation tel + requireAdmin contacts |
+| `src/utils/api.js` | Fix baseUrl, endpoint reset, doublon, token localStorage |
+| `src/components/LoginForm.jsx` | Fix localStorage bypass → api.setAuth() |
+| `src/components/mobile/MobileLogin.jsx` | Fix localStorage bypass → api.setAuth() |
+| `src/components/MailingPanel.jsx` | + DOMPurify sanitisation XSS |
+| `package.json` | + dompurify dependency |
+
+### Bilan quantitatif
+
+| Métrique | Valeur |
+|----------|--------|
+| Problèmes identifiés | **96** (9 CRITIQUES, 14 HAUTS, 38 MOYENS, 19 BAS, 16 INFO) |
+| Corrections appliquées | **13 bugs** (5 critiques + 8 hauts) |
+| Enrichissements Annuaire | **6** (validation, normalisation, colonnes, sécurité) |
+| Fichiers modifiés | **12** |
+| Nouvelles dépendances | **1** (dompurify) |
+| Migrations SQL ajoutées | **4** colonnes (idempotentes) |
+| Erreurs syntaxe | **0** |

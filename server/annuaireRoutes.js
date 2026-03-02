@@ -8,6 +8,62 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ═══════════════════════════════════════════════════════════════
+// Helpers : validation, normalisation
+// ═══════════════════════════════════════════════════════════════
+
+/** Normalise un numéro de téléphone français (supprime espaces/points/tirets, ajoute 0 initial) */
+function normalizePhone(phone) {
+  if (!phone) return phone;
+  let cleaned = phone.replace(/[\s.\-()]/g, '');
+  // Si 9 chiffres sans le 0 initial (ex: 612345678)
+  if (/^\d{9}$/.test(cleaned)) cleaned = '0' + cleaned;
+  // Si format international +33
+  if (/^\+33\d{9}$/.test(cleaned)) cleaned = '0' + cleaned.slice(3);
+  return cleaned;
+}
+
+/** Valide un numéro SIRET (14 chiffres, algorithme de Luhn) */
+function validateSiret(siret) {
+  if (!siret) return { valid: true };
+  const cleaned = siret.replace(/\s/g, '');
+  if (!/^\d{14}$/.test(cleaned)) return { valid: false, error: 'Le SIRET doit contenir 14 chiffres' };
+  let sum = 0;
+  for (let i = 0; i < 14; i++) {
+    let digit = parseInt(cleaned[i], 10);
+    if (i % 2 === 0) { digit *= 2; if (digit > 9) digit -= 9; }
+    sum += digit;
+  }
+  if (sum % 10 !== 0) return { valid: false, error: 'SIRET invalide (clé de contrôle incorrecte)' };
+  return { valid: true, cleaned };
+}
+
+/** Valide un numéro TVA intracommunautaire français */
+function validateTvaIntra(tva) {
+  if (!tva) return { valid: true };
+  const cleaned = tva.replace(/\s/g, '').toUpperCase();
+  if (!/^FR\d{11}$/.test(cleaned)) return { valid: false, error: 'TVA intra. doit être au format FRXXXXXXXXXXX (FR + 11 chiffres)' };
+  return { valid: true, cleaned };
+}
+
+/** Applique la normalisation téléphone + validation SIRET/TVA sur un body entité */
+function sanitizeEntityBody(body) {
+  const errors = [];
+  if (body.phone) body.phone = normalizePhone(body.phone);
+  if (body.phone2) body.phone2 = normalizePhone(body.phone2);
+  if (body.siret) {
+    const v = validateSiret(body.siret);
+    if (!v.valid) errors.push(v.error);
+    else if (v.cleaned) body.siret = v.cleaned;
+  }
+  if (body.tva_intra) {
+    const v = validateTvaIntra(body.tva_intra);
+    if (!v.valid) errors.push(v.error);
+    else if (v.cleaned) body.tva_intra = v.cleaned;
+  }
+  return errors;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Helper : pagination + recherche générique
 // ═══════════════════════════════════════════════════════════════
 function buildSearchQuery(baseTable, searchFields, req) {
@@ -83,14 +139,18 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
               type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes } = req.body;
       if (!name) return res.status(400).json({ error: 'Le nom est requis' });
 
+      // Validation et normalisation
+      const validationErrors = sanitizeEntityBody(req.body);
+      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+
       const result = db.prepare(`
         INSERT INTO clients (name, code_libre, email, phone, phone2, address, postal_code, city, country,
           type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes, 
           is_active, created_by, modified_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-      `).run(name, code_libre || null, email || null, phone || null, phone2 || null,
+      `).run(name, code_libre || null, email || null, req.body.phone || null, req.body.phone2 || null,
              address || null, postal_code || null, city || null, country || 'France',
-             type || 'client', legal_structure || null, siret || null, tva_intra || null,
+             type || 'client', legal_structure || null, req.body.siret || null, req.body.tva_intra || null,
              website || null, activity_sector || null,
              service_types ? JSON.stringify(service_types) : null, notes || null,
              req.user.id, req.user.id);
@@ -113,6 +173,10 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
       const { name, code_libre, email, phone, phone2, address, postal_code, city, country,
               type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes, is_active } = req.body;
 
+      // Validation et normalisation
+      const validationErrors = sanitizeEntityBody(req.body);
+      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+
       db.prepare(`
         UPDATE clients SET name = ?, code_libre = ?, email = ?, phone = ?, phone2 = ?,
           address = ?, postal_code = ?, city = ?, country = ?,
@@ -120,9 +184,9 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
           activity_sector = ?, service_types = ?, notes = ?, is_active = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(name, code_libre || null, email || null, phone || null, phone2 || null,
+      `).run(name, code_libre || null, email || null, req.body.phone || null, req.body.phone2 || null,
              address || null, postal_code || null, city || null, country || 'France',
-             type || 'client', legal_structure || null, siret || null, tva_intra || null,
+             type || 'client', legal_structure || null, req.body.siret || null, req.body.tva_intra || null,
              website || null, activity_sector || null,
              service_types ? JSON.stringify(service_types) : null, notes || null,
              is_active !== undefined ? is_active : 1,
@@ -205,14 +269,18 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
               type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes } = req.body;
       if (!name) return res.status(400).json({ error: 'Le nom est requis' });
 
+      // Validation et normalisation
+      const validationErrors = sanitizeEntityBody(req.body);
+      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+
       const result = db.prepare(`
         INSERT INTO suppliers (name, code_libre, contact_name, email, phone, phone2, address, postal_code, city, country,
           type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes,
           is_active, created_by, modified_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-      `).run(name, code_libre || null, contact_name || null, email || null, phone || null, phone2 || null,
+      `).run(name, code_libre || null, contact_name || null, email || null, req.body.phone || null, req.body.phone2 || null,
              address || null, postal_code || null, city || null, country || 'France',
-             type || 'fournisseur', legal_structure || null, siret || null, tva_intra || null,
+             type || 'fournisseur', legal_structure || null, req.body.siret || null, req.body.tva_intra || null,
              website || null, activity_sector || null,
              service_types ? JSON.stringify(service_types) : null, notes || null,
              req.user.id, req.user.id);
@@ -234,6 +302,10 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
       const { name, code_libre, contact_name, email, phone, phone2, address, postal_code, city, country,
               type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes, is_active } = req.body;
 
+      // Validation et normalisation
+      const validationErrors = sanitizeEntityBody(req.body);
+      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+
       db.prepare(`
         UPDATE suppliers SET name = ?, code_libre = ?, contact_name = ?, email = ?, phone = ?, phone2 = ?,
           address = ?, postal_code = ?, city = ?, country = ?,
@@ -241,9 +313,9 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
           activity_sector = ?, service_types = ?, notes = ?, is_active = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(name, code_libre || null, contact_name || null, email || null, phone || null, phone2 || null,
+      `).run(name, code_libre || null, contact_name || null, email || null, req.body.phone || null, req.body.phone2 || null,
              address || null, postal_code || null, city || null, country || 'France',
-             type || 'fournisseur', legal_structure || null, siret || null, tva_intra || null,
+             type || 'fournisseur', legal_structure || null, req.body.siret || null, req.body.tva_intra || null,
              website || null, activity_sector || null,
              service_types ? JSON.stringify(service_types) : null, notes || null,
              is_active !== undefined ? is_active : 1,
@@ -322,14 +394,18 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
               legal_structure, siret, tva_intra, website, activity_sector, service_types, notes } = req.body;
       if (!name) return res.status(400).json({ error: 'Le nom est requis' });
 
+      // Validation et normalisation
+      const validationErrors = sanitizeEntityBody(req.body);
+      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+
       const result = db.prepare(`
         INSERT INTO prestataires (name, code_libre, email, phone, phone2, address, postal_code, city, country,
           legal_structure, siret, tva_intra, website, activity_sector, service_types, notes,
           is_active, created_by, modified_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-      `).run(name, code_libre || null, email || null, phone || null, phone2 || null,
+      `).run(name, code_libre || null, email || null, req.body.phone || null, req.body.phone2 || null,
              address || null, postal_code || null, city || null, country || 'France',
-             legal_structure || null, siret || null, tva_intra || null,
+             legal_structure || null, req.body.siret || null, req.body.tva_intra || null,
              website || null, activity_sector || null,
              service_types ? JSON.stringify(service_types) : null, notes || null,
              req.user.id, req.user.id);
@@ -351,6 +427,10 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
       const { name, code_libre, email, phone, phone2, address, postal_code, city, country,
               legal_structure, siret, tva_intra, website, activity_sector, service_types, notes, is_active } = req.body;
 
+      // Validation et normalisation
+      const validationErrors = sanitizeEntityBody(req.body);
+      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+
       db.prepare(`
         UPDATE prestataires SET name = ?, code_libre = ?, email = ?, phone = ?, phone2 = ?,
           address = ?, postal_code = ?, city = ?, country = ?,
@@ -358,9 +438,9 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
           activity_sector = ?, service_types = ?, notes = ?, is_active = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(name, code_libre || null, email || null, phone || null, phone2 || null,
+      `).run(name, code_libre || null, email || null, req.body.phone || null, req.body.phone2 || null,
              address || null, postal_code || null, city || null, country || 'France',
-             legal_structure || null, siret || null, tva_intra || null,
+             legal_structure || null, req.body.siret || null, req.body.tva_intra || null,
              website || null, activity_sector || null,
              service_types ? JSON.stringify(service_types) : null, notes || null,
              is_active !== undefined ? is_active : 1,
@@ -491,7 +571,7 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
     }
   });
 
-  app.delete('/api/annuaire/contacts/:id', authenticateToken, (req, res) => {
+  app.delete('/api/annuaire/contacts/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       db.prepare('DELETE FROM annuaire_contacts WHERE id = ?').run(req.params.id);
       res.json({ success: true });

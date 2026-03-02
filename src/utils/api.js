@@ -902,6 +902,13 @@ class ApiClient {
     });
   }
 
+  async syncGoogleEventsToAffaires(events) {
+    return this.request('/affaires/sync-google-events', {
+      method: 'POST',
+      body: JSON.stringify({ events }),
+    });
+  }
+
   // ============ MESSAGERIE ============
 
   async getConversations() {

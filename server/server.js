@@ -2342,6 +2342,103 @@ app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
   }
 });
 
+// POST /api/affaires/sync-google-events — Détection auto : lier/créer affaires depuis événements Google
+app.post('/api/affaires/sync-google-events', authenticateToken, (req, res) => {
+  try {
+    const { events } = req.body;
+    if (!Array.isArray(events) || events.length === 0) {
+      return res.json({ created: 0, linked: 0, results: [] });
+    }
+
+    const results = [];
+    const affaireRegex = /\baf\s*(\d{3,})\b/i;
+
+    const findAffaire = db.prepare('SELECT * FROM affaires WHERE numero_affaire = ?');
+    const findByGoogleEvent = db.prepare('SELECT * FROM affaires WHERE google_event_id = ?');
+    const insertAffaire = db.prepare(`
+      INSERT INTO affaires (numero_affaire, type, client, titre, description,
+        date_debut, date_fin, adresse_livraison, google_event_id, event_name,
+        created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const linkAffaire = db.prepare(`
+      UPDATE affaires SET google_event_id = ?, event_name = ?,
+        modified_by = ?, modified_at = CURRENT_TIMESTAMP
+      WHERE numero_affaire = ? AND (google_event_id IS NULL OR google_event_id = '')
+    `);
+
+    let created = 0;
+    let linked = 0;
+
+    for (const evt of events) {
+      const title = evt.summary || evt.title || '';
+      const match = title.match(affaireRegex);
+      if (!match) continue;
+
+      const affaireNum = `AF${match[1]}`;
+      const googleEventId = evt.id || '';
+      if (!googleEventId) continue;
+
+      // Vérifier si cet événement Google est déjà lié à une affaire
+      const alreadyLinked = findByGoogleEvent.get(googleEventId);
+      if (alreadyLinked) continue; // Déjà traité
+
+      // Extraire les informations de l'événement
+      const eventName = title;
+      const dateStart = evt.start?.date || (evt.start?.dateTime || '').slice(0, 10) || '';
+      const dateEnd = evt.end?.date || (evt.end?.dateTime || '').slice(0, 10) || '';
+      const location = evt.location || '';
+      const description = evt.description || '';
+
+      // Vérifier si l'affaire existe dans la base
+      const existing = findAffaire.get(affaireNum);
+
+      if (existing) {
+        // L'affaire existe → la lier à l'événement Google (si pas déjà liée)
+        const changes = linkAffaire.run(googleEventId, eventName, req.user.id, affaireNum);
+        if (changes.changes > 0) {
+          linked++;
+          results.push({ affaire: affaireNum, action: 'linked', googleEventId });
+          logger.info(`🔗 Affaire ${affaireNum} liée à l'événement Google "${eventName}"`);
+        }
+      } else {
+        // L'affaire n'existe pas → la créer
+        // Tenter de détecter le type depuis le titre
+        let type = 'Prestation';
+        const titleLower = title.toLowerCase();
+        if (titleLower.includes('location') || titleLower.includes('loc ')) type = 'Location';
+        else if (titleLower.includes('vente') || titleLower.includes('achat')) type = 'Vente';
+        else if (titleLower.includes('install')) type = 'Installation';
+
+        // Tenter d'extraire le client (texte après le N° d'affaire, avant un séparateur)
+        let client = '';
+        const afterAffaire = title.slice(match.index + match[0].length).trim();
+        const clientMatch = afterAffaire.match(/^[\s\-–—:]+\s*(.+?)(?:\s*[\-–—|\/]|$)/);
+        if (clientMatch) {
+          client = clientMatch[1].trim();
+        } else if (afterAffaire && afterAffaire.length > 0 && afterAffaire.length < 60) {
+          client = afterAffaire.replace(/^[\s\-–—:]+/, '').trim();
+        }
+
+        insertAffaire.run(
+          affaireNum, type, client, eventName, description,
+          dateStart, dateEnd, location,
+          googleEventId, eventName,
+          req.user.id, req.user.id
+        );
+        created++;
+        results.push({ affaire: affaireNum, action: 'created', googleEventId, client, type });
+        logger.info(`✨ Affaire ${affaireNum} créée automatiquement depuis l'événement Google "${eventName}"`);
+      }
+    }
+
+    res.json({ created, linked, results });
+  } catch (error) {
+    logger.error('Erreur POST /api/affaires/sync-google-events:', error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
 // Routes Planning Personnel — MagLog 1.0
 setupPersonsRoutes(app, authenticateToken, requireAdmin);
 setupSkillsRoutes(app, authenticateToken, requireAdmin);

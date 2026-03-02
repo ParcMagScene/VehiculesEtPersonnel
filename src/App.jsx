@@ -114,14 +114,42 @@ function App() {
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [googleEvents, setGoogleEvents] = useState([]);
   const allGoogleEventsRef = useRef(new Map());
+  const syncedGoogleEventIdsRef = useRef(new Set()); // IDs déjà envoyés pour sync affaires
 
   // Accumuler les events Google Calendar (dédupliqués par ID) pour avoir un pool complet
+  // + détection automatique des numéros d'affaire pour créer/lier
   const handleGoogleEventsChange = useCallback((newEvents) => {
     setGoogleEvents(newEvents);
     if (newEvents && newEvents.length > 0) {
       newEvents.forEach(ev => {
         if (ev.id) allGoogleEventsRef.current.set(ev.id, ev);
       });
+
+      // Sync automatique : détecter les events avec numéro d'affaire non encore traités
+      const affaireRegex = /\baf\s*\d{3,}\b/i;
+      const eventsToSync = newEvents.filter(ev =>
+        ev.id &&
+        !syncedGoogleEventIdsRef.current.has(ev.id) &&
+        affaireRegex.test(ev.summary || ev.title || '')
+      );
+
+      if (eventsToSync.length > 0) {
+        // Marquer comme traités immédiatement (évite les doublons en cas de re-render rapide)
+        eventsToSync.forEach(ev => syncedGoogleEventIdsRef.current.add(ev.id));
+
+        // Appel asynchrone — fire & forget, pas de blocage
+        api.syncGoogleEventsToAffaires(eventsToSync)
+          .then(result => {
+            if (result && (result.created > 0 || result.linked > 0)) {
+              console.log(`🔗 Sync affaires: ${result.created} créée(s), ${result.linked} liée(s)`, result.results);
+            }
+          })
+          .catch(err => {
+            console.warn('⚠️ Sync affaires/Google échouée:', err);
+            // Retirer les IDs pour permettre un retry au prochain fetch
+            eventsToSync.forEach(ev => syncedGoogleEventIdsRef.current.delete(ev.id));
+          });
+      }
     }
   }, []);
 

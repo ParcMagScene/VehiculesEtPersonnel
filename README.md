@@ -54,6 +54,14 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 - **Notes internes** : Partage d'informations
 - **Mailing** : Templates, envoi groupé, historique
 - **Dashboard Écrans** : Gestion d'écrans d'affichage dynamique (playlists, médias, messages, templates, logs)
+- **Planning des tâches** : Planning jour/semaine, PDF export, édition de tâches individuelles
+
+### 📒 Annuaire
+- **Clients** : Gestion complète avec contacts multiples
+- **Fournisseurs** : Répertoire fournisseurs avec spécialités
+- **Prestataires** : Gestion des prestataires freelance
+- **Recherche unifiée** : Recherche globale sur tous les types de contacts
+- **Import** : Import CSV/Excel de contacts
 
 ### 💬 Messagerie
 - **Conversations** : Temps réel entre utilisateurs
@@ -150,17 +158,18 @@ eM@g/
 ├── vite.config.js          # Configuration Vite (proxy /api → :3003)
 ├── src/
 │   ├── main.jsx            # Point d'entrée React
-│   ├── App.jsx             # Composant racine (~1401 lignes)
-│   ├── components/         # 79 composants React desktop
-│   │   └── mobile/         # 14 composants mobile
-│   ├── hooks/              # 7 hooks custom
-│   └── utils/              # 13 utilitaires (API client, dates, import, etc.)
+│   ├── App.jsx             # Composant racine (~1408 lignes)
+│   ├── components/         # 82 composants React desktop
+│   │   ├── DisplayDashboard/ # 20 composants affichage dynamique
+│   │   └── mobile/         # 16 composants mobile
+│   ├── hooks/              # 6 hooks custom
+│   └── utils/              # 13 utilitaires (API client ~1895 lignes, dates, import, etc.)
 ├── server/
-│   ├── server.js           # Express (~2835 lignes)
-│   ├── database.js         # SQLite 56 tables (~1915 lignes)
-│   ├── 10 fichiers routes  # ~7 000 lignes de routes API
-│   ├── emailService.js     # Service d'envoi d'emails
-│   └── migrations/         # 16 fichiers SQL
+│   ├── server.js           # Express (~2911 lignes)
+│   ├── database.js         # SQLite 79 tables (~2818 lignes)
+│   ├── 15 fichiers routes  # ~17 765 lignes de routes API
+│   ├── emailService.js     # Service d'envoi d'emails (~383 lignes)
+│   └── migrations/         # 17 fichiers SQL
 ├── public/
 │   ├── depot-zones.json    # Plan dépôt 1 (Événementiel)
 │   ├── depot2-zones.json   # Plan dépôt 2 (Structure)

@@ -4,7 +4,9 @@
 
 | Version | Support Sécurité |
 | ------- | ---------------- |
-| 2.x     | ✅ Support actif |
+| 4.x     | ✅ Support actif |
+| 3.x     | ✅ Support actif |
+| 2.x     | ⚠️ Maintenance uniquement |
 
 ---
 
@@ -180,6 +182,12 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ## 🔄 Historique des Mises à Jour Sécurité
 
+### 2026-03-02
+- ✅ Mise à jour documentation (README, ARCHITECTURE, SECURITY, GUIDE)
+- ✅ 79 tables DB, ~350+ routes API, 118 composants React documentés
+- ✅ Nouveaux modules : Annuaire, Task Planning/PDF, DisplayDashboard
+- ✅ Migration base de données dev→prod sécurisée (backup API SQLite)
+
 ### 2026-02-26
 - ✅ Mise à jour SECURITY.md (nouvelles permissions, rate limiting, sanitizePath)
 - ✅ 56 tables DB, 267 routes API documentées
@@ -212,5 +220,5 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ---
 
-**Dernière mise à jour :** 26 février 2026
+**Dernière mise à jour :** 2 mars 2026
 **Prochaine révision :** Mensuelle

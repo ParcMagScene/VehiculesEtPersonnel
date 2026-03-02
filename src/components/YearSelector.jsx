@@ -36,7 +36,7 @@ function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] })
   const todayYear = new Date().getFullYear();
 
   return (
-    <div className="year-selector-overlay" onClick={onClose}>
+    <div className="year-selector-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="year-selector-modal" onClick={(e) => e.stopPropagation()}>
         <div className="year-selector-header">
           <h3>Sélectionner une année</h3>

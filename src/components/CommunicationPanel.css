@@ -216,6 +216,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.dd-rdv-subtitle {
+  font-size: 0.78rem;
+  color: var(--theme-text-secondary);
+  font-style: italic;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 350px;
+}
 .dd-rdv-meta {
   display: flex;
   gap: 10px;

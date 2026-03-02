@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart } from 'lucide-react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
@@ -12,7 +12,10 @@ import MobileEquipment from './MobileEquipment';
 import MobileEquipmentQR from './MobileEquipmentQR';
 import MobileQRLanding from './MobileQRLanding';
 import MobileOrders from './MobileOrders';
+import MobileLeaves from './MobileLeaves';
+import MobileLocation from './MobileLocation';
 import MobileLogin from './MobileLogin';
+import { useTheme, PALETTES } from '../../hooks/useTheme';
 import api from '../../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../../utils/notificationSound';
 import './MobileApp.css';
@@ -28,6 +31,8 @@ function MobileApp({ onSwitchToDesktop }) {
   const [clients, setClients] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [garages, setGarages] = useState([]);
+  const { theme, isDark, toggleTheme, palette, setPalette } = useTheme();
+  const [showThemePanel, setShowThemePanel] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -350,7 +355,7 @@ function MobileApp({ onSwitchToDesktop }) {
 
       {/* Menu latéral */}
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-        <div className="menu-overlay" onClick={() => setMenuOpen(false)}></div>
+        <div className="menu-overlay" onMouseDown={() => setMenuOpen(false)}></div>
         <div className="menu-content">
           <div className="menu-user">
             <div className="menu-avatar">{currentUser?.name?.charAt(0)}</div>
@@ -425,12 +430,73 @@ function MobileApp({ onSwitchToDesktop }) {
               <span>Matériel & SAV</span>
             </button>
             <button
+              className={currentScreen === 'location' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('location'); setMenuOpen(false); }}
+            >
+              <MapPin size={20} />
+              <span>Localisation</span>
+            </button>
+            <button
               className={currentScreen === 'orders' ? 'active' : ''}
               onClick={() => { setCurrentScreen('orders'); setMenuOpen(false); }}
             >
               <ShoppingCart size={20} />
               <span>Commandes</span>
             </button>
+            <button
+              className={currentScreen === 'leaves' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('leaves'); setMenuOpen(false); }}
+            >
+              <Palmtree size={20} />
+              <span>Congés</span>
+            </button>
+
+            {/* ── Thème ── */}
+            <div className="menu-section-label">Apparence</div>
+            <button onClick={() => setShowThemePanel(!showThemePanel)}>
+              <Palette size={20} />
+              <span>Thème & couleurs</span>
+              <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
+                {isDark ? '🌙' : '☀️'}
+              </span>
+            </button>
+            {showThemePanel && (
+              <div className="menu-theme-panel">
+                <div className="menu-theme-mode">
+                  <button 
+                    className={`menu-theme-mode-btn ${!isDark ? 'active' : ''}`} 
+                    onClick={() => { if (isDark) toggleTheme(); }}
+                  >
+                    <Sun size={16} /> Clair
+                  </button>
+                  <button 
+                    className={`menu-theme-mode-btn ${isDark ? 'active' : ''}`}
+                    onClick={() => { if (!isDark) toggleTheme(); }}
+                  >
+                    <Moon size={16} /> Sombre
+                  </button>
+                </div>
+                <div className="menu-palette-grid">
+                  {PALETTES.map(p => {
+                    const colors = isDark ? p.darkColors : p.colors;
+                    return (
+                      <button
+                        key={p.id}
+                        className={`menu-palette-btn ${palette === p.id ? 'active' : ''}`}
+                        onClick={() => setPalette(p.id)}
+                        title={p.name}
+                      >
+                        <div className="menu-palette-preview">
+                          <div style={{ background: colors.primary, width: '50%', height: '100%', borderRadius: '4px 0 0 4px' }} />
+                          <div style={{ background: colors.accent, width: '50%', height: '100%', borderRadius: '0 4px 4px 0' }} />
+                        </div>
+                        <span>{p.name.replace('Flat ', '')}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </nav>
 
           <button className="menu-logout" onClick={handleLogout}>
@@ -552,7 +618,62 @@ function MobileApp({ onSwitchToDesktop }) {
             onBack={() => setCurrentScreen('home')}
           />
         )}
+
+        {currentScreen === 'leaves' && (
+          <MobileLeaves
+            currentUser={currentUser}
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'location' && (
+          <MobileLocation
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
       </main>
+
+      {/* Bottom Navigation Bar */}
+      <nav className="mobile-bottom-nav">
+        <button
+          className={`bottom-nav-item ${currentScreen === 'home' ? 'active' : ''}`}
+          onClick={() => setCurrentScreen('home')}
+        >
+          <Home size={20} />
+          <span>Accueil</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${currentScreen === 'parc-dashboard' || currentScreen === 'planning' || currentScreen === 'availability' || currentScreen === 'reservations' || currentScreen === 'maintenances' ? 'active' : ''}`}
+          onClick={() => setCurrentScreen('parc-dashboard')}
+        >
+          <Truck size={20} />
+          <span>Parc</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${currentScreen === 'messaging' ? 'active' : ''}`}
+          onClick={() => setCurrentScreen('messaging')}
+        >
+          <div style={{ position: 'relative' }}>
+            <MessageSquare size={20} />
+            {unreadMsgCount > 0 && <span className="bottom-nav-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
+          </div>
+          <span>Messages</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${currentScreen === 'equipment' || currentScreen === 'equipment-qr' ? 'active' : ''}`}
+          onClick={() => setCurrentScreen('equipment')}
+        >
+          <Package size={20} />
+          <span>Matériel</span>
+        </button>
+        <button
+          className="bottom-nav-item"
+          onClick={() => setMenuOpen(true)}
+        >
+          <Menu size={20} />
+          <span>Plus</span>
+        </button>
+      </nav>
 
       {/* Toast notification messages */}
       {msgToast && (

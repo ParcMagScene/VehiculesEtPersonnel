@@ -257,7 +257,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       </div>
 
       {rejectDialogOpen && (
-        <div className="reject-dialog-overlay" onClick={() => setRejectDialogOpen(false)}>
+        <div className="reject-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && setRejectDialogOpen(false)}>
           <div className="reject-dialog" onClick={(e) => e.stopPropagation()}>
             <h3>Rejeter la demande</h3>
             <textarea

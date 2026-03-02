@@ -561,7 +561,7 @@ function ApproveRequestModal({ request, onConfirm, onCancel }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onCancel}>
+    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
       <div className="approve-modal" onClick={(e) => e.stopPropagation()}>
         <div className="approve-modal-header">
           <UserCheck size={24} />
@@ -685,7 +685,7 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onCancel}>
+    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
       <div className="create-personnel-modal" onClick={(e) => e.stopPropagation()}>
         <div className="create-personnel-modal-header">
           <Users size={22} />

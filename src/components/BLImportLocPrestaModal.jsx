@@ -376,7 +376,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
   ];
 
   return (
-    <div className="bl-loc-overlay" onClick={onClose}>
+    <div className="bl-loc-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bl-loc-modal" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="bl-loc-header">

@@ -237,7 +237,7 @@ const InterventionModal = ({
   const isTechnicalControl = formData.type === 'inspection' || formData.type === 'technical_inspection';
 
   return (
-    <div className="modal-overlay" onClick={handleSafeClose}>
+    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
       <div className="intervention-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>

@@ -113,7 +113,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   // ===== ÉTAPE 1 : FORMULAIRE DE DEMANDE =====
   if (step === 'request') {
     return (
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
         <div className="access-request-modal" onClick={(e) => e.stopPropagation()}>
           <div className="access-request-header">
             <h2>Demande d'accès</h2>
@@ -184,7 +184,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   // ===== ÉTAPE 2A : CRÉATION DE MOT DE PASSE (email autorisé) =====
   if (step === 'create-password') {
     return (
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
         <div className="access-request-modal" onClick={(e) => e.stopPropagation()}>
           <div className="access-request-header access-request-header-success">
             <h2>Créer votre compte</h2>
@@ -290,7 +290,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   // ===== ÉTAPE 2B : DEMANDE EN ATTENTE DE VALIDATION =====
   if (step === 'pending') {
     return (
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
         <div className="access-request-modal" onClick={(e) => e.stopPropagation()}>
           <div className="access-request-header access-request-header-pending">
             <h2>Demande envoyée</h2>

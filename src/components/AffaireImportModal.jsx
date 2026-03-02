@@ -672,7 +672,7 @@ const AffaireImportModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="affaire-modal-overlay" onClick={onClose}>
+    <div className="affaire-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="affaire-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="affaire-modal-header">
           <h2>

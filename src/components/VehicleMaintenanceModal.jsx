@@ -198,7 +198,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   };
 
   return (
-    <div className="vm-overlay" onClick={handleSafeClose}>
+    <div className="vm-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
       <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-title">

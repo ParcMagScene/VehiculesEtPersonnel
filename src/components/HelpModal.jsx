@@ -119,7 +119,7 @@ const HelpModal = ({ isOpen, onClose }) => {
     : FAQ_ITEMS;
 
   return (
-    <div className="help-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="help-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="help-modal">
         <div className="help-header">
           <h3><HelpCircle size={20} /> Aide — eM@g</h3>

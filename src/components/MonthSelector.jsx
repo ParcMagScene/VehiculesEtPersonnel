@@ -87,7 +87,7 @@ function MonthSelector({ currentDate, onSelectMonth, onClose, reservations = [],
   const currentMonthIndex = currentDate.getMonth();
 
   return (
-    <div className="month-selector-overlay" onClick={onClose}>
+    <div className="month-selector-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="month-selector-modal" onClick={(e) => e.stopPropagation()}>
         <div className="month-selector-header">
           <h3>Sélectionner un mois - {format(currentDate, 'yyyy', { locale: fr })}</h3>

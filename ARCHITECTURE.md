@@ -106,6 +106,15 @@ eM@g/
 │   │   ├── EquipmentPanel.jsx      # Module équipements individualisés
 │   │   ├── CataloguePanel.jsx      # Module catalogue d'équipements
 │   │   ├── CommunicationPanel.jsx  # Communication & événements
+│   │   ├── DisplayDashboard/       # Module Dashboard écrans (affichage dynamique)
+│   │   │   ├── DisplayDashboardPanel.jsx  # Panel principal (sous-onglets)
+│   │   │   ├── ScreensTab.jsx       # Gestion écrans
+│   │   │   ├── PlaylistsTab.jsx     # Playlists de contenu
+│   │   │   ├── MediaTab.jsx         # Galerie médias
+│   │   │   ├── MessagesTab.jsx      # Messages d'affichage
+│   │   │   ├── TemplatesTab.jsx     # Templates de mise en page
+│   │   │   ├── LogsTab.jsx          # Historique d'activité
+│   │   │   └── *FormModal.jsx       # Modales création/édition
 │   │   ├── MailingPanel.jsx        # Mailing avancé
 │   │   ├── StockPanel.jsx          # Gestion de stock
 │   │   ├── OrdersPanel.jsx         # Commandes fournisseurs
@@ -276,6 +285,7 @@ Client HTTP
 | `leaveRoutes.js` | ~1323 | Routes module congés (demandes, approbation, solde, planning) |
 | `equipmentRoutes.js` | ~1195 | Routes équipements individualisés (UID, SAV, localisation multi-dépôt) |
 | `communicationRoutes.js` | ~931 | Routes communication (événements, notes, affichage écran) |
+| `displayRoutes.js` | ~530 | Routes Dashboard écrans (screens, playlists, médias, messages, templates, logs) |
 | `catalogRoutes.js` | ~746 | Routes catalogue (équipements, flight-cases, camions, réservation-équipement) |
 | `ordersRoutes.js` | ~636 | Routes commandes fournisseurs |
 | `stockRoutes.js` | ~432 | Routes gestion de stock (mouvements, inventaire) |

@@ -160,7 +160,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
   }, [preview, filterAction]);
 
   return (
-    <div className="eq-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eq-modal pi-import-modal">
         <div className="eq-modal-header">
           <h3><Upload size={18} /> Import CSV Personnel</h3>

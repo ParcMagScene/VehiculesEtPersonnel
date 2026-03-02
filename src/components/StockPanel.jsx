@@ -817,7 +817,7 @@ function ItemFormModal({ item, categories, suppliers, onSave, onClose }) {
   };
 
   return (
-    <div className="stock-modal-overlay" onClick={onClose}>
+    <div className="stock-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="stock-modal" onClick={e => e.stopPropagation()}>
         <div className="stock-modal-header">
           <h3>{item ? 'Modifier l\'article' : 'Nouvel article'}</h3>
@@ -917,7 +917,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
   };
 
   return (
-    <div className="stock-modal-overlay" onClick={onClose}>
+    <div className="stock-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="stock-modal stock-modal-sm" onClick={e => e.stopPropagation()}>
         <div className="stock-modal-header">
           <h3>{category ? 'Modifier la catégorie' : 'Nouvelle catégorie'}</h3>
@@ -1001,7 +1001,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
   };
 
   return (
-    <div className="stock-modal-overlay" onClick={onClose}>
+    <div className="stock-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="stock-modal stock-modal-sm" onClick={e => e.stopPropagation()}>
         <div className="stock-modal-header">
           <h3>Nouveau mouvement</h3>

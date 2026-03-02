@@ -641,7 +641,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   }, [skills]);
 
   const dialogContent = (
-    <div className="assignment-dialog-overlay" onClick={handleSafeClose}>
+    <div className="assignment-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
       <div className="assignment-dialog" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="assignment-dialog-header">

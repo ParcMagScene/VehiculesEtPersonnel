@@ -427,3 +427,69 @@
     display: none;
   }
 }
+
+/* ═══ FOCUS INDICATOR (pulsing marker on target zone) ═══ */
+.depot-focus-indicator .focus-pulse-ring {
+  animation: focusPulse 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+.depot-focus-indicator .focus-pulse-ring-inner {
+  animation: focusPulseInner 1.8s ease-in-out infinite;
+  animation-delay: 0.3s;
+  transform-origin: center;
+}
+
+@keyframes focusPulse {
+  0%, 100% { opacity: 1; stroke-width: 2; }
+  50% { opacity: 0.3; stroke-width: 3.5; }
+}
+@keyframes focusPulseInner {
+  0%, 100% { opacity: 0.5; stroke-width: 1.5; }
+  50% { opacity: 0.15; stroke-width: 2.5; }
+}
+
+/* ═══ TOUCH / MOBILE SPECIFIC ═══ */
+.depot-map-svg-wrapper {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Mobile: larger controls, compact header */
+@media (max-width: 768px) {
+  .depot-map-container {
+    border-radius: 8px;
+  }
+  .depot-map-header {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .depot-map-title {
+    font-size: 0.85rem;
+  }
+  .depot-floor-selector button {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+  }
+  .depot-map-search input {
+    font-size: 16px; /* prevent iOS zoom on focus */
+    min-height: 36px;
+  }
+  .depot-zoom-controls button {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 1.1rem;
+  }
+  .depot-map-svg {
+    max-height: 50vh;
+  }
+  .depot-map-legend {
+    padding: 6px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}

@@ -1343,7 +1343,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
 
       // Messages actifs du display (comme événements pour l'aperçu)
       const displayMessages = db.prepare(
-        "SELECT content, priority FROM display_messages WHERE status = 'active' ORDER BY priority DESC LIMIT 8"
+        "SELECT title, body, priority FROM display_messages WHERE is_active = 1 AND (date_end IS NULL OR date_end >= date('now')) ORDER BY priority DESC LIMIT 8"
       ).all();
 
       res.json({

@@ -254,10 +254,6 @@ class ApiClient {
     return this.request('/reservation-requests');
   }
 
-  async getReservationRequests() {
-    return this.request('/reservation-requests');
-  }
-
   async createReservationRequest(request) {
     return this.request('/reservation-requests', {
       method: 'POST',
@@ -456,7 +452,7 @@ class ApiClient {
   }
 
   async resetUserPassword(userId, newPassword) {
-    return this.request('/users/reset-password', {
+    return this.request('/admin/reset-password', {
       method: 'POST',
       body: JSON.stringify({ userId, newPassword }),
     });
@@ -1120,8 +1116,8 @@ class ApiClient {
     for (const file of files) {
       formData.append('photos', file);
     }
-    const token = localStorage.getItem('auth_token');
-    const res = await fetch(`${this.baseUrl}/equipment-photos/upload`, {
+    const token = this.token;
+    const res = await fetch(`${API_URL}/equipment-photos/upload`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
@@ -1453,7 +1449,7 @@ class ApiClient {
 
   // --- Export PDF tâches ---
   async exportTasksPdf(date, taskIds, affaireIds, eventIds, gcalEvents) {
-    const token = localStorage.getItem('auth_token');
+    const token = this.token;
     let url = `${API_URL}/communication/tasks/export-pdf?date=${date}`;
     if (taskIds && taskIds.length > 0) {
       url += `&taskIds=${taskIds.join(',')}`;

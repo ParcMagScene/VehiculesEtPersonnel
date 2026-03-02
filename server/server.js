@@ -59,6 +59,10 @@ const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
 
 if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHANGEZ_CETTE_CLE') {
   logger.warn('⚠️  ATTENTION: JWT_SECRET par défaut détecté ! Créez un fichier server/.env avec un secret sécurisé.');
+  if (process.env.NODE_ENV === 'production') {
+    logger.error('❌ FATAL: JWT_SECRET par défaut interdit en production. Définissez JWT_SECRET dans server/.env');
+    process.exit(1);
+  }
 }
 
 // CORS — restriction aux domaines autorisés

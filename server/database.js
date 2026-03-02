@@ -1795,6 +1795,10 @@ function initializeDatabase() {
       db.exec('ALTER TABLE dynamic_display_events ADD COLUMN visible INTEGER DEFAULT 1');
       logger.info('✅ Colonne visible ajoutée à dynamic_display_events');
     }
+    if (!ddeColumns.find(c => c.name === 'assigned_person_id')) {
+      db.exec('ALTER TABLE dynamic_display_events ADD COLUMN assigned_person_id INTEGER DEFAULT NULL REFERENCES persons(id)');
+      logger.info('✅ Colonne assigned_person_id ajoutée à dynamic_display_events');
+    }
 
     db.exec(`
       CREATE TABLE IF NOT EXISTS bl_imports (
@@ -2472,6 +2476,7 @@ function initializeDatabase() {
       legal_structure: 'TEXT',
       siret: 'TEXT',
       tva_intra: 'TEXT',
+      naf_code: 'TEXT',
       website: 'TEXT',
       phone2: 'TEXT',
       activity_sector: 'TEXT',
@@ -2499,6 +2504,7 @@ function initializeDatabase() {
       legal_structure: 'TEXT',
       siret: 'TEXT',
       tva_intra: 'TEXT',
+      naf_code: 'TEXT',
       website: 'TEXT',
       phone2: 'TEXT',
       activity_sector: 'TEXT',
@@ -2516,6 +2522,13 @@ function initializeDatabase() {
     }
     // UNIQUE index séparé (ALTER TABLE ADD COLUMN ne supporte pas UNIQUE)
     try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_suppliers_code_libre ON suppliers(code_libre)'); } catch(_) {}
+
+    // --- Migration : enrichir la table prestataires ---
+    const prestaCols = db.pragma('table_info(prestataires)').map(c => c.name);
+    if (!prestaCols.includes('naf_code')) {
+      db.exec('ALTER TABLE prestataires ADD COLUMN naf_code TEXT');
+      logger.info('  + prestataires.naf_code');
+    }
 
     // --- Seed lookup tables (si vides) ---
     const lsCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_legal_structures').get();

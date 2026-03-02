@@ -732,9 +732,11 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 - **Configuration stockée** : Google Client ID, Calendar ID, Maps API Key, adresse entreprise
 
 ### 📒 Module Annuaire
-- **Composants** : `AnnuairePanel`
-- **Backend** : `annuaireRoutes.js` (~833 lignes)
-- **Fonctionnalités** : Répertoire unifié clients/fournisseurs/prestataires, contacts multiples par entité, recherche globale, import CSV/Excel, lookups rapides
+- **Composants** : `AnnuairePanel` (~1100 lignes, 6 sous-composants)
+- **Backend** : `annuaireRoutes.js` (~914 lignes, 30 routes)
+- **Tables** : `clients` (enrichie), `suppliers` (enrichie), `prestataires`, `annuaire_contacts`, 4 tables lookup (legal_structures, service_types, activity_sectors, contact_categories)
+- **Validation** : SIRET (algorithme de Luhn), TVA intracommunautaire (format FR+11), normalisation téléphone automatique
+- **Fonctionnalités** : Répertoire unifié clients/fournisseurs/prestataires, contacts multiples par entité, recherche globale, import CSV avec UPSERT, lookups éditables, code NAF
 
 ---
 
@@ -1087,8 +1089,8 @@ conversations → conversation_participants, messages
 
 | Métrique | Valeur |
 |----------|--------|
-| Tables DB | 79 |
-| Routes API | ~350+ |
+| Tables DB | 80+ |
+| Routes API | ~380+ |
 | Composants React (desktop) | 82 |
 | Composants React (mobile) | 16 |
 | Composants DisplayDashboard | 20 |
@@ -1099,8 +1101,8 @@ conversations → conversation_participants, messages
 | Code splitting (lazy) | ~15 composants |
 | Stores IndexedDB | 12 |
 | Fichiers routes backend | 15 |
-| Lignes backend total | ~17 765 |
-| Lignes frontend composants | ~58 314 |
+| Lignes backend total | ~17 800 |
+| Lignes frontend composants | ~58 400 |
 | Palettes de thème | 7 (défaut + 6 Flat Design) |
 | Variables CSS --theme-* | ~145 |
 | Migrations SQL | 17 |

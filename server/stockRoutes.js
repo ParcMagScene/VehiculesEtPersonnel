@@ -156,7 +156,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       // Auto-generate reference if not provided
       let ref = reference;
       if (!ref) {
-        const last = db.prepare("SELECT reference FROM stock_items WHERE reference LIKE 'STK-%' ORDER BY id DESC LIMIT 1").get();
+        const last = db.prepare("SELECT reference FROM stock_items WHERE reference LIKE 'STK-%' ORDER BY reference DESC LIMIT 1").get();
         const num = last ? parseInt(last.reference.replace('STK-', ''), 10) + 1 : 1;
         ref = `STK-${String(num).padStart(5, '0')}`;
       }

@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
-import { Monitor, List, Image, MessageSquare, Layout, Activity, RefreshCw, Plus,
+import { Monitor, RefreshCw, Plus,
          Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -12,13 +12,6 @@ import './DisplayDashboardPanel.css';
 
 // Lazy sub-tabs
 const ScreensTab = lazy(() => import('./ScreensTab'));
-const PlaylistsTab = lazy(() => import('./PlaylistsTab'));
-const MediaTab = lazy(() => import('./MediaTab'));
-const MessagesTab = lazy(() => import('./MessagesTab'));
-const TemplatesTab = lazy(() => import('./TemplatesTab'));
-const LogsTab = lazy(() => import('./LogsTab'));
-
-// Lazy sub-tabs — Dashboard TV
 const AppearanceTab = lazy(() => import('./AppearanceTab'));
 const WelcomeMessagesTab = lazy(() => import('./WelcomeMessagesTab'));
 const ColorRulesTab = lazy(() => import('./ColorRulesTab'));
@@ -29,21 +22,9 @@ const TVPreviewPanel = lazy(() => import('./TVPreviewPanel'));
 
 // Lazy modals
 const ScreenFormModal = lazy(() => import('./ScreenFormModal'));
-const PlaylistFormModal = lazy(() => import('./PlaylistFormModal'));
-const MediaUploadModal = lazy(() => import('./MediaUploadModal'));
-const MessageFormModal = lazy(() => import('./MessageFormModal'));
-const TemplateFormModal = lazy(() => import('./TemplateFormModal'));
 
-const CONTENT_TABS = [
+const CONFIG_TABS = [
   { id: 'screens', label: 'Écrans', icon: Monitor },
-  { id: 'playlists', label: 'Playlists', icon: List },
-  { id: 'media', label: 'Médias', icon: Image },
-  { id: 'messages', label: 'Messages', icon: MessageSquare },
-  { id: 'templates', label: 'Templates', icon: Layout },
-  { id: 'logs', label: 'Logs', icon: Activity },
-];
-
-const TV_CONFIG_TABS = [
   { id: 'appearance', label: 'Apparence', icon: Palette },
   { id: 'welcomeMessages', label: 'Messages TV', icon: MessageCircle },
   { id: 'colorRules', label: 'Couleurs', icon: Tag },
@@ -52,7 +33,8 @@ const TV_CONFIG_TABS = [
   { id: 'sonos', label: 'Sonos', icon: Music },
 ];
 
-const TV_TAB_IDS = new Set(TV_CONFIG_TABS.map(t => t.id));
+// Écrans n'a pas de preview split, les autres oui
+const TV_PREVIEW_TAB_IDS = new Set(['appearance', 'welcomeMessages', 'colorRules', 'locationIcons', 'sneaky', 'sonos']);
 
 function DisplayDashboardPanel({ currentUser }) {
   const toast = useToast();
@@ -61,7 +43,7 @@ function DisplayDashboardPanel({ currentUser }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewOverrides, setPreviewOverrides] = useState({});
 
-  const isTVTab = TV_TAB_IDS.has(activeTab);
+  const isTVTab = TV_PREVIEW_TAB_IDS.has(activeTab);
 
   const handlePreviewChange = useCallback((overrides) => {
     setPreviewOverrides(prev => ({ ...prev, ...overrides }));
@@ -75,13 +57,6 @@ function DisplayDashboardPanel({ currentUser }) {
   // Modals
   const [showScreenModal, setShowScreenModal] = useState(false);
   const [editingScreen, setEditingScreen] = useState(null);
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const [editingPlaylist, setEditingPlaylist] = useState(null);
-  const [showMediaModal, setShowMediaModal] = useState(false);
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  const [editingMessage, setEditingMessage] = useState(null);
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState(null);
 
   // Charger les stats
   const loadStats = useCallback(async () => {
@@ -117,123 +92,28 @@ function DisplayDashboardPanel({ currentUser }) {
     toast.success('Écran enregistré');
   }, [handleRefresh, toast]);
 
-  const handleCreatePlaylist = useCallback(() => {
-    setEditingPlaylist(null);
-    setShowPlaylistModal(true);
-  }, []);
-  const handleEditPlaylist = useCallback((playlist) => {
-    setEditingPlaylist(playlist);
-    setShowPlaylistModal(true);
-  }, []);
-  const handlePlaylistSaved = useCallback(() => {
-    setShowPlaylistModal(false);
-    setEditingPlaylist(null);
-    handleRefresh();
-    toast.success('Playlist enregistrée');
-  }, [handleRefresh, toast]);
-
-  const handleUploadMedia = useCallback(() => {
-    setShowMediaModal(true);
-  }, []);
-  const handleMediaUploaded = useCallback(() => {
-    setShowMediaModal(false);
-    handleRefresh();
-    toast.success('Média uploadé');
-  }, [handleRefresh, toast]);
-
-  const handleCreateMessage = useCallback(() => {
-    setEditingMessage(null);
-    setShowMessageModal(true);
-  }, []);
-  const handleEditMessage = useCallback((msg) => {
-    setEditingMessage(msg);
-    setShowMessageModal(true);
-  }, []);
-  const handleMessageSaved = useCallback(() => {
-    setShowMessageModal(false);
-    setEditingMessage(null);
-    handleRefresh();
-    toast.success('Message enregistré');
-  }, [handleRefresh, toast]);
-
-  const handleCreateTemplate = useCallback(() => {
-    setEditingTemplate(null);
-    setShowTemplateModal(true);
-  }, []);
-  const handleEditTemplate = useCallback((tpl) => {
-    setEditingTemplate(tpl);
-    setShowTemplateModal(true);
-  }, []);
-  const handleTemplateSaved = useCallback(() => {
-    setShowTemplateModal(false);
-    setEditingTemplate(null);
-    handleRefresh();
-    toast.success('Template enregistré');
-  }, [handleRefresh, toast]);
-
   // Bouton d'action par onglet
   const getActionButton = () => {
-    const isAdmin = currentUser?.isAdmin;
-    switch (activeTab) {
-      case 'screens':
-        return isAdmin ? (
-          <button className="btn-primary-sm" onClick={handleCreateScreen}>
-            <Plus size={14} /> Nouvel écran
-          </button>
-        ) : null;
-      case 'playlists':
-        return (
-          <button className="btn-primary-sm" onClick={handleCreatePlaylist}>
-            <Plus size={14} /> Nouvelle playlist
-          </button>
-        );
-      case 'media':
-        return (
-          <button className="btn-primary-sm" onClick={handleUploadMedia}>
-            <Plus size={14} /> Upload média
-          </button>
-        );
-      case 'messages':
-        return (
-          <button className="btn-primary-sm" onClick={handleCreateMessage}>
-            <Plus size={14} /> Nouveau message
-          </button>
-        );
-      case 'templates':
-        return isAdmin ? (
-          <button className="btn-primary-sm" onClick={handleCreateTemplate}>
-            <Plus size={14} /> Nouveau template
-          </button>
-        ) : null;
-      default:
-        return null;
+    if (activeTab === 'screens' && currentUser?.isAdmin) {
+      return (
+        <button className="btn-primary-sm" onClick={handleCreateScreen}>
+          <Plus size={14} /> Nouvel écran
+        </button>
+      );
     }
+    return null;
   };
 
   return (
     <div className="display-dashboard">
-      {/* Header stats */}
+      {/* Header actions */}
       <div className="display-dashboard-header">
         <div className="display-stats-row">
           {stats && (
-            <>
-              <span className="display-stat">
-                <Monitor size={14} />
-                {stats.screens?.online || 0}/{stats.screens?.total || 0} écrans
-              </span>
-              <span className="display-stat">
-                <List size={14} />
-                {stats.playlists?.total || 0} playlists
-              </span>
-              <span className="display-stat">
-                <Image size={14} />
-                {stats.media?.total || 0} médias
-              </span>
-              <span className="display-stat">
-                <MessageSquare size={14} />
-                {stats.messages?.active || 0} messages actifs
-              </span>
-            </>
+            <span className="display-stat">
+              <Monitor size={14} />
+              {stats.screens?.online || 0}/{stats.screens?.total || 0} écrans
+            </span>
           )}
         </div>
         <div className="display-header-actions">
@@ -244,30 +124,12 @@ function DisplayDashboardPanel({ currentUser }) {
         </div>
       </div>
 
-      {/* Sous-onglets en deux groupes */}
+      {/* Sous-onglets Configuration TV */}
       <div className="display-tabs-container">
-        <div className="display-tabs-group">
-          <span className="display-tabs-label">Diffusion</span>
-          <div className="display-subtabs">
-            {CONTENT_TABS.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  className={`display-subtab ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <Icon size={14} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
         <div className="display-tabs-group">
           <span className="display-tabs-label">Configuration TV</span>
           <div className="display-subtabs">
-            {TV_CONFIG_TABS.map(tab => {
+            {CONFIG_TABS.map(tab => {
               const Icon = tab.icon;
               return (
                 <button
@@ -295,41 +157,6 @@ function DisplayDashboardPanel({ currentUser }) {
               onEdit={handleEditScreen}
               onRefresh={handleRefresh}
             />
-          )}
-          {activeTab === 'playlists' && (
-            <PlaylistsTab
-              currentUser={currentUser}
-              refreshKey={refreshKey}
-              onEdit={handleEditPlaylist}
-              onRefresh={handleRefresh}
-            />
-          )}
-          {activeTab === 'media' && (
-            <MediaTab
-              currentUser={currentUser}
-              refreshKey={refreshKey}
-              onUpload={handleUploadMedia}
-              onRefresh={handleRefresh}
-            />
-          )}
-          {activeTab === 'messages' && (
-            <MessagesTab
-              currentUser={currentUser}
-              refreshKey={refreshKey}
-              onEdit={handleEditMessage}
-              onRefresh={handleRefresh}
-            />
-          )}
-          {activeTab === 'templates' && (
-            <TemplatesTab
-              currentUser={currentUser}
-              refreshKey={refreshKey}
-              onEdit={handleEditTemplate}
-              onRefresh={handleRefresh}
-            />
-          )}
-          {activeTab === 'logs' && (
-            <LogsTab refreshKey={refreshKey} />
           )}
           {activeTab === 'appearance' && (
             <AppearanceTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
@@ -366,41 +193,6 @@ function DisplayDashboardPanel({ currentUser }) {
             screen={editingScreen}
             onSave={handleScreenSaved}
             onClose={() => { setShowScreenModal(false); setEditingScreen(null); }}
-          />
-        </Suspense>
-      )}
-      {showPlaylistModal && (
-        <Suspense fallback={null}>
-          <PlaylistFormModal
-            playlist={editingPlaylist}
-            onSave={handlePlaylistSaved}
-            onClose={() => { setShowPlaylistModal(false); setEditingPlaylist(null); }}
-          />
-        </Suspense>
-      )}
-      {showMediaModal && (
-        <Suspense fallback={null}>
-          <MediaUploadModal
-            onSave={handleMediaUploaded}
-            onClose={() => setShowMediaModal(false)}
-          />
-        </Suspense>
-      )}
-      {showMessageModal && (
-        <Suspense fallback={null}>
-          <MessageFormModal
-            message={editingMessage}
-            onSave={handleMessageSaved}
-            onClose={() => { setShowMessageModal(false); setEditingMessage(null); }}
-          />
-        </Suspense>
-      )}
-      {showTemplateModal && (
-        <Suspense fallback={null}>
-          <TemplateFormModal
-            template={editingTemplate}
-            onSave={handleTemplateSaved}
-            onClose={() => { setShowTemplateModal(false); setEditingTemplate(null); }}
           />
         </Suspense>
       )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
-  Radio, Monitor, ClipboardList, Plus, Search,
+  Monitor, ClipboardList, Plus, Search,
   ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User,
   Edit2, Trash2, Filter, Sun, Moon as MoonIcon, MessageSquare,
   Briefcase, ArrowUpDown, RefreshCw, CalendarDays, LayoutList,
@@ -934,24 +934,7 @@ function CommunicationPanel({ currentUser, googleEvents = [] }) {
 
   return (
     <div className="communication-panel">
-      {/* Header */}
-      <div className="panel-header">
-        <h2><Radio size={22} /> Communication</h2>
-        <div className="header-stats">
-          {stats && (
-            <>
-              <span className="stat-badge highlight">
-                <Calendar size={14} /> {stats.displayEventsToday} aujourd'hui
-              </span>
-              <span className="stat-badge">
-                <ClipboardList size={14} /> {stats.tasksPending} tâches en attente
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Sub-tabs */}
+      {/* Sub-tabs (fusionnés avec stats) */}
       <div className="sub-tabs">
         {subTabs.map(tab => {
           const Icon = tab.icon;
@@ -967,6 +950,16 @@ function CommunicationPanel({ currentUser, googleEvents = [] }) {
             </button>
           );
         })}
+        {stats && (
+          <div className="header-stats">
+            <span className="stat-badge highlight">
+              <Calendar size={14} /> {stats.displayEventsToday} aujourd'hui
+            </span>
+            <span className="stat-badge">
+              <ClipboardList size={14} /> {stats.tasksPending} tâches en attente
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}

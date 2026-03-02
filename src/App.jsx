@@ -16,6 +16,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFeedback } from './hooks/useFeedback';
 import { useTheme } from './hooks/useTheme';
 import { ToastProvider } from './hooks/useToast';
+import { NavigationProvider } from './contexts/NavigationContext';
 import './App.css';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
@@ -39,6 +40,7 @@ const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/MailingPanel'));
 const AnnuairePanel = lazy(() => import('./components/AnnuairePanel'));
 // const ReportsPanel = lazy(() => import('./components/ReportsPanel'));
+const AffaireDetailDialog = lazy(() => import('./components/AffaireDetailPanel').then(m => ({ default: m.AffaireDetailDialog })));
 const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
 
@@ -756,7 +758,7 @@ function App() {
   };
 
   // ═══ Navigation croisée entre modules ═══
-  const [navigateToAffaireNum, setNavigateToAffaireNum] = useState(null);
+  const [globalAffaireDialog, setGlobalAffaireDialog] = useState(null);
 
   const handleNavigateToEntity = useCallback((type, data) => {
     if (type === 'vehicle') {
@@ -778,10 +780,15 @@ function App() {
       setShowSettings(false);
       setReservationToEdit(data.id);
     } else if (type === 'affaire') {
-      setActiveModule('affaires');
-      setShowManagement(false);
-      setShowSettings(false);
-      setNavigateToAffaireNum(data.numero || data.numeroAffaire || null);
+      // Ouvrir le modal de détail sans changer de page
+      const numero = data.numero || data.numeroAffaire;
+      if (!numero) return;
+      api.getAffaires().then(all => {
+        const found = (Array.isArray(all) ? all : []).find(
+          a => a.numeroAffaire === numero || a.numero_affaire === numero
+        );
+        if (found) setGlobalAffaireDialog(found);
+      }).catch(() => {});
     }
   }, [vehicles]);
 
@@ -908,6 +915,7 @@ function App() {
   return (
     <ErrorBoundary>
     <ToastProvider toast={toast}>
+    <NavigationProvider value={handleNavigateToEntity}>
     <div className="app">
       <Header
         view={view}
@@ -1143,8 +1151,6 @@ function App() {
           <AffairesPanel
             reservations={reservations}
             onNavigateToEntity={handleNavigateToEntity}
-            navigateToAffaireNum={navigateToAffaireNum}
-            onNavigateToAffaireHandled={() => setNavigateToAffaireNum(null)}
           />
         </Suspense>
       )}
@@ -1437,7 +1443,21 @@ function App() {
       <Suspense fallback={null}>
         <ToastContainer ref={toastRef} />
       </Suspense>
+
+      {/* Modal global de détail d'affaire (ouvert depuis n'importe quel badge) */}
+      {globalAffaireDialog && (
+        <Suspense fallback={null}>
+          <AffaireDetailDialog
+            affaire={globalAffaireDialog}
+            reservations={reservations}
+            onClose={() => setGlobalAffaireDialog(null)}
+            onDataChanged={(updatedAffaire) => { if (updatedAffaire) setGlobalAffaireDialog(updatedAffaire); }}
+            onNavigateToEntity={handleNavigateToEntity}
+          />
+        </Suspense>
+      )}
     </div>
+    </NavigationProvider>
     </ToastProvider>
     </ErrorBoundary>
   );

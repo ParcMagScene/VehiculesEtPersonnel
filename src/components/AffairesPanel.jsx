@@ -49,7 +49,7 @@ const getAffaireStatus = (affaire, today) => {
   return 'upcoming';
 };
 
-const AffairesPanel = ({ reservations = [], onNavigateToEntity, navigateToAffaireNum, onNavigateToAffaireHandled }) => {
+const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const [dbAffaires, setDbAffaires] = useState([]);
   const [googleAffaires, setGoogleAffaires] = useState([]);
   const [googleEventIdsMap, setGoogleEventIdsMap] = useState({}); // { AF32844: ['eventId1', 'eventId2', ...] }
@@ -261,21 +261,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, navigateToAffair
     };
     loadAll();
   }, [loadDbAffaires, loadGoogleAffaires, loadAttachmentsIndex, loadPersonnelCounts]);
-
-  // Navigation externe → ouvrir une affaire par numéro
-  useEffect(() => {
-    if (!navigateToAffaireNum || isLoading) return;
-    // Chercher dans la liste chargée
-    const found = dbAffaires.find(a => a.numeroAffaire === navigateToAffaireNum) ||
-                  dbAffaires.find(a => a.numero_affaire === navigateToAffaireNum);
-    if (found) {
-      setDialogAffaire(found);
-      // Déverrouiller les filtres pour montrer l'affaire
-      setFilterType('');
-      setSearchTerm('');
-    }
-    onNavigateToAffaireHandled?.();
-  }, [navigateToAffaireNum, isLoading, dbAffaires, onNavigateToAffaireHandled]);
 
   // Fusionner les affaires : DB prend priorité, puis réservations (source: 'auto'), puis Google
   const affaires = useMemo(() => {

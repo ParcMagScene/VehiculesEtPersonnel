@@ -57,23 +57,20 @@ function DisplayDashboardPanel({ currentUser }) {
     <div className="display-dashboard">
       {/* Sous-onglets Configuration TV */}
       <div className="display-tabs-container">
-        <div className="display-tabs-group">
-          <span className="display-tabs-label">Configuration TV</span>
-          <div className="display-subtabs">
-            {CONFIG_TABS.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  className={`display-subtab ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <Icon size={14} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        <div className="display-subtabs">
+          {CONFIG_TABS.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                className={`display-subtab ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <Icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

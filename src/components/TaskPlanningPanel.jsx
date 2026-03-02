@@ -1046,6 +1046,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
     const googleOtherCount = isEvenements ? googleOtherEvents.length : 0;
     const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount + googleOtherCount;
 
+    // Masquer les sections vides
+    if (totalCount === 0) return null;
+
     return (
       <div key={sectionKey} className={`task-section ${isRdv ? 'rdv-section' : ''}`}>
         <div className="section-header" style={{ borderBottomColor: info.color }}>

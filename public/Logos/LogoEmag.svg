@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" fill="none">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="atGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#ef4444"/>
+    </linearGradient>
+  </defs>
+  <!-- Background pill -->
+  <rect x="2" y="2" width="276" height="76" rx="16" fill="none" stroke="url(#grad)" stroke-width="2.5" opacity="0.6"/>
+  <!-- "e" -->
+  <text x="28" y="56" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="48" font-weight="300" fill="url(#grad)" letter-spacing="-1">e</text>
+  <!-- "M" -->
+  <text x="58" y="56" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" fill="url(#grad)" letter-spacing="-1">M</text>
+  <!-- "@" -->
+  <text x="112" y="56" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="44" font-weight="700" fill="url(#atGrad)">@</text>
+  <!-- "g" -->
+  <text x="156" y="56" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="48" font-weight="300" fill="url(#grad)" letter-spacing="-1">g</text>
+  <!-- "Scene" subtitle -->
+  <text x="194" y="36" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="url(#grad)" letter-spacing="3" text-transform="uppercase" opacity="0.7">SCÈNE</text>
+  <!-- Tagline -->
+  <text x="194" y="54" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="11" font-weight="400" fill="#888" letter-spacing="1">LOGISTICS</text>
+</svg>

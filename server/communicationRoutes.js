@@ -1526,4 +1526,195 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ═══════════════════════════════════════════════════════════════
+  // ──────── TÂCHES RÉCURRENTES ─────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /api/communication/recurring-tasks
+  app.get('/api/communication/recurring-tasks', authenticateToken, (req, res) => {
+    try {
+      const rows = db.prepare('SELECT * FROM recurring_tasks ORDER BY created_at DESC').all();
+      res.json({ recurringTasks: rows });
+    } catch (error) {
+      logger.error('GET /api/communication/recurring-tasks error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/communication/recurring-tasks
+  app.post('/api/communication/recurring-tasks', authenticateToken, (req, res) => {
+    try {
+      const { title, section, time, period, recurrence, day_of_week, day_of_month, notes } = req.body;
+      if (!title || !title.trim()) return res.status(400).json({ error: 'Titre requis' });
+      const id = crypto.randomUUID().replace(/-/g, '');
+      db.prepare(`
+        INSERT INTO recurring_tasks (id, title, section, time, period, recurrence, day_of_week, day_of_month, notes, active, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, datetime('now'))
+      `).run(id, title.trim(), section || 'manual', time || null, period || null, recurrence || 'daily', day_of_week ?? null, day_of_month ?? null, notes || '', req.user.id);
+      const created = db.prepare('SELECT * FROM recurring_tasks WHERE id = ?').get(id);
+      res.json(created);
+    } catch (error) {
+      logger.error('POST /api/communication/recurring-tasks error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // PUT /api/communication/recurring-tasks/:id
+  app.put('/api/communication/recurring-tasks/:id', authenticateToken, (req, res) => {
+    try {
+      const { title, section, time, period, recurrence, day_of_week, day_of_month, notes, active } = req.body;
+      db.prepare(`
+        UPDATE recurring_tasks SET title = ?, section = ?, time = ?, period = ?, recurrence = ?, day_of_week = ?, day_of_month = ?, notes = ?, active = ?
+        WHERE id = ?
+      `).run(title, section || 'manual', time || null, period || null, recurrence || 'daily', day_of_week ?? null, day_of_month ?? null, notes || '', active ?? 1, req.params.id);
+      const updated = db.prepare('SELECT * FROM recurring_tasks WHERE id = ?').get(req.params.id);
+      if (!updated) return res.status(404).json({ error: 'Tâche récurrente introuvable' });
+      res.json(updated);
+    } catch (error) {
+      logger.error('PUT /api/communication/recurring-tasks/:id error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // DELETE /api/communication/recurring-tasks/:id
+  app.delete('/api/communication/recurring-tasks/:id', authenticateToken, (req, res) => {
+    try {
+      const result = db.prepare('DELETE FROM recurring_tasks WHERE id = ?').run(req.params.id);
+      if (result.changes === 0) return res.status(404).json({ error: 'Introuvable' });
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('DELETE /api/communication/recurring-tasks error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/communication/recurring-tasks/generate
+  // Génère les tâches récurrentes pour une date donnée
+  app.post('/api/communication/recurring-tasks/generate', authenticateToken, (req, res) => {
+    try {
+      const { date } = req.body;
+      if (!date) return res.status(400).json({ error: 'Date requise' });
+      const count = generateRecurringTasks(date);
+      res.json({ generated: count });
+    } catch (error) {
+      logger.error('POST /api/communication/recurring-tasks/generate error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/communication/tasks/rollover
+  // Reporter les tâches non terminées au lendemain
+  app.post('/api/communication/tasks/rollover', authenticateToken, (req, res) => {
+    try {
+      const { fromDate } = req.body;
+      if (!fromDate) return res.status(400).json({ error: 'Date requise' });
+      const count = rolloverPendingTasks(fromDate);
+      res.json({ rolled: count });
+    } catch (error) {
+      logger.error('POST /api/communication/tasks/rollover error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // ═══ Fonctions internes ═══
+
+  // Générer les tâches récurrentes pour une date donnée
+  function generateRecurringTasks(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    const dayOfWeek = d.getDay(); // 0=dim, 1=lun...
+    const dayOfMonth = d.getDate();
+
+    const recurring = db.prepare('SELECT * FROM recurring_tasks WHERE active = 1').all();
+    const insertStmt = db.prepare(`
+      INSERT INTO task_assignments (id, date, period, time, section, title, notes, source_type, source_id, status, visible, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'recurring', ?, 'pending', 1, datetime('now'))
+    `);
+
+    let count = 0;
+    for (const rt of recurring) {
+      let shouldGenerate = false;
+      if (rt.recurrence === 'daily') shouldGenerate = true;
+      else if (rt.recurrence === 'weekly' && rt.day_of_week === dayOfWeek) shouldGenerate = true;
+      else if (rt.recurrence === 'monthly' && rt.day_of_month === dayOfMonth) shouldGenerate = true;
+
+      if (!shouldGenerate) continue;
+
+      // Vérifier qu'on n'a pas déjà créé cette tâche (source_type=recurring, source_id=rt.id, date=dateStr)
+      const existing = db.prepare(
+        "SELECT 1 FROM task_assignments WHERE source_type = 'recurring' AND source_id = ? AND date = ?"
+      ).get(rt.id, dateStr);
+      if (existing) continue;
+
+      const id = crypto.randomUUID().replace(/-/g, '');
+      insertStmt.run(id, dateStr, rt.period, rt.time, rt.section, rt.title, rt.notes, rt.id);
+      count++;
+    }
+    return count;
+  }
+
+  // Reporter les tâches non terminées au lendemain
+  function rolloverPendingTasks(fromDate) {
+    const d = new Date(fromDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    const nextDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    // Tâches pending/in_progress du jour qui ne sont pas des RDV/événements
+    const pending = db.prepare(`
+      SELECT * FROM task_assignments
+      WHERE date = ? AND status IN ('pending', 'in_progress')
+        AND section NOT IN ('rdv', 'evenements')
+    `).all(fromDate);
+
+    const insertStmt = db.prepare(`
+      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'))
+    `);
+
+    let count = 0;
+    for (const t of pending) {
+      // Vérifier pas de doublon (même titre + section + date cible)
+      const dup = db.prepare(
+        "SELECT 1 FROM task_assignments WHERE date = ? AND section = ? AND title = ? AND status != 'cancelled'"
+      ).get(nextDate, t.section, t.title);
+      if (dup) continue;
+
+      const id = crypto.randomUUID().replace(/-/g, '');
+      insertStmt.run(id, t.display_event_id, t.person_id, nextDate, t.period, t.time, t.end_time, t.section, t.title, t.notes || '', t.source_type, t.source_id, t.google_event_title, t.affaire_num, t.visible ?? 1);
+      count++;
+    }
+    return count;
+  }
+
+  // ═══ Cron automatique : tous les jours à 18h ═══
+  function scheduleRolloverCron() {
+    const check = () => {
+      const now = new Date();
+      if (now.getHours() === 18 && now.getMinutes() === 0) {
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const tomorrowD = new Date(now);
+        tomorrowD.setDate(tomorrowD.getDate() + 1);
+        const tomorrowStr = `${tomorrowD.getFullYear()}-${String(tomorrowD.getMonth() + 1).padStart(2, '0')}-${String(tomorrowD.getDate()).padStart(2, '0')}`;
+
+        // 1. Reporter les tâches non terminées d'aujourd'hui
+        const rolled = rolloverPendingTasks(todayStr);
+        logger.info(`⏰ Cron 18h : ${rolled} tâche(s) reportée(s) au ${tomorrowStr}`);
+
+        // 2. Générer les tâches récurrentes de demain
+        const generated = generateRecurringTasks(tomorrowStr);
+        logger.info(`⏰ Cron 18h : ${generated} tâche(s) récurrente(s) générée(s) pour ${tomorrowStr}`);
+      }
+    };
+    // Vérifier toutes les 30 secondes (pour capter 18:00 sans timer compliqué)
+    setInterval(check, 30000);
+    logger.info('⏰ Cron report tâches 18h activé');
+
+    // Au démarrage : générer les tâches récurrentes d'aujourd'hui si pas encore fait
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const generated = generateRecurringTasks(todayStr);
+    if (generated > 0) logger.info(`🔄 Démarrage : ${generated} tâche(s) récurrente(s) générée(s) pour aujourd'hui`);
+  }
+
+  scheduleRolloverCron();
+
 }

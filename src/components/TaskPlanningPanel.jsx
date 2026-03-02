@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
-  CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings
+  CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings,
+  Repeat, SkipForward
 } from 'lucide-react';
 import api from '../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../utils/affaireConstants';
@@ -138,6 +139,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   // TaskEditModal — édition individuelle d'une tâche
   const [editingTask, setEditingTask] = useState(null);
 
+  // ── Tâches récurrentes ──
+  const [showRecurring, setShowRecurring] = useState(false);
+  const [recurringTasks, setRecurringTasks] = useState([]);
+  const [recurringForm, setRecurringForm] = useState(null); // null = fermé, {} = nouveau, {id,...} = édition
+
   // Semaine : 7 jours à partir du lundi
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
 
@@ -185,6 +191,69 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
   useEffect(() => { loadTasks(); }, [loadTasks, refreshKey]);
   useEffect(() => { loadPersons(); }, [loadPersons]);
+
+  // ── Chargement des tâches récurrentes ──
+  const loadRecurringTasks = useCallback(async () => {
+    try {
+      const res = await api.getRecurringTasks();
+      setRecurringTasks(res.recurringTasks || []);
+    } catch { setRecurringTasks([]); }
+  }, []);
+  useEffect(() => { if (showRecurring) loadRecurringTasks(); }, [showRecurring, loadRecurringTasks]);
+
+  const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+  const handleSaveRecurring = async () => {
+    if (!recurringForm) return;
+    if (!recurringForm.title?.trim()) { toast.warning('Titre requis'); return; }
+    try {
+      if (recurringForm.id) {
+        await api.updateRecurringTask(recurringForm.id, recurringForm);
+      } else {
+        await api.createRecurringTask(recurringForm);
+      }
+      toast.success(recurringForm.id ? 'Tâche récurrente modifiée' : 'Tâche récurrente créée');
+      setRecurringForm(null);
+      loadRecurringTasks();
+    } catch { toast.error('Erreur sauvegarde'); }
+  };
+
+  const handleDeleteRecurring = async (id) => {
+    setConfirmDialog({
+      title: 'Supprimer la tâche récurrente',
+      message: 'Supprimer cette tâche récurrente ?',
+      onConfirm: async () => {
+        try { await api.deleteRecurringTask(id); toast.success('Supprimée'); loadRecurringTasks(); }
+        catch { toast.error('Erreur suppression'); }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
+
+  const handleGenerateRecurring = async () => {
+    try {
+      const res = await api.generateRecurringTasks(selectedDate);
+      toast.success(`${res.generated || 0} tâche(s) récurrente(s) générée(s)`);
+      loadTasks();
+    } catch { toast.error('Erreur génération'); }
+  };
+
+  const handleRollover = async () => {
+    setConfirmDialog({
+      title: 'Reporter les tâches',
+      message: `Reporter les tâches non terminées du ${formatDateFr(selectedDate)} au lendemain ?`,
+      onConfirm: async () => {
+        try {
+          const res = await api.rolloverTasks(selectedDate);
+          toast.success(`${res.rolled || 0} tâche(s) reportée(s)`);
+          loadTasks();
+        } catch { toast.error('Erreur report'); }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
 
   // Grouper par section
   const grouped = useMemo(() => {
@@ -1209,11 +1278,100 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           )}
         </div>
         <div className="tp-toolbar-right">
+          <button className="btn-toolbar-action" onClick={handleRollover} title="Reporter les tâches non terminées au lendemain">
+            <SkipForward size={16} /> Reporter
+          </button>
+          <button className="btn-toolbar-action" onClick={handleGenerateRecurring} title="Générer les tâches récurrentes pour ce jour">
+            <Repeat size={16} /> Générer
+          </button>
+          <button className={`btn-toolbar-action ${showRecurring ? 'active' : ''}`} onClick={() => setShowRecurring(v => !v)} title="Gérer les tâches récurrentes">
+            <Settings size={16} /> Récurrentes
+          </button>
           <button className="btn-export-pdf" onClick={handleExportPdf} title="Exporter la fiche de tâches en PDF">
             <FileDown size={16} /> PDF
           </button>
         </div>
       </div>
+
+      {/* ═══ Panneau Tâches Récurrentes ═══ */}
+      {showRecurring && (
+        <div className="recurring-panel">
+          <div className="recurring-panel-header">
+            <h3><Repeat size={18} /> Tâches Récurrentes</h3>
+            <button className="btn-add-recurring" onClick={() => setRecurringForm({ title: '', section: 'manual', recurrence: 'daily', day_of_week: 1, day_of_month: 1, time: '08:00', period: 'AM', notes: '' })}>
+              <Plus size={14} /> Ajouter
+            </button>
+          </div>
+
+          {/* Formulaire création/édition */}
+          {recurringForm && (
+            <div className="recurring-form">
+              <div className="recurring-form-row">
+                <input type="text" placeholder="Titre de la tâche..." value={recurringForm.title || ''} onChange={e => setRecurringForm(f => ({ ...f, title: e.target.value }))} autoFocus />
+                <select value={recurringForm.section || 'manual'} onChange={e => setRecurringForm(f => ({ ...f, section: e.target.value }))}>
+                  {Object.entries(SECTIONS).filter(([, v]) => !v.affaireOnly).map(([k, v]) => (
+                    <option key={k} value={k}>{v.emoji} {v.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="recurring-form-row">
+                <select value={recurringForm.recurrence || 'daily'} onChange={e => setRecurringForm(f => ({ ...f, recurrence: e.target.value }))}>
+                  <option value="daily">Journalière</option>
+                  <option value="weekly">Hebdomadaire</option>
+                  <option value="monthly">Mensuelle</option>
+                </select>
+                {recurringForm.recurrence === 'weekly' && (
+                  <select value={recurringForm.day_of_week ?? 1} onChange={e => setRecurringForm(f => ({ ...f, day_of_week: parseInt(e.target.value) }))}>
+                    {DAYS_FR.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                  </select>
+                )}
+                {recurringForm.recurrence === 'monthly' && (
+                  <select value={recurringForm.day_of_month ?? 1} onChange={e => setRecurringForm(f => ({ ...f, day_of_month: parseInt(e.target.value) }))}>
+                    {Array.from({ length: 31 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
+                  </select>
+                )}
+                <input type="time" value={recurringForm.time || '08:00'} onChange={e => setRecurringForm(f => ({ ...f, time: e.target.value }))} />
+                <select value={recurringForm.period || 'AM'} onChange={e => setRecurringForm(f => ({ ...f, period: e.target.value }))}>
+                  <option value="AM">Matin</option>
+                  <option value="PM">Après-midi</option>
+                </select>
+              </div>
+              <div className="recurring-form-row">
+                <input type="text" placeholder="Notes (optionnel)" value={recurringForm.notes || ''} onChange={e => setRecurringForm(f => ({ ...f, notes: e.target.value }))} />
+                <div className="form-actions">
+                  <button className="btn-confirm" onClick={handleSaveRecurring}><Check size={14} /></button>
+                  <button className="btn-cancel" onClick={() => setRecurringForm(null)}><X size={14} /></button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Liste */}
+          <div className="recurring-list">
+            {recurringTasks.length === 0 && !recurringForm && (
+              <div className="recurring-empty">Aucune tâche récurrente configurée</div>
+            )}
+            {recurringTasks.map(rt => (
+              <div key={rt.id} className={`recurring-item ${rt.active ? '' : 'inactive'}`}>
+                <div className="recurring-item-info">
+                  <span className="recurring-item-title">{SECTIONS[rt.section]?.emoji || '📋'} {rt.title}</span>
+                  <span className="recurring-item-meta">
+                    {rt.recurrence === 'daily' && '🔄 Tous les jours'}
+                    {rt.recurrence === 'weekly' && `🔄 Chaque ${DAYS_FR[rt.day_of_week] || ''}`}
+                    {rt.recurrence === 'monthly' && `🔄 Le ${rt.day_of_month} de chaque mois`}
+                    {rt.time && ` à ${rt.time}`}
+                    {' · '}{SECTIONS[rt.section]?.label || rt.section}
+                  </span>
+                </div>
+                <div className="recurring-item-actions">
+                  <button onClick={() => setRecurringForm({ ...rt })} title="Modifier"><Edit2 size={14} /></button>
+                  <button className="delete" onClick={() => handleDeleteRecurring(rt.id)} title="Supprimer"><Trash2 size={14} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Contenu */}
       {loading ? (

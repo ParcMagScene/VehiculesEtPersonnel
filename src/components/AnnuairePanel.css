@@ -13,33 +13,21 @@
 
 /* ═══ Header ═══ */
 .annuaire-header {
-  padding: 16px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 24px;
   border-bottom: 1px solid var(--border-color, #e2e8f0);
   background: var(--bg-secondary, #f8fafc);
+  flex-shrink: 0;
+  overflow-x: auto;
 }
 
-.annuaire-header-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.annuaire-header-top h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-primary, #1e293b);
-}
-
-.annuaire-stats-bar {
+.annuaire-header-stats {
   display: flex;
   gap: 8px;
+  align-items: center;
+  margin-left: auto;
   flex-wrap: wrap;
 }
 
@@ -59,7 +47,6 @@
 .annuaire-tabs {
   display: flex;
   gap: 0;
-  overflow-x: auto;
 }
 
 .annuaire-tab {
@@ -854,14 +841,16 @@
 
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
-  .annuaire-header { padding: 10px 12px 0; }
+  .annuaire-header { padding: 8px 16px; flex-wrap: wrap; }
+  .annuaire-header-stats { margin-left: 0; width: 100%; justify-content: flex-start; }
   .annuaire-toolbar { padding: 8px 12px; }
   .annuaire-filters { padding: 6px 12px; flex-wrap: wrap; }
   .annuaire-detail { padding: 12px; }
   .detail-grid { grid-template-columns: 1fr; }
   .contacts-grid { grid-template-columns: 1fr; }
   .form-row { flex-direction: column; gap: 10px; }
-  .annuaire-stats-bar { display: none; }
+  .annuaire-header { padding: 8px 16px; flex-wrap: wrap; }
+  .annuaire-header-stats { margin-left: 0; width: 100%; justify-content: flex-start; }
   .annuaire-tab span { display: none; }
   .annuaire-tab { padding: 8px 12px; }
 }

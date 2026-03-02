@@ -1272,7 +1272,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // GET /api/display/tv-state — État complet pour l'aperçu TV dans l'admin
-  app.get('/api/display/tv-state', authenticateToken, (req, res) => {
+  app.get('/api/display/tv-state', authenticateToken, async (req, res) => {
     try {
       // Config apparence
       const configRows = db.prepare('SELECT key, value FROM display_config').all();
@@ -1395,6 +1395,38 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         return a.time.localeCompare(b.time);
       });
 
+      // ── Sonos now-playing ──
+      let sonos = { playing: false };
+      try {
+        const sonosRow = db.prepare("SELECT value FROM display_config WHERE key = 'sonosIP'").get();
+        const sonosIP = sonosRow ? JSON.parse(sonosRow.value) : '';
+        if (sonosIP) {
+          let Sonos;
+          try {
+            const sonosModule = await import('sonos');
+            Sonos = sonosModule.Sonos || sonosModule.default?.Sonos;
+          } catch { /* package not installed */ }
+          if (Sonos) {
+            const device = new Sonos(sonosIP);
+            const [track, state] = await Promise.all([
+              device.currentTrack().catch(() => null),
+              device.getCurrentState().catch(() => 'stopped'),
+            ]);
+            if (track && state !== 'stopped') {
+              sonos = {
+                playing: state === 'playing',
+                title: track.title || '',
+                artist: track.artist || '',
+                album: track.album || '',
+                albumArtURI: track.albumArtURI || '',
+              };
+            }
+          }
+        }
+      } catch (e) {
+        logger.error('Sonos in tv-state:', e.message);
+      }
+
       res.json({
         config: {
           primaryColor: config.primaryColor || '#00e1ff',
@@ -1412,6 +1444,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         sneakyPhoto,
         displayMessages,
         events,
+        sonos,
       });
     } catch (error) {
       logger.error('Display tv-state:', error);

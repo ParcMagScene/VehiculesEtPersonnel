@@ -1522,6 +1522,26 @@ class ApiClient {
     });
   }
 
+  // --- Tâches récurrentes ---
+  async getRecurringTasks() {
+    return this.request('/communication/recurring-tasks');
+  }
+  async createRecurringTask(data) {
+    return this.request('/communication/recurring-tasks', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateRecurringTask(id, data) {
+    return this.request(`/communication/recurring-tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteRecurringTask(id) {
+    return this.request(`/communication/recurring-tasks/${id}`, { method: 'DELETE' });
+  }
+  async generateRecurringTasks(date) {
+    return this.request('/communication/recurring-tasks/generate', { method: 'POST', body: JSON.stringify({ date }) });
+  }
+  async rolloverTasks(fromDate) {
+    return this.request('/communication/tasks/rollover', { method: 'POST', body: JSON.stringify({ fromDate }) });
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // MODULE ANNUAIRE
   // ═══════════════════════════════════════════════════════════════

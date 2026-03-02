@@ -2813,6 +2813,20 @@ try {
   logger.warn('⚠️ Migration completion_alerts:', error.message);
 }
 
+// Migration ONE-TIME: Masquer les RDV/événements existants sur l'écran TV (visible=0)
+try {
+  const rdvMigApplied = db.prepare("SELECT 1 FROM migrations_log WHERE name = ?").get('hide_rdv_events_on_tv');
+  if (!rdvMigApplied) {
+    const result = db.prepare(
+      "UPDATE task_assignments SET visible = 0 WHERE section IN ('rdv', 'evenements') AND visible = 1"
+    ).run();
+    db.prepare("INSERT INTO migrations_log (name) VALUES (?)").run('hide_rdv_events_on_tv');
+    logger.info(`✅ Migration hide_rdv_events_on_tv: ${result.changes} tâche(s) RDV/événements masquées sur TV`);
+  }
+} catch (error) {
+  logger.warn('⚠️ Migration hide_rdv_events_on_tv:', error.message);
+}
+
 // Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
   try {

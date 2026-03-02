@@ -1,12 +1,33 @@
 // ═══════════════════════════════════════════════════════════════
-// LocationIconsTab — Gestion des icônes GIF de lieux
-// Galerie d'icônes + Règles d'association lieu → icône
+// LocationIconsTab — Gestion des icônes GIF par type de tâche
+// Galerie d'icônes + Règles d'association type de tâche → icône
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Film, Upload, Plus, Trash2, Save, X, Check } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api, { getApiUrl } from '../../utils/api';
+
+// Types de tâches (sections) disponibles pour l'association icône
+const TASK_SECTIONS = [
+  { key: 'rdv', label: '📅 RDV' },
+  { key: 'evenements', label: '🎉 Événement' },
+  { key: 'taches_prioritaires', label: '⚡ Prioritaire' },
+  { key: 'courses', label: '🛒 Courses' },
+  { key: 'prep_locations', label: '📦 Prépa Location' },
+  { key: 'prep_prestations', label: '🎤 Prépa Prestation' },
+  { key: 'prep_ventes', label: '💰 Prépa Vente' },
+  { key: 'prep_installations', label: '🔧 Prépa Installation' },
+  { key: 'prep_tournees', label: '🚛 Prépa Tournée' },
+  { key: 'chargement', label: '📦 Chargement' },
+  { key: 'depart', label: '🚀 Départ' },
+  { key: 'enlevement', label: '📤 Enlèvement' },
+  { key: 'retour', label: '🔙 Retour' },
+  { key: 'recuperation', label: '♻️ Récupération' },
+  { key: 'installation', label: '🔧 Installation' },
+  { key: 'taches_secondaires', label: '📋 Secondaire' },
+  { key: 'manual', label: '✏️ Divers' },
+];
 
 function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
   const toast = useToast();
@@ -143,12 +164,12 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
         )}
       </div>
 
-      {/* Règles d'association lieu → icône */}
+      {/* Règles d'association type de tâche → icône */}
       <div className="dtv-section">
         <h3 className="dtv-section-title">
-          <Film size={16} /> Associer des icônes aux lieux
+          <Film size={16} /> Associer des icônes aux types de tâches
         </h3>
-        <p className="dtv-hint">Définissez quelle icône afficher à côté d'un événement selon son lieu.</p>
+        <p className="dtv-hint">Définissez quelle icône afficher sur l'écran TV selon le type de tâche.</p>
 
         <div className="dtv-rules-list">
           {rules.length === 0 && (
@@ -163,13 +184,19 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
                   <span className="dtv-icon-empty">➕</span>
                 )}
               </div>
-              <input
-                type="text"
+              <select
                 value={rule.keyword}
                 onChange={e => handleRuleChange(index, 'keyword', e.target.value)}
-                placeholder="Mot-clé du lieu (ex: Salle A, Bureau…)"
                 className="dtv-rule-keyword"
-              />
+              >
+                <option value="">— Choisir un type de tâche —</option>
+                {TASK_SECTIONS
+                  .filter(s => s.key === rule.keyword || !rules.some((r, ri) => ri !== index && r.keyword === s.key))
+                  .map(s => (
+                    <option key={s.key} value={s.key}>{s.label}</option>
+                  ))
+                }
+              </select>
               <button className="btn-icon-sm danger" onClick={() => handleRemoveRule(index)}>
                 <Trash2 size={14} />
               </button>

@@ -8,7 +8,7 @@ import { Monitor, Eye, RefreshCw, Radio } from 'lucide-react';
 import api from '../../utils/api';
 import TVScreenMini from './TVScreenMini';
 
-function TVPreviewPanel({ previewOverrides = {}, refreshKey }) {
+function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
   const [liveState, setLiveState] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,14 +53,14 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey }) {
 
   if (loading && !liveState) {
     return (
-      <div className="tv-preview-panel">
+      <div className="tv-preview-panel" style={style}>
         <div className="tv-preview-loading">Chargement aperçu…</div>
       </div>
     );
   }
 
   return (
-    <div className="tv-preview-panel">
+    <div className="tv-preview-panel" style={style}>
       {/* ─── Direct (diffusion en cours) ─── */}
       <div className="tv-preview-zone live">
         <div className="tv-preview-label">

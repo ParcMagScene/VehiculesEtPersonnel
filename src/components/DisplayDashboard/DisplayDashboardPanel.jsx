@@ -3,7 +3,7 @@
 // Sous-module de Communication → onglet « Dashboard Écrans »
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
 import { Monitor, Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
 import './DisplayDashboardPanel.css';
 
@@ -31,6 +31,40 @@ function DisplayDashboardPanel({ currentUser }) {
   const [activeTab, setActiveTab] = useState('screens');
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewOverrides, setPreviewOverrides] = useState({});
+  const [previewWidth, setPreviewWidth] = useState(() => {
+    const saved = localStorage.getItem('ddp-preview-width');
+    return saved ? Number(saved) : 360;
+  });
+  const isDragging = useRef(false);
+  const bodyRef = useRef(null);
+
+  // Drag handler for the resizable divider
+  const handleDividerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    isDragging.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev) => {
+      if (!isDragging.current || !bodyRef.current) return;
+      const rect = bodyRef.current.getBoundingClientRect();
+      const newWidth = Math.round(rect.right - ev.clientX);
+      const clamped = Math.max(200, Math.min(newWidth, rect.width - 300));
+      setPreviewWidth(clamped);
+    };
+
+    const onMouseUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      setPreviewWidth(w => { localStorage.setItem('ddp-preview-width', w); return w; });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, []);
 
   const handlePreviewChange = useCallback((overrides) => {
     setPreviewOverrides(prev => ({ ...prev, ...overrides }));
@@ -67,7 +101,7 @@ function DisplayDashboardPanel({ currentUser }) {
       </div>
 
       {/* Corps — split layout avec moniteurs Direct/Preview à droite */}
-      <div className="display-body split">
+      <div className="display-body split" ref={bodyRef}>
       <div className="display-tab-content">
         <Suspense fallback={<div className="display-loading">Chargement…</div>}>
           {activeTab === 'screens' && (
@@ -98,8 +132,15 @@ function DisplayDashboardPanel({ currentUser }) {
         </Suspense>
       </div>
 
+        {/* Divider draggable */}
+        <div
+          className="display-split-divider"
+          onMouseDown={handleDividerMouseDown}
+          title="Glisser pour redimensionner"
+        />
+
         <Suspense fallback={<div className="tv-preview-loading">Chargement aperçu…</div>}>
-          <TVPreviewPanel previewOverrides={previewOverrides} refreshKey={refreshKey} />
+          <TVPreviewPanel previewOverrides={previewOverrides} refreshKey={refreshKey} style={{ width: previewWidth }} />
         </Suspense>
       </div>
 

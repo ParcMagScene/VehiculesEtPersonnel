@@ -4,6 +4,7 @@ import {
   User, Clock, Briefcase, Loader2, MapPin, Calendar
 } from 'lucide-react';
 import api from '../utils/api';
+import { AFFAIRE_TYPE_INFO } from '../utils/affaireConstants';
 import { formatDateFr } from '../utils/formatUtils';
 import './TaskPDFExportModal.css';
 
@@ -25,13 +26,6 @@ const SECTIONS = {
   evenements:          { label: 'Autres Événements',    emoji: '📌', color: '#64748b' },
   taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
   manual:              { label: 'Autres',                emoji: '📋', color: 'var(--theme-text-secondary)' },
-};
-
-const AFFAIRE_TYPE_INFO = {
-  'Prestation':   { label: 'Prestation',   emoji: '🎭', section: 'prep_prestations' },
-  'Location':     { label: 'Location',     emoji: '🏗️', section: 'prep_locations' },
-  'Vente':        { label: 'Vente',        emoji: '💰', section: 'prep_ventes' },
-  'Installation': { label: 'Installation', emoji: '⚙️', section: 'prep_installations' },
 };
 
 const EVENT_TYPES = {

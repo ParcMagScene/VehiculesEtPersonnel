@@ -4,6 +4,8 @@ import {
   Package, Truck, ArrowRight, RotateCcw, Wrench, AlertCircle
 } from 'lucide-react';
 import api from '../utils/api';
+import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../utils/affaireConstants';
+import AffaireBadge from './AffaireBadge';
 import { useToast } from '../hooks/useToast';
 import './EventTaskModal.css';
 
@@ -18,14 +20,6 @@ const TASK_STEPS = [
   { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'recuperation', typeRestriction: 'Location' },
   { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: '#10b981', defaultSection: 'installation', typeRestriction: 'Installation' },
 ];
-
-// Mapping affaire type → section de préparation
-const AFFAIRE_TYPE_SECTIONS = {
-  'Location':     'prep_locations',
-  'Prestation':   'prep_prestations',
-  'Vente':        'prep_ventes',
-  'Installation': 'prep_installations',
-};
 
 // Filtrer les étapes selon le type d'affaire
 const getVisibleSteps = (affaireType) => TASK_STEPS.filter(s => !s.typeRestriction || s.typeRestriction === affaireType);
@@ -232,16 +226,13 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         {/* Event summary */}
         <div className="etm-event-summary">
           {eventInfo.affaireNum && (
-            <span className="etm-badge affaire"><Briefcase size={12} /> {eventInfo.affaireNum}</span>
+            <AffaireBadge numero={eventInfo.affaireNum} type={eventInfo.affaireType} showIcon />
           )}
           {eventInfo.startTime && (
             <span className="etm-badge time"><Clock size={12} /> {eventInfo.startTime}{eventInfo.endTime ? ` → ${eventInfo.endTime}` : ''}</span>
           )}
           {eventInfo.location && (
             <span className="etm-badge location"><MapPin size={12} /> {eventInfo.location}</span>
-          )}
-          {eventInfo.affaireType && (
-            <span className="etm-badge type">{eventInfo.affaireType}</span>
           )}
         </div>
 
@@ -331,16 +322,6 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       </div>
     </div>
   );
-}
-
-// ═══ Utilities ═══
-function guessAffaireType(summary) {
-  const s = summary.toLowerCase();
-  if (/location/i.test(s)) return 'Location';
-  if (/prestation|spectacle|concert|festival/i.test(s)) return 'Prestation';
-  if (/vente/i.test(s)) return 'Vente';
-  if (/install/i.test(s)) return 'Installation';
-  return '';
 }
 
 export default EventTaskModal;

@@ -909,6 +909,25 @@ class ApiClient {
     });
   }
 
+  // ── Liaisons entre affaires ──
+
+  async getAffaireLinks(affaireId) {
+    return this.request(`/affaires/${affaireId}/links`);
+  }
+
+  async createAffaireLink(parentId, childAffaireId) {
+    return this.request(`/affaires/${parentId}/links`, {
+      method: 'POST',
+      body: JSON.stringify({ childAffaireId }),
+    });
+  }
+
+  async deleteAffaireLink(affaireId, linkId) {
+    return this.request(`/affaires/${affaireId}/links/${linkId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // ============ MESSAGERIE ============
 
   async getConversations() {

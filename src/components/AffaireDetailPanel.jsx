@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw } from 'lucide-react';
+import { AFFAIRE_TYPES, getTypeInfo, AFFAIRE_TYPE_SECTIONS } from '../utils/affaireConstants';
 import api, { getApiUrl } from '../utils/api';
+import AffaireBadge from './AffaireBadge';
 import { formatPhoneDisplay } from './PhoneInput';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -14,14 +16,6 @@ const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const DynamicDisplayDialog = lazy(() => import('./DynamicDisplayDialog'));
 
 const API_BASE_URL = getApiUrl();
-
-const AFFAIRE_TYPES = [
-  { value: 'Prestation', label: 'Prestation', color: '#3b82f6' },
-  { value: 'Location', label: 'Location', color: '#f59e0b' },
-  { value: 'Installation', label: 'Installation', color: '#10b981' },
-  { value: 'Vente', label: 'Vente', color: '#8b5cf6' },
-];
-const getTypeInfo = (type) => AFFAIRE_TYPES.find(t => t.value === type) || AFFAIRE_TYPES[0];
 
 // ═══ Étapes de tâches opérationnelles ═══
 const TASK_STEPS = [
@@ -37,13 +31,6 @@ const TASK_STEPS = [
 
 // Filtrer les étapes selon le type d'affaire
 const getVisibleSteps = (affaireType) => TASK_STEPS.filter(s => !s.typeRestriction || s.typeRestriction === affaireType);
-
-const AFFAIRE_TYPE_SECTIONS = {
-  'Location':     'prep_locations',
-  'Prestation':   'prep_prestations',
-  'Vente':        'prep_ventes',
-  'Installation': 'prep_installations',
-};
 
 const TASK_STATUS_MAP = {
   pending:     { label: 'En attente', color: '#94a3b8', bg: '#f1f5f9' },
@@ -344,6 +331,78 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     };
     loadBLImports();
   }, [affaire.numeroAffaire]);
+
+  // ═══ Affaires liées (Tournée) ═══
+  const [linkedAffaires, setLinkedAffaires] = useState({ children: [], parents: [] });
+  const [isLoadingLinks, setIsLoadingLinks] = useState(false);
+  const [linkSearchQuery, setLinkSearchQuery] = useState('');
+  const [showLinkSearch, setShowLinkSearch] = useState(false);
+  const [linkSearchResults, setLinkSearchResults] = useState([]);
+
+  const loadLinkedAffaires = useCallback(async () => {
+    if (!affaire.id) return;
+    setIsLoadingLinks(true);
+    try {
+      const data = await api.getAffaireLinks(affaire.id);
+      setLinkedAffaires({ children: data.children || [], parents: data.parents || [] });
+    } catch { setLinkedAffaires({ children: [], parents: [] }); }
+    setIsLoadingLinks(false);
+  }, [affaire.id]);
+
+  useEffect(() => { loadLinkedAffaires(); }, [loadLinkedAffaires]);
+
+  // Recherche d'affaires à lier
+  const handleLinkSearch = useCallback(async (query) => {
+    setLinkSearchQuery(query);
+    if (query.length < 2) { setLinkSearchResults([]); return; }
+    try {
+      const all = await api.getAffaires();
+      const existing = new Set([
+        affaire.id,
+        ...linkedAffaires.children.map(c => c.id),
+        ...linkedAffaires.parents.map(p => p.id),
+      ]);
+      const q = query.toLowerCase();
+      setLinkSearchResults(
+        (Array.isArray(all) ? all : [])
+          .filter(a => !existing.has(a.id) && (
+            (a.numeroAffaire || '').toLowerCase().includes(q) ||
+            (a.client || '').toLowerCase().includes(q) ||
+            (a.titre || a.eventName || '').toLowerCase().includes(q)
+          ))
+          .slice(0, 8)
+      );
+    } catch { setLinkSearchResults([]); }
+  }, [affaire.id, linkedAffaires]);
+
+  const handleAddLink = useCallback(async (childAffaireId) => {
+    try {
+      await api.createAffaireLink(affaire.id, childAffaireId);
+      setShowLinkSearch(false);
+      setLinkSearchQuery('');
+      setLinkSearchResults([]);
+      loadLinkedAffaires();
+      showFeedback({ type: 'success', message: 'Affaire liée avec succès' });
+    } catch (err) {
+      showFeedback({ type: 'error', message: err.message || 'Erreur de liaison' }, 4000);
+    }
+  }, [affaire.id, loadLinkedAffaires, showFeedback]);
+
+  const handleRemoveLink = useCallback(async (linkId) => {
+    if (!window.confirm('Supprimer ce lien entre affaires ?')) return;
+    try {
+      await api.deleteAffaireLink(affaire.id, linkId);
+      loadLinkedAffaires();
+      showFeedback({ type: 'success', message: 'Lien supprimé' });
+    } catch (err) {
+      showFeedback({ type: 'error', message: err.message || 'Erreur' }, 4000);
+    }
+  }, [affaire.id, loadLinkedAffaires, showFeedback]);
+
+  const allLinkedAffaires = useMemo(() => [
+    ...linkedAffaires.parents.map(p => ({ ...p, relation: 'parent' })),
+    ...linkedAffaires.children.map(c => ({ ...c, relation: 'child' })),
+  ], [linkedAffaires]);
 
   // ═══ Tâches de planification liées à l'affaire ═══
   const [affaireTasks, setAffaireTasks] = useState([]);
@@ -810,6 +869,74 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           </div>
         )}
       </section>
+
+      {/* ═══ Section 2a : Affaires liées (Tournée) ═══ */}
+      {(affaire.type === 'Tournée' || allLinkedAffaires.length > 0) && (
+        <section className="detail-section">
+          <h3 className="detail-section-title">
+            <LinkIcon size={15} /> Affaires liées
+            <span className="section-count">{allLinkedAffaires.length}</span>
+            {editable && (
+              <button className="section-action-btn" onClick={() => setShowLinkSearch(!showLinkSearch)} title="Lier une affaire">
+                <Plus size={13} /> Lier
+              </button>
+            )}
+          </h3>
+          {showLinkSearch && (
+            <div className="link-search-wrapper">
+              <input
+                type="text"
+                className="link-search-input"
+                placeholder="Rechercher une affaire à lier…"
+                value={linkSearchQuery}
+                onChange={e => handleLinkSearch(e.target.value)}
+                autoFocus
+              />
+              {linkSearchResults.length > 0 && (
+                <div className="link-search-results">
+                  {linkSearchResults.map(a => (
+                    <div key={a.id} className="link-search-item" onClick={() => handleAddLink(a.id)}>
+                      <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
+                      <span className="link-search-client">{a.client || '—'}</span>
+                      <span className="link-search-title">{a.titre || a.eventName || ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {isLoadingLinks ? (
+            <p className="detail-empty">Chargement…</p>
+          ) : allLinkedAffaires.length === 0 ? (
+            <p className="detail-empty">Aucune affaire liée — utilisez le bouton "Lier" pour associer des affaires</p>
+          ) : (
+            <div className="detail-list">
+              {allLinkedAffaires.map(linked => (
+                <div key={linked.link_id || linked.id} className="detail-list-item linked-affaire-item">
+                  <div className="linked-affaire-main">
+                    <AffaireBadge
+                      numero={linked.numeroAffaire}
+                      type={linked.type}
+                      size="sm"
+                      onNavigate={onNavigateToEntity ? () => onNavigateToEntity('affaire', { numero: linked.numeroAffaire }) : undefined}
+                    />
+                    <div className="linked-affaire-info">
+                      <span className="linked-affaire-client">{linked.client || '—'}</span>
+                      {(linked.titre || linked.eventName) && <span className="linked-affaire-title">{linked.titre || linked.eventName}</span>}
+                    </div>
+                    <span className="linked-affaire-relation">{linked.relation === 'parent' ? '↑ Parent' : '↓ Enfant'}</span>
+                  </div>
+                  {editable && (
+                    <button className="linked-affaire-remove" onClick={() => handleRemoveLink(linked.link_id)} title="Supprimer le lien">
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ═══ Section 2b : Événements Google Calendar liés ═══ */}
       {googleEventIds && googleEventIds.length > 0 && (

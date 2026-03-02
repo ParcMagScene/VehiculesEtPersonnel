@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil } from 'lucide-react';
 import { getApiUrl } from '../utils/api';
+import AffaireBadge from './AffaireBadge';
 import './EventDetailsModal.css';
 import { useToast } from '../hooks/useToast';
 
@@ -334,7 +335,7 @@ function EventDetailsModal({
             <Calendar size={24} />
             <div>
               <h2>{event.summary || '(Sans titre)'}</h2>
-              {event.affaire && <span className="event-affaire-badge">{event.affaire}</span>}
+              {event.affaire && <AffaireBadge numero={event.affaire} className="inverted" />}
             </div>
           </div>
           <button className="close-button" onClick={onClose}>×</button>

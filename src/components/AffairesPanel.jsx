@@ -4,6 +4,7 @@ import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { capitalizeText } from '../utils/dateUtils';
+import { AFFAIRE_TYPES, getTypeInfo } from '../utils/affaireConstants';
 import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
 import MonthSelector from './MonthSelector';
 import WeekSelector from './WeekSelector';
@@ -12,15 +13,6 @@ import './AffairesPanel.css';
 const BLImportModal = lazy(() => import('./BLImportModal'));
 const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
-
-const AFFAIRE_TYPES = [
-  { value: 'Prestation', label: 'Prestation', color: '#3b82f6', icon: '🎭' },
-  { value: 'Location', label: 'Location', color: '#f59e0b', icon: '🏗️' },
-  { value: 'Installation', label: 'Installation', color: '#10b981', icon: '⚙️' },
-  { value: 'Vente', label: 'Vente', color: '#8b5cf6', icon: '💰' },
-];
-
-const getTypeInfo = (type) => AFFAIRE_TYPES.find(t => t.value === type) || AFFAIRE_TYPES[0];
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
@@ -57,7 +49,7 @@ const getAffaireStatus = (affaire, today) => {
   return 'upcoming';
 };
 
-const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
+const AffairesPanel = ({ reservations = [], onNavigateToEntity, navigateToAffaireNum, onNavigateToAffaireHandled }) => {
   const [dbAffaires, setDbAffaires] = useState([]);
   const [googleAffaires, setGoogleAffaires] = useState([]);
   const [googleEventIdsMap, setGoogleEventIdsMap] = useState({}); // { AF32844: ['eventId1', 'eventId2', ...] }
@@ -269,6 +261,21 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     };
     loadAll();
   }, [loadDbAffaires, loadGoogleAffaires, loadAttachmentsIndex, loadPersonnelCounts]);
+
+  // Navigation externe → ouvrir une affaire par numéro
+  useEffect(() => {
+    if (!navigateToAffaireNum || isLoading) return;
+    // Chercher dans la liste chargée
+    const found = dbAffaires.find(a => a.numeroAffaire === navigateToAffaireNum) ||
+                  dbAffaires.find(a => a.numero_affaire === navigateToAffaireNum);
+    if (found) {
+      setDialogAffaire(found);
+      // Déverrouiller les filtres pour montrer l'affaire
+      setFilterType('');
+      setSearchTerm('');
+    }
+    onNavigateToAffaireHandled?.();
+  }, [navigateToAffaireNum, isLoading, dbAffaires, onNavigateToAffaireHandled]);
 
   // Fusionner les affaires : DB prend priorité, puis réservations (source: 'auto'), puis Google
   const affaires = useMemo(() => {

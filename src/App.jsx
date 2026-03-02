@@ -756,6 +756,8 @@ function App() {
   };
 
   // ═══ Navigation croisée entre modules ═══
+  const [navigateToAffaireNum, setNavigateToAffaireNum] = useState(null);
+
   const handleNavigateToEntity = useCallback((type, data) => {
     if (type === 'vehicle') {
       const v = vehicles.find(v => v.id === data.id);
@@ -775,6 +777,11 @@ function App() {
       setShowManagement(false);
       setShowSettings(false);
       setReservationToEdit(data.id);
+    } else if (type === 'affaire') {
+      setActiveModule('affaires');
+      setShowManagement(false);
+      setShowSettings(false);
+      setNavigateToAffaireNum(data.numero || data.numeroAffaire || null);
     }
   }, [vehicles]);
 
@@ -1136,6 +1143,8 @@ function App() {
           <AffairesPanel
             reservations={reservations}
             onNavigateToEntity={handleNavigateToEntity}
+            navigateToAffaireNum={navigateToAffaireNum}
+            onNavigateToAffaireHandled={() => setNavigateToAffaireNum(null)}
           />
         </Suspense>
       )}
@@ -1204,6 +1213,7 @@ function App() {
           <CommunicationPanel
             currentUser={currentUser}
             googleEvents={allGoogleEvents}
+            onNavigateToEntity={handleNavigateToEntity}
           />
         </Suspense>
       )}

@@ -5,6 +5,8 @@ import {
   CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings
 } from 'lucide-react';
 import api from '../utils/api';
+import { AFFAIRE_TYPE_INFO } from '../utils/affaireConstants';
+import AffaireBadge from './AffaireBadge';
 import { formatDateFr } from '../utils/formatUtils';
 import ConfirmDialog from './ConfirmDialog';
 import { useToast } from '../hooks/useToast';
@@ -26,6 +28,7 @@ const SECTIONS = {
   prep_prestations:   { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6', affaireOnly: true },
   prep_ventes:        { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981', affaireOnly: true },
   prep_installations: { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6', affaireOnly: true },
+  prep_tournees:      { label: 'Préparations Tournées',       emoji: '🚐', color: '#ec4899', affaireOnly: true },
   // — Autres étapes opérationnelles —
   chargement:         { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
   depart:             { label: 'Départ',               emoji: '🚀', color: '#3b82f6', typeRestriction: 'Prestation', affaireOnly: true },
@@ -41,13 +44,6 @@ const SECTIONS = {
 // Sections événements (haut) vs opérationnelles (bas)
 const EVENT_SECTION_KEYS = ['rdv', 'evenements'];
 const OPS_SECTION_KEYS = Object.keys(SECTIONS).filter(k => !EVENT_SECTION_KEYS.includes(k));
-
-const AFFAIRE_TYPE_INFO = {
-  'Prestation':    { label: 'Prestation',    emoji: '🎭', color: '#3b82f6', section: 'prep_prestations' },
-  'Location':      { label: 'Location',      emoji: '🏗️', color: '#f59e0b', section: 'prep_locations' },
-  'Vente':         { label: 'Vente',         emoji: '💰', color: '#8b5cf6', section: 'prep_ventes' },
-  'Installation':  { label: 'Installation',  emoji: '⚙️', color: '#10b981', section: 'prep_installations' },
-};
 
 const EVENT_TYPES = {
   preparation:  { label: 'Préparation',  emoji: '🔧', color: '#6366f1' },
@@ -117,7 +113,7 @@ const getWeekDays = (dateStr) => {
 };
 
 // ═══ Composant Principal ═══
-function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
+function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavigateToEntity }) {
   const toast = useToast();
   const [tasks, setTasks] = useState([]);
   const [persons, setPersons] = useState([]);
@@ -586,7 +582,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         <div className="task-info">
           <div className={`task-title ${isDone ? 'done' : ''}`}>
             {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
-            {affaireNum && <span className="affaire-num-badge" title={`Affaire ${affaireNum}`}>{affaireNum}</span>}
+            {affaireNum && <AffaireBadge numero={affaireNum} type={linkedAffaire?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />}
             {dateBadge && <span className="date-badge">{dateBadge}</span>}
             {displayTitle}
           </div>
@@ -663,7 +659,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         <div className="task-info">
           <div className="task-title">
             {!isTypeRedundant && <>{typeInfo.emoji} </>}
-            {affaireNum && <span className="affaire-num-badge" title={`Affaire ${affaireNum}`}>{affaireNum}</span>}
+            {affaireNum && <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum)?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />}
             {dateBadge && <span className="date-badge">{dateBadge}</span>}
             {isTypeRedundant
               ? (event.client || event.affaireId || typeInfo.label)
@@ -816,7 +812,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
         </span>
         <div className="task-info">
           <div className="task-title">
-            {affaireNum && <span className="affaire-tag">{affaireNum}</span>} {summary}
+            {affaireNum && <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />} {summary}
           </div>
           <div className="task-meta">
             <span><Clock size={11} /> {timeStr}</span>
@@ -910,7 +906,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [] }) {
           </button>
           {(() => {
             const an = item.affaireNum || extractAffaireNum(item.title) || extractAffaireNum(item.googleEventTitle);
-            return an ? <span className="wk-affaire-badge">{an}</span> : null;
+            return an ? <AffaireBadge numero={an} type={affaireByNum.get(an.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null;
           })()}
           {(() => {
             const isP = (item.section || '').startsWith('prep_');

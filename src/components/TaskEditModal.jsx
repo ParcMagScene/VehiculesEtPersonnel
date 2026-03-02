@@ -3,6 +3,7 @@ import {
   X, Clock, User, FileText, Calendar, Check, Loader, Save
 } from 'lucide-react';
 import api from '../utils/api';
+import AffaireBadge from './AffaireBadge';
 import { useToast } from '../hooks/useToast';
 import './TaskEditModal.css';
 
@@ -101,7 +102,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         {/* Badges info */}
         <div className="tem-badges">
           {task.affaireNum && (
-            <span className="tem-badge affaire">{task.affaireNum}</span>
+            <AffaireBadge numero={task.affaireNum} type={task.affaireType} />
           )}
           {task.sourceType === 'google_event' && (
             <span className="tem-badge google">G</span>

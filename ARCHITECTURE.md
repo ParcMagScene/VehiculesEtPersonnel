@@ -1,6 +1,6 @@
 # 🏗️ Architecture Complète — eM@g
 
-> **Dernière mise à jour** : 26 février 2026
+> **Dernière mise à jour** : 2 mars 2026
 > **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
 > **Domaine** : `magsav.duckdns.org`
 
@@ -96,10 +96,10 @@ eM@g/
 │
 ├── src/                            # ══ CODE SOURCE FRONTEND ══
 │   ├── main.jsx                    # Point d'entrée React
-│   ├── App.jsx                     # Composant racine (~1401 lignes)
+│   ├── App.jsx                     # Composant racine (~1408 lignes)
 │   ├── App.css / index.css / theme.css
 │   │
-│   ├── components/                 # 79 composants React desktop
+│   ├── components/                 # 82 composants React desktop
 │   │   ├── Calendar.jsx            # Calendrier principal (semaine/mois/année)
 │   │   ├── Header.jsx              # Barre de navigation + boutons contextuels
 │   │   ├── ManagementPanel.jsx     # Panel admin (multi-onglets)
@@ -124,23 +124,28 @@ eM@g/
 │   │   ├── DepotMap.jsx            # Plan interactif du dépôt (SVG)
 │   │   ├── LocationSelector.jsx    # Sélecteur localisation 4 niveaux
 │   │   ├── TaskPlanningPanel.jsx   # Planning des tâches
+│   │   ├── TaskEditModal.jsx       # Édition de tâches individuelles
+│   │   ├── TaskPDFExportModal.jsx  # Export PDF du planning
+│   │   ├── AnnuairePanel.jsx       # Annuaire contacts (clients, fournisseurs, prestataires)
 │   │   ├── ReservationModal.jsx    # Modal création/édition réservation
 │   │   ├── MaintenanceDialog.jsx   # Dialog maintenance/intervention
 │   │   ├── BLImportModal.jsx       # Import BL standard
 │   │   ├── BLImportLocPrestaModal.jsx # Import BL fournisseur/prestataire
-│   │   └── mobile/                 # 14 composants mobile
+│   │   └── mobile/                 # 16 composants mobile
 │   │       ├── MobileApp.jsx       # Routeur mobile
 │   │       ├── MobileHome.jsx      # Accueil mobile
 │   │       └── ...                 # Planning, réservations, maintenances, etc.
 │   │
-│   ├── hooks/                      # 7 hooks React custom
+│   ├── hooks/                      # 6 hooks React custom
 │   │   ├── useAutocomplete.js
-│   │   ├── useGooglePlacesAutocomplete.js
-│   │   ├── useUnsavedChanges.js
+│   │   ├── useFeedback.js
+│   │   ├── useKeyboardShortcuts.js
+│   │   ├── useTheme.js
+│   │   ├── useToast.jsx
 │   │   └── useWindowWidth.js
 │   │
 │   └── utils/                      # 13 fonctions utilitaires
-│       ├── api.js                  # Client API (~1424 lignes, ~242 méthodes)
+│       ├── api.js                  # Client API (~1895 lignes, ~350 méthodes)
 │       ├── deepLinking.js          # URL builders, ouverture protocole Chargement 3D
 │       ├── dateUtils.js            # Utilitaires de dates
 │       ├── excelImport.js          # Import Excel
@@ -149,24 +154,26 @@ eM@g/
 │       └── ...
 │
 ├── server/                         # ══ CODE SOURCE BACKEND ══
-│   ├── server.js                   # Serveur Express principal (~2835 lignes)
-│   ├── routes.js                   # Routes secondaires (~671 lignes)
-│   ├── personnelRoutes.js          # Routes personnel (~1319 lignes)
-│   ├── catalogRoutes.js            # Routes catalogue (~746 lignes)
-│   ├── equipmentRoutes.js          # Routes équipements (~1195 lignes)
-│   ├── communicationRoutes.js      # Routes communication (~931 lignes)
-│   ├── leaveRoutes.js              # Routes congés (~1323 lignes)
-│   ├── ordersRoutes.js             # Routes commandes (~636 lignes)
-│   ├── stockRoutes.js              # Routes stock (~432 lignes)
-│   ├── mailingRoutes.js            # Routes mailing (~294 lignes)
-│   ├── messagingRoutes.js          # Routes messagerie (~322 lignes)
-│   ├── emailService.js             # Service d'envoi d'emails (~217 lignes)
-│   ├── database.js                 # Init SQLite + schéma + migrations (~1915 lignes)
+│   ├── server.js                   # Serveur Express principal (~2911 lignes)
+│   ├── routes.js                   # Routes secondaires (~672 lignes)
+│   ├── personnelRoutes.js          # Routes personnel (~1337 lignes)
+│   ├── catalogRoutes.js            # Routes catalogue (~775 lignes)
+│   ├── equipmentRoutes.js          # Routes équipements (~1299 lignes)
+│   ├── communicationRoutes.js      # Routes communication (~1522 lignes)
+│   ├── leaveRoutes.js              # Routes congés (~1337 lignes)
+│   ├── ordersRoutes.js             # Routes commandes (~1367 lignes)
+│   ├── stockRoutes.js              # Routes stock (~433 lignes)
+│   ├── mailingRoutes.js            # Routes mailing (~299 lignes)
+│   ├── messagingRoutes.js          # Routes messagerie (~368 lignes)
+│   ├── displayRoutes.js            # Routes Dashboard écrans (~1383 lignes)
+│   ├── annuaireRoutes.js           # Routes annuaire (~833 lignes)
+│   ├── emailService.js             # Service d'envoi d'emails (~383 lignes)
+│   ├── database.js                 # Init SQLite + schéma + migrations (~2818 lignes)
 │   ├── logger.js                   # Logger conditionnel
 │   ├── package.json                # Dépendances backend
 │   ├── ecosystem.config.js         # Configuration PM2
 │   ├── backup-database.sh          # Script de backup SQLite
-│   └── migrations/                 # 16 fichiers SQL
+│   └── migrations/                 # 17 fichiers SQL
 │
 ├── public/                         # ══ ASSETS STATIQUES ══
 │   ├── depot-zones.json            # Zones du dépôt 1 — Événementiel (SVG 770×560)
@@ -210,7 +217,7 @@ Client HTTP
 │  └───────┬───────┘  └────────┬───────────┘   │
 │          ▼                   ▼               │
 │  ┌──────────────────────────────────────┐    │
-│  │ Route Handlers (11 fichiers)         │    │
+│  │ Route Handlers (15 fichiers)         │    │
 │  │                                      │    │
 │  │  server.js :                         │    │
 │  │   - /api/auth/*      (auth)          │    │
@@ -245,7 +252,18 @@ Client HTTP
 │  │                                      │    │
 │  │  communicationRoutes.js :            │    │
 │  │   - /api/communication/* (events,    │    │
-│  │     notes, display-events)           │    │
+│  │     notes, display-events, tasks,    │    │
+│  │     planning, PDF export)            │    │
+│  │                                      │    │
+│  │  displayRoutes.js :                  │    │
+│  │   - /api/display/* (screens,         │    │
+│  │     playlists, media, messages,      │    │
+│  │     templates, logs)                 │    │
+│  │                                      │    │
+│  │  annuaireRoutes.js :                 │    │
+│  │   - /api/annuaire/* (clients,        │    │
+│  │     fournisseurs, prestataires,      │    │
+│  │     contacts, import)                │    │
 │  │                                      │    │
 │  │  leaveRoutes.js :                    │    │
 │  │   - /api/leaves/* (demandes,         │    │
@@ -270,7 +288,7 @@ Client HTTP
 │  ┌──────────────────────────────────────┐    │
 │  │ SQLite (better-sqlite3)              │    │
 │  │ vehicules.db — WAL mode             │    │
-│  │ 56 tables, FK enforced             │    │
+│  │ 79 tables, FK enforced              │    │
 │  └──────────────────────────────────────┘    │
 └─────────────────────────────────────────────┘
 ```
@@ -279,21 +297,22 @@ Client HTTP
 
 | Fichier | Lignes | Rôle |
 |---------|--------|------|
-| `server.js` | ~2835 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads, messagerie) |
-| `routes.js` | ~671 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
-| `personnelRoutes.js` | ~1319 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations) |
-| `leaveRoutes.js` | ~1323 | Routes module congés (demandes, approbation, solde, planning) |
-| `equipmentRoutes.js` | ~1195 | Routes équipements individualisés (UID, SAV, localisation multi-dépôt) |
-| `communicationRoutes.js` | ~931 | Routes communication (événements, notes, affichage écran) |
-| `displayRoutes.js` | ~530 | Routes Dashboard écrans (screens, playlists, médias, messages, templates, logs) |
-| `catalogRoutes.js` | ~746 | Routes catalogue (équipements, flight-cases, camions, réservation-équipement) |
-| `ordersRoutes.js` | ~636 | Routes commandes fournisseurs |
-| `stockRoutes.js` | ~432 | Routes gestion de stock (mouvements, inventaire) |
-| `messagingRoutes.js` | ~322 | Routes messagerie interne |
-| `mailingRoutes.js` | ~294 | Routes mailing avancé (templates, campagnes) |
-| `emailService.js` | ~217 | Service d'envoi d'emails (nodemailer) |
-| `database.js` | ~1915 | Initialisation schéma SQLite, pragmas, migrations, 56 tables |
-| `logger.js` | ~23 | Logger conditionnel |
+| `server.js` | ~2911 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads, messagerie) |
+| `routes.js` | ~672 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
+| `personnelRoutes.js` | ~1337 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations) |
+| `leaveRoutes.js` | ~1337 | Routes module congés (demandes, approbation, solde, planning) |
+| `equipmentRoutes.js` | ~1299 | Routes équipements individualisés (UID, SAV, localisation multi-dépôt) |
+| `communicationRoutes.js` | ~1522 | Routes communication (événements, notes, tâches, planning, PDF export) |
+| `displayRoutes.js` | ~1383 | Routes Dashboard écrans (screens, playlists, médias, messages, templates, logs) |
+| `ordersRoutes.js` | ~1367 | Routes commandes fournisseurs |
+| `annuaireRoutes.js` | ~833 | Routes annuaire (clients, fournisseurs, prestataires, contacts, import) |
+| `catalogRoutes.js` | ~775 | Routes catalogue (équipements, flight-cases, camions, réservation-équipement) |
+| `stockRoutes.js` | ~433 | Routes gestion de stock (mouvements, inventaire) |
+| `messagingRoutes.js` | ~368 | Routes messagerie interne |
+| `mailingRoutes.js` | ~299 | Routes mailing avancé (templates, campagnes) |
+| `emailService.js` | ~383 | Service d'envoi d'emails (nodemailer) |
+| `database.js` | ~2818 | Initialisation schéma SQLite, pragmas, migrations, 79 tables |
+| `logger.js` | ~28 | Logger conditionnel |
 
 ### Variables d'environnement (`server/.env`)
 
@@ -306,7 +325,7 @@ JWT_EXPIRY_DAYS=30
 
 ## 5. Architecture Frontend
 
-### Composant racine : `App.jsx` (~1401 lignes)
+### Composant racine : `App.jsx` (~1408 lignes)
 
 ```
 main.jsx
@@ -359,9 +378,9 @@ Le frontend persiste les données dans IndexedDB (via `src/utils/indexedDB.js`) 
 | `skills` | Compétences |
 | `missions` | Missions |
 
-### Client API (`src/utils/api.js` — ~1424 lignes)
+### Client API (`src/utils/api.js` — ~1895 lignes)
 
-Classe `ApiClient` avec ~242 méthodes. Fonctionnalités :
+Classe `ApiClient` avec ~350 méthodes. Fonctionnalités :
 - Détection automatique de l'URL backend (DuckDNS / localhost / IP)
 - Injection automatique du Bearer token JWT
 - Conversion `snake_case` ↔ `camelCase` transparente
@@ -379,7 +398,7 @@ Classe `ApiClient` avec ~242 méthodes. Fonctionnalités :
 - `PRAGMA synchronous = FULL` — Durabilité maximale
 - Checkpoint automatique toutes les 5 minutes
 
-### Schéma — 56 tables
+### Schéma — 79 tables
 
 #### Tables principales
 
@@ -445,6 +464,7 @@ Classe `ApiClient` avec ~242 méthodes. Fonctionnalités :
 |-------|-------------|
 | `communication_events` | Événements d'entreprise (visibilité, affichage écran) |
 | `communication_notes` | Notes internes |
+| `task_assignments` | Affectation de tâches au planning (date, période, section, statut) |
 | `mail_templates` | Templates d'emails |
 | `mail_campaigns` | Campagnes de mailing |
 | `mail_recipients` | Destinataires de campagne |
@@ -470,7 +490,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 
 ## 7. API — Catalogue des routes
 
-> **Total : ~267 routes API** réparties en 11 fichiers
+> **Total : ~350+ routes API** réparties en 15 fichiers
 
 ### Authentification (`/api/auth/*`)
 
@@ -585,6 +605,9 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | GET | `/api/communication/display-events` | ✅ | Événements pour affichage écran |
 | PATCH | `/api/communication/events/:id/visibility` | ✅ | Toggle visibilité |
 | GET/POST/PUT/DELETE | `/api/communication/notes` | ✅ | Notes internes |
+| GET | `/api/communication/tasks/planning` | ✅ | Planning des tâches (jour/semaine) |
+| POST/PUT/DELETE | `/api/communication/tasks` | ✅ | CRUD tâches |
+| GET | `/api/communication/tasks/pdf` | ✅ | Export PDF planning |
 
 ### Stock & Commandes
 
@@ -680,8 +703,10 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 - **Fonctionnalités** : Conversations temps réel, notifications, historique
 
 ### 📢 Module Communication
-- **Composants** : `CommunicationPanel`
+- **Composants** : `CommunicationPanel`, `TaskPlanningPanel`, `TaskEditModal`, `TaskPDFExportModal`
 - **Fonctionnalités** : Événements d'entreprise (calendrier), notes internes, toggle visibilité affichage écran, endpoint `/display-events` pour écrans déportés
+- **Planning tâches** : Vue jour/semaine, 9 sections ordonnées (RDV, priorités, courses, prépa, opérationnel, événements, secondaires, manuelles), édition individuelle
+- **Export PDF** : Génération PDF une page avec badges colorés, enrichissement par affaire
 
 ### ✉️ Module Mailing
 - **Composants** : `MailingPanel`
@@ -697,7 +722,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 - **Fonctionnalités** : Gestion fournisseurs, commandes, lignes de commande, suivi de réception
 
 ### 📱 Module Mobile
-- **Composants** : `MobileApp`, `MobileHome`, `MobileLogin`, `MobilePlanning`, `MobileReservations`, `MobileMaintenances`, `MobileAvailability`, `MobilePersonnel`, `MobileMessaging`, `MobileParcDashboard` et 4 autres
+- **Composants** : `MobileApp`, `MobileHome`, `MobileLogin`, `MobilePlanning`, `MobileReservations`, `MobileMaintenances`, `MobileAvailability`, `MobilePersonnel`, `MobileMessaging`, `MobileParcDashboard`, `MobileEquipmentQR`, `MobileLocation`, `MobileLeaves`, `MobileOrders`, `MobileEquipment` et 1 autre
 - **Accès** : Via `/mobile` ou QR code
 - **PWA** : Service Worker + manifest pour installation
 
@@ -705,6 +730,11 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 - **Composants** : `GoogleCalendarConfig`, `ManagementPanel` (multi-onglets)
 - **Onglets** : Véhicules, Clients, Conducteurs, Lieux, Personnel, Mon compte, Demandes, Utilisateurs, Import/Export, Config Google, Accès Mobile, Plan Dépôt
 - **Configuration stockée** : Google Client ID, Calendar ID, Maps API Key, adresse entreprise
+
+### 📒 Module Annuaire
+- **Composants** : `AnnuairePanel`
+- **Backend** : `annuaireRoutes.js` (~833 lignes)
+- **Fonctionnalités** : Répertoire unifié clients/fournisseurs/prestataires, contacts multiples par entité, recherche globale, import CSV/Excel, lookups rapides
 
 ---
 
@@ -1057,13 +1087,21 @@ conversations → conversation_participants, messages
 
 | Métrique | Valeur |
 |----------|--------|
-| Tables DB | 56 |
-| Routes API | ~267 |
-| Composants React (desktop) | 79 |
-| Composants React (mobile) | 14 |
+| Tables DB | 79 |
+| Routes API | ~350+ |
+| Composants React (desktop) | 82 |
+| Composants React (mobile) | 16 |
+| Composants DisplayDashboard | 20 |
+| Total composants React | 118 |
 | Utilitaires | 13 |
-| Hooks custom | 7 |
-| Méthodes API client | ~242 |
+| Hooks custom | 6 |
+| Méthodes API client | ~350 |
 | Code splitting (lazy) | ~15 composants |
 | Stores IndexedDB | 12 |
-| Fichiers routes backend | 11 |
+| Fichiers routes backend | 15 |
+| Lignes backend total | ~17 765 |
+| Lignes frontend composants | ~58 314 |
+| Palettes de thème | 7 (défaut + 6 Flat Design) |
+| Variables CSS --theme-* | ~145 |
+| Migrations SQL | 17 |
+| Scripts utilitaires | 15 |

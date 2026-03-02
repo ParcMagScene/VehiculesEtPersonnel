@@ -59,7 +59,10 @@
 | Catalogue | 📦 | Équipements catalogue (familles, catégories) |
 | Équipements | 🏷️ | Matériel individualisé (UID, SAV, localisation) |
 | Camions | 🚛 | Modèles de camions (chargement 3D) |
-| Communication | 📢 | Événements d'entreprise, notes internes |
+| Communication | 📢 | Événements d'entreprise, notes internes, planning tâches |
+| Mailing | ✉️ | Templates, envoi groupé, historique campagnes |
+| Annuaire | 📒 | Clients, fournisseurs, prestataires, contacts |
+| Dashboard Écrans | 📺 | Affichage dynamique : écrans, playlists, médias |
 | Stock | 📊 | Mouvements de stock, inventaire |
 | Commandes | 🛒 | Commandes fournisseurs |
 
@@ -158,7 +161,20 @@ Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès 
 ### Communication & Mailing
 - Événements d'entreprise (calendrier, affichage écran déporté)
 - Notes internes
+- **Planning des tâches** : Vue jour/semaine, 9 sections, édition individuelle, export PDF
 - Mailing avancé : templates, envoi groupé, historique
+
+### Annuaire
+- Répertoire unifié : clients, fournisseurs, prestataires
+- Contacts multiples par entité
+- Recherche globale sur tous les types
+- Import CSV/Excel de contacts
+
+### Dashboard Écrans
+- Gestion multi-écrans d'affichage dynamique
+- Playlists de contenu, médias, messages
+- Templates de mise en page, messages de bienvenue
+- Logs d'activité
 
 ### Stock & Commandes
 - Mouvements entrées/sorties, inventaire
@@ -231,6 +247,6 @@ Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès 
 
 ---
 
-**Version :** 3.0
-**Dernière mise à jour :** 26 février 2026
+**Version :** 4.0
+**Dernière mise à jour :** 2 mars 2026
 © MagScene — Usage interne uniquement

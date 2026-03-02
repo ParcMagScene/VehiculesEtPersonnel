@@ -1,13 +1,17 @@
 // ScreensTab — Liste et gestion des écrans d'affichage
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Monitor, Wifi, WifiOff, MapPin, Settings, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
+import { Monitor, Wifi, WifiOff, MapPin, Settings, Trash2, ToggleLeft, ToggleRight, Plus } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 
-function ScreensTab({ currentUser, refreshKey, onEdit, onRefresh }) {
+const ScreenFormModal = lazy(() => import('./ScreenFormModal'));
+
+function ScreensTab({ currentUser, refreshKey, onRefresh }) {
   const toast = useToast();
   const [screens, setScreens] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showScreenModal, setShowScreenModal] = useState(false);
+  const [editingScreen, setEditingScreen] = useState(null);
 
   const loadScreens = useCallback(async () => {
     try {
@@ -48,6 +52,13 @@ function ScreensTab({ currentUser, refreshKey, onEdit, onRefresh }) {
 
   const isAdmin = currentUser?.isAdmin;
 
+  const handleScreenSaved = useCallback(() => {
+    setShowScreenModal(false);
+    setEditingScreen(null);
+    onRefresh();
+    toast.success('Écran enregistré');
+  }, [onRefresh, toast]);
+
   if (loading) return <div className="display-loading">Chargement des écrans…</div>;
 
   if (screens.length === 0) {
@@ -61,7 +72,15 @@ function ScreensTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   }
 
   return (
-    <div className="display-screens-grid">
+    <div className="display-screens-list">
+      {isAdmin && (
+        <div className="screens-toolbar">
+          <button className="btn-primary-sm" onClick={() => { setEditingScreen(null); setShowScreenModal(true); }}>
+            <Plus size={14} /> Nouvel écran
+          </button>
+        </div>
+      )}
+      <div className="display-grid">
       {screens.map(screen => (
         <div key={screen.id} className={`display-screen-card ${screen.status === 'online' ? 'online' : 'offline'}`}>
           <div className="screen-card-header">
@@ -102,7 +121,7 @@ function ScreensTab({ currentUser, refreshKey, onEdit, onRefresh }) {
 
           {isAdmin && (
             <div className="screen-actions">
-              <button className="btn-icon-sm" onClick={() => onEdit(screen)} title="Modifier">
+              <button className="btn-icon-sm" onClick={() => { setEditingScreen(screen); setShowScreenModal(true); }} title="Modifier">
                 <Settings size={14} />
               </button>
               <button className="btn-icon-sm" onClick={() => handleToggle(screen)} title={screen.is_active ? 'Désactiver' : 'Activer'}>
@@ -115,6 +134,17 @@ function ScreensTab({ currentUser, refreshKey, onEdit, onRefresh }) {
           )}
         </div>
       ))}
+      </div>
+
+      {showScreenModal && (
+        <Suspense fallback={null}>
+          <ScreenFormModal
+            screen={editingScreen}
+            onSave={handleScreenSaved}
+            onClose={() => { setShowScreenModal(false); setEditingScreen(null); }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

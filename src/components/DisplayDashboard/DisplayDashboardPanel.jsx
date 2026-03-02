@@ -4,8 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
-import { Monitor, RefreshCw, Plus,
-         Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
+import { Monitor, Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import './DisplayDashboardPanel.css';
@@ -19,9 +18,6 @@ const LocationIconsTab = lazy(() => import('./LocationIconsTab'));
 const SneakyTab = lazy(() => import('./SneakyTab'));
 const SonosTab = lazy(() => import('./SonosTab'));
 const TVPreviewPanel = lazy(() => import('./TVPreviewPanel'));
-
-// Lazy modals
-const ScreenFormModal = lazy(() => import('./ScreenFormModal'));
 
 const CONFIG_TABS = [
   { id: 'screens', label: 'Écrans', icon: Monitor },
@@ -39,7 +35,6 @@ const TV_PREVIEW_TAB_IDS = new Set(['appearance', 'welcomeMessages', 'colorRules
 function DisplayDashboardPanel({ currentUser }) {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState('screens');
-  const [stats, setStats] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewOverrides, setPreviewOverrides] = useState({});
 
@@ -54,76 +49,12 @@ function DisplayDashboardPanel({ currentUser }) {
     setPreviewOverrides({});
   }, [activeTab]);
 
-  // Modals
-  const [showScreenModal, setShowScreenModal] = useState(false);
-  const [editingScreen, setEditingScreen] = useState(null);
-
-  // Charger les stats
-  const loadStats = useCallback(async () => {
-    try {
-      const data = await api.getDisplayStats();
-      setStats(data);
-    } catch {
-      // Stats optionnelles
-    }
-  }, []);
-
-  useEffect(() => {
-    loadStats();
-  }, [loadStats, refreshKey]);
-
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
   }, []);
 
-  // Handlers modals
-  const handleCreateScreen = useCallback(() => {
-    setEditingScreen(null);
-    setShowScreenModal(true);
-  }, []);
-  const handleEditScreen = useCallback((screen) => {
-    setEditingScreen(screen);
-    setShowScreenModal(true);
-  }, []);
-  const handleScreenSaved = useCallback(() => {
-    setShowScreenModal(false);
-    setEditingScreen(null);
-    handleRefresh();
-    toast.success('Écran enregistré');
-  }, [handleRefresh, toast]);
-
-  // Bouton d'action par onglet
-  const getActionButton = () => {
-    if (activeTab === 'screens' && currentUser?.isAdmin) {
-      return (
-        <button className="btn-primary-sm" onClick={handleCreateScreen}>
-          <Plus size={14} /> Nouvel écran
-        </button>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="display-dashboard">
-      {/* Header actions */}
-      <div className="display-dashboard-header">
-        <div className="display-stats-row">
-          {stats && (
-            <span className="display-stat">
-              <Monitor size={14} />
-              {stats.screens?.online || 0}/{stats.screens?.total || 0} écrans
-            </span>
-          )}
-        </div>
-        <div className="display-header-actions">
-          {getActionButton()}
-          <button className="btn-icon-sm" onClick={handleRefresh} title="Rafraîchir">
-            <RefreshCw size={14} />
-          </button>
-        </div>
-      </div>
-
       {/* Sous-onglets Configuration TV */}
       <div className="display-tabs-container">
         <div className="display-tabs-group">
@@ -154,7 +85,6 @@ function DisplayDashboardPanel({ currentUser }) {
             <ScreensTab
               currentUser={currentUser}
               refreshKey={refreshKey}
-              onEdit={handleEditScreen}
               onRefresh={handleRefresh}
             />
           )}
@@ -186,16 +116,6 @@ function DisplayDashboardPanel({ currentUser }) {
         )}
       </div>
 
-      {/* Modals */}
-      {showScreenModal && (
-        <Suspense fallback={null}>
-          <ScreenFormModal
-            screen={editingScreen}
-            onSave={handleScreenSaved}
-            onClose={() => { setShowScreenModal(false); setEditingScreen(null); }}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

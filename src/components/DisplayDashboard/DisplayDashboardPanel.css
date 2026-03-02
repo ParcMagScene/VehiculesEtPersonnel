@@ -150,6 +150,12 @@
 }
 
 /* ─── Grille de cartes (Screens, Templates) ─── */
+.screens-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .display-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

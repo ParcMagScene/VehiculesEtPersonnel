@@ -1,10 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
-// TVPreviewPanel — Volet droit avec deux aperçus miniatures
-// du Dashboard TV (écran actuel + aperçu modifications en cours)
+// TVPreviewPanel — Volet droit avec deux moniteurs
+// « Direct » (diffusion en cours) + « Preview » (après validation)
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { Monitor, Eye, RefreshCw } from 'lucide-react';
+import { Monitor, Eye, RefreshCw, Radio } from 'lucide-react';
 import api from '../../utils/api';
 import TVScreenMini from './TVScreenMini';
 
@@ -61,11 +61,11 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey }) {
 
   return (
     <div className="tv-preview-panel">
-      {/* ─── Écran actuel (sauvegardé) ─── */}
-      <div className="tv-preview-zone">
+      {/* ─── Direct (diffusion en cours) ─── */}
+      <div className="tv-preview-zone live">
         <div className="tv-preview-label">
-          <Monitor size={12} />
-          <span>Écran actuel</span>
+          <Radio size={12} />
+          <span>Direct</span>
           <button
             className="tv-preview-refresh"
             onClick={fetchLiveState}
@@ -83,17 +83,17 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey }) {
         </div>
       </div>
 
-      {/* ─── Aperçu modifications en cours ─── */}
+      {/* ─── Preview (après validation des changements) ─── */}
       <div className="tv-preview-zone draft">
         <div className="tv-preview-label">
           <Eye size={12} />
-          <span>Aperçu modifications</span>
+          <span>Preview</span>
         </div>
         <div className="tv-preview-frame">
           {draftState ? (
             <TVScreenMini state={draftState} />
           ) : (
-            <div className="tv-preview-empty">Modifiez les paramètres pour voir l'aperçu</div>
+            <div className="tv-preview-empty">Modifiez la configuration pour prévisualiser</div>
           )}
         </div>
       </div>

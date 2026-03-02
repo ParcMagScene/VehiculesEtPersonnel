@@ -666,7 +666,7 @@
 
 .ath-status { width: 20px; flex-shrink: 0; }
 .ath-numero { width: 80px; flex-shrink: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ath-type { width: 80px; flex-shrink: 1; min-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-type { width: 100px; flex-shrink: 1; min-width: 85px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-dates { width: 200px; flex-shrink: 1; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-client { flex: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-titre { flex: 1.5; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -803,9 +803,9 @@
 }
 
 .ar-type {
-  width: 80px;
+  width: 100px;
   flex-shrink: 1;
-  min-width: 50px;
+  min-width: 85px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

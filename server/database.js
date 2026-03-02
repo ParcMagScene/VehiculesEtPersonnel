@@ -1824,12 +1824,13 @@ function initializeDatabase() {
         time TEXT,
         end_time TEXT,
         section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
-          'prep_locations', 'prep_prestations', 'prep_ventes',
-          'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
+          'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+          'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+          'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
         )),
         title TEXT,
         notes TEXT DEFAULT '',
-        source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event')),
+        source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
         source_id TEXT,
         google_event_title TEXT,
         affaire_num TEXT,
@@ -1894,11 +1895,12 @@ function initializeDatabase() {
             end_time TEXT,
             section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
               'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
-              'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
+              'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+              'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
             )),
             title TEXT,
             notes TEXT DEFAULT '',
-            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event')),
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
             source_id TEXT,
             google_event_title TEXT,
             affaire_num TEXT,
@@ -1928,6 +1930,172 @@ function initializeDatabase() {
     } catch (migErr) {
       try { db.exec('ROLLBACK'); } catch(e) {}
       logger.warn('Migration CHECK constraint section:', migErr.message);
+    }
+
+    // Migration : corriger le CHECK constraint source_type pour inclure 'affaire'
+    try {
+      const checkInfo2 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+      if (checkInfo2 && checkInfo2.sql && !checkInfo2.sql.includes("'affaire'")) {
+        logger.info('Migration: correction CHECK constraint source_type de task_assignments...');
+        db.exec('BEGIN TRANSACTION');
+        db.exec(`
+          CREATE TABLE task_assignments_new (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            display_event_id TEXT REFERENCES dynamic_display_events(id) ON DELETE SET NULL,
+            person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+            date TEXT NOT NULL,
+            period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+            time TEXT,
+            end_time TEXT,
+            section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
+              'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+              'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+              'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
+            )),
+            title TEXT,
+            notes TEXT DEFAULT '',
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
+            source_id TEXT,
+            google_event_title TEXT,
+            affaire_num TEXT,
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
+            visible INTEGER DEFAULT 1,
+            created_by INTEGER REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            modified_by INTEGER,
+            modified_at TEXT
+          )
+        `);
+        const oldCols2 = db.pragma('table_info(task_assignments)').map(c => c.name);
+        const newCols2 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
+        const commonCols2 = oldCols2.filter(c => newCols2.includes(c)).join(', ');
+        db.exec(`INSERT INTO task_assignments_new (${commonCols2}) SELECT ${commonCols2} FROM task_assignments`);
+        db.exec('DROP TABLE task_assignments');
+        db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_person ON task_assignments(person_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+        db.exec('COMMIT');
+        logger.info('✅ CHECK constraint source_type corrigé (ajout affaire)');
+      }
+    } catch (migErr2) {
+      try { db.exec('ROLLBACK'); } catch(e) {}
+      logger.warn('Migration CHECK constraint source_type:', migErr2.message);
+    }
+
+    // Migration : ajouter les sections opérationnelles (chargement, depart, enlevement, retour, recuperation, evenements)
+    try {
+      const checkInfo3 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+      if (checkInfo3 && checkInfo3.sql && !checkInfo3.sql.includes("'chargement'")) {
+        logger.info('Migration: ajout sections opérationnelles à task_assignments...');
+        db.exec('BEGIN TRANSACTION');
+        db.exec(`
+          CREATE TABLE task_assignments_new (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            display_event_id TEXT REFERENCES dynamic_display_events(id) ON DELETE SET NULL,
+            person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+            date TEXT NOT NULL,
+            period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+            time TEXT,
+            end_time TEXT,
+            section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
+              'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+              'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+              'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
+            )),
+            title TEXT,
+            notes TEXT DEFAULT '',
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
+            source_id TEXT,
+            google_event_title TEXT,
+            affaire_num TEXT,
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
+            visible INTEGER DEFAULT 1,
+            created_by INTEGER REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            modified_by INTEGER,
+            modified_at TEXT
+          )
+        `);
+        const oldCols3 = db.pragma('table_info(task_assignments)').map(c => c.name);
+        const newCols3 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
+        const commonCols3 = oldCols3.filter(c => newCols3.includes(c)).join(', ');
+        db.exec(`INSERT INTO task_assignments_new (${commonCols3}) SELECT ${commonCols3} FROM task_assignments`);
+        // Migrer les anciennes tâches vers les nouvelles sections
+        db.exec(`UPDATE task_assignments_new SET section = 'chargement' WHERE section = 'taches_prioritaires' AND title LIKE '%Chargement%'`);
+        db.exec(`UPDATE task_assignments_new SET section = 'depart' WHERE section = 'taches_prioritaires' AND title LIKE '%Départ%'`);
+        db.exec(`UPDATE task_assignments_new SET section = 'enlevement' WHERE section = 'taches_prioritaires' AND title LIKE '%Enlèvement%'`);
+        db.exec(`UPDATE task_assignments_new SET section = 'retour' WHERE section = 'taches_secondaires' AND title LIKE '%Retour%'`);
+        db.exec(`UPDATE task_assignments_new SET section = 'recuperation' WHERE section = 'taches_secondaires' AND title LIKE '%Récupération%'`);
+        db.exec('DROP TABLE task_assignments');
+        db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_person ON task_assignments(person_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+        db.exec('COMMIT');
+        logger.info('✅ Sections opérationnelles ajoutées (chargement, depart, enlevement, retour, recuperation, evenements)');
+      }
+    } catch (migErr3) {
+      try { db.exec('ROLLBACK'); } catch(e) {}
+      logger.warn('Migration sections opérationnelles:', migErr3.message);
+    }
+
+    // Migration : ajouter la section 'installation' pour les tâches d'affaires de type Installation
+    try {
+      const checkInfo4 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+      if (checkInfo4 && checkInfo4.sql && !checkInfo4.sql.includes("'installation'")) {
+        logger.info('Migration: ajout section installation à task_assignments...');
+        db.exec('BEGIN TRANSACTION');
+        db.exec(`
+          CREATE TABLE task_assignments_new (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            display_event_id TEXT REFERENCES dynamic_display_events(id) ON DELETE SET NULL,
+            person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+            date TEXT NOT NULL,
+            period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+            time TEXT,
+            end_time TEXT,
+            section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
+              'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+              'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+              'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
+            )),
+            title TEXT,
+            notes TEXT DEFAULT '',
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
+            source_id TEXT,
+            google_event_title TEXT,
+            affaire_num TEXT,
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
+            visible INTEGER DEFAULT 1,
+            created_by INTEGER REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            modified_by INTEGER,
+            modified_at TEXT
+          )
+        `);
+        const oldCols4 = db.pragma('table_info(task_assignments)').map(c => c.name);
+        const newCols4 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
+        const commonCols4 = oldCols4.filter(c => newCols4.includes(c)).join(', ');
+        db.exec(`INSERT INTO task_assignments_new (${commonCols4}) SELECT ${commonCols4} FROM task_assignments`);
+        db.exec(`UPDATE task_assignments_new SET section = 'installation' WHERE title LIKE '%Installation%' AND source_type = 'affaire'`);
+        db.exec('DROP TABLE task_assignments');
+        db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_person ON task_assignments(person_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+        db.exec('COMMIT');
+        logger.info('✅ Section installation ajoutée');
+      }
+    } catch (migErr4) {
+      try { db.exec('ROLLBACK'); } catch(e) {}
+      logger.warn('Migration section installation:', migErr4.message);
     }
 
     // Migration : colonnes enrichies pour bl_imports (Phase 5)
@@ -2131,6 +2299,56 @@ function initializeDatabase() {
     logger.info('  ✅ Module Dashboard (écrans, playlists, médias, messages, templates, logs)');
   } catch (error) {
     logger.warn('⚠️ Migration Dashboard:', error.message);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Module Dashboard TV — Config apparence, messages accueil, couleurs, icônes, Sonos
+  // ═══════════════════════════════════════════════════════════════
+  try {
+    // --- Configuration clé/valeur (apparence, sonos, météo…) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_config (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+
+    // --- Messages d'accueil par jour / créneau ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_welcome_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        day TEXT NOT NULL,
+        slot TEXT NOT NULL,
+        message TEXT NOT NULL DEFAULT '',
+        UNIQUE(day, slot)
+      )
+    `);
+
+    // --- Règles de couleurs événements (mot-clé → couleur) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_color_rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        keyword TEXT NOT NULL,
+        color TEXT NOT NULL DEFAULT '#00e1ff',
+        description TEXT DEFAULT '',
+        sort_order INTEGER DEFAULT 0
+      )
+    `);
+
+    // --- Règles d'icônes de lieux (mot-clé → gif) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_location_icon_rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        keyword TEXT NOT NULL,
+        gif_filename TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0
+      )
+    `);
+
+    logger.info('  ✅ Module Dashboard TV (config, messages accueil, couleurs, icônes)');
+  } catch (error) {
+    logger.warn('⚠️ Migration Dashboard TV:', error.message);
   }
 
   // ═══════════════════════════════════════════════════════════════

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw } from 'lucide-react';
+import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw } from 'lucide-react';
 import api, { getApiUrl } from '../utils/api';
 import { formatPhoneDisplay } from './PhoneInput';
 import { format } from 'date-fns';
@@ -22,6 +22,35 @@ const AFFAIRE_TYPES = [
   { value: 'Vente', label: 'Vente', color: '#8b5cf6' },
 ];
 const getTypeInfo = (type) => AFFAIRE_TYPES.find(t => t.value === type) || AFFAIRE_TYPES[0];
+
+// ═══ Étapes de tâches opérationnelles ═══
+const TASK_STEPS = [
+  { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: '#6366f1', defaultSection: 'prep_locations' },
+  { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: '#f59e0b', defaultSection: 'chargement' },
+  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: '#3b82f6', defaultSection: 'depart',       typeRestriction: 'Prestation' },
+  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: '#f97316', defaultSection: 'courses',      typeRestriction: 'Location' },
+  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: '#10b981', defaultSection: 'enlevement',   typeRestriction: 'Location' },
+  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: '#8b5cf6', defaultSection: 'retour',       typeRestriction: 'Prestation' },
+  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'recuperation', typeRestriction: 'Location' },
+  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: '#10b981', defaultSection: 'installation' },
+];
+
+// Filtrer les étapes selon le type d'affaire
+const getVisibleSteps = (affaireType) => TASK_STEPS.filter(s => !s.typeRestriction || s.typeRestriction === affaireType);
+
+const AFFAIRE_TYPE_SECTIONS = {
+  'Location':     'prep_locations',
+  'Prestation':   'prep_prestations',
+  'Vente':        'prep_ventes',
+  'Installation': 'prep_installations',
+};
+
+const TASK_STATUS_MAP = {
+  pending:     { label: 'En attente', color: '#94a3b8', bg: '#f1f5f9' },
+  in_progress: { label: 'En cours',  color: '#f59e0b', bg: '#fef3c7' },
+  done:        { label: 'Terminé',   color: '#10b981', bg: '#d1fae5' },
+  cancelled:   { label: 'Annulé',    color: '#ef4444', bg: '#fee2e2' },
+};
 
 const fmtDate = (dateStr) => {
   if (!dateStr) return '—';
@@ -55,8 +84,8 @@ const extractLinksFromText = (text) => {
 // Contenu partagé (sections de détail)
 // ═══════════════════════════════════════
 
-const AffaireDetailContent = ({ affaire, reservations = [], missions = [], persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity }) => {
-  const typeInfo = getTypeInfo(affaire.type);
+const AffaireDetailContent = ({ affaire, reservations = [], missions = [], persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity, isEditing = false, editForm = null, setEditForm = null }) => {
+  const typeInfo = getTypeInfo(isEditing && editForm ? editForm.type : affaire.type);
 
   // ═══ États pour les actions (mode éditable) ═══
   const [showReservationModal, setShowReservationModal] = useState(false);
@@ -316,6 +345,149 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     loadBLImports();
   }, [affaire.numeroAffaire]);
 
+  // ═══ Tâches de planification liées à l'affaire ═══
+  const [affaireTasks, setAffaireTasks] = useState([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [savingTasks, setSavingTasks] = useState(false);
+
+  // État des étapes — initialisé à partir des tâches existantes
+  const [taskSteps, setTaskSteps] = useState(() => {
+    const init = {};
+    TASK_STEPS.forEach(s => { init[s.key] = { enabled: false, date: '', time: '', endTime: '', period: '', notes: '', taskId: null, status: 'pending' }; });
+    return init;
+  });
+
+  const loadAffaireTasks = useCallback(async () => {
+    if (!affaire.numeroAffaire) { setAffaireTasks([]); return; }
+    setIsLoadingTasks(true);
+    try {
+      const tasks = await api.getTasks({ affaire_num: affaire.numeroAffaire });
+      const list = Array.isArray(tasks) ? tasks : [];
+      setAffaireTasks(list);
+      // Synchroniser les toggles avec les tâches existantes
+      const updated = {};
+      TASK_STEPS.forEach(step => {
+        const existing = list.find(t => (t.title || '').toLowerCase().includes(step.label.toLowerCase()));
+        updated[step.key] = existing ? {
+          enabled: true,
+          date: existing.date || '',
+          time: existing.time || '',
+          endTime: existing.end_time || '',
+          period: existing.period || '',
+          notes: existing.notes || '',
+          taskId: existing.id,
+          status: existing.status || 'pending',
+        } : {
+          enabled: false,
+          date: affaire.dateDebut || '',
+          time: '',
+          endTime: '',
+          period: (step.key === 'preparation' || step.key === 'chargement') ? 'AM' : 'PM',
+          notes: '',
+          taskId: null,
+          status: 'pending',
+        };
+      });
+      setTaskSteps(updated);
+    } catch { setAffaireTasks([]); }
+    setIsLoadingTasks(false);
+  }, [affaire.numeroAffaire, affaire.dateDebut]);
+
+  useEffect(() => { loadAffaireTasks(); }, [loadAffaireTasks]);
+
+  const toggleTaskStep = (key) => {
+    setTaskSteps(prev => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled } }));
+  };
+
+  const updateTaskStep = (key, field, value) => {
+    setTaskSteps(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+  };
+
+  const getSectionForStep = useCallback((stepKey) => {
+    if (stepKey === 'preparation') {
+      return AFFAIRE_TYPE_SECTIONS[affaire.type] || 'prep_locations';
+    }
+    return TASK_STEPS.find(s => s.key === stepKey)?.defaultSection || 'manual';
+  }, [affaire.type]);
+
+  // Sauvegarder toutes les modifications d'étapes
+  const handleSaveTaskSteps = useCallback(async () => {
+    setSavingTasks(true);
+    try {
+      const eventName = affaire.eventName || affaire.event_name || affaire.titre || affaire.numeroAffaire;
+      const toCreate = [];
+      const toUpdate = [];
+      const toDelete = [];
+
+      for (const step of TASK_STEPS) {
+        const s = taskSteps[step.key];
+        if (!s) continue;
+        if (s.enabled && !s.taskId) {
+          // Nouvelle étape activée → créer
+          toCreate.push({
+            date: s.date, period: s.period || null, time: s.time || null, end_time: s.endTime || null,
+            section: getSectionForStep(step.key),
+            title: `${step.emoji} ${step.label}`,
+            notes: s.notes || '', source_type: 'affaire', source_id: affaire.id ? String(affaire.id) : null,
+            affaire_num: affaire.numeroAffaire, google_event_title: eventName,
+            status: s.status || 'pending',
+          });
+        } else if (s.enabled && s.taskId) {
+          // Étape existante modifiée → mettre à jour
+          toUpdate.push({
+            id: s.taskId,
+            date: s.date, period: s.period || null, time: s.time || null, end_time: s.endTime || null,
+            section: getSectionForStep(step.key),
+            title: `${step.emoji} ${step.label}`,
+            google_event_title: eventName,
+            notes: s.notes || '', status: s.status || 'pending',
+          });
+        } else if (!s.enabled && s.taskId) {
+          // Étape désactivée qui existait → supprimer
+          toDelete.push(s.taskId);
+        }
+      }
+
+      // Exécuter les opérations
+      if (toCreate.length > 0) await api.createTasksBatch(toCreate);
+      for (const upd of toUpdate) await api.updateTask(upd.id, upd);
+      for (const id of toDelete) await api.deleteTask(id);
+
+      const total = toCreate.length + toUpdate.length + toDelete.length;
+      if (total > 0) {
+        showFeedback({ type: 'success', message: `Planification mise à jour (${toCreate.length} créée${toCreate.length > 1 ? 's' : ''}, ${toUpdate.length} modifiée${toUpdate.length > 1 ? 's' : ''}, ${toDelete.length} supprimée${toDelete.length > 1 ? 's' : ''})` });
+        loadAffaireTasks();
+      }
+    } catch (err) {
+      console.error('Erreur sauvegarde tâches:', err);
+      showFeedback({ type: 'error', message: 'Erreur: ' + err.message }, 4000);
+    } finally {
+      setSavingTasks(false);
+    }
+  }, [taskSteps, affaire, getSectionForStep, showFeedback, loadAffaireTasks]);
+
+  // Nombre d'étapes activées
+  const visibleSteps = useMemo(() => getVisibleSteps(affaire.type), [affaire.type]);
+  const enabledStepCount = useMemo(() => visibleSteps.filter(s => taskSteps[s.key]?.enabled).length, [taskSteps, visibleSteps]);
+  // Vérifier si des changements non sauvegardés existent
+  const hasTaskChanges = useMemo(() => {
+    for (const step of visibleSteps) {
+      const s = taskSteps[step.key];
+      if (!s) continue;
+      const existingTask = affaireTasks.find(t => t.id === s.taskId);
+      if (s.enabled && !s.taskId) return true; // nouvelle étape activée
+      if (!s.enabled && s.taskId) return true;  // étape existante désactivée
+      if (s.enabled && existingTask) {
+        if (s.date !== (existingTask.date || '')) return true;
+        if (s.time !== (existingTask.time || '')) return true;
+        if (s.endTime !== (existingTask.end_time || '')) return true;
+        if (s.period !== (existingTask.period || '')) return true;
+        if (s.notes !== (existingTask.notes || '')) return true;
+      }
+    }
+    return false;
+  }, [taskSteps, affaireTasks]);
+
   // ═══ Articles BL (Vente / Installation) ═══
   const [blArticles, setBlArticles] = useState([]);
   const showArticles = affaire.type === 'Vente' || affaire.type === 'Installation';
@@ -460,6 +632,58 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         <h3 className="detail-section-title">
           <Briefcase size={15} /> Détails
         </h3>
+        {isEditing && editForm && setEditForm ? (
+          <div className="detail-grid edit-mode">
+            <div className="detail-field">
+              <label>N° Affaire</label>
+              <input type="text" value={editForm.numeroAffaire} onChange={(e) => setEditForm(f => ({ ...f, numeroAffaire: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field">
+              <label>Type</label>
+              <select value={editForm.type} onChange={(e) => setEditForm(f => ({ ...f, type: e.target.value }))} className="edit-input">
+                {AFFAIRE_TYPES.map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="detail-field">
+              <label>Client</label>
+              <input type="text" value={editForm.client} onChange={(e) => setEditForm(f => ({ ...f, client: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field">
+              <label>Interlocuteur</label>
+              <input type="text" value={editForm.interlocuteur} onChange={(e) => setEditForm(f => ({ ...f, interlocuteur: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field">
+              <label><Phone size={12} /> Téléphone</label>
+              <input type="text" value={editForm.tel} onChange={(e) => setEditForm(f => ({ ...f, tel: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field">
+              <label>Devis</label>
+              <input type="text" value={editForm.devis} onChange={(e) => setEditForm(f => ({ ...f, devis: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field">
+              <label><Calendar size={12} /> Date début</label>
+              <input type="date" value={editForm.dateDebut} onChange={(e) => setEditForm(f => ({ ...f, dateDebut: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field">
+              <label><Calendar size={12} /> Date fin</label>
+              <input type="date" value={editForm.dateFin} onChange={(e) => setEditForm(f => ({ ...f, dateFin: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field full-width">
+              <label><MapPin size={12} /> Lieu / Adresse</label>
+              <input type="text" value={editForm.adresseLivraison} onChange={(e) => setEditForm(f => ({ ...f, adresseLivraison: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field full-width">
+              <label><FileText size={12} /> Titre / Événement</label>
+              <input type="text" value={editForm.titre} onChange={(e) => setEditForm(f => ({ ...f, titre: e.target.value }))} className="edit-input" />
+            </div>
+            <div className="detail-field full-width">
+              <label>Description</label>
+              <textarea value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} className="edit-input edit-textarea" rows={3} />
+            </div>
+          </div>
+        ) : (
         <div className="detail-grid">
           <div className="detail-field">
             <label>N° Affaire</label>
@@ -520,6 +744,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             </div>
           )}
         </div>
+        )}
       </section>
 
       {/* ═══ Feedback action ═══ */}
@@ -623,6 +848,80 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           )}
         </section>
       )}
+
+      {/* ═══ Section 2c : Planification opérationnelle ═══ */}
+      <section className="detail-section">
+        <h3 className="detail-section-title">
+          <ClipboardList size={15} /> Planification
+          <span className="section-count">{enabledStepCount}/{visibleSteps.length}</span>
+        </h3>
+
+        {isLoadingTasks ? (
+          <p className="detail-empty">Chargement...</p>
+        ) : (
+          <div className="task-steps-list">
+            {visibleSteps.map(step => {
+              const s = taskSteps[step.key];
+              if (!s) return null;
+              const Icon = step.icon;
+              const statusInfo = TASK_STATUS_MAP[s.status] || TASK_STATUS_MAP.pending;
+              return (
+                <div key={step.key} className={`task-step-item ${s.enabled ? 'enabled' : ''}`} style={s.enabled ? { borderLeftColor: step.color } : {}}>
+                  <div className="task-step-header" onClick={editable ? () => toggleTaskStep(step.key) : undefined} style={editable ? { cursor: 'pointer' } : {}}>
+                    <div className="task-step-check" style={s.enabled ? { background: step.color, borderColor: step.color } : {}}>
+                      {s.enabled && <Check size={10} color="#fff" />}
+                    </div>
+                    <Icon size={14} style={{ color: step.color }} />
+                    <span className="task-step-label">{step.emoji} {step.label}</span>
+                    {s.enabled && s.taskId && (
+                      <span className="task-step-status" style={{ background: statusInfo.bg, color: statusInfo.color }}>
+                        {statusInfo.label}
+                      </span>
+                    )}
+                    {s.enabled && s.date && (
+                      <span className="task-step-date">{fmtDate(s.date)}{s.period ? ` · ${s.period === 'AM' ? 'Matin' : 'Après-midi'}` : ''}</span>
+                    )}
+                  </div>
+                  {s.enabled && editable && (
+                    <div className="task-step-fields">
+                      <div className="tsf-row">
+                        <label>Date</label>
+                        <input type="date" value={s.date} onChange={e => updateTaskStep(step.key, 'date', e.target.value)} />
+                        <label>Période</label>
+                        <select value={s.period} onChange={e => updateTaskStep(step.key, 'period', e.target.value)}>
+                          <option value="AM">Matin</option>
+                          <option value="PM">Après-midi</option>
+                        </select>
+                      </div>
+                      <div className="tsf-row">
+                        <label>Début</label>
+                        <input type="time" value={s.time} onChange={e => updateTaskStep(step.key, 'time', e.target.value)} />
+                        <label>Fin</label>
+                        <input type="time" value={s.endTime} onChange={e => updateTaskStep(step.key, 'endTime', e.target.value)} />
+                      </div>
+                      <div className="tsf-row">
+                        <label>Notes</label>
+                        <input type="text" placeholder="Notes..." value={s.notes} onChange={e => updateTaskStep(step.key, 'notes', e.target.value)} className="tsf-notes" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Bouton Enregistrer si des changements existent */}
+            {editable && hasTaskChanges && (
+              <div className="task-form-actions">
+                <button className="section-action-btn" onClick={loadAffaireTasks}>Annuler</button>
+                <button className="section-action-btn primary" onClick={handleSaveTaskSteps} disabled={savingTasks}>
+                  {savingTasks ? <Loader size={13} className="spin" /> : <Save size={13} />}
+                  Enregistrer la planification
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
 
       {/* ═══ Section 3 : Personnel affecté ═══ */}
       <section className="detail-section">
@@ -1213,6 +1512,93 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
   const [showDisplayDialog, setShowDisplayDialog] = useState(false);
   const [hasBLImports, setHasBLImports] = useState(false);
 
+  // ═══ Mode édition ═══
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const startEditing = useCallback(() => {
+    setEditForm({
+      numeroAffaire: affaire.numeroAffaire || '',
+      type: affaire.type || 'Prestation',
+      client: affaire.client || '',
+      interlocuteur: affaire.interlocuteur || '',
+      tel: affaire.tel || '',
+      fax: affaire.fax || '',
+      dateDebut: affaire.dateDebut || '',
+      dateFin: affaire.dateFin || '',
+      devis: affaire.devis || '',
+      adresseLivraison: affaire.adresseLivraison || '',
+      titre: affaire.titre || affaire.eventName || '',
+      description: affaire.description || '',
+      googleEventId: affaire.googleEventId || '',
+      eventName: affaire.eventName || '',
+    });
+    setIsEditing(true);
+  }, [affaire]);
+
+  const cancelEditing = useCallback(() => {
+    setIsEditing(false);
+    setEditForm(null);
+  }, []);
+
+  const saveEditing = useCallback(async () => {
+    if (!editForm || isSaving) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        numero_affaire: editForm.numeroAffaire,
+        type: editForm.type,
+        client: editForm.client,
+        interlocuteur: editForm.interlocuteur,
+        tel: editForm.tel,
+        fax: editForm.fax || '',
+        date_debut: editForm.dateDebut,
+        date_fin: editForm.dateFin,
+        devis: editForm.devis,
+        adresse_livraison: editForm.adresseLivraison,
+        titre: editForm.titre,
+        description: editForm.description,
+        google_event_id: editForm.googleEventId || '',
+        event_name: editForm.eventName || editForm.titre || '',
+      };
+      let result;
+      if (affaire.id) {
+        result = await api.updateAffaire(affaire.id, payload);
+      } else {
+        result = await api.createOrUpdateAffaire(payload);
+      }
+      // Construire l'objet affaire mis à jour (camelCase) pour le parent
+      const updatedAffaire = {
+        ...affaire,
+        id: result?.id || affaire.id,
+        numeroAffaire: editForm.numeroAffaire,
+        type: editForm.type,
+        client: editForm.client,
+        interlocuteur: editForm.interlocuteur,
+        tel: editForm.tel,
+        fax: editForm.fax || '',
+        dateDebut: editForm.dateDebut,
+        dateFin: editForm.dateFin,
+        devis: editForm.devis,
+        adresseLivraison: editForm.adresseLivraison,
+        titre: editForm.titre,
+        description: editForm.description,
+        googleEventId: editForm.googleEventId || '',
+        eventName: editForm.eventName || editForm.titre || '',
+        source: affaire.source || 'db',
+      };
+      setIsEditing(false);
+      setEditForm(null);
+      if (onDataChanged) onDataChanged(updatedAffaire);
+    } catch (err) {
+      console.error('Erreur sauvegarde affaire:', err);
+      alert('Erreur lors de la sauvegarde : ' + (err.message || 'Erreur serveur'));
+    } finally {
+      setIsSaving(false);
+    }
+  }, [editForm, isSaving, affaire, onDataChanged]);
+
   const refreshMissions = useCallback(() => {
     if (!affaire) return;
     api.request('/missions').then(data => {
@@ -1223,6 +1609,8 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
   useEffect(() => {
     if (!affaire) return;
     setIsClosing(false);
+    setIsEditing(false);
+    setEditForm(null);
     refreshMissions();
     // Check if BL/BP already imported
     api.getBLImports({ affaire_id: affaire.numeroAffaire }).then(data => {
@@ -1236,9 +1624,10 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
   }, [refreshMissions, onDataChanged]);
 
   const handleClose = useCallback(() => {
+    if (isEditing) { cancelEditing(); return; }
     setIsClosing(true);
     setTimeout(() => onClose(), 200);
-  }, [onClose]);
+  }, [onClose, isEditing, cancelEditing]);
 
   // Fermer avec Escape
   useEffect(() => {
@@ -1251,31 +1640,48 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
 
   if (!affaire) return null;
 
-  const typeInfo = getTypeInfo(affaire.type);
+  const typeInfo = getTypeInfo(isEditing && editForm ? editForm.type : affaire.type);
 
   return (
     <div className={`affaire-dialog-overlay ${isClosing ? 'closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
       <div className={`affaire-dialog ${isClosing ? 'closing' : ''}`}>
         <div className="dialog-header">
           <div className="dialog-title-row">
-            <span className="dialog-numero">{affaire.numeroAffaire}</span>
+            <span className="dialog-numero">{isEditing && editForm ? editForm.numeroAffaire : affaire.numeroAffaire}</span>
             <span className="dialog-type" style={{ background: typeInfo.color }}>{typeInfo.label}</span>
-            {affaire.client && <span className="dialog-client">{capitalizeText(affaire.client)}</span>}
+            {!isEditing && affaire.client && <span className="dialog-client">{capitalizeText(affaire.client)}</span>}
+            {isEditing && editForm?.client && <span className="dialog-client">{capitalizeText(editForm.client)}</span>}
           </div>
           <div className="dialog-header-actions">
-            <button className="dialog-display-btn" onClick={() => setShowDisplayDialog(true)} title="Ajouter à l'affichage dynamique">
-              📺 Affichage
-            </button>
-            <button className="dialog-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
-              {hasBLImports ? <><RefreshCw size={15} /> MAJ BL</> : <><FileText size={15} /> Import BL</>}
-            </button>
-            <button className="dialog-close" onClick={handleClose} title="Fermer">
+            {isEditing ? (
+              <>
+                <button className="dialog-cancel-btn" onClick={cancelEditing} title="Annuler les modifications">
+                  <X size={15} /> Annuler
+                </button>
+                <button className="dialog-save-btn" onClick={saveEditing} disabled={isSaving} title="Enregistrer les modifications">
+                  <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="dialog-edit-btn" onClick={startEditing} title="Modifier les informations de l'affaire">
+                  <Edit3 size={15} /> Modifier
+                </button>
+                <button className="dialog-display-btn" onClick={() => setShowDisplayDialog(true)} title="Ajouter à l'affichage dynamique">
+                  📺 Affichage
+                </button>
+                <button className="dialog-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
+                  {hasBLImports ? <><RefreshCw size={15} /> MAJ BL</> : <><FileText size={15} /> Import BL</>}
+                </button>
+              </>
+            )}
+            <button className="dialog-close" onClick={handleClose} title={isEditing ? "Annuler" : "Fermer"}>
               <X size={20} />
             </button>
           </div>
         </div>
         <div className="dialog-body">
-          <AffaireDetailContent affaire={affaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={handleDataChanged} onNavigateToEntity={onNavigateToEntity} />
+          <AffaireDetailContent affaire={affaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={!isEditing} onDataChanged={handleDataChanged} onNavigateToEntity={onNavigateToEntity} isEditing={isEditing} editForm={editForm} setEditForm={setEditForm} />
         </div>
       </div>
 

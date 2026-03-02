@@ -1035,7 +1035,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         reservations={reservations}
         googleEventIds={dialogAffaire ? (googleEventIdsMap[dialogAffaire.numeroAffaire] || []) : []}
         onClose={() => setDialogAffaire(null)}
-        onDataChanged={() => { loadDbAffaires(); }}
+        onDataChanged={(updatedAffaire) => { if (updatedAffaire) setDialogAffaire(updatedAffaire); loadDbAffaires(); }}
         onNavigateToEntity={onNavigateToEntity}
       />
 

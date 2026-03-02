@@ -5,8 +5,6 @@
 
 import React, { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
 import { Monitor, Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
-import api from '../../utils/api';
 import './DisplayDashboardPanel.css';
 
 // Lazy sub-tabs
@@ -29,16 +27,10 @@ const CONFIG_TABS = [
   { id: 'sonos', label: 'Sonos', icon: Music },
 ];
 
-// Écrans n'a pas de preview split, les autres oui
-const TV_PREVIEW_TAB_IDS = new Set(['appearance', 'welcomeMessages', 'colorRules', 'locationIcons', 'sneaky', 'sonos']);
-
 function DisplayDashboardPanel({ currentUser }) {
-  const toast = useToast();
   const [activeTab, setActiveTab] = useState('screens');
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewOverrides, setPreviewOverrides] = useState({});
-
-  const isTVTab = TV_PREVIEW_TAB_IDS.has(activeTab);
 
   const handlePreviewChange = useCallback((overrides) => {
     setPreviewOverrides(prev => ({ ...prev, ...overrides }));
@@ -74,8 +66,8 @@ function DisplayDashboardPanel({ currentUser }) {
         </div>
       </div>
 
-      {/* Corps — split layout si onglet TV actif */}
-      <div className={`display-body${isTVTab ? ' split' : ''}`}>
+      {/* Corps — split layout avec moniteurs Direct/Preview à droite */}
+      <div className="display-body split">
       <div className="display-tab-content">
         <Suspense fallback={<div className="display-loading">Chargement…</div>}>
           {activeTab === 'screens' && (
@@ -106,11 +98,9 @@ function DisplayDashboardPanel({ currentUser }) {
         </Suspense>
       </div>
 
-        {isTVTab && (
-          <Suspense fallback={<div className="tv-preview-loading">Chargement aperçu…</div>}>
-            <TVPreviewPanel previewOverrides={previewOverrides} refreshKey={refreshKey} />
-          </Suspense>
-        )}
+        <Suspense fallback={<div className="tv-preview-loading">Chargement aperçu…</div>}>
+          <TVPreviewPanel previewOverrides={previewOverrides} refreshKey={refreshKey} />
+        </Suspense>
       </div>
 
     </div>

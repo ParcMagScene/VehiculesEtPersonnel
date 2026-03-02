@@ -1543,3 +1543,113 @@ select.edit-input {
   min-height: 60px;
   line-height: 1.5;
 }
+
+/* ═══ Affaires liées (Tournée) ═══ */
+.link-search-wrapper {
+  margin-bottom: 10px;
+  position: relative;
+}
+.link-search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  background: #f9fafb;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.link-search-input:focus {
+  border-color: #ec4899;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+.link-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  z-index: 20;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+.link-search-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 0.82rem;
+}
+.link-search-item:hover {
+  background: #f3f4f6;
+}
+.link-search-client {
+  font-weight: 500;
+  color: #1f2937;
+}
+.link-search-title {
+  color: #6b7280;
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linked-affaire-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.linked-affaire-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.linked-affaire-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.linked-affaire-client {
+  font-weight: 500;
+  font-size: 0.82rem;
+  color: #1f2937;
+}
+.linked-affaire-title {
+  font-size: 0.76rem;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.linked-affaire-relation {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  padding: 2px 6px;
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+.linked-affaire-remove {
+  background: none;
+  border: none;
+  color: #d1d5db;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s;
+  margin-left: 6px;
+}
+.linked-affaire-remove:hover {
+  color: #ef4444;
+  background: #fee2e2;
+}

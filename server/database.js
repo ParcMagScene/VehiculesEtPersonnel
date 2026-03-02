@@ -544,6 +544,19 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_affaires_google_event ON affaires(google_event_id);
   `);
 
+  // ── Liaisons entre affaires (ex: Tournée ↔ affaires individuelles) ──
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS affaire_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      parent_affaire_id INTEGER NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
+      child_affaire_id INTEGER NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(parent_affaire_id, child_affaire_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_affaire_links_parent ON affaire_links(parent_affaire_id);
+    CREATE INDEX IF NOT EXISTS idx_affaire_links_child ON affaire_links(child_affaire_id);
+  `);
+
   logger.info('✅ Module Affaires initialisé');
 
   // ═══════════════════════════════════════════════════════

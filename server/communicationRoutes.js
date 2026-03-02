@@ -658,6 +658,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         installation:        [16, 185, 129],
         taches_prioritaires: [239, 68, 68],
         taches_secondaires:  [245, 158, 11],
+        prep_tournees:       [236, 72, 153],
         courses:             [139, 92, 246],
         manual:              [100, 116, 139],
       };
@@ -665,6 +666,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const AFFAIRE_TYPE_MAP = {
         'Prestation': 'prep_prestations', 'Location': 'prep_locations',
         'Vente': 'prep_ventes', 'Installation': 'prep_installations',
+        'Tournée': 'prep_tournees',
       };
 
       const EVENT_TYPE_MAP = {

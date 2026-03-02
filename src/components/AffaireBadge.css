@@ -1,0 +1,61 @@
+/* ═══ Badge Affaire Unifié ═══ */
+.affaire-badge-unified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 0.02em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--badge-color);
+  background: var(--badge-bg);
+  border: 1px solid var(--badge-border);
+  white-space: nowrap;
+  line-height: 1.4;
+  transition: all 0.15s ease;
+  vertical-align: middle;
+}
+
+.affaire-badge-unified.sm {
+  font-size: 0.6rem;
+  padding: 0px 4px;
+  border-radius: 3px;
+  gap: 2px;
+}
+
+.affaire-badge-unified.lg {
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 5px;
+  gap: 4px;
+}
+
+.affaire-badge-unified.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.affaire-badge-unified.clickable:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px var(--badge-border);
+}
+
+.affaire-badge-unified.clickable:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* ═══ Variante inversée (sur fond coloré) ═══ */
+.affaire-badge-unified.inverted {
+  color: #fff;
+  background: var(--badge-color);
+  border-color: transparent;
+  opacity: 0.9;
+}
+
+.affaire-badge-unified.inverted:hover {
+  opacity: 1;
+}

@@ -10,6 +10,7 @@ import LocationDialog from './LocationDialog';
 import VehiclePickerCards from './VehiclePickerCards';
 import DriverSelect from './DriverSelect';
 import api from '../utils/api';
+import AffaireBadge from './AffaireBadge';
 import { loadFromIndexedDB } from '../utils/indexedDB';
 import './ReservationModal.css';
 import { useToast } from '../hooks/useToast';
@@ -897,7 +898,7 @@ const ReservationModal = ({
             {formData.affaires.length > 0 && (
               <div className="modal-affaires-badges">
                 {formData.affaires.map((affaire, index) => (
-                  <span key={index} className="affaire-badge-header">{affaire}</span>
+                  <AffaireBadge key={index} numero={affaire} size="sm" className="inverted" />
                 ))}
               </div>
             )}

@@ -2342,6 +2342,72 @@ app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
   }
 });
 
+// ═══ Liaisons entre affaires (Tournée ↔ affaires individuelles) ═══
+
+// GET /api/affaires/:id/links — Récupérer les affaires liées
+app.get('/api/affaires/:id/links', authenticateToken, (req, res) => {
+  try {
+    const { id } = req.params;
+    // Affaires dont cette affaire est le parent
+    const children = db.prepare(`
+      SELECT a.*, al.id as link_id, 'child' as link_direction
+      FROM affaire_links al
+      JOIN affaires a ON a.id = al.child_affaire_id
+      WHERE al.parent_affaire_id = ?
+      ORDER BY a.date_debut
+    `).all(id);
+    // Affaires dont cette affaire est un enfant
+    const parents = db.prepare(`
+      SELECT a.*, al.id as link_id, 'parent' as link_direction
+      FROM affaire_links al
+      JOIN affaires a ON a.id = al.parent_affaire_id
+      WHERE al.child_affaire_id = ?
+      ORDER BY a.date_debut
+    `).all(id);
+    res.json({ children, parents, total: children.length + parents.length });
+  } catch (error) {
+    logger.error('Erreur GET /api/affaires/:id/links:', error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
+// POST /api/affaires/:id/links — Lier une affaire à une autre
+app.post('/api/affaires/:id/links', authenticateToken, (req, res) => {
+  try {
+    const parentId = parseInt(req.params.id);
+    const { childAffaireId } = req.body;
+    if (!childAffaireId) return res.status(400).json({ error: 'childAffaireId requis' });
+    if (parentId === childAffaireId) return res.status(400).json({ error: 'Impossible de lier une affaire à elle-même' });
+
+    const parent = db.prepare('SELECT id, numero_affaire FROM affaires WHERE id = ?').get(parentId);
+    const child = db.prepare('SELECT id, numero_affaire FROM affaires WHERE id = ?').get(childAffaireId);
+    if (!parent) return res.status(404).json({ error: 'Affaire parent non trouvée' });
+    if (!child) return res.status(404).json({ error: 'Affaire enfant non trouvée' });
+
+    const existing = db.prepare('SELECT id FROM affaire_links WHERE parent_affaire_id = ? AND child_affaire_id = ?').get(parentId, childAffaireId);
+    if (existing) return res.json({ success: true, message: 'Lien déjà existant', linkId: existing.id });
+
+    const result = db.prepare('INSERT INTO affaire_links (parent_affaire_id, child_affaire_id) VALUES (?, ?)').run(parentId, childAffaireId);
+    logger.info(`🔗 Affaire ${parent.numero_affaire} liée → ${child.numero_affaire}`);
+    res.json({ success: true, linkId: result.lastInsertRowid });
+  } catch (error) {
+    logger.error('Erreur POST /api/affaires/:id/links:', error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
+// DELETE /api/affaires/:id/links/:linkId — Supprimer un lien entre affaires
+app.delete('/api/affaires/:id/links/:linkId', authenticateToken, (req, res) => {
+  try {
+    const { linkId } = req.params;
+    db.prepare('DELETE FROM affaire_links WHERE id = ?').run(linkId);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Erreur DELETE affaire link:', error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
 // POST /api/affaires/sync-google-events — Détection auto : lier/créer affaires depuis événements Google
 app.post('/api/affaires/sync-google-events', authenticateToken, (req, res) => {
   try {
@@ -2406,7 +2472,8 @@ app.post('/api/affaires/sync-google-events', authenticateToken, (req, res) => {
         // Tenter de détecter le type depuis le titre
         let type = 'Prestation';
         const titleLower = title.toLowerCase();
-        if (titleLower.includes('location') || titleLower.includes('loc ')) type = 'Location';
+        if (/tourn[eé]e/i.test(titleLower)) type = 'Tournée';
+        else if (titleLower.includes('location') || titleLower.includes('loc ')) type = 'Location';
         else if (titleLower.includes('vente') || titleLower.includes('achat')) type = 'Vente';
         else if (titleLower.includes('install')) type = 'Installation';
 

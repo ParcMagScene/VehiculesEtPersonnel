@@ -3,6 +3,7 @@ import { FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, 
 import api from '../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel } from '../utils/pdfParser';
 import { useToast } from '../hooks/useToast';
+import { AFFAIRE_TYPES } from '../utils/affaireConstants';
 import AddressAutocomplete from './AddressAutocomplete';
 import './BLImportModal.css';
 
@@ -16,13 +17,8 @@ const formatFileSize = (bytes) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 };
 
-// Types d'affaire disponibles
-const AFFAIRE_TYPE_OPTIONS = [
-  { value: 'Prestation', label: 'Prestation', color: '#3b82f6', icon: '🎭' },
-  { value: 'Location', label: 'Location', color: '#f59e0b', icon: '🏗️' },
-  { value: 'Installation', label: 'Installation', color: '#10b981', icon: '⚙️' },
-  { value: 'Vente', label: 'Vente', color: '#8b5cf6', icon: '💰' },
-];
+// Alias pour compatibilité
+const AFFAIRE_TYPE_OPTIONS = AFFAIRE_TYPES;
 
 // ═══ Composant Principal ═══
 function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireType }) {

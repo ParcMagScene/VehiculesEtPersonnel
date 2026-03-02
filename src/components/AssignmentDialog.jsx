@@ -7,6 +7,7 @@ import {
 import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDay, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../utils/api';
+import AffaireBadge from './AffaireBadge';
 import UnsavedChangesDialog from './UnsavedChangesDialog';
 import './AssignmentDialog.css';
 
@@ -751,7 +752,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
               {selectedAffaire ? (
                 <div className="asd-affaire-selected">
                   <div className="asd-affaire-info">
-                    <span className="asd-affaire-numero">{selectedAffaire.numeroAffaire}</span>
+                    <AffaireBadge numero={selectedAffaire.numeroAffaire} type={selectedAffaire.type} size="sm" />
                     <span className="asd-affaire-titre">{selectedAffaire.titre || selectedAffaire.eventName || ''}</span>
                     <span className="asd-affaire-client">{selectedAffaire.client || ''}</span>
                     {selectedAffaire.dateDebut && (
@@ -790,7 +791,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                             onClick={() => selectAffaire(a)}
                           >
                             <div className="asd-affaire-opt-left">
-                              <span className="asd-affaire-opt-num">{a.numeroAffaire}</span>
+                              <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                               <span className="asd-affaire-opt-title">{a.titre || a.eventName || ''}</span>
                             </div>
                             <div className="asd-affaire-opt-right">

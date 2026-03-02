@@ -8,7 +8,7 @@ const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
 const DisplayDashboardPanel = lazy(() => import('./DisplayDashboard/DisplayDashboardPanel'));
 
 // ═══ Composant Principal ═══
-function CommunicationPanel({ currentUser, googleEvents = [] }) {
+function CommunicationPanel({ currentUser, googleEvents = [], onNavigateToEntity }) {
   const toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('tasks');
   const [stats, setStats] = useState(null);
@@ -57,7 +57,7 @@ function CommunicationPanel({ currentUser, googleEvents = [] }) {
       <div className="panel-content">
         {activeSubTab === 'tasks' && (
           <Suspense fallback={null}>
-            <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} googleEvents={googleEvents} />
+            <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} googleEvents={googleEvents} onNavigateToEntity={onNavigateToEntity} />
           </Suspense>
         )}
         {activeSubTab === 'dashboard' && (

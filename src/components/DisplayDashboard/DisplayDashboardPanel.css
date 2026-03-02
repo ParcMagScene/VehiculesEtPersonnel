@@ -2048,6 +2048,14 @@
   padding: 0.6cqi 1cqi;
 }
 
+/* Tâche effectuée → barrée + opacité réduite */
+.tv-mini-event.done {
+  opacity: 0.45;
+}
+.tv-mini-event.done .tv-mini-evt-title {
+  text-decoration: line-through;
+}
+
 /* Suppression du fond explicite pour all-day — gardons juste la border */
 .tv-mini-event.all-day .tv-mini-evt-time {
   visibility: hidden;

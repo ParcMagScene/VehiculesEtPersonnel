@@ -1346,21 +1346,14 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         "SELECT title, body, priority FROM display_messages WHERE is_active = 1 AND (date_end IS NULL OR date_end >= date('now')) ORDER BY priority DESC LIMIT 8"
       ).all();
 
-      // ── Événements du jour visibles (planification → écran TV) ──
+      // ── Tâches du jour visibles (planification → écran TV) ──
+      // Par défaut seules les tâches opérationnelles sont affichées.
+      // Les RDV/événements ne s'affichent que si l'utilisateur les active (visible=1 via eye toggle).
       const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      // 1) Display events visibles du jour
-      const dayEvents = db.prepare(
-        `SELECT id, type, category, date, time, comment, client, location, visible
-         FROM dynamic_display_events
-         WHERE date = ? AND visible = 1
-         ORDER BY time ASC, created_at ASC`
-      ).all(todayISO);
-
-      // 2) Tâches visibles du jour (manuelles, google, affaires)
       const dayTasks = db.prepare(
-        `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.notes,
-                ta.source_type, ta.google_event_title, ta.affaire_num,
+        `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.period,
+                ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
                 dde.type AS event_type, dde.category AS event_category
          FROM task_assignments ta
@@ -1371,44 +1364,28 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       ).all(todayISO);
 
       // Transformer en format compatible TVScreenMini
-      // Format : { time, title, location, description, is_recurrent }
-      const coveredEventIds = new Set();
-      const events = [];
+      // Format enrichi : { time, period, title, section, sectionLabel, status, description, is_recurrent }
+      const SECTION_LABELS = {
+        rdv: 'RDV', evenements: 'Événement',
+        taches_prioritaires: 'Prioritaire', courses: 'Courses',
+        prep_locations: 'Prépa Location', prep_prestations: 'Prépa Prestation',
+        prep_ventes: 'Prépa Vente', prep_installations: 'Prépa Installation',
+        prep_tournees: 'Prépa Tournée',
+        chargement: 'Chargement', depart: 'Départ', enlevement: 'Enlèvement',
+        retour: 'Retour', recuperation: 'Récupération', installation: 'Installation',
+        taches_secondaires: 'Secondaire', manual: 'Divers',
+      };
 
-      // Tâches → événements TV
-      for (const t of dayTasks) {
-        const title = t.google_event_title || t.title || '';
-        const location = t.event_location || '';
-        const description = t.affaire_num
-          ? `Affaire ${t.affaire_num}`
-          : (t.notes || '');
-        const time = t.time ? t.time.substring(0, 5) : '';
-        const isRecurrent = t.source_type === 'google_event' && t.section === 'evenements';
-
-        events.push({ time, title, location, description, is_recurrent: isRecurrent ? 1 : 0 });
-
-        // Marquer le display_event lié comme couvert (évite les doublons)
-        if (t.event_type) {
-          // La tâche est liée à un display_event via le JOIN
-          coveredEventIds.add(`${t.event_client}|${t.event_location}|${t.event_type}`);
-        }
-      }
-
-      // Display events non couverts par les tâches → événements TV
-      for (const ev of dayEvents) {
-        const evKey = `${ev.client}|${ev.location}|${ev.type}`;
-        if (coveredEventIds.has(evKey)) continue; // Déjà représenté par une tâche
-        const typeLabels = {
-          preparation: 'Préparation', enlevement: 'Enlèvement', livraison: 'Livraison',
-          depart: 'Départ', retour: 'Retour', recuperation: 'Récupération', installation: 'Installation'
-        };
-        const title = `${typeLabels[ev.type] || ev.type || ''} ${ev.client || ''}`.trim();
-        const location = ev.location || '';
-        const description = ev.comment || '';
-        const time = ev.time ? ev.time.substring(0, 5) : '';
-
-        events.push({ time, title, location, description, is_recurrent: 0 });
-      }
+      const events = dayTasks.map(t => ({
+        time: t.time ? t.time.substring(0, 5) : '',
+        period: t.period || '',
+        title: t.google_event_title || t.title || '',
+        section: t.section || 'manual',
+        sectionLabel: SECTION_LABELS[t.section] || t.section || 'Divers',
+        status: t.status || 'pending',
+        description: t.affaire_num ? `Affaire ${t.affaire_num}` : (t.notes || ''),
+        is_recurrent: 0,
+      }));
 
       // Trier par heure (événements sans heure en fin)
       events.sort((a, b) => {

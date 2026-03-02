@@ -1114,9 +1114,14 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
       const id = crypto.randomUUID().replace(/-/g, '');
 
+      // RDV/événements masqués par défaut sur l'écran TV (visible=0)
+      const effectiveSection = section || 'manual';
+      const EVENT_SECTIONS = ['rdv', 'evenements'];
+      const defaultVisible = EVENT_SECTIONS.includes(effectiveSection) ? 0 : 1;
+
       const stmt = db.prepare(`
-        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
       stmt.run(
@@ -1127,7 +1132,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         period || null,
         time || null,
         end_time || null,
-        section || 'manual',
+        effectiveSection,
         title || null,
         notes || '',
         source_type || 'manual',
@@ -1135,6 +1140,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         google_event_title || null,
         affaire_num || null,
         status || 'pending',
+        defaultVisible,
         req.user.id
       );
 
@@ -1167,9 +1173,10 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Un tableau de tâches est requis' });
       }
 
+      const EVENT_SECTIONS_BATCH = ['rdv', 'evenements'];
       const insertStmt = db.prepare(`
-        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
       const createdIds = [];
@@ -1177,6 +1184,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         for (const t of items) {
           if (!t.date) continue;
           const id = crypto.randomUUID().replace(/-/g, '');
+          const sect = t.section || 'manual';
+          const vis = EVENT_SECTIONS_BATCH.includes(sect) ? 0 : 1;
           insertStmt.run(
             id,
             t.display_event_id || null,
@@ -1185,7 +1194,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
             t.period || null,
             t.time || null,
             t.end_time || null,
-            t.section || 'manual',
+            sect,
             t.title || null,
             t.notes || '',
             t.source_type || 'manual',
@@ -1193,6 +1202,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
             t.google_event_title || null,
             t.affaire_num || null,
             t.status || 'pending',
+            vis,
             req.user.id
           );
           createdIds.push(id);

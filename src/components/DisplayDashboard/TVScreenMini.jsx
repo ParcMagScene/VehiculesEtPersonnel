@@ -6,17 +6,12 @@
 
 import React, { useState, useEffect, useRef, memo } from 'react';
 
-const SAMPLE_REGULAR = [
-  { time: '08:00', title: 'Livraison matériel chantier Dupont', location: 'Entrepôt A', description: 'Presta LM' },
-  { time: '09:30', title: 'Installation sono festival', location: 'Salle des fêtes', description: 'Location' },
-  { time: '', title: 'Maintenance éclairage scène 2', location: 'Bureau', description: '' },
-  { time: '14:00', title: 'Retour camion-grue', location: 'Dépôt', description: 'Livraison' },
-  { time: '15:30', title: 'Préparation commande Mairie', location: 'Entrepôt B', description: '' },
-];
-
-const SAMPLE_RECURRENT = [
-  { time: '07:30', title: 'Briefing équipe matin', location: 'Bureau', description: '' },
-  { time: '17:00', title: 'Rangement dépôt', location: 'Dépôt', description: '' },
+const SAMPLE_TASKS = [
+  { time: '07:00', period: 'AM', title: 'Prépa sono festival Dupont', section: 'prep_locations', sectionLabel: 'Prépa Location', status: 'pending', description: 'Affaire AF32887' },
+  { time: '08:30', period: 'AM', title: 'Chargement camion 3T', section: 'chargement', sectionLabel: 'Chargement', status: 'pending', description: '' },
+  { time: '09:00', period: 'AM', title: 'Départ livraison Mairie', section: 'depart', sectionLabel: 'Départ', status: 'done', description: 'Affaire AF32899' },
+  { time: '', period: 'PM', title: 'Récup du barnum Legrand', section: 'recuperation', sectionLabel: 'Récupération', status: 'pending', description: '' },
+  { time: '15:30', period: 'PM', title: 'Courses visserie + câbles', section: 'courses', sectionLabel: 'Courses', status: 'pending', description: '' },
 ];
 
 function TVScreenMini({ state = {} }) {
@@ -62,59 +57,57 @@ function TVScreenMini({ state = {} }) {
   const logoUrl = state.logoUrl || null;
   const sneakyPhoto = state.sneakyPhoto || { active: false };
 
-  // Séparer événements réguliers et récurrents (comme calendar-dashboard)
-  const allEvents = state.events && state.events.length > 0 ? state.events : null;
-  const regularEvents = allEvents
-    ? allEvents.filter(e => !e.is_recurrent)
-    : SAMPLE_REGULAR;
-  const recurrentEvents = allEvents
-    ? allEvents.filter(e => e.is_recurrent)
-    : SAMPLE_RECURRENT;
+  // Événements = tâches du jour (format enrichi depuis tv-state)
+  const tasks = state.events && state.events.length > 0 ? state.events : SAMPLE_TASKS;
 
   const dateStr = clock.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   const timeStr = clock.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-  const getEventColor = (title, location) => {
-    const searchText = `${title} ${location}`.toLowerCase();
+  // Couleur par type de tâche (section)
+  const getTaskColor = (section) => {
+    if (!section) return eventTextColor;
+    const sectionLower = section.toLowerCase();
     for (const rule of colorRules) {
-      if (rule.keyword && searchText.includes(rule.keyword.toLowerCase())) {
+      if (rule.keyword && sectionLower === rule.keyword.toLowerCase()) {
         return rule.color;
       }
     }
     return eventTextColor;
   };
 
-  const getLocationIcon = (location) => {
-    if (!location) return null;
-    const locLower = location.toLowerCase();
+  // Icône animée par type de tâche (section)
+  const getTaskIcon = (section) => {
+    if (!section) return null;
+    const sectionLower = section.toLowerCase();
     for (const rule of iconRules) {
-      if (rule.keyword && locLower.includes(rule.keyword.toLowerCase())) {
+      if (rule.keyword && sectionLower === rule.keyword.toLowerCase()) {
         return rule.gif_filename;
       }
     }
     return null;
   };
 
-  const renderEvent = (evt, i) => {
-    const color = getEventColor(evt.title, evt.location);
-    const iconFile = getLocationIcon(evt.location);
-    const isAllDay = !evt.time;
+  const renderTask = (task, i) => {
+    const color = getTaskColor(task.section);
+    const iconFile = getTaskIcon(task.section);
+    const isDone = task.status === 'done';
+    const timeDisplay = task.time || (task.period === 'AM' ? 'Matin' : task.period === 'PM' ? 'Après-midi' : '');
     return (
       <div
         key={i}
-        className={`tv-mini-event${isAllDay ? ' all-day' : ''}`}
+        className={`tv-mini-event${isDone ? ' done' : ''}${!task.time ? ' all-day' : ''}`}
         style={{ color, background: eventBgColor }}
       >
-        <span className="tv-mini-evt-time">{evt.time || ''}</span>
-        <span className="tv-mini-evt-title">{evt.title}</span>
+        <span className="tv-mini-evt-time">{timeDisplay}</span>
+        <span className="tv-mini-evt-title">{task.title}</span>
         <span className="tv-mini-evt-loc">
           {iconFile ? (
             <img src={`/display-gifs/${iconFile}`} alt="" className="tv-mini-evt-icon" />
           ) : (
-            evt.location || ''
+            task.sectionLabel || ''
           )}
         </span>
-        <span className="tv-mini-evt-desc">{evt.description || ''}</span>
+        <span className="tv-mini-evt-desc">{task.description || ''}</span>
       </div>
     );
   };
@@ -153,27 +146,14 @@ function TVScreenMini({ state = {} }) {
         </div>
       </div>
 
-      {/* ─── Main (events + recurrent, réplique calendar-dashboard) ─── */}
+      {/* ─── Main (tâches du jour, réplique calendar-dashboard) ─── */}
       <div className="tv-mini-main" ref={eventsRef}>
-        {/* Événements ponctuels */}
         <div className="tv-mini-events">
-          {regularEvents.length > 0
-            ? regularEvents.map(renderEvent)
-            : <div className="tv-mini-no-events">Aucun événement aujourd'hui</div>
+          {tasks.length > 0
+            ? tasks.map(renderTask)
+            : <div className="tv-mini-no-events">Aucune tâche aujourd'hui</div>
           }
         </div>
-
-        {/* Événements récurrents (section en bas, comme calendar-dashboard) */}
-        {recurrentEvents.length > 0 && (
-          <div className="tv-mini-recurrent-section">
-            <div className="tv-mini-recurrent-title" style={{ color: primaryColor, borderColor: primaryColor }}>
-              🔄 Récurrents
-            </div>
-            <div className="tv-mini-events">
-              {recurrentEvents.map(renderEvent)}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ─── Sneaky photo (slide left-to-right, like calendar-dashboard) ─── */}

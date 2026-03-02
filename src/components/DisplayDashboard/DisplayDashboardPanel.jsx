@@ -22,7 +22,7 @@ const CONFIG_TABS = [
   { id: 'appearance', label: 'Apparence', icon: Palette },
   { id: 'welcomeMessages', label: 'Messages TV', icon: MessageCircle },
   { id: 'colorRules', label: 'Couleurs', icon: Tag },
-  { id: 'locationIcons', label: 'Icônes lieu', icon: Film },
+  { id: 'locationIcons', label: 'Icônes tâches', icon: Film },
   { id: 'sneaky', label: 'Photo furtive', icon: Camera },
   { id: 'sonos', label: 'Sonos', icon: Music },
 ];

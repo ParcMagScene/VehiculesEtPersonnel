@@ -1,12 +1,33 @@
 // ═══════════════════════════════════════════════════════════════
-// ColorRulesTab — Règles de couleurs pour les événements
-// (mot-clé → couleur d'affichage sur l'écran TV)
+// ColorRulesTab — Règles de couleurs par type de tâche
+// (type de tâche → couleur d'affichage sur l'écran TV)
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Tag, Plus, Trash2, Save, GripVertical } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+
+// Types de tâches (sections) disponibles pour l'association couleur
+const TASK_SECTIONS = [
+  { key: 'rdv', label: '📅 RDV' },
+  { key: 'evenements', label: '🎉 Événement' },
+  { key: 'taches_prioritaires', label: '⚡ Prioritaire' },
+  { key: 'courses', label: '🛒 Courses' },
+  { key: 'prep_locations', label: '📦 Prépa Location' },
+  { key: 'prep_prestations', label: '🎤 Prépa Prestation' },
+  { key: 'prep_ventes', label: '💰 Prépa Vente' },
+  { key: 'prep_installations', label: '🔧 Prépa Installation' },
+  { key: 'prep_tournees', label: '🚛 Prépa Tournée' },
+  { key: 'chargement', label: '📦 Chargement' },
+  { key: 'depart', label: '🚀 Départ' },
+  { key: 'enlevement', label: '📤 Enlèvement' },
+  { key: 'retour', label: '🔙 Retour' },
+  { key: 'recuperation', label: '♻️ Récupération' },
+  { key: 'installation', label: '🔧 Installation' },
+  { key: 'taches_secondaires', label: '📋 Secondaire' },
+  { key: 'manual', label: '✏️ Divers' },
+];
 
 function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
   const toast = useToast();
@@ -66,10 +87,10 @@ function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
     <div className="dtv-color-rules">
       <div className="dtv-section">
         <h3 className="dtv-section-title">
-          <Tag size={16} /> Règles de couleurs des événements
+          <Tag size={16} /> Couleurs par type de tâche
         </h3>
         <p className="dtv-hint">
-          Définissez la couleur d'affichage des événements selon les mots-clés contenus dans le titre.
+          Attribuez une couleur d'affichage sur l'écran TV à chaque type de tâche.
         </p>
 
         <div className="dtv-rules-list">
@@ -86,13 +107,19 @@ function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
                   className="dtv-rule-color"
                   title="Couleur"
                 />
-                <input
-                  type="text"
+                <select
                   value={rule.keyword}
                   onChange={e => handleChange(index, 'keyword', e.target.value)}
-                  placeholder="Mot-clé (ex: Livraison, Presta…)"
                   className="dtv-rule-keyword"
-                />
+                >
+                  <option value="">— Choisir un type de tâche —</option>
+                  {TASK_SECTIONS
+                    .filter(s => s.key === rule.keyword || !rules.some((r, ri) => ri !== index && r.keyword === s.key))
+                    .map(s => (
+                      <option key={s.key} value={s.key}>{s.label}</option>
+                    ))
+                  }
+                </select>
                 <input
                   type="text"
                   value={rule.description || ''}
@@ -106,7 +133,7 @@ function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
               </div>
               {/* Prévisualisation */}
               <div className="dtv-rule-preview" style={{ borderLeftColor: rule.color }}>
-                <span style={{ color: rule.color }}>■</span> {rule.keyword || 'Mot-clé'} → {rule.description || 'Aucune description'}
+                <span style={{ color: rule.color }}>■</span> {TASK_SECTIONS.find(s => s.key === rule.keyword)?.label || rule.keyword || 'Type de tâche'} → {rule.description || 'Aucune description'}
               </div>
             </div>
           ))}

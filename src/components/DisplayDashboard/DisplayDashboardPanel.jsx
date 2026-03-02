@@ -4,7 +4,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
-import { Monitor, List, Image, MessageSquare, Layout, Activity, RefreshCw, Plus } from 'lucide-react';
+import { Monitor, List, Image, MessageSquare, Layout, Activity, RefreshCw, Plus,
+         Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import './DisplayDashboardPanel.css';
@@ -17,6 +18,15 @@ const MessagesTab = lazy(() => import('./MessagesTab'));
 const TemplatesTab = lazy(() => import('./TemplatesTab'));
 const LogsTab = lazy(() => import('./LogsTab'));
 
+// Lazy sub-tabs — Dashboard TV
+const AppearanceTab = lazy(() => import('./AppearanceTab'));
+const WelcomeMessagesTab = lazy(() => import('./WelcomeMessagesTab'));
+const ColorRulesTab = lazy(() => import('./ColorRulesTab'));
+const LocationIconsTab = lazy(() => import('./LocationIconsTab'));
+const SneakyTab = lazy(() => import('./SneakyTab'));
+const SonosTab = lazy(() => import('./SonosTab'));
+const TVPreviewPanel = lazy(() => import('./TVPreviewPanel'));
+
 // Lazy modals
 const ScreenFormModal = lazy(() => import('./ScreenFormModal'));
 const PlaylistFormModal = lazy(() => import('./PlaylistFormModal'));
@@ -24,7 +34,7 @@ const MediaUploadModal = lazy(() => import('./MediaUploadModal'));
 const MessageFormModal = lazy(() => import('./MessageFormModal'));
 const TemplateFormModal = lazy(() => import('./TemplateFormModal'));
 
-const SUB_TABS = [
+const CONTENT_TABS = [
   { id: 'screens', label: 'Écrans', icon: Monitor },
   { id: 'playlists', label: 'Playlists', icon: List },
   { id: 'media', label: 'Médias', icon: Image },
@@ -33,11 +43,34 @@ const SUB_TABS = [
   { id: 'logs', label: 'Logs', icon: Activity },
 ];
 
+const TV_CONFIG_TABS = [
+  { id: 'appearance', label: 'Apparence', icon: Palette },
+  { id: 'welcomeMessages', label: 'Messages TV', icon: MessageCircle },
+  { id: 'colorRules', label: 'Couleurs', icon: Tag },
+  { id: 'locationIcons', label: 'Icônes lieu', icon: Film },
+  { id: 'sneaky', label: 'Photo furtive', icon: Camera },
+  { id: 'sonos', label: 'Sonos', icon: Music },
+];
+
+const TV_TAB_IDS = new Set(TV_CONFIG_TABS.map(t => t.id));
+
 function DisplayDashboardPanel({ currentUser }) {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState('screens');
   const [stats, setStats] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [previewOverrides, setPreviewOverrides] = useState({});
+
+  const isTVTab = TV_TAB_IDS.has(activeTab);
+
+  const handlePreviewChange = useCallback((overrides) => {
+    setPreviewOverrides(prev => ({ ...prev, ...overrides }));
+  }, []);
+
+  // Réinitialiser les overrides à chaque changement d'onglet
+  useEffect(() => {
+    setPreviewOverrides({});
+  }, [activeTab]);
 
   // Modals
   const [showScreenModal, setShowScreenModal] = useState(false);
@@ -211,24 +244,48 @@ function DisplayDashboardPanel({ currentUser }) {
         </div>
       </div>
 
-      {/* Sous-onglets */}
-      <div className="display-subtabs">
-        {SUB_TABS.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              className={`display-subtab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <Icon size={14} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* Sous-onglets en deux groupes */}
+      <div className="display-tabs-container">
+        <div className="display-tabs-group">
+          <span className="display-tabs-label">Diffusion</span>
+          <div className="display-subtabs">
+            {CONTENT_TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  className={`display-subtab ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <Icon size={14} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="display-tabs-group">
+          <span className="display-tabs-label">Configuration TV</span>
+          <div className="display-subtabs">
+            {TV_CONFIG_TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  className={`display-subtab ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <Icon size={14} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Contenu */}
+      {/* Corps — split layout si onglet TV actif */}
+      <div className={`display-body${isTVTab ? ' split' : ''}`}>
       <div className="display-tab-content">
         <Suspense fallback={<div className="display-loading">Chargement…</div>}>
           {activeTab === 'screens' && (
@@ -274,7 +331,32 @@ function DisplayDashboardPanel({ currentUser }) {
           {activeTab === 'logs' && (
             <LogsTab refreshKey={refreshKey} />
           )}
+          {activeTab === 'appearance' && (
+            <AppearanceTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
+          )}
+          {activeTab === 'welcomeMessages' && (
+            <WelcomeMessagesTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
+          )}
+          {activeTab === 'colorRules' && (
+            <ColorRulesTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
+          )}
+          {activeTab === 'locationIcons' && (
+            <LocationIconsTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
+          )}
+          {activeTab === 'sneaky' && (
+            <SneakyTab currentUser={currentUser} refreshKey={refreshKey} />
+          )}
+          {activeTab === 'sonos' && (
+            <SonosTab currentUser={currentUser} refreshKey={refreshKey} />
+          )}
         </Suspense>
+      </div>
+
+        {isTVTab && (
+          <Suspense fallback={<div className="tv-preview-loading">Chargement aperçu…</div>}>
+            <TVPreviewPanel previewOverrides={previewOverrides} refreshKey={refreshKey} />
+          </Suspense>
+        )}
       </div>
 
       {/* Modals */}

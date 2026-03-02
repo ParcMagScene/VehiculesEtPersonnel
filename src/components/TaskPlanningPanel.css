@@ -188,6 +188,17 @@
   opacity: 0.6;
 }
 
+.task-planning-panel .task-subtitle {
+  font-size: 0.8rem;
+  color: var(--theme-text-secondary);
+  font-style: italic;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
 .task-planning-panel .task-meta {
   display: flex;
   align-items: center;
@@ -438,14 +449,108 @@
   text-transform: capitalize;
 }
 
+/* ═══ Affaire number badge on tasks ═══ */
+.task-planning-panel .affaire-num-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 6px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ═══ Affaire rows in sections ═══ */
 .task-planning-panel .affaire-row {
   border-left: 3px solid var(--theme-primary);
   background: rgba(99, 102, 241, 0.04);
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
 .task-planning-panel .affaire-row:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.task-planning-panel .affaire-row.processed {
+  opacity: 0.75;
+}
+
+.task-planning-panel .affaire-row .processed-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #10b981;
+  margin-left: 6px;
+  font-weight: 700;
+}
+
+.task-planning-panel .affaire-row .google-linked-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+  background: #4285f4;
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-left: 6px;
+  line-height: 1.4;
+}
+
+.task-planning-panel .wk-google-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #fff;
+  background: #4285f4;
+  border-radius: 2px;
+  padding: 0 3px;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+
+.task-planning-panel .wk-affaire-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  border-radius: 2px;
+  padding: 0 3px;
+  line-height: 1.3;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ═══ Sections divider ═══ */
+.task-planning-panel .sections-events-group {
+  margin-bottom: 0;
+}
+
+.task-planning-panel .sections-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  color: var(--theme-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.task-planning-panel .sections-divider::before,
+.task-planning-panel .sections-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--theme-border);
 }
 
 /* ═══ RDV section ═══ */

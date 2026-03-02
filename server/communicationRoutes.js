@@ -517,6 +517,10 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         query += ' AND ta.status = ?';
         params.push(req.query.status);
       }
+      if (req.query.affaire_num) {
+        query += ' AND ta.affaire_num = ?';
+        params.push(req.query.affaire_num);
+      }
 
       query += ' ORDER BY ta.date ASC, ta.period ASC, ta.time ASC';
 
@@ -586,25 +590,71 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         }
       }
 
+      // ── Index affaires par numéro (pour enrichir les titres de tâches) ──
+      const affaireByNum = new Map();
+      affaires.forEach(a => {
+        if (a.numero_affaire) affaireByNum.set(a.numero_affaire.toUpperCase(), a);
+      });
+      // Inclure aussi les affaires de la date (pour enrichir les tâches même si affaire non sélectionnée)
+      const allDateAffaires = db.prepare(`
+        SELECT * FROM affaires
+        WHERE date_debut <= ? AND (date_fin IS NULL OR date_fin = '' OR date_fin >= ?)
+      `).all(date, date);
+      allDateAffaires.forEach(a => {
+        if (a.numero_affaire && !affaireByNum.has(a.numero_affaire.toUpperCase())) {
+          affaireByNum.set(a.numero_affaire.toUpperCase(), a);
+        }
+      });
+
+      // ── Helper: Nettoyer les caractères non supportés par Helvetica (emojis, symboles) ──
+      const stripEmoji = (str) => {
+        if (!str) return '';
+        return str
+          .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '')
+          .replace(/[\u2700-\u27BF]/g, '')
+          .replace(/[\u2190-\u21FF]/g, '->')  // flèches
+          .replace(/\u2014|\u2013/g, '-')      // tirets longs
+          .replace(/\u2018|\u2019/g, "'")     // apostrophes courbes
+          .replace(/\u201C|\u201D/g, '"')     // guillemets courbes
+          .replace(/\u2026/g, '...')            // ellipse
+          .replace(/\u00A0/g, ' ')              // espace insécable
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      };
+
       // ── Sections & couleurs ──
       const SECTIONS = {
-        rdv:                 { label: 'RDV du jour',          emoji: '📅' },
-        prep_locations:      { label: 'Prépa Locations',      emoji: '📦' },
-        prep_prestations:    { label: 'Prépa Prestations',    emoji: '🎤' },
-        prep_ventes:         { label: 'Prépa Ventes',         emoji: '🏷' },
-        prep_installations:  { label: 'Prépa Installations',  emoji: '⚙' },
-        taches_prioritaires: { label: 'Tâches Prioritaires',  emoji: '🔴' },
-        taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡' },
-        courses:             { label: 'Courses',               emoji: '🚗' },
-        manual:              { label: 'Autres',                emoji: '📋' },
+        rdv:                 { label: 'RDV du jour' },
+        taches_prioritaires: { label: 'Tâches Prioritaires' },
+        courses:             { label: 'Courses' },
+        prep_locations:      { label: 'Préparations Locations' },
+        prep_prestations:    { label: 'Préparations Prestations' },
+        prep_ventes:         { label: 'Préparations Ventes' },
+        prep_installations:  { label: 'Préparations Installations' },
+        chargement:          { label: 'Chargement' },
+        depart:              { label: 'Départ' },
+        enlevement:          { label: 'Enlèvement' },
+        retour:              { label: 'Retour' },
+        recuperation:        { label: 'Récupération' },
+        installation:        { label: 'Installation' },
+        evenements:          { label: 'Autres Événements' },
+        taches_secondaires:  { label: 'Tâches Secondaires' },
+        manual:              { label: 'Autres' },
       };
 
       const SECTION_COLORS = {
         rdv:                 [5, 150, 105],
-        prep_locations:      [59, 130, 246],
-        prep_prestations:    [245, 158, 11],
+        evenements:          [100, 116, 139],
+        prep_locations:      [245, 158, 11],
+        prep_prestations:    [59, 130, 246],
         prep_ventes:         [16, 185, 129],
         prep_installations:  [139, 92, 246],
+        chargement:          [245, 158, 11],
+        depart:              [59, 130, 246],
+        enlevement:          [16, 185, 129],
+        retour:              [139, 92, 246],
+        recuperation:        [239, 68, 68],
+        installation:        [16, 185, 129],
         taches_prioritaires: [239, 68, 68],
         taches_secondaires:  [245, 158, 11],
         courses:             [139, 92, 246],
@@ -628,8 +678,72 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       };
 
       const STATUS_LABELS = {
-        pending: '○ À faire', in_progress: '◐ En cours',
-        done: '● Fait', cancelled: '✕ Annulé',
+        pending: 'Effectué', in_progress: 'En cours',
+        done: 'Fait', cancelled: 'Annulé',
+      };
+
+      // Helper: dessiner une case à cocher carrée
+      const drawCheckbox = (x, y, checked = false, size = 10) => {
+        doc.save();
+        doc.rect(x, y, size, size)
+          .strokeColor('#333333').lineWidth(0.8).stroke();
+        if (checked) {
+          // Coche à l'intérieur
+          doc.moveTo(x + 2, y + size / 2)
+            .lineTo(x + size / 2 - 0.5, y + size - 2.5)
+            .lineTo(x + size - 1.5, y + 2)
+            .strokeColor('#333333').lineWidth(1.2).stroke();
+        }
+        doc.restore();
+      };
+
+      // ── Sections qui sont "affaire only" (le label est redondant dans le titre des tâches) ──
+      const AFFAIRE_ONLY_SECTIONS = new Set([
+        'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+        'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+      ]);
+
+      // Nettoyer le titre d'une tâche pour le PDF (supprimer doublons avec section/affaire)
+      const cleanTaskTitle = (task, sectionKey) => {
+        let title = stripEmoji(task.title || '-');
+        const googleTitle = task.google_event_title || '';
+        // Extraire le N° d'affaire depuis le champ OU depuis le titre/google_event_title
+        const affNum = task.affaire_num
+          || ((task.title || '').match(/\bAF\s*\d{3,}/i) || [''])[0].toUpperCase().replace(/\s+/g, '')
+          || ((task.google_event_title || '').match(/\bAF\s*\d{3,}/i) || [''])[0].toUpperCase().replace(/\s+/g, '')
+          || '';
+
+        // 1. Retirer le suffixe " - eventSummary" (tâches Google: "Label - Summary")
+        if (googleTitle) {
+          const dashIdx = title.indexOf(' - ');
+          if (dashIdx >= 0) {
+            const suffix = title.slice(dashIdx + 3).trim();
+            if (suffix.toLowerCase() === stripEmoji(googleTitle).trim().toLowerCase()) {
+              title = title.slice(0, dashIdx).trim();
+            }
+          }
+        }
+        // 2. Retirer le label de section (redondant avec le bandeau)
+        if (AFFAIRE_ONLY_SECTIONS.has(sectionKey)) {
+          title = title
+            .replace(/^(Preparation|Préparation|Chargement|Depart|Départ|Enlevement|Enlèvement|Retour|Recuperation|Récupération|Installation|Livraison)\s*-?\s*/i, '')
+            .trim();
+          // Si vide, utiliser le google_event_title ou les notes
+          if (!title) {
+            title = stripEmoji(googleTitle) || task.notes || '-';
+          }
+        }
+        // 3. Retirer le N° d'affaire du titre (déjà affiché en badge)
+        if (affNum) {
+          const escaped = affNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          title = title.replace(new RegExp(escaped, 'gi'), '').replace(/\s{2,}/g, ' ').trim();
+        }
+        // 4. Enrichir avec client/titre de l'affaire si titre trop générique
+        const linkedAffaire = affNum ? affaireByNum.get(affNum.toUpperCase()) : null;
+        if (linkedAffaire && (!title || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(title))) {
+          title = stripEmoji(linkedAffaire.client || linkedAffaire.titre || linkedAffaire.event_name || title || '-');
+        }
+        return title || '-';
       };
 
       // ── Regrouper tous les items par section ──
@@ -683,13 +797,13 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
       });
 
-      // ── Générer le PDF ──
+      // ── Générer le PDF (tout sur 1 page) ──
       const doc = new PDFDocument({
         size: 'A4',
-        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        margins: { top: 25, bottom: 20, left: 25, right: 25 },
         info: {
-          Title: `Fiche du jour — ${dateFr}`,
-          Author: 'eM@g — Mag Scène',
+          Title: `Fiche du jour - ${dateFr}`,
+          Author: 'eM@g - Mag Scène',
           Subject: 'Planification journalière',
         }
       });
@@ -701,136 +815,250 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
       const pageW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
       const leftX = doc.page.margins.left;
+      const pageH = doc.page.height - doc.page.margins.top - doc.page.margins.bottom;
 
-      // ── EN-TÊTE ──
-      doc.fontSize(20).font('Helvetica-Bold').text('Fiche du jour', { align: 'center' });
-      doc.moveDown(0.3);
-      doc.fontSize(13).font('Helvetica').text(dateFr.charAt(0).toUpperCase() + dateFr.slice(1), { align: 'center' });
-      doc.moveDown(0.2);
-      doc.fontSize(9).fillColor('#888888')
-        .text(`${totalItems} élément${totalItems > 1 ? 's' : ''}`, { align: 'center' });
-      doc.fillColor('#000000');
-      doc.moveDown(0.8);
+      // ── Calcul dynamique pour tenir en 1 page ──
+      const nonEmptySections = Object.entries(SECTIONS).filter(([key]) => (grouped[key] || []).length > 0);
+      const totalSections = nonEmptySections.length;
+      const FREE_LINES = Math.max(2, Math.min(5, 6 - Math.floor(totalItems / 12)));
+      const HEADER_H = 38;
+      const FOOTER_H = 12;
+      const BANNER_H = 15;
+      const SECTION_GAP = 2;
+      const FREE_LINE_H = 16;
+      const sectionOverhead = totalSections * (BANNER_H + SECTION_GAP);
+      const notesH = BANNER_H + FREE_LINES * FREE_LINE_H + 6;
+      const availableForItems = pageH - HEADER_H - FOOTER_H - sectionOverhead - notesH - 8;
+      const rowH = Math.max(10, Math.min(17, Math.floor(availableForItems / Math.max(totalItems, 1))));
+      const fs = rowH <= 11 ? 6.5 : rowH <= 13 ? 7.5 : 8;
+      const fsSmall = fs - 1;
+      const cbSize = Math.min(7, rowH - 3);
 
-      doc.moveTo(leftX, doc.y).lineTo(leftX + pageW, doc.y)
-        .strokeColor('#cccccc').lineWidth(0.5).stroke();
-      doc.moveDown(0.6);
-
-      // ── Helper: dessiner une ligne d'item ──
-      const renderRow = (label, detail, rightInfo, idx) => {
-        if (doc.y > doc.page.height - 60) doc.addPage();
-        const rowY = doc.y;
-        if (idx % 2 === 0) {
-          doc.rect(leftX, rowY, pageW, 20).fillColor('#f8f9fa').fill();
-        }
-        // Label (gauche)
-        doc.font('Helvetica').fontSize(9).fillColor('#333333')
-          .text(label, leftX + 4, rowY + 4, { width: 80, lineBreak: false });
-        // Detail (centre)
-        doc.font('Helvetica').fontSize(9).fillColor('#111111')
-          .text(detail || '—', leftX + 84, rowY + 4, { width: pageW - 200, lineBreak: false });
-        // Right info
-        if (rightInfo) {
-          doc.font('Helvetica').fontSize(8).fillColor('#555555')
-            .text(rightInfo, leftX + pageW - 110, rowY + 5, { width: 105, lineBreak: false, align: 'right' });
-        }
-        doc.fillColor('#000000');
-        doc.y = rowY + 22;
+      // ── Badge helper ──
+      const drawBadge = (text, x, y, color = '#f59e0b') => {
+        if (!text) return 0;
+        doc.save();
+        const bfs = Math.max(5, fs - 1);
+        doc.font('Helvetica-Bold').fontSize(bfs);
+        const tw = doc.widthOfString(text);
+        const bw = tw + 6;
+        const bh = bfs + 4;
+        const by = y + Math.max(0, (rowH - bh) / 2);
+        doc.roundedRect(x, by, bw, bh, 2).fillColor(color).fill();
+        doc.fillColor('#ffffff').text(text, x + 3, by + 1.5, { width: tw + 2, lineBreak: false });
+        doc.restore();
+        return bw + 3;
       };
 
+      // Couleur badge selon section
+      const getBadgeColor = (sectionKey) => {
+        if (sectionKey.includes('location')) return '#d97706';
+        if (sectionKey.includes('prestation')) return '#2563eb';
+        if (sectionKey.includes('vente')) return '#7c3aed';
+        if (sectionKey.includes('installation')) return '#059669';
+        if (sectionKey === 'chargement') return '#d97706';
+        if (sectionKey === 'depart') return '#2563eb';
+        if (sectionKey === 'enlevement' || sectionKey === 'recuperation') return '#059669';
+        if (sectionKey === 'retour') return '#7c3aed';
+        return '#6b7280';
+      };
+
+      // ── EN-TÊTE (compact) ──
+      doc.fontSize(16).font('Helvetica-Bold').text('Fiche du jour', { align: 'center' });
+      doc.moveDown(0.15);
+      doc.fontSize(10).font('Helvetica').text(dateFr.charAt(0).toUpperCase() + dateFr.slice(1), { align: 'center' });
+      doc.moveDown(0.1);
+      doc.fontSize(7).fillColor('#999999')
+        .text(`${totalItems} élément${totalItems > 1 ? 's' : ''}`, { align: 'center' });
+      doc.fillColor('#000000');
+      doc.moveDown(0.3);
+      doc.moveTo(leftX, doc.y).lineTo(leftX + pageW, doc.y)
+        .strokeColor('#cccccc').lineWidth(0.5).stroke();
+      doc.moveDown(0.3);
+
       // ── SECTIONS ──
-      Object.entries(SECTIONS).forEach(([key, info]) => {
+      nonEmptySections.forEach(([key, info]) => {
         const items = grouped[key] || [];
-        if (items.length === 0) return;
-
-        if (doc.y > doc.page.height - 120) doc.addPage();
-
         const color = SECTION_COLORS[key] || [100, 100, 100];
         const hexColor = `#${color.map(c => c.toString(16).padStart(2, '0')).join('')}`;
+        const badgeColor = getBadgeColor(key);
 
-        // Bandeau de section
+        // Bandeau de section (compact)
         const bannerY = doc.y;
-        doc.rect(leftX, bannerY, pageW, 22).fillColor(hexColor).fill();
-        doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff')
-          .text(`${info.label} (${items.length})`, leftX + 10, bannerY + 5, { width: pageW - 20 });
+        doc.rect(leftX, bannerY, pageW, BANNER_H).fillColor(hexColor).fill();
+        doc.fontSize(fs + 1).font('Helvetica-Bold').fillColor('#ffffff')
+          .text(`${info.label} (${items.length})`, leftX + 6, bannerY + 3, { width: pageW - 12 });
         doc.fillColor('#000000');
-        doc.y = bannerY + 28;
+        doc.y = bannerY + BANNER_H + 1;
 
         items.forEach((item, i) => {
           if (item.type === 'task') {
             const t = item.data;
-            const statusLabel = STATUS_LABELS[t.status] || '○';
-            const titleStr = t.title || '—';
+            const statusLabel = STATUS_LABELS[t.status] || '[ ]';
+            const titleStr = cleanTaskTitle(t, key);
+            // Extraire le N° d'affaire depuis le champ OU depuis le titre/google_event_title
+            const affNum = t.affaire_num
+              || ((t.title || '').match(/\bAF\s*\d{3,}/i) || [''])[0].toUpperCase().replace(/\s+/g, '')
+              || ((t.google_event_title || '').match(/\bAF\s*\d{3,}/i) || [''])[0].toUpperCase().replace(/\s+/g, '')
+              || '';
             const personStr = (t.person_first_name || t.person_last_name)
               ? `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim()
               : '';
 
-            if (doc.y > doc.page.height - 60) doc.addPage();
             const rowY = doc.y;
             if (i % 2 === 0) {
-              doc.rect(leftX, rowY, pageW, 18).fillColor('#f8f9fa').fill();
+              doc.rect(leftX, rowY, pageW, rowH).fillColor('#f8f9fa').fill();
             }
-            doc.font('Helvetica').fontSize(9).fillColor('#333333')
-              .text(statusLabel, leftX + 4, rowY + 4, { width: 70 });
-            const titleX = leftX + 74;
-            const titleW = pageW - 240;
+            // Case à cocher
+            const cbX = leftX + 3;
+            const cbY = rowY + Math.max(1, (rowH - cbSize) / 2);
+            drawCheckbox(cbX, cbY, t.status === 'done', cbSize);
+            // Statut
+            doc.font('Helvetica').fontSize(fsSmall).fillColor('#777777')
+              .text(statusLabel, cbX + cbSize + 3, rowY + 2, { width: 44, lineBreak: false });
+            // Badge N° affaire
+            let titleX = leftX + 56;
+            if (affNum) {
+              const badgeW = drawBadge(affNum, titleX, rowY, badgeColor);
+              titleX += badgeW;
+            }
+            // Titre
+            const titleW = leftX + pageW - titleX - 110;
             if (t.status === 'done') {
-              doc.font('Helvetica-Oblique').fillColor('#999999');
+              doc.font('Helvetica-Oblique').fontSize(fs).fillColor('#999999');
             } else {
-              doc.font('Helvetica').fillColor('#111111');
+              doc.font('Helvetica').fontSize(fs).fillColor('#111111');
             }
-            doc.text(titleStr, titleX, rowY + 4, { width: titleW, lineBreak: false });
+            doc.text(titleStr, titleX, rowY + 2, { width: Math.max(titleW, 60), lineBreak: false });
             if (t.status === 'done') {
               const tw = doc.widthOfString(titleStr, { width: titleW });
-              doc.moveTo(titleX, rowY + 10).lineTo(titleX + Math.min(tw, titleW), rowY + 10)
-                .strokeColor('#999999').lineWidth(0.5).stroke();
+              doc.moveTo(titleX, rowY + rowH / 2).lineTo(titleX + Math.min(tw, titleW), rowY + rowH / 2)
+                .strokeColor('#999999').lineWidth(0.4).stroke();
             }
+            // Personne (droite)
             if (personStr) {
-              doc.font('Helvetica').fontSize(8).fillColor('#555555')
-                .text(personStr, leftX + pageW - 160, rowY + 5, { width: 90, lineBreak: false });
+              doc.font('Helvetica').fontSize(fsSmall).fillColor('#555555')
+                .text(personStr, leftX + pageW - 105, rowY + 2, { width: 60, lineBreak: false });
             }
+            // Client (extrême droite)
             if (t.event_client) {
-              doc.font('Helvetica').fontSize(7).fillColor('#888888')
-                .text(t.event_client.slice(0, 15), leftX + pageW - 60, rowY + 3, { width: 55, lineBreak: false });
+              doc.font('Helvetica').fontSize(fsSmall).fillColor('#888888')
+                .text(t.event_client.slice(0, 12), leftX + pageW - 45, rowY + 2, { width: 42, lineBreak: false, align: 'right' });
             }
             doc.fillColor('#000000');
-            doc.y = rowY + 20;
+            doc.y = rowY + rowH;
 
           } else if (item.type === 'affaire' || item.type === 'affaire-rdv') {
             const a = item.data;
-            const label = `📋 ${a.numero_affaire || '?'}`;
-            const detail = `${a.type || ''} — ${a.client || 'Sans client'}${a.adresse_livraison ? ' — ' + a.adresse_livraison.split('\n')[0].slice(0, 40) : ''}`;
-            const right = a.interlocuteur ? a.interlocuteur.slice(0, 20) : '';
-            renderRow(label, detail, right, i);
+            const rowY = doc.y;
+            if (i % 2 === 0) {
+              doc.rect(leftX, rowY, pageW, rowH).fillColor('#f8f9fa').fill();
+            }
+            // Badge N° affaire
+            let contentX = leftX + 4;
+            if (a.numero_affaire) {
+              const badgeW = drawBadge(a.numero_affaire, contentX, rowY, badgeColor);
+              contentX += badgeW;
+            }
+            // Détail
+            const detail = `${a.type || ''} - ${a.client || 'Sans client'}${a.adresse_livraison ? ' - ' + a.adresse_livraison.split('\n')[0].slice(0, 35) : ''}`;
+            doc.font('Helvetica').fontSize(fs).fillColor('#111111')
+              .text(stripEmoji(detail), contentX, rowY + 2, { width: leftX + pageW - contentX - 60, lineBreak: false });
+            if (a.interlocuteur) {
+              doc.font('Helvetica').fontSize(fsSmall).fillColor('#555555')
+                .text(a.interlocuteur.slice(0, 18), leftX + pageW - 55, rowY + 2, { width: 52, lineBreak: false, align: 'right' });
+            }
+            doc.fillColor('#000000');
+            doc.y = rowY + rowH;
 
           } else if (item.type === 'event') {
             const ev = item.data;
-            const typeLabel = EVENT_TYPE_LABELS[ev.type] || ev.type || 'Événement';
-            const label = typeLabel;
-            const detail = `${ev.affaire_id ? ev.affaire_id + ' — ' : ''}${ev.client || ''}${ev.location ? ' — ' + ev.location.slice(0, 30) : ''}`;
-            renderRow(label, detail, '', i);
+            const typeLabel = EVENT_TYPE_LABELS[ev.type] || ev.type || 'Evenement';
+            const isRedundant = AFFAIRE_ONLY_SECTIONS.has(key);
+            const rowY = doc.y;
+            if (i % 2 === 0) {
+              doc.rect(leftX, rowY, pageW, rowH).fillColor('#f8f9fa').fill();
+            }
+            // Badge affaire_id si présent
+            let contentX = leftX + 4;
+            if (ev.affaire_id) {
+              const badgeW = drawBadge(ev.affaire_id, contentX, rowY, badgeColor);
+              contentX += badgeW;
+            }
+            // Label + detail
+            let detail;
+            if (isRedundant) {
+              const parts = [];
+              if (ev.client) parts.push(ev.client);
+              if (ev.location) parts.push(ev.location.slice(0, 25));
+              detail = parts.join(' - ') || '-';
+            } else {
+              if (!ev.affaire_id) {
+                detail = `${typeLabel} - ${ev.client || ''}${ev.location ? ' - ' + ev.location.slice(0, 25) : ''}`;
+              } else {
+                detail = `${typeLabel}${ev.client ? ' - ' + ev.client : ''}${ev.location ? ' - ' + ev.location.slice(0, 25) : ''}`;
+              }
+            }
+            doc.font('Helvetica').fontSize(fs).fillColor('#111111')
+              .text(stripEmoji(detail) || '-', contentX, rowY + 2, { width: leftX + pageW - contentX - 10, lineBreak: false });
+            doc.fillColor('#000000');
+            doc.y = rowY + rowH;
 
           } else if (item.type === 'gcal') {
             const ev = item.data;
             const time = ev.start && ev.start.includes('T')
               ? new Date(ev.start).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
               : '';
-            const label = `📅 ${ev.affaire || 'RDV'}`;
-            const detail = `${ev.summary || 'RDV Google'}${ev.location ? ' — ' + ev.location.slice(0, 30) : ''}`;
-            renderRow(label, detail, time, i);
+            const rowY = doc.y;
+            if (i % 2 === 0) {
+              doc.rect(leftX, rowY, pageW, rowH).fillColor('#f8f9fa').fill();
+            }
+            // Badge affaire si présent
+            let contentX = leftX + 4;
+            if (ev.affaire) {
+              const badgeW = drawBadge(ev.affaire, contentX, rowY, badgeColor);
+              contentX += badgeW;
+            }
+            const detail = `${stripEmoji(ev.summary) || 'RDV Google'}${ev.location ? ' - ' + ev.location.slice(0, 25) : ''}`;
+            doc.font('Helvetica').fontSize(fs).fillColor('#111111')
+              .text(detail, contentX, rowY + 2, { width: leftX + pageW - contentX - 50, lineBreak: false });
+            if (time) {
+              doc.font('Helvetica').fontSize(fsSmall).fillColor('#555555')
+                .text(time, leftX + pageW - 40, rowY + 2, { width: 38, lineBreak: false, align: 'right' });
+            }
+            doc.fillColor('#000000');
+            doc.y = rowY + rowH;
           }
         });
 
-        doc.moveDown(0.5);
+        doc.y += SECTION_GAP;
       });
 
+      // ── SECTION LIBRE : lignes pour notes manuscrites ──
+      const freeY = doc.y;
+      doc.rect(leftX, freeY, pageW, BANNER_H).fillColor('#6b7280').fill();
+      doc.fontSize(fs + 1).font('Helvetica-Bold').fillColor('#ffffff')
+        .text('Notes / Tâches supplémentaires', leftX + 6, freeY + 3, { width: pageW - 12 });
+      doc.fillColor('#000000');
+      doc.y = freeY + BANNER_H + 2;
+
+      for (let i = 0; i < FREE_LINES; i++) {
+        const ly = doc.y;
+        drawCheckbox(leftX + 3, ly + Math.max(1, (FREE_LINE_H - cbSize) / 2), false, cbSize);
+        doc.moveTo(leftX + cbSize + 8, ly + FREE_LINE_H - 3)
+          .lineTo(leftX + pageW, ly + FREE_LINE_H - 3)
+          .strokeColor('#cccccc').lineWidth(0.3).dash(3, { space: 2 }).stroke();
+        doc.undash();
+        doc.y = ly + FREE_LINE_H;
+      }
+
       // ── PIED DE PAGE ──
-      doc.moveDown(1);
-      doc.moveTo(leftX, doc.y).lineTo(leftX + pageW, doc.y)
-        .strokeColor('#cccccc').lineWidth(0.5).stroke();
       doc.moveDown(0.4);
-      doc.fontSize(7).font('Helvetica').fillColor('#aaaaaa')
-        .text(`Généré par eM@g — ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+      doc.moveTo(leftX, doc.y).lineTo(leftX + pageW, doc.y)
+        .strokeColor('#cccccc').lineWidth(0.4).stroke();
+      doc.moveDown(0.2);
+      doc.fontSize(6).font('Helvetica').fillColor('#bbbbbb')
+        .text(`Généré par eM@g - ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
 
       doc.end();
 

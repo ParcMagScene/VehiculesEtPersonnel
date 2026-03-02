@@ -9,14 +9,21 @@ import './TaskPDFExportModal.css';
 
 // ═══ Constantes sections (identiques au planning) ═══
 const SECTIONS = {
-  rdv:                 { label: 'RDV du jour',          emoji: '📅', color: '#059669' },
-  prep_locations:      { label: 'Prépa Locations',      emoji: '📦', color: '#3b82f6' },
-  prep_prestations:    { label: 'Prépa Prestations',    emoji: '🎤', color: '#f59e0b' },
-  prep_ventes:         { label: 'Prépa Ventes',         emoji: '🏷️', color: '#10b981' },
-  prep_installations:  { label: 'Prépa Installations',  emoji: '⚙️', color: '#8b5cf6' },
+  rdv:                 { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
   taches_prioritaires: { label: 'Tâches Prioritaires',  emoji: '🔴', color: '#ef4444' },
-  taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
   courses:             { label: 'Courses',               emoji: '🚗', color: '#8b5cf6' },
+  prep_locations:      { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b', affaireOnly: true },
+  prep_prestations:    { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6', affaireOnly: true },
+  prep_ventes:         { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981', affaireOnly: true },
+  prep_installations:  { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6', affaireOnly: true },
+  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
+  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6', affaireOnly: true },
+  enlevement:          { label: 'Enlèvement',           emoji: '🚚', color: '#10b981', affaireOnly: true },
+  retour:              { label: 'Retour',               emoji: '↩️', color: '#8b5cf6', affaireOnly: true },
+  recuperation:        { label: 'Récupération',         emoji: '📥', color: '#ef4444', affaireOnly: true },
+  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
+  evenements:          { label: 'Autres Événements',    emoji: '📌', color: '#64748b' },
+  taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
   manual:              { label: 'Autres',                emoji: '📋', color: 'var(--theme-text-secondary)' },
 };
 
@@ -60,9 +67,13 @@ const mapEventToSection = (event) => {
     if (cat === 'installation') return 'prep_installations';
     return 'prep_locations';
   }
-  if (['livraison', 'enlevement', 'depart'].includes(type)) return 'taches_prioritaires';
-  if (['retour', 'recuperation'].includes(type)) return 'taches_secondaires';
-  return 'manual';
+  if (type === 'enlevement') return 'enlevement';
+  if (type === 'depart') return 'depart';
+  if (type === 'livraison') return 'chargement';
+  if (type === 'retour') return 'retour';
+  if (type === 'recuperation') return 'recuperation';
+  if (type === 'installation') return 'installation';
+  return 'evenements';
 };
 
 const mapAffaireToSection = (affaire) => {
@@ -239,18 +250,66 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
   const totalItems = allItems.length;
   const dateFr = formatDateFr(date);
 
+  // ── Index affaires par numéro pour enrichir les tâches ──
+  const affaireByNum = useMemo(() => {
+    const map = new Map();
+    (affaires || []).forEach(a => {
+      if (a.numeroAffaire) map.set(a.numeroAffaire.toUpperCase(), a);
+    });
+    return map;
+  }, [affaires]);
+
+  // ── Nettoyage titre de tâche (supprimer doublons section/affaire) ──
+  const cleanTaskTitle = (task) => {
+    let title = task.title || '-';
+    const sectionInfo = SECTIONS[task.section];
+    const affNum = task.affaireNum || (title.match(/\bAF\s*\d{3,}/i) || [''])[0];
+    // 1. Retirer le suffixe " — eventSummary"
+    if (task.googleEventTitle) {
+      const dashIdx = title.indexOf(' — ');
+      if (dashIdx >= 0) {
+        const suffix = title.slice(dashIdx + 3).trim();
+        if (suffix.toLowerCase() === task.googleEventTitle.trim().toLowerCase()) {
+          title = title.slice(0, dashIdx).trim();
+        }
+      }
+    }
+    // 2. Retirer label de section (redondant avec le bandeau)
+    if (sectionInfo?.affaireOnly) {
+      title = title
+        .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
+        .replace(/^(Préparation|Chargement|Départ|Enlèvement|Retour|Récupération|Installation|Livraison)\s*—?\s*/i, '')
+        .trim();
+      if (!title) title = task.googleEventTitle || task.notes || '-';
+    }
+    // 3. Retirer N° affaire du titre
+    if (affNum) {
+      const esc = affNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      title = title.replace(new RegExp(esc, 'gi'), '').replace(/\s{2,}/g, ' ').trim();
+    }
+    // 4. Enrichir avec client/titre affaire si titre trop générique
+    const linkedAffaire = affNum ? affaireByNum.get(affNum.toUpperCase()) : null;
+    if (linkedAffaire && (!title || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(title))) {
+      title = linkedAffaire.client || linkedAffaire.titre || linkedAffaire.eventName || title || '-';
+    }
+    return title || '-';
+  };
+
   // ── Rendu d'un item dans la liste de sélection ──
   const renderItemRow = (item) => {
     const checked = selectedIds.has(item.uid);
+    const sectionInfo = SECTIONS[item.section];
+    const isAffaireOnly = sectionInfo?.affaireOnly;
 
     if (item.type === 'task') {
       const task = item.data;
       const isDone = task.status === 'done';
+      const displayTitle = cleanTaskTitle(task);
       return (
         <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <span className="task-cb-status" title={STATUS_LABELS[task.status]}>{STATUS_ICONS[task.status]}</span>
-          <span className={`task-cb-title ${isDone ? 'done' : ''}`}>{task.title}</span>
+          <span className={`task-cb-title ${isDone ? 'done' : ''}`}>{displayTitle}</span>
           {(task.personFirstName || task.personLastName) && (
             <span className="task-cb-person"><User size={10} /> {task.personFirstName} {task.personLastName?.charAt(0)}.</span>
           )}
@@ -274,11 +333,15 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     if (item.type === 'event') {
       const ev = item.data;
       const ti = EVENT_TYPES[ev.type] || { label: ev.type || 'Événement', emoji: '📌' };
+      // Dans les sections affaireOnly, ne pas répéter le type
+      const displayText = isAffaireOnly
+        ? [ev.affaireId, ev.client].filter(Boolean).join(' — ') || ti.label
+        : `${ti.label} ${ev.affaireId ? `(${ev.affaireId})` : ''} ${ev.client ? `— ${ev.client}` : ''}`;
       return (
         <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
-          <span className="task-cb-status">{ti.emoji}</span>
-          <span className="task-cb-title">{ti.label} {ev.affaireId ? `(${ev.affaireId})` : ''} {ev.client ? `— ${ev.client}` : ''}</span>
+          <span className="task-cb-status">{isAffaireOnly ? '' : ti.emoji}</span>
+          <span className="task-cb-title">{displayText}</span>
           {ev.location && <span className="task-cb-person"><MapPin size={10} /> {ev.location.slice(0, 20)}</span>}
         </div>
       );

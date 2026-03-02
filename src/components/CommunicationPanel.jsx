@@ -54,20 +54,29 @@ const addDays = (dateStr, n) => {
 // ═══ Sous-panneau : Affichage Dynamique ═══
 
 const AFFAIRE_TYPE_INFO = {
-  'Prestation':    { label: 'Prestation',    emoji: '🎭', color: '#f59e0b' },
-  'Location':      { label: 'Location',      emoji: '🏗️', color: '#3b82f6' },
+  'Prestation':    { label: 'Prestation',    emoji: '🎭', color: '#3b82f6' },
+  'Location':      { label: 'Location',      emoji: '🏗️', color: '#f59e0b' },
   'Vente':         { label: 'Vente',         emoji: '💰', color: '#8b5cf6' },
   'Installation':  { label: 'Installation',  emoji: '⚙️', color: '#10b981' },
 };
 
 const TASK_SECTION_INFO = {
-  prep_locations:     { label: 'Prép. Locations',     emoji: '🏗️', color: '#3b82f6' },
-  prep_prestations:   { label: 'Prép. Prestations',   emoji: '🎭', color: '#f59e0b' },
-  prep_ventes:        { label: 'Prép. Ventes',         emoji: '💰', color: '#8b5cf6' },
-  prep_installations: { label: 'Prép. Installations',  emoji: '⚙️', color: '#10b981' },
-  taches_prioritaires:{ label: 'Tâches prioritaires',  emoji: '⚡', color: '#ef4444' },
-  taches_secondaires: { label: 'Tâches secondaires',   emoji: '📋', color: '#64748b' },
-  rdv:                { label: 'Rendez-vous',           emoji: '📅', color: '#06b6d4' },
+  rdv:                { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
+  prep_locations:     { label: 'Préparations Locations',      emoji: '🏗️', color: '#f59e0b' },
+  prep_prestations:   { label: 'Préparations Prestations',    emoji: '🎭', color: '#3b82f6' },
+  prep_ventes:        { label: 'Préparations Ventes',          emoji: '💰', color: '#8b5cf6' },
+  prep_installations: { label: 'Préparations Installations',   emoji: '⚙️', color: '#10b981' },
+  chargement:         { label: 'Chargement',            emoji: '📦', color: '#f59e0b' },
+  depart:             { label: 'Départ',                emoji: '🚀', color: '#3b82f6' },
+  enlevement:         { label: 'Enlèvement',            emoji: '🚚', color: '#10b981' },
+  retour:             { label: 'Retour',                emoji: '↩️', color: '#8b5cf6' },
+  recuperation:       { label: 'Récupération',          emoji: '📥', color: '#ef4444' },
+  installation:       { label: 'Installation',          emoji: '🛠️', color: '#10b981' },
+  evenements:         { label: 'Autres événements',     emoji: '📌', color: '#64748b' },
+  taches_prioritaires:{ label: 'Tâches prioritaires',   emoji: '⚡', color: '#ef4444' },
+  taches_secondaires: { label: 'Tâches secondaires',    emoji: '📋', color: '#64748b' },
+  courses:            { label: 'Courses',               emoji: '🚗', color: '#8b5cf6' },
+  manual:             { label: 'Autres',                emoji: '📋', color: 'var(--theme-text-secondary)' },
 };
 
 function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshKey, googleEvents = [] }) {
@@ -177,6 +186,48 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     return list;
   }, [affaires, searchTerm]);
 
+  // ── Lier les événements Google aux affaires par numéro d'affaire ──
+  // Les events Google contenant un AF existant sont masqués, l'affaire prend le relais
+  const { deduplicatedGoogleEvents, enrichedFilteredAffaires } = useMemo(() => {
+    const affaireNumMap = new Map();
+    filteredAffaires.forEach(a => {
+      if (a.numeroAffaire) affaireNumMap.set(a.numeroAffaire.toUpperCase(), a);
+    });
+
+    const linkedByAffaire = new Map();
+    const deduped = filteredGoogleEvents.filter(ev => {
+      const match = (ev.summary || '').match(/AF\d{4,}/i);
+      if (match) {
+        const num = match[0].toUpperCase();
+        if (affaireNumMap.has(num)) {
+          if (!linkedByAffaire.has(num)) linkedByAffaire.set(num, ev);
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const enriched = filteredAffaires.map(a => {
+      const num = (a.numeroAffaire || '').toUpperCase();
+      const gev = linkedByAffaire.get(num);
+      if (gev) {
+        const startDT = gev.start?.dateTime || '';
+        const endDT = gev.end?.dateTime || '';
+        return {
+          ...a,
+          _linkedGoogleEvent: gev,
+          _googleTime: startDT.includes('T') ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+          _googleEndTime: endDT.includes('T') ? new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+          _googleLocation: gev.location || '',
+          _googleId: gev.id,
+        };
+      }
+      return a;
+    });
+
+    return { deduplicatedGoogleEvents: deduped, enrichedFilteredAffaires: enriched };
+  }, [filteredGoogleEvents, filteredAffaires]);
+
   // Filtrer tâches par recherche
   const filteredTasks = useMemo(() => {
     let list = tasks;
@@ -208,13 +259,13 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
   // Grouper affaires par type
   const affairesByType = useMemo(() => {
     const groups = {};
-    filteredAffaires.forEach(a => {
+    enrichedFilteredAffaires.forEach(a => {
       const t = a.type || 'Autre';
       if (!groups[t]) groups[t] = [];
       groups[t].push(a);
     });
     return groups;
-  }, [filteredAffaires]);
+  }, [enrichedFilteredAffaires]);
 
   // Grouper par jour (vue semaine) — événements + affaires + tâches
   const weekGroupedDisplay = useMemo(() => {
@@ -225,8 +276,8 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
       const d = ev.date;
       if (map[d]) map[d].events.push(ev);
     });
-    // Ajouter les affaires à chaque jour où elles sont actives
-    filteredAffaires.forEach(a => {
+    // Ajouter les affaires enrichies à chaque jour où elles sont actives
+    enrichedFilteredAffaires.forEach(a => {
       weekDays.forEach(d => {
         if (a.dateDebut && a.dateDebut <= d && (!a.dateFin || a.dateFin === '' || a.dateFin >= d)) {
           map[d].affaires.push(a);
@@ -238,8 +289,8 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
       const d = t.date;
       if (map[d]) map[d].tasks.push(t);
     });
-    // Ajouter les Google events
-    filteredGoogleEvents.forEach(ev => {
+    // Ajouter les Google events (uniquement ceux non liés à une affaire)
+    deduplicatedGoogleEvents.forEach(ev => {
       const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
       if (map[evDate]) {
         if (!map[evDate].googleEvents) map[evDate].googleEvents = [];
@@ -247,7 +298,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
       }
     });
     return map;
-  }, [filteredEvents, filteredAffaires, filteredTasks, filteredGoogleEvents, weekDays, viewMode]);
+  }, [filteredEvents, enrichedFilteredAffaires, filteredTasks, deduplicatedGoogleEvents, weekDays, viewMode]);
 
   const handleDelete = async (id) => {
     setConfirmDialog({
@@ -358,7 +409,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
             </span>
             {isGoogle && <span className="dd-google-badge">G</span>}
             {task.affaireNum && (
-              <span className="event-affaire">
+              <span className="event-affaire affaire-num-badge">
                 <Briefcase size={13} /> {task.affaireNum}
               </span>
             )}
@@ -463,7 +514,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
     return map;
   }, [filteredTasks]);
 
-  const allPlanningItems = filteredGoogleEvents.length + filteredAffaires.length;
+  const allPlanningItems = deduplicatedGoogleEvents.length + enrichedFilteredAffaires.length;
 
   // ── Rendu Google event (style identique à la Planification) ──
   const renderGoogleRdvRow = (event) => {
@@ -547,18 +598,33 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
   const renderAffaireRdvRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
     const isExpanded = expandedRdv === affaire.numeroAffaire;
+    const isProcessed = affaire._googleId ? processedGoogleIds.has(affaire._googleId) : false;
     return (
       <div key={`rdv-${affaire.numeroAffaire}`} className="dd-rdv-block">
-        <div className="dd-rdv-row affaire-rdv">
+        <div
+          className={`dd-rdv-row affaire-rdv ${affaire._linkedGoogleEvent ? 'google-linked' : ''} ${isProcessed ? 'processed' : ''}`}
+          onClick={affaire._linkedGoogleEvent ? () => setEventTaskModalEvent(affaire._linkedGoogleEvent) : undefined}
+          style={affaire._linkedGoogleEvent ? { cursor: 'pointer' } : {}}
+        >
           <span className="dd-rdv-icon" style={{ color: typeInfo.color }}>
-            <Calendar size={14} />
+            {affaire._linkedGoogleEvent ? <Calendar size={14} /> : <Briefcase size={14} />}
           </span>
           <div className="dd-rdv-info">
             <div className="dd-rdv-title">
               {typeInfo.emoji} {affaire.numeroAffaire} — {affaire.client || 'Sans client'}
+              {affaire._linkedGoogleEvent && <span className="dd-google-badge" title="Lié à Google Calendar">G</span>}
+              {isProcessed && <span className="dd-google-status done">✓</span>}
             </div>
+            {(affaire.titre || affaire.event_name) && (
+              <div className="dd-rdv-subtitle">{affaire.event_name || affaire.titre}</div>
+            )}
             <div className="dd-rdv-meta">
-              {affaire.adresseLivraison && <span><MapPin size={11} /> {affaire.adresseLivraison.split('\n')[0]}</span>}
+              {affaire._googleTime && (
+                <span><Clock size={11} /> {affaire._googleTime}{affaire._googleEndTime ? ` → ${affaire._googleEndTime}` : ''}</span>
+              )}
+              {(affaire._googleLocation || affaire.adresseLivraison) && (
+                <span><MapPin size={11} /> {(affaire._googleLocation || affaire.adresseLivraison).split('\n')[0]}</span>
+              )}
               {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
               {affaire.tel && <span>📞 {affaire.tel}</span>}
               <span>📆 {affaire.dateDebut ? new Date(affaire.dateDebut + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}
@@ -567,7 +633,12 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
             </div>
           </div>
           <div className="dd-rdv-actions">
-            <button className="dd-btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
+            {affaire._linkedGoogleEvent && (
+              <span className={`dd-google-status ${isProcessed ? 'done' : 'pending'}`}>
+                {isProcessed ? '✓ Planifié' : '⚙ Définir'}
+              </span>
+            )}
+            <button className="dd-btn-rdv-view" onClick={(e) => { e.stopPropagation(); setExpandedRdv(isExpanded ? null : affaire.numeroAffaire); }} title="Voir détails">
               <Eye size={14} />
             </button>
           </div>
@@ -601,8 +672,8 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
           <div className="dd-events-empty">Aucun événement</div>
         ) : (
           <div className="dd-events-list">
-            {filteredGoogleEvents.map(renderGoogleRdvRow)}
-            {filteredAffaires.map(renderAffaireRdvRow)}
+            {deduplicatedGoogleEvents.map(renderGoogleRdvRow)}
+            {enrichedFilteredAffaires.map(renderAffaireRdvRow)}
           </div>
         )}
       </div>
@@ -784,7 +855,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
               );
             })}
           </div>
-        ) : filteredEvents.length === 0 && filteredAffaires.length === 0 && filteredTasks.length === 0 ? (
+        ) : filteredEvents.length === 0 && enrichedFilteredAffaires.length === 0 && filteredTasks.length === 0 ? (
           <div className="events-empty">
             <Calendar size={48} />
             <p>Aucun événement ni affaire pour le {formatDateShort(selectedDate)}</p>
@@ -830,7 +901,7 @@ function DynamicDisplayPanel({ currentUser, onEditEvent, onCreateEvent, refreshK
 // ═══ Composant Principal ═══
 function CommunicationPanel({ currentUser, googleEvents = [] }) {
   const toast = useToast();
-  const [activeSubTab, setActiveSubTab] = useState('display');
+  const [activeSubTab, setActiveSubTab] = useState('tasks');
   const [stats, setStats] = useState(null);
 
   // Dialog d'événement (Phase 4)
@@ -856,8 +927,8 @@ function CommunicationPanel({ currentUser, googleEvents = [] }) {
   };
 
   const subTabs = [
-    { id: 'display', label: 'Affichage dynamique', icon: Monitor, count: stats?.displayEventsTotal || 0 },
     { id: 'tasks', label: 'Planification', icon: ClipboardList, count: stats?.tasksPending || 0 },
+    { id: 'display', label: 'Affichage dynamique', icon: Monitor, count: stats?.displayEventsTotal || 0 },
     { id: 'dashboard', label: 'Dashboard Écrans', icon: Tv2 },
   ];
 

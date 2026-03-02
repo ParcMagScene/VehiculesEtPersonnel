@@ -14,57 +14,68 @@
 .stock-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
-  color: var(--theme-text-inverse);
+  gap: 4px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--theme-border);
+  background: var(--theme-bg-secondary);
   flex-shrink: 0;
+  overflow-x: auto;
 }
 
-.stock-header-left {
+.stock-header-stats {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.stock-header-stats .stat-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--theme-primary);
+  white-space: nowrap;
 }
 
-.stock-header-left h2 {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 600;
+.stock-header-stats .stat-badge.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
 }
 
 .stock-tabs {
   display: flex;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 3px;
-  border-radius: 8px;
 }
 
 .stock-tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.82rem;
+  color: var(--theme-text-secondary);
+  font-size: 0.85rem;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
 
 .stock-tab:hover {
-  color: var(--theme-text-inverse);
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-primary);
 }
 
 .stock-tab.active {
-  background: var(--theme-bg-card);
-  color: var(--theme-primary-dark);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
 }
 
 /* ═══ Content ═══ */
@@ -1241,9 +1252,14 @@
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
   .stock-header {
-    flex-direction: column;
-    gap: 10px;
-    padding: 10px 14px;
+    padding: 8px 16px;
+    flex-wrap: wrap;
+  }
+
+  .stock-header-stats {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .stock-tabs {

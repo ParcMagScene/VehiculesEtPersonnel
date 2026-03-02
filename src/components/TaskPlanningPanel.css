@@ -1013,3 +1013,174 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══ Toolbar buttons ═══ */
+.task-planning-panel .btn-toolbar-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.task-planning-panel .btn-toolbar-action:hover {
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-primary);
+}
+.task-planning-panel .btn-toolbar-action.active {
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  border-color: var(--theme-primary);
+}
+
+/* ═══ Recurring Tasks Panel ═══ */
+.task-planning-panel .recurring-panel {
+  border-bottom: 2px solid var(--theme-border);
+  background: var(--theme-bg-secondary);
+  padding: 12px 24px 16px;
+  flex-shrink: 0;
+  max-height: 350px;
+  overflow-y: auto;
+}
+.task-planning-panel .recurring-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.task-planning-panel .recurring-panel-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+.task-planning-panel .btn-add-recurring {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid var(--theme-primary);
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--theme-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.task-planning-panel .btn-add-recurring:hover {
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+}
+
+/* Recurring form */
+.task-planning-panel .recurring-form {
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-primary);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.task-planning-panel .recurring-form-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.task-planning-panel .recurring-form-row input,
+.task-planning-panel .recurring-form-row select {
+  padding: 6px 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  font-size: 0.82rem;
+}
+.task-planning-panel .recurring-form-row input:focus,
+.task-planning-panel .recurring-form-row select:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+}
+.task-planning-panel .recurring-form-row input[type="text"] {
+  flex: 1;
+  min-width: 150px;
+}
+.task-planning-panel .recurring-form-row input[type="time"] {
+  width: 100px;
+}
+
+/* Recurring list */
+.task-planning-panel .recurring-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.task-planning-panel .recurring-empty {
+  text-align: center;
+  color: var(--theme-text-secondary);
+  font-size: 0.82rem;
+  padding: 12px;
+}
+.task-planning-panel .recurring-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  transition: background 0.1s;
+}
+.task-planning-panel .recurring-item:hover {
+  background: var(--theme-bg-tertiary);
+}
+.task-planning-panel .recurring-item.inactive {
+  opacity: 0.5;
+}
+.task-planning-panel .recurring-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.task-planning-panel .recurring-item-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--theme-text-primary);
+}
+.task-planning-panel .recurring-item-meta {
+  font-size: 0.75rem;
+  color: var(--theme-text-secondary);
+}
+.task-planning-panel .recurring-item-actions {
+  display: flex;
+  gap: 4px;
+}
+.task-planning-panel .recurring-item-actions button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.task-planning-panel .recurring-item-actions button:hover {
+  background: var(--theme-bg-tertiary);
+}
+.task-planning-panel .recurring-item-actions button.delete:hover {
+  color: #ef4444;
+}

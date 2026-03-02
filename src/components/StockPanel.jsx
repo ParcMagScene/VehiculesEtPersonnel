@@ -184,12 +184,8 @@ function StockPanel({ currentUser }) {
   // ═══ Rendu ═══
   return (
     <div className="stock-panel">
-      {/* Header */}
+      {/* Header — unified tabs + stats */}
       <div className="stock-header">
-        <div className="stock-header-left">
-          <Package size={24} />
-          <h2>Stock & Pièces</h2>
-        </div>
         <div className="stock-tabs">
           {tabs.map(tab => {
             const Icon = tab.icon;
@@ -205,6 +201,12 @@ function StockPanel({ currentUser }) {
             );
           })}
         </div>
+        {stats && (
+          <div className="stock-header-stats">
+            <span className="stat-badge"><Package size={14} /> {stats.totalItems || 0} articles</span>
+            {stats.lowStockCount > 0 && <span className="stat-badge warning"><AlertTriangle size={14} /> {stats.lowStockCount} stock bas</span>}
+          </div>
+        )}
       </div>
 
       {/* Content */}

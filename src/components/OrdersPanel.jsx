@@ -404,46 +404,6 @@ function OrdersPanel({ currentUser }) {
 
   return (
     <div className="orders-panel">
-      {/* Stats bar */}
-      {stats && (
-        <div className="orders-stats-bar">
-          <div className="orders-stat">
-            <ShoppingCart size={16} />
-            <span className="stat-value">{stats.orders?.total || 0}</span>
-            <span className="stat-label">Commandes</span>
-          </div>
-          <div className="orders-stat">
-            <FileText size={16} />
-            <span className="stat-value">{stats.quotes?.total || 0}</span>
-            <span className="stat-label">Devis</span>
-          </div>
-          <div className="orders-stat">
-            <Building2 size={16} />
-            <span className="stat-value">{stats.suppliers?.total || 0}</span>
-            <span className="stat-label">Fournisseurs</span>
-          </div>
-          {requestStats && (
-            <div className="orders-stat" style={requestStats.pending > 0 ? { borderColor: '#f59e0b' } : undefined}>
-              <ClipboardList size={16} />
-              <span className="stat-value">{requestStats.pending || 0}</span>
-              <span className="stat-label">Demandes en attente</span>
-            </div>
-          )}
-          <div className="orders-stat highlight">
-            <Euro size={16} />
-            <span className="stat-value">{formatCurrency(stats.orders?.total_ht || 0)}</span>
-            <span className="stat-label">Total commandes HT</span>
-          </div>
-          {completionAlerts.length > 0 && (
-            <div className="orders-stat alert-stat" onClick={() => setActiveTab('requests')}>
-              <Bell size={16} />
-              <span className="stat-value">{completionAlerts.length}</span>
-              <span className="stat-label">Alertes</span>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Completion Alerts Banner */}
       {completionAlerts.length > 0 && (
         <div className="completion-alerts-banner">
@@ -461,7 +421,7 @@ function OrdersPanel({ currentUser }) {
         </div>
       )}
 
-      {/* Tabs */}
+      {/* Tabs + Stats unified */}
       <div className="orders-tabs">
         <button className={`orders-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => { setActiveTab('orders'); setStatusFilter(''); }}>
           <ShoppingCart size={16} /> Commandes
@@ -476,6 +436,16 @@ function OrdersPanel({ currentUser }) {
         <button className={`orders-tab ${activeTab === 'suppliers' ? 'active' : ''}`} onClick={() => { setActiveTab('suppliers'); setStatusFilter(''); }}>
           <Building2 size={16} /> Fournisseurs
         </button>
+        {stats && (
+          <div className="orders-header-stats">
+            <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
+            <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
+            <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
+            {completionAlerts.length > 0 && (
+              <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Toolbar */}

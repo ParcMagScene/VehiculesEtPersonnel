@@ -2827,6 +2827,82 @@ try {
   logger.warn('⚠️ Migration hide_rdv_events_on_tv:', error.message);
 }
 
+// Migration : ajouter prep_tournees au CHECK constraint de task_assignments
+try {
+  const checkInfo5 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+  if (checkInfo5 && checkInfo5.sql && !checkInfo5.sql.includes("'prep_tournees'")) {
+    logger.info('Migration: ajout section prep_tournees à task_assignments...');
+    db.exec('BEGIN TRANSACTION');
+    db.exec(`
+      CREATE TABLE task_assignments_new (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        display_event_id TEXT REFERENCES dynamic_display_events(id) ON DELETE SET NULL,
+        person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+        date TEXT NOT NULL,
+        period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+        time TEXT,
+        end_time TEXT,
+        section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
+          'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations', 'prep_tournees',
+          'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+          'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
+        )),
+        title TEXT,
+        notes TEXT DEFAULT '',
+        source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire', 'recurring')),
+        source_id TEXT,
+        google_event_title TEXT,
+        affaire_num TEXT,
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
+        visible INTEGER DEFAULT 1,
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER,
+        modified_at TEXT
+      )
+    `);
+    const oldCols5 = db.pragma('table_info(task_assignments)').map(c => c.name);
+    const newCols5 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
+    const commonCols5 = oldCols5.filter(c => newCols5.includes(c)).join(', ');
+    db.exec(`INSERT INTO task_assignments_new (${commonCols5}) SELECT ${commonCols5} FROM task_assignments`);
+    db.exec('DROP TABLE task_assignments');
+    db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_person ON task_assignments(person_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+    db.exec('COMMIT');
+    logger.info('✅ Section prep_tournees + source_type recurring ajoutés');
+  }
+} catch (migErr5) {
+  try { db.exec('ROLLBACK'); } catch(e) {}
+  logger.warn('Migration prep_tournees:', migErr5.message);
+}
+
+// ── Table recurring_tasks : tâches récurrentes ──
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS recurring_tasks (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      title TEXT NOT NULL,
+      section TEXT NOT NULL DEFAULT 'manual',
+      time TEXT,
+      period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+      recurrence TEXT NOT NULL DEFAULT 'daily' CHECK(recurrence IN ('daily', 'weekly', 'monthly')),
+      day_of_week INTEGER,
+      day_of_month INTEGER,
+      notes TEXT DEFAULT '',
+      active INTEGER DEFAULT 1,
+      created_by INTEGER REFERENCES users(id),
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  logger.info('✅ Table recurring_tasks vérifiée/créée');
+} catch (error) {
+  logger.warn('⚠️ recurring_tasks:', error.message);
+}
+
 // Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
   try {

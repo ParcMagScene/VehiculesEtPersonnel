@@ -284,21 +284,8 @@ function AnnuairePanel({ currentUser }) {
   // ═══ RENDU ═══
   return (
     <div className="annuaire-panel">
-      {/* Header */}
+      {/* Header — unified tabs + stats */}
       <div className="annuaire-header">
-        <div className="annuaire-header-top">
-          <h2><Building2 size={22} /> Annuaire</h2>
-          {stats && (
-            <div className="annuaire-stats-bar">
-              <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
-              <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
-              <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
-              <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
-            </div>
-          )}
-        </div>
-
-        {/* Tabs */}
         <div className="annuaire-tabs">
           {ENTITY_TABS.map(tab => {
             const Icon = tab.icon;
@@ -315,6 +302,14 @@ function AnnuairePanel({ currentUser }) {
             );
           })}
         </div>
+        {stats && (
+          <div className="annuaire-header-stats">
+            <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
+            <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
+            <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
+            <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
+          </div>
+        )}
       </div>
 
       {/* Toolbar */}

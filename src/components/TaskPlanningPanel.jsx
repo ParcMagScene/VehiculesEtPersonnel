@@ -208,11 +208,17 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const handleSaveRecurring = async () => {
     if (!recurringForm) return;
     if (!recurringForm.title?.trim()) { toast.warning('Titre requis'); return; }
+    // Préparer le payload avec les clés snake_case attendues par le serveur
+    const payload = {
+      ...recurringForm,
+      day_of_week: recurringForm.dayOfWeek,
+      day_of_month: recurringForm.dayOfMonth,
+    };
     try {
       if (recurringForm.id) {
-        await api.updateRecurringTask(recurringForm.id, recurringForm);
+        await api.updateRecurringTask(recurringForm.id, payload);
       } else {
-        await api.createRecurringTask(recurringForm);
+        await api.createRecurringTask(payload);
       }
       toast.success(recurringForm.id ? 'Tâche récurrente modifiée' : 'Tâche récurrente créée');
       setRecurringForm(null);
@@ -1310,7 +1316,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="recurring-panel">
           <div className="recurring-panel-header">
             <h3><Repeat size={18} /> Tâches Récurrentes</h3>
-            <button className="btn-add-recurring" onClick={() => setRecurringForm({ title: '', section: 'manual', recurrence: 'daily', day_of_week: 1, day_of_month: 1, time: '08:00', period: 'AM', notes: '' })}>
+            <button className="btn-add-recurring" onClick={() => setRecurringForm({ title: '', section: 'manual', recurrence: 'daily', dayOfWeek: 1, dayOfMonth: 1, time: '08:00', period: 'AM', notes: '' })}>
               <Plus size={14} /> Ajouter
             </button>
           </div>
@@ -1333,12 +1339,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                   <option value="monthly">Mensuelle</option>
                 </select>
                 {recurringForm.recurrence === 'weekly' && (
-                  <select value={recurringForm.day_of_week ?? 1} onChange={e => setRecurringForm(f => ({ ...f, day_of_week: parseInt(e.target.value) }))}>
+                  <select value={recurringForm.dayOfWeek ?? 1} onChange={e => setRecurringForm(f => ({ ...f, dayOfWeek: parseInt(e.target.value) }))}>
                     {DAYS_FR.map((d, i) => <option key={i} value={i}>{d}</option>)}
                   </select>
                 )}
                 {recurringForm.recurrence === 'monthly' && (
-                  <select value={recurringForm.day_of_month ?? 1} onChange={e => setRecurringForm(f => ({ ...f, day_of_month: parseInt(e.target.value) }))}>
+                  <select value={recurringForm.dayOfMonth ?? 1} onChange={e => setRecurringForm(f => ({ ...f, dayOfMonth: parseInt(e.target.value) }))}>
                     {Array.from({ length: 31 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
                   </select>
                 )}
@@ -1369,8 +1375,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                   <span className="recurring-item-title">{SECTIONS[rt.section]?.emoji || '📋'} {rt.title}</span>
                   <span className="recurring-item-meta">
                     {rt.recurrence === 'daily' && '🔄 Tous les jours'}
-                    {rt.recurrence === 'weekly' && `🔄 Chaque ${DAYS_FR[rt.day_of_week] || ''}`}
-                    {rt.recurrence === 'monthly' && `🔄 Le ${rt.day_of_month} de chaque mois`}
+                    {rt.recurrence === 'weekly' && `🔄 Chaque ${DAYS_FR[rt.dayOfWeek] || ''}`}
+                    {rt.recurrence === 'monthly' && `🔄 Le ${rt.dayOfMonth} de chaque mois`}
                     {rt.time && ` à ${rt.time}`}
                     {' · '}{SECTIONS[rt.section]?.label || rt.section}
                   </span>

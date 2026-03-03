@@ -2941,6 +2941,60 @@ try {
   logger.warn('Migration ical_event source_type:', migErr6.message);
 }
 
+// Migration : ajouter montage/demontage au CHECK constraint de task_assignments
+try {
+  const checkInfo7 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+  if (checkInfo7 && checkInfo7.sql && !checkInfo7.sql.includes("'montage'")) {
+    logger.info('Migration: ajout sections montage/demontage à task_assignments...');
+    db.exec('BEGIN TRANSACTION');
+    db.exec(`
+      CREATE TABLE task_assignments_new (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        display_event_id TEXT REFERENCES dynamic_display_events(id) ON DELETE SET NULL,
+        person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+        date TEXT NOT NULL,
+        period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+        time TEXT,
+        end_time TEXT,
+        section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
+          'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations', 'prep_tournees',
+          'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+          'montage', 'demontage',
+          'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
+        )),
+        title TEXT,
+        notes TEXT DEFAULT '',
+        source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire', 'recurring')),
+        source_id TEXT,
+        google_event_title TEXT,
+        affaire_num TEXT,
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
+        visible INTEGER DEFAULT 1,
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER,
+        modified_at TEXT
+      )
+    `);
+    const oldCols7 = db.pragma('table_info(task_assignments)').map(c => c.name);
+    const newCols7 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
+    const commonCols7 = oldCols7.filter(c => newCols7.includes(c)).join(', ');
+    db.exec(`INSERT INTO task_assignments_new (${commonCols7}) SELECT ${commonCols7} FROM task_assignments`);
+    db.exec('DROP TABLE task_assignments');
+    db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_person ON task_assignments(person_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+    db.exec('COMMIT');
+    logger.info('✅ Sections montage/demontage ajoutées à task_assignments');
+  }
+} catch (migErr7) {
+  try { db.exec('ROLLBACK'); } catch(e) {}
+  logger.warn('Migration montage/demontage:', migErr7.message);
+}
+
 // ── Table recurring_tasks : tâches récurrentes ──
 try {
   db.exec(`

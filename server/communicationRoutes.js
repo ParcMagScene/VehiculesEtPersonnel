@@ -674,11 +674,13 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         preparation: 'prep_locations', livraison: 'taches_prioritaires',
         enlevement: 'taches_prioritaires', depart: 'taches_prioritaires',
         retour: 'taches_secondaires', recuperation: 'taches_secondaires',
+        montage: 'montage', demontage: 'demontage',
       };
 
       const EVENT_TYPE_LABELS = {
         preparation: 'Préparation', enlevement: 'Enlèvement', livraison: 'Livraison',
         depart: 'Départ', retour: 'Retour', recuperation: 'Récupération',
+        montage: 'Montage', demontage: 'Démontage',
       };
 
       const STATUS_LABELS = {
@@ -705,6 +707,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const AFFAIRE_ONLY_SECTIONS = new Set([
         'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
         'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+        'montage', 'demontage',
       ]);
 
       // Nettoyer le titre d'une tâche pour le PDF (supprimer doublons avec section/affaire)

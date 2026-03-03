@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X, Clock, User, FileText, Calendar, Check, Loader, Save
+  X, Clock, User, FileText, Calendar, Check, Loader, Save, Briefcase
 } from 'lucide-react';
 import api from '../utils/api';
 import AffaireBadge from './AffaireBadge';
@@ -178,9 +178,9 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
             </select>
           </div>
 
-          {/* Section */}
+          {/* Type de tâche */}
           <div className="tem-field full">
-            <label>Section</label>
+            <label><Briefcase size={13} /> Type</label>
             <select value={form.section} onChange={e => update('section', e.target.value)}>
               {Object.entries(SECTIONS).map(([key, label]) => (
                 <option key={key} value={key}>{label}</option>

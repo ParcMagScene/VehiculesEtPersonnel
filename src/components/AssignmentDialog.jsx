@@ -303,12 +303,18 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
     existingMission?.notes || existingAssignment?.comment || ''
   );
 
-  // Personnel — pour réaffectation en mode édition
+  // Personnel — pour réaffectation en mode édition ou multi-affectation en mode création
   const [allPersons, setAllPersons] = useState([]);
   const [selectedPersonId, setSelectedPersonId] = useState(person.id);
   const [personSearch, setPersonSearch] = useState('');
   const [showPersonDropdown, setShowPersonDropdown] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+
+  // Multi-affectation : IDs des personnes supplémentaires (en plus de la personne principale)
+  const [additionalPersonIds, setAdditionalPersonIds] = useState([]);
+  const [showAddPersonDropdown, setShowAddPersonDropdown] = useState(false);
+  const [addPersonSearch, setAddPersonSearch] = useState('');
+  const addPersonContainerRef = useRef(null);
 
   // Capturer l'état initial pour détecter les modifications
   const initialStateRef = useRef(null);
@@ -364,9 +370,8 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
     });
   }, [stableGoogleEvents]);
 
-  // Charger la liste du personnel (pour réaffectation)
+  // Charger la liste du personnel (pour réaffectation ou multi-affectation)
   useEffect(() => {
-    if (!isEdit) return;
     const loadPersons = async () => {
       try {
         const data = await api.getPersons();
@@ -376,7 +381,20 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
       }
     };
     loadPersons();
-  }, [isEdit]);
+  }, []);
+
+  // Fermer le dropdown d'ajout de personnes au clic extérieur
+  useEffect(() => {
+    if (!showAddPersonDropdown) return;
+    const handleClickOutside = (e) => {
+      if (addPersonContainerRef.current && !addPersonContainerRef.current.contains(e.target)) {
+        setShowAddPersonDropdown(false);
+        setAddPersonSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAddPersonDropdown]);
 
   const selectedPerson = useMemo(() => {
     if (selectedPersonId === person.id) return person;
@@ -391,6 +409,25 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
       (p.type || '').toLowerCase().includes(q)
     );
   }, [allPersons, personSearch]);
+
+  // Multi-affectation : personnes supplémentaires résolues
+  const additionalPersons = useMemo(() => {
+    return additionalPersonIds.map(id => allPersons.find(p => p.id === id)).filter(Boolean);
+  }, [additionalPersonIds, allPersons]);
+
+  // Multi-affectation : liste filtrée pour ajout (exclure la personne principale et celles déjà ajoutées)
+  const filteredAddPersons = useMemo(() => {
+    const excludedIds = new Set([person.id, ...additionalPersonIds]);
+    let list = allPersons.filter(p => !excludedIds.has(p.id));
+    if (addPersonSearch.trim()) {
+      const q = addPersonSearch.toLowerCase();
+      list = list.filter(p =>
+        `${p.firstName || ''} ${p.lastName || ''}`.toLowerCase().includes(q) ||
+        (p.type || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [allPersons, person.id, additionalPersonIds, addPersonSearch]);
 
   // Charger les affaires
   useEffect(() => {
@@ -566,28 +603,38 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         // ── Mode création ──
         mission = await api.createMission(missionData);
 
-        const assignmentData = {
-          mission_id: mission.id,
-          person_id: person.id,
-          status: status,
-          position: positionValue,
-          comment: notes || null,
-        };
+        // Tous les person IDs à affecter (principal + supplémentaires)
+        const allPersonIdsToAssign = [person.id, ...additionalPersonIds];
+        const allWarnings = [];
 
-        assignment = await api.createAssignment(assignmentData);
+        for (const personId of allPersonIdsToAssign) {
+          const assignmentData = {
+            mission_id: mission.id,
+            person_id: personId,
+            status: status,
+            position: positionValue,
+            comment: notes || null,
+          };
 
-        // Vérifier les warnings
-        if (assignment.warnings) {
-          const warns = [];
-          if (assignment.warnings.conflicts) {
-            warns.push(`⚠️ Conflit avec ${assignment.warnings.conflicts.length} autre(s) mission(s)`);
+          const result = await api.createAssignment(assignmentData);
+          if (!assignment) assignment = result; // garder la première pour le callback
+
+          // Collecter les warnings de chaque affectation
+          if (result.warnings) {
+            const pName = allPersons.find(p => p.id === personId);
+            const prefix = allPersonIdsToAssign.length > 1 && pName
+              ? `${pName.firstName} ${pName.lastName}: ` : '';
+            if (result.warnings.conflicts) {
+              allWarnings.push(`${prefix}⚠️ Conflit avec ${result.warnings.conflicts.length} autre(s) mission(s)`);
+            }
+            if (result.warnings.unavailabilities) {
+              allWarnings.push(`${prefix}⚠️ ${result.warnings.unavailabilities.length} indisponibilité(s) sur cette période`);
+            }
           }
-          if (assignment.warnings.unavailabilities) {
-            warns.push(`⚠️ ${assignment.warnings.unavailabilities.length} indisponibilité(s) sur cette période`);
-          }
-          if (warns.length > 0) {
-            setError(warns.join('\n'));
-          }
+        }
+
+        if (allWarnings.length > 0) {
+          setError(allWarnings.join('\n'));
         }
       }
 
@@ -720,6 +767,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 )}
               </div>
             ) : (
+              <>
               <div className="asd-person-badge">
                 <span className="asd-person-name">{person.firstName} {person.lastName}</span>
                 <span className={`asd-person-type type-${person.type}`}>
@@ -738,6 +786,74 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                   </div>
                 )}
               </div>
+
+              {/* Multi-affectation : personnes supplémentaires */}
+              {additionalPersons.length > 0 && (
+                <div className="asd-multi-persons">
+                  {additionalPersons.map(p => (
+                    <div key={p.id} className="asd-person-badge asd-person-additional">
+                      <span className="asd-person-name">{p.firstName} {p.lastName}</span>
+                      <span className={`asd-person-type type-${p.type}`}>
+                        {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
+                      </span>
+                      <button
+                        className="asd-person-remove"
+                        onClick={() => setAdditionalPersonIds(prev => prev.filter(id => id !== p.id))}
+                        title="Retirer"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Bouton / dropdown d'ajout de personnel supplémentaire */}
+              <div className="asd-add-person-wrapper" ref={addPersonContainerRef}>
+                <button
+                  className="asd-btn-add-person"
+                  onClick={() => { setShowAddPersonDropdown(!showAddPersonDropdown); setAddPersonSearch(''); }}
+                  title="Ajouter un personnel à cette mission"
+                >
+                  <Users size={14} />
+                  <Plus size={12} />
+                  <span>Ajouter personnel</span>
+                </button>
+                {showAddPersonDropdown && (
+                  <div className="asd-add-person-dropdown">
+                    <input
+                      type="text"
+                      className="asd-person-search"
+                      placeholder="Rechercher un personnel…"
+                      value={addPersonSearch}
+                      onChange={e => setAddPersonSearch(e.target.value)}
+                      autoFocus
+                    />
+                    <div className="asd-person-dropdown">
+                      {filteredAddPersons.length === 0 ? (
+                        <div className="asd-affaire-empty">Aucun personnel disponible</div>
+                      ) : (
+                        filteredAddPersons.slice(0, 15).map(p => (
+                          <div
+                            key={p.id}
+                            className="asd-person-option"
+                            onClick={() => {
+                              setAdditionalPersonIds(prev => [...prev, p.id]);
+                              setAddPersonSearch('');
+                            }}
+                          >
+                            <span className="asd-person-opt-name">{p.firstName} {p.lastName}</span>
+                            <span className={`asd-person-opt-type type-${p.type}`}>
+                              {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              </>
             )}
           </div>
 
@@ -993,7 +1109,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           {success && (
             <div className="asd-message asd-success">
               <Check size={14} />
-              <span>{isEdit ? 'Affectation mise \u00e0 jour !' : 'Affectation cr\u00e9\u00e9e avec succ\u00e8s !'}</span>
+              <span>{isEdit ? 'Affectation mise à jour !' : additionalPersonIds.length > 0 ? `${1 + additionalPersonIds.length} affectations créées avec succès !` : 'Affectation créée avec succès !'}</span>
             </div>
           )}
         </div>
@@ -1016,7 +1132,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
             ) : (
               <>
                 <Save size={16} />
-                {isEdit ? 'Enregistrer' : "Créer l'affectation"}
+                {isEdit ? 'Enregistrer' : additionalPersonIds.length > 0 ? `Créer ${1 + additionalPersonIds.length} affectations` : "Créer l'affectation"}
               </>
             )}
           </button>

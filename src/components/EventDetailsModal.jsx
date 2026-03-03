@@ -1,8 +1,8 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil } from 'lucide-react';
-import { getApiUrl } from '../utils/api';
+import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil, Briefcase } from 'lucide-react';
+import api, { getApiUrl } from '../utils/api';
 import AffaireBadge from './AffaireBadge';
 import './EventDetailsModal.css';
 import { useToast } from '../hooks/useToast';
@@ -19,15 +19,18 @@ function EventDetailsModal({
   reservations = [], 
   onRequestEditReservation,
   onRequestCreateReservation,
+  onRequestCreateAssignment,
   onEventCreated,
   onEventUpdated,
   onRequestEditEvent,
   onRequestDeleteEvent,
   onReservationsRefresh,
-  currentUser
+  currentUser,
+  activeModule
 }) {
   const toast = useToast();
   const [linkedReservations, setLinkedReservations] = useState([]);
+  const [linkedAffaires, setLinkedAffaires] = useState([]);
   const [attachmentFiles, setAttachmentFiles] = useState([]);
   const [showActions, setShowActions] = useState(true);
   const [previewFile, setPreviewFile] = useState(null);
@@ -70,6 +73,30 @@ function EventDetailsModal({
       setLinkedReservations(linked);
     }
   }, [event, reservations]);
+
+  // Charger les affaires liées à cet événement (par numéro d'affaire ou google_event_id)
+  useEffect(() => {
+    if (!event) { setLinkedAffaires([]); return; }
+    const loadLinkedAffaires = async () => {
+      try {
+        const allAffaires = await api.getAffaires();
+        const affaires = Array.isArray(allAffaires) ? allAffaires : [];
+        const linked = affaires.filter(a => {
+          // Lien par google_event_id
+          if (a.googleEventId && a.googleEventId === event.id) return true;
+          // Lien par numéro d'affaire détecté dans le titre
+          if (event.affaire && a.numeroAffaire &&
+              a.numeroAffaire.toUpperCase() === event.affaire.toUpperCase()) return true;
+          return false;
+        });
+        setLinkedAffaires(linked);
+      } catch (err) {
+        console.error('Erreur chargement affaires liées:', err);
+        setLinkedAffaires([]);
+      }
+    };
+    loadLinkedAffaires();
+  }, [event]);
 
   useEffect(() => {
     if (event && event.affaire) {
@@ -172,6 +199,19 @@ function EventDetailsModal({
     }
     onClose();
   };
+
+  const handleCreateAssignment = () => {
+    // Ouvrir le dialog d'affectation personnel
+    if (onRequestCreateAssignment) {
+      onRequestCreateAssignment(event);
+    }
+    onClose();
+  };
+
+  // Bouton contextuel : label et handler selon le module actif
+  const isPersonnelMode = activeModule === 'personnel';
+  const actionLabel = isPersonnelMode ? 'Nouvelle affectation' : 'Nouvelle réservation';
+  const actionHandler = isPersonnelMode ? handleCreateAssignment : handleCreateReservation;
 
   const handleImportBL = () => {
     // Ouvrir le modal d'import de BL (AffaireImportModal)
@@ -370,6 +410,44 @@ function EventDetailsModal({
             </div>
           </section>
 
+          {/* Affaires liées */}
+          {linkedAffaires.length > 0 && (
+            <section className="linked-affaires-section">
+              <div className="section-header">
+                <h3>
+                  <Briefcase size={18} />
+                  Affaires liées ({linkedAffaires.length})
+                </h3>
+              </div>
+              <div className="affaires-list">
+                {linkedAffaires.map((affaire) => (
+                  <div key={affaire.id || affaire.numeroAffaire} className="affaire-card">
+                    <div className="affaire-info">
+                      <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="md" showIcon />
+                      <div className="affaire-details">
+                        {affaire.client && <span className="affaire-client">{affaire.client}</span>}
+                        {affaire.titre && <span className="affaire-titre">{affaire.titre}</span>}
+                        {affaire.dateDebut && (
+                          <span className="affaire-dates">
+                            {affaire.dateDebut}{affaire.dateFin ? ` → ${affaire.dateFin}` : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="affaire-stats">
+                      {affaire.reservationCount > 0 && (
+                        <span className="affaire-stat" title="Réservations">🚛 {affaire.reservationCount}</span>
+                      )}
+                      {affaire.personnelCount > 0 && (
+                        <span className="affaire-stat" title="Personnel affecté">👷 {affaire.personnelCount}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Réservations liées */}
           <section className="linked-reservations-section">
             <div className="section-header">
@@ -380,11 +458,11 @@ function EventDetailsModal({
               {currentUser?.isAdmin && (
                 <button 
                   className="btn-add-reservation" 
-                  onClick={handleCreateReservation}
-                  title="Créer une réservation"
+                  onClick={actionHandler}
+                  title={actionLabel}
                 >
                   <Plus size={16} />
-                  Nouvelle réservation
+                  {actionLabel}
                 </button>
               )}
             </div>

@@ -264,6 +264,14 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     }
   };
 
+  // Ouvrir le dialog d'affectation personnel depuis le modal de détails
+  const handleCreateAssignmentFromEvent = (event) => {
+    setEventDetailsOpen(false);
+    if (onNewAssignment) {
+      onNewAssignment(event);
+    }
+  };
+
   const handleCloseModal = () => {
     setModalOpen(false);
     setSelectedEvent(null);
@@ -1406,12 +1414,14 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       reservations={reservations}
       onRequestEditReservation={onRequestEditReservation}
       onRequestCreateReservation={handleCreateReservationFromEvent}
+      onRequestCreateAssignment={handleCreateAssignmentFromEvent}
       onEventCreated={handleOpenAffaireImport}
       onEventUpdated={handleEventUpdated}
       onRequestEditEvent={isSignedIn ? handleRequestEditEvent : undefined}
       onRequestDeleteEvent={isSignedIn ? handleDeleteEvent : undefined}
       onReservationsRefresh={onReservationsRefresh}
       currentUser={currentUser}
+      activeModule={activeModule}
     />
 
     {/* Modal de création / édition d'événement Google */}

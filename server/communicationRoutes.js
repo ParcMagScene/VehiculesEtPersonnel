@@ -1378,40 +1378,44 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       let query, params;
 
       if (date) {
-        // Affaires dont la période couvre cette date
-        // date_debut <= date AND (date_fin IS NULL OR date_fin = '' OR date_fin >= date)
+        // Affaires dont la période couvre cette date ET qui ont des tâches, BL ou événements
         query = `
           SELECT a.*, 
             (SELECT COUNT(*) FROM bl_imports WHERE affaire_id = a.numero_affaire) as bl_count,
-            (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count
+            (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
+            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
           FROM affaires a
           WHERE a.date_debut <= ?
             AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?)
+          HAVING (bl_count + events_count + task_count) > 0
           ORDER BY a.type, a.date_debut
         `;
         params = [date, date];
       } else if (dateFrom && dateTo) {
-        // Affaires dont la période chevauche la plage
-        // date_debut <= dateTo AND (date_fin IS NULL OR date_fin = '' OR date_fin >= dateFrom)
+        // Affaires dont la période chevauche la plage ET qui ont des tâches, BL ou événements
         query = `
           SELECT a.*, 
             (SELECT COUNT(*) FROM bl_imports WHERE affaire_id = a.numero_affaire) as bl_count,
-            (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count
+            (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
+            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
           FROM affaires a
           WHERE a.date_debut <= ?
             AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?)
+          HAVING (bl_count + events_count + task_count) > 0
           ORDER BY a.type, a.date_debut
         `;
         params = [dateTo, dateFrom];
       } else {
-        // Sans filtre de date : toutes les affaires actives (non archivées)
+        // Sans filtre de date : toutes les affaires actives (non archivées) avec activité
         const today = new Date().toISOString().slice(0, 10);
         query = `
           SELECT a.*, 
             (SELECT COUNT(*) FROM bl_imports WHERE affaire_id = a.numero_affaire) as bl_count,
-            (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count
+            (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
+            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
           FROM affaires a
           WHERE a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?
+          HAVING (bl_count + events_count + task_count) > 0
           ORDER BY a.type, a.date_debut
         `;
         params = [today];
@@ -1708,9 +1712,51 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     setInterval(check, 30000);
     logger.info('⏰ Cron report tâches 18h activé');
 
-    // Au démarrage : générer les tâches récurrentes d'aujourd'hui si pas encore fait
+    // Au démarrage : reporter les tâches pending des jours précédents + générer récurrentes
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // 1. Reporter les tâches pending de tous les jours passés vers aujourd'hui
+    try {
+      const pendingDays = db.prepare(`
+        SELECT DISTINCT date FROM task_assignments
+        WHERE date < ? AND status IN ('pending', 'in_progress')
+          AND section NOT IN ('rdv', 'evenements')
+        ORDER BY date ASC
+      `).all(todayStr).map(r => r.date);
+
+      let totalRolled = 0;
+      for (const pastDate of pendingDays) {
+        // Reporter directement vers aujourd'hui (pas jour par jour)
+        const pending = db.prepare(`
+          SELECT * FROM task_assignments
+          WHERE date = ? AND status IN ('pending', 'in_progress')
+            AND section NOT IN ('rdv', 'evenements')
+        `).all(pastDate);
+
+        const insertStmt = db.prepare(`
+          INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'))
+        `);
+
+        for (const t of pending) {
+          // Pas de doublon : même titre + section + date cible
+          const dup = db.prepare(
+            "SELECT 1 FROM task_assignments WHERE date = ? AND section = ? AND title = ? AND status != 'cancelled'"
+          ).get(todayStr, t.section, t.title);
+          if (dup) continue;
+
+          const id = crypto.randomUUID().replace(/-/g, '');
+          insertStmt.run(id, t.display_event_id, t.person_id, todayStr, t.period, t.time, t.end_time, t.section, t.title, t.notes || '', t.source_type, t.source_id, t.google_event_title, t.affaire_num, t.visible ?? 1);
+          totalRolled++;
+        }
+      }
+      if (totalRolled > 0) logger.info(`🔄 Démarrage : ${totalRolled} tâche(s) en attente reportée(s) des jours passés vers aujourd'hui`);
+    } catch (err) {
+      logger.error('Erreur rollover au démarrage:', err);
+    }
+
+    // 2. Générer les tâches récurrentes d'aujourd'hui si pas encore fait
     const generated = generateRecurringTasks(todayStr);
     if (generated > 0) logger.info(`🔄 Démarrage : ${generated} tâche(s) récurrente(s) générée(s) pour aujourd'hui`);
   }

@@ -384,17 +384,17 @@
 }
 
 .stock-filter-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 6px 12px;
-  border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--btn-radius);
   background: var(--theme-bg-card);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   cursor: pointer;
   color: var(--theme-text-secondary);
-  transition: all 0.15s;
+  transition: var(--btn-transition);
 }
 
 .stock-filter-btn:hover {
@@ -409,23 +409,25 @@
 }
 
 .stock-add-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 16px;
+  padding: 6px 12px;
   border: none;
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
   font-size: 0.85rem;
-  font-weight: 500;
-  border-radius: 8px;
+  font-weight: var(--btn-font-weight);
+  border-radius: var(--btn-radius);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: var(--btn-transition);
   white-space: nowrap;
+  box-shadow: var(--btn-primary-shadow);
 }
 
 .stock-add-btn:hover {
-  background: var(--theme-primary-dark);
+  box-shadow: var(--btn-primary-hover-shadow);
+  transform: translateY(-1px);
 }
 
 /* ═══ Table ═══ */
@@ -605,17 +607,18 @@
 }
 
 .stock-edit-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border: 1px solid var(--theme-primary);
-  background: var(--theme-bg-card);
+  background: transparent;
   color: var(--theme-primary);
   font-size: 0.85rem;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   cursor: pointer;
+  transition: var(--btn-transition);
 }
 
 .stock-edit-btn:hover {
@@ -623,18 +626,19 @@
 }
 
 .stock-delete-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   padding: 6px 10px;
   border: 1px solid var(--theme-danger);
-  background: var(--theme-bg-card);
+  background: transparent;
   color: var(--theme-danger);
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   cursor: pointer;
+  transition: var(--btn-transition);
 }
 
 .stock-delete-btn:hover {
-  background: var(--theme-danger-bg);
+  background: var(--btn-danger-bg);
 }
 
 .stock-detail-body {
@@ -1115,35 +1119,43 @@
 }
 
 .stock-btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px 18px;
-  border: 1px solid var(--theme-border-muted);
-  background: var(--theme-bg-card);
-  color: var(--theme-text-subtle);
-  font-size: 0.88rem;
-  border-radius: 8px;
+  border: var(--btn-secondary-border);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  font-size: 0.85rem;
+  font-weight: var(--btn-font-weight);
+  border-radius: var(--btn-radius);
   cursor: pointer;
+  transition: var(--btn-transition);
 }
 
 .stock-btn-cancel:hover {
-  background: var(--theme-bg-page);
+  background: var(--btn-secondary-hover-bg);
 }
 
 .stock-btn-save {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 20px;
   border: none;
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
-  font-size: 0.88rem;
-  font-weight: 500;
-  border-radius: 8px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  font-size: 0.85rem;
+  font-weight: var(--btn-font-weight);
+  border-radius: var(--btn-radius);
   cursor: pointer;
+  box-shadow: var(--btn-primary-shadow);
+  transition: var(--btn-transition);
 }
 
 .stock-btn-save:hover {
-  background: var(--theme-primary-dark);
+  box-shadow: var(--btn-primary-hover-shadow);
+  transform: translateY(-1px);
 }
 
 /* ═══ Pickers (icône, couleur) ═══ */

@@ -27,6 +27,8 @@ const TASK_STEPS = [
   { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: '#8b5cf6', defaultSection: 'retour' },
   { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'recuperation' },
   { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: '#10b981', defaultSection: 'installation' },
+  { key: 'montage',      label: 'Montage',      emoji: '🔩', icon: Wrench,      color: '#0891b2', defaultSection: 'montage' },
+  { key: 'demontage',    label: 'Démontage',    emoji: '🔧', icon: Wrench,      color: '#dc2626', defaultSection: 'demontage' },
 ];
 
 // Toutes les étapes sont disponibles pour tous les types d'affaire

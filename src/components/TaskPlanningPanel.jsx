@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import {
-  ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
+  ClipboardList, Plus, ChevronLeft, ChevronRight, ChevronDown, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
   CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings,
   Repeat, SkipForward, Link, RefreshCw, Palette
@@ -20,7 +20,7 @@ const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 // ═══ Constantes ═══
 const SECTIONS = {
   rdv:                { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
-  evenements:         { label: 'Autres Événements',    emoji: '📌', color: '#64748b' },
+  evenements:         { label: 'Événements Google',    emoji: '📌', color: '#64748b' },
   // — Prioritaires & Courses en premier —
   taches_prioritaires:{ label: 'Tâches Prioritaires',  emoji: '🔴', color: '#ef4444' },
   courses:            { label: 'Courses',              emoji: '🚗', color: '#8b5cf6' },
@@ -144,6 +144,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [recurringTasks, setRecurringTasks] = useState([]);
   const [recurringForm, setRecurringForm] = useState(null); // null = fermé, {} = nouveau, {id,...} = édition
 
+  // ── Collapse sections ──
+  const [collapsedSections, setCollapsedSections] = useState({});
+  const toggleSectionCollapse = (key) => setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
+
   // ── iCal Calendars ──
   const [icalCalendars, setIcalCalendars] = useState([]);
   const [icalEvents, setIcalEvents] = useState([]);
@@ -217,7 +221,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       const from = addDays(today, -7);
       const to = addDays(today, 7);
       const res = await api.getIcalEvents({ dateFrom: from, dateTo: to });
-      setIcalEvents(res.events || []);
+      const events = (res.events || []).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+      setIcalEvents(events);
       if (res.syncErrors?.length) {
         res.syncErrors.forEach(e => toast.warning(`iCal: ${e}`));
       }
@@ -480,9 +485,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     allGoogleEvents.filter(ev => /rdv/i.test(ev.summary || '')),
   [allGoogleEvents]);
 
-  const googleOtherEvents = useMemo(() =>
-    allGoogleEvents.filter(ev => !/rdv/i.test(ev.summary || '')),
-  [allGoogleEvents]);
+  const googleOtherEvents = useMemo(() => {
+    const filtered = allGoogleEvents.filter(ev => !/rdv/i.test(ev.summary || ''));
+    // Tri chronologique
+    return filtered.sort((a, b) => {
+      const aStart = a.start?.dateTime || a.start?.date || '';
+      const bStart = b.start?.dateTime || b.start?.date || '';
+      return aStart.localeCompare(bStart);
+    });
+  }, [allGoogleEvents]);
 
   // ── Groupement par jour pour la vue semaine ──
   const weekGroupedByDay = useMemo(() => {
@@ -955,10 +966,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const affaireNum = (summary.match(/AF\d{4,}/i) || [''])[0];
     const isProcessed = processedGoogleIds.has(event.id);
     const isExpanded = expandedRdv === `gcal-${event.id}`;
+    // Déterminer si l'événement est en cours
+    const now = new Date();
+    const evStart = startDT ? new Date(startDT) : null;
+    const evEnd = endDT ? new Date(endDT) : null;
+    const isOngoing = evStart && evEnd && evStart <= now && now <= evEnd;
     return (
       <div
         key={`gcal-rdv-${event.id}`}
-        className={`task-row rdv-row google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
+        className={`task-row rdv-row google-rdv-row ${isProcessed ? 'processed' : 'pending'} ${isOngoing ? 'event-ongoing' : ''}`}
         onClick={() => setEventTaskModalEvent(event)}
         style={{ cursor: 'pointer' }}
       >
@@ -1068,10 +1084,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const isProcessed = processedGoogleIds.has(event.id);
+    // Déterminer si l'événement est en cours
+    const now = new Date();
+    const evStart = startDT ? new Date(startDT.includes('T') ? startDT : startDT + 'T00:00:00') : null;
+    const evEnd = endDT ? new Date(endDT.includes('T') ? endDT : endDT + 'T23:59:59') : null;
+    const isOngoing = evStart && evEnd && evStart <= now && now <= evEnd;
     return (
       <div
         key={`ical-${event.id}-${startDT}`}
-        className={`task-row ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
+        className={`task-row ical-event-row ${isProcessed ? 'processed' : 'pending'} ${isOngoing ? 'event-ongoing' : ''}`}
         onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}
         style={{ cursor: 'pointer' }}
       >
@@ -1256,16 +1277,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     // Masquer les sections vides SAUF rdv (toujours visible)
     if (totalCount === 0 && !isRdv) return null;
 
+    const isCollapsible = isEvenements;
+    const isCollapsed = isCollapsible && collapsedSections[sectionKey];
+
     return (
-      <div key={sectionKey} className={`task-section ${isRdv ? 'rdv-section' : ''} ${isEvenements ? 'evenements-section' : ''}`}>
-        <div className="section-header" style={{ borderBottomColor: info.color }}>
+      <div key={sectionKey} className={`task-section ${isRdv ? 'rdv-section' : ''} ${isEvenements ? 'evenements-section' : ''} ${isCollapsed ? 'section-collapsed' : ''}`}>
+        <div
+          className={`section-header ${isCollapsible ? 'collapsible' : ''}`}
+          style={{ borderBottomColor: info.color }}
+          onClick={isCollapsible ? () => toggleSectionCollapse(sectionKey) : undefined}
+        >
           <h4>
+            {isCollapsible && <ChevronDown size={16} className={`section-chevron ${isCollapsed ? 'collapsed' : ''}`} />}
             <span>{info.emoji}</span>
             {info.label}
           </h4>
           <span className="section-count">{totalCount}</span>
         </div>
 
+        {!isCollapsed && <>
         {/* Section RDV : Google Calendar RDV (titre contient "rdv") + affaires avec "rdv" dans le titre */}
         {isRdv && googleRdvEvents.map(renderGoogleRdvRow)}
         {isRdv && sectionAffaires.map(renderRdvRow)}
@@ -1347,6 +1377,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <Plus size={14} /> Ajouter une tâche
           </div>
         ))}
+        </>}
       </div>
     );
   };

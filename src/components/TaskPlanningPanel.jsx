@@ -485,15 +485,24 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     allGoogleEvents.filter(ev => /rdv/i.test(ev.summary || '')),
   [allGoogleEvents]);
 
-  const googleOtherEvents = useMemo(() => {
-    const filtered = allGoogleEvents.filter(ev => !/rdv/i.test(ev.summary || ''));
-    // Tri chronologique
-    return filtered.sort((a, b) => {
-      const aStart = a.start?.dateTime || a.start?.date || '';
-      const bStart = b.start?.dateTime || b.start?.date || '';
-      return aStart.localeCompare(bStart);
-    });
-  }, [allGoogleEvents]);
+  const googleOtherEvents = useMemo(() =>
+    allGoogleEvents.filter(ev => !/rdv/i.test(ev.summary || '')),
+  [allGoogleEvents]);
+
+  // Fusionner Google (non-RDV) + iCal en une seule liste triée chronologiquement
+  const mergedOtherEvents = useMemo(() => {
+    const googleNorm = googleOtherEvents.map(ev => ({
+      ...ev,
+      _source: 'google',
+      _sortKey: ev.start?.dateTime || ev.start?.date || '',
+    }));
+    const icalNorm = icalEvents.map(ev => ({
+      ...ev,
+      _source: 'ical',
+      _sortKey: ev.start || '',
+    }));
+    return [...googleNorm, ...icalNorm].sort((a, b) => a._sortKey.localeCompare(b._sortKey));
+  }, [googleOtherEvents, icalEvents]);
 
   // ── Groupement par jour pour la vue semaine ──
   const weekGroupedByDay = useMemo(() => {
@@ -966,15 +975,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const affaireNum = (summary.match(/AF\d{4,}/i) || [''])[0];
     const isProcessed = processedGoogleIds.has(event.id);
     const isExpanded = expandedRdv === `gcal-${event.id}`;
-    // Déterminer si l'événement est en cours
-    const now = new Date();
-    const evStart = startDT ? new Date(startDT) : null;
-    const evEnd = endDT ? new Date(endDT) : null;
-    const isOngoing = evStart && evEnd && evStart <= now && now <= evEnd;
     return (
       <div
         key={`gcal-rdv-${event.id}`}
-        className={`task-row rdv-row google-rdv-row ${isProcessed ? 'processed' : 'pending'} ${isOngoing ? 'event-ongoing' : ''}`}
+        className={`task-row rdv-row google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
         onClick={() => setEventTaskModalEvent(event)}
         style={{ cursor: 'pointer' }}
       >
@@ -1084,15 +1088,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const isProcessed = processedGoogleIds.has(event.id);
-    // Déterminer si l'événement est en cours
-    const now = new Date();
-    const evStart = startDT ? new Date(startDT.includes('T') ? startDT : startDT + 'T00:00:00') : null;
-    const evEnd = endDT ? new Date(endDT.includes('T') ? endDT : endDT + 'T23:59:59') : null;
-    const isOngoing = evStart && evEnd && evStart <= now && now <= evEnd;
     return (
       <div
         key={`ical-${event.id}-${startDT}`}
-        className={`task-row ical-event-row ${isProcessed ? 'processed' : 'pending'} ${isOngoing ? 'event-ongoing' : ''}`}
+        className={`task-row ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
         onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}
         style={{ cursor: 'pointer' }}
       >
@@ -1270,9 +1269,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const isEvenements = sectionKey === 'evenements';
     const isAffaireOnly = !!info.affaireOnly;
     const googleRdvCount = isRdv ? googleRdvEvents.length : 0;
-    const googleOtherCount = isEvenements ? googleOtherEvents.length : 0;
-    const icalCount = isEvenements ? icalEvents.length : 0;
-    const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount + googleOtherCount + icalCount;
+    const mergedCount = isEvenements ? mergedOtherEvents.length : 0;
+    const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount + mergedCount;
 
     // Masquer les sections vides SAUF rdv (toujours visible)
     if (totalCount === 0 && !isRdv) return null;
@@ -1303,9 +1301,42 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <div className="section-empty-msg">Aucun rendez-vous pour cette date</div>
         )}
 
-        {/* Section Autres Événements : Google events + iCal events */}
-        {isEvenements && googleOtherEvents.map(renderGoogleRdvRow)}
-        {isEvenements && icalEvents.map(renderIcalEventRow)}
+        {/* Section Événements Google + iCal : liste fusionnée triée */}
+        {isEvenements && (() => {
+          const now = new Date();
+          const todayDate = todayStr();
+          // Déterminer si un événement est "du jour" ou "en cours"
+          const isEventToday = (ev) => {
+            const start = ev._source === 'ical' ? (ev.start || '') : (ev.start?.dateTime || ev.start?.date || '');
+            const end = ev._source === 'ical' ? (ev.end || '') : (ev.end?.dateTime || ev.end?.date || '');
+            const startDate = start.slice(0, 10);
+            const evStart = start ? new Date(start.includes('T') ? start : start + 'T00:00:00') : null;
+            const evEnd = end ? new Date(end.includes('T') ? end : end + 'T23:59:59') : null;
+            const isToday = startDate === todayDate;
+            const isOngoing = evStart && evEnd && evStart <= now && now <= evEnd;
+            return isToday || isOngoing;
+          };
+          // Séparer en groupes contigus : today/ongoing vs autres
+          const groups = [];
+          let currentGroup = null;
+          mergedOtherEvents.forEach((ev, i) => {
+            const today = isEventToday(ev);
+            if (!currentGroup || currentGroup.isToday !== today) {
+              currentGroup = { isToday: today, events: [] };
+              groups.push(currentGroup);
+            }
+            currentGroup.events.push(ev);
+          });
+          return groups.map((group, gi) => {
+            const items = group.events.map(ev =>
+              ev._source === 'ical' ? renderIcalEventRow(ev) : renderGoogleRdvRow(ev)
+            );
+            if (group.isToday) {
+              return <div key={`today-group-${gi}`} className="events-today-group">{items}</div>;
+            }
+            return <React.Fragment key={`other-group-${gi}`}>{items}</React.Fragment>;
+          });
+        })()}
 
         {/* Sections non-RDV : affaires + événements + tâches */}
         {!isRdv && sectionAffaires.map(renderAffaireRow)}

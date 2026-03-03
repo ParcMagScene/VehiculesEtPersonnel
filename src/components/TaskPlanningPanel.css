@@ -1415,21 +1415,31 @@
   border-bottom: 1px solid var(--theme-border);
 }
 
-/* ═══ Événement en cours (ongoing) ═══ */
-.task-planning-panel .task-row.event-ongoing {
+/* ═══ Groupe événements du jour / en cours ═══ */
+.task-planning-panel .events-today-group {
   outline: 2px solid var(--theme-primary, #3b82f6);
   outline-offset: -1px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--theme-primary, #3b82f6) 6%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-primary, #3b82f6) 5%, transparent);
   position: relative;
+  margin: 4px 0;
+  overflow: hidden;
 }
-.task-planning-panel .task-row.event-ongoing::before {
-  content: '● En cours';
-  position: absolute;
-  top: 3px;
-  right: 8px;
+.task-planning-panel .events-today-group::before {
+  content: '● Aujourd\'hui';
+  display: block;
+  padding: 3px 12px 2px;
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--theme-primary, #3b82f6);
   letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--theme-primary, #3b82f6) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-primary, #3b82f6) 15%, transparent);
+}
+.task-planning-panel .events-today-group > .task-row {
+  border-left: none;
+  border-right: none;
+}
+.task-planning-panel .events-today-group > .task-row:last-child {
+  border-bottom: none;
 }

@@ -2913,9 +2913,12 @@ try {
       color TEXT DEFAULT '#3b82f6',
       enabled INTEGER DEFAULT 1,
       last_sync TEXT,
+      last_sync_error TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+  // Migration : ajouter last_sync_error si absente
+  try { db.exec('ALTER TABLE ical_calendars ADD COLUMN last_sync_error TEXT'); } catch {}
   logger.info('✅ Table ical_calendars vérifiée/créée');
 } catch (error) {
   logger.warn('⚠️ ical_calendars:', error.message);

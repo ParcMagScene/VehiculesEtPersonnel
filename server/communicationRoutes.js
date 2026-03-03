@@ -1697,12 +1697,16 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
       const calendars = db.prepare('SELECT * FROM ical_calendars WHERE enabled = 1').all();
       const allEvents = [];
+      const syncErrors = [];
 
       for (const cal of calendars) {
         try {
           const response = await fetch(cal.url, { signal: AbortSignal.timeout(10000) });
           if (!response.ok) {
-            logger.warn(`iCal fetch failed for ${cal.name}: ${response.status}`);
+            const msg = `${cal.name}: HTTP ${response.status}`;
+            logger.warn(`iCal fetch failed — ${msg}`);
+            syncErrors.push(msg);
+            db.prepare('UPDATE ical_calendars SET last_sync_error = ? WHERE id = ?').run(`HTTP ${response.status}`, cal.id);
             continue;
           }
           const icalData = await response.text();
@@ -1714,16 +1718,19 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           });
           allEvents.push(...events);
 
-          // Mettre à jour last_sync
-          db.prepare('UPDATE ical_calendars SET last_sync = datetime(\'now\') WHERE id = ?').run(cal.id);
+          // Mettre à jour last_sync + reset erreur
+          db.prepare('UPDATE ical_calendars SET last_sync = datetime(\'now\'), last_sync_error = NULL WHERE id = ?').run(cal.id);
         } catch (fetchErr) {
-          logger.warn(`iCal sync error for ${cal.name}:`, fetchErr.message);
+          const msg = `${cal.name}: ${fetchErr.message}`;
+          logger.warn(`iCal sync error — ${msg}`);
+          syncErrors.push(msg);
+          try { db.prepare('UPDATE ical_calendars SET last_sync_error = ? WHERE id = ?').run(fetchErr.message, cal.id); } catch {}
         }
       }
 
       // Trier par date de début
       allEvents.sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-      res.json({ events: allEvents });
+      res.json({ events: allEvents, syncErrors: syncErrors.length ? syncErrors : undefined });
     } catch (error) {
       logger.error('GET ical-events error:', error);
       res.status(500).json({ error: 'Erreur serveur' });
@@ -1733,24 +1740,21 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // ── Parser iCal simplifié ──
   function parseICalData(icalData, dateFrom, dateTo) {
     const events = [];
-    const lines = icalData.split(/\r?\n/);
-    let currentEvent = null;
-    let lastKey = '';
-
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
-      // Continuation lines (starts with space or tab)
-      if (/^[ \t]/.test(line)) {
-        line = lastKey ? '' : line.trimStart();
-        if (currentEvent && lastKey) {
-          currentEvent[lastKey] = (currentEvent[lastKey] || '') + line.substring(1);
-          continue;
-        }
+    // Unfold continuation lines (RFC 5545: lines starting with space/tab are continuation of previous line)
+    const rawLines = icalData.split(/\r?\n/);
+    const lines = [];
+    for (const raw of rawLines) {
+      if (/^[ \t]/.test(raw) && lines.length > 0) {
+        lines[lines.length - 1] += raw.substring(1);
+      } else {
+        lines.push(raw);
       }
+    }
+    let currentEvent = null;
 
+    for (const line of lines) {
       if (line === 'BEGIN:VEVENT') {
         currentEvent = {};
-        lastKey = '';
       } else if (line === 'END:VEVENT' && currentEvent) {
         // Filtrer par plage de dates
         const evDate = (currentEvent.dtstart || '').slice(0, 10);
@@ -1765,7 +1769,6 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           });
         }
         currentEvent = null;
-        lastKey = '';
       } else if (currentEvent) {
         const colonIdx = line.indexOf(':');
         if (colonIdx < 0) continue;
@@ -1776,24 +1779,16 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
         if (baseKey === 'dtstart') {
           currentEvent.dtstart = formatICalDate(value);
-          lastKey = 'dtstart';
         } else if (baseKey === 'dtend') {
           currentEvent.dtend = formatICalDate(value);
-          lastKey = 'dtend';
         } else if (baseKey === 'summary') {
           currentEvent.summary = value;
-          lastKey = 'summary';
         } else if (baseKey === 'location') {
           currentEvent.location = value;
-          lastKey = 'location';
         } else if (baseKey === 'description') {
           currentEvent.description = value;
-          lastKey = 'description';
         } else if (baseKey === 'uid') {
           currentEvent.uid = value;
-          lastKey = 'uid';
-        } else {
-          lastKey = '';
         }
       }
     }

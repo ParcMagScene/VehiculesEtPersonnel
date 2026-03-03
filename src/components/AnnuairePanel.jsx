@@ -294,7 +294,6 @@ function AnnuairePanel({ currentUser }) {
                 key={tab.id}
                 className={`annuaire-tab ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => handleTabChange(tab.id)}
-                style={activeTab === tab.id ? { borderBottomColor: tab.color } : {}}
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>

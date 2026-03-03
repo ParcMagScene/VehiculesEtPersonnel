@@ -220,7 +220,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       <div className="header-content">
         <div className="header-title-container">
           <div className="header-logo-area">
-            <img src="/Logos/LogoEmag.svg" alt="eM@g Scene" className="header-logo" />
+            <img src="/Logos/LogoEmagTransp.png" alt="eM@g Scene" className="header-logo" />
             <button className="help-trigger-btn" onClick={onOpenHelp} title="Aide — Guide d'utilisation" aria-label="Aide">
               <HelpCircle size={18} />
               <span>Aide</span>

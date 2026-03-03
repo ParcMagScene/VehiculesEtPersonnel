@@ -2977,6 +2977,26 @@ try {
   logger.warn('⚠️ ical_calendars:', error.message);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// [AUDIT FIX] Migration : Index manquants critiques (idempotent)
+// ═══════════════════════════════════════════════════════════════════
+try {
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_active_sessions_token_hash ON active_sessions(token_hash);
+    CREATE INDEX IF NOT EXISTS idx_active_sessions_expires ON active_sessions(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_reservations_vehicle_dates ON reservations(vehicle_id, start_date, end_date);
+    CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
+    CREATE INDEX IF NOT EXISTS idx_maintenances_vehicle ON maintenances(vehicle_id, status, date);
+    CREATE INDEX IF NOT EXISTS idx_modification_history_entity ON modification_history(entity_type, entity_id);
+    CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests(status);
+    CREATE INDEX IF NOT EXISTS idx_mail_history_status ON mail_history(sent_by, status);
+    CREATE INDEX IF NOT EXISTS idx_bl_imports_affaire ON bl_imports(affaire_id);
+  `);
+  logger.info('✅ Index performance vérifiés/créés');
+} catch (error) {
+  logger.warn('⚠️ Création index:', error.message);
+}
+
 // Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
   try {

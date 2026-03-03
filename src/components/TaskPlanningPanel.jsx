@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
@@ -148,8 +148,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
 
   // Load tasks + display events + affaires
-  const loadTasks = useCallback(async () => {
-    setLoading(true);
+  const initialLoadDone = useRef(false);
+  const loadTasks = useCallback(async (silent = false) => {
+    if (!silent && !initialLoadDone.current) setLoading(true);
     try {
       let data, events, affairesData;
       if (viewMode === 'week') {
@@ -168,6 +169,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       setTasks(data);
       setDisplayEvents(Array.isArray(events) ? events : []);
       setAffaires(Array.isArray(affairesData) ? affairesData : []);
+      initialLoadDone.current = true;
     } catch (err) {
       toast.error('Erreur chargement tâches');
     } finally {
@@ -235,7 +237,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     try {
       const res = await api.generateRecurringTasks(selectedDate);
       toast.success(`${res.generated || 0} tâche(s) récurrente(s) générée(s)`);
-      loadTasks();
+      loadTasks(true);
     } catch { toast.error('Erreur génération'); }
   };
 
@@ -247,7 +249,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         try {
           const res = await api.rolloverTasks(selectedDate);
           toast.success(`${res.rolled || 0} tâche(s) reportée(s)`);
-          loadTasks();
+          loadTasks(true);
         } catch { toast.error('Erreur report'); }
         setConfirmDialog(null);
       },
@@ -464,7 +466,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       await api.assignDisplayEvent(eventId, personId || null);
       toast.success('Personnel affecté');
       setAssigningEventId(null);
-      loadTasks();
+      loadTasks(true);
     } catch (err) {
       toast.error('Erreur affectation');
     }
@@ -483,7 +485,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const newStatus = nextStatus[task.status] || 'pending';
     try {
       await api.updateTask(task.id, { status: newStatus });
-      loadTasks();
+      loadTasks(true);
     } catch (err) {
       toast.error('Erreur mise à jour');
     }
@@ -498,7 +500,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         try {
           await api.deleteTask(id);
           toast.success('Tâche supprimée');
-          loadTasks();
+          loadTasks(true);
         } catch (err) {
           toast.error('Erreur suppression');
         }
@@ -517,7 +519,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         try {
           await api.deleteDisplayEvent(id);
           toast.success('Événement retiré');
-          loadTasks();
+          loadTasks(true);
         } catch (err) {
           toast.error('Erreur suppression');
         }
@@ -547,7 +549,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       setNewTaskTitle('');
       setNewTaskPerson('');
       setAddingSection(null);
-      loadTasks();
+      loadTasks(true);
     } catch (err) {
       toast.error('Erreur création tâche');
     }
@@ -798,7 +800,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         try {
           await api.hidePlanningAffaire(affaire.numeroAffaire);
           toast.success(`${affaire.numeroAffaire} retirée`);
-          loadTasks();
+          loadTasks(true);
         } catch (err) {
           toast.error('Erreur masquage affaire');
         }
@@ -1222,7 +1224,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const handleToggleTaskVisible = async (task) => {
     try {
       await api.toggleTaskVisibility(task.id);
-      loadTasks();
+      loadTasks(true);
     } catch (err) {
       toast.error('Erreur toggle visibilité');
     }
@@ -1232,7 +1234,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const handleToggleDisplayEventVisible = async (event) => {
     try {
       await api.toggleDisplayEventVisibility(event.id);
-      loadTasks();
+      loadTasks(true);
     } catch (err) {
       toast.error('Erreur toggle visibilité');
     }
@@ -1426,8 +1428,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <EventTaskModal
           event={eventTaskModalEvent}
           existingTasks={tasks.filter(t => t.sourceType === 'google_event' && t.sourceId === eventTaskModalEvent.id)}
-          onSave={() => { setEventTaskModalEvent(null); loadTasks(); }}
-          onDelete={() => { setEventTaskModalEvent(null); loadTasks(); }}
+          onSave={() => { setEventTaskModalEvent(null); loadTasks(true); }}
+          onDelete={() => { setEventTaskModalEvent(null); loadTasks(true); }}
           onClose={() => setEventTaskModalEvent(null)}
         />
       )}
@@ -1435,7 +1437,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <TaskEditModal
           task={editingTask}
           persons={persons}
-          onSave={() => { setEditingTask(null); loadTasks(); }}
+          onSave={() => { setEditingTask(null); loadTasks(true); }}
           onClose={() => setEditingTask(null)}
         />
       )}

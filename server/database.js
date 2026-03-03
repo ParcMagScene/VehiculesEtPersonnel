@@ -2903,6 +2903,24 @@ try {
   logger.warn('⚠️ recurring_tasks:', error.message);
 }
 
+// ── Table ical_calendars : agendas iCal configurés ──
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ical_calendars (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      name TEXT NOT NULL,
+      url TEXT NOT NULL,
+      color TEXT DEFAULT '#3b82f6',
+      enabled INTEGER DEFAULT 1,
+      last_sync TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  logger.info('✅ Table ical_calendars vérifiée/créée');
+} catch (error) {
+  logger.warn('⚠️ ical_calendars:', error.message);
+}
+
 // Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
   try {

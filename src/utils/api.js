@@ -1542,6 +1542,23 @@ class ApiClient {
     return this.request('/communication/tasks/rollover', { method: 'POST', body: JSON.stringify({ fromDate }) });
   }
 
+  // --- iCal Calendars ---
+  async getIcalCalendars() {
+    return this.request('/communication/ical-calendars');
+  }
+  async createIcalCalendar(data) {
+    return this.request('/communication/ical-calendars', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateIcalCalendar(id, data) {
+    return this.request(`/communication/ical-calendars/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteIcalCalendar(id) {
+    return this.request(`/communication/ical-calendars/${id}`, { method: 'DELETE' });
+  }
+  async getIcalEvents({ dateFrom, dateTo }) {
+    return this.request(`/communication/ical-events?dateFrom=${dateFrom}&dateTo=${dateTo}`);
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // MODULE ANNUAIRE
   // ═══════════════════════════════════════════════════════════════

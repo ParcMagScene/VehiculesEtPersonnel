@@ -22,8 +22,10 @@
 12. [Synchronisation inventaire](#12-synchronisation-inventaire)
 13. [Authentification & sécurité](#13-authentification--sécurité)
 14. [Déploiement & infrastructure](#14-déploiement--infrastructure)
-15. [Conventions de code](#15-conventions-de-code)
-16. [Diagramme des relations](#16-diagramme-des-relations)
+15. [Design System](#15-design-system)
+16. [Cache Backend](#16-cache-backend)
+17. [Conventions de code](#17-conventions-de-code)
+18. [Diagramme des relations](#18-diagramme-des-relations)
 
 ---
 
@@ -144,17 +146,17 @@ eM@g/
 │   │   ├── useToast.jsx
 │   │   └── useWindowWidth.js
 │   │
-│   └── utils/                      # 13 fonctions utilitaires
+│   └── utils/                      # Fonctions utilitaires
 │       ├── api.js                  # Client API (~1895 lignes, ~350 méthodes)
 │       ├── deepLinking.js          # URL builders, ouverture protocole Chargement 3D
 │       ├── dateUtils.js            # Utilitaires de dates
-│       ├── excelImport.js          # Import Excel
 │       ├── indexedDB.js            # Cache IndexedDB (12 stores)
 │       ├── pdfParser.js            # Parsing PDF (pdfjs-dist)
 │       └── ...
 │
 ├── server/                         # ══ CODE SOURCE BACKEND ══
-│   ├── server.js                   # Serveur Express principal (~2911 lignes)
+│   ├── server.js                   # Serveur Express principal (~3100 lignes)
+│   ├── cache.js                    # Cache LRU/TTL en mémoire (auth, stats, listes, iCal, config)
 │   ├── routes.js                   # Routes secondaires (~672 lignes)
 │   ├── personnelRoutes.js          # Routes personnel (~1337 lignes)
 │   ├── catalogRoutes.js            # Routes catalogue (~775 lignes)
@@ -1021,7 +1023,73 @@ Le proxy Vite en dev redirige `/api` → `http://localhost:3003`.
 
 ---
 
-## 15. Conventions de code
+## 15. Design System
+
+### Tokens CSS (`src/theme.css`)
+
+Le fichier central `theme.css` définit toutes les variables CSS (custom properties) du projet. Les catégories de tokens :
+
+| Catégorie | Préfixe | Tokens |
+|-----------|---------|--------|
+| **Espacement** | `--space-*` | 16 niveaux (0.25rem → 5rem) |
+| **Rayons** | `--radius-*` | 7 variantes (sm → full) |
+| **Typographie** | `--font-*` | 9 tailles + leading + weights |
+| **Ombres** | `--shadow-*` | 5 niveaux (xs → 2xl) |
+| **Z-index** | `--z-*` | 8 paliers (base → max) |
+| **Scrollbar** | `--scrollbar-*` | width, thumb, track, hover, radius, bg, width-thin |
+| **Tableaux** | `--table-*` | header-bg, header-color, row-hover, row-stripe, border, cell-padding, radius |
+| **Cartes/Panels** | `--card-*`, `--panel-*` | bg, border, radius, shadow, padding, header-padding, body-padding |
+
+**Dark mode** : toutes les couleurs thème sont redéfinies dans `[data-theme="dark"]`.
+
+### Composants UI réutilisables (`src/components/ui/`)
+
+| Composant | Fichier | Usage |
+|-----------|---------|-------|
+| `Card` | `Card.jsx` | Conteneur avec fond, bordure, ombre (variantes: flat, compact) |
+| `Panel` | `Panel.jsx` | Panneau structuré header/body/footer avec bouton fermer |
+| `SectionHeader` | `SectionHeader.jsx` | Titre de section avec badge de comptage et actions |
+| `Table` | `Table.jsx` | Tableau standardisé : columns, data, striped, compact, sticky header |
+| `ScrollArea` | `ScrollArea.jsx` | Conteneur scrollable avec scrollbars unifiées |
+| `FormField` | `FormField.jsx` | Champ de formulaire label + input + hint/erreur |
+
+**Import** : `import { Card, Panel, Table } from '../components/ui';`
+
+---
+
+## 16. Cache Backend (`server/cache.js`)
+
+Module de cache LRU (Least Recently Used) en mémoire avec TTL (Time To Live).
+
+### Instances pré-configurées
+
+| Instance | TTL | Max | Usage |
+|----------|-----|-----|-------|
+| `authCache` | 30s | 1000 | Vérification session `authenticateToken` (évite SHA-256 + SELECT à chaque requête) |
+| `statsCache` | 20s | 100 | Endpoints `/stats` (6+ queries agrégées par appel) |
+| `listCache` | 30s | 200 | Listes enrichies (`/api/affaires`, `/api/communication/planning-affaires`) |
+| `icalCache` | 5min | 50 | Événements iCal (évite les fetch HTTP externes répétés) |
+| `configCache` | 10min | 50 | Configuration quasi-statique (Google keys, etc.) |
+
+### Invalidation automatique
+
+- Mutations (POST/PUT/DELETE) sur `/api/affaires` → `invalidateEntity('affaires')` vide `listCache` + `statsCache`
+- Logout → `authCache.clear()` force re-vérification DB
+
+### Monitoring
+
+- `GET /api/cache/stats` (admin) → statistiques tous caches (size, hits, misses, hitRate)
+- `POST /api/cache/clear` (admin) → vider un cache par nom ou tous
+
+### Middleware Express
+
+```js
+app.get('/api/stats', cacheMiddleware(statsCache, () => 'comm-stats', 20_000), handler);
+```
+
+---
+
+## 17. Conventions de code
 
 ### Nommage
 
@@ -1049,7 +1117,7 @@ Le client API (`api.js`) convertit transparemment :
 
 ---
 
-## 16. Diagramme des relations
+## 18. Diagramme des relations
 
 ```
 users ──────────┬──< active_sessions

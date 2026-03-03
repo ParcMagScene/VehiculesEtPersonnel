@@ -395,21 +395,21 @@
 }
 
 .calendar-scroll-area::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
 }
 
 .calendar-scroll-area::-webkit-scrollbar-track {
-  background: var(--theme-bg-tertiary);
+  background: var(--scrollbar-track);
 }
 
 .calendar-scroll-area::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
 }
 
 .calendar-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--scrollbar-thumb-hover);
 }
 
 .calendar-grid {
@@ -1417,18 +1417,6 @@
 /* ═══════════════════════════════════════════════════════
    DARK THEME OVERRIDES — Calendar.css
    ═══════════════════════════════════════════════════════ */
-
-[data-theme="dark"] .calendar-scroll-area::-webkit-scrollbar-track {
-  background: var(--theme-bg-dark);
-}
-
-[data-theme="dark"] .calendar-scroll-area::-webkit-scrollbar-thumb {
-  background: var(--theme-border-muted);
-}
-
-[data-theme="dark"] .calendar-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-text-muted);
-}
 
 [data-theme="dark"] .calendar-header-cell.day-header {
   background: linear-gradient(to bottom, var(--theme-bg-tertiary), var(--theme-bg-card));

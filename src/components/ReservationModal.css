@@ -132,17 +132,17 @@
 }
 
 .vehicle-picker-grid::-webkit-scrollbar {
-  width: 6px;
+  width: var(--scrollbar-width-thin);
 }
 
 .vehicle-picker-grid::-webkit-scrollbar-track {
-  background: var(--theme-border-medium);
-  border-radius: 3px;
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
 }
 
 .vehicle-picker-grid::-webkit-scrollbar-thumb {
-  background: var(--theme-bg-muted);
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
 }
 
 .vehicle-picker-card-desktop {
@@ -1155,10 +1155,6 @@
 /* ═══════════════════════════════════════════════════════
    DARK THEME OVERRIDES — ReservationModal.css
    ═══════════════════════════════════════════════════════ */
-
-[data-theme="dark"] .vehicle-picker-grid::-webkit-scrollbar-thumb {
-  background: var(--theme-border-muted);
-}
 
 [data-theme="dark"] .vehicle-picker-card-desktop:hover {
   background: var(--theme-bg-hover);

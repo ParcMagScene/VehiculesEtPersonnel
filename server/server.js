@@ -48,6 +48,7 @@ import { setupDisplayRoutes } from './displayRoutes.js';
 import { setupAnnuaireClientsRoutes, setupAnnuaireSuppliersRoutes, setupAnnuairePrestatairesRoutes, setupAnnuaireContactsRoutes, setupAnnuaireLookupsRoutes, setupAnnuaireSearchRoutes, setupAnnuaireImportRoutes } from './annuaireRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated, alertMaintenanceCreated } from './emailService.js';
 import logger from "./logger.js";
+import { authCache, statsCache, listCache, cacheMiddleware, invalidateEntity, getAllCacheStats } from './cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -133,6 +134,7 @@ if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
 app.use('/avatars', express.static(avatarsPath));
 
 // Middleware d'authentification — vérifie JWT + session active en DB
+// [PERF] Cache LRU/TTL sur la vérification session (30s) pour éviter SHA-256 + SELECT à chaque requête
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -146,6 +148,14 @@ function authenticateToken(req, res, next) {
 
     // [AUDIT FIX HIGH-1] Vérifier que la session existe encore en DB
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
+
+    // [PERF] Vérifier le cache avant de requêter la DB
+    const cachedSession = authCache.get(tokenHash);
+    if (cachedSession !== null) {
+      req.user = user;
+      return next();
+    }
+
     const session = db.prepare(
       'SELECT 1 FROM active_sessions WHERE token_hash = ? AND expires_at > datetime(\'now\')'
     ).get(tokenHash);
@@ -153,6 +163,8 @@ function authenticateToken(req, res, next) {
       return res.status(401).json({ error: 'Session expirée ou révoquée' });
     }
 
+    // Mettre en cache le résultat positif (TTL 30s)
+    authCache.set(tokenHash, true);
     req.user = user;
     next();
   });
@@ -518,6 +530,9 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
     // Supprimer toutes les sessions de cet utilisateur
     const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
     const result = deleteSessionsStmt.run(userId);
+    
+    // [PERF] Invalider le cache auth pour forcer re-vérification DB
+    authCache.clear();
     
     logger.info(`🚪 Déconnexion: ${result.changes} session(s) fermée(s)`);
     
@@ -2109,8 +2124,8 @@ app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, 
 
 // ============ MODULE AFFAIRES ============
 
-// GET /api/affaires — Liste des affaires enrichies (DB + auto-détection depuis réservations)
-app.get('/api/affaires', authenticateToken, (req, res) => {
+// GET /api/affaires — Liste des affaires enrichies (DB + auto-détection depuis réservations) [PERF] Cache 30s
+app.get('/api/affaires', authenticateToken, cacheMiddleware(listCache, () => 'affaires', 30_000), (req, res) => {
   try {
     // 1. Affaires explicitement enregistrées en DB
     const dbAffaires = db.prepare('SELECT * FROM affaires ORDER BY date_debut DESC').all();
@@ -2287,6 +2302,7 @@ app.post('/api/affaires', authenticateToken, (req, res) => {
         req.user.id, req.user.id
       );
       const created = db.prepare('SELECT * FROM affaires WHERE id = ?').get(result.lastInsertRowid);
+      invalidateEntity('affaires');
       res.status(201).json(created);
     }
   } catch (error) {
@@ -2316,6 +2332,7 @@ app.put('/api/affaires/:id', authenticateToken, (req, res) => {
     );
     const updated = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
     if (!updated) return res.status(404).json({ error: 'Affaire non trouvée' });
+    invalidateEntity('affaires');
     res.json(updated);
   } catch (error) {
     logger.error('Erreur PUT /api/affaires:', error);
@@ -2330,6 +2347,7 @@ app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
     const existing = db.prepare('SELECT id FROM affaires WHERE id = ?').get(id);
     if (!existing) return res.status(404).json({ error: 'Affaire non trouvée' });
     db.prepare('DELETE FROM affaires WHERE id = ?').run(id);
+    invalidateEntity('affaires');
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur DELETE /api/affaires:', error);
@@ -3005,6 +3023,27 @@ app.delete('/api/attachments/:affaireId/:filename', authenticateToken, requireAd
     logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
   }
+});
+
+// ─── Cache monitoring endpoint (admin only) ───
+app.get('/api/cache/stats', authenticateToken, requireAdmin, (req, res) => {
+  res.json(getAllCacheStats());
+});
+app.post('/api/cache/clear', authenticateToken, requireAdmin, (req, res) => {
+  const { name } = req.body || {};
+  if (name) {
+    const stats = getAllCacheStats();
+    const target = stats.find(s => s.name === name);
+    if (!target) return res.status(404).json({ error: `Cache '${name}' non trouvé` });
+    // Clear by name
+    const { ALL_CACHES } = require('./cache.js');
+    const cache = ALL_CACHES.find(c => c.name === name);
+    if (cache) cache.clear();
+  } else {
+    const { ALL_CACHES } = require('./cache.js');
+    ALL_CACHES.forEach(c => c.clear());
+  }
+  res.json({ success: true, message: name ? `Cache '${name}' vidé` : 'Tous les caches vidés' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {

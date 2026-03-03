@@ -322,21 +322,21 @@
 }
 
 .personnel-edit-form-body::-webkit-scrollbar {
-  width: 6px;
+  width: var(--scrollbar-width-thin);
 }
 
 .personnel-edit-form-body::-webkit-scrollbar-track {
-  background: var(--theme-border-light);
-  border-radius: 3px;
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
 }
 
 .personnel-edit-form-body::-webkit-scrollbar-thumb {
-  background: var(--theme-border);
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
 }
 
 .personnel-edit-form-body::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-text-muted);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .personnel-edit-form-body .form-row {

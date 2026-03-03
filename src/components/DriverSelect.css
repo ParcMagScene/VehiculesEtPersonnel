@@ -196,18 +196,18 @@
 
 /* Scrollbar */
 .driver-select-dropdown::-webkit-scrollbar {
-  width: 6px;
+  width: var(--scrollbar-width-thin);
 }
 
 .driver-select-dropdown::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--scrollbar-track);
 }
 
 .driver-select-dropdown::-webkit-scrollbar-thumb {
-  background: var(--theme-bg-muted);
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
 }
 
 .driver-select-dropdown::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-text-muted);
+  background: var(--scrollbar-thumb-hover);
 }

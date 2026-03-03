@@ -29,7 +29,10 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Extraire les infos de l'événement Google
+  // Déterminer le source_type (iCal vs Google)
+  const sourceType = event?._ical ? 'ical_event' : 'google_event';
+
+  // Extraire les infos de l'événement (Google ou iCal)
   const eventInfo = useMemo(() => {
     const summary = event?.summary || '';
     const startDT = event?.start?.dateTime || event?.start?.date || '';
@@ -176,7 +179,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
           section: getSectionForStep(step.key),
           title: `${step.emoji} ${step.label} — ${eventInfo.summary}`,
           notes: s.notes || '',
-          source_type: 'google_event',
+          source_type: sourceType,
           source_id: event.id,
           google_event_title: eventInfo.summary,
           affaire_num: eventInfo.affaireNum || null,

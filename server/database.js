@@ -1917,7 +1917,7 @@ function initializeDatabase() {
             )),
             title TEXT,
             notes TEXT DEFAULT '',
-            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire')),
             source_id TEXT,
             google_event_title TEXT,
             affaire_num TEXT,
@@ -1971,7 +1971,7 @@ function initializeDatabase() {
             )),
             title TEXT,
             notes TEXT DEFAULT '',
-            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire')),
             source_id TEXT,
             google_event_title TEXT,
             affaire_num TEXT,
@@ -2024,7 +2024,7 @@ function initializeDatabase() {
             )),
             title TEXT,
             notes TEXT DEFAULT '',
-            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire')),
             source_id TEXT,
             google_event_title TEXT,
             affaire_num TEXT,
@@ -2083,7 +2083,7 @@ function initializeDatabase() {
             )),
             title TEXT,
             notes TEXT DEFAULT '',
-            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire')),
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire')),
             source_id TEXT,
             google_event_title TEXT,
             affaire_num TEXT,
@@ -2849,7 +2849,7 @@ try {
         )),
         title TEXT,
         notes TEXT DEFAULT '',
-        source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'affaire', 'recurring')),
+        source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire', 'recurring')),
         source_id TEXT,
         google_event_title TEXT,
         affaire_num TEXT,
@@ -2878,6 +2878,59 @@ try {
 } catch (migErr5) {
   try { db.exec('ROLLBACK'); } catch(e) {}
   logger.warn('Migration prep_tournees:', migErr5.message);
+}
+
+// Migration : ajouter ical_event au CHECK constraint source_type de task_assignments
+try {
+  const checkInfo6 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+  if (checkInfo6 && checkInfo6.sql && !checkInfo6.sql.includes("'ical_event'")) {
+    logger.info('Migration: ajout source_type ical_event à task_assignments...');
+    db.exec('BEGIN TRANSACTION');
+    db.exec(`
+      CREATE TABLE task_assignments_new (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        display_event_id TEXT REFERENCES dynamic_display_events(id) ON DELETE SET NULL,
+        person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+        date TEXT NOT NULL,
+        period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+        time TEXT,
+        end_time TEXT,
+        section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
+          'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations', 'prep_tournees',
+          'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+          'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
+        )),
+        title TEXT,
+        notes TEXT DEFAULT '',
+        source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire', 'recurring')),
+        source_id TEXT,
+        google_event_title TEXT,
+        affaire_num TEXT,
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
+        visible INTEGER DEFAULT 1,
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER,
+        modified_at TEXT
+      )
+    `);
+    const oldCols6 = db.pragma('table_info(task_assignments)').map(c => c.name);
+    const newCols6 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
+    const commonCols6 = oldCols6.filter(c => newCols6.includes(c)).join(', ');
+    db.exec(`INSERT INTO task_assignments_new (${commonCols6}) SELECT ${commonCols6} FROM task_assignments`);
+    db.exec('DROP TABLE task_assignments');
+    db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_person ON task_assignments(person_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+    db.exec('COMMIT');
+    logger.info('✅ Source type ical_event ajouté');
+  }
+} catch (migErr6) {
+  try { db.exec('ROLLBACK'); } catch(e) {}
+  logger.warn('Migration ical_event source_type:', migErr6.message);
 }
 
 // ── Table recurring_tasks : tâches récurrentes ──

@@ -384,9 +384,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     });
   }, [googleEvents, selectedDate]);
 
-  // IDs Google event qui ont déjà des tâches créées
+  // IDs Google/iCal event qui ont déjà des tâches créées
   const processedGoogleIds = useMemo(() =>
-    new Set(tasks.filter(t => t.sourceType === 'google_event' && t.sourceId).map(t => t.sourceId)),
+    new Set(tasks.filter(t => (t.sourceType === 'google_event' || t.sourceType === 'ical_event') && t.sourceId).map(t => t.sourceId)),
     [tasks]
   );
 
@@ -1041,6 +1041,23 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   // Carte événement iCal
+  // Transformer un événement iCal en objet compatible EventTaskModal (format Google-like)
+  const icalToGoogleLike = useCallback((ev) => {
+    const startDT = ev.start || '';
+    const endDT = ev.end || '';
+    return {
+      id: ev.id, // uid iCal ou généré
+      summary: ev.summary || 'Événement',
+      start: startDT.includes('T') ? { dateTime: startDT } : { date: startDT },
+      end: endDT.includes('T') ? { dateTime: endDT } : { date: endDT },
+      location: ev.location || '',
+      description: ev.description || '',
+      _ical: true,
+      _calendarName: ev.calendarName,
+      _calendarColor: ev.calendarColor,
+    };
+  }, []);
+
   const renderIcalEventRow = (event) => {
     const startDT = event.start || '';
     const endDT = event.end || '';
@@ -1050,8 +1067,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const dayStr = startDT.includes('T')
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+    const isProcessed = processedGoogleIds.has(event.id);
     return (
-      <div key={`ical-${event.uid || event.summary}-${startDT}`} className="task-row ical-event-row">
+      <div
+        key={`ical-${event.id}-${startDT}`}
+        className={`task-row ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
+        onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}
+        style={{ cursor: 'pointer' }}
+      >
         <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />
         <div className="task-info">
           <div className="task-title">{event.summary || 'Événement'}</div>
@@ -1062,6 +1085,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <span className="ical-calendar-name" style={{ color: event.calendarColor || '#3b82f6' }}>{event.calendarName}</span>
           </div>
           {event.description && <div className="task-subtitle">{event.description.slice(0, 120)}{event.description.length > 120 ? '…' : ''}</div>}
+        </div>
+        <div className="task-actions rdv-actions">
+          <span className={`google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
+            {isProcessed ? '✓ Planifié' : '⚙ Définir'}
+          </span>
         </div>
       </div>
     );
@@ -1597,7 +1625,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       {eventTaskModalEvent && (
         <EventTaskModal
           event={eventTaskModalEvent}
-          existingTasks={tasks.filter(t => t.sourceType === 'google_event' && t.sourceId === eventTaskModalEvent.id)}
+          existingTasks={tasks.filter(t => (t.sourceType === 'google_event' || t.sourceType === 'ical_event') && t.sourceId === eventTaskModalEvent.id)}
           onSave={() => { setEventTaskModalEvent(null); loadTasks(true); }}
           onDelete={() => { setEventTaskModalEvent(null); loadTasks(true); }}
           onClose={() => setEventTaskModalEvent(null)}

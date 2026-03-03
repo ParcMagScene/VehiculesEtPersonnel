@@ -1,0 +1,349 @@
+/* ═══════════════════════════════════════════════════════
+   Design System — Composants UI réutilisables
+   ═══════════════════════════════════════════════════════
+   
+   Tokens de référence → voir theme.css
+   
+   Utilisation :
+     import { Card, Panel, SectionHeader, Table, ScrollArea, FormField } from './ui';
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Card ─── */
+.ui-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: var(--card-padding);
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+
+.ui-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.ui-card--flat {
+  box-shadow: none;
+}
+
+.ui-card--compact {
+  padding: var(--space-2) var(--space-3);
+}
+
+/* ─── Panel (slide-over / section) ─── */
+.ui-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-panel-header {
+  padding: var(--panel-header-padding);
+  background: var(--theme-gradient);
+  color: var(--modal-header-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.ui-panel-header h2,
+.ui-panel-header h3 {
+  margin: 0;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  color: inherit;
+}
+
+.ui-panel-header .ui-panel-close {
+  background: var(--close-btn-bg);
+  border: 1px solid var(--close-btn-border);
+  color: var(--close-btn-color);
+  border-radius: var(--close-btn-radius);
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: 1.1rem;
+}
+
+.ui-panel-header .ui-panel-close:hover {
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
+}
+
+.ui-panel-body {
+  padding: var(--panel-body-padding);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ui-panel-footer {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+/* ─── SectionHeader ─── */
+.ui-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--section-header-gap);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--theme-border-light);
+}
+
+.ui-section-header h3,
+.ui-section-header h4 {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--theme-text-heading);
+}
+
+.ui-section-header .ui-section-badge {
+  background: var(--theme-bg-indigo-light);
+  color: var(--theme-primary);
+  font-size: var(--font-xs);
+  font-weight: var(--weight-semibold);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  min-width: 22px;
+  text-align: center;
+}
+
+.ui-section-header .ui-section-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* ─── Table ─── */
+.ui-table-wrapper {
+  border: 1px solid var(--table-border-light);
+  border-radius: var(--table-radius);
+  overflow: hidden;
+}
+
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+}
+
+.ui-table thead th {
+  background: var(--table-header-bg);
+  color: var(--table-header-color);
+  font-size: var(--table-header-font-size);
+  font-weight: var(--table-header-font-weight);
+  padding: var(--table-header-padding);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--table-border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-base);
+}
+
+.ui-table tbody td {
+  padding: var(--table-cell-padding);
+  border-bottom: 1px solid var(--table-border-light);
+  color: var(--theme-text-primary);
+  vertical-align: middle;
+}
+
+.ui-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ui-table tbody tr:hover td {
+  background: var(--table-row-hover);
+}
+
+.ui-table--striped tbody tr:nth-child(even) td {
+  background: var(--table-row-stripe);
+}
+
+.ui-table--striped tbody tr:nth-child(even):hover td {
+  background: var(--table-row-hover);
+}
+
+.ui-table--compact thead th,
+.ui-table--compact tbody td {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-xs);
+}
+
+/* ─── ScrollArea ─── */
+.ui-scroll-area {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+}
+
+.ui-scroll-area::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+}
+
+.ui-scroll-area::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
+}
+
+.ui-scroll-area::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+}
+
+.ui-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+.ui-scroll-area--thin::-webkit-scrollbar {
+  width: var(--scrollbar-width-thin);
+}
+
+.ui-scroll-area--horizontal {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.ui-scroll-area--horizontal::-webkit-scrollbar {
+  height: var(--scrollbar-width);
+}
+
+.ui-scroll-area--both {
+  overflow: auto;
+}
+
+.ui-scroll-area--both::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+/* ─── FormField ─── */
+.ui-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.ui-form-field--horizontal {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ui-form-field--horizontal .ui-form-label {
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.ui-form-label {
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  color: var(--theme-text-dark);
+}
+
+.ui-form-label--required::after {
+  content: ' *';
+  color: var(--theme-danger);
+}
+
+.ui-form-input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-card);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  width: 100%;
+}
+
+.ui-form-input:focus {
+  border-color: var(--focus-border);
+  box-shadow: var(--focus-ring);
+}
+
+.ui-form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--theme-bg-tertiary);
+}
+
+.ui-form-input--error {
+  border-color: var(--theme-danger);
+}
+
+.ui-form-input--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.ui-form-hint {
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+}
+
+.ui-form-error {
+  font-size: var(--font-xs);
+  color: var(--theme-danger);
+}
+
+/* ─── FormField select ─── */
+.ui-form-select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-card);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+}
+
+.ui-form-select:focus {
+  border-color: var(--focus-border);
+  box-shadow: var(--focus-ring);
+}
+
+/* ─── FormField textarea ─── */
+.ui-form-textarea {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-card);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.ui-form-textarea:focus {
+  border-color: var(--focus-border);
+  box-shadow: var(--focus-ring);
+}

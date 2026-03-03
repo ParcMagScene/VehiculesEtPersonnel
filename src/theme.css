@@ -282,6 +282,39 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
   --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.15);
+
+  /* ─── [AUDIT] Scrollbar tokens ─── */
+  --scrollbar-width: 8px;
+  --scrollbar-width-thin: 6px;
+  --scrollbar-radius: 10px;
+  --scrollbar-bg: transparent;
+  --scrollbar-track: var(--theme-border-light);
+  --scrollbar-thumb: var(--theme-bg-muted);
+  --scrollbar-thumb-hover: var(--theme-text-muted);
+
+  /* ─── [AUDIT] Table tokens ─── */
+  --table-header-bg: var(--theme-bg-tertiary);
+  --table-header-color: var(--theme-text-secondary);
+  --table-header-font-size: var(--font-xs);
+  --table-header-font-weight: var(--weight-semibold);
+  --table-header-padding: var(--space-2) var(--space-3);
+  --table-row-bg: var(--theme-bg-card);
+  --table-row-hover: var(--theme-bg-hover);
+  --table-row-stripe: var(--theme-bg-secondary);
+  --table-border: var(--theme-border);
+  --table-border-light: var(--theme-border-light);
+  --table-cell-padding: var(--space-2) var(--space-3);
+  --table-radius: var(--radius-lg);
+
+  /* ─── [AUDIT] Panel/Card tokens ─── */
+  --card-bg: var(--theme-bg-card);
+  --card-border: var(--theme-border);
+  --card-radius: var(--radius-lg);
+  --card-shadow: var(--shadow-card);
+  --card-padding: var(--space-4);
+  --panel-header-padding: var(--space-4) var(--space-5);
+  --panel-body-padding: var(--space-5);
+  --section-header-gap: var(--space-2);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -304,6 +337,14 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.6);
+
+  /* ─── [AUDIT] Scrollbar dark ─── */
+  --scrollbar-track: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+
+  /* ─── [AUDIT] Table dark ─── */
+  --table-row-stripe: var(--theme-bg-tertiary);
   
   /* ─── Dégradés ─── */
   --theme-gradient: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);

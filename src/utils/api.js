@@ -384,25 +384,7 @@ class ApiClient {
     return this.request('/garages');
   }
 
-  async createGarage(garage) {
-    return this.request('/garages', {
-      method: 'POST',
-      body: JSON.stringify(garage),
-    });
-  }
-
-  async updateGarage(id, garage) {
-    return this.request(`/garages/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(garage),
-    });
-  }
-
-  async deleteGarage(id) {
-    return this.request(`/garages/${id}`, {
-      method: 'DELETE',
-    });
-  }
+  // [CLEANUP] createGarage, updateGarage, deleteGarage supprimés — jamais appelés
 
   // Configuration
   async getConfig(key) {

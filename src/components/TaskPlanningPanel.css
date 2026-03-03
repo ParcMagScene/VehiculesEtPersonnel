@@ -997,6 +997,50 @@
   font-size: 0.8rem;
 }
 
+/* ── Zones événements / tâches dans chaque jour ── */
+.wk-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--theme-bg-secondary, rgba(0,0,0,0.015));
+}
+.wk-zone + .wk-zone {
+  margin-top: 4px;
+  border-top: 1px dashed var(--theme-border-color, #e2e8f0);
+  padding-top: 6px;
+}
+.wk-zone-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--theme-text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 4px 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.wk-zone-count {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: var(--theme-primary, #3b82f6);
+  color: #fff;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.wk-zone-events {
+  background: rgba(66, 133, 244, 0.04);
+}
+.wk-zone-tasks {
+  background: rgba(99, 102, 241, 0.04);
+}
+
 /* ── Mini-cartes ── */
 .wk-card {
   display: flex;

@@ -1261,7 +1261,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const d = new Date(dayStr + 'T00:00:00');
     const dayLabel = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
     const isToday = dayStr === todayStr();
-    const totalItems = dayData.tasks.length + dayData.events.length + dayData.affaires.length + dayData.googleEvents.length;
+    const eventsCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
+    const tasksCount = dayData.tasks.length;
+    const totalItems = eventsCount + tasksCount;
 
     return (
       <div key={dayStr} className={`wk-day-col ${isToday ? 'today' : ''}`}>
@@ -1271,10 +1273,24 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
         <div className="wk-day-body">
           {totalItems === 0 && <div className="wk-empty">—</div>}
-          {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
-          {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
-          {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
-          {dayData.tasks.map(t => renderWeekMiniCard(t, 'task'))}
+
+          {/* Zone Événements */}
+          {eventsCount > 0 && (
+            <div className="wk-zone wk-zone-events">
+              <div className="wk-zone-label">📅 Événements <span className="wk-zone-count">{eventsCount}</span></div>
+              {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
+              {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
+              {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
+            </div>
+          )}
+
+          {/* Zone Tâches */}
+          {tasksCount > 0 && (
+            <div className="wk-zone wk-zone-tasks">
+              <div className="wk-zone-label">✅ Tâches <span className="wk-zone-count">{tasksCount}</span></div>
+              {dayData.tasks.map(t => renderWeekMiniCard(t, 'task'))}
+            </div>
+          )}
         </div>
       </div>
     );

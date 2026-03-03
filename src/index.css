@@ -68,25 +68,25 @@ code {
   min-height: 100dvh;
 }
 
-/* Scrollbar personnalisée */
+/* Scrollbar personnalisée — standardisée via tokens */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--theme-bg-muted);
-  border-radius: 10px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-text-muted);
+  background: var(--scrollbar-thumb-hover);
   background-clip: padding-box;
 }
 
@@ -95,16 +95,16 @@ code {
 .dialog-content::-webkit-scrollbar,
 [class*="modal"]::-webkit-scrollbar,
 [class*="dialog"]::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
 }
 
 .modal-content::-webkit-scrollbar-track,
 .dialog-content::-webkit-scrollbar-track,
 [class*="modal"]::-webkit-scrollbar-track,
 [class*="dialog"]::-webkit-scrollbar-track {
-  background: var(--theme-border-light);
-  border-radius: 4px;
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
   margin: 4px 0;
 }
 
@@ -112,9 +112,9 @@ code {
 .dialog-content::-webkit-scrollbar-thumb,
 [class*="modal"]::-webkit-scrollbar-thumb,
 [class*="dialog"]::-webkit-scrollbar-thumb {
-  background: var(--theme-bg-muted);
-  border-radius: 4px;
-  border: 2px solid var(--theme-border-light);
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+  border: 2px solid var(--scrollbar-track);
   background-clip: padding-box;
 }
 
@@ -122,8 +122,8 @@ code {
 .dialog-content::-webkit-scrollbar-thumb:hover,
 [class*="modal"]::-webkit-scrollbar-thumb:hover,
 [class*="dialog"]::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-text-muted);
-  border: 2px solid var(--theme-border-light);
+  background: var(--scrollbar-thumb-hover);
+  border: 2px solid var(--scrollbar-track);
   background-clip: padding-box;
 }
 

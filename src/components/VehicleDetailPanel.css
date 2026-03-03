@@ -86,14 +86,14 @@
 }
 
 .vdp-slide-body::-webkit-scrollbar {
-  width: 5px;
+  width: var(--scrollbar-width-thin);
 }
 .vdp-slide-body::-webkit-scrollbar-track {
-  background: var(--theme-border-light);
+  background: var(--scrollbar-track);
 }
 .vdp-slide-body::-webkit-scrollbar-thumb {
-  background: var(--theme-bg-muted);
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
 }
 
 /* ═══ Sections de contenu ═══ */

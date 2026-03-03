@@ -455,27 +455,27 @@
 .planning-vehicles-list::-webkit-scrollbar,
 .planning-grid-container::-webkit-scrollbar,
 .planning-cell::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
 }
 
 .planning-vehicles-list::-webkit-scrollbar-track,
 .planning-grid-container::-webkit-scrollbar-track,
 .planning-cell::-webkit-scrollbar-track {
-  background: var(--theme-bg-tertiary);
+  background: var(--scrollbar-track);
 }
 
 .planning-vehicles-list::-webkit-scrollbar-thumb,
 .planning-grid-container::-webkit-scrollbar-thumb,
 .planning-cell::-webkit-scrollbar-thumb {
-  background: var(--theme-border-muted);
-  border-radius: 4px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
 }
 
 .planning-vehicles-list::-webkit-scrollbar-thumb:hover,
 .planning-grid-container::-webkit-scrollbar-thumb:hover,
 .planning-cell::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Responsive */

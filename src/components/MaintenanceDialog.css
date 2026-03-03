@@ -129,22 +129,22 @@
 }
 
 .maintenance-dialog-content::-webkit-scrollbar {
-  width: 6px;
+  width: var(--scrollbar-width-thin);
 }
 
 .maintenance-dialog-content::-webkit-scrollbar-track {
-  background: var(--theme-border-light);
-  border-radius: 3px;
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
   margin: 8px 0;
 }
 
 .maintenance-dialog-content::-webkit-scrollbar-thumb {
-  background: var(--theme-border);
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
 }
 
 .maintenance-dialog-content::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-text-muted);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Formulaire */
@@ -1022,10 +1022,6 @@
 /* ═══════════════════════════════════════════════════════
    DARK THEME OVERRIDES — MaintenanceDialog.css
    ═══════════════════════════════════════════════════════ */
-
-[data-theme="dark"] .maintenance-dialog-content::-webkit-scrollbar-thumb {
-  background: var(--theme-border-muted);
-}
 
 [data-theme="dark"] .immobilized-checkbox {
   border-color: var(--theme-danger-border);

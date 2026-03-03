@@ -1352,7 +1352,17 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             const isP = (item.section || '').startsWith('prep_');
             const cleaned = isP ? item.title.replace(/^🔧\s*Préparation\s*—\s*/i, '') : item.title;
             const an = item.affaireNum || extractAffaireNum(item.title) || extractAffaireNum(item.googleEventTitle);
-            return <span className={`wk-title ${isDone ? 'done' : ''}`} title={`${an ? an + ' · ' : ''}${item.title}${item.googleEventTitle ? ' — ' + item.googleEventTitle : ''}`}>{cleaned}</span>;
+            // Nom de l'événement Google ou titre de l'affaire liée
+            const eventLabel = item.googleEventTitle
+              || (an && affaireByNum.get(an.toUpperCase())?.event_name)
+              || (an && affaireByNum.get(an.toUpperCase())?.titre)
+              || '';
+            return (
+              <span className="wk-task-info">
+                <span className={`wk-title ${isDone ? 'done' : ''}`} title={`${an ? an + ' · ' : ''}${item.title}${eventLabel ? ' — ' + eventLabel : ''}`}>{cleaned}</span>
+                {eventLabel && <span className="wk-event-label" title={eventLabel}>{eventLabel.length > 20 ? eventLabel.slice(0, 20) + '…' : eventLabel}</span>}
+              </span>
+            );
           })()}
           {(item.personFirstName) && (
             <span className="wk-person">{item.personFirstName?.charAt(0)}{item.personLastName?.charAt(0)}</span>
@@ -1459,14 +1469,36 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     );
   };
 
-  // ── Colonne d'un jour (tâches uniquement) ──
+  // ── Colonne d'un jour (tâches groupées par section) ──
   const renderWeekTaskCol = (dayStr) => {
     const dayData = weekGroupedByDay?.[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
     const tasksCount = dayData.tasks.length;
+    if (tasksCount === 0) return <div key={dayStr} className="wk-band-col"><div className="wk-empty">—</div></div>;
+
+    // Grouper par section en respectant l'ordre SECTIONS
+    const grouped = {};
+    dayData.tasks.forEach(t => {
+      const sec = t.section || 'manual';
+      if (!grouped[sec]) grouped[sec] = [];
+      grouped[sec].push(t);
+    });
+    const sectionOrder = Object.keys(SECTIONS);
+
     return (
       <div key={dayStr} className="wk-band-col">
-        {tasksCount === 0 && <div className="wk-empty">—</div>}
-        {dayData.tasks.map(t => renderWeekMiniCard(t, 'task'))}
+        {sectionOrder.map(secKey => {
+          const items = grouped[secKey];
+          if (!items || items.length === 0) return null;
+          const info = SECTIONS[secKey] || SECTIONS.manual;
+          return (
+            <div key={secKey} className="wk-task-group">
+              <div className="wk-task-group-label" style={{ color: info.color }}>
+                <span>{info.emoji}</span> {info.label}
+              </div>
+              {items.map(t => renderWeekMiniCard(t, 'task'))}
+            </div>
+          );
+        })}
       </div>
     );
   };

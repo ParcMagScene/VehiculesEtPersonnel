@@ -25,6 +25,8 @@ const TASK_SECTIONS = [
   { key: 'retour', label: '🔙 Retour' },
   { key: 'recuperation', label: '♻️ Récupération' },
   { key: 'installation', label: '🔧 Installation' },
+  { key: 'montage', label: '🔩 Montage' },
+  { key: 'demontage', label: '🔧 Démontage' },
   { key: 'taches_secondaires', label: '📋 Secondaire' },
   { key: 'manual', label: '✏️ Divers' },
 ];

@@ -37,6 +37,8 @@ const SECTIONS = {
   retour:             { label: 'Retour',               emoji: '↩️', color: '#8b5cf6', affaireOnly: true },
   recuperation:       { label: 'Récupération',         emoji: '📥', color: '#ef4444', affaireOnly: true },
   installation:       { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
+  montage:            { label: 'Montage',              emoji: '🔩', color: '#0891b2', affaireOnly: true },
+  demontage:          { label: 'Démontage',            emoji: '🔧', color: '#dc2626', affaireOnly: true },
   // — En bas —
   taches_secondaires: { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
   manual:             { label: 'Autres',               emoji: '📋', color: 'var(--theme-text-secondary)' },
@@ -53,6 +55,8 @@ const EVENT_TYPES = {
   depart:       { label: 'Départ',        emoji: '🚀', color: '#3b82f6' },
   retour:       { label: 'Retour',        emoji: '↩️', color: '#8b5cf6' },
   recuperation: { label: 'Récupération',  emoji: '📥', color: '#ef4444' },
+  montage:      { label: 'Montage',       emoji: '🔩', color: '#0891b2' },
+  demontage:    { label: 'Démontage',     emoji: '🔧', color: '#dc2626' },
 };
 
 const mapEventToSection = (event) => {
@@ -71,6 +75,8 @@ const mapEventToSection = (event) => {
   if (type === 'retour') return 'retour';
   if (type === 'recuperation') return 'recuperation';
   if (type === 'installation') return 'installation';
+  if (type === 'montage') return 'montage';
+  if (type === 'demontage') return 'demontage';
   return 'evenements';
 };
 
@@ -786,6 +792,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       prep_locations: 'preparation', prep_prestations: 'preparation', prep_ventes: 'preparation', prep_installations: 'preparation',
       chargement: 'chargement', depart: 'depart', enlevement: 'enlevement',
       retour: 'retour', recuperation: 'recuperation', installation: 'installation',
+      montage: 'montage', demontage: 'demontage',
     };
     const showEventType = task.eventType && SECTION_EVENT_TYPES[task.section] !== task.eventType;
 

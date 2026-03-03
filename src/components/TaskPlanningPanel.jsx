@@ -407,25 +407,29 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   // ── Lier les événements Google aux affaires par numéro d'affaire ──
   // Évite les doublons : un event Google portant un AF existant est masqué,
   // et l'affaire récupère les horaires Google associés.
-  const { enrichedAffaires, filteredDayGoogleEvents, filteredWeekGoogleEvents } = useMemo(() => {
+  const { enrichedAffaires, filteredDayGoogleEvents, filteredWeekGoogleEvents, unlinkedAffaireEvents } = useMemo(() => {
     const affaireNumMap = new Map();
     affaires.forEach(a => {
       if (a.numeroAffaire) affaireNumMap.set(a.numeroAffaire.toUpperCase(), a);
     });
 
     const linkedByAffaire = new Map(); // affaireNum → googleEvent
+    const unlinked = []; // Events Google avec AF non trouvé en base
 
     const filterLinked = (events) => {
       return events.filter(ev => {
-        const match = (ev.summary || '').match(/AF\d{4,}/i);
+        const match = (ev.summary || '').match(/\bAF\s*\d{4,}/i);
         if (match) {
-          const num = match[0].toUpperCase();
+          const num = match[0].toUpperCase().replace(/\s+/g, '');
           if (affaireNumMap.has(num)) {
             // Garder le premier événement lié (ou celui avec l'heure la plus tôt)
             if (!linkedByAffaire.has(num)) {
               linkedByAffaire.set(num, ev);
             }
             return false; // Filtrer cet événement Google (l'affaire prend le relais)
+          } else {
+            // AF détecté mais pas en base → à créer
+            unlinked.push(ev);
           }
         }
         return true;
@@ -454,8 +458,54 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       return a;
     });
 
-    return { enrichedAffaires: enriched, filteredDayGoogleEvents: fDay, filteredWeekGoogleEvents: fWeek };
+    return { enrichedAffaires: enriched, filteredDayGoogleEvents: fDay, filteredWeekGoogleEvents: fWeek, unlinkedAffaireEvents: unlinked };
   }, [affaires, dayGoogleEvents, weekGoogleEvents]);
+
+  // ── Auto-création des affaires pour les events Google avec AF non trouvé en base ──
+  const syncedAFRef = useRef(new Set());
+  useEffect(() => {
+    if (!unlinkedAffaireEvents || unlinkedAffaireEvents.length === 0) return;
+    // Ne syncer que les events pas encore traités
+    const toSync = unlinkedAffaireEvents.filter(ev => {
+      const m = (ev.summary || '').match(/\bAF\s*\d{4,}/i);
+      if (!m) return false;
+      const num = m[0].toUpperCase().replace(/\s+/g, '');
+      if (syncedAFRef.current.has(num)) return false;
+      syncedAFRef.current.add(num);
+      return true;
+    });
+    if (toSync.length === 0) return;
+    (async () => {
+      try {
+        await api.syncGoogleEventsToAffaires(toSync);
+        await loadTasks(true); // Refresh silencieux
+      } catch (err) {
+        console.error('[TaskPlanning] Auto-sync affaires failed:', err);
+      }
+    })();
+  }, [unlinkedAffaireEvents, loadTasks]);
+
+  // ── Liaison manuelle event → affaire ──
+  const [linkingEvent, setLinkingEvent] = useState(null); // Google event en cours de liaison
+  const [linkSearchQuery, setLinkSearchQuery] = useState('');
+
+  const handleManualLink = async (event, affaireNum) => {
+    try {
+      // Créer/mettre à jour l'affaire avec cet event
+      const summary = event.summary || '';
+      await api.syncGoogleEventsToAffaires([{
+        ...event,
+        summary: summary.includes(affaireNum) ? summary : `${affaireNum} ${summary}`,
+      }]);
+      syncedAFRef.current.add(affaireNum.toUpperCase());
+      setLinkingEvent(null);
+      setLinkSearchQuery('');
+      await loadTasks(true);
+      toast.success(`Événement lié à ${affaireNum}`);
+    } catch (err) {
+      toast.error('Erreur lors de la liaison');
+    }
+  };
 
   // Ouvrir EventTaskModal à partir d'une affaire (pseudo événement, ou Google event lié)
   const openAffaireTaskModal = (affaire) => {
@@ -993,21 +1043,32 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const location = event.location || '';
-    const affaireNum = (summary.match(/AF\d{4,}/i) || [''])[0];
+    const affaireMatch = summary.match(/\bAF\s*\d{4,}/i);
+    const affaireNum = affaireMatch ? affaireMatch[0].toUpperCase().replace(/\s+/g, '') : '';
     const isProcessed = processedGoogleIds.has(event.id);
+    const isLinking = linkingEvent?.id === event.id;
     // Retirer l'affaire du titre pour éviter la redondance
     let displaySummary = summary;
     if (affaireNum) {
-      displaySummary = summary.replace(new RegExp(affaireNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').replace(/^\s*[-—–:]\s*/, '').trim() || summary;
+      displaySummary = summary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || summary;
     }
+
+    // Filtrer les affaires pour la recherche manuelle
+    const linkableAffaires = isLinking && linkSearchQuery.length >= 2
+      ? affaires.filter(a => {
+          const q = linkSearchQuery.toUpperCase();
+          return (a.numeroAffaire || '').toUpperCase().includes(q)
+            || (a.client || '').toUpperCase().includes(q)
+            || (a.titre || '').toUpperCase().includes(q);
+        }).slice(0, 8)
+      : [];
+
     return (
       <div
         key={`gcal-rdv-${event.id}`}
         className={`task-row event-row-cols google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
-        onClick={() => setEventTaskModalEvent(event)}
-        style={{ cursor: 'pointer' }}
       >
-        <span className="ev-col ev-col-dot" style={{ color: isProcessed ? '#10b981' : '#4285f4' }}>
+        <span className="ev-col ev-col-dot" style={{ color: isProcessed ? '#10b981' : '#4285f4', cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>
           <Calendar size={14} />
         </span>
         {affaireNum && (
@@ -1015,7 +1076,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
           </span>
         )}
-        <span className="ev-col ev-col-title" title={summary}>{displaySummary}</span>
+        <span className="ev-col ev-col-title" title={summary} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displaySummary}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         {location && <span className="ev-col ev-col-location" title={location}><MapPin size={11} /> {location.length > 25 ? location.slice(0, 25) + '…' : location}</span>}
@@ -1023,6 +1084,67 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
           {isProcessed ? '✓' : '⚙'}
         </span>
+        {/* Bouton liaison manuelle — visible seulement si pas d'AF détecté */}
+        {!affaireNum && (
+          <span className="ev-col ev-col-link">
+            <button
+              className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+              title="Lier à une affaire"
+              onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
+            >
+              <Link size={13} />
+            </button>
+          </span>
+        )}
+        {/* Popover de liaison manuelle */}
+        {isLinking && (
+          <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
+            <div className="link-popover-header">
+              <span>🔗 Lier à une affaire</span>
+              <button className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
+                <X size={14} />
+              </button>
+            </div>
+            <input
+              type="text"
+              className="link-search-input"
+              placeholder="Rechercher AF, client…"
+              value={linkSearchQuery}
+              onChange={(e) => setLinkSearchQuery(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Escape') { setLinkingEvent(null); setLinkSearchQuery(''); } }}
+            />
+            {/* Saisie directe d'un numéro AF */}
+            {linkSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
+              <button
+                className="link-option link-option-create"
+                onClick={() => {
+                  const num = linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
+                  handleManualLink(event, num);
+                }}
+              >
+                ➕ Créer & lier <strong>{linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
+              </button>
+            )}
+            {linkableAffaires.length > 0 && (
+              <div className="link-options-list">
+                {linkableAffaires.map(a => (
+                  <button
+                    key={a.id || a.numeroAffaire}
+                    className="link-option"
+                    onClick={() => handleManualLink(event, a.numeroAffaire)}
+                  >
+                    <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
+                    <span className="link-option-client">{a.client || 'Sans client'}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {linkSearchQuery.length >= 2 && linkableAffaires.length === 0 && !linkSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
+              <div className="link-no-results">Aucune affaire trouvée</div>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -1099,19 +1221,29 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const isProcessed = processedGoogleIds.has(event.id);
-    const affaireNum = ((event.summary || '').match(/AF\d{4,}/i) || [''])[0];
+    const icalAffaireMatch = (event.summary || '').match(/\bAF\s*\d{4,}/i);
+    const affaireNum = icalAffaireMatch ? icalAffaireMatch[0].toUpperCase().replace(/\s+/g, '') : '';
+    const isLinking = linkingEvent?.id === event.id;
     let displaySummary = event.summary || 'Événement';
     if (affaireNum) {
-      displaySummary = displaySummary.replace(new RegExp(affaireNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').replace(/^\s*[-—–:]\s*/, '').trim() || displaySummary;
+      displaySummary = displaySummary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || displaySummary;
     }
+
+    const linkableAffaires = isLinking && linkSearchQuery.length >= 2
+      ? affaires.filter(a => {
+          const q = linkSearchQuery.toUpperCase();
+          return (a.numeroAffaire || '').toUpperCase().includes(q)
+            || (a.client || '').toUpperCase().includes(q)
+            || (a.titre || '').toUpperCase().includes(q);
+        }).slice(0, 8)
+      : [];
+
     return (
       <div
         key={`ical-${event.id}-${startDT}`}
         className={`task-row event-row-cols ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
-        onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}
-        style={{ cursor: 'pointer' }}
       >
-        <span className="ev-col ev-col-dot">
+        <span className="ev-col ev-col-dot" onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>
           <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />
         </span>
         {affaireNum && (
@@ -1119,7 +1251,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
           </span>
         )}
-        <span className="ev-col ev-col-title" title={event.summary}>{displaySummary}</span>
+        <span className="ev-col ev-col-title" title={event.summary} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displaySummary}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         {event.location && <span className="ev-col ev-col-location" title={event.location}><MapPin size={11} /> {event.location.length > 25 ? event.location.slice(0, 25) + '…' : event.location}</span>}
@@ -1131,6 +1263,64 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
           {isProcessed ? '✓' : '⚙'}
         </span>
+        {!affaireNum && (
+          <span className="ev-col ev-col-link">
+            <button
+              className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+              title="Lier à une affaire"
+              onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
+            >
+              <Link size={13} />
+            </button>
+          </span>
+        )}
+        {isLinking && (
+          <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
+            <div className="link-popover-header">
+              <span>🔗 Lier à une affaire</span>
+              <button className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
+                <X size={14} />
+              </button>
+            </div>
+            <input
+              type="text"
+              className="link-search-input"
+              placeholder="Rechercher AF, client…"
+              value={linkSearchQuery}
+              onChange={(e) => setLinkSearchQuery(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Escape') { setLinkingEvent(null); setLinkSearchQuery(''); } }}
+            />
+            {linkSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
+              <button
+                className="link-option link-option-create"
+                onClick={() => {
+                  const num = linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
+                  handleManualLink(event, num);
+                }}
+              >
+                ➕ Créer & lier <strong>{linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
+              </button>
+            )}
+            {linkableAffaires.length > 0 && (
+              <div className="link-options-list">
+                {linkableAffaires.map(a => (
+                  <button
+                    key={a.id || a.numeroAffaire}
+                    className="link-option"
+                    onClick={() => handleManualLink(event, a.numeroAffaire)}
+                  >
+                    <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
+                    <span className="link-option-client">{a.client || 'Sans client'}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {linkSearchQuery.length >= 2 && linkableAffaires.length === 0 && !linkSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
+              <div className="link-no-results">Aucune affaire trouvée</div>
+            )}
+          </div>
+        )}
       </div>
     );
   };

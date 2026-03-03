@@ -775,8 +775,8 @@ function EventDetailsModal({
             onClose={() => setShowBLImport(false)}
             onImported={() => setShowBLImport(false)}
             defaultAffaireId={event?.summary ? (() => {
-              const m = event.summary.match(/AF\d{4,}/i);
-              return m ? m[0].toUpperCase() : '';
+              const m = event.summary.match(/\bAF\s*\d{4,}/i);
+              return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
             })() : ''}
           />
         </Suspense>
@@ -788,8 +788,8 @@ function EventDetailsModal({
           <DynamicDisplayDialog
             defaultDate={event?.start?.date || event?.start?.dateTime?.slice(0, 10) || null}
             defaultAffaireId={event?.summary ? (() => {
-              const m = event.summary.match(/AF\d{4,}/i);
-              return m ? m[0].toUpperCase() : '';
+              const m = event.summary.match(/\bAF\s*\d{4,}/i);
+              return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
             })() : ''}
             onSave={() => setShowDisplayDialog(false)}
             onClose={() => setShowDisplayDialog(false)}

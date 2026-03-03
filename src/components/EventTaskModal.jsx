@@ -46,9 +46,9 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       : '';
     const location = event?.location || '';
     const description = event?.description || '';
-    // Extraire numéro d'affaire (AFxxxxx pattern)
-    const affaireMatch = summary.match(/AF\d{4,}/i);
-    const affaireNum = affaireMatch ? affaireMatch[0].toUpperCase() : '';
+    // Extraire numéro d'affaire (AF xxxxx ou AFxxxxx pattern)
+    const affaireMatch = summary.match(/\bAF\s*\d{4,}/i);
+    const affaireNum = affaireMatch ? affaireMatch[0].toUpperCase().replace(/\s+/g, '') : '';
     // Déduire le type à partir du titre
     const affaireType = guessAffaireType(summary);
 

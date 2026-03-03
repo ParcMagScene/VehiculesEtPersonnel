@@ -1039,3 +1039,78 @@
   color: var(--theme-text-muted);
   font-size: 0.85rem;
 }
+
+/* ── Multi-affectation ── */
+.asd-multi-persons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.asd-person-badge.asd-person-additional {
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border-medium);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  position: relative;
+}
+
+.asd-person-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: var(--theme-danger-bg, #fef2f2);
+  color: var(--theme-danger, #ef4444);
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+  transition: background 0.15s, color 0.15s;
+}
+.asd-person-remove:hover {
+  background: var(--theme-danger, #ef4444);
+  color: white;
+}
+
+.asd-add-person-wrapper {
+  position: relative;
+  margin-top: 6px;
+}
+
+.asd-btn-add-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px dashed var(--theme-border-medium);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: all 0.15s;
+}
+.asd-btn-add-person:hover {
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+  background: var(--theme-primary-bg, rgba(102, 126, 234, 0.06));
+}
+
+.asd-add-person-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 55;
+  margin-top: 4px;
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border-muted);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  min-width: 280px;
+}

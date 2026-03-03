@@ -1387,7 +1387,11 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           FROM affaires a
           WHERE a.date_debut <= ?
             AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?)
-          HAVING (bl_count + events_count + task_count) > 0
+            AND (
+              EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
+              OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
+              OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
+            )
           ORDER BY a.type, a.date_debut
         `;
         params = [date, date];
@@ -1401,7 +1405,11 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           FROM affaires a
           WHERE a.date_debut <= ?
             AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?)
-          HAVING (bl_count + events_count + task_count) > 0
+            AND (
+              EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
+              OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
+              OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
+            )
           ORDER BY a.type, a.date_debut
         `;
         params = [dateTo, dateFrom];
@@ -1414,8 +1422,12 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
             (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
             (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
           FROM affaires a
-          WHERE a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?
-          HAVING (bl_count + events_count + task_count) > 0
+          WHERE (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?)
+            AND (
+              EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
+              OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
+              OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
+            )
           ORDER BY a.type, a.date_debut
         `;
         params = [today];

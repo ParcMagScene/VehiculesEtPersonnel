@@ -351,14 +351,14 @@
 
 /* Scrollbar */
 .vehicles-list::-webkit-scrollbar {
-  width: 4px;
+  width: var(--scrollbar-width-thin);
 }
 
 .vehicles-list::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--scrollbar-track);
 }
 
 .vehicles-list::-webkit-scrollbar-thumb {
-  background: var(--theme-border-muted);
-  border-radius: 2px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
 }

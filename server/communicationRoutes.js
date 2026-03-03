@@ -11,6 +11,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import PDFDocument from 'pdfkit';
 import logger from './logger.js';
+import { statsCache, listCache, icalCache, cacheMiddleware } from './cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1317,8 +1318,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // STATS — Résumé pour le tableau de bord
   // ═══════════════════════════════════════════════
 
-  // ─── GET /api/communication/stats ───
-  app.get('/api/communication/stats', authenticateToken, (req, res) => {
+  // ─── GET /api/communication/stats ─── [PERF] Cache 20s
+  app.get('/api/communication/stats', authenticateToken, cacheMiddleware(statsCache, () => 'comm-stats', 20_000), (req, res) => {
     try {
       const today = new Date().toISOString().slice(0, 10);
 
@@ -1368,10 +1369,10 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // AFFAIRES POUR PLANNING — Filtrage par date
   // ═══════════════════════════════════════════════
 
-  // ─── GET /api/communication/planning-affaires ───
+  // ─── GET /api/communication/planning-affaires ─── [PERF] Cache 15s par clé date
   // Retourne les affaires actives pour une date ou plage de dates
   // Params: date (YYYY-MM-DD) ou dateFrom + dateTo
-  app.get('/api/communication/planning-affaires', authenticateToken, (req, res) => {
+  app.get('/api/communication/planning-affaires', authenticateToken, cacheMiddleware(listCache, (req) => `planning-affaires-${req.query.date || ''}-${req.query.dateFrom || ''}-${req.query.dateTo || ''}`, 15_000), (req, res) => {
     try {
       const { date, dateFrom, dateTo } = req.query;
 
@@ -1689,8 +1690,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // GET /api/communication/ical-events — récupère les événements iCal dans une plage de dates
-  app.get('/api/communication/ical-events', authenticateToken, async (req, res) => {
+  // GET /api/communication/ical-events — récupère les événements iCal dans une plage de dates [PERF] Cache 5min
+  app.get('/api/communication/ical-events', authenticateToken, cacheMiddleware(icalCache, (req) => `ical-${req.query.dateFrom}-${req.query.dateTo}`, 5 * 60_000), async (req, res) => {
     try {
       const { dateFrom, dateTo } = req.query;
       if (!dateFrom || !dateTo) return res.status(400).json({ error: 'dateFrom et dateTo requis' });

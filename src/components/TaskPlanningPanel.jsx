@@ -828,7 +828,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="task-info">
           <div className="task-title">
             {typeInfo.emoji} {dateBadge && <span className="date-badge">{dateBadge}</span>}
-            {affaire.numeroAffaire}
+            <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
             {affaire.client ? ` — ${affaire.client}` : ''}
             {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
             {isProcessed && <span className="processed-badge" title="Tâches définies">✓</span>}
@@ -849,6 +849,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           </div>
         </div>
         <div className="task-actions">
+          {!isProcessed && (
+            <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }} title="Définir les tâches pour cette affaire">
+              <Plus size={14} />
+            </button>
+          )}
+          {isProcessed && (
+            <span className="task-status-btn done" title="Tâches déjà définies">
+              <Check size={14} />
+            </span>
+          )}
           <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }} title="Retirer de la planification">
             <X size={14} />
           </button>

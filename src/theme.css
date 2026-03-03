@@ -496,6 +496,163 @@
   border-color: var(--btn-secondary-hover-border-color);
 }
 
+/* Bouton danger (supprimer) */
+.theme-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-danger-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-danger-bg);
+  color: var(--btn-danger-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+.theme-btn-danger:hover {
+  background: var(--btn-danger-hover-bg);
+}
+.theme-btn-danger.filled {
+  background: var(--btn-danger-filled-bg, #ef4444);
+  color: var(--btn-danger-filled-color, white);
+  border: none;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+.theme-btn-danger.filled:hover {
+  opacity: 0.9;
+}
+
+/* Bouton success */
+.theme-btn-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-success-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-success-bg);
+  color: var(--btn-success-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+.theme-btn-success:hover {
+  background: var(--btn-success-hover-bg);
+}
+
+/* Bouton warning */
+.theme-btn-warning {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-warning-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-warning-bg);
+  color: var(--btn-warning-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
+}
+.theme-btn-warning:hover {
+  background: var(--btn-warning-hover-bg);
+}
+
+/* Bouton ghost (transparent, juste texte + icône) */
+.theme-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--btn-radius);
+  background: transparent;
+  color: var(--theme-text-secondary);
+  font-size: var(--btn-font-size);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--btn-transition);
+}
+.theme-btn-ghost:hover {
+  background: var(--theme-bg-hover);
+  color: var(--theme-text-primary);
+}
+.theme-btn-ghost.active {
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+}
+
+/* ─── Tailles ─── */
+.theme-btn-sm,
+.theme-btn-primary.theme-btn-sm,
+.theme-btn-secondary.theme-btn-sm,
+.theme-btn-danger.theme-btn-sm,
+.theme-btn-success.theme-btn-sm,
+.theme-btn-warning.theme-btn-sm,
+.theme-btn-ghost.theme-btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  height: 32px;
+  gap: 5px;
+}
+
+.theme-btn-xs,
+.theme-btn-primary.theme-btn-xs,
+.theme-btn-secondary.theme-btn-xs,
+.theme-btn-danger.theme-btn-xs,
+.theme-btn-ghost.theme-btn-xs {
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  height: 26px;
+  gap: 4px;
+}
+
+/* Bouton icône seul (carré) */
+.theme-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--btn-radius);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  flex-shrink: 0;
+}
+.theme-btn-icon:hover {
+  background: var(--theme-bg-hover);
+  color: var(--theme-text-primary);
+  border-color: var(--theme-border-medium);
+}
+.theme-btn-icon.danger:hover {
+  background: var(--btn-danger-bg);
+  color: var(--btn-danger-color);
+  border-color: var(--theme-danger);
+}
+.theme-btn-icon.sm {
+  width: 26px;
+  height: 26px;
+}
+.theme-btn-icon.lg {
+  width: 38px;
+  height: 38px;
+}
+
 
 
 /* ═══════════════════════════════════════════════════════

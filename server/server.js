@@ -48,7 +48,7 @@ import { setupDisplayRoutes } from './displayRoutes.js';
 import { setupAnnuaireClientsRoutes, setupAnnuaireSuppliersRoutes, setupAnnuairePrestatairesRoutes, setupAnnuaireContactsRoutes, setupAnnuaireLookupsRoutes, setupAnnuaireSearchRoutes, setupAnnuaireImportRoutes } from './annuaireRoutes.js';
 import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated, alertMaintenanceCreated } from './emailService.js';
 import logger from "./logger.js";
-import { authCache, statsCache, listCache, cacheMiddleware, invalidateEntity, getAllCacheStats } from './cache.js';
+import { authCache, statsCache, listCache, cacheMiddleware, invalidateEntity, getAllCacheStats, ALL_CACHES } from './cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -544,8 +544,7 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 });
 
 // Liste des utilisateurs (pour le sélecteur de connexion)
-// Authentifié pour éviter l'énumération publique des utilisateurs
-app.get('/api/auth/users', authenticateToken, (req, res) => {
+app.get('/api/auth/users', (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, email, name, avatar FROM users ORDER BY name');
     const users = stmt.all();
@@ -3036,11 +3035,9 @@ app.post('/api/cache/clear', authenticateToken, requireAdmin, (req, res) => {
     const target = stats.find(s => s.name === name);
     if (!target) return res.status(404).json({ error: `Cache '${name}' non trouvé` });
     // Clear by name
-    const { ALL_CACHES } = require('./cache.js');
     const cache = ALL_CACHES.find(c => c.name === name);
     if (cache) cache.clear();
   } else {
-    const { ALL_CACHES } = require('./cache.js');
     ALL_CACHES.forEach(c => c.clear());
   }
   res.json({ success: true, message: name ? `Cache '${name}' vidé` : 'Tous les caches vidés' });

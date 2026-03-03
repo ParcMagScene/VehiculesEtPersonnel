@@ -2476,6 +2476,14 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_contacts_supplier ON annuaire_contacts(supplier_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_contacts_prestataire ON annuaire_contacts(prestataire_id)');
 
+    // Migration : ajouter code_libre sur annuaire_contacts (pour import CSV / déduplication)
+    const contactCols = db.pragma('table_info(annuaire_contacts)').map(c => c.name);
+    if (!contactCols.includes('code_libre')) {
+      db.exec('ALTER TABLE annuaire_contacts ADD COLUMN code_libre TEXT');
+      logger.info('  + annuaire_contacts.code_libre');
+    }
+    try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_code_libre ON annuaire_contacts(code_libre)'); } catch(_) {}
+
     logger.info('  ✅ Tables Annuaire (lookup + prestataires + contacts)');
 
     // --- Migration : enrichir la table clients ---

@@ -963,55 +963,48 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     );
   };
 
-  // Carte Google Calendar — cliquable pour ouvrir EventTaskModal
+  // Carte Google Calendar — ligne compacte en colonnes
   const renderGoogleRdvRow = (event) => {
     const summary = event.summary || 'Événement';
     const startDT = event.start?.dateTime || event.start?.date || '';
     const endDT = event.end?.dateTime || event.end?.date || '';
     const timeStr = startDT.includes('T')
       ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
-      : 'Journée entière';
+      : 'Journée';
+    const dayStr = startDT.includes('T')
+      ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+      : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const location = event.location || '';
     const affaireNum = (summary.match(/AF\d{4,}/i) || [''])[0];
     const isProcessed = processedGoogleIds.has(event.id);
-    const isExpanded = expandedRdv === `gcal-${event.id}`;
+    // Retirer l'affaire du titre pour éviter la redondance
+    let displaySummary = summary;
+    if (affaireNum) {
+      displaySummary = summary.replace(new RegExp(affaireNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').replace(/^\s*[-—–:]\s*/, '').trim() || summary;
+    }
     return (
       <div
         key={`gcal-rdv-${event.id}`}
-        className={`task-row rdv-row google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
+        className={`task-row event-row-cols google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
         onClick={() => setEventTaskModalEvent(event)}
         style={{ cursor: 'pointer' }}
       >
-        <span className="display-event-icon" style={{ color: isProcessed ? '#10b981' : '#3b82f6' }}>
+        <span className="ev-col ev-col-dot" style={{ color: isProcessed ? '#10b981' : '#4285f4' }}>
           <Calendar size={14} />
         </span>
-        <div className="task-info">
-          <div className="task-title">
-            {affaireNum && <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />} {summary}
-          </div>
-          <div className="task-meta">
-            <span><Clock size={11} /> {timeStr}</span>
-            {location && <span><MapPin size={11} /> {location}</span>}
-          </div>
-        </div>
-        <div className="task-actions rdv-actions">
-          <span className={`google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
-            {isProcessed ? '✓ Planifié' : '⚙ Définir'}
+        {affaireNum && (
+          <span className="ev-col ev-col-affaire">
+            <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
           </span>
-          <span className="google-badge" title="Google Calendar">G</span>
-          <button className="btn-rdv-view" onClick={(e) => { e.stopPropagation(); setExpandedRdv(isExpanded ? null : `gcal-${event.id}`); }} title="Voir détails">
-            <Eye size={14} />
-          </button>
-        </div>
-        {isExpanded && (
-          <div className="rdv-detail-card" onClick={e => e.stopPropagation()}>
-            <div className="rdv-detail-row"><strong>Titre :</strong> {summary}</div>
-            {affaireNum && <div className="rdv-detail-row"><strong>Affaire :</strong> {affaireNum}</div>}
-            <div className="rdv-detail-row"><strong>Horaire :</strong> {timeStr}</div>
-            {location && <div className="rdv-detail-row"><strong>Lieu :</strong> {location}</div>}
-            {event.description && <div className="rdv-detail-row"><strong>Description :</strong> {event.description.slice(0, 200)}{event.description.length > 200 ? '…' : ''}</div>}
-          </div>
         )}
+        <span className="ev-col ev-col-title" title={summary}>{displaySummary}</span>
+        <span className="ev-col ev-col-date">{dayStr}</span>
+        <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
+        {location && <span className="ev-col ev-col-location" title={location}><MapPin size={11} /> {location.length > 25 ? location.slice(0, 25) + '…' : location}</span>}
+        <span className="ev-col ev-col-origin"><span className="google-badge" title="Google Calendar">G</span></span>
+        <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
+          {isProcessed ? '✓' : '⚙'}
+        </span>
       </div>
     );
   };
@@ -1083,34 +1076,43 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const endDT = event.end || '';
     const timeStr = startDT.includes('T')
       ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
-      : 'Journée entière';
+      : 'Journée';
     const dayStr = startDT.includes('T')
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const isProcessed = processedGoogleIds.has(event.id);
+    const affaireNum = ((event.summary || '').match(/AF\d{4,}/i) || [''])[0];
+    let displaySummary = event.summary || 'Événement';
+    if (affaireNum) {
+      displaySummary = displaySummary.replace(new RegExp(affaireNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').replace(/^\s*[-—–:]\s*/, '').trim() || displaySummary;
+    }
     return (
       <div
         key={`ical-${event.id}-${startDT}`}
-        className={`task-row ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
+        className={`task-row event-row-cols ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
         onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}
         style={{ cursor: 'pointer' }}
       >
-        <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />
-        <div className="task-info">
-          <div className="task-title">{event.summary || 'Événement'}</div>
-          <div className="task-meta">
-            {dayStr && <span><CalendarDays size={11} /> {dayStr}</span>}
-            <span><Clock size={11} /> {timeStr}</span>
-            {event.location && <span><MapPin size={11} /> {event.location}</span>}
-            <span className="ical-calendar-name" style={{ color: event.calendarColor || '#3b82f6' }}>{event.calendarName}</span>
-          </div>
-          {event.description && <div className="task-subtitle">{event.description.slice(0, 120)}{event.description.length > 120 ? '…' : ''}</div>}
-        </div>
-        <div className="task-actions rdv-actions">
-          <span className={`google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
-            {isProcessed ? '✓ Planifié' : '⚙ Définir'}
+        <span className="ev-col ev-col-dot">
+          <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />
+        </span>
+        {affaireNum && (
+          <span className="ev-col ev-col-affaire">
+            <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
           </span>
-        </div>
+        )}
+        <span className="ev-col ev-col-title" title={event.summary}>{displaySummary}</span>
+        <span className="ev-col ev-col-date">{dayStr}</span>
+        <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
+        {event.location && <span className="ev-col ev-col-location" title={event.location}><MapPin size={11} /> {event.location.length > 25 ? event.location.slice(0, 25) + '…' : event.location}</span>}
+        <span className="ev-col ev-col-origin">
+          <span className="ical-origin-badge" style={{ borderColor: event.calendarColor || '#3b82f6', color: event.calendarColor || '#3b82f6' }} title={event.calendarName}>
+            {(event.calendarName || 'iCal').slice(0, 3)}
+          </span>
+        </span>
+        <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
+          {isProcessed ? '✓' : '⚙'}
+        </span>
       </div>
     );
   };

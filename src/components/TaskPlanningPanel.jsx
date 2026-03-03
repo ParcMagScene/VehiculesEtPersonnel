@@ -32,11 +32,11 @@ const SECTIONS = {
   prep_tournees:      { label: 'Préparations Tournées',       emoji: '🚐', color: '#ec4899', affaireOnly: true },
   // — Autres étapes opérationnelles —
   chargement:         { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  depart:             { label: 'Départ',               emoji: '🚀', color: '#3b82f6', typeRestriction: 'Prestation', affaireOnly: true },
-  enlevement:         { label: 'Enlèvement',           emoji: '🚚', color: '#10b981', typeRestriction: 'Location', affaireOnly: true },
-  retour:             { label: 'Retour',               emoji: '↩️', color: '#8b5cf6', typeRestriction: 'Prestation', affaireOnly: true },
-  recuperation:       { label: 'Récupération',         emoji: '📥', color: '#ef4444', typeRestriction: 'Location', affaireOnly: true },
-  installation:       { label: 'Installation',         emoji: '🛠️', color: '#10b981', typeRestriction: 'Installation', affaireOnly: true },
+  depart:             { label: 'Départ',               emoji: '🚀', color: '#3b82f6', affaireOnly: true },
+  enlevement:         { label: 'Enlèvement',           emoji: '🚚', color: '#10b981', affaireOnly: true },
+  retour:             { label: 'Retour',               emoji: '↩️', color: '#8b5cf6', affaireOnly: true },
+  recuperation:       { label: 'Récupération',         emoji: '📥', color: '#ef4444', affaireOnly: true },
+  installation:       { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
   // — En bas —
   taches_secondaires: { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
   manual:             { label: 'Autres',               emoji: '📋', color: 'var(--theme-text-secondary)' },
@@ -706,6 +706,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       const client = linkedAffaire.client || '';
       const titre = linkedAffaire.titre || linkedAffaire.eventName || '';
       displayTitle = client || titre || displayTitle || '-';
+    } else if (linkedAffaire) {
+      // Même titre non-générique : ajouter le client s'il n'apparaît pas déjà
+      const client = linkedAffaire.client || '';
+      if (client && !displayTitle.toLowerCase().includes(client.toLowerCase())) {
+        displayTitle = `${displayTitle} — ${client}`;
+      }
     }
 
     // --- Nettoyage du sous-titre (googleEventTitle) ---
@@ -770,6 +776,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className="ev-col ev-col-type"><Briefcase size={11} /> {task.eventType}</span>
         )}
 
+        {(task.eventLocation || linkedAffaire?.location) && (
+          <span className="ev-col ev-col-location" title={task.eventLocation || linkedAffaire?.location}>
+            📍 {task.eventLocation || linkedAffaire?.location}
+          </span>
+        )}
+
         {task.notes && (
           <span className="ev-col ev-col-notes" title={task.notes}>
             📝 {task.notes.slice(0, 30)}{task.notes.length > 30 ? '…' : ''}
@@ -779,7 +791,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         {(task.personFirstName || task.personLastName) && (
           <span className="ev-col task-person">
             <User size={12} />
-            {task.personFirstName} {task.personLastName?.charAt(0)}.
+            {task.personFirstName} {task.personLastName}
           </span>
         )}
 

@@ -1445,43 +1445,28 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     return null;
   };
 
-  // ── Colonne d'un jour dans la vue semaine ──
-  const renderWeekDayColumn = (dayStr) => {
+  // ── Colonne d'un jour (événements uniquement) ──
+  const renderWeekEventCol = (dayStr) => {
     const dayData = weekGroupedByDay?.[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
-    const d = new Date(dayStr + 'T00:00:00');
-    const dayLabel = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
-    const isToday = dayStr === todayStr();
     const eventsCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
-    const tasksCount = dayData.tasks.length;
-    const totalItems = eventsCount + tasksCount;
-
     return (
-      <div key={dayStr} className={`wk-day-col ${isToday ? 'today' : ''}`}>
-        <div className="wk-day-header">
-          <span className="wk-day-label">{dayLabel}</span>
-          {totalItems > 0 && <span className="wk-day-count">{totalItems}</span>}
-        </div>
-        <div className="wk-day-body">
-          {totalItems === 0 && <div className="wk-empty">—</div>}
+      <div key={dayStr} className="wk-band-col">
+        {eventsCount === 0 && <div className="wk-empty">—</div>}
+        {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
+        {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
+        {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
+      </div>
+    );
+  };
 
-          {/* Zone Événements */}
-          {eventsCount > 0 && (
-            <div className="wk-zone wk-zone-events">
-              <div className="wk-zone-label">📅 Événements <span className="wk-zone-count">{eventsCount}</span></div>
-              {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
-              {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
-              {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
-            </div>
-          )}
-
-          {/* Zone Tâches */}
-          {tasksCount > 0 && (
-            <div className="wk-zone wk-zone-tasks">
-              <div className="wk-zone-label">✅ Tâches <span className="wk-zone-count">{tasksCount}</span></div>
-              {dayData.tasks.map(t => renderWeekMiniCard(t, 'task'))}
-            </div>
-          )}
-        </div>
+  // ── Colonne d'un jour (tâches uniquement) ──
+  const renderWeekTaskCol = (dayStr) => {
+    const dayData = weekGroupedByDay?.[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
+    const tasksCount = dayData.tasks.length;
+    return (
+      <div key={dayStr} className="wk-band-col">
+        {tasksCount === 0 && <div className="wk-empty">—</div>}
+        {dayData.tasks.map(t => renderWeekMiniCard(t, 'task'))}
       </div>
     );
   };
@@ -1816,8 +1801,39 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           </div>
         </div>
       ) : viewMode === 'week' ? (
-        <div className="wk-day-grid">
-          {weekDays.map(d => renderWeekDayColumn(d))}
+        <div className="wk-split-layout">
+          {/* ── En-têtes des jours (partagés) ── */}
+          <div className="wk-day-headers">
+            {weekDays.map(d => {
+              const dt = new Date(d + 'T00:00:00');
+              const dayLabel = dt.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+              const isToday = d === todayStr();
+              const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
+              const total = dayData.tasks.length + dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
+              return (
+                <div key={d} className={`wk-col-header ${isToday ? 'today' : ''}`}>
+                  <span className="wk-day-label">{dayLabel}</span>
+                  {total > 0 && <span className="wk-day-count">{total}</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Bande haute : Événements ── */}
+          <div className="wk-band wk-band-events">
+            <div className="wk-band-label">📅 Événements</div>
+            <div className="wk-band-grid">
+              {weekDays.map(d => renderWeekEventCol(d))}
+            </div>
+          </div>
+
+          {/* ── Bande basse : Tâches ── */}
+          <div className="wk-band wk-band-tasks">
+            <div className="wk-band-label">✅ Tâches</div>
+            <div className="wk-band-grid">
+              {weekDays.map(d => renderWeekTaskCol(d))}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="sections-container">

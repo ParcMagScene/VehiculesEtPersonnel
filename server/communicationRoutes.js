@@ -1632,6 +1632,199 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ═══════════════════════════════════════════════════════
+  // iCal Calendars — CRUD + synchronisation
+  // ═══════════════════════════════════════════════════════
+
+  // GET /api/communication/ical-calendars
+  app.get('/api/communication/ical-calendars', authenticateToken, (req, res) => {
+    try {
+      const rows = db.prepare('SELECT * FROM ical_calendars ORDER BY name ASC').all();
+      res.json({ calendars: rows });
+    } catch (error) {
+      logger.error('GET ical-calendars error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/communication/ical-calendars
+  app.post('/api/communication/ical-calendars', authenticateToken, (req, res) => {
+    try {
+      const { name, url, color } = req.body;
+      if (!name?.trim() || !url?.trim()) return res.status(400).json({ error: 'Nom et URL requis' });
+      const id = crypto.randomUUID().replace(/-/g, '');
+      db.prepare('INSERT INTO ical_calendars (id, name, url, color) VALUES (?, ?, ?, ?)').run(id, name.trim(), url.trim(), color || '#3b82f6');
+      const created = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(id);
+      res.json(created);
+    } catch (error) {
+      logger.error('POST ical-calendars error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // PUT /api/communication/ical-calendars/:id
+  app.put('/api/communication/ical-calendars/:id', authenticateToken, (req, res) => {
+    try {
+      const { name, url, color, enabled } = req.body;
+      db.prepare('UPDATE ical_calendars SET name = ?, url = ?, color = ?, enabled = ? WHERE id = ?')
+        .run(name, url, color || '#3b82f6', enabled ?? 1, req.params.id);
+      const updated = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(req.params.id);
+      if (!updated) return res.status(404).json({ error: 'Calendrier introuvable' });
+      res.json(updated);
+    } catch (error) {
+      logger.error('PUT ical-calendars error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // DELETE /api/communication/ical-calendars/:id
+  app.delete('/api/communication/ical-calendars/:id', authenticateToken, (req, res) => {
+    try {
+      const result = db.prepare('DELETE FROM ical_calendars WHERE id = ?').run(req.params.id);
+      if (result.changes === 0) return res.status(404).json({ error: 'Introuvable' });
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('DELETE ical-calendars error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // GET /api/communication/ical-events — récupère les événements iCal dans une plage de dates
+  app.get('/api/communication/ical-events', authenticateToken, async (req, res) => {
+    try {
+      const { dateFrom, dateTo } = req.query;
+      if (!dateFrom || !dateTo) return res.status(400).json({ error: 'dateFrom et dateTo requis' });
+
+      const calendars = db.prepare('SELECT * FROM ical_calendars WHERE enabled = 1').all();
+      const allEvents = [];
+
+      for (const cal of calendars) {
+        try {
+          const response = await fetch(cal.url, { signal: AbortSignal.timeout(10000) });
+          if (!response.ok) {
+            logger.warn(`iCal fetch failed for ${cal.name}: ${response.status}`);
+            continue;
+          }
+          const icalData = await response.text();
+          const events = parseICalData(icalData, dateFrom, dateTo);
+          events.forEach(ev => {
+            ev.calendarId = cal.id;
+            ev.calendarName = cal.name;
+            ev.calendarColor = cal.color;
+          });
+          allEvents.push(...events);
+
+          // Mettre à jour last_sync
+          db.prepare('UPDATE ical_calendars SET last_sync = datetime(\'now\') WHERE id = ?').run(cal.id);
+        } catch (fetchErr) {
+          logger.warn(`iCal sync error for ${cal.name}:`, fetchErr.message);
+        }
+      }
+
+      // Trier par date de début
+      allEvents.sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+      res.json({ events: allEvents });
+    } catch (error) {
+      logger.error('GET ical-events error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // ── Parser iCal simplifié ──
+  function parseICalData(icalData, dateFrom, dateTo) {
+    const events = [];
+    const lines = icalData.split(/\r?\n/);
+    let currentEvent = null;
+    let lastKey = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      // Continuation lines (starts with space or tab)
+      if (/^[ \t]/.test(line)) {
+        line = lastKey ? '' : line.trimStart();
+        if (currentEvent && lastKey) {
+          currentEvent[lastKey] = (currentEvent[lastKey] || '') + line.substring(1);
+          continue;
+        }
+      }
+
+      if (line === 'BEGIN:VEVENT') {
+        currentEvent = {};
+        lastKey = '';
+      } else if (line === 'END:VEVENT' && currentEvent) {
+        // Filtrer par plage de dates
+        const evDate = (currentEvent.dtstart || '').slice(0, 10);
+        if (evDate >= dateFrom && evDate <= dateTo && currentEvent.summary) {
+          events.push({
+            id: currentEvent.uid || `ical-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            summary: cleanICalText(currentEvent.summary),
+            start: currentEvent.dtstart || '',
+            end: currentEvent.dtend || '',
+            location: cleanICalText(currentEvent.location || ''),
+            description: cleanICalText(currentEvent.description || ''),
+          });
+        }
+        currentEvent = null;
+        lastKey = '';
+      } else if (currentEvent) {
+        const colonIdx = line.indexOf(':');
+        if (colonIdx < 0) continue;
+        const keyPart = line.substring(0, colonIdx);
+        const value = line.substring(colonIdx + 1);
+        // Strip parameters (e.g., DTSTART;TZID=Europe/Paris)
+        const baseKey = keyPart.split(';')[0].toLowerCase();
+
+        if (baseKey === 'dtstart') {
+          currentEvent.dtstart = formatICalDate(value);
+          lastKey = 'dtstart';
+        } else if (baseKey === 'dtend') {
+          currentEvent.dtend = formatICalDate(value);
+          lastKey = 'dtend';
+        } else if (baseKey === 'summary') {
+          currentEvent.summary = value;
+          lastKey = 'summary';
+        } else if (baseKey === 'location') {
+          currentEvent.location = value;
+          lastKey = 'location';
+        } else if (baseKey === 'description') {
+          currentEvent.description = value;
+          lastKey = 'description';
+        } else if (baseKey === 'uid') {
+          currentEvent.uid = value;
+          lastKey = 'uid';
+        } else {
+          lastKey = '';
+        }
+      }
+    }
+    return events;
+  }
+
+  function formatICalDate(dateStr) {
+    // Formats: 20260303T140000Z, 20260303T140000, 20260303
+    const clean = dateStr.replace(/[^0-9TZ]/g, '');
+    if (clean.length >= 15) {
+      // YYYYMMDDTHHMMSS
+      const y = clean.slice(0, 4), m = clean.slice(4, 6), d = clean.slice(6, 8);
+      const hh = clean.slice(9, 11), mm = clean.slice(11, 13);
+      return `${y}-${m}-${d}T${hh}:${mm}`;
+    }
+    if (clean.length >= 8) {
+      return `${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`;
+    }
+    return dateStr;
+  }
+
+  function cleanICalText(text) {
+    if (!text) return '';
+    return text
+      .replace(/\\n/g, '\n')
+      .replace(/\\,/g, ',')
+      .replace(/\\;/g, ';')
+      .replace(/\\\\/g, '\\')
+      .trim();
+  }
+
   // ═══ Fonctions internes ═══
 
   // Générer les tâches récurrentes pour une date donnée

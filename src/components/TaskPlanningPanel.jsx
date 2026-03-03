@@ -3,7 +3,7 @@ import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
   CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings,
-  Repeat, SkipForward
+  Repeat, SkipForward, Link, RefreshCw, Palette
 } from 'lucide-react';
 import api from '../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../utils/affaireConstants';
@@ -144,6 +144,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [recurringTasks, setRecurringTasks] = useState([]);
   const [recurringForm, setRecurringForm] = useState(null); // null = fermé, {} = nouveau, {id,...} = édition
 
+  // ── iCal Calendars ──
+  const [icalCalendars, setIcalCalendars] = useState([]);
+  const [icalEvents, setIcalEvents] = useState([]);
+  const [showIcalManager, setShowIcalManager] = useState(false);
+  const [icalForm, setIcalForm] = useState(null); // null = fermé, {} = nouveau, {id,...} = édition
+  const [icalLoading, setIcalLoading] = useState(false);
+
   // Semaine : 7 jours à partir du lundi
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
 
@@ -194,6 +201,30 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   useEffect(() => { loadTasks(); }, [loadTasks, refreshKey]);
   useEffect(() => { loadPersons(); }, [loadPersons]);
 
+  // ── iCal : chargement des calendriers configurés ──
+  const loadIcalCalendars = useCallback(async () => {
+    try {
+      const res = await api.getIcalCalendars();
+      setIcalCalendars(res.calendars || []);
+    } catch { setIcalCalendars([]); }
+  }, []);
+
+  // ── iCal : chargement des événements (fenêtre glissante ±1 semaine) ──
+  const loadIcalEvents = useCallback(async () => {
+    setIcalLoading(true);
+    try {
+      const today = todayStr();
+      const from = addDays(today, -7);
+      const to = addDays(today, 7);
+      const res = await api.getIcalEvents({ dateFrom: from, dateTo: to });
+      setIcalEvents(res.events || []);
+    } catch { setIcalEvents([]); }
+    finally { setIcalLoading(false); }
+  }, []);
+
+  useEffect(() => { loadIcalCalendars(); }, [loadIcalCalendars]);
+  useEffect(() => { loadIcalEvents(); }, [loadIcalEvents, icalCalendars]);
+
   // ── Chargement des tâches récurrentes ──
   const loadRecurringTasks = useCallback(async () => {
     try {
@@ -233,6 +264,40 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       onConfirm: async () => {
         try { await api.deleteRecurringTask(id); toast.success('Supprimée'); loadRecurringTasks(); }
         catch { toast.error('Erreur suppression'); }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
+
+  // ── iCal Calendars CRUD ──
+  const handleSaveIcal = async () => {
+    if (!icalForm) return;
+    if (!icalForm.name?.trim() || !icalForm.url?.trim()) { toast.warning('Nom et URL requis'); return; }
+    try {
+      if (icalForm.id) {
+        await api.updateIcalCalendar(icalForm.id, icalForm);
+      } else {
+        await api.createIcalCalendar(icalForm);
+      }
+      toast.success(icalForm.id ? 'Calendrier modifié' : 'Calendrier ajouté');
+      setIcalForm(null);
+      await loadIcalCalendars();
+      loadIcalEvents();
+    } catch { toast.error('Erreur sauvegarde'); }
+  };
+
+  const handleDeleteIcal = async (id) => {
+    setConfirmDialog({
+      title: 'Supprimer le calendrier',
+      message: 'Supprimer ce calendrier iCal ?',
+      onConfirm: async () => {
+        try {
+          await api.deleteIcalCalendar(id);
+          toast.success('Calendrier supprimé');
+          await loadIcalCalendars();
+          loadIcalEvents();
+        } catch { toast.error('Erreur suppression'); }
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null),
@@ -972,6 +1037,33 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     );
   };
 
+  // Carte événement iCal
+  const renderIcalEventRow = (event) => {
+    const startDT = event.start || '';
+    const endDT = event.end || '';
+    const timeStr = startDT.includes('T')
+      ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
+      : 'Journée entière';
+    const dayStr = startDT.includes('T')
+      ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+      : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+    return (
+      <div key={`ical-${event.uid || event.summary}-${startDT}`} className="task-row ical-event-row">
+        <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />
+        <div className="task-info">
+          <div className="task-title">{event.summary || 'Événement'}</div>
+          <div className="task-meta">
+            {dayStr && <span><CalendarDays size={11} /> {dayStr}</span>}
+            <span><Clock size={11} /> {timeStr}</span>
+            {event.location && <span><MapPin size={11} /> {event.location}</span>}
+            <span className="ical-calendar-name" style={{ color: event.calendarColor || '#3b82f6' }}>{event.calendarName}</span>
+          </div>
+          {event.description && <div className="task-subtitle">{event.description.slice(0, 120)}{event.description.length > 120 ? '…' : ''}</div>}
+        </div>
+      </div>
+    );
+  };
+
   // ── Rendu compact d'une mini-carte pour la vue semaine ──
   const renderWeekMiniCard = (item, type) => {
     if (type === 'task') {
@@ -1127,13 +1219,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const isAffaireOnly = !!info.affaireOnly;
     const googleRdvCount = isRdv ? googleRdvEvents.length : 0;
     const googleOtherCount = isEvenements ? googleOtherEvents.length : 0;
-    const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount + googleOtherCount;
+    const icalCount = isEvenements ? icalEvents.length : 0;
+    const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount + googleOtherCount + icalCount;
 
-    // Masquer les sections vides
-    if (totalCount === 0) return null;
+    // Masquer les sections vides SAUF rdv (toujours visible)
+    if (totalCount === 0 && !isRdv) return null;
 
     return (
-      <div key={sectionKey} className={`task-section ${isRdv ? 'rdv-section' : ''}`}>
+      <div key={sectionKey} className={`task-section ${isRdv ? 'rdv-section' : ''} ${isEvenements ? 'evenements-section' : ''}`}>
         <div className="section-header" style={{ borderBottomColor: info.color }}>
           <h4>
             <span>{info.emoji}</span>
@@ -1145,9 +1238,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         {/* Section RDV : Google Calendar RDV (titre contient "rdv") + affaires avec "rdv" dans le titre */}
         {isRdv && googleRdvEvents.map(renderGoogleRdvRow)}
         {isRdv && sectionAffaires.map(renderRdvRow)}
+        {isRdv && totalCount === 0 && (
+          <div className="section-empty-msg">Aucun rendez-vous pour cette date</div>
+        )}
 
-        {/* Section Autres Événements : Google events sans "rdv" dans le titre */}
+        {/* Section Autres Événements : Google events + iCal events */}
         {isEvenements && googleOtherEvents.map(renderGoogleRdvRow)}
+        {isEvenements && icalEvents.map(renderIcalEventRow)}
 
         {/* Sections non-RDV : affaires + événements + tâches */}
         {!isRdv && sectionAffaires.map(renderAffaireRow)}
@@ -1405,9 +1502,68 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
       ) : (
         <div className="sections-container">
-          <div className="sections-group sections-events-group">
-            {EVENT_SECTION_KEYS.map(renderSection)}
+          {/* ── Autres Événements : tout en haut avec gestion iCal ── */}
+          <div className="sections-group sections-top-events">
+            {renderSection('evenements')}
+
+            {/* Gestion des calendriers iCal */}
+            <div className="ical-manager-bar">
+              <button className="ical-manage-btn" onClick={() => setShowIcalManager(v => !v)}>
+                <Link size={13} /> Calendriers iCal ({icalCalendars.length})
+              </button>
+              <button className="ical-refresh-btn" onClick={() => { loadIcalCalendars(); loadIcalEvents(); }} title="Rafraîchir les événements iCal">
+                <RefreshCw size={13} className={icalLoading ? 'spinning' : ''} />
+              </button>
+            </div>
+
+            {showIcalManager && (
+              <div className="ical-manager-panel">
+                <div className="ical-manager-header">
+                  <h5><Link size={14} /> Calendriers iCal</h5>
+                  <button className="btn-add-ical" onClick={() => setIcalForm({ name: '', url: '', color: '#3b82f6' })}>
+                    <Plus size={14} /> Ajouter
+                  </button>
+                </div>
+
+                {icalForm && (
+                  <div className="ical-form">
+                    <input type="text" placeholder="Nom du calendrier" value={icalForm.name} onChange={e => setIcalForm(f => ({ ...f, name: e.target.value }))} autoFocus />
+                    <input type="url" placeholder="URL iCal (.ics)" value={icalForm.url} onChange={e => setIcalForm(f => ({ ...f, url: e.target.value }))} />
+                    <div className="ical-form-row">
+                      <input type="color" value={icalForm.color || '#3b82f6'} onChange={e => setIcalForm(f => ({ ...f, color: e.target.value }))} title="Couleur" />
+                      <div className="form-actions">
+                        <button className="btn-confirm" onClick={handleSaveIcal}><Check size={14} /></button>
+                        <button className="btn-cancel" onClick={() => setIcalForm(null)}><X size={14} /></button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="ical-calendar-list">
+                  {icalCalendars.length === 0 && !icalForm && (
+                    <div className="ical-empty">Aucun calendrier iCal configuré</div>
+                  )}
+                  {icalCalendars.map(cal => (
+                    <div key={cal.id} className="ical-calendar-item">
+                      <span className="ical-color-dot" style={{ background: cal.color || '#3b82f6' }} />
+                      <span className="ical-cal-name">{cal.name}</span>
+                      <span className="ical-cal-url" title={cal.url}>{cal.url.length > 40 ? cal.url.slice(0, 40) + '…' : cal.url}</span>
+                      <div className="ical-cal-actions">
+                        <button onClick={() => setIcalForm({ ...cal })} title="Modifier"><Edit2 size={13} /></button>
+                        <button className="delete" onClick={() => handleDeleteIcal(cal.id)} title="Supprimer"><Trash2 size={13} /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* ── RDV ── */}
+          <div className="sections-group sections-events-group">
+            {renderSection('rdv')}
+          </div>
+
           <div className="sections-divider">
             <span>Opérations & Tâches</span>
           </div>

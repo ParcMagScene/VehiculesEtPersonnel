@@ -1184,3 +1184,193 @@
 .task-planning-panel .recurring-item-actions button.delete:hover {
   color: #ef4444;
 }
+
+/* ═══ iCal Manager ═══ */
+.task-planning-panel .ical-manager-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+}
+.task-planning-panel .ical-manage-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--theme-bg-tertiary);
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.task-planning-panel .ical-manage-btn:hover {
+  background: var(--theme-bg-secondary);
+  color: var(--theme-text);
+}
+.task-planning-panel .ical-refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--theme-text-secondary);
+  transition: color 0.15s;
+}
+.task-planning-panel .ical-refresh-btn:hover { color: var(--theme-accent); }
+.task-planning-panel .ical-refresh-btn .spinning {
+  animation: spin-icon 1s linear infinite;
+}
+@keyframes spin-icon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.task-planning-panel .ical-manager-panel {
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  margin: 0 10px 10px;
+  padding: 10px;
+}
+.task-planning-panel .ical-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.task-planning-panel .ical-manager-header h5 {
+  margin: 0;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--theme-text);
+}
+.task-planning-panel .btn-add-ical {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--theme-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.task-planning-panel .btn-add-ical:hover { opacity: 0.85; }
+
+.task-planning-panel .ical-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: var(--theme-bg);
+  border-radius: 6px;
+  border: 1px solid var(--theme-border);
+}
+.task-planning-panel .ical-form input[type="text"],
+.task-planning-panel .ical-form input[type="url"] {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  background: var(--theme-bg-secondary);
+  color: var(--theme-text);
+}
+.task-planning-panel .ical-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.task-planning-panel .ical-form input[type="color"] {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.task-planning-panel .ical-calendar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.task-planning-panel .ical-empty {
+  font-size: 0.8rem;
+  color: var(--theme-text-tertiary);
+  text-align: center;
+  padding: 8px;
+}
+.task-planning-panel .ical-calendar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--theme-bg);
+  font-size: 0.82rem;
+}
+.task-planning-panel .ical-cal-name {
+  font-weight: 600;
+  color: var(--theme-text);
+  white-space: nowrap;
+}
+.task-planning-panel .ical-cal-url {
+  color: var(--theme-text-tertiary);
+  font-size: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-planning-panel .ical-cal-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.task-planning-panel .ical-cal-actions button {
+  background: none;
+  border: none;
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+.task-planning-panel .ical-cal-actions button:hover { background: var(--theme-bg-tertiary); }
+.task-planning-panel .ical-cal-actions button.delete:hover { color: #ef4444; }
+
+/* ═══ iCal Event Row ═══ */
+.task-planning-panel .ical-event-row {
+  border-left: 3px solid #3b82f6;
+}
+.task-planning-panel .ical-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.task-planning-panel .ical-calendar-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ═══ Section empty msg ═══ */
+.task-planning-panel .section-empty-msg {
+  text-align: center;
+  padding: 12px;
+  color: var(--theme-text-tertiary);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+/* ═══ Top events group ═══ */
+.task-planning-panel .sections-top-events {
+  margin-bottom: 6px;
+}

@@ -1346,6 +1346,25 @@
 .task-planning-panel .ical-cal-actions button:hover { background: var(--theme-bg-tertiary); }
 .task-planning-panel .ical-cal-actions button.delete:hover { color: #ef4444; }
 
+.task-planning-panel .ical-cal-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.task-planning-panel .ical-cal-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ef4444;
+  font-size: 0.72rem;
+}
+.task-planning-panel .ical-calendar-item.has-error {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
 /* ═══ iCal Event Row ═══ */
 .task-planning-panel .ical-event-row {
   border-left: 3px solid #3b82f6;

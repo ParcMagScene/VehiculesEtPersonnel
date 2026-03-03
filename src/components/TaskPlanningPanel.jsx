@@ -218,6 +218,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       const to = addDays(today, 7);
       const res = await api.getIcalEvents({ dateFrom: from, dateTo: to });
       setIcalEvents(res.events || []);
+      if (res.syncErrors?.length) {
+        res.syncErrors.forEach(e => toast.warning(`iCal: ${e}`));
+      }
     } catch { setIcalEvents([]); }
     finally { setIcalLoading(false); }
   }, []);
@@ -1544,10 +1547,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                     <div className="ical-empty">Aucun calendrier iCal configuré</div>
                   )}
                   {icalCalendars.map(cal => (
-                    <div key={cal.id} className="ical-calendar-item">
+                    <div key={cal.id} className={`ical-calendar-item ${cal.lastSyncError ? 'has-error' : ''}`}>
                       <span className="ical-color-dot" style={{ background: cal.color || '#3b82f6' }} />
-                      <span className="ical-cal-name">{cal.name}</span>
-                      <span className="ical-cal-url" title={cal.url}>{cal.url.length > 40 ? cal.url.slice(0, 40) + '…' : cal.url}</span>
+                      <div className="ical-cal-info">
+                        <span className="ical-cal-name">{cal.name}</span>
+                        <span className="ical-cal-url" title={cal.url}>{cal.url.length > 50 ? cal.url.slice(0, 50) + '…' : cal.url}</span>
+                        {cal.lastSyncError && (
+                          <span className="ical-cal-error"><AlertCircle size={11} /> {cal.lastSyncError}</span>
+                        )}
+                      </div>
                       <div className="ical-cal-actions">
                         <button onClick={() => setIcalForm({ ...cal })} title="Modifier"><Edit2 size={13} /></button>
                         <button className="delete" onClick={() => handleDeleteIcal(cal.id)} title="Supprimer"><Trash2 size={13} /></button>

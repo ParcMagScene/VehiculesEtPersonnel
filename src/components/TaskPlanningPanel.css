@@ -1393,3 +1393,43 @@
 .task-planning-panel .sections-top-events {
   margin-bottom: 6px;
 }
+
+/* ═══ Collapsible section ═══ */
+.task-planning-panel .section-header.collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+.task-planning-panel .section-header.collapsible:hover {
+  background: var(--theme-bg-tertiary, var(--theme-bg-secondary));
+}
+.task-planning-panel .section-chevron {
+  transition: transform 0.2s ease;
+  color: var(--theme-text-secondary);
+  flex-shrink: 0;
+}
+.task-planning-panel .section-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+.task-planning-panel .section-collapsed .section-header {
+  border-radius: 10px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+/* ═══ Événement en cours (ongoing) ═══ */
+.task-planning-panel .task-row.event-ongoing {
+  outline: 2px solid var(--theme-primary, #3b82f6);
+  outline-offset: -1px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--theme-primary, #3b82f6) 6%, transparent);
+  position: relative;
+}
+.task-planning-panel .task-row.event-ongoing::before {
+  content: '● En cours';
+  position: absolute;
+  top: 3px;
+  right: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--theme-primary, #3b82f6);
+  letter-spacing: 0.02em;
+}

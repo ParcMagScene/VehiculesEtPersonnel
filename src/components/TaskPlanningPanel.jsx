@@ -733,10 +733,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     };
     const showEventType = task.eventType && SECTION_EVENT_TYPES[task.section] !== task.eventType;
 
+    // Combiner titre + sous-titre en un seul texte compact
+    const fullTitle = showSubtitle ? `${displayTitle} — ${cleanEventTitle}` : displayTitle;
+
     return (
-      <div key={task.id} className={`task-row ${isGoogle ? 'google-task-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
+      <div key={task.id} className={`task-row event-row-cols ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
         <button
-          className={`task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           onClick={() => cycleStatus(task)}
           title={`Statut: ${task.status} — cliquer pour changer`}
         >
@@ -744,34 +747,37 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {isProgress && <Clock size={12} />}
         </button>
 
-        <div className="task-info">
-          <div className={`task-title ${isDone ? 'done' : ''}`}>
-            {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
-            {affaireNum && <AffaireBadge numero={affaireNum} type={linkedAffaire?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />}
-            {dateBadge && <span className="date-badge">{dateBadge}</span>}
-            {displayTitle}
-          </div>
-          {showSubtitle && (
-            <div className="task-subtitle"><Calendar size={11} /> {cleanEventTitle}</div>
-          )}
-          <div className="task-meta">
-            {task.time && (
-              <span><Clock size={11} /> {task.time}{task.endTime ? ` → ${task.endTime}` : ''}</span>
-            )}
-            {!affaireNum && cleanEventTitle && (
-              <span><Calendar size={11} /> {cleanEventTitle}</span>
-            )}
-            {showEventType && (
-              <span><Briefcase size={11} /> {task.eventType}</span>
-            )}
-            {task.notes && (
-              <span title={task.notes}>📝 {task.notes.slice(0, 40)}{task.notes.length > 40 ? '…' : ''}</span>
-            )}
-          </div>
-        </div>
+        {affaireNum && (
+          <span className="ev-col ev-col-affaire">
+            <AffaireBadge numero={affaireNum} type={linkedAffaire?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
+          </span>
+        )}
+
+        <span className={`ev-col ev-col-title ${isDone ? 'done' : ''}`} title={fullTitle}>
+          {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
+          {fullTitle}
+        </span>
+
+        {dateBadge && <span className="ev-col ev-col-date">{dateBadge}</span>}
+
+        {task.time && (
+          <span className="ev-col ev-col-time">
+            <Clock size={11} /> {task.time}{task.endTime ? ` → ${task.endTime}` : ''}
+          </span>
+        )}
+
+        {showEventType && (
+          <span className="ev-col ev-col-type"><Briefcase size={11} /> {task.eventType}</span>
+        )}
+
+        {task.notes && (
+          <span className="ev-col ev-col-notes" title={task.notes}>
+            📝 {task.notes.slice(0, 30)}{task.notes.length > 30 ? '…' : ''}
+          </span>
+        )}
 
         {(task.personFirstName || task.personLastName) && (
-          <span className="task-person">
+          <span className="ev-col task-person">
             <User size={12} />
             {task.personFirstName} {task.personLastName?.charAt(0)}.
           </span>

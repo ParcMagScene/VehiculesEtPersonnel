@@ -226,6 +226,11 @@
   font-weight: 600;
   flex-shrink: 0;
 }
+/* Task person dans layout colonnes */
+.task-planning-panel .event-row-cols .task-person {
+  font-size: 0.76rem;
+  padding: 2px 8px;
+}
 
 .task-planning-panel .task-actions {
   display: flex;
@@ -635,6 +640,35 @@
 .task-planning-panel .ev-col-status {
   flex-shrink: 0;
   padding: 2px 8px;
+}
+.task-planning-panel .ev-col-type {
+  color: var(--theme-text-secondary);
+  font-size: 0.76rem;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-planning-panel .ev-col-notes {
+  color: var(--theme-text-tertiary, var(--theme-text-secondary));
+  font-size: 0.74rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Tâche terminée en layout colonnes */
+.task-planning-panel .event-row-cols .ev-col-title.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.task-planning-panel .task-done-row {
+  opacity: 0.7;
+}
+/* Status btn dans layout colonnes */
+.task-planning-panel .event-row-cols .task-status-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin-right: 2px;
 }
 
 /* Badge origine iCal */

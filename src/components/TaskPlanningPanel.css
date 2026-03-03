@@ -2,7 +2,8 @@
 .task-planning-panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   background: var(--theme-bg-page);
 }
 
@@ -932,9 +933,12 @@
 .wk-split-layout {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   gap: 0;
   padding: 8px;
   overflow-x: auto;
+  overflow-y: auto;
 }
 
 /* ── En-têtes des jours (bande partagée) ── */

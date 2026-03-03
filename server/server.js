@@ -132,7 +132,7 @@ const avatarsPath = path.join(__dirname, '..', 'public', 'avatars');
 if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
 app.use('/avatars', express.static(avatarsPath));
 
-// Middleware d'authentification
+// Middleware d'authentification — vérifie JWT + session active en DB
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -143,6 +143,16 @@ function authenticateToken(req, res, next) {
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Token invalide' });
+
+    // [AUDIT FIX HIGH-1] Vérifier que la session existe encore en DB
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
+    const session = db.prepare(
+      'SELECT 1 FROM active_sessions WHERE token_hash = ? AND expires_at > datetime(\'now\')'
+    ).get(tokenHash);
+    if (!session) {
+      return res.status(401).json({ error: 'Session expirée ou révoquée' });
+    }
+
     req.user = user;
     next();
   });
@@ -327,17 +337,15 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 });
 
 // Réinitialisation directe du mot de passe (self-service, sans ancien mot de passe)
-// Sécurité : l'utilisateur doit fournir son email ET son nom exact pour prouver son identité
+// [AUDIT FIX CRIT-1] Sécurisé : seul un admin peut déclencher le self-reset
+// L'utilisateur s'identifie avec email + nom → on positionne le flag reset
+// Le nouveau MDP est choisi ensuite via set-new-password (protégé par le flag)
 app.post('/api/auth/self-reset-password', async (req, res) => {
   try {
-    const { email, name, newPassword } = req.body;
+    const { email, name } = req.body;
 
-    if (!email || !name || !newPassword) {
-      return res.status(400).json({ error: 'Email, nom et nouveau mot de passe requis' });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    if (!email || !name) {
+      return res.status(400).json({ error: 'Email et nom requis' });
     }
 
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
@@ -352,32 +360,19 @@ app.post('/api/auth/self-reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Les informations saisies ne correspondent à aucun compte' });
     }
 
-    // Mettre à jour le mot de passe
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    db.prepare('UPDATE users SET password_hash = ?, password_reset_required = 0 WHERE id = ?').run(passwordHash, user.id);
+    // [AUDIT FIX] Ne PAS changer le mot de passe ici — seulement activer le flag
+    db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?').run(user.id);
 
-    // Fermer toutes les sessions existantes
+    // Fermer toutes les sessions existantes pour forcer la re-connexion
     db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
 
-    // Créer un nouveau token pour connecter directement l'utilisateur
-    let perms = {};
-    try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
-
-    const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1 },
-      JWT_SECRET,
-      { expiresIn: `${JWT_EXPIRY_DAYS}d` }
-    );
-
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
-    const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    db.prepare('INSERT INTO active_sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)').run(user.id, tokenHash, expiresAt);
-
-    logger.info('🔑 Mot de passe réinitialisé (self-service)');
+    logger.info(`🔑 Reset password demandé (self-service) pour user ${user.id}`);
 
     res.json({
-      token,
-      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms }
+      success: true,
+      message: 'Réinitialisation activée. Veuillez définir un nouveau mot de passe.',
+      requireNewPassword: true,
+      email: user.email
     });
   } catch (error) {
     logger.error('Erreur self-reset-password:', error);

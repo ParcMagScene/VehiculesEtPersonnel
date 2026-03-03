@@ -4,7 +4,7 @@
  * ═══════════════════════════════════════════════════════
  *
  * Usage :
- *   const { createCache, authCache, statsCache, listCache, icalCache } = require('./cache');
+ *   import { createCache, authCache, statsCache, listCache, icalCache } from './cache.js';
  *
  *   // Direct
  *   const cache = createCache({ maxSize: 200, ttl: 30_000, name: 'my-cache' });
@@ -218,7 +218,7 @@ function getAllCacheStats() {
   return ALL_CACHES.map((c) => c.stats());
 }
 
-module.exports = {
+export {
   LRUCache,
   createCache,
   authCache,

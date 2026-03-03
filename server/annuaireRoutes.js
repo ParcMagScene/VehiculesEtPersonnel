@@ -77,9 +77,10 @@ function buildSearchQuery(baseTable, searchFields, req) {
     searchFields.forEach(() => params.push(`%${search}%`));
   }
 
-  // Generic filters
+  // Generic filters — whitelist pour éviter l'injection SQL via les clés de query
+  const allowedFilters = ['type', 'activity_sector', 'is_active', 'client_id', 'supplier_id', 'prestataire_id', 'legal_structure', 'country'];
   for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== '' && key !== 'page' && key !== 'limit' && key !== 'sort' && key !== 'order') {
+    if (allowedFilters.includes(key) && value !== undefined && value !== '') {
       conditions.push(`${key} = ?`);
       params.push(value);
     }
@@ -891,6 +892,161 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
       res.json({ success: true, imported, skipped, errors, total: dataLines.length });
     } catch (error) {
       logger.error('Import fournisseurs CSV:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // ─── POST /api/annuaire/import/contacts-csv — Import contacts depuis données CSV uploadées ───
+  app.post('/api/annuaire/import/contacts-csv', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { data, mode = 'import' } = req.body;
+
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ error: 'Données CSV manquantes ou vides' });
+      }
+
+      /**
+       * Parse un nom "NOM Prénom" en { lastName, firstName }.
+       * Gère : "DUPONT Jean-Marie", "Aline", "YES HIGH TECH Sylvie", "wagogne sarah"
+       */
+      function parseName(raw) {
+        if (!raw) return { lastName: '', firstName: '' };
+        const trimmed = raw.trim();
+        if (!trimmed) return { lastName: '', firstName: '' };
+
+        const parts = trimmed.split(/\s+/);
+        if (parts.length === 1) {
+          // Nom seul → on le met en last_name
+          return { lastName: parts[0].toUpperCase(), firstName: '' };
+        }
+
+        // Détecter la frontière : les mots tout en majuscules sont le nom de famille
+        let lastNameParts = [];
+        let firstNameParts = [];
+        let foundFirstName = false;
+
+        for (const part of parts) {
+          if (!foundFirstName && part === part.toUpperCase() && /[A-ZÀ-Ü]/.test(part)) {
+            // Mot en majuscules → nom de famille
+            lastNameParts.push(part);
+          } else {
+            foundFirstName = true;
+            firstNameParts.push(part);
+          }
+        }
+
+        // Si tout est en majuscules ou tout en minuscules, fallback : dernier mot = prénom
+        if (firstNameParts.length === 0 && lastNameParts.length > 1) {
+          const last = lastNameParts.pop();
+          firstNameParts = [last.charAt(0).toUpperCase() + last.slice(1).toLowerCase()];
+        }
+        // Si aucun mot n'est en majuscules (tout en minuscules), fallback : premier mot = nom, reste = prénom
+        if (lastNameParts.length === 0 && firstNameParts.length > 1) {
+          lastNameParts = [firstNameParts.shift().toUpperCase()];
+        }
+
+        return {
+          lastName: lastNameParts.join(' ') || trimmed.toUpperCase(),
+          firstName: firstNameParts.join(' ')
+        };
+      }
+
+      /** Parse une ligne CSV en objet contact */
+      function parseContactRow(row) {
+        const codeFree = (row.codeFree || row.code_libre || '').trim();
+        const { lastName, firstName } = parseName(row.name || row.nom_prenom || '');
+        let phone = normalizePhone(row.phone || row.telephone || '');
+        let mobile = normalizePhone(row.mobile || row.portable || '');
+        const email = (row.email || '').trim().toLowerCase() || null;
+
+        // Téléphones trop courts → null
+        if (phone && phone.replace(/[^0-9]/g, '').length < 9) phone = null;
+        if (mobile && mobile.replace(/[^0-9]/g, '').length < 9) mobile = null;
+
+        return { codeFree, lastName, firstName, phone, mobile, email };
+      }
+
+      // Mode preview : renvoyer un aperçu des 30 premières lignes parsées
+      if (mode === 'preview') {
+        const preview = data.slice(0, 30).map(row => {
+          const p = parseContactRow(row);
+          return { code_libre: p.codeFree, last_name: p.lastName, first_name: p.firstName, phone: p.phone, phone2: p.mobile, email: p.email };
+        });
+        return res.json({ preview, totalRows: data.length });
+      }
+
+      // Mode import
+      let imported = 0, updated = 0, skipped = 0, errors = 0;
+
+      // Vérifier si la colonne code_libre existe
+      const hasCL = db.pragma('table_info(annuaire_contacts)').some(c => c.name === 'code_libre');
+
+      const insertStmt = hasCL
+        ? db.prepare(`
+            INSERT INTO annuaire_contacts (code_libre, first_name, last_name, phone, phone2, email, is_active, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))
+            ON CONFLICT(code_libre) DO UPDATE SET
+              first_name = COALESCE(NULLIF(excluded.first_name, ''), annuaire_contacts.first_name),
+              last_name = excluded.last_name,
+              phone = COALESCE(excluded.phone, annuaire_contacts.phone),
+              phone2 = COALESCE(excluded.phone2, annuaire_contacts.phone2),
+              email = COALESCE(excluded.email, annuaire_contacts.email),
+              modified_at = datetime('now')
+          `)
+        : db.prepare(`
+            INSERT INTO annuaire_contacts (first_name, last_name, phone, phone2, email, is_active, created_at)
+            VALUES (?, ?, ?, ?, ?, 1, datetime('now'))
+          `);
+
+      // Essayer de rattacher les contacts C-xxx à un client existant
+      const findClient = db.prepare('SELECT id FROM clients WHERE code_libre = ? LIMIT 1');
+      const findExisting = db.prepare('SELECT id FROM annuaire_contacts WHERE code_libre = ? LIMIT 1');
+
+      const importTransaction = db.transaction(() => {
+        for (const row of data) {
+          try {
+            const p = parseContactRow(row);
+            if (!p.lastName && !p.firstName) { skipped++; continue; }
+            if (!p.lastName) { p.lastName = p.firstName; p.firstName = ''; }
+
+            // Optionnel : rattacher à un client si le code commence par C
+            let clientId = null;
+            if (p.codeFree && p.codeFree.startsWith('C')) {
+              const client = findClient.get(p.codeFree);
+              if (client) clientId = client.id;
+            }
+
+            if (hasCL && p.codeFree) {
+              // Vérifier AVANT l'upsert si le contact existe déjà
+              const alreadyExists = !!findExisting.get(p.codeFree);
+              const info = insertStmt.run(p.codeFree, p.firstName || null, p.lastName, p.phone || null, p.mobile || null, p.email || null);
+              if (info.changes > 0) {
+                if (alreadyExists) {
+                  updated++;
+                } else {
+                  imported++;
+                }
+                // Rattacher au client si trouvé
+                if (clientId) {
+                  db.prepare('UPDATE annuaire_contacts SET client_id = ? WHERE code_libre = ?').run(clientId, p.codeFree);
+                }
+              }
+            } else {
+              insertStmt.run(p.firstName || null, p.lastName, p.phone || null, p.mobile || null, p.email || null);
+              imported++;
+            }
+          } catch (e) {
+            errors++;
+          }
+        }
+      });
+
+      importTransaction();
+      const total = imported + updated;
+      logger.info(`Import contacts CSV: ${imported} créés, ${updated} mis à jour, ${skipped} ignorés, ${errors} erreurs`);
+      res.json({ success: true, imported, updated, skipped, errors, total: data.length });
+    } catch (error) {
+      logger.error('Import contacts CSV:', error);
       res.status(500).json({ error: 'Erreur serveur' });
     }
   });

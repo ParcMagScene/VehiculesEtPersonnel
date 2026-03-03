@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../utils/api';
 import ConfirmDialog from './ConfirmDialog';
+import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import './AnnuairePanel.css';
 import { useToast } from '../hooks/useToast';
 
@@ -63,6 +64,8 @@ function AnnuairePanel({ currentUser }) {
   const [refData, setRefData] = useState([]);
   const [showRefForm, setShowRefForm] = useState(false);
   const [editingRef, setEditingRef] = useState(null);
+  // Import CSV contacts
+  const [showContactsImport, setShowContactsImport] = useState(false);
   // Compteurs de version pour déclencher un refresh après CRUD
   const [dataVersion, setDataVersion] = useState(0);
   const [refVersion, setRefVersion] = useState(0);
@@ -341,6 +344,11 @@ function AnnuairePanel({ currentUser }) {
                 <Upload size={15} /> CSV
               </button>
             )}
+            {activeTab === 'contacts' && currentUser?.isAdmin && (
+              <button className="btn-import" onClick={() => setShowContactsImport(true)} title="Import CSV Contacts Locmat">
+                <Upload size={15} /> CSV
+              </button>
+            )}
             <button className="btn-add" onClick={() => { setEditingItem(null); setShowForm(true); }}>
               <Plus size={15} /> Nouveau
             </button>
@@ -450,6 +458,17 @@ function AnnuairePanel({ currentUser }) {
       )}
 
       {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+
+      {showContactsImport && (
+        <ContactsCSVImportDialog
+          onClose={() => setShowContactsImport(false)}
+          onSuccess={() => {
+            setDataVersion(v => v + 1);
+            loadStats();
+          }}
+          toast={toast}
+        />
+      )}
     </div>
   );
 }
@@ -579,7 +598,7 @@ function DetailView({ item, entityType, lookups, getLookupName, currentUser, onB
     };
     fetchDetail();
     return () => { cancelled = true; };
-  }, [item.id, entityType, item, toast]);
+  }, [item.id, entityType]);
 
   if (loading || !detail) return <div className="annuaire-loading"><div className="loading-spinner" /></div>;
 

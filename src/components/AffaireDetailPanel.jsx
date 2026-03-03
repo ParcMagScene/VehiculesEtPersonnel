@@ -21,16 +21,16 @@ const API_BASE_URL = getApiUrl();
 const TASK_STEPS = [
   { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: '#6366f1', defaultSection: 'prep_locations' },
   { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: '#f59e0b', defaultSection: 'chargement' },
-  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: '#3b82f6', defaultSection: 'depart',       typeRestriction: 'Prestation' },
-  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: '#f97316', defaultSection: 'courses',      typeRestriction: 'Location' },
-  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: '#10b981', defaultSection: 'enlevement',   typeRestriction: 'Location' },
-  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: '#8b5cf6', defaultSection: 'retour',       typeRestriction: 'Prestation' },
-  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'recuperation', typeRestriction: 'Location' },
-  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: '#10b981', defaultSection: 'installation' },
+  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: '#3b82f6', defaultSection: 'depart',       typeRestriction: ['Prestation', 'Tournée'] },
+  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: '#f97316', defaultSection: 'courses' },
+  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: '#10b981', defaultSection: 'enlevement',   typeRestriction: ['Location', 'Tournée'] },
+  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: '#8b5cf6', defaultSection: 'retour',       typeRestriction: ['Prestation', 'Tournée'] },
+  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'recuperation', typeRestriction: ['Location', 'Tournée'] },
+  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: '#10b981', defaultSection: 'installation', typeRestriction: ['Installation'] },
 ];
 
 // Filtrer les étapes selon le type d'affaire
-const getVisibleSteps = (affaireType) => TASK_STEPS.filter(s => !s.typeRestriction || s.typeRestriction === affaireType);
+const getVisibleSteps = (affaireType) => TASK_STEPS.filter(s => !s.typeRestriction || (Array.isArray(s.typeRestriction) ? s.typeRestriction.includes(affaireType) : s.typeRestriction === affaireType));
 
 const TASK_STATUS_MAP = {
   pending:     { label: 'En attente', color: '#94a3b8', bg: '#f1f5f9' },

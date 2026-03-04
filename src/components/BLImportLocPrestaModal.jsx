@@ -518,7 +518,12 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                               <input
                                 type="text"
                                 value={val}
-                                onChange={e => setEditedFields(p => ({ ...p, [field.key]: e.target.value }))}
+                                onChange={e => {
+                                  const v = e.target.value;
+                                  setEditedFields(p => ({ ...p, [field.key]: v }));
+                                  // Synchroniser le numéro d'affaire avec le champ d'association
+                                  if (field.key === 'numero') setAffaireId(v);
+                                }}
                                 placeholder={`${field.label} non détecté`}
                                 className={`bl-loc-field-input ${isEdited ? 'edited' : ''} ${!val ? 'empty' : ''}`}
                               />

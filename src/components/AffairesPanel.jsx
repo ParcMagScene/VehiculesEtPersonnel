@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw } from 'lucide-react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -55,6 +55,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const [googleEventIdsMap, setGoogleEventIdsMap] = useState({}); // { AF32844: ['eventId1', 'eventId2', ...] }
   const [attachmentsIndex, setAttachmentsIndex] = useState({ affaires: [], counts: {} }); // index des pièces jointes locales
   const [personnelCountsMap, setPersonnelCountsMap] = useState({}); // { AF32512: 2, AF32854: 1, ... }
+  const [allTasks, setAllTasks] = useState([]); // Toutes les tâches pour afficher par affaire
   const [isLoading, setIsLoading] = useState(true);
 
   // Filtres internes (anciennement dans App.jsx / Header)
@@ -251,16 +252,26 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     }
   }, []);
 
+  // Charger toutes les tâches (pour colonne Tâches)
+  const loadAllTasks = useCallback(async () => {
+    try {
+      const data = await api.getTasks();
+      setAllTasks(Array.isArray(data) ? data : []);
+    } catch {
+      setAllTasks([]);
+    }
+  }, []);
+
   // Chargement initial
   useEffect(() => {
     const loadAll = async () => {
       setIsLoading(true);
       setError(null);
-      await Promise.all([loadDbAffaires(), loadGoogleAffaires(), loadAttachmentsIndex(), loadPersonnelCounts()]);
+      await Promise.all([loadDbAffaires(), loadGoogleAffaires(), loadAttachmentsIndex(), loadPersonnelCounts(), loadAllTasks()]);
       setIsLoading(false);
     };
     loadAll();
-  }, [loadDbAffaires, loadGoogleAffaires, loadAttachmentsIndex, loadPersonnelCounts]);
+  }, [loadDbAffaires, loadGoogleAffaires, loadAttachmentsIndex, loadPersonnelCounts, loadAllTasks]);
 
   // Fusionner les affaires : DB prend priorité, puis réservations (source: 'auto'), puis Google
   const affaires = useMemo(() => {
@@ -332,6 +343,19 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       };
     });
   }, [affaires, googleEventIdsMap, attachmentsIndex, reservations, personnelCountsMap]);
+
+  // Map tâches groupées par numéro d'affaire : { AF32844: [{ section, title, status }, ...] }
+  const tasksByAffaire = useMemo(() => {
+    const map = {};
+    for (const t of allTasks) {
+      const num = t.affaire_num || t.event_affaire_id;
+      if (!num) continue;
+      const key = num.toUpperCase();
+      if (!map[key]) map[key] = [];
+      map[key].push({ section: t.section, title: t.title || t.google_event_title || '', status: t.status });
+    }
+    return map;
+  }, [allTasks]);
 
   // Aujourd'hui au format YYYY-MM-DD
   const today = useMemo(() => {
@@ -535,6 +559,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         cmp = (a.eventName || a.titre || '').localeCompare(b.eventName || b.titre || '');
       } else if (sortBy === 'lieu') {
         cmp = (a.adresseLivraison || '').localeCompare(b.adresseLivraison || '');
+      } else if (sortBy === 'tasks') {
+        cmp = (tasksByAffaire[a.numeroAffaire?.toUpperCase()]?.length || 0) - (tasksByAffaire[b.numeroAffaire?.toUpperCase()]?.length || 0);
       } else if (sortBy === 'resa') {
         cmp = (a.reservationCount || 0) - (b.reservationCount || 0);
       } else if (sortBy === 'pers') {
@@ -544,7 +570,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     });
 
     return result;
-  }, [enrichedAffaires, searchTerm, filterType, filterDateStart, filterDateEnd, sortBy, sortOrder, showArchived]);
+  }, [enrichedAffaires, searchTerm, filterType, filterDateStart, filterDateEnd, sortBy, sortOrder, showArchived, tasksByAffaire]);
 
   // ═══ Frise chronologique — calculs ═══
 
@@ -963,6 +989,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
                 Lieu {sortBy === 'lieu' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
               <span className="ath-icons"></span>
+              <span className="ath-tasks sortable" onClick={() => toggleSort('tasks')}>
+                Tâches {sortBy === 'tasks' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
+              </span>
               <span className="ath-resa sortable" onClick={() => toggleSort('resa')}>
                 Résa {sortBy === 'resa' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
@@ -1028,6 +1057,52 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
                         <span className="badge-count">{affaire.driveLinksCount}</span>
                       </span>
                     )}
+                  </span>
+                  <span className="ar-tasks">
+                    {(() => {
+                      const tasks = tasksByAffaire[affaire.numeroAffaire?.toUpperCase()] || [];
+                      if (!tasks.length) return null;
+                      // Grouper par section
+                      const groups = {};
+                      for (const t of tasks) {
+                        const s = t.section || 'manual';
+                        if (!groups[s]) groups[s] = { count: 0, done: 0 };
+                        groups[s].count++;
+                        if (t.status === 'done') groups[s].done++;
+                      }
+                      const SECTION_META = {
+                        prep_locations: { e: '📦', c: '#f59e0b', l: 'Prép. Loc' },
+                        prep_prestations: { e: '🎤', c: '#3b82f6', l: 'Prép. Presta' },
+                        prep_ventes: { e: '🏷️', c: '#10b981', l: 'Prép. Ventes' },
+                        prep_installations: { e: '⚙️', c: '#8b5cf6', l: 'Prép. Instal.' },
+                        prep_tournees: { e: '🚐', c: '#ec4899', l: 'Prép. Tournées' },
+                        chargement: { e: '📦', c: '#f59e0b', l: 'Chargement' },
+                        depart: { e: '🚀', c: '#3b82f6', l: 'Départ' },
+                        installation: { e: '🛠️', c: '#10b981', l: 'Installation' },
+                        montage: { e: '🔩', c: '#0891b2', l: 'Montage' },
+                        demontage: { e: '🔧', c: '#dc2626', l: 'Démontage' },
+                        courses: { e: '🚗', c: '#8b5cf6', l: 'Courses' },
+                        taches_prioritaires: { e: '🔴', c: '#ef4444', l: 'Prioritaire' },
+                        taches_secondaires: { e: '🟡', c: '#f59e0b', l: 'Secondaire' },
+                        manual: { e: '📋', c: '#64748b', l: 'Autre' },
+                        rdv: { e: '📅', c: '#059669', l: 'RDV' },
+                        evenements: { e: '📌', c: '#64748b', l: 'Événement' },
+                      };
+                      return Object.entries(groups).map(([sec, { count, done }]) => {
+                        const meta = SECTION_META[sec] || { e: '📋', c: '#64748b', l: sec };
+                        const allDone = done === count;
+                        return (
+                          <span
+                            key={sec}
+                            className={`ar-task-chip${allDone ? ' done' : ''}`}
+                            style={{ background: `${meta.c}18`, color: meta.c, borderColor: `${meta.c}40` }}
+                            title={`${meta.l}: ${done}/${count} terminée(s)`}
+                          >
+                            {meta.e}{count > 1 && <span className="ar-task-count">×{count}</span>}
+                          </span>
+                        );
+                      });
+                    })()}
                   </span>
                   <span className="ar-resa">{affaire.reservationCount || 0}</span>
                   <span className="ar-pers">{affaire.personnelCount || 0}</span>

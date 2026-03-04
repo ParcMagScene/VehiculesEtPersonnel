@@ -681,6 +681,7 @@
 .ath-titre { flex: 1.5; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-lieu { flex: 1; min-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-icons { width: 50px; flex-shrink: 0; }
+.ath-tasks { width: 90px; flex-shrink: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-resa,
 .ath-pers { width: 35px; flex-shrink: 0; text-align: center; }
 
@@ -918,6 +919,39 @@
   margin-right: 3px;
   vertical-align: middle;
   display: inline;
+}
+
+/* Colonne Tâches */
+.ar-tasks {
+  width: 90px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
+.ar-task-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 8px;
+  border: 1px solid;
+  white-space: nowrap;
+  cursor: default;
+}
+.ar-task-chip.done {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.ar-task-count {
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-left: 1px;
 }
 
 .ar-resa,

@@ -308,8 +308,9 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
               req.user.id
             );
             affaireCreated = true;
-            // Invalider le cache pour que GET /api/affaires retourne la nouvelle affaire
+            // Invalider les caches pour que GET /api/affaires et planning-affaires retournent la nouvelle affaire
             invalidateEntity('affaires');
+            listCache.invalidatePattern(/^planning-affaires/);
           } catch (affaireErr) {
             // Si erreur UNIQUE constraint (race condition), l'affaire a été créée entre-temps → OK
             if (!affaireErr.message?.includes('UNIQUE')) {

@@ -461,10 +461,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const archiveThreshold = oneWeekAgo.toISOString().slice(0, 10);
 
+    // Seuil "création récente" : affaires créées dans les dernières 48h
+    const recentCreation = new Date();
+    recentCreation.setDate(recentCreation.getDate() - 2);
+    const recentThreshold = recentCreation.toISOString().slice(0, 10);
+
     // Marquer les affaires archivées (terminées depuis + d'1 semaine)
-    // N'archiver que si une date_fin explicite est définie et dépassée
+    // Exception : les affaires créées récemment ne sont jamais archivées
     result = result.map(a => {
-      const isArchived = a.dateFin ? a.dateFin < archiveThreshold : false;
+      const createdDate = (a.createdAt || '').slice(0, 10);
+      const isRecent = createdDate >= recentThreshold;
+      const isArchived = !isRecent && a.dateFin ? a.dateFin < archiveThreshold : false;
       return { ...a, isArchived };
     });
 
@@ -491,18 +498,25 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
     // Filtre par période (personnalisé)
     // Les affaires sans dates sont toujours incluses (elles ne doivent pas disparaître)
+    // Les affaires créées récemment sont toujours incluses (même si dates passées) pour rester visibles après import BL
     if (filterDateStart) {
       result = result.filter(a => {
         const d = a.dateFin || a.dateDebut;
-        if (!d) return true; // Pas de date → ne pas filtrer
-        return d >= filterDateStart;
+        if (!d) return true;
+        if (d >= filterDateStart) return true;
+        // Fallback: inclure si l'affaire a été créée dans la période visible
+        const created = (a.createdAt || '').slice(0, 10);
+        return created >= filterDateStart;
       });
     }
     if (filterDateEnd) {
       result = result.filter(a => {
         const d = a.dateDebut;
-        if (!d) return true; // Pas de date → ne pas filtrer
-        return d <= filterDateEnd;
+        if (!d) return true;
+        if (d <= filterDateEnd) return true;
+        // Fallback: inclure si l'affaire a été créée dans la période visible
+        const created = (a.createdAt || '').slice(0, 10);
+        return created <= filterDateEnd;
       });
     }
 

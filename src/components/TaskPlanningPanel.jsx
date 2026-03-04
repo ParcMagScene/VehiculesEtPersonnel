@@ -402,6 +402,18 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     [tasks]
   );
 
+  // Index des tâches par sourceId pour afficher les tâches liées à chaque événement
+  const tasksBySourceId = useMemo(() => {
+    const map = new Map();
+    tasks.forEach(t => {
+      if ((t.sourceType === 'google_event' || t.sourceType === 'ical_event') && t.sourceId) {
+        if (!map.has(t.sourceId)) map.set(t.sourceId, []);
+        map.get(t.sourceId).push(t);
+      }
+    });
+    return map;
+  }, [tasks]);
+
   // ── Index des affaires par numéro pour enrichir les tâches liées ──
   const affaireByNum = useMemo(() => {
     const map = new Map();
@@ -1049,6 +1061,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const affaireMatch = summary.match(/\bAF\s*\d{4,}/i);
     const affaireNum = affaireMatch ? affaireMatch[0].toUpperCase().replace(/\s+/g, '') : '';
     const isProcessed = processedGoogleIds.has(event.id);
+    const linkedTasks = tasksBySourceId.get(event.id) || [];
     const isLinking = linkingEvent?.id === event.id;
     // Retirer l'affaire du titre pour éviter la redondance
     let displaySummary = summary;
@@ -1101,6 +1114,22 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             </button>
           )}
         </div>
+        {/* Mini-badges des tâches créées depuis cet événement */}
+        {linkedTasks.length > 0 && (
+          <div className="event-linked-tasks">
+            {linkedTasks.map(t => {
+              const isDone = t.status === 'done';
+              const label = (t.title || '').replace(/\s*—.*$/, '').replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '').trim();
+              const emoji = (t.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+/u)?.[0] || '📋';
+              return (
+                <span key={t.id} className={`linked-task-chip ${isDone ? 'done' : ''}`} title={`${t.title}${t.date ? ' — ' + t.date : ''}${t.time ? ' ' + t.time : ''}`}>
+                  {emoji} {label}{t.date && t.date !== selectedDate ? ` (${new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})` : ''}
+                  {isDone && <Check size={10} />}
+                </span>
+              );
+            })}
+          </div>
+        )}
         {/* Popover de liaison manuelle */}
         {isLinking && (
           <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
@@ -1226,6 +1255,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const isProcessed = processedGoogleIds.has(event.id);
+    const linkedTasks = tasksBySourceId.get(event.id) || [];
     const icalAffaireMatch = (event.summary || '').match(/\bAF\s*\d{4,}/i);
     const affaireNum = icalAffaireMatch ? icalAffaireMatch[0].toUpperCase().replace(/\s+/g, '') : '';
     const isLinking = linkingEvent?.id === event.id;
@@ -1280,6 +1310,22 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             </button>
           )}
         </div>
+        {/* Mini-badges des tâches créées depuis cet événement iCal */}
+        {linkedTasks.length > 0 && (
+          <div className="event-linked-tasks">
+            {linkedTasks.map(t => {
+              const isDone = t.status === 'done';
+              const label = (t.title || '').replace(/\s*—.*$/, '').replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '').trim();
+              const emoji = (t.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+/u)?.[0] || '📋';
+              return (
+                <span key={t.id} className={`linked-task-chip ${isDone ? 'done' : ''}`} title={`${t.title}${t.date ? ' — ' + t.date : ''}${t.time ? ' ' + t.time : ''}`}>
+                  {emoji} {label}{t.date && t.date !== selectedDate ? ` (${new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})` : ''}
+                  {isDone && <Check size={10} />}
+                </span>
+              );
+            })}
+          </div>
+        )}
         {isLinking && (
           <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
             <div className="link-popover-header">

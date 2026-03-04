@@ -1628,7 +1628,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const isAffaireOnly = !!info.affaireOnly;
     const googleRdvCount = isRdv ? googleRdvEvents.length : 0;
     const mergedCount = isEvenements ? mergedOtherEvents.length : 0;
-    const totalCount = sectionTasks.length + sectionEvents.length + sectionAffaires.length + googleRdvCount + mergedCount;
+    // Les affaires ne comptent que dans la section RDV (pas dans les sections de préparation)
+    const affaireCount = isRdv ? sectionAffaires.length : 0;
+    const totalCount = sectionTasks.length + sectionEvents.length + affaireCount + googleRdvCount + mergedCount;
 
     // Masquer les sections vides SAUF rdv (toujours visible)
     if (totalCount === 0 && !isRdv) return null;
@@ -1696,9 +1698,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           });
         })()}
 
-        {/* Sections non-RDV : affaires + événements + tâches */}
-        {!isRdv && sectionAffaires.map(renderAffaireRow)}
-        {!isRdv && (() => {
+        {/* Sections non-RDV : événements + tâches (pas d'affaires brutes) */}
+        {!isRdv && !isEvenements && (() => {
           // Filtrer les display events redondants avec les affaires déjà affichées
           const affaireNums = new Set(sectionAffaires.map(a => a.numeroAffaire).filter(Boolean));
           const affaireIds = new Set(sectionAffaires.map(a => String(a.id)).filter(Boolean));

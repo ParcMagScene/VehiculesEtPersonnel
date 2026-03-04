@@ -1767,15 +1767,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       <div key={sectionKey} className={`task-section ${isRdv ? 'rdv-section' : ''} ${isEvenements ? 'evenements-section' : ''} ${isCollapsed ? 'section-collapsed' : ''}`}>
         <div
           className={`section-header ${isCollapsible ? 'collapsible' : ''}`}
-          style={{ borderBottomColor: info.color }}
+          style={{ borderBottomColor: info.color, background: `color-mix(in srgb, ${info.color} 10%, var(--theme-bg-secondary, #f8fafc))` }}
           onClick={isCollapsible ? () => toggleSectionCollapse(sectionKey) : undefined}
         >
-          <h4>
+          <h4 style={{ color: info.color }}>
             {isCollapsible && <ChevronDown size={16} className={`section-chevron ${isCollapsed ? 'collapsed' : ''}`} />}
             <span>{info.emoji}</span>
             {info.label}
           </h4>
-          <span className="section-count">{totalCount}</span>
+          <span className="section-count" style={{ background: info.color }}>{totalCount}</span>
         </div>
 
         {!isCollapsed && <>

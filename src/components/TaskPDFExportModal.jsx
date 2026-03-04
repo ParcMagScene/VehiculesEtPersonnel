@@ -96,12 +96,20 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       groups[sec].push(item);
     });
 
-    // 2) Affaires — uniquement dans la section RDV (pas dans les sections de préparation)
+    // 2) Affaires — dans leur section de préparation (+ section RDV si titre contient "rdv")
     (affaires || []).forEach(a => {
-      const item = { uid: `affaire-${a.id}`, type: 'affaire', section: 'rdv', data: a };
+      const sec = mapAffaireToSection(a);
+      const item = { uid: `affaire-${a.id}`, type: 'affaire', section: sec, data: a };
       items.push(item);
-      if (!groups.rdv) groups.rdv = [];
-      groups.rdv.push(item);
+      if (!groups[sec]) groups[sec] = [];
+      groups[sec].push(item);
+      // Aussi dans RDV si le titre contient "rdv" (identique au planning)
+      if (a.titre && /rdv/i.test(a.titre)) {
+        const rdvItem = { uid: `affaire-rdv-${a.id}`, type: 'affaire-rdv', section: 'rdv', data: a };
+        items.push(rdvItem);
+        if (!groups.rdv) groups.rdv = [];
+        groups.rdv.push(rdvItem);
+      }
     });
 
     // 3) Événements d'affichage non liés à des tâches

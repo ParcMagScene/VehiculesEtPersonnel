@@ -685,6 +685,17 @@
   flex-shrink: 0;
   padding: 2px 8px;
 }
+/* Badge type d'étape affiché après le nom (Récupération, Montage, etc.) */
+.task-planning-panel .event-type-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+  font-size: 0.78em;
+  font-weight: 600;
+  opacity: 0.85;
+  white-space: nowrap;
+}
 /* Tâche terminée en layout colonnes */
 .task-planning-panel .event-row-cols .ev-col-nom.done {
   text-decoration: line-through;

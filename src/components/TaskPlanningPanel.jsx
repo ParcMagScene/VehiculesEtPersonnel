@@ -56,6 +56,14 @@ const EVENT_TYPES = {
   demontage:    { label: 'Démontage',     emoji: '🔧', color: '#dc2626' },
 };
 
+// Détecter le type d'étape dans un titre d'événement (Récupération, Montage, Démontage, etc.)
+function detectSummaryEventType(summary) {
+  const m = (summary || '').match(/\b(Préparation|Chargement|Départ|Enlèvement|Retour|Récupération|Installation|Livraison|Montage|Démontage)\b/i);
+  if (!m) return null;
+  const key = m[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return EVENT_TYPES[key] ? { ...EVENT_TYPES[key], key, matchedText: m[1] } : null;
+}
+
 const mapEventToSection = (event) => {
   const type = event.type;
   const cat = event.category;
@@ -1107,6 +1115,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     if (affaireNum) {
       displaySummary = summary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || summary;
     }
+    // Détecter le type d'étape (Récupération, Montage, etc.) et le retirer du titre
+    const detectedType = detectSummaryEventType(displaySummary);
+    if (detectedType) {
+      const cleaned = displaySummary.replace(new RegExp(detectedType.matchedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[-—–:]*\\s*', 'i'), '').trim();
+      if (cleaned) displaySummary = cleaned;
+    }
     // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
     const affaireNom = linkedAff?.nom || '';
@@ -1123,28 +1137,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         }).slice(0, 8)
       : [];
 
-    const googleStatus = eventStatuses.get(`google_event:${event.id}`) || 'pending';
-    const isGoogleDone = googleStatus === 'done';
-    const isGoogleProgress = googleStatus === 'in_progress';
-
     return (
       <div
         key={`gcal-rdv-${event.id}`}
-        className={`task-row event-row-cols google-rdv-row ${isGoogleDone ? 'task-done-row' : ''}`}
+        className="task-row event-row-cols google-rdv-row"
       >
-        <button
-          className={`ev-col task-status-btn ${isGoogleDone ? 'done' : isGoogleProgress ? 'in-progress' : ''}`}
-          style={{ cursor: 'pointer' }}
-          onClick={(e) => { e.stopPropagation(); handleCyclePlanningEventStatus('google_event', event.id); }}
-          title={`Statut: ${googleStatus} — cliquer pour changer`}
-        >
-          {isGoogleDone && <Check size={14} />}
-          {isGoogleProgress && <Clock size={12} />}
-        </button>
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}{detectedType && <span className="event-type-mini" style={{ color: detectedType.color }}>{detectedType.emoji} {detectedType.label}</span>}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -1153,15 +1154,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
             {isProcessed ? '✓' : '⚙'}
           </span>
-          {!affaireNum && (
-            <button
-              className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
-              title="Lier à une affaire"
-              onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
-            >
-              <Link size={13} />
-            </button>
-          )}
+          <button
+            className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+            title="Lier à une affaire"
+            style={affaireNum ? { visibility: 'hidden' } : {}}
+            onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
+          >
+            <Link size={13} />
+          </button>
         </div>
         {/* Mini-badges des tâches créées depuis cet événement */}
         {linkedTasks.length > 0 && (
@@ -1250,20 +1250,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       affaire.tel && '📞 ' + affaire.tel,
     ].filter(Boolean).join('\n');
 
-    const rdvStatus = affaire.planningStatus || eventStatuses.get(`rdv:${affaire.numeroAffaire}`) || 'pending';
-    const isRdvDone = rdvStatus === 'done';
-    const isRdvProgress = rdvStatus === 'in_progress';
-
     return (
-      <div key={`rdv-${affaire.numeroAffaire}`} className={`task-row event-row-cols rdv-row ${isRdvDone ? 'task-done-row' : ''} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`} style={{ flexWrap: 'wrap' }}>
-        <button
-          className={`ev-col task-status-btn ${isRdvDone ? 'done' : isRdvProgress ? 'in-progress' : ''}`}
-          title={`Statut: ${rdvStatus} — cliquer pour changer`}
-          onClick={(e) => { e.stopPropagation(); handleCycleAffaireStatus(affaire.numeroAffaire); }}
-        >
-          {isRdvDone && <Check size={14} />}
-          {isRdvProgress && <Clock size={12} />}
-        </button>
+      <div key={`rdv-${affaire.numeroAffaire}`} className={`task-row event-row-cols rdv-row ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`} style={{ flexWrap: 'wrap' }}>
 
         <span className="ev-col ev-col-affaire">
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
@@ -1344,6 +1332,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     if (affaireNum) {
       displaySummary = displaySummary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || displaySummary;
     }
+    // Détecter le type d'étape (Récupération, Montage, etc.) et le retirer du titre
+    const detectedType = detectSummaryEventType(displaySummary);
+    if (detectedType) {
+      const cleaned = displaySummary.replace(new RegExp(detectedType.matchedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[-—–:]*\\s*', 'i'), '').trim();
+      if (cleaned) displaySummary = cleaned;
+    }
     // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
     const affaireNom = linkedAff?.nom || '';
@@ -1359,29 +1353,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         }).slice(0, 8)
       : [];
 
-    const icalStatusKey = `ical_event:${event.id}`;
-    const icalStatus = eventStatuses.get(icalStatusKey) || 'pending';
-    const isIcalDone = icalStatus === 'done';
-    const isIcalProgress = icalStatus === 'in_progress';
-
     return (
       <div
         key={`ical-${event.id}-${startDT}`}
-        className={`task-row event-row-cols ical-event-row ${isIcalDone ? 'task-done-row' : ''}`}
+        className="task-row event-row-cols ical-event-row"
       >
-        <button
-          className={`ev-col task-status-btn ${isIcalDone ? 'done' : isIcalProgress ? 'in-progress' : ''}`}
-          style={{ cursor: 'pointer' }}
-          onClick={(e) => { e.stopPropagation(); handleCyclePlanningEventStatus('ical_event', event.id); }}
-          title={`Statut: ${icalStatus} — cliquer pour changer`}
-        >
-          {isIcalDone && <Check size={14} />}
-          {isIcalProgress && <Clock size={12} />}
-        </button>
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}{detectedType && <span className="event-type-mini" style={{ color: detectedType.color }}>{detectedType.emoji} {detectedType.label}</span>}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -1392,15 +1372,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
             {isProcessed ? '✓' : '⚙'}
           </span>
-          {!affaireNum && (
-            <button
-              className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
-              title="Lier à une affaire"
-              onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
-            >
-              <Link size={13} />
-            </button>
-          )}
+          <button
+            className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+            title="Lier à une affaire"
+            style={affaireNum ? { visibility: 'hidden' } : {}}
+            onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
+          >
+            <Link size={13} />
+          </button>
         </div>
         {/* Mini-badges des tâches créées depuis cet événement iCal */}
         {linkedTasks.length > 0 && (

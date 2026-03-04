@@ -1008,8 +1008,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   // Carte affaire dans une section — layout colonnes aligné
   const renderAffaireRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
+    const isExpanded = expandedRdv === affaire.numeroAffaire;
     const dateBadge = getDateBadge(affaire.dateDebut || affaire.date_debut);
-    const planningStatus = affaire.planningStatus || 'pending';
+    const planningStatus = affaire.planningStatus || eventStatuses.get(`rdv:${affaire.numeroAffaire}`) || 'pending';
     const isDone = planningStatus === 'done';
     const isProgress = planningStatus === 'in_progress';
     const displayNom = affaire.nom || affaire.event_name || affaire.titre || affaire.client || typeInfo.label;
@@ -1022,6 +1023,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       (affaire.titre || affaire.event_name) && (affaire.event_name || affaire.titre),
       (affaire._googleLocation || affaire.adresseLivraison) && '📍 ' + (affaire._googleLocation || affaire.adresseLivraison).split('\n')[0],
       affaire.interlocuteur && '👤 ' + affaire.interlocuteur,
+      affaire.tel && '📞 ' + affaire.tel,
       affaire.blCount > 0 && `📄 ${affaire.blCount} BL`,
     ].filter(Boolean).join('\n');
 
@@ -1029,8 +1031,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       <div
         key={`aff-${affaire.numeroAffaire}`}
         className={`task-row event-row-cols affaire-row ${isDone ? 'task-done-row' : ''} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
-        onClick={() => openAffaireTaskModal(affaire)}
-        style={{ cursor: 'pointer' }}
+        style={{ flexWrap: 'wrap' }}
       >
         <button
           className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
@@ -1045,7 +1046,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { onNavigateToEntity('affaire', { numero: num }); } : undefined} />
         </span>
 
-        <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }}>
+        <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
           {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
         </span>
@@ -1058,7 +1059,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {timeStr ? <><Clock size={11} /> {timeStr}</> : ''}
         </span>
 
-        <div className="task-actions">
+        <div className="task-actions rdv-actions">
+          <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
+            <Eye size={14} />
+          </button>
           <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }} title="Définir les tâches pour cette affaire">
             <Plus size={14} />
           </button>
@@ -1066,6 +1070,17 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <X size={14} />
           </button>
         </div>
+
+        {isExpanded && (
+          <div className="rdv-detail-card">
+            <div className="rdv-detail-row"><strong>Client :</strong> {affaire.client || '—'}</div>
+            <div className="rdv-detail-row"><strong>Interlocuteur :</strong> {affaire.interlocuteur || '—'}</div>
+            <div className="rdv-detail-row"><strong>Tél :</strong> {affaire.tel || '—'}</div>
+            <div className="rdv-detail-row"><strong>Adresse :</strong> {affaire.adresseLivraison?.split('\n').join(', ') || '—'}</div>
+            {affaire.titre && <div className="rdv-detail-row"><strong>Titre :</strong> {affaire.titre}</div>}
+            {affaire.devis && <div className="rdv-detail-row"><strong>Devis :</strong> {affaire.devis}</div>}
+          </div>
+        )}
       </div>
     );
   };
@@ -1224,11 +1239,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const dateBadge = getDateBadge(affaire.dateDebut || affaire.date_debut);
     const displayNom = affaire.nom || affaire.event_name || affaire.titre || affaire.client || typeInfo.label;
     const displayClient = affaire.client || '';
-    const linkedAff = affaire.numeroAffaire ? affaireByNum.get(affaire.numeroAffaire.toUpperCase()) : null;
+    const timeStr = affaire._googleTime
+      ? `${affaire._googleTime}${affaire._googleEndTime ? ` → ${affaire._googleEndTime}` : ''}`
+      : '';
     const tooltipParts = [
       displayNom,
       (affaire.titre || affaire.event_name) && (affaire.event_name || affaire.titre),
-      affaire.adresseLivraison && '📍 ' + affaire.adresseLivraison.split('\n')[0],
+      (affaire._googleLocation || affaire.adresseLivraison) && '📍 ' + (affaire._googleLocation || affaire.adresseLivraison).split('\n')[0],
       affaire.interlocuteur && '👤 ' + affaire.interlocuteur,
       affaire.tel && '📞 ' + affaire.tel,
     ].filter(Boolean).join('\n');
@@ -1238,7 +1255,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const isRdvProgress = rdvStatus === 'in_progress';
 
     return (
-      <div key={`rdv-${affaire.numeroAffaire}`} className={`task-row event-row-cols rdv-row ${isRdvDone ? 'task-done-row' : ''}`} style={{ flexWrap: 'wrap' }}>
+      <div key={`rdv-${affaire.numeroAffaire}`} className={`task-row event-row-cols rdv-row ${isRdvDone ? 'task-done-row' : ''} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`} style={{ flexWrap: 'wrap' }}>
         <button
           className={`ev-col task-status-btn ${isRdvDone ? 'done' : isRdvProgress ? 'in-progress' : ''}`}
           title={`Statut: ${rdvStatus} — cliquer pour changer`}
@@ -1252,19 +1269,31 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
         </span>
 
-        <span className="ev-col ev-col-nom" title={tooltipParts}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
+          {displayNom}
+          {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
+        </span>
 
         <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
 
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
-        <span className="ev-col ev-col-time"></span>
+        <span className="ev-col ev-col-time">
+          {timeStr ? <><Clock size={11} /> {timeStr}</> : ''}
+        </span>
 
         <div className="task-actions rdv-actions">
           <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
             <Eye size={14} />
           </button>
+          <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }} title="Définir les tâches pour cette affaire">
+            <Plus size={14} />
+          </button>
+          <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }} title="Retirer de la planification">
+            <X size={14} />
+          </button>
         </div>
+
         {isExpanded && (
           <div className="rdv-detail-card">
             <div className="rdv-detail-row"><strong>Client :</strong> {affaire.client || '—'}</div>

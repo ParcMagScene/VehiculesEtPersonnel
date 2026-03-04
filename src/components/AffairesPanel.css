@@ -316,6 +316,15 @@
   color: var(--theme-text-dark);
 }
 
+/* Compteur affaires dans toolbar */
+.affaires-tb-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* Bouton Import BL dans toolbar */
 .affaires-tb-bl-import-btn {
   display: flex;

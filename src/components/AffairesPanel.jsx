@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2 } from 'lucide-react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -898,6 +898,21 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           >
             <BarChart2 size={14} /> Analyse batch
           </button>
+
+          <div className="affaires-tb-divider" />
+
+          {/* Refresh + compteur */}
+          <button
+            className="affaires-tb-nav-btn"
+            onClick={handleRefresh}
+            title="Rafraîchir les affaires"
+            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            <RefreshCw size={14} />
+          </button>
+          <span className="affaires-tb-count" title={`${filteredAffaires.length} affaire(s) affichée(s) sur ${enrichedAffaires.length} total`}>
+            {filteredAffaires.length}/{enrichedAffaires.length}
+          </span>
         </div>
       </div>
 

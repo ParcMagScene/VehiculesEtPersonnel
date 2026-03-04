@@ -92,6 +92,8 @@
 
 /* Panel content */
 .communication-panel .panel-content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   overflow: hidden;

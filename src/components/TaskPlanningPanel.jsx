@@ -56,14 +56,6 @@ const EVENT_TYPES = {
   demontage:    { label: 'Démontage',     emoji: '🔧', color: '#dc2626' },
 };
 
-// Détecter le type d'étape dans un titre d'événement (Récupération, Montage, Démontage, etc.)
-function detectSummaryEventType(summary) {
-  const m = (summary || '').match(/\b(Préparation|Chargement|Départ|Enlèvement|Retour|Récupération|Installation|Livraison|Montage|Démontage)\b/i);
-  if (!m) return null;
-  const key = m[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  return EVENT_TYPES[key] ? { ...EVENT_TYPES[key], key, matchedText: m[1] } : null;
-}
-
 const mapEventToSection = (event) => {
   const type = event.type;
   const cat = event.category;
@@ -1110,22 +1102,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const isProcessed = processedGoogleIds.has(event.id);
     const linkedTasks = tasksBySourceId.get(event.id) || [];
     const isLinking = linkingEvent?.id === event.id;
-    // Retirer l'affaire du titre pour éviter la redondance
-    let displaySummary = summary;
-    if (affaireNum) {
-      displaySummary = summary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || summary;
-    }
-    // Détecter le type d'étape (Récupération, Montage, etc.) et le retirer du titre
-    const detectedType = detectSummaryEventType(displaySummary);
-    if (detectedType) {
-      const cleaned = displaySummary.replace(new RegExp(detectedType.matchedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[-—–:]*\\s*', 'i'), '').trim();
-      if (cleaned) displaySummary = cleaned;
-    }
     // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
-    const affaireNom = linkedAff?.nom || '';
     const affaireClient = linkedAff?.client || '';
-    const displayNom = affaireNom || displaySummary;
+    // Titre original tel qu'il apparaît dans Google Agenda
+    const displayNom = summary;
 
     // Filtrer les affaires pour la recherche manuelle
     const linkableAffaires = isLinking && linkSearchQuery.length >= 2
@@ -1145,7 +1126,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}{detectedType && <span className="event-type-mini" style={{ color: detectedType.color }}>{detectedType.emoji} {detectedType.label}</span>}</span>
+        <span className="ev-col ev-col-nom" title={[displayNom, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -1328,21 +1309,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const icalAffaireMatch = (event.summary || '').match(/\bAF\s*\d{4,}/i);
     const affaireNum = icalAffaireMatch ? icalAffaireMatch[0].toUpperCase().replace(/\s+/g, '') : '';
     const isLinking = linkingEvent?.id === event.id;
-    let displaySummary = event.summary || 'Événement';
-    if (affaireNum) {
-      displaySummary = displaySummary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || displaySummary;
-    }
-    // Détecter le type d'étape (Récupération, Montage, etc.) et le retirer du titre
-    const detectedType = detectSummaryEventType(displaySummary);
-    if (detectedType) {
-      const cleaned = displaySummary.replace(new RegExp(detectedType.matchedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[-—–:]*\\s*', 'i'), '').trim();
-      if (cleaned) displaySummary = cleaned;
-    }
     // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
-    const affaireNom = linkedAff?.nom || '';
     const affaireClient = linkedAff?.client || '';
-    const displayNom = affaireNom || displaySummary;
+    // Titre original tel qu'il apparaît dans le calendrier
+    const displayNom = event.summary || 'Événement';
 
     const linkableAffaires = isLinking && linkSearchQuery.length >= 2
       ? affaires.filter(a => {
@@ -1361,7 +1332,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}{detectedType && <span className="event-type-mini" style={{ color: detectedType.color }}>{detectedType.emoji} {detectedType.label}</span>}</span>
+        <span className="ev-col ev-col-nom" title={[displayNom, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>

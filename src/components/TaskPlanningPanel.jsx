@@ -125,6 +125,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [viewMode, setViewMode] = useState('day'); // 'day' | 'week'
+  const [expandedWeekDay, setExpandedWeekDay] = useState(null); // dayStr to expand in week view
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Inline add form
@@ -151,6 +152,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   // ── Collapse sections ──
   const [collapsedSections, setCollapsedSections] = useState({});
   const toggleSectionCollapse = (key) => setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  // Collapse past/future events independently (default: both collapsed)
+  const [collapsedPastEvents, setCollapsedPastEvents] = useState(true);
+  const [collapsedFutureEvents, setCollapsedFutureEvents] = useState(true);
 
   // ── Statuts des événements planning (Google/iCal/RDV) ──
   const [eventStatuses, setEventStatuses] = useState(new Map());
@@ -1650,6 +1654,95 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     );
   };
 
+  // ── Colonne étendue d'un jour : même présentation que la vue jour ──
+  const renderWeekDayExpanded = (dayStr) => {
+    const dayData = weekGroupedByDay?.[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
+
+    // Grouper les tâches par section
+    const tasksBySection = {};
+    dayData.tasks.forEach(t => {
+      const sec = normalizeSection(t.section || 'manual');
+      if (!tasksBySection[sec]) tasksBySection[sec] = [];
+      tasksBySection[sec].push(t);
+    });
+
+    // Affaires par section
+    const affBySection = {};
+    dayData.affaires.forEach(a => {
+      const sec = mapAffaireToSection(a);
+      if (!affBySection[sec]) affBySection[sec] = [];
+      affBySection[sec].push(a);
+    });
+
+    // Display events par section
+    const evBySection = {};
+    dayData.events.forEach(ev => {
+      const sec = mapEventToSection(ev);
+      if (!evBySection[sec]) evBySection[sec] = [];
+      evBySection[sec].push(ev);
+    });
+
+    const sectionOrder = Object.keys(SECTIONS);
+
+    return (
+      <div className="wk-day-expanded">
+        {/* En-tête de colonnes comme la vue jour */}
+        <div className="tp-columns-header tp-columns-header-mini">
+          <span className="ev-col-h ev-col-h-status">✔</span>
+          <span className="ev-col-h ev-col-h-affaire">Aff.</span>
+          <span className="ev-col-h ev-col-h-nom">Titre</span>
+          <span className="ev-col-h ev-col-h-client">Client</span>
+          <span className="ev-col-h ev-col-h-time">Heure</span>
+          <span className="ev-col-h ev-col-h-actions">Actions</span>
+        </div>
+
+        {/* Google events */}
+        {dayData.googleEvents.length > 0 && (
+          <div className="wk-expanded-section">
+            <div className="wk-expanded-section-label" style={{ color: '#4285f4' }}>📅 Google Calendar</div>
+            {dayData.googleEvents.map(ev => renderGoogleRdvRow(ev))}
+          </div>
+        )}
+
+        {/* Sections avec affaires + events + tâches */}
+        {sectionOrder.map(secKey => {
+          const secInfo = SECTIONS[secKey];
+          if (!secInfo) return null;
+          const secAff = affBySection[secKey] || [];
+          const secEv = evBySection[secKey] || [];
+          const secTasks = tasksBySection[secKey] || [];
+          const total = secAff.length + secEv.length + secTasks.length;
+          if (total === 0) return null;
+
+          // Dédoublonner events/tâches liées aux affaires affichées
+          const affaireNums = new Set(secAff.map(a => a.numeroAffaire).filter(Boolean));
+          const filteredEv = secEv.filter(ev => !(ev.affaireId && affaireNums.has(ev.affaireId)));
+          const filteredTasks = secTasks.filter(t => {
+            const an = t.affaireNum || extractAffaireNum(t.title);
+            return !(an && affaireNums.has(an.toUpperCase()));
+          });
+
+          if (secAff.length + filteredEv.length + filteredTasks.length === 0) return null;
+
+          return (
+            <div key={secKey} className="wk-expanded-section">
+              <div className="wk-expanded-section-label" style={{ color: secInfo.color }}>
+                {secInfo.emoji} {secInfo.label}
+              </div>
+              {secAff.map(renderAffaireRow)}
+              {filteredEv.map(renderDisplayEventRow)}
+              {filteredTasks.map(renderTaskRow)}
+            </div>
+          );
+        })}
+
+        {dayData.tasks.length + dayData.events.length + dayData.affaires.length + dayData.googleEvents.length === 0 && (
+          <div className="wk-empty" style={{ padding: '20px 0' }}>Aucun élément</div>
+        )}
+      </div>
+    );
+  };
+
   const renderSection = (sectionKey) => {
     const info = SECTIONS[sectionKey];
     const sectionTasks = grouped[sectionKey] || [];
@@ -1698,7 +1791,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           const now = new Date();
           const todayDate = todayStr();
           // Déterminer si un événement est "du jour" ou "en cours"
-          const isEventToday = (ev) => {
+          const classifyEvent = (ev) => {
             const start = ev._source === 'ical' ? (ev.start || '') : (ev.start?.dateTime || ev.start?.date || '');
             const end = ev._source === 'ical' ? (ev.end || '') : (ev.end?.dateTime || ev.end?.date || '');
             const startDate = start.slice(0, 10);
@@ -1706,28 +1799,51 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             const evEnd = end ? new Date(end.includes('T') ? end : end + 'T23:59:59') : null;
             const isToday = startDate === todayDate;
             const isOngoing = evStart && evEnd && evStart <= now && now <= evEnd;
-            return isToday || isOngoing;
+            if (isToday || isOngoing) return 'today';
+            if (startDate < todayDate) return 'past';
+            return 'future';
           };
-          // Séparer en groupes contigus : today/ongoing vs autres
-          const groups = [];
-          let currentGroup = null;
-          mergedOtherEvents.forEach((ev, i) => {
-            const today = isEventToday(ev);
-            if (!currentGroup || currentGroup.isToday !== today) {
-              currentGroup = { isToday: today, events: [] };
-              groups.push(currentGroup);
-            }
-            currentGroup.events.push(ev);
+          // Classer les événements en 3 groupes
+          const pastEvents = [];
+          const todayEvents = [];
+          const futureEvents = [];
+          mergedOtherEvents.forEach(ev => {
+            const cls = classifyEvent(ev);
+            if (cls === 'past') pastEvents.push(ev);
+            else if (cls === 'today') todayEvents.push(ev);
+            else futureEvents.push(ev);
           });
-          return groups.map((group, gi) => {
-            const items = group.events.map(ev =>
-              ev._source === 'ical' ? renderIcalEventRow(ev) : renderGoogleRdvRow(ev)
-            );
-            if (group.isToday) {
-              return <div key={`today-group-${gi}`} className="events-today-group">{items}</div>;
-            }
-            return <React.Fragment key={`other-group-${gi}`}>{items}</React.Fragment>;
-          });
+          const renderEvRow = (ev) => ev._source === 'ical' ? renderIcalEventRow(ev) : renderGoogleRdvRow(ev);
+          return (
+            <>
+              {/* Événements précédents */}
+              {pastEvents.length > 0 && (
+                <div className={`events-subgroup events-past-group ${collapsedPastEvents ? 'collapsed' : ''}`}>
+                  <div className="events-subgroup-header" onClick={() => setCollapsedPastEvents(v => !v)}>
+                    <ChevronDown size={14} className={`subgroup-chevron ${collapsedPastEvents ? 'collapsed' : ''}`} />
+                    <span className="subgroup-label">Événements précédents</span>
+                    <span className="subgroup-count">{pastEvents.length}</span>
+                  </div>
+                  {!collapsedPastEvents && <div className="events-subgroup-content">{pastEvents.map(renderEvRow)}</div>}
+                </div>
+              )}
+              {/* Événements du jour */}
+              {todayEvents.length > 0 && (
+                <div className="events-today-group">{todayEvents.map(renderEvRow)}</div>
+              )}
+              {/* Événements suivants */}
+              {futureEvents.length > 0 && (
+                <div className={`events-subgroup events-future-group ${collapsedFutureEvents ? 'collapsed' : ''}`}>
+                  <div className="events-subgroup-header" onClick={() => setCollapsedFutureEvents(v => !v)}>
+                    <ChevronDown size={14} className={`subgroup-chevron ${collapsedFutureEvents ? 'collapsed' : ''}`} />
+                    <span className="subgroup-label">Événements suivants</span>
+                    <span className="subgroup-count">{futureEvents.length}</span>
+                  </div>
+                  {!collapsedFutureEvents && <div className="events-subgroup-content">{futureEvents.map(renderEvRow)}</div>}
+                </div>
+              )}
+            </>
+          );
         })()}
 
         {/* Sections opérationnelles : affaires + événements + tâches */}
@@ -2009,37 +2125,79 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
       ) : viewMode === 'week' ? (
         <div className="wk-split-layout">
-          {/* ── En-têtes des jours (partagés) ── */}
-          <div className="wk-day-headers">
+          {/* ── Colonnes des jours ── */}
+          <div className="wk-days-row">
             {weekDays.map(d => {
               const dt = new Date(d + 'T00:00:00');
               const dayLabel = dt.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
               const isToday = d === todayStr();
+              const isExpanded = expandedWeekDay === d;
               const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
               const total = dayData.tasks.length + dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
+
               return (
-                <div key={d} className={`wk-col-header ${isToday ? 'today' : ''}`}>
-                  <span className="wk-day-label">{dayLabel}</span>
-                  {total > 0 && <span className="wk-day-count">{total}</span>}
+                <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>
+                  {/* En-tête cliquable */}
+                  <div
+                    className={`wk-col-header ${isToday ? 'today' : ''}`}
+                    onClick={() => setExpandedWeekDay(isExpanded ? null : d)}
+                    title={isExpanded ? 'Réduire' : 'Cliquer pour agrandir'}
+                  >
+                    <span className="wk-day-label">{dayLabel}</span>
+                    {total > 0 && <span className="wk-day-count">{total}</span>}
+                    <ChevronDown size={14} className={`wk-expand-chevron ${isExpanded ? 'open' : ''}`} />
+                  </div>
+
+                  {/* Contenu */}
+                  <div className="wk-day-content">
+                    {isExpanded ? (
+                      renderWeekDayExpanded(d)
+                    ) : (
+                      <>
+                        {/* Vue compacte : mini-cartes par catégorie */}
+                        {dayData.googleEvents.length > 0 && (
+                          <div className="wk-compact-group">
+                            {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
+                          </div>
+                        )}
+                        {dayData.affaires.length > 0 && (
+                          <div className="wk-compact-group">
+                            {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
+                          </div>
+                        )}
+                        {dayData.events.length > 0 && (
+                          <div className="wk-compact-group">
+                            {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
+                          </div>
+                        )}
+                        {(() => {
+                          const grouped = {};
+                          dayData.tasks.forEach(t => {
+                            const sec = normalizeSection(t.section || 'manual');
+                            if (!grouped[sec]) grouped[sec] = [];
+                            grouped[sec].push(t);
+                          });
+                          return Object.keys(SECTIONS).map(secKey => {
+                            const items = grouped[secKey];
+                            if (!items || items.length === 0) return null;
+                            const info = SECTIONS[secKey] || SECTIONS.manual;
+                            return (
+                              <div key={secKey} className="wk-compact-group">
+                                <div className="wk-task-group-label" style={{ color: info.color }}>
+                                  <span>{info.emoji}</span> {info.label}
+                                </div>
+                                {items.map(t => renderWeekMiniCard(t, 'task'))}
+                              </div>
+                            );
+                          });
+                        })()}
+                        {total === 0 && <div className="wk-empty">—</div>}
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}
-          </div>
-
-          {/* ── Bande haute : Événements ── */}
-          <div className="wk-band wk-band-events">
-            <div className="wk-band-label">📅 Événements</div>
-            <div className="wk-band-grid">
-              {weekDays.map(d => renderWeekEventCol(d))}
-            </div>
-          </div>
-
-          {/* ── Bande basse : Tâches ── */}
-          <div className="wk-band wk-band-tasks">
-            <div className="wk-band-label">✅ Tâches</div>
-            <div className="wk-band-grid">
-              {weekDays.map(d => renderWeekTaskCol(d))}
-            </div>
           </div>
         </div>
       ) : (
@@ -2139,6 +2297,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             affaires={affaires}
             displayEvents={displayEvents}
             googleRdvEvents={googleRdvEvents}
+            planningAssignments={planningAssignments}
+            persons={persons}
             onClose={() => setShowPdfExport(false)}
           />
         </Suspense>

@@ -704,6 +704,20 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         }
       });
 
+      // ── Charger les multi-affectations (planning_assignments) ──
+      const allAssignments = db.prepare(`
+        SELECT pa.entity_type, pa.entity_id, pa.person_id,
+               p.first_name, p.last_name
+        FROM planning_assignments pa
+        LEFT JOIN persons p ON pa.person_id = p.id
+      `).all();
+      const assignmentsByEntity = new Map();
+      allAssignments.forEach(a => {
+        const key = `${a.entity_type}:${a.entity_id}`;
+        if (!assignmentsByEntity.has(key)) assignmentsByEntity.set(key, []);
+        assignmentsByEntity.get(key).push(a);
+      });
+
       // ── Helper: Nettoyer les caractères non supportés par Helvetica (emojis, symboles) ──
       const stripEmoji = (str) => {
         if (!str) return '';
@@ -1023,9 +1037,13 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
               || ((t.title || '').match(/\bAF\s*\d{3,}/i) || [''])[0].toUpperCase().replace(/\s+/g, '')
               || ((t.google_event_title || '').match(/\bAF\s*\d{3,}/i) || [''])[0].toUpperCase().replace(/\s+/g, '')
               || '';
-            const personStr = (t.person_first_name || t.person_last_name)
-              ? `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim()
-              : '';
+            // Multi-affectations ou personne unique
+            const multiAssign = assignmentsByEntity.get(`task:${t.id}`) || [];
+            const personStr = multiAssign.length > 0
+              ? multiAssign.map(a => `${a.first_name || ''} ${a.last_name ? a.last_name.charAt(0) + '.' : ''}`.trim()).join(', ')
+              : (t.person_first_name || t.person_last_name)
+                ? `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim()
+                : '';
 
             const rowY = doc.y;
             if (i % 2 === 0) {
@@ -1084,11 +1102,15 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
             }
             // Détail
             const detail = `${a.type || ''} - ${a.client || 'Sans client'}${a.adresse_livraison ? ' - ' + a.adresse_livraison.split('\n')[0].slice(0, 35) : ''}`;
+            const affAssign = assignmentsByEntity.get(`affaire:${a.id}`) || [];
+            const affPersonStr = affAssign.length > 0
+              ? affAssign.map(as => `${as.first_name || ''} ${as.last_name ? as.last_name.charAt(0) + '.' : ''}`.trim()).join(', ')
+              : (a.interlocuteur || '').slice(0, 18);
             doc.font('Helvetica').fontSize(fs).fillColor('#111111')
               .text(stripEmoji(detail), contentX, rowY + 2, { width: leftX + pageW - contentX - 60, lineBreak: false });
-            if (a.interlocuteur) {
+            if (affPersonStr) {
               doc.font('Helvetica').fontSize(fsSmall).fillColor('#555555')
-                .text(a.interlocuteur.slice(0, 18), leftX + pageW - 55, rowY + 2, { width: 52, lineBreak: false, align: 'right' });
+                .text(affPersonStr, leftX + pageW - 55, rowY + 2, { width: 52, lineBreak: false, align: 'right' });
             }
             doc.fillColor('#000000');
             doc.y = rowY + rowH;
@@ -1121,8 +1143,17 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
                 detail = `${typeLabel}${ev.client ? ' - ' + ev.client : ''}${ev.location ? ' - ' + ev.location.slice(0, 25) : ''}`;
               }
             }
+            // Multi-affectations pour événements
+            const evAssign = assignmentsByEntity.get(`display_event:${ev.id}`) || [];
+            const evPersonStr = evAssign.length > 0
+              ? evAssign.map(a => `${a.first_name || ''} ${a.last_name ? a.last_name.charAt(0) + '.' : ''}`.trim()).join(', ')
+              : '';
             doc.font('Helvetica').fontSize(fs).fillColor('#111111')
-              .text(stripEmoji(detail) || '-', contentX, rowY + 2, { width: leftX + pageW - contentX - 10, lineBreak: false });
+              .text(stripEmoji(detail) || '-', contentX, rowY + 2, { width: leftX + pageW - contentX - (evPersonStr ? 65 : 10), lineBreak: false });
+            if (evPersonStr) {
+              doc.font('Helvetica').fontSize(fsSmall).fillColor('#555555')
+                .text(evPersonStr, leftX + pageW - 60, rowY + 2, { width: 55, lineBreak: false, align: 'right' });
+            }
             doc.fillColor('#000000');
             doc.y = rowY + rowH;
 

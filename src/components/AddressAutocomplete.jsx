@@ -56,48 +56,11 @@ export default function AddressAutocomplete({
       if (!window.google?.maps?.places) return;
       if (!inputRef.current) return;
 
-      // Utiliser la nouvelle API PlaceAutocompleteElement si disponible
-      if (window.google.maps.places.PlaceAutocompleteElement) {
+      // Utiliser l'API Autocomplete classique (stable et compatible)
+      if (window.google.maps.places.Autocomplete) {
         const countries = Array.isArray(country) ? country : [country];
-        const placeEl = new window.google.maps.places.PlaceAutocompleteElement({
-          componentRestrictions: { country: countries },
-          fields: ['formattedAddress', 'displayName', 'location'],
-        });
-
-        // Styler l'élément pour qu'il soit invisible — on l'utilise comme source
-        placeEl.style.position = 'absolute';
-        placeEl.style.opacity = '0';
-        placeEl.style.pointerEvents = 'none';
-        placeEl.style.height = '0';
-        placeEl.style.overflow = 'hidden';
-        inputRef.current.parentElement?.appendChild(placeEl);
-
-        // Créer un Autocomplete classique en fallback (toujours supporté)
-        if (window.google.maps.places.Autocomplete) {
-          const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-            componentRestrictions: { country: countries },
-            fields: ['formatted_address', 'geometry', 'name'],
-          });
-
-          autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            if (place.formatted_address) {
-              onChange(place.formatted_address);
-              if (onPlaceSelect) onPlaceSelect(place);
-            } else if (place.name) {
-              onChange(place.name);
-              if (onPlaceSelect) onPlaceSelect(place);
-            }
-          });
-
-          autocompleteInstanceRef.current = autocomplete;
-        }
-
-        isInitializedRef.current = true;
-      } else if (window.google.maps.places.Autocomplete) {
-        // Fallback : ancienne API
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: Array.isArray(country) ? country : [country] },
+          componentRestrictions: { country: countries },
           fields: ['formatted_address', 'geometry', 'name'],
         });
 

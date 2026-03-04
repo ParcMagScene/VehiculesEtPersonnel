@@ -130,8 +130,40 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       groups.rdv.push(item);
     });
 
+    // 5) Dédupliquer : retirer les tâches dont l'affaire est déjà affichée dans la même section
+    const extractAffNum = (str) => {
+      const m = (str || '').match(/\bAF\s*\d{4,}/i);
+      return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
+    };
+    Object.keys(groups).forEach(sec => {
+      const sectionItems = groups[sec];
+      const affaireNums = new Set(
+        sectionItems
+          .filter(i => i.type === 'affaire' || i.type === 'affaire-rdv')
+          .map(i => (i.data.numeroAffaire || '').toUpperCase())
+          .filter(Boolean)
+      );
+      if (affaireNums.size === 0) return;
+      const toRemove = new Set();
+      sectionItems.forEach(i => {
+        if (i.type !== 'task') return;
+        const t = i.data;
+        const taskAffNum = (t.affaireNum || '').toUpperCase() || extractAffNum(t.title);
+        if (taskAffNum && affaireNums.has(taskAffNum)) toRemove.add(i.uid);
+      });
+      if (toRemove.size > 0) {
+        groups[sec] = sectionItems.filter(i => !toRemove.has(i.uid));
+      }
+    });
+    // Reconstruire items sans les doublons retirés
+    const removedUids = new Set();
+    Object.values(groups).forEach(arr => {
+      arr.forEach(i => removedUids.add(i.uid));
+    });
+    const dedupedItems = items.filter(i => removedUids.has(i.uid));
+
     const active = Object.keys(SECTIONS).filter(k => (groups[k] || []).length > 0);
-    return { allItems: items, grouped: groups, activeSections: active };
+    return { allItems: dedupedItems, grouped: groups, activeSections: active };
   }, [tasks, affaires, displayEvents, googleRdvEvents]);
 
   // Initialiser avec tout sélectionné

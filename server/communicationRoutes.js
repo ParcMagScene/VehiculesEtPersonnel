@@ -888,6 +888,25 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         grouped.rdv.push({ type: 'gcal', data: ev });
       });
 
+      // Dédupliquer : retirer les tâches dont l'affaire est déjà affichée dans la même section
+      const extractAFNum = (str) => {
+        const m = (str || '').match(/\bAF\s*\d{4,}/i);
+        return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
+      };
+      Object.keys(grouped).forEach(sec => {
+        const items = grouped[sec];
+        const affaireNums = new Set(
+          items.filter(i => i.type === 'affaire').map(i => (i.data.numero_affaire || '').toUpperCase()).filter(Boolean)
+        );
+        if (affaireNums.size === 0) return;
+        grouped[sec] = items.filter(i => {
+          if (i.type !== 'task') return true;
+          const t = i.data;
+          const taskAffNum = (t.affaire_num || '').toUpperCase() || extractAFNum(t.title) || extractAFNum(t.google_event_title);
+          return !(taskAffNum && affaireNums.has(taskAffNum));
+        });
+      });
+
       // Compter le total
       let totalItems = 0;
       Object.values(grouped).forEach(arr => { totalItems += arr.length; });

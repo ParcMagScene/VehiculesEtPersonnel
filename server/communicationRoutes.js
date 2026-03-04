@@ -55,9 +55,11 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // Enrichit chaque événement avec nom/client de l'affaire liée (LEFT JOIN)
   app.get('/api/communication/display-events', authenticateToken, (req, res) => {
     try {
-      let query = `SELECT dde.*, a.nom AS affaire_nom, a.client AS affaire_client, a.type AS affaire_type
+      let query = `SELECT dde.*, a.nom AS affaire_nom, a.client AS affaire_client, a.type AS affaire_type,
+        p.first_name AS assigned_person_first_name, p.last_name AS assigned_person_last_name
         FROM dynamic_display_events dde
         LEFT JOIN affaires a ON dde.affaire_id = a.numero_affaire
+        LEFT JOIN persons p ON p.id = dde.assigned_person_id
         WHERE 1=1`;
       const params = [];
 

@@ -2,8 +2,10 @@
 .task-planning-panel {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  height: 0;
+  overflow: hidden;
   background: var(--theme-bg-page);
 }
 
@@ -88,9 +90,11 @@
 
 /* Sections container */
 .task-planning-panel .sections-container {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding: 16px 24px;
 }

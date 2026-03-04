@@ -2,8 +2,10 @@
 .communication-panel {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  height: 0;
+  overflow: hidden;
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
 }
@@ -94,8 +96,9 @@
 .communication-panel .panel-content {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  height: 0;
   overflow: hidden;
   padding: 0;
 }

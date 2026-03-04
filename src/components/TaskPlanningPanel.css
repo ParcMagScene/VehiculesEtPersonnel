@@ -429,7 +429,8 @@
 
 /* ═══ Visibility toggle + hidden-display ═══ */
 .task-planning-panel .task-row.hidden-display {
-  opacity: 0.45;
+  /* Pas de grisage global — seul l'icône œil change */
+  opacity: 1;
 }
 
 .task-planning-panel .task-actions .toggle-visible {
@@ -1155,7 +1156,8 @@
   background: var(--theme-hover-bg, #eef2f7);
 }
 .wk-card.hidden-display {
-  opacity: 0.45;
+  /* Pas de grisage global pour les éléments masqués de l'écran */
+  opacity: 1;
 }
 .wk-title {
   flex: 1;

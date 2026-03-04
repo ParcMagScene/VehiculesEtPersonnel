@@ -1968,7 +1968,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <EventTaskModal
           event={eventTaskModalEvent}
           existingTasks={tasks.filter(t => (t.sourceType === 'google_event' || t.sourceType === 'ical_event') && t.sourceId === eventTaskModalEvent.id)}
-          onSave={() => { setEventTaskModalEvent(null); loadTasks(true); }}
+          onSave={(taskDate) => { setEventTaskModalEvent(null); if (taskDate && taskDate !== selectedDate) setSelectedDate(taskDate); else loadTasks(true); }}
           onDelete={() => { setEventTaskModalEvent(null); loadTasks(true); }}
           onClose={() => setEventTaskModalEvent(null)}
         />

@@ -2141,13 +2141,14 @@ function initializeDatabase() {
     logger.warn('⚠️ Migration communication:', error.message);
   }
 
-  // ═══ Table bp_items : liaison BP → Catalogue Équipement ═══
+  // ═══ Table bp_items : liaison BP → Matériel (equipment) ═══
   try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS bp_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         bl_import_id TEXT NOT NULL,
         equipment_catalog_id TEXT,
+        equipment_id INTEGER,
         reference TEXT,
         description TEXT,
         section TEXT,
@@ -2158,12 +2159,16 @@ function initializeDatabase() {
         match_confidence REAL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (bl_import_id) REFERENCES bl_imports(id) ON DELETE CASCADE,
-        FOREIGN KEY (equipment_catalog_id) REFERENCES equipment_catalog(id) ON DELETE SET NULL
+        FOREIGN KEY (equipment_catalog_id) REFERENCES equipment_catalog(id) ON DELETE SET NULL,
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE SET NULL
       )
     `);
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_bl ON bp_items(bl_import_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_catalog ON bp_items(equipment_catalog_id)');
-    logger.info('  ✅ Table bp_items (liaison BP ↔ catalogue)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_equipment ON bp_items(equipment_id)');
+    // Migration : ajouter equipment_id si absente
+    try { db.exec('ALTER TABLE bp_items ADD COLUMN equipment_id INTEGER REFERENCES equipment(id) ON DELETE SET NULL'); } catch (_) { /* déjà présente */ }
+    logger.info('  ✅ Table bp_items (liaison BP ↔ matériel)');
   } catch (error) {
     logger.warn('⚠️ Migration bp_items:', error.message);
   }

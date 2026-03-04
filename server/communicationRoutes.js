@@ -381,43 +381,68 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
       const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(finalId);
 
-      // ═══ Auto-persist BP items with catalogue matching ═══
+      // ═══ Auto-persist BP items with equipment matching ═══
       let bpItemsCount = 0;
       if (pd && Array.isArray(pd.items) && pd.items.length > 0) {
         try {
           const insertItem = db.prepare(`
-            INSERT INTO bp_items (bl_import_id, equipment_catalog_id, reference, description, section, quantity, poids, volume, match_status, match_confidence)
+            INSERT INTO bp_items (bl_import_id, equipment_id, reference, description, section, quantity, poids, volume, match_status, match_confidence)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `);
-          const findExact = db.prepare('SELECT id FROM equipment_catalog WHERE reference = ?');
-          const findNorm = db.prepare("SELECT id FROM equipment_catalog WHERE REPLACE(REPLACE(reference, '-', ''), ' ', '') = REPLACE(REPLACE(?, '-', ''), ' ', '') LIMIT 1");
+          // Matching contre la table equipment (matériel réel)
+          const findExact = db.prepare('SELECT id FROM equipment WHERE reference = ? LIMIT 1');
+          const findNorm = db.prepare("SELECT id FROM equipment WHERE REPLACE(REPLACE(reference, '-', ''), ' ', '') = REPLACE(REPLACE(?, '-', ''), ' ', '') LIMIT 1");
+          // Matching partiel : ref BP contenue dans les refs equipment (ex: "DXR12" → "DXR12-")
+          const findPartial = db.prepare("SELECT id FROM equipment WHERE reference LIKE ? || '%' LIMIT 1");
 
           const insertMany = db.transaction((items) => {
             for (const item of items) {
               const ref = (item.reference || item.code || '').trim();
-              let catalogId = null;
+              let equipmentId = null;
               let matchStatus = 'unmatched';
               let matchConf = 0;
 
               if (ref) {
+                // 1. Exact match
                 const exact = findExact.get(ref);
                 if (exact) {
-                  catalogId = exact.id;
+                  equipmentId = exact.id;
                   matchStatus = 'matched';
                   matchConf = 1.0;
                 } else {
+                  // 2. Normalized (sans tirets/espaces)
                   const norm = findNorm.get(ref);
                   if (norm) {
-                    catalogId = norm.id;
+                    equipmentId = norm.id;
                     matchStatus = 'matched';
                     matchConf = 0.8;
+                  } else {
+                    // 3. Partial prefix match (ex: "DXR12" → "DXR12-")
+                    const partial = findPartial.get(ref);
+                    if (partial) {
+                      equipmentId = partial.id;
+                      matchStatus = 'matched';
+                      matchConf = 0.7;
+                    } else if (ref.includes(' ')) {
+                      // 4. Ref multi-mots : essayer chaque segment (ex: "YAMAHA QL5" → "QL5")
+                      const parts = ref.split(/\s+/).filter(p => p.length > 2);
+                      for (const part of parts) {
+                        const seg = findExact.get(part) || findNorm.get(part) || findPartial.get(part);
+                        if (seg) {
+                          equipmentId = seg.id;
+                          matchStatus = 'matched';
+                          matchConf = 0.6;
+                          break;
+                        }
+                      }
+                    }
                   }
                 }
               }
 
               insertItem.run(
                 finalId,
-                catalogId,
+                equipmentId,
                 ref || null,
                 item.description || null,
                 item.section || null,
@@ -467,17 +492,17 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ─── GET /api/communication/bp-items?affaire_id=AFxxxxx ───
-  // Retourne les articles BP avec leur statut de matching catalogue
+  // Retourne les articles BP avec leur statut de matching matériel
   app.get('/api/communication/bp-items', authenticateToken, (req, res) => {
     try {
       const { affaire_id, bl_import_id } = req.query;
       let query = `
         SELECT bp.*, 
-               ec.name AS catalog_name, ec.family AS catalog_family, 
-               ec.subfamily AS catalog_subfamily, ec.reference AS catalog_reference,
-               ec.location_zone AS catalog_zone, ec.location_depot AS catalog_depot
+               eq.name AS catalog_name, eq.reference AS catalog_reference,
+               eq.brand AS catalog_family, eq.location AS catalog_zone,
+               eq.location_depot AS catalog_depot
         FROM bp_items bp
-        LEFT JOIN equipment_catalog ec ON bp.equipment_catalog_id = ec.id
+        LEFT JOIN equipment eq ON bp.equipment_id = eq.id
         JOIN bl_imports bi ON bp.bl_import_id = bi.id
       `;
       const params = [];
@@ -503,27 +528,27 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ─── PUT /api/communication/bp-items/:id/match ───
-  // Lier manuellement un article BP à un item du catalogue
+  // Lier manuellement un article BP à un matériel
   app.put('/api/communication/bp-items/:id/match', authenticateToken, (req, res) => {
     try {
-      const { equipment_catalog_id } = req.body;
+      const { equipment_id } = req.body;
       const item = db.prepare('SELECT * FROM bp_items WHERE id = ?').get(req.params.id);
       if (!item) return res.status(404).json({ error: 'Article BP non trouvé' });
 
-      if (equipment_catalog_id) {
-        const catalogItem = db.prepare('SELECT id FROM equipment_catalog WHERE id = ?').get(equipment_catalog_id);
-        if (!catalogItem) return res.status(404).json({ error: 'Article catalogue introuvable' });
-        db.prepare('UPDATE bp_items SET equipment_catalog_id = ?, match_status = ?, match_confidence = 1.0 WHERE id = ?')
-          .run(equipment_catalog_id, 'manual', req.params.id);
+      if (equipment_id) {
+        const eqItem = db.prepare('SELECT id FROM equipment WHERE id = ?').get(equipment_id);
+        if (!eqItem) return res.status(404).json({ error: 'Matériel introuvable' });
+        db.prepare('UPDATE bp_items SET equipment_id = ?, match_status = ?, match_confidence = 1.0 WHERE id = ?')
+          .run(equipment_id, 'manual', req.params.id);
       } else {
         // Délier
-        db.prepare('UPDATE bp_items SET equipment_catalog_id = NULL, match_status = ?, match_confidence = 0 WHERE id = ?')
+        db.prepare('UPDATE bp_items SET equipment_id = NULL, match_status = ?, match_confidence = 0 WHERE id = ?')
           .run('unmatched', req.params.id);
       }
 
       const updated = db.prepare(`
-        SELECT bp.*, ec.name AS catalog_name, ec.family AS catalog_family, ec.reference AS catalog_reference
-        FROM bp_items bp LEFT JOIN equipment_catalog ec ON bp.equipment_catalog_id = ec.id
+        SELECT bp.*, eq.name AS catalog_name, eq.reference AS catalog_reference
+        FROM bp_items bp LEFT JOIN equipment eq ON bp.equipment_id = eq.id
         WHERE bp.id = ?
       `).get(req.params.id);
 

@@ -52,37 +52,41 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
   // ─── GET /api/communication/display-events ───
   // Liste avec filtres optionnels : date, dateFrom, dateTo, type, category, affaire_id
+  // Enrichit chaque événement avec nom/client de l'affaire liée (LEFT JOIN)
   app.get('/api/communication/display-events', authenticateToken, (req, res) => {
     try {
-      let query = 'SELECT * FROM dynamic_display_events WHERE 1=1';
+      let query = `SELECT dde.*, a.nom AS affaire_nom, a.client AS affaire_client, a.type AS affaire_type
+        FROM dynamic_display_events dde
+        LEFT JOIN affaires a ON dde.affaire_id = a.numero_affaire
+        WHERE 1=1`;
       const params = [];
 
       if (req.query.date) {
-        query += ' AND date = ?';
+        query += ' AND dde.date = ?';
         params.push(req.query.date);
       }
       if (req.query.dateFrom) {
-        query += ' AND date >= ?';
+        query += ' AND dde.date >= ?';
         params.push(req.query.dateFrom);
       }
       if (req.query.dateTo) {
-        query += ' AND date <= ?';
+        query += ' AND dde.date <= ?';
         params.push(req.query.dateTo);
       }
       if (req.query.type) {
-        query += ' AND type = ?';
+        query += ' AND dde.type = ?';
         params.push(req.query.type);
       }
       if (req.query.category) {
-        query += ' AND category = ?';
+        query += ' AND dde.category = ?';
         params.push(req.query.category);
       }
       if (req.query.affaire_id) {
-        query += ' AND affaire_id = ?';
+        query += ' AND dde.affaire_id = ?';
         params.push(req.query.affaire_id);
       }
 
-      query += ' ORDER BY date DESC, created_at DESC';
+      query += ' ORDER BY dde.date DESC, dde.created_at DESC';
 
       const events = db.prepare(query).all(...params);
       res.json(events);

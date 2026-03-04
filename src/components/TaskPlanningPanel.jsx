@@ -871,10 +871,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       ? (event.affaireId.match(/\bAF\s*\d{3,}/i) || [null])[0]?.toUpperCase()?.replace(/\s+/g, '')
       : null;
 
-    // Nom et Client de l'affaire liée
+    // Nom et Client de l'affaire liée (linkedAff depuis affaireByNum OU champs enrichis du serveur)
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
-    const affaireNom = linkedAff?.nom || '';
-    const affaireClient = linkedAff?.client || event.client || '';
+    const affaireNom = linkedAff?.nom || event.affaireNom || '';
+    const affaireClient = linkedAff?.client || event.affaireClient || '';
+    const affaireTypeResolved = linkedAff?.type || event.affaireType || '';
     const fallbackName = isTypeRedundant
       ? (event.affaireId || typeInfo.label)
       : `${typeInfo.label}${event.affaireId && !affaireNum ? ' (' + event.affaireId + ')' : ''}`;
@@ -887,7 +888,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <span className="ev-col ev-col-affaire">
-          {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
+          {affaireNum ? <AffaireBadge numero={affaireNum} type={affaireTypeResolved} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
 
         <span className="ev-col ev-col-nom" title={[displayName, event.location && '📍 ' + event.location, event.comment && '📝 ' + event.comment].filter(Boolean).join('\n')}>

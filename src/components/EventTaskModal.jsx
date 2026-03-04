@@ -60,6 +60,13 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
   // ═══ État des tâches par étape ═══
   const [steps, setSteps] = useState(() => {
     const initial = {};
+    // Déduire la période AM/PM à partir de l'heure de l'événement
+    const eventPeriod = (() => {
+      if (!eventInfo.startTime) return null;
+      const hour = parseInt(eventInfo.startTime.split(':')[0], 10);
+      return hour < 12 ? 'AM' : 'PM';
+    })();
+
     TASK_STEPS.forEach(step => {
       // Chercher si une tâche existe déjà pour cette étape
       const existing = existingTasks.find(t =>
@@ -68,12 +75,15 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         t.sourceId === event?.id && (t.title || '').toLowerCase().includes(step.label.toLowerCase())
       );
 
+      // Période par défaut : basée sur l'heure de l'événement, sinon prep/chargement=AM, reste=PM
+      const defaultPeriod = eventPeriod || (step.key === 'preparation' || step.key === 'chargement' ? 'AM' : 'PM');
+
       initial[step.key] = {
         enabled: !!existing,
         date: existing?.date || eventInfo.startDate || '',
-        time: existing?.time || '',
-        endTime: existing?.endTime || '',
-        period: existing?.period || (step.key === 'preparation' || step.key === 'chargement' ? 'AM' : 'PM'),
+        time: existing?.time || eventInfo.startTime || '',
+        endTime: existing?.endTime || eventInfo.endTime || '',
+        period: existing?.period || defaultPeriod,
         notes: existing?.notes || '',
         taskId: existing?.id || null,
       };

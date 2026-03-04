@@ -1467,7 +1467,9 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
   // ─── GET /api/communication/planning-affaires ─── [PERF] Cache 15s par clé date
   // Retourne les affaires actives pour une date ou plage de dates
-  // Params: date (YYYY-MM-DD) ou dateFrom + dateTo
+  // Inclut les affaires dont des display_events/tâches/BL existent à la date demandée
+  // Les affaires masquées (planning_hidden_affaires) sont incluses avec hidden=true
+  // pour permettre la résolution nom/client dans les display events
   app.get('/api/communication/planning-affaires', authenticateToken, cacheMiddleware(listCache, (req) => `planning-affaires-${req.query.date || ''}-${req.query.dateFrom || ''}-${req.query.dateTo || ''}`, 15_000), (req, res) => {
     try {
       const { date, dateFrom, dateTo } = req.query;
@@ -1475,41 +1477,47 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       let query, params;
 
       if (date) {
-        // Affaires dont la période couvre cette date ET qui ont des tâches, BL ou événements
+        // Affaires dont la période couvre cette date OU qui ont des événements/tâches/BL à cette date
         query = `
-          SELECT a.*, 
+          SELECT DISTINCT a.*, 
             (SELECT COUNT(*) FROM bl_imports WHERE affaire_id = a.numero_affaire) as bl_count,
             (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
             (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
           FROM affaires a
-          WHERE a.date_debut <= ?
-            AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?)
-            AND (
-              EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
-              OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
-              OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
-            )
+          WHERE (
+            (a.date_debut <= ? AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?))
+            OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire AND date = ?)
+            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND date = ?)
+          )
+          AND (
+            EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
+            OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
+            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
+          )
           ORDER BY a.type, a.date_debut
         `;
-        params = [date, date];
+        params = [date, date, date, date];
       } else if (dateFrom && dateTo) {
-        // Affaires dont la période chevauche la plage ET qui ont des tâches, BL ou événements
+        // Affaires dont la période chevauche la plage OU qui ont des événements/tâches dans la plage
         query = `
-          SELECT a.*, 
+          SELECT DISTINCT a.*, 
             (SELECT COUNT(*) FROM bl_imports WHERE affaire_id = a.numero_affaire) as bl_count,
             (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
             (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
           FROM affaires a
-          WHERE a.date_debut <= ?
-            AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?)
-            AND (
-              EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
-              OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
-              OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
-            )
+          WHERE (
+            (a.date_debut <= ? AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?))
+            OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire AND date >= ? AND date <= ?)
+            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND date >= ? AND date <= ?)
+          )
+          AND (
+            EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
+            OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
+            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
+          )
           ORDER BY a.type, a.date_debut
         `;
-        params = [dateTo, dateFrom];
+        params = [dateTo, dateFrom, dateFrom, dateTo, dateFrom, dateTo];
       } else {
         // Sans filtre de date : toutes les affaires actives (non archivées) avec activité
         const today = new Date().toISOString().slice(0, 10);
@@ -1532,13 +1540,17 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
       const affaires = db.prepare(query).all(...params);
 
-      // Filtrer les affaires masquées de la planification
+      // Marquer les affaires masquées de la planification (au lieu de les exclure)
+      // Elles restent disponibles pour la résolution nom/client dans les display events
       const hiddenSet = new Set(
         db.prepare('SELECT numero_affaire FROM planning_hidden_affaires').all().map(r => r.numero_affaire)
       );
-      const visible = affaires.filter(a => !hiddenSet.has(a.numero_affaire));
+      const result = affaires.map(a => ({
+        ...a,
+        planning_hidden: hiddenSet.has(a.numero_affaire) ? 1 : 0,
+      }));
 
-      res.json(visible);
+      res.json(result);
     } catch (error) {
       logger.error('GET /api/communication/planning-affaires error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });

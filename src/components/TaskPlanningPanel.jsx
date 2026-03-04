@@ -133,10 +133,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [newTaskPerson, setNewTaskPerson] = useState('');
   const [showPdfExport, setShowPdfExport] = useState(false);
   const [displayEvents, setDisplayEvents] = useState([]);
-  // Personnel assignment popover for display events
-  const [assigningEventId, setAssigningEventId] = useState(null);
-  // Personnel assignment popover for tasks
-  const [assigningTaskId, setAssigningTaskId] = useState(null);
+  // Multi-assignment
+  const [planningAssignments, setPlanningAssignments] = useState([]);
+  const [assigningEntity, setAssigningEntity] = useState(null); // "task:123" | "display_event:456" | "affaire:AF1234"
   // RDV detail expansion
   const [expandedRdv, setExpandedRdv] = useState(null);
   // EventTaskModal
@@ -188,12 +187,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       setTasks(data);
       setDisplayEvents(Array.isArray(events) ? events : []);
       setAffaires(Array.isArray(affairesData) ? affairesData : []);
-      // Charger les statuts des événements planning (Google/iCal/RDV)
+      // Charger statuts + multi-affectations en parallèle
       try {
-        const statuses = await api.getPlanningEventStatuses();
+        const [statuses, assignments] = await Promise.all([
+          api.getPlanningEventStatuses().catch(() => []),
+          api.getPlanningAssignments().catch(() => []),
+        ]);
         const map = new Map();
         (Array.isArray(statuses) ? statuses : []).forEach(s => map.set(`${s.eventType}:${s.eventId}`, s.status));
         setEventStatuses(map);
+        setPlanningAssignments(Array.isArray(assignments) ? assignments : []);
       } catch { /* ignore */ }
       initialLoadDone.current = true;
     } catch (err) {
@@ -633,6 +636,17 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     return map;
   }, [displayEvents]);
 
+  // Map multi-affectations : "entityType:entityId" → [{id, personId, firstName, lastName}]
+  const assignmentsByEntity = useMemo(() => {
+    const map = new Map();
+    (planningAssignments || []).forEach(a => {
+      const key = `${a.entityType}:${a.entityId}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(a);
+    });
+    return map;
+  }, [planningAssignments]);
+
   // Affaires groupées par section de préparation
   const affairesBySection = useMemo(() => {
     const groups = {};
@@ -650,28 +664,60 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     return groups;
   }, [enrichedAffaires]);
 
-  // Assigner un personnel à un événement d'affichage
-  const handleAssignPerson = async (eventId, personId) => {
+  // Toggle multi-affectation (ajouter ou retirer une personne)
+  const handleToggleAssignment = async (entityType, entityId, personId) => {
     try {
-      await api.assignDisplayEvent(eventId, personId || null);
-      toast.success('Personnel affecté');
-      setAssigningEventId(null);
-      loadTasks(true);
+      const key = `${entityType}:${entityId}`;
+      const existing = assignmentsByEntity.get(key) || [];
+      const found = existing.find(a => a.personId === personId);
+      if (found) {
+        await api.removePlanningAssignment(found.id);
+      } else {
+        await api.addPlanningAssignment(entityType, entityId, personId);
+      }
+      // Recharger les affectations
+      const updated = await api.getPlanningAssignments();
+      setPlanningAssignments(Array.isArray(updated) ? updated : []);
     } catch (err) {
       toast.error('Erreur affectation');
     }
   };
 
-  // Assigner un personnel à une tâche
-  const handleAssignTaskPerson = async (taskId, personId) => {
-    try {
-      await api.updateTask(taskId, { person_id: personId || null });
-      toast.success('Personnel affecté');
-      setAssigningTaskId(null);
-      loadTasks(true);
-    } catch (err) {
-      toast.error('Erreur affectation');
-    }
+  // Composant d'affectation multi-personnel partagé par les 3 renderers
+  const renderMultiAssign = (entityType, entityId) => {
+    const key = `${entityType}:${entityId}`;
+    const assignments = assignmentsByEntity.get(key) || [];
+    const isOpen = assigningEntity === key;
+
+    return (
+      <div className="event-assign-container">
+        <div className="multi-assign-chips">
+          {assignments.map(a => (
+            <span key={a.id} className="task-person assigned" onClick={() => setAssigningEntity(isOpen ? null : key)}>
+              <User size={11} />
+              {a.firstName} {a.lastName?.charAt(0)}.
+            </span>
+          ))}
+          <button className="btn-assign" onClick={() => setAssigningEntity(isOpen ? null : key)} title="Affecter du personnel">
+            <UserPlus size={13} />
+          </button>
+        </div>
+        {isOpen && (
+          <div className="assign-dropdown">
+            <div className="assign-dropdown-title">Multi-affectation :</div>
+            {persons.map(p => {
+              const isAssigned = assignments.some(a => a.personId === p.id);
+              return (
+                <div key={p.id} className={`assign-option ${isAssigned ? 'selected' : ''}`} onClick={() => handleToggleAssignment(entityType, entityId, p.id)}>
+                  <span className={`assign-check ${isAssigned ? 'on' : ''}`}>{isAssigned ? <Check size={12} /> : null}</span>
+                  {p.firstName || p.prenom} {p.lastName || p.nom}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
   };
 
 
@@ -886,34 +932,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <div className="task-actions">
-          {/* Affectation personnel */}
-          <div className="event-assign-container">
-            {task.personFirstName ? (
-              <span className="task-person assigned" onClick={() => setAssigningTaskId(assigningTaskId === task.id ? null : task.id)}>
-                <User size={12} />
-                {task.personFirstName} {task.personLastName?.charAt(0)}.
-              </span>
-            ) : (
-              <button className="btn-assign" onClick={() => setAssigningTaskId(assigningTaskId === task.id ? null : task.id)} title="Affecter un personnel">
-                <UserPlus size={13} />
-              </button>
-            )}
-            {assigningTaskId === task.id && (
-              <div className="assign-dropdown">
-                <div className="assign-dropdown-title">Affecter à :</div>
-                {task.personId && (
-                  <div className="assign-option unassign" onClick={() => handleAssignTaskPerson(task.id, null)}>
-                    <X size={12} /> Retirer l'affectation
-                  </div>
-                )}
-                {persons.map(p => (
-                  <div key={p.id} className="assign-option" onClick={() => handleAssignTaskPerson(task.id, p.id)}>
-                    <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Multi-affectation personnel */}
+          {renderMultiAssign('task', task.id)}
           <button
             className={`toggle-visible ${isHidden ? 'off' : ''}`}
             onClick={() => handleToggleTaskVisible(task)}
@@ -994,34 +1014,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <div className="task-actions">
-          {/* Affectation personnel */}
-          <div className="event-assign-container">
-            {event.assigned_person_first_name ? (
-              <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)}>
-                <User size={12} />
-                {event.assigned_person_first_name} {event.assigned_person_last_name?.charAt(0)}.
-              </span>
-            ) : (
-              <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)} title="Affecter un personnel">
-                <UserPlus size={13} />
-              </button>
-            )}
-            {assigningEventId === event.id && (
-              <div className="assign-dropdown">
-                <div className="assign-dropdown-title">Affecter à :</div>
-                {event.assigned_person_id && (
-                  <div className="assign-option unassign" onClick={() => handleAssignPerson(event.id, null)}>
-                    <X size={12} /> Retirer l'affectation
-                  </div>
-                )}
-                {persons.map(p => (
-                  <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(event.id, p.id)}>
-                    <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Multi-affectation personnel */}
+          {renderMultiAssign('display_event', event.id)}
           <button
             className={`toggle-visible ${isHidden ? 'off' : ''}`}
             onClick={() => handleToggleDisplayEventVisible(event)}
@@ -1111,40 +1105,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <div className="task-actions rdv-actions">
-          {/* Affectation personnel via display event lié */}
-          {(() => {
-            const de = displayEventByAffaire.get(affaire.numeroAffaire);
-            if (!de) return null;
-            return (
-              <div className="event-assign-container">
-                {de.assignedPersonFirstName ? (
-                  <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === de.id ? null : de.id)}>
-                    <User size={12} />
-                    {de.assignedPersonFirstName} {de.assignedPersonLastName?.charAt(0)}.
-                  </span>
-                ) : (
-                  <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === de.id ? null : de.id)} title="Affecter un personnel">
-                    <UserPlus size={13} />
-                  </button>
-                )}
-                {assigningEventId === de.id && (
-                  <div className="assign-dropdown">
-                    <div className="assign-dropdown-title">Affecter à :</div>
-                    {de.assignedPersonId && (
-                      <div className="assign-option unassign" onClick={() => handleAssignPerson(de.id, null)}>
-                        <X size={12} /> Retirer l'affectation
-                      </div>
-                    )}
-                    {persons.map(p => (
-                      <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(de.id, p.id)}>
-                        <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
+          {/* Multi-affectation personnel directe sur l'affaire */}
+          {renderMultiAssign('affaire', affaire.numeroAffaire)}
           <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
             <Eye size={14} />
           </button>

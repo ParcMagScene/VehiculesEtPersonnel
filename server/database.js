@@ -1909,6 +1909,20 @@ function initializeDatabase() {
       )
     `);
 
+    // Table planning_assignments : affectation multi-personnel générique
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS planning_assignments (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        entity_type TEXT NOT NULL CHECK(entity_type IN ('affaire', 'display_event', 'task')),
+        entity_id TEXT NOT NULL,
+        person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+        created_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(entity_type, entity_id, person_id)
+      )
+    `);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_pa_entity ON planning_assignments(entity_type, entity_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_pa_person ON planning_assignments(person_id)');
+
     // Migration : ajout colonne visible si absente
     const taCols = db.pragma('table_info(task_assignments)');
     if (!taCols.find(c => c.name === 'visible')) {

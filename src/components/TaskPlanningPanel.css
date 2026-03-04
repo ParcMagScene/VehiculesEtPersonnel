@@ -884,10 +884,18 @@
   min-width: 90px;
 }
 
-/* ═══ Personnel assignment dropdown ═══ */
+/* ═══ Personnel multi-assignment ═══ */
 .task-planning-panel .event-assign-container {
   position: relative;
   flex-shrink: 0;
+}
+
+.task-planning-panel .multi-assign-chips {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  max-width: 180px;
 }
 
 .task-planning-panel .btn-assign {
@@ -975,6 +983,38 @@
 
 .task-planning-panel .assign-option.unassign:hover {
   background: rgba(239, 68, 68, 0.06);
+}
+
+/* Selected person in multi-assign dropdown */
+.task-planning-panel .assign-option.selected {
+  background: rgba(99, 102, 241, 0.10);
+  font-weight: 600;
+  color: var(--theme-primary);
+}
+
+.task-planning-panel .assign-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1.5px solid var(--theme-border);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.task-planning-panel .assign-check.on {
+  background: var(--theme-primary);
+  border-color: var(--theme-primary);
+  color: #fff;
+}
+
+/* Smaller chips for multi-assign */
+.task-planning-panel .multi-assign-chips .task-person.assigned {
+  padding: 1px 6px;
+  font-size: 0.72rem;
+  gap: 2px;
 }
 
 

@@ -2097,6 +2097,101 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     return count;
   }
 
+  // ═══════════════════════════════════════════════
+  // MULTI-AFFECTATION PERSONNEL (planning_assignments)
+  // ═══════════════════════════════════════════════
+
+  // GET /api/communication/planning-assignments?entity_type=affaire&entity_ids=AF123,AF456
+  // ou ?entity_type=display_event&entity_ids=abc,def
+  // ou sans filtre → tous
+  app.get('/api/communication/planning-assignments', authenticateToken, (req, res) => {
+    try {
+      let query = `
+        SELECT pa.*, p.first_name, p.last_name
+        FROM planning_assignments pa
+        LEFT JOIN persons p ON p.id = pa.person_id
+        WHERE 1=1
+      `;
+      const params = [];
+      if (req.query.entity_type) {
+        query += ' AND pa.entity_type = ?';
+        params.push(req.query.entity_type);
+      }
+      if (req.query.entity_ids) {
+        const ids = req.query.entity_ids.split(',');
+        query += ` AND pa.entity_id IN (${ids.map(() => '?').join(',')})`;
+        params.push(...ids);
+      }
+      query += ' ORDER BY pa.created_at ASC';
+      const rows = db.prepare(query).all(...params);
+      res.json(rows);
+    } catch (error) {
+      logger.error('GET /api/communication/planning-assignments error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // POST /api/communication/planning-assignments
+  // Body: { entity_type, entity_id, person_id }
+  app.post('/api/communication/planning-assignments', authenticateToken, (req, res) => {
+    try {
+      const { entity_type, entity_id, person_id } = req.body;
+      if (!entity_type || !entity_id || !person_id) {
+        return res.status(400).json({ error: 'entity_type, entity_id et person_id requis' });
+      }
+      const id = crypto.randomUUID().replace(/-/g, '');
+      db.prepare(`
+        INSERT OR IGNORE INTO planning_assignments (id, entity_type, entity_id, person_id)
+        VALUES (?, ?, ?, ?)
+      `).run(id, entity_type, entity_id, person_id);
+      // Retourner toutes les affectations pour cette entité
+      const assignments = db.prepare(`
+        SELECT pa.*, p.first_name, p.last_name
+        FROM planning_assignments pa
+        LEFT JOIN persons p ON p.id = pa.person_id
+        WHERE pa.entity_type = ? AND pa.entity_id = ?
+        ORDER BY pa.created_at ASC
+      `).all(entity_type, entity_id);
+      res.json(assignments);
+    } catch (error) {
+      logger.error('POST /api/communication/planning-assignments error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // DELETE /api/communication/planning-assignments/:id
+  app.delete('/api/communication/planning-assignments/:id', authenticateToken, (req, res) => {
+    try {
+      const row = db.prepare('SELECT * FROM planning_assignments WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Affectation non trouvée' });
+      db.prepare('DELETE FROM planning_assignments WHERE id = ?').run(req.params.id);
+      // Retourner les affectations restantes pour cette entité
+      const assignments = db.prepare(`
+        SELECT pa.*, p.first_name, p.last_name
+        FROM planning_assignments pa
+        LEFT JOIN persons p ON p.id = pa.person_id
+        WHERE pa.entity_type = ? AND pa.entity_id = ?
+        ORDER BY pa.created_at ASC
+      `).all(row.entity_type, row.entity_id);
+      res.json(assignments);
+    } catch (error) {
+      logger.error('DELETE /api/communication/planning-assignments error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // DELETE /api/communication/planning-assignments/entity/:type/:id — supprimer toutes les affectations d'une entité
+  app.delete('/api/communication/planning-assignments/entity/:type/:id', authenticateToken, (req, res) => {
+    try {
+      db.prepare('DELETE FROM planning_assignments WHERE entity_type = ? AND entity_id = ?')
+        .run(req.params.type, req.params.id);
+      res.json([]);
+    } catch (error) {
+      logger.error('DELETE /api/communication/planning-assignments/entity error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
   // ═══ Cron automatique : tous les jours à 18h ═══
   function scheduleRolloverCron() {
     const check = () => {

@@ -134,15 +134,16 @@
   flex-shrink: 0;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-nom {
-  flex: 1 1 0;
+  flex: 1.2 1 0;
   min-width: 80px;
+  max-width: 320px;
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-client {
-  flex: 0 1 auto;
-  max-width: 180px;
+  flex: 1 1 0;
   min-width: 60px;
+  max-width: 220px;
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
@@ -691,10 +692,11 @@
   min-width: 95px;
   width: 95px;
 }
-/* Col: Nom (prend l'espace restant, partagé avec Client) */
+/* Col: Nom (partage l'espace flexible avec Client) */
 .task-planning-panel .ev-col-nom {
-  flex: 1 1 0;
+  flex: 1.2 1 0;
   min-width: 80px;
+  max-width: 320px;
   font-weight: 600;
   font-size: 1.05rem;
   color: var(--theme-text-primary);
@@ -703,11 +705,11 @@
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
-/* Col: Client */
+/* Col: Client (partage l'espace flexible avec Nom) */
 .task-planning-panel .ev-col-client {
-  flex: 0 1 auto;
-  max-width: 180px;
+  flex: 1 1 0;
   min-width: 60px;
+  max-width: 220px;
   font-size: 0.92rem;
   color: var(--theme-text-secondary);
   overflow: hidden;

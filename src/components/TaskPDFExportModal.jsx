@@ -75,11 +75,27 @@ const mapAffaireToSection = (affaire) => {
   return info ? info.section : 'manual';
 };
 
-function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], googleRdvEvents = [], onClose }) {
+function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], googleRdvEvents = [], planningAssignments = [], persons = [], onClose }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [pdfUrl, setPdfUrl] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+
+  // ── Map multi-affectations : "entityType:entityId" → [{personId, firstName, lastName}] ──
+  const assignmentsByEntity = useMemo(() => {
+    const map = new Map();
+    (planningAssignments || []).forEach(a => {
+      const key = `${a.entityType}:${a.entityId}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(a);
+    });
+    return map;
+  }, [planningAssignments]);
+
+  // Helper: get assigned persons for an entity
+  const getAssignments = useCallback((entityType, entityId) => {
+    return assignmentsByEntity.get(`${entityType}:${entityId}`) || [];
+  }, [assignmentsByEntity]);
 
   // ── Construire les items par section (identique au planning) ──
   const { allItems, grouped, activeSections } = useMemo(() => {
@@ -332,14 +348,23 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const task = item.data;
       const isDone = task.status === 'done';
       const displayTitle = cleanTaskTitle(task);
+      const assignments = getAssignments('task', task.id);
       return (
         <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <span className="task-cb-status" title={STATUS_LABELS[task.status]}>{STATUS_ICONS[task.status]}</span>
           <span className={`task-cb-title ${isDone ? 'done' : ''}`}>{displayTitle}</span>
-          {(task.personFirstName || task.personLastName) && (
+          {assignments.length > 0 ? (
+            <span className="task-cb-persons">
+              {assignments.map(a => (
+                <span key={a.personId} className="task-cb-person-chip" title={`${a.firstName} ${a.lastName || ''}`}>
+                  {a.firstName?.charAt(0)}{a.lastName?.charAt(0) || ''}
+                </span>
+              ))}
+            </span>
+          ) : (task.personFirstName || task.personLastName) ? (
             <span className="task-cb-person"><User size={10} /> {task.personFirstName} {task.personLastName?.charAt(0)}.</span>
-          )}
+          ) : null}
         </div>
       );
     }
@@ -347,12 +372,23 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     if (item.type === 'affaire' || item.type === 'affaire-rdv') {
       const a = item.data;
       const ti = AFFAIRE_TYPE_INFO[a.type] || { label: a.type || 'Affaire', emoji: '📋' };
+      const assignments = getAssignments('affaire', a.id);
       return (
         <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <Briefcase size={11} style={{ color: 'var(--theme-purple-accent)', flexShrink: 0 }} />
           <span className="task-cb-title">{ti.emoji} {a.numeroAffaire} — {a.client || 'Sans client'}</span>
-          {a.adresseLivraison && <span className="task-cb-person"><MapPin size={10} /> {a.adresseLivraison.split('\n')[0].slice(0, 25)}</span>}
+          {assignments.length > 0 ? (
+            <span className="task-cb-persons">
+              {assignments.map(as => (
+                <span key={as.personId} className="task-cb-person-chip" title={`${as.firstName} ${as.lastName || ''}`}>
+                  {as.firstName?.charAt(0)}{as.lastName?.charAt(0) || ''}
+                </span>
+              ))}
+            </span>
+          ) : a.adresseLivraison ? (
+            <span className="task-cb-person"><MapPin size={10} /> {a.adresseLivraison.split('\n')[0].slice(0, 25)}</span>
+          ) : null}
         </div>
       );
     }
@@ -360,6 +396,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     if (item.type === 'event') {
       const ev = item.data;
       const ti = EVENT_TYPES[ev.type] || { label: ev.type || 'Événement', emoji: '📌' };
+      const assignments = getAssignments('display_event', ev.id);
       // Dans les sections affaireOnly, ne pas répéter le type
       const displayText = isAffaireOnly
         ? [ev.affaireId, ev.client].filter(Boolean).join(' — ') || ti.label
@@ -369,7 +406,17 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <span className="task-cb-status">{isAffaireOnly ? '' : ti.emoji}</span>
           <span className="task-cb-title">{displayText}</span>
-          {ev.location && <span className="task-cb-person"><MapPin size={10} /> {ev.location.slice(0, 20)}</span>}
+          {assignments.length > 0 ? (
+            <span className="task-cb-persons">
+              {assignments.map(as => (
+                <span key={as.personId} className="task-cb-person-chip" title={`${as.firstName} ${as.lastName || ''}`}>
+                  {as.firstName?.charAt(0)}{as.lastName?.charAt(0) || ''}
+                </span>
+              ))}
+            </span>
+          ) : ev.location ? (
+            <span className="task-cb-person"><MapPin size={10} /> {ev.location.slice(0, 20)}</span>
+          ) : null}
         </div>
       );
     }

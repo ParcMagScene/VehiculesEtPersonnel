@@ -277,6 +277,32 @@
   white-space: nowrap;
 }
 
+/* Multi-assignment person chips */
+.task-cb-persons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.task-cb-person-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--theme-primary, #3b82f6);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  cursor: default;
+}
+.task-checkbox-row.done .task-cb-person-chip {
+  opacity: 0.5;
+}
+
 .empty-selection {
   display: flex;
   align-items: center;

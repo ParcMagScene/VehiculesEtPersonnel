@@ -1495,6 +1495,10 @@ class ApiClient {
     return this.request(`/communication/planning-hidden-affaires/${encodeURIComponent(numeroAffaire)}`, { method: 'POST' });
   }
 
+  async cycleAffaireStatus(numeroAffaire) {
+    return this.request(`/communication/planning-affaires/${encodeURIComponent(numeroAffaire)}/cycle-status`, { method: 'PATCH' });
+  }
+
   async unhidePlanningAffaire(numeroAffaire) {
     return this.request(`/communication/planning-hidden-affaires/${encodeURIComponent(numeroAffaire)}`, { method: 'DELETE' });
   }

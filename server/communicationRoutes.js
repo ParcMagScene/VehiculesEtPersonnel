@@ -1545,14 +1545,38 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const hiddenSet = new Set(
         db.prepare('SELECT numero_affaire FROM planning_hidden_affaires').all().map(r => r.numero_affaire)
       );
+      // Récupérer les statuts de traitement des affaires
+      const statusMap = new Map(
+        db.prepare('SELECT numero_affaire, status FROM planning_affaire_status').all().map(r => [r.numero_affaire, r.status])
+      );
       const result = affaires.map(a => ({
         ...a,
         planning_hidden: hiddenSet.has(a.numero_affaire) ? 1 : 0,
+        planning_status: statusMap.get(a.numero_affaire) || 'pending',
       }));
 
       res.json(result);
     } catch (error) {
       logger.error('GET /api/communication/planning-affaires error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── PATCH /api/communication/planning-affaires/:num/cycle-status ───
+  // Basculer le statut de traitement d'une affaire (pending → in_progress → done → pending)
+  app.patch('/api/communication/planning-affaires/:num/cycle-status', authenticateToken, (req, res) => {
+    try {
+      const num = req.params.num;
+      const existing = db.prepare('SELECT status FROM planning_affaire_status WHERE numero_affaire = ?').get(num);
+      const currentStatus = existing?.status || 'pending';
+      const nextStatus = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
+      const newStatus = nextStatus[currentStatus] || 'pending';
+      db.prepare(`INSERT INTO planning_affaire_status (numero_affaire, status, updated_at) VALUES (?, ?, datetime('now'))
+        ON CONFLICT(numero_affaire) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at`
+      ).run(num, newStatus);
+      res.json({ numero_affaire: num, status: newStatus });
+    } catch (error) {
+      logger.error('PATCH /api/communication/planning-affaires/:num/cycle-status error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });

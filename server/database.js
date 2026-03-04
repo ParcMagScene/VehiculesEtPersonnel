@@ -1889,6 +1889,15 @@ function initializeDatabase() {
       )
     `);
 
+    // Table planning_affaire_status: statut de traitement des affaires dans la planification
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS planning_affaire_status (
+        numero_affaire TEXT PRIMARY KEY,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+
     // Migration : ajout colonne visible si absente
     const taCols = db.pragma('table_info(task_assignments)');
     if (!taCols.find(c => c.name === 'visible')) {

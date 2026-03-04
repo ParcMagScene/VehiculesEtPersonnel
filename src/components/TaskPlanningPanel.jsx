@@ -1022,12 +1022,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         onClick={() => openAffaireTaskModal(affaire)}
         style={{ cursor: 'pointer' }}
       >
-        <span
+        <button
           className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
-          title={isProcessed ? 'Tâches définies' : 'Aucune tâche encore'}
+          title={isProcessed ? 'Tâches définies' : 'Définir les tâches'}
+          onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}
         >
-          {isProcessed ? <Check size={14} /> : <Briefcase size={12} />}
-        </span>
+          {isProcessed && <Check size={14} />}
+        </button>
 
         <span className="ev-col ev-col-affaire">
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { /* stop propagation handled by AffaireBadge */ onNavigateToEntity('affaire', { numero: num }); } : undefined} />
@@ -1109,14 +1110,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         key={`gcal-rdv-${event.id}`}
         className={`task-row event-row-cols google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
       >
-        <span
+        <button
           className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
           style={{ cursor: 'pointer' }}
           onClick={() => setEventTaskModalEvent(event)}
           title={isProcessed ? 'Tâches définies — cliquer pour modifier' : 'Définir les tâches'}
         >
-          {isProcessed ? <Check size={14} /> : <Calendar size={12} />}
-        </span>
+          {isProcessed && <Check size={14} />}
+        </button>
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
@@ -1227,7 +1228,6 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     return (
       <div key={`rdv-${affaire.numeroAffaire}`} className="task-row event-row-cols rdv-row" style={{ flexWrap: 'wrap' }}>
         <span className="ev-col task-status-btn" title="Rendez-vous">
-          <Calendar size={12} />
         </span>
 
         <span className="ev-col ev-col-affaire">
@@ -1317,14 +1317,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         key={`ical-${event.id}-${startDT}`}
         className={`task-row event-row-cols ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
       >
-        <span
+        <button
           className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
           style={{ cursor: 'pointer' }}
           onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}
           title={isProcessed ? 'Tâches définies — cliquer pour modifier' : 'Définir les tâches'}
         >
-          {isProcessed ? <Check size={14} /> : <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />}
-        </span>
+          {isProcessed && <Check size={14} />}
+        </button>
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>

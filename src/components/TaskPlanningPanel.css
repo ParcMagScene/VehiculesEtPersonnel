@@ -123,47 +123,43 @@
   text-overflow: ellipsis;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-status {
-  width: 22px;
-  margin-right: 2px;
+  width: 28px;
+  flex: 0 0 28px;
   text-align: center;
-  flex-shrink: 0;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-affaire {
-  min-width: 95px;
-  width: 95px;
-  flex-shrink: 0;
+  width: 110px;
+  flex: 0 0 110px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-nom {
-  flex: 1.2 1 0;
-  min-width: 80px;
-  max-width: 320px;
+  flex: 1 1 180px;
+  min-width: 140px;
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-client {
-  flex: 1 1 0;
-  min-width: 60px;
-  max-width: 220px;
+  width: 160px;
+  flex: 0 0 160px;
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-date {
-  min-width: 110px;
-  width: 110px;
+  width: 120px;
+  flex: 0 0 120px;
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-time {
-  min-width: 135px;
-  width: 135px;
+  width: 140px;
+  flex: 0 0 140px;
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-actions {
-  margin-left: auto;
+  width: 160px;
+  flex: 0 0 160px;
   padding-left: 8px;
   border-left: 1px solid var(--theme-border);
-  min-width: 80px;
   text-align: center;
 }
 
@@ -181,6 +177,7 @@
   border-radius: 10px 10px 0 0;
   border: 1px solid var(--theme-border);
   border-bottom: 2px solid var(--theme-border);
+  transition: background 0.15s;
 }
 
 .task-planning-panel .section-header h4 {
@@ -199,7 +196,7 @@
   padding: 2px 8px;
   border-radius: 10px;
   background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  color: #fff;
 }
 
 /* Task row */
@@ -311,10 +308,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-shrink: 0;
-  margin-left: auto;
+  width: 160px;
+  flex: 0 0 160px;
   padding-left: 8px;
   border-left: 1px solid var(--theme-border);
+  justify-content: flex-end;
 }
 
 .task-planning-panel .task-actions button {
@@ -681,22 +679,20 @@
 }
 /* Col: Coche / Dot (icône) */
 .task-planning-panel .ev-col-dot {
-  width: 24px;
+  width: 28px;
+  flex: 0 0 28px;
   padding: 0 2px 0 0;
   justify-content: center;
-  flex-shrink: 0;
 }
 /* Col: N° Affaire (largeur fixe pour alignement) */
 .task-planning-panel .ev-col-affaire {
-  flex-shrink: 0;
-  min-width: 95px;
-  width: 95px;
+  width: 110px;
+  flex: 0 0 110px;
 }
-/* Col: Nom (partage l'espace flexible avec Client) */
+/* Col: Nom (seul flex pour absorber l'espace restant) */
 .task-planning-panel .ev-col-nom {
-  flex: 1.2 1 0;
-  min-width: 80px;
-  max-width: 320px;
+  flex: 1 1 180px;
+  min-width: 140px;
   font-weight: 600;
   font-size: 1.05rem;
   color: var(--theme-text-primary);
@@ -705,11 +701,10 @@
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
-/* Col: Client (partage l'espace flexible avec Nom) */
+/* Col: Client (largeur fixe) */
 .task-planning-panel .ev-col-client {
-  flex: 1 1 0;
-  min-width: 60px;
-  max-width: 220px;
+  width: 160px;
+  flex: 0 0 160px;
   font-size: 0.92rem;
   color: var(--theme-text-secondary);
   overflow: hidden;
@@ -721,8 +716,8 @@
 .task-planning-panel .ev-col-date {
   color: var(--theme-text-secondary);
   font-size: 0.9rem;
-  min-width: 110px;
-  width: 110px;
+  width: 120px;
+  flex: 0 0 120px;
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
@@ -730,8 +725,8 @@
 .task-planning-panel .ev-col-time {
   color: var(--theme-text-secondary);
   font-size: 0.9rem;
-  min-width: 135px;
-  width: 135px;
+  width: 140px;
+  flex: 0 0 140px;
   border-left: 1px solid var(--theme-border);
   padding-left: 10px;
 }
@@ -789,6 +784,7 @@
   height: 22px;
   padding: 0;
   margin-right: 2px;
+  flex: 0 0 28px;
 }
 
 /* Badge origine iCal */

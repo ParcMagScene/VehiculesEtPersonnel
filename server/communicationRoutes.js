@@ -651,6 +651,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
                dde.category AS event_category,
                dde.client AS event_client,
                dde.location AS event_location,
+               dde.status AS event_status,
                p.first_name AS person_first_name,
                p.last_name AS person_last_name
         FROM task_assignments ta
@@ -660,6 +661,9 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         ORDER BY ta.section ASC, ta.period ASC, ta.time ASC
       `).all(date);
 
+      // Exclure les tâches terminées du PDF (tâche done OU display event lié done)
+      tasks = tasks.filter(t => t.status !== 'done' && t.event_status !== 'done');
+
       if (taskIds) {
         const ids = taskIds.split(',').map(Number).filter(n => !isNaN(n));
         if (ids.length > 0) {
@@ -668,23 +672,17 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         }
       }
 
-      // ── 2) Charger les affaires ──
-      let affaires = [];
-      if (affaireIds) {
-        const ids = affaireIds.split(',').map(Number).filter(n => !isNaN(n));
-        if (ids.length > 0) {
-          const placeholders = ids.map(() => '?').join(',');
-          affaires = db.prepare(`SELECT * FROM affaires WHERE id IN (${placeholders})`).all(...ids);
-        }
-      }
+      // Affaires exclues de l'export PDF (seules les tâches sont pertinentes)
+      const affaires = [];
 
-      // ── 3) Charger les événements d'affichage ──
+      // ── 3) Charger les événements d'affichage (exclure les terminés) ──
       let displayEvts = [];
       if (eventIds) {
         const ids = eventIds.split(',').map(Number).filter(n => !isNaN(n));
         if (ids.length > 0) {
           const placeholders = ids.map(() => '?').join(',');
           displayEvts = db.prepare(`SELECT * FROM dynamic_display_events WHERE id IN (${placeholders})`).all(...ids);
+          displayEvts = displayEvts.filter(ev => ev.status !== 'done');
         }
       }
 
@@ -885,9 +883,9 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         }
       });
 
-      // Display events
+      // Display events (exclure les terminés)
       const linkedEventIds = new Set(tasks.filter(t => t.display_event_id).map(t => t.display_event_id));
-      displayEvts.filter(ev => !linkedEventIds.has(ev.id)).forEach(ev => {
+      displayEvts.filter(ev => !linkedEventIds.has(ev.id) && ev.status !== 'done').forEach(ev => {
         let sec = EVENT_TYPE_MAP[ev.type] || 'manual';
         if (ev.type === 'preparation') {
           if (ev.category === 'prestation') sec = 'prep_prestations';

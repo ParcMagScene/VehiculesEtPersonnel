@@ -1105,8 +1105,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
     const affaireClient = linkedAff?.client || '';
-    // Titre original tel qu'il apparaît dans Google Agenda
-    const displayNom = summary;
+    // Titre : retirer le n° d'affaire (déjà affiché dans le badge)
+    let displayNom = summary;
+    if (affaireNum) {
+      displayNom = summary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]+\s*/, '').replace(/\s*[-—–:]+\s*$/, '').trim() || summary;
+    }
 
     // Filtrer les affaires pour la recherche manuelle
     const linkableAffaires = isLinking && linkSearchQuery.length >= 2
@@ -1312,8 +1315,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
     const affaireClient = linkedAff?.client || '';
-    // Titre original tel qu'il apparaît dans le calendrier
-    const displayNom = event.summary || 'Événement';
+    // Titre : retirer le n° d'affaire (déjà affiché dans le badge)
+    let displayNom = event.summary || 'Événement';
+    if (affaireNum) {
+      displayNom = displayNom.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]+\s*/, '').replace(/\s*[-—–:]+\s*$/, '').trim() || displayNom;
+    }
 
     const linkableAffaires = isLinking && linkSearchQuery.length >= 2
       ? affaires.filter(a => {

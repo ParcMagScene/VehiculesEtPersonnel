@@ -201,7 +201,9 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
 
       await api.createTasksBatch(tasksToCreate);
       toast.success(`${tasksToCreate.length} tâche${tasksToCreate.length > 1 ? 's' : ''} créée${tasksToCreate.length > 1 ? 's' : ''}`);
-      onSave?.();
+      // Passer la date de la première tâche pour naviguer automatiquement
+      const firstTaskDate = tasksToCreate[0]?.date || null;
+      onSave?.(firstTaskDate);
       onClose();
     } catch (err) {
       console.error('Erreur sauvegarde tâches:', err);

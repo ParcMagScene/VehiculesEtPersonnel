@@ -11,7 +11,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import PDFDocument from 'pdfkit';
 import logger from './logger.js';
-import { statsCache, listCache, icalCache, cacheMiddleware } from './cache.js';
+import { statsCache, listCache, icalCache, cacheMiddleware, invalidateEntity } from './cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -304,6 +304,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
               req.user.id
             );
             affaireCreated = true;
+            // Invalider le cache pour que GET /api/affaires retourne la nouvelle affaire
+            invalidateEntity('affaires');
           } catch (affaireErr) {
             // Si erreur UNIQUE constraint (race condition), l'affaire a été créée entre-temps → OK
             if (!affaireErr.message?.includes('UNIQUE')) {

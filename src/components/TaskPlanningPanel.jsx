@@ -1109,8 +1109,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         key={`gcal-rdv-${event.id}`}
         className={`task-row event-row-cols google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
       >
-        <span className="ev-col ev-col-dot" style={{ color: isProcessed ? '#10b981' : '#4285f4', cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>
-          <Calendar size={14} />
+        <span
+          className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setEventTaskModalEvent(event)}
+          title={isProcessed ? 'Tâches définies — cliquer pour modifier' : 'Définir les tâches'}
+        >
+          {isProcessed ? <Check size={14} /> : <Calendar size={12} />}
         </span>
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
@@ -1221,8 +1226,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
     return (
       <div key={`rdv-${affaire.numeroAffaire}`} className="task-row event-row-cols rdv-row" style={{ flexWrap: 'wrap' }}>
-        <span className="ev-col ev-col-dot" style={{ color: typeInfo.color }}>
-          <Calendar size={14} />
+        <span className="ev-col task-status-btn" title="Rendez-vous">
+          <Calendar size={12} />
         </span>
 
         <span className="ev-col ev-col-affaire">
@@ -1312,8 +1317,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         key={`ical-${event.id}-${startDT}`}
         className={`task-row event-row-cols ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
       >
-        <span className="ev-col ev-col-dot" onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>
-          <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />
+        <span
+          className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
+          style={{ cursor: 'pointer' }}
+          onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}
+          title={isProcessed ? 'Tâches définies — cliquer pour modifier' : 'Définir les tâches'}
+        >
+          {isProcessed ? <Check size={14} /> : <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />}
         </span>
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}

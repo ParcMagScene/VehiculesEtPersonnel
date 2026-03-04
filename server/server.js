@@ -2151,6 +2151,7 @@ app.get('/api/affaires', authenticateToken, cacheMiddleware(listCache, () => 'af
       return {
         id: a.id,
         numeroAffaire: a.numero_affaire,
+        nom: a.nom || '',
         type: a.type,
         client: a.client,
         interlocuteur: a.interlocuteur,
@@ -2204,6 +2205,7 @@ app.get('/api/affaires', authenticateToken, cacheMiddleware(listCache, () => 'af
       enriched.push({
         id: null, // pas d'ID en DB
         numeroAffaire: ra.affaire,
+        nom: '',
         type: 'Prestation',
         client: client,
         interlocuteur: '',

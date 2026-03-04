@@ -798,6 +798,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
     // Combiner titre + sous-titre en un seul texte compact
     const fullTitle = showSubtitle ? `${displayTitle} — ${cleanEventTitle}` : displayTitle;
+    // Nom de l'affaire liée (prioritaire) sinon titre de la tâche
+    const affaireNom = linkedAffaire?.nom || linkedAffaire?.client || '';
+    const displayNom = affaireNom || fullTitle;
 
     return (
       <div key={task.id} className={`task-row event-row-cols ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
@@ -814,9 +817,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAffaire?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
 
-        <span className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`} title={[fullTitle, showEventType && task.eventType, (task.eventLocation || linkedAffaire?.location) && '📍 ' + (task.eventLocation || linkedAffaire?.location), task.notes && '📝 ' + task.notes, (task.personFirstName || task.personLastName) && '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' ')].filter(Boolean).join('\n')}>
+        <span className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`} title={[fullTitle, affaireNom && affaireNom !== fullTitle && '📌 ' + affaireNom, showEventType && task.eventType, (task.eventLocation || linkedAffaire?.location) && '📍 ' + (task.eventLocation || linkedAffaire?.location), task.notes && '📝 ' + task.notes, (task.personFirstName || task.personLastName) && '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' ')].filter(Boolean).join('\n')}>
           {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
-          {fullTitle}
+          {displayNom}
         </span>
 
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
@@ -864,10 +867,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       ? (event.affaireId.match(/\bAF\s*\d{3,}/i) || [null])[0]?.toUpperCase()?.replace(/\s+/g, '')
       : null;
 
-    // Nom d'affichage pour la colonne Nom
-    const displayName = isTypeRedundant
+    // Nom d'affichage pour la colonne Nom — priorité au nom de l'affaire liée
+    const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
+    const affaireNom = linkedAff?.nom || linkedAff?.client || '';
+    const fallbackName = isTypeRedundant
       ? (event.client || event.affaireId || typeInfo.label)
       : `${typeInfo.label}${event.client ? ' — ' + event.client : ''}${event.affaireId && !affaireNum ? ' (' + event.affaireId + ')' : ''}`;
+    const displayName = affaireNom || fallbackName;
 
     return (
       <div key={`de-${event.id}`} className={`task-row event-row-cols display-event-row ${isHidden ? 'hidden-display' : ''}`}>
@@ -876,10 +882,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <span className="ev-col ev-col-affaire">
-          {affaireNum ? <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum)?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
+          {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
 
-        <span className="ev-col ev-col-nom" title={[displayName, event.location && '📍 ' + event.location, event.comment && '📝 ' + event.comment].filter(Boolean).join('\n')}>
+        <span className="ev-col ev-col-nom" title={[displayName, fallbackName !== displayName && fallbackName, event.location && '📍 ' + event.location, event.comment && '📝 ' + event.comment].filter(Boolean).join('\n')}>
           {!isTypeRedundant && <>{typeInfo.emoji} </>}
           {displayName}
         </span>
@@ -1036,6 +1042,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     if (affaireNum) {
       displaySummary = summary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || summary;
     }
+    // Nom de l'affaire liée (prioritaire)
+    const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
+    const affaireNom = linkedAff?.nom || linkedAff?.client || '';
+    const displayNom = affaireNom || displaySummary;
 
     // Filtrer les affaires pour la recherche manuelle
     const linkableAffaires = isLinking && linkSearchQuery.length >= 2
@@ -1056,9 +1066,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <Calendar size={14} />
         </span>
         <span className="ev-col ev-col-affaire">
-          {affaireNum ? <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
+          {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[summary, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displaySummary}</span>
+        <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         <div className="task-actions">
@@ -1208,6 +1218,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     if (affaireNum) {
       displaySummary = displaySummary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || displaySummary;
     }
+    // Nom de l'affaire liée (prioritaire)
+    const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
+    const affaireNom = linkedAff?.nom || linkedAff?.client || '';
+    const displayNom = affaireNom || displaySummary;
 
     const linkableAffaires = isLinking && linkSearchQuery.length >= 2
       ? affaires.filter(a => {
@@ -1227,9 +1241,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className="ical-color-dot" style={{ background: event.calendarColor || '#3b82f6' }} />
         </span>
         <span className="ev-col ev-col-affaire">
-          {affaireNum ? <AffaireBadge numero={affaireNum} type={affaireByNum.get(affaireNum.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
+          {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[event.summary, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displaySummary}</span>
+        <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         <div className="task-actions">

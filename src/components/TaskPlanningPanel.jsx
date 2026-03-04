@@ -1738,14 +1738,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               if (ev.affaire_id && (affaireNums.has(ev.affaire_id) || affaireIds.has(String(ev.affaire_id)))) return false;
               return true;
             });
-          // Filtrer les tâches redondantes : tâches source_type=affaire dont l'affaire est déjà visible
+          // Filtrer les tâches redondantes : tâches dont l'affaire est déjà visible comme ligne affaire
           const filteredTasks = sectionTasks.filter(t => {
-            if (t.sourceType === 'affaire' && t.sourceId) {
-              if (affaireIds.has(String(t.sourceId))) return false;
-              // Vérifier aussi par numéro d'affaire
-              const taskAffNum = t.affaireNum || extractAffaireNum(t.title) || extractAffaireNum(t.googleEventTitle);
-              if (taskAffNum && affaireNums.has(taskAffNum.toUpperCase())) return false;
-            }
+            // Par ID d'affaire (sourceType=affaire)
+            if (t.sourceType === 'affaire' && t.sourceId && affaireIds.has(String(t.sourceId))) return false;
+            // Par numéro d'affaire (tout sourceType : affaire, google_event, ical_event)
+            const taskAffNum = t.affaireNum || extractAffaireNum(t.title) || extractAffaireNum(t.googleEventTitle);
+            if (taskAffNum && affaireNums.has(taskAffNum.toUpperCase())) return false;
             return true;
           });
           return (

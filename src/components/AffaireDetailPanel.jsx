@@ -3,6 +3,7 @@ import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, L
 import { AFFAIRE_TYPES, getTypeInfo, AFFAIRE_TYPE_SECTIONS } from '../utils/affaireConstants';
 import api, { getApiUrl } from '../utils/api';
 import AffaireBadge from './AffaireBadge';
+import AddressAutocomplete from './AddressAutocomplete';
 import { formatPhoneDisplay } from './PhoneInput';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -90,6 +91,42 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   const [generatingOrders, setGeneratingOrders] = useState(false);
   const fileInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
+
+  // ═══ Autocomplete Client & Interlocuteur ═══
+  const [clientSuggestions, setClientSuggestions] = useState([]);
+  const [contactSuggestions, setContactSuggestions] = useState([]);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [showContactDropdown, setShowContactDropdown] = useState(false);
+  const clientDropdownRef = useRef(null);
+  const contactDropdownRef = useRef(null);
+
+  // Recherche clients dans l'annuaire
+  const searchClients = useCallback(async (query) => {
+    if (!query || query.length < 2) { setClientSuggestions([]); return; }
+    try {
+      const resp = await api.getAnnuaireClients({ search: query, limit: 10 });
+      setClientSuggestions(resp?.data || []);
+    } catch { setClientSuggestions([]); }
+  }, []);
+
+  // Recherche contacts dans l'annuaire
+  const searchContacts = useCallback(async (query) => {
+    if (!query || query.length < 2) { setContactSuggestions([]); return; }
+    try {
+      const resp = await api.getAnnuaireContacts({ search: query, limit: 10 });
+      setContactSuggestions(resp?.data || []);
+    } catch { setContactSuggestions([]); }
+  }, []);
+
+  // Fermer les dropdowns quand on clique ailleurs
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (clientDropdownRef.current && !clientDropdownRef.current.contains(e.target)) setShowClientDropdown(false);
+      if (contactDropdownRef.current && !contactDropdownRef.current.contains(e.target)) setShowContactDropdown(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   // Cleanup feedback timer on unmount
   useEffect(() => () => clearTimeout(feedbackTimerRef.current), []);
@@ -695,6 +732,10 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         </h3>
         {isEditing && editForm && setEditForm ? (
           <div className="detail-grid edit-mode">
+            <div className="detail-field full-width">
+              <label>Nom</label>
+              <input type="text" value={editForm.nom} onChange={(e) => setEditForm(f => ({ ...f, nom: e.target.value }))} className="edit-input" placeholder="Nom de l'affaire" />
+            </div>
             <div className="detail-field">
               <label>N° Affaire</label>
               <input type="text" value={editForm.numeroAffaire} onChange={(e) => setEditForm(f => ({ ...f, numeroAffaire: e.target.value }))} className="edit-input" />
@@ -707,13 +748,69 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                 ))}
               </select>
             </div>
-            <div className="detail-field">
+            <div className="detail-field" ref={clientDropdownRef} style={{ position: 'relative' }}>
               <label>Client</label>
-              <input type="text" value={editForm.client} onChange={(e) => setEditForm(f => ({ ...f, client: e.target.value }))} className="edit-input" />
+              <input
+                type="text"
+                value={editForm.client}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEditForm(f => ({ ...f, client: val }));
+                  searchClients(val);
+                  setShowClientDropdown(true);
+                }}
+                onFocus={() => { if (editForm.client?.length >= 2) { searchClients(editForm.client); setShowClientDropdown(true); } }}
+                className="edit-input"
+                placeholder="Rechercher un client..."
+                autoComplete="off"
+              />
+              {showClientDropdown && clientSuggestions.length > 0 && (
+                <ul className="autocomplete-dropdown">
+                  {clientSuggestions.map(c => (
+                    <li key={c.id} onClick={() => {
+                      setEditForm(f => ({ ...f, client: c.name }));
+                      setShowClientDropdown(false);
+                      setClientSuggestions([]);
+                    }}>
+                      <span className="ac-name">{c.name}</span>
+                      {c.city && <span className="ac-detail">{c.city}</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <div className="detail-field">
+            <div className="detail-field" ref={contactDropdownRef} style={{ position: 'relative' }}>
               <label>Interlocuteur</label>
-              <input type="text" value={editForm.interlocuteur} onChange={(e) => setEditForm(f => ({ ...f, interlocuteur: e.target.value }))} className="edit-input" />
+              <input
+                type="text"
+                value={editForm.interlocuteur}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEditForm(f => ({ ...f, interlocuteur: val }));
+                  searchContacts(val);
+                  setShowContactDropdown(true);
+                }}
+                onFocus={() => { if (editForm.interlocuteur?.length >= 2) { searchContacts(editForm.interlocuteur); setShowContactDropdown(true); } }}
+                className="edit-input"
+                placeholder="Rechercher un contact..."
+                autoComplete="off"
+              />
+              {showContactDropdown && contactSuggestions.length > 0 && (
+                <ul className="autocomplete-dropdown">
+                  {contactSuggestions.map(c => (
+                    <li key={c.id} onClick={() => {
+                      const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ');
+                      setEditForm(f => ({ ...f, interlocuteur: fullName, tel: f.tel || c.phone || '' }));
+                      setShowContactDropdown(false);
+                      setContactSuggestions([]);
+                    }}>
+                      <span className="ac-name">{[c.first_name, c.last_name].filter(Boolean).join(' ')}</span>
+                      {c.client_name && <span className="ac-detail">{c.client_name}</span>}
+                      {c.job_title && <span className="ac-detail">— {c.job_title}</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="detail-field">
               <label><Phone size={12} /> Téléphone</label>
@@ -733,7 +830,12 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             </div>
             <div className="detail-field full-width">
               <label><MapPin size={12} /> Lieu / Adresse</label>
-              <input type="text" value={editForm.adresseLivraison} onChange={(e) => setEditForm(f => ({ ...f, adresseLivraison: e.target.value }))} className="edit-input" />
+              <AddressAutocomplete
+                value={editForm.adresseLivraison}
+                onChange={(val) => setEditForm(f => ({ ...f, adresseLivraison: val }))}
+                className="edit-input"
+                placeholder="Saisir une adresse..."
+              />
             </div>
             <div className="detail-field full-width">
               <label><FileText size={12} /> Titre / Événement</label>
@@ -746,6 +848,12 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           </div>
         ) : (
         <div className="detail-grid">
+          {affaire.nom && (
+            <div className="detail-field full-width">
+              <label>Nom</label>
+              <span className="detail-nom">{affaire.nom}</span>
+            </div>
+          )}
           <div className="detail-field">
             <label>N° Affaire</label>
             <span className="detail-numero">{affaire.numeroAffaire || '—'}</span>
@@ -1647,7 +1755,10 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
   const [isSaving, setIsSaving] = useState(false);
 
   const startEditing = useCallback(() => {
+    // Pré-remplir nom : valeur existante, sinon event_name, sinon client
+    const defaultNom = affaire.nom || affaire.eventName || affaire.client || '';
     setEditForm({
+      nom: defaultNom,
       numeroAffaire: affaire.numeroAffaire || '',
       type: affaire.type || 'Prestation',
       client: affaire.client || '',
@@ -1677,6 +1788,7 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
     try {
       const payload = {
         numero_affaire: editForm.numeroAffaire,
+        nom: editForm.nom,
         type: editForm.type,
         client: editForm.client,
         interlocuteur: editForm.interlocuteur,
@@ -1701,6 +1813,7 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
       const updatedAffaire = {
         ...affaire,
         id: result?.id || affaire.id,
+        nom: editForm.nom,
         numeroAffaire: editForm.numeroAffaire,
         type: editForm.type,
         client: editForm.client,
@@ -1778,8 +1891,8 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
           <div className="dialog-title-row">
             <span className="dialog-numero">{isEditing && editForm ? editForm.numeroAffaire : affaire.numeroAffaire}</span>
             <span className="dialog-type" style={{ background: typeInfo.color }}>{typeInfo.label}</span>
-            {!isEditing && affaire.client && <span className="dialog-client">{capitalizeText(affaire.client)}</span>}
-            {isEditing && editForm?.client && <span className="dialog-client">{capitalizeText(editForm.client)}</span>}
+            {!isEditing && (affaire.nom || affaire.client) && <span className="dialog-client">{capitalizeText(affaire.nom || affaire.client)}</span>}
+            {isEditing && (editForm?.nom || editForm?.client) && <span className="dialog-client">{capitalizeText(editForm.nom || editForm.client)}</span>}
           </div>
           <div className="dialog-header-actions">
             {isEditing ? (

@@ -515,6 +515,7 @@ function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS affaires (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       numero_affaire TEXT NOT NULL UNIQUE,
+      nom TEXT DEFAULT '',
       type TEXT NOT NULL DEFAULT 'Prestation',
       client TEXT,
       interlocuteur TEXT,
@@ -536,6 +537,17 @@ function initializeDatabase() {
       FOREIGN KEY (modified_by) REFERENCES users(id)
     )
   `);
+
+  // Migration : ajouter colonne 'nom' si absente
+  try {
+    const cols = db.prepare("PRAGMA table_info(affaires)").all().map(c => c.name);
+    if (!cols.includes('nom')) {
+      db.exec("ALTER TABLE affaires ADD COLUMN nom TEXT DEFAULT ''");
+      // Pré-remplir nom avec event_name ou client pour les affaires existantes
+      db.exec("UPDATE affaires SET nom = COALESCE(NULLIF(event_name, ''), NULLIF(client, ''), '') WHERE nom IS NULL OR nom = ''");
+      logger.info('✅ Migration: colonne nom ajoutée à affaires');
+    }
+  } catch (e) { /* colonne existe déjà */ }
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_affaires_numero ON affaires(numero_affaire);

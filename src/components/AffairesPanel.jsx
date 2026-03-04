@@ -733,6 +733,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             try {
               const newAffaire = {
                 numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+                nom: '',
                 client: '',
                 interlocuteur: '',
                 tel: '',
@@ -1052,6 +1053,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           try {
             const newAffaire = {
               numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+              nom: '',
               client: '',
               interlocuteur: '',
               tel: '',

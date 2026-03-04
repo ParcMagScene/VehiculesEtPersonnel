@@ -2274,13 +2274,13 @@ app.post('/api/affaires', authenticateToken, (req, res) => {
       // Mise à jour
       db.prepare(`
         UPDATE affaires SET
-          type = ?, client = ?, interlocuteur = ?, tel = ?, fax = ?,
+          nom = ?, type = ?, client = ?, interlocuteur = ?, tel = ?, fax = ?,
           date_debut = ?, date_fin = ?, devis = ?, adresse_livraison = ?,
           titre = ?, description = ?, google_event_id = ?, event_name = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE numero_affaire = ?
       `).run(
-        a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
+        a.nom || '', a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
         a.date_debut || '', a.date_fin || '', a.devis || '', a.adresse_livraison || '',
         a.titre || '', a.description || '', a.google_event_id || '', a.event_name || '',
         req.user.id, a.numero_affaire
@@ -2290,12 +2290,12 @@ app.post('/api/affaires', authenticateToken, (req, res) => {
     } else {
       // Création
       const result = db.prepare(`
-        INSERT INTO affaires (numero_affaire, type, client, interlocuteur, tel, fax,
+        INSERT INTO affaires (numero_affaire, nom, type, client, interlocuteur, tel, fax,
           date_debut, date_fin, devis, adresse_livraison, titre, description,
           google_event_id, event_name, created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
-        a.numero_affaire, a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
+        a.numero_affaire, a.nom || '', a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
         a.date_debut || '', a.date_fin || '', a.devis || '', a.adresse_livraison || '',
         a.titre || '', a.description || '', a.google_event_id || '', a.event_name || '',
         req.user.id, req.user.id
@@ -2318,13 +2318,13 @@ app.put('/api/affaires/:id', authenticateToken, (req, res) => {
 
     db.prepare(`
       UPDATE affaires SET
-        numero_affaire = ?, type = ?, client = ?, interlocuteur = ?, tel = ?, fax = ?,
+        numero_affaire = ?, nom = ?, type = ?, client = ?, interlocuteur = ?, tel = ?, fax = ?,
         date_debut = ?, date_fin = ?, devis = ?, adresse_livraison = ?,
         titre = ?, description = ?, google_event_id = ?, event_name = ?,
         modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
-      a.numero_affaire || '', a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
+      a.numero_affaire || '', a.nom || '', a.type || 'Prestation', a.client || '', a.interlocuteur || '', a.tel || '', a.fax || '',
       a.date_debut || '', a.date_fin || '', a.devis || '', a.adresse_livraison || '',
       a.titre || '', a.description || '', a.google_event_id || '', a.event_name || '',
       req.user.id, id
@@ -2434,10 +2434,10 @@ app.post('/api/affaires/sync-google-events', authenticateToken, (req, res) => {
     const findAffaire = db.prepare('SELECT * FROM affaires WHERE numero_affaire = ?');
     const findByGoogleEvent = db.prepare('SELECT * FROM affaires WHERE google_event_id = ?');
     const insertAffaire = db.prepare(`
-      INSERT INTO affaires (numero_affaire, type, client, titre, description,
+      INSERT INTO affaires (numero_affaire, nom, type, client, titre, description,
         date_debut, date_fin, adresse_livraison, google_event_id, event_name,
         created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const linkAffaire = db.prepare(`
       UPDATE affaires SET google_event_id = ?, event_name = ?,
@@ -2500,7 +2500,7 @@ app.post('/api/affaires/sync-google-events', authenticateToken, (req, res) => {
         }
 
         insertAffaire.run(
-          affaireNum, type, client, eventName, description,
+          affaireNum, eventName || client || '', type, client, eventName, description,
           dateStart, dateEnd, location,
           googleEventId, eventName,
           req.user.id, req.user.id

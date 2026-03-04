@@ -135,6 +135,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [displayEvents, setDisplayEvents] = useState([]);
   // Personnel assignment popover for display events
   const [assigningEventId, setAssigningEventId] = useState(null);
+  // Personnel assignment popover for tasks
+  const [assigningTaskId, setAssigningTaskId] = useState(null);
   // RDV detail expansion
   const [expandedRdv, setExpandedRdv] = useState(null);
   // EventTaskModal
@@ -648,6 +650,18 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     }
   };
 
+  // Assigner un personnel à une tâche
+  const handleAssignTaskPerson = async (taskId, personId) => {
+    try {
+      await api.updateTask(taskId, { person_id: personId || null });
+      toast.success('Personnel affecté');
+      setAssigningTaskId(null);
+      loadTasks(true);
+    } catch (err) {
+      toast.error('Erreur affectation');
+    }
+  };
+
 
 
   // Toggle task status
@@ -860,6 +874,34 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <div className="task-actions">
+          {/* Affectation personnel */}
+          <div className="event-assign-container">
+            {task.personFirstName ? (
+              <span className="task-person assigned" onClick={() => setAssigningTaskId(assigningTaskId === task.id ? null : task.id)}>
+                <User size={12} />
+                {task.personFirstName} {task.personLastName?.charAt(0)}.
+              </span>
+            ) : (
+              <button className="btn-assign" onClick={() => setAssigningTaskId(assigningTaskId === task.id ? null : task.id)} title="Affecter un personnel">
+                <UserPlus size={13} />
+              </button>
+            )}
+            {assigningTaskId === task.id && (
+              <div className="assign-dropdown">
+                <div className="assign-dropdown-title">Affecter à :</div>
+                {task.personId && (
+                  <div className="assign-option unassign" onClick={() => handleAssignTaskPerson(task.id, null)}>
+                    <X size={12} /> Retirer l'affectation
+                  </div>
+                )}
+                {persons.map(p => (
+                  <div key={p.id} className="assign-option" onClick={() => handleAssignTaskPerson(task.id, p.id)}>
+                    <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             className={`toggle-visible ${isHidden ? 'off' : ''}`}
             onClick={() => handleToggleTaskVisible(task)}
@@ -939,36 +981,34 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {event.time ? <><Clock size={11} /> {event.time}</> : event.period ? <span className="period-badge">{event.period}</span> : ''}
         </span>
 
-        {/* Affectation personnel (préparations) */}
-        {isPrep && (
-          <div className="event-assign-container">
-            {event.assigned_person_first_name ? (
-              <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)}>
-                <User size={12} />
-                {event.assigned_person_first_name} {event.assigned_person_last_name?.charAt(0)}.
-              </span>
-            ) : (
-              <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)} title="Affecter un personnel">
-                <UserPlus size={13} />
-              </button>
-            )}
-            {assigningEventId === event.id && (
-              <div className="assign-dropdown">
-                <div className="assign-dropdown-title">Affecter à :</div>
-                {event.assigned_person_id && (
-                  <div className="assign-option unassign" onClick={() => handleAssignPerson(event.id, null)}>
-                    <X size={12} /> Retirer l'affectation
-                  </div>
-                )}
-                {persons.map(p => (
-                  <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(event.id, p.id)}>
-                    <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Affectation personnel */}
+        <div className="event-assign-container">
+          {event.assigned_person_first_name ? (
+            <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)}>
+              <User size={12} />
+              {event.assigned_person_first_name} {event.assigned_person_last_name?.charAt(0)}.
+            </span>
+          ) : (
+            <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)} title="Affecter un personnel">
+              <UserPlus size={13} />
+            </button>
+          )}
+          {assigningEventId === event.id && (
+            <div className="assign-dropdown">
+              <div className="assign-dropdown-title">Affecter à :</div>
+              {event.assigned_person_id && (
+                <div className="assign-option unassign" onClick={() => handleAssignPerson(event.id, null)}>
+                  <X size={12} /> Retirer l'affectation
+                </div>
+              )}
+              {persons.map(p => (
+                <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(event.id, p.id)}>
+                  <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="task-actions">
           <button

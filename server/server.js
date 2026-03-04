@@ -2304,6 +2304,7 @@ app.post('/api/affaires', authenticateToken, (req, res) => {
       );
       const created = db.prepare('SELECT * FROM affaires WHERE id = ?').get(result.lastInsertRowid);
       invalidateEntity('affaires');
+      listCache.invalidatePattern(/^planning-affaires/);
       res.status(201).json(created);
     }
   } catch (error) {
@@ -2334,6 +2335,7 @@ app.put('/api/affaires/:id', authenticateToken, (req, res) => {
     const updated = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
     if (!updated) return res.status(404).json({ error: 'Affaire non trouvée' });
     invalidateEntity('affaires');
+    listCache.invalidatePattern(/^planning-affaires/);
     res.json(updated);
   } catch (error) {
     logger.error('Erreur PUT /api/affaires:', error);
@@ -2349,6 +2351,7 @@ app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Affaire non trouvée' });
     db.prepare('DELETE FROM affaires WHERE id = ?').run(id);
     invalidateEntity('affaires');
+    listCache.invalidatePattern(/^planning-affaires/);
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur DELETE /api/affaires:', error);

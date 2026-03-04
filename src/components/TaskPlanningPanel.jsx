@@ -798,9 +798,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
     // Combiner titre + sous-titre en un seul texte compact
     const fullTitle = showSubtitle ? `${displayTitle} — ${cleanEventTitle}` : displayTitle;
-    // Nom de l'affaire liée (prioritaire) sinon titre de la tâche
-    const affaireNom = linkedAffaire?.nom || linkedAffaire?.client || '';
+    // Nom et Client de l'affaire liée
+    const affaireNom = linkedAffaire?.nom || '';
+    const affaireClient = linkedAffaire?.client || '';
     const displayNom = affaireNom || fullTitle;
+    const displayClient = affaireClient;
 
     return (
       <div key={task.id} className={`task-row event-row-cols ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
@@ -817,10 +819,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAffaire?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
 
-        <span className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`} title={[fullTitle, affaireNom && affaireNom !== fullTitle && '📌 ' + affaireNom, showEventType && task.eventType, (task.eventLocation || linkedAffaire?.location) && '📍 ' + (task.eventLocation || linkedAffaire?.location), task.notes && '📝 ' + task.notes, (task.personFirstName || task.personLastName) && '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' ')].filter(Boolean).join('\n')}>
+        <span className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`} title={[fullTitle, showEventType && task.eventType, (task.eventLocation || linkedAffaire?.location) && '📍 ' + (task.eventLocation || linkedAffaire?.location), task.notes && '📝 ' + task.notes, (task.personFirstName || task.personLastName) && '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' ')].filter(Boolean).join('\n')}>
           {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
           {displayNom}
         </span>
+
+        <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
 
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
@@ -867,12 +871,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       ? (event.affaireId.match(/\bAF\s*\d{3,}/i) || [null])[0]?.toUpperCase()?.replace(/\s+/g, '')
       : null;
 
-    // Nom d'affichage pour la colonne Nom — priorité au nom de l'affaire liée
+    // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
-    const affaireNom = linkedAff?.nom || linkedAff?.client || '';
+    const affaireNom = linkedAff?.nom || '';
+    const affaireClient = linkedAff?.client || event.client || '';
     const fallbackName = isTypeRedundant
-      ? (event.client || event.affaireId || typeInfo.label)
-      : `${typeInfo.label}${event.client ? ' — ' + event.client : ''}${event.affaireId && !affaireNum ? ' (' + event.affaireId + ')' : ''}`;
+      ? (event.affaireId || typeInfo.label)
+      : `${typeInfo.label}${event.affaireId && !affaireNum ? ' (' + event.affaireId + ')' : ''}`;
     const displayName = affaireNom || fallbackName;
 
     return (
@@ -885,10 +890,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
 
-        <span className="ev-col ev-col-nom" title={[displayName, fallbackName !== displayName && fallbackName, event.location && '📍 ' + event.location, event.comment && '📝 ' + event.comment].filter(Boolean).join('\n')}>
+        <span className="ev-col ev-col-nom" title={[displayName, event.location && '📍 ' + event.location, event.comment && '📝 ' + event.comment].filter(Boolean).join('\n')}>
           {!isTypeRedundant && <>{typeInfo.emoji} </>}
           {displayName}
         </span>
+
+        <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
 
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
@@ -1042,9 +1049,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     if (affaireNum) {
       displaySummary = summary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || summary;
     }
-    // Nom de l'affaire liée (prioritaire)
+    // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
-    const affaireNom = linkedAff?.nom || linkedAff?.client || '';
+    const affaireNom = linkedAff?.nom || '';
+    const affaireClient = linkedAff?.client || '';
     const displayNom = affaireNom || displaySummary;
 
     // Filtrer les affaires pour la recherche manuelle
@@ -1069,6 +1077,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
         <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
+        <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         <div className="task-actions">
@@ -1218,9 +1227,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     if (affaireNum) {
       displaySummary = displaySummary.replace(/\baf\s*\d{4,}/gi, '').replace(/^\s*[-—–:]\s*/, '').trim() || displaySummary;
     }
-    // Nom de l'affaire liée (prioritaire)
+    // Nom et Client de l'affaire liée
     const linkedAff = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
-    const affaireNom = linkedAff?.nom || linkedAff?.client || '';
+    const affaireNom = linkedAff?.nom || '';
+    const affaireClient = linkedAff?.client || '';
     const displayNom = affaireNom || displaySummary;
 
     const linkableAffaires = isLinking && linkSearchQuery.length >= 2
@@ -1244,6 +1254,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
         <span className="ev-col ev-col-nom" title={[displayNom, displaySummary !== displayNom && displaySummary, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
+        <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         <div className="task-actions">

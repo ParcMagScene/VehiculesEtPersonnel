@@ -446,7 +446,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const fWeek = filterLinked(weekGoogleEvents);
 
     // Enrichir les affaires avec les données de l'événement Google lié
-    const enriched = affaires.map(a => {
+    // Exclure les affaires masquées de l'affichage section (elles restent dans affaireByNum)
+    const enriched = affaires
+      .filter(a => !a.planningHidden)
+      .map(a => {
       const num = (a.numeroAffaire || '').toUpperCase();
       const gev = linkedByAffaire.get(num);
       if (gev) {

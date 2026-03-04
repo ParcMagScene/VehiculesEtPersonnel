@@ -1824,6 +1824,10 @@ function initializeDatabase() {
       db.exec('ALTER TABLE dynamic_display_events ADD COLUMN assigned_person_id INTEGER DEFAULT NULL REFERENCES persons(id)');
       logger.info('✅ Colonne assigned_person_id ajoutée à dynamic_display_events');
     }
+    if (!ddeColumns.find(c => c.name === 'status')) {
+      db.exec("ALTER TABLE dynamic_display_events ADD COLUMN status TEXT DEFAULT 'pending'");
+      logger.info('✅ Colonne status ajoutée à dynamic_display_events');
+    }
 
     db.exec(`
       CREATE TABLE IF NOT EXISTS bl_imports (

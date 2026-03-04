@@ -898,11 +898,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       : `${typeInfo.label}${event.affaireId && !affaireNum ? ' (' + event.affaireId + ')' : ''}`;
     const displayName = affaireNom || fallbackName;
 
+    const isDone = event.status === 'done';
+    const isProgress = event.status === 'in_progress';
+
     return (
-      <div key={`de-${event.id}`} className={`task-row event-row-cols display-event-row ${isHidden ? 'hidden-display' : ''}`}>
-        <span className="ev-col ev-col-dot" style={{ color: typeInfo.color }}>
-          <Monitor size={14} />
-        </span>
+      <div key={`de-${event.id}`} className={`task-row event-row-cols display-event-row ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
+        <button
+          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+          onClick={() => handleCycleDisplayEventStatus(event)}
+          title={`Statut: ${event.status || 'pending'} — cliquer pour changer`}
+        >
+          {isDone && <Check size={14} />}
+          {isProgress && <Clock size={12} />}
+        </button>
 
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={affaireTypeResolved} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
@@ -1014,8 +1022,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         onClick={() => openAffaireTaskModal(affaire)}
         style={{ cursor: 'pointer' }}
       >
-        <span className="ev-col ev-col-dot" style={{ color: typeInfo.color }}>
-          <Briefcase size={14} />
+        <span
+          className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
+          title={isProcessed ? 'Tâches définies' : 'Aucune tâche encore'}
+        >
+          {isProcessed ? <Check size={14} /> : <Briefcase size={12} />}
         </span>
 
         <span className="ev-col ev-col-affaire">
@@ -1746,6 +1757,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       loadTasks(true);
     } catch (err) {
       toast.error('Erreur toggle visibilité');
+    }
+  };
+
+  const handleCycleDisplayEventStatus = async (event) => {
+    try {
+      await api.cycleDisplayEventStatus(event.id);
+      loadTasks(true);
+    } catch (err) {
+      toast.error('Erreur mise à jour statut');
     }
   };
 

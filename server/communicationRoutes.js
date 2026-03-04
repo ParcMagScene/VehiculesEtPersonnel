@@ -1626,6 +1626,26 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ─── PATCH /api/communication/display-events/:id/cycle-status ───
+  // Basculer le statut d'un événement d'affichage (pending → in_progress → done → pending)
+  app.patch('/api/communication/display-events/:id/cycle-status', authenticateToken, (req, res) => {
+    try {
+      const event = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
+      if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
+
+      const nextStatus = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
+      const newStatus = nextStatus[event.status] || 'pending';
+      db.prepare('UPDATE dynamic_display_events SET status = ?, modified_by = ?, modified_at = datetime(\'now\') WHERE id = ?')
+        .run(newStatus, req.user.id, req.params.id);
+
+      const updated = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
+      res.json(updated);
+    } catch (error) {
+      logger.error('PATCH /api/communication/display-events/:id/cycle-status error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
   // ─── PUT /api/communication/display-events/:id/assign ───
   // Affecter un personnel à un événement d'affichage
   app.put('/api/communication/display-events/:id/assign', authenticateToken, (req, res) => {

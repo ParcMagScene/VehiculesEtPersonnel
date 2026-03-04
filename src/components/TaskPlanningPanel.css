@@ -607,8 +607,8 @@
 }
 /* Col: Coche / Dot (icône) */
 .task-planning-panel .ev-col-dot {
-  width: 28px;
-  padding: 0 4px 0 0;
+  width: 24px;
+  padding: 0 2px 0 0;
   justify-content: center;
   flex-shrink: 0;
 }

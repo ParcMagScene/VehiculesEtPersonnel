@@ -987,46 +987,55 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     });
   };
 
-  // Carte affaire dans une section — cliquable pour définir des tâches
+  // Carte affaire dans une section — layout colonnes aligné
   const renderAffaireRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
     const dateBadge = getDateBadge(affaire.dateDebut || affaire.date_debut);
     const isProcessed = affaire._googleId
       ? processedGoogleIds.has(affaire._googleId)
       : processedGoogleIds.has(`affaire-${affaire.id || affaire.numeroAffaire}`);
+    const displayNom = affaire.nom || affaire.event_name || affaire.titre || affaire.client || typeInfo.label;
+    const displayClient = affaire.client || '';
+    const timeStr = affaire._googleTime
+      ? `${affaire._googleTime}${affaire._googleEndTime ? ` → ${affaire._googleEndTime}` : ''}`
+      : '';
+    const tooltipParts = [
+      displayNom,
+      (affaire.titre || affaire.event_name) && (affaire.event_name || affaire.titre),
+      (affaire._googleLocation || affaire.adresseLivraison) && '📍 ' + (affaire._googleLocation || affaire.adresseLivraison).split('\n')[0],
+      affaire.interlocuteur && '👤 ' + affaire.interlocuteur,
+      affaire.blCount > 0 && `📄 ${affaire.blCount} BL`,
+    ].filter(Boolean).join('\n');
+
     return (
       <div
         key={`aff-${affaire.numeroAffaire}`}
-        className={`task-row affaire-row ${isProcessed ? 'processed' : 'pending'} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
+        className={`task-row event-row-cols affaire-row ${isProcessed ? 'processed' : 'pending'} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
         onClick={() => openAffaireTaskModal(affaire)}
         style={{ cursor: 'pointer' }}
       >
-        <span className="display-event-icon" style={{ color: typeInfo.color }}>
+        <span className="ev-col ev-col-dot" style={{ color: typeInfo.color }}>
           <Briefcase size={14} />
         </span>
-        <div className="task-info">
-          <div className="task-title">
-            {typeInfo.emoji} {dateBadge && <span className="date-badge">{dateBadge}</span>}
-            <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
-            {affaire.client ? ` — ${affaire.client}` : ''}
-            {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
-            {isProcessed && <span className="processed-badge" title="Tâches définies">✓</span>}
-          </div>
-          {(affaire.titre || affaire.event_name) && (
-            <div className="task-subtitle">{affaire.event_name || affaire.titre}</div>
-          )}
-          <div className="task-meta">
-            {affaire._googleTime && (
-              <span><Clock size={11} /> {affaire._googleTime}{affaire._googleEndTime ? ` → ${affaire._googleEndTime}` : ''}</span>
-            )}
-            {(affaire._googleLocation || affaire.adresseLivraison) && (
-              <span><MapPin size={11} /> {(affaire._googleLocation || affaire.adresseLivraison).split('\n')[0]}</span>
-            )}
-            {!affaire._googleLocation && !affaire.adresseLivraison && null}
-            {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
-            {affaire.blCount > 0 && <span>📄 {affaire.blCount} BL</span>}
-          </div>
-        </div>
+
+        <span className="ev-col ev-col-affaire">
+          <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { /* stop propagation handled by AffaireBadge */ onNavigateToEntity('affaire', { numero: num }); } : undefined} />
+        </span>
+
+        <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }}>
+          {displayNom}
+          {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
+          {isProcessed && <span className="processed-badge" title="Tâches définies">✓</span>}
+        </span>
+
+        <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
+
+        <span className="ev-col ev-col-date">{dateBadge || ''}</span>
+
+        <span className="ev-col ev-col-time">
+          {timeStr ? <><Clock size={11} /> {timeStr}</> : ''}
+        </span>
+
         <div className="task-actions">
           {!isProcessed && (
             <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }} title="Définir les tâches pour cette affaire">
@@ -1187,27 +1196,36 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const renderRdvRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
     const isExpanded = expandedRdv === affaire.numeroAffaire;
+    const dateBadge = getDateBadge(affaire.dateDebut || affaire.date_debut);
+    const displayNom = affaire.nom || affaire.event_name || affaire.titre || affaire.client || typeInfo.label;
+    const displayClient = affaire.client || '';
+    const linkedAff = affaire.numeroAffaire ? affaireByNum.get(affaire.numeroAffaire.toUpperCase()) : null;
+    const tooltipParts = [
+      displayNom,
+      (affaire.titre || affaire.event_name) && (affaire.event_name || affaire.titre),
+      affaire.adresseLivraison && '📍 ' + affaire.adresseLivraison.split('\n')[0],
+      affaire.interlocuteur && '👤 ' + affaire.interlocuteur,
+      affaire.tel && '📞 ' + affaire.tel,
+    ].filter(Boolean).join('\n');
+
     return (
-      <div key={`rdv-${affaire.numeroAffaire}`} className="task-row rdv-row">
-        <span className="display-event-icon" style={{ color: typeInfo.color }}>
+      <div key={`rdv-${affaire.numeroAffaire}`} className="task-row event-row-cols rdv-row" style={{ flexWrap: 'wrap' }}>
+        <span className="ev-col ev-col-dot" style={{ color: typeInfo.color }}>
           <Calendar size={14} />
         </span>
-        <div className="task-info">
-          <div className="task-title">
-            {typeInfo.emoji} {affaire.numeroAffaire} — {affaire.client || 'Sans client'}
-          </div>
-          {(affaire.titre || affaire.event_name) && (
-            <div className="task-subtitle">{affaire.event_name || affaire.titre}</div>
-          )}
-          <div className="task-meta">
-            {affaire.adresseLivraison && <span><MapPin size={11} /> {affaire.adresseLivraison.split('\n')[0]}</span>}
-            {affaire.interlocuteur && <span><User size={11} /> {affaire.interlocuteur}</span>}
-            {affaire.tel && <span>📞 {affaire.tel}</span>}
-            <span>📆 {affaire.dateDebut ? new Date(affaire.dateDebut + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}
-              {affaire.dateFin ? ` → ${new Date(affaire.dateFin + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
-            </span>
-          </div>
-        </div>
+
+        <span className="ev-col ev-col-affaire">
+          <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
+        </span>
+
+        <span className="ev-col ev-col-nom" title={tooltipParts}>{displayNom}</span>
+
+        <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
+
+        <span className="ev-col ev-col-date">{dateBadge || ''}</span>
+
+        <span className="ev-col ev-col-time"></span>
+
         <div className="task-actions rdv-actions">
           <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
             <Eye size={14} />

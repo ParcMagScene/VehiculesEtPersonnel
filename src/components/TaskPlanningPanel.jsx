@@ -927,8 +927,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <span className="ev-col ev-col-nom" title={[displayName, event.location && '📍 ' + event.location, event.comment && '📝 ' + event.comment].filter(Boolean).join('\n')}>
-          {!isTypeRedundant && <>{typeInfo.emoji} </>}
           {displayName}
+          {!isTypeRedundant && <span className="course-type-badge" style={{ background: `${typeInfo.color}18`, color: typeInfo.color, borderColor: `${typeInfo.color}40` }}>{typeInfo.emoji} {typeInfo.label}</span>}
         </span>
 
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
@@ -1997,6 +1997,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
       ) : (
         <div className="sections-container">
+          {/* En-tête de colonnes (sticky) */}
+          <div className="tp-columns-header">
+            <span className="ev-col-h ev-col-h-status">✔</span>
+            <span className="ev-col-h ev-col-h-affaire">Affaire</span>
+            <span className="ev-col-h ev-col-h-nom">Titre / Nom</span>
+            <span className="ev-col-h ev-col-h-client">Client</span>
+            <span className="ev-col-h ev-col-h-date">Date</span>
+            <span className="ev-col-h ev-col-h-time">Heure</span>
+            <span className="ev-col-h ev-col-h-actions">Actions</span>
+          </div>
           {/* ── Autres Événements : tout en haut avec gestion iCal ── */}
           <div className="sections-group sections-top-events">
             {renderSection('evenements')}

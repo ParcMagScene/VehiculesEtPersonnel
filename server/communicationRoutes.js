@@ -857,9 +857,15 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         grouped[sec].push({ type: 'task', data: t });
       });
 
-      // Affaires → toujours dans RDV uniquement (pas dans les sections de préparation)
+      // Affaires → dans leur section opérationnelle + dans RDV si titre contient "rdv"
       affaires.forEach(a => {
-        grouped.rdv.push({ type: 'affaire', data: a });
+        const sec = AFFAIRE_TYPE_MAP[a.type] || 'manual';
+        if (!grouped[sec]) grouped[sec] = [];
+        grouped[sec].push({ type: 'affaire', data: a });
+        // Dupliquer dans RDV si le titre contient "rdv"
+        if (a.titre && /rdv/i.test(a.titre)) {
+          grouped.rdv.push({ type: 'affaire', data: a });
+        }
       });
 
       // Display events

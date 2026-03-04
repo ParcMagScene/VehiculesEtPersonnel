@@ -1403,15 +1403,15 @@ class ApiClient {
     return this.request(`/communication/bl-imports/${id}`, { method: 'DELETE' });
   }
 
-  // --- Articles BP (liaison catalogue) ---
+  // --- Articles BP (liaison matériel) ---
   async getBPItems(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/communication/bp-items${qs ? '?' + qs : ''}`);
   }
-  async matchBPItem(id, equipmentCatalogId) {
+  async matchBPItem(id, equipmentId) {
     return this.request(`/communication/bp-items/${id}/match`, {
       method: 'PUT',
-      body: JSON.stringify({ equipment_catalog_id: equipmentCatalogId }),
+      body: JSON.stringify({ equipment_id: equipmentId }),
     });
   }
 

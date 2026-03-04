@@ -33,9 +33,6 @@ const SECTIONS = {
   // — Autres étapes opérationnelles —
   chargement:         { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
   depart:             { label: 'Départ',               emoji: '🚀', color: '#3b82f6', affaireOnly: true },
-  enlevement:         { label: 'Enlèvement',           emoji: '🚚', color: '#10b981', affaireOnly: true },
-  retour:             { label: 'Retour',               emoji: '↩️', color: '#8b5cf6', affaireOnly: true },
-  recuperation:       { label: 'Récupération',         emoji: '📥', color: '#ef4444', affaireOnly: true },
   installation:       { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
   montage:            { label: 'Montage',              emoji: '🔩', color: '#0891b2', affaireOnly: true },
   demontage:          { label: 'Démontage',            emoji: '🔧', color: '#dc2626', affaireOnly: true },
@@ -69,11 +66,11 @@ const mapEventToSection = (event) => {
     if (cat === 'installation') return 'prep_installations';
     return 'prep_locations';
   }
-  if (type === 'enlevement') return 'enlevement';
+  if (type === 'enlevement') return 'courses';
   if (type === 'depart') return 'depart';
-  if (type === 'livraison') return 'chargement';
-  if (type === 'retour') return 'retour';
-  if (type === 'recuperation') return 'recuperation';
+  if (type === 'livraison') return 'courses';
+  if (type === 'retour') return 'courses';
+  if (type === 'recuperation') return 'courses';
   if (type === 'installation') return 'installation';
   if (type === 'montage') return 'montage';
   if (type === 'demontage') return 'demontage';
@@ -342,12 +339,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     });
   };
 
+  // Normaliser les anciennes sections transport → courses
+  const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation: 'courses' };
+  const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
+
   // Grouper par section
   const grouped = useMemo(() => {
     const groups = {};
     Object.keys(SECTIONS).forEach(key => { groups[key] = []; });
     tasks.forEach(t => {
-      const sec = t.section || 'manual';
+      const sec = normalizeSection(t.section || 'manual');
       if (!groups[sec]) groups[sec] = [];
       groups[sec].push(t);
     });
@@ -727,7 +728,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const isHidden = task.visible === 0;
     const dateBadge = getDateBadge(task.date);
     const affaireNum = task.affaireNum || extractAffaireNum(task.title) || extractAffaireNum(task.googleEventTitle);
-    const sectionInfo = SECTIONS[task.section];
+    const taskSection = normalizeSection(task.section || 'manual');
+    const sectionInfo = SECTIONS[taskSection];
 
     // --- Nettoyage du titre pour éviter les doublons ---
     let displayTitle = task.title;
@@ -793,11 +795,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     // Masquer l'eventType quand il est redondant avec le nom de la section
     const SECTION_EVENT_TYPES = {
       prep_locations: 'preparation', prep_prestations: 'preparation', prep_ventes: 'preparation', prep_installations: 'preparation',
-      chargement: 'chargement', depart: 'depart', enlevement: 'enlevement',
-      retour: 'retour', recuperation: 'recuperation', installation: 'installation',
+      chargement: 'chargement', depart: 'depart', courses: 'courses',
+      installation: 'installation',
       montage: 'montage', demontage: 'demontage',
     };
-    const showEventType = task.eventType && SECTION_EVENT_TYPES[task.section] !== task.eventType;
+    const showEventType = task.eventType && SECTION_EVENT_TYPES[taskSection] !== task.eventType;
 
     // Combiner titre + sous-titre en un seul texte compact
     const fullTitle = showSubtitle ? `${displayTitle} — ${cleanEventTitle}` : displayTitle;
@@ -832,7 +834,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
         <span className="ev-col ev-col-time">
-          {task.time ? <><Clock size={11} /> {task.time}{task.endTime ? ` → ${task.endTime}` : ''}</> : ''}
+          {task.time ? <><Clock size={11} /> {task.time}{task.endTime ? ` → ${task.endTime}` : ''}</> : task.period ? <span className="period-badge">{task.period}</span> : ''}
         </span>
 
         <div className="task-actions">
@@ -904,7 +906,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
         <span className="ev-col ev-col-time">
-          {event.time ? <><Clock size={11} /> {event.time}</> : ''}
+          {event.time ? <><Clock size={11} /> {event.time}</> : event.period ? <span className="period-badge">{event.period}</span> : ''}
         </span>
 
         {/* Affectation personnel (préparations) */}
@@ -1334,7 +1336,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     if (type === 'task') {
       const isDone = item.status === 'done';
       const isProgress = item.status === 'in_progress';
-      const sectionInfo = SECTIONS[item.section] || SECTIONS.manual;
+      const sectionInfo = SECTIONS[normalizeSection(item.section || 'manual')] || SECTIONS.manual;
       return (
         <div
           key={`wt-${item.id}`}
@@ -1482,7 +1484,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     // Grouper par section en respectant l'ordre SECTIONS
     const grouped = {};
     dayData.tasks.forEach(t => {
-      const sec = t.section || 'manual';
+      const sec = normalizeSection(t.section || 'manual');
       if (!grouped[sec]) grouped[sec] = [];
       grouped[sec].push(t);
     });

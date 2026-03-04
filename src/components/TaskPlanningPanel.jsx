@@ -621,6 +621,18 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     return map;
   }, [viewMode, weekDays, tasks, unlinkedEvents, enrichedAffaires, filteredWeekGoogleEvents]);
 
+  // Index des display events par affaire_id (pour affectation personnel sur les lignes affaire)
+  const displayEventByAffaire = useMemo(() => {
+    const map = new Map();
+    displayEvents.forEach(ev => {
+      if (ev.affaireId) {
+        // Garder le premier (ou le plus récent) display event pour chaque affaire
+        if (!map.has(ev.affaireId)) map.set(ev.affaireId, ev);
+      }
+    });
+    return map;
+  }, [displayEvents]);
+
   // Affaires groupées par section de préparation
   const affairesBySection = useMemo(() => {
     const groups = {};
@@ -1098,6 +1110,41 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className="ev-col ev-col-time">
           {timeStr ? <><Clock size={11} /> {timeStr}</> : ''}
         </span>
+
+        {/* Affectation personnel via display event lié */}
+        {(() => {
+          const de = displayEventByAffaire.get(affaire.numeroAffaire);
+          if (!de) return null;
+          return (
+            <div className="event-assign-container">
+              {de.assignedPersonFirstName ? (
+                <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === de.id ? null : de.id)}>
+                  <User size={12} />
+                  {de.assignedPersonFirstName} {de.assignedPersonLastName?.charAt(0)}.
+                </span>
+              ) : (
+                <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === de.id ? null : de.id)} title="Affecter un personnel">
+                  <UserPlus size={13} />
+                </button>
+              )}
+              {assigningEventId === de.id && (
+                <div className="assign-dropdown">
+                  <div className="assign-dropdown-title">Affecter à :</div>
+                  {de.assignedPersonId && (
+                    <div className="assign-option unassign" onClick={() => handleAssignPerson(de.id, null)}>
+                      <X size={12} /> Retirer l'affectation
+                    </div>
+                  )}
+                  {persons.map(p => (
+                    <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(de.id, p.id)}>
+                      <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="task-actions rdv-actions">
           <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">

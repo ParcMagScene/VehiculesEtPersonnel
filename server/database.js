@@ -1898,6 +1898,17 @@ function initializeDatabase() {
       )
     `);
 
+    // Table planning_event_status: statut de traitement des événements Google/iCal/RDV dans la planification
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS planning_event_status (
+        event_type TEXT NOT NULL,
+        event_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (event_type, event_id)
+      )
+    `);
+
     // Migration : ajout colonne visible si absente
     const taCols = db.pragma('table_info(task_assignments)');
     if (!taCols.find(c => c.name === 'visible')) {

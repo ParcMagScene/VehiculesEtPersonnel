@@ -1499,6 +1499,14 @@ class ApiClient {
     return this.request(`/communication/planning-affaires/${encodeURIComponent(numeroAffaire)}/cycle-status`, { method: 'PATCH' });
   }
 
+  async cyclePlanningEventStatus(eventType, eventId) {
+    return this.request(`/communication/planning-events/${encodeURIComponent(eventType)}/${encodeURIComponent(eventId)}/cycle-status`, { method: 'PATCH' });
+  }
+
+  async getPlanningEventStatuses() {
+    return this.request('/communication/planning-event-statuses');
+  }
+
   async unhidePlanningAffaire(numeroAffaire) {
     return this.request(`/communication/planning-hidden-affaires/${encodeURIComponent(numeroAffaire)}`, { method: 'DELETE' });
   }

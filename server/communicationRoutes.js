@@ -1581,6 +1581,39 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ─── PATCH /api/communication/planning-events/:type/:id/cycle-status ───
+  // Basculer le statut d'un événement planning (google_event, ical_event, rdv)
+  app.patch('/api/communication/planning-events/:type/:id/cycle-status', authenticateToken, (req, res) => {
+    try {
+      const { type, id } = req.params;
+      const validTypes = ['google_event', 'ical_event', 'rdv'];
+      if (!validTypes.includes(type)) return res.status(400).json({ error: 'Type invalide' });
+      const existing = db.prepare('SELECT status FROM planning_event_status WHERE event_type = ? AND event_id = ?').get(type, id);
+      const currentStatus = existing?.status || 'pending';
+      const nextStatus = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
+      const newStatus = nextStatus[currentStatus] || 'pending';
+      db.prepare(`INSERT INTO planning_event_status (event_type, event_id, status, updated_at) VALUES (?, ?, ?, datetime('now'))
+        ON CONFLICT(event_type, event_id) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at`
+      ).run(type, id, newStatus);
+      res.json({ event_type: type, event_id: id, status: newStatus });
+    } catch (error) {
+      logger.error('PATCH /api/communication/planning-events/:type/:id/cycle-status error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── GET /api/communication/planning-event-statuses ───
+  // Récupérer tous les statuts d'événements planning
+  app.get('/api/communication/planning-event-statuses', authenticateToken, (req, res) => {
+    try {
+      const rows = db.prepare('SELECT event_type, event_id, status FROM planning_event_status WHERE status != ?').all('pending');
+      res.json(rows);
+    } catch (error) {
+      logger.error('GET /api/communication/planning-event-statuses error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
   // ─── POST /api/communication/planning-hidden-affaires/:id ───
   // Masquer une affaire de la planification
   app.post('/api/communication/planning-hidden-affaires/:id', authenticateToken, (req, res) => {

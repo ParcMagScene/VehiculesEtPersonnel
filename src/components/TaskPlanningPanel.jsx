@@ -151,6 +151,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [collapsedSections, setCollapsedSections] = useState({});
   const toggleSectionCollapse = (key) => setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
+  // ── Statuts des événements planning (Google/iCal/RDV) ──
+  const [eventStatuses, setEventStatuses] = useState(new Map());
+
   // ── iCal Calendars ──
   const [icalCalendars, setIcalCalendars] = useState([]);
   const [icalEvents, setIcalEvents] = useState([]);
@@ -183,6 +186,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       setTasks(data);
       setDisplayEvents(Array.isArray(events) ? events : []);
       setAffaires(Array.isArray(affairesData) ? affairesData : []);
+      // Charger les statuts des événements planning (Google/iCal/RDV)
+      try {
+        const statuses = await api.getPlanningEventStatuses();
+        const map = new Map();
+        (Array.isArray(statuses) ? statuses : []).forEach(s => map.set(`${s.eventType}:${s.eventId}`, s.status));
+        setEventStatuses(map);
+      } catch { /* ignore */ }
       initialLoadDone.current = true;
     } catch (err) {
       toast.error('Erreur chargement tâches');
@@ -1098,18 +1108,23 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         }).slice(0, 8)
       : [];
 
+    const googleStatus = eventStatuses.get(`google_event:${event.id}`) || 'pending';
+    const isGoogleDone = googleStatus === 'done';
+    const isGoogleProgress = googleStatus === 'in_progress';
+
     return (
       <div
         key={`gcal-rdv-${event.id}`}
-        className={`task-row event-row-cols google-rdv-row ${isProcessed ? 'processed' : 'pending'}`}
+        className={`task-row event-row-cols google-rdv-row ${isGoogleDone ? 'task-done-row' : ''}`}
       >
         <button
-          className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
+          className={`ev-col task-status-btn ${isGoogleDone ? 'done' : isGoogleProgress ? 'in-progress' : ''}`}
           style={{ cursor: 'pointer' }}
-          onClick={() => setEventTaskModalEvent(event)}
-          title={isProcessed ? 'Tâches définies — cliquer pour modifier' : 'Définir les tâches'}
+          onClick={(e) => { e.stopPropagation(); handleCyclePlanningEventStatus('google_event', event.id); }}
+          title={`Statut: ${googleStatus} — cliquer pour changer`}
         >
-          {isProcessed && <Check size={14} />}
+          {isGoogleDone && <Check size={14} />}
+          {isGoogleProgress && <Clock size={12} />}
         </button>
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
@@ -1218,10 +1233,20 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       affaire.tel && '📞 ' + affaire.tel,
     ].filter(Boolean).join('\n');
 
+    const rdvStatus = affaire.planningStatus || eventStatuses.get(`rdv:${affaire.numeroAffaire}`) || 'pending';
+    const isRdvDone = rdvStatus === 'done';
+    const isRdvProgress = rdvStatus === 'in_progress';
+
     return (
-      <div key={`rdv-${affaire.numeroAffaire}`} className="task-row event-row-cols rdv-row" style={{ flexWrap: 'wrap' }}>
-        <span className="ev-col task-status-btn" title="Rendez-vous">
-        </span>
+      <div key={`rdv-${affaire.numeroAffaire}`} className={`task-row event-row-cols rdv-row ${isRdvDone ? 'task-done-row' : ''}`} style={{ flexWrap: 'wrap' }}>
+        <button
+          className={`ev-col task-status-btn ${isRdvDone ? 'done' : isRdvProgress ? 'in-progress' : ''}`}
+          title={`Statut: ${rdvStatus} — cliquer pour changer`}
+          onClick={(e) => { e.stopPropagation(); handleCycleAffaireStatus(affaire.numeroAffaire); }}
+        >
+          {isRdvDone && <Check size={14} />}
+          {isRdvProgress && <Clock size={12} />}
+        </button>
 
         <span className="ev-col ev-col-affaire">
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
@@ -1305,18 +1330,24 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         }).slice(0, 8)
       : [];
 
+    const icalStatusKey = `ical_event:${event.id}`;
+    const icalStatus = eventStatuses.get(icalStatusKey) || 'pending';
+    const isIcalDone = icalStatus === 'done';
+    const isIcalProgress = icalStatus === 'in_progress';
+
     return (
       <div
         key={`ical-${event.id}-${startDT}`}
-        className={`task-row event-row-cols ical-event-row ${isProcessed ? 'processed' : 'pending'}`}
+        className={`task-row event-row-cols ical-event-row ${isIcalDone ? 'task-done-row' : ''}`}
       >
         <button
-          className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
+          className={`ev-col task-status-btn ${isIcalDone ? 'done' : isIcalProgress ? 'in-progress' : ''}`}
           style={{ cursor: 'pointer' }}
-          onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}
-          title={isProcessed ? 'Tâches définies — cliquer pour modifier' : 'Définir les tâches'}
+          onClick={(e) => { e.stopPropagation(); handleCyclePlanningEventStatus('ical_event', event.id); }}
+          title={`Statut: ${icalStatus} — cliquer pour changer`}
         >
-          {isProcessed && <Check size={14} />}
+          {isIcalDone && <Check size={14} />}
+          {isIcalProgress && <Clock size={12} />}
         </button>
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
@@ -1778,6 +1809,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       loadTasks(true);
     } catch (err) {
       toast.error('Erreur mise à jour statut affaire');
+    }
+  };
+
+  const handleCyclePlanningEventStatus = async (eventType, eventId) => {
+    try {
+      await api.cyclePlanningEventStatus(eventType, eventId);
+      loadTasks(true);
+    } catch (err) {
+      toast.error('Erreur mise à jour statut');
     }
   };
 

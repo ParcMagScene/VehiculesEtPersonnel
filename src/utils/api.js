@@ -1372,6 +1372,9 @@ class ApiClient {
   async toggleDisplayEventVisibility(id) {
     return this.request(`/communication/display-events/${id}/toggle-visible`, { method: 'PATCH' });
   }
+  async cycleDisplayEventStatus(id) {
+    return this.request(`/communication/display-events/${id}/cycle-status`, { method: 'PATCH' });
+  }
 
   // --- Import BL ---
   async getBLImports(params = {}) {

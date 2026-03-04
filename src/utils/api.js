@@ -1519,6 +1519,24 @@ class ApiClient {
     });
   }
 
+  // --- Multi-affectation personnel (planning_assignments) ---
+  async getPlanningAssignments(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/communication/planning-assignments${qs ? '?' + qs : ''}`);
+  }
+  async addPlanningAssignment(entityType, entityId, personId) {
+    return this.request('/communication/planning-assignments', {
+      method: 'POST',
+      body: JSON.stringify({ entity_type: entityType, entity_id: entityId, person_id: personId }),
+    });
+  }
+  async removePlanningAssignment(id) {
+    return this.request(`/communication/planning-assignments/${id}`, { method: 'DELETE' });
+  }
+  async clearPlanningAssignments(entityType, entityId) {
+    return this.request(`/communication/planning-assignments/entity/${encodeURIComponent(entityType)}/${encodeURIComponent(entityId)}`, { method: 'DELETE' });
+  }
+
   // --- Tâches récurrentes ---
   async getRecurringTasks() {
     return this.request('/communication/recurring-tasks');

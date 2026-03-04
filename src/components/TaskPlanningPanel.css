@@ -96,7 +96,74 @@
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 16px 24px;
+  padding: 0 24px 16px;
+}
+
+/* ═══ En-tête de colonnes (sticky) ═══ */
+.task-planning-panel .tp-columns-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 6px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--theme-bg-page);
+  border-bottom: 2px solid var(--theme-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--theme-text-secondary);
+}
+.task-planning-panel .tp-columns-header .ev-col-h {
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-status {
+  width: 22px;
+  margin-right: 2px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-affaire {
+  min-width: 95px;
+  width: 95px;
+  flex-shrink: 0;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-nom {
+  flex: 1 1 0;
+  min-width: 80px;
+  border-left: 1px solid var(--theme-border);
+  padding-left: 10px;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-client {
+  flex: 0 1 auto;
+  max-width: 180px;
+  min-width: 60px;
+  border-left: 1px solid var(--theme-border);
+  padding-left: 10px;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-date {
+  min-width: 110px;
+  width: 110px;
+  border-left: 1px solid var(--theme-border);
+  padding-left: 10px;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-time {
+  min-width: 135px;
+  width: 135px;
+  border-left: 1px solid var(--theme-border);
+  padding-left: 10px;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-actions {
+  margin-left: auto;
+  padding-left: 8px;
+  border-left: 1px solid var(--theme-border);
+  min-width: 80px;
+  text-align: center;
 }
 
 /* Section block */
@@ -674,6 +741,21 @@
   border-radius: 4px;
   background: var(--theme-bg-tertiary, rgba(0,0,0,0.08));
   color: var(--theme-text-secondary);
+}
+/* Badge type course (Enlèvement, Livraison, Retour, Récupération…) */
+.task-planning-panel .course-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  margin-left: 8px;
+  border-radius: 10px;
+  border: 1px solid;
+  white-space: nowrap;
+  line-height: 1.5;
+  vertical-align: middle;
 }
 /* Origine (badge compact dans actions) */
 .task-planning-panel .ev-col-origin {

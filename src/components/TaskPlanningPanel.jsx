@@ -993,36 +993,35 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {event.time ? <><Clock size={11} /> {event.time}</> : event.period ? <span className="period-badge">{event.period}</span> : ''}
         </span>
 
-        {/* Affectation personnel */}
-        <div className="event-assign-container">
-          {event.assigned_person_first_name ? (
-            <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)}>
-              <User size={12} />
-              {event.assigned_person_first_name} {event.assigned_person_last_name?.charAt(0)}.
-            </span>
-          ) : (
-            <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)} title="Affecter un personnel">
-              <UserPlus size={13} />
-            </button>
-          )}
-          {assigningEventId === event.id && (
-            <div className="assign-dropdown">
-              <div className="assign-dropdown-title">Affecter à :</div>
-              {event.assigned_person_id && (
-                <div className="assign-option unassign" onClick={() => handleAssignPerson(event.id, null)}>
-                  <X size={12} /> Retirer l'affectation
-                </div>
-              )}
-              {persons.map(p => (
-                <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(event.id, p.id)}>
-                  <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         <div className="task-actions">
+          {/* Affectation personnel */}
+          <div className="event-assign-container">
+            {event.assigned_person_first_name ? (
+              <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)}>
+                <User size={12} />
+                {event.assigned_person_first_name} {event.assigned_person_last_name?.charAt(0)}.
+              </span>
+            ) : (
+              <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === event.id ? null : event.id)} title="Affecter un personnel">
+                <UserPlus size={13} />
+              </button>
+            )}
+            {assigningEventId === event.id && (
+              <div className="assign-dropdown">
+                <div className="assign-dropdown-title">Affecter à :</div>
+                {event.assigned_person_id && (
+                  <div className="assign-option unassign" onClick={() => handleAssignPerson(event.id, null)}>
+                    <X size={12} /> Retirer l'affectation
+                  </div>
+                )}
+                {persons.map(p => (
+                  <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(event.id, p.id)}>
+                    <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             className={`toggle-visible ${isHidden ? 'off' : ''}`}
             onClick={() => handleToggleDisplayEventVisible(event)}
@@ -1111,42 +1110,41 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {timeStr ? <><Clock size={11} /> {timeStr}</> : ''}
         </span>
 
-        {/* Affectation personnel via display event lié */}
-        {(() => {
-          const de = displayEventByAffaire.get(affaire.numeroAffaire);
-          if (!de) return null;
-          return (
-            <div className="event-assign-container">
-              {de.assignedPersonFirstName ? (
-                <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === de.id ? null : de.id)}>
-                  <User size={12} />
-                  {de.assignedPersonFirstName} {de.assignedPersonLastName?.charAt(0)}.
-                </span>
-              ) : (
-                <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === de.id ? null : de.id)} title="Affecter un personnel">
-                  <UserPlus size={13} />
-                </button>
-              )}
-              {assigningEventId === de.id && (
-                <div className="assign-dropdown">
-                  <div className="assign-dropdown-title">Affecter à :</div>
-                  {de.assignedPersonId && (
-                    <div className="assign-option unassign" onClick={() => handleAssignPerson(de.id, null)}>
-                      <X size={12} /> Retirer l'affectation
-                    </div>
-                  )}
-                  {persons.map(p => (
-                    <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(de.id, p.id)}>
-                      <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
         <div className="task-actions rdv-actions">
+          {/* Affectation personnel via display event lié */}
+          {(() => {
+            const de = displayEventByAffaire.get(affaire.numeroAffaire);
+            if (!de) return null;
+            return (
+              <div className="event-assign-container">
+                {de.assignedPersonFirstName ? (
+                  <span className="task-person assigned" onClick={() => setAssigningEventId(assigningEventId === de.id ? null : de.id)}>
+                    <User size={12} />
+                    {de.assignedPersonFirstName} {de.assignedPersonLastName?.charAt(0)}.
+                  </span>
+                ) : (
+                  <button className="btn-assign" onClick={() => setAssigningEventId(assigningEventId === de.id ? null : de.id)} title="Affecter un personnel">
+                    <UserPlus size={13} />
+                  </button>
+                )}
+                {assigningEventId === de.id && (
+                  <div className="assign-dropdown">
+                    <div className="assign-dropdown-title">Affecter à :</div>
+                    {de.assignedPersonId && (
+                      <div className="assign-option unassign" onClick={() => handleAssignPerson(de.id, null)}>
+                        <X size={12} /> Retirer l'affectation
+                      </div>
+                    )}
+                    {persons.map(p => (
+                      <div key={p.id} className="assign-option" onClick={() => handleAssignPerson(de.id, p.id)}>
+                        <User size={12} /> {p.firstName || p.prenom} {p.lastName || p.nom}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
             <Eye size={14} />
           </button>

@@ -472,7 +472,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     if (!showArchived) {
       result = result.filter(a => !a.isArchived);
     }
-
     // Filtre recherche texte
     if (searchTerm) {
       const term = searchTerm.toLowerCase();

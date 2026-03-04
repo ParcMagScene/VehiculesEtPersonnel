@@ -348,11 +348,11 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const tasksByAffaire = useMemo(() => {
     const map = {};
     for (const t of allTasks) {
-      const num = t.affaire_num || t.event_affaire_id;
+      const num = t.affaireNum || t.eventAffaireId;
       if (!num) continue;
       const key = num.toUpperCase();
       if (!map[key]) map[key] = [];
-      map[key].push({ section: t.section, title: t.title || t.google_event_title || '', status: t.status });
+      map[key].push({ section: t.section, title: t.title || t.googleEventTitle || '', status: t.status });
     }
     return map;
   }, [allTasks]);

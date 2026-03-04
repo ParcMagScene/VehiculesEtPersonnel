@@ -235,8 +235,12 @@
 
 .task-planning-panel .task-actions {
   display: flex;
+  align-items: center;
   gap: 4px;
   flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 8px;
+  border-left: 1px solid var(--theme-border);
 }
 
 .task-planning-panel .task-actions button {
@@ -580,7 +584,7 @@
   background: rgba(66, 133, 244, 0.08);
 }
 
-/* ═══ Événement compact en colonnes (1 ligne) ═══ */
+/* ═══ Colonnes alignées : Coche | N° Affaire | Nom | Date | Heure | Actions ═══ */
 .task-planning-panel .event-row-cols {
   display: flex;
   align-items: center;
@@ -597,68 +601,64 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 1rem;
-  padding: 0 6px;
+  padding: 0 8px;
   flex-shrink: 0;
 }
+/* Col: Coche / Dot (icône) */
 .task-planning-panel .ev-col-dot {
-  width: 24px;
+  width: 28px;
   padding: 0 4px 0 0;
   justify-content: center;
   flex-shrink: 0;
 }
+/* Col: N° Affaire (largeur fixe pour alignement) */
 .task-planning-panel .ev-col-affaire {
   flex-shrink: 0;
+  min-width: 95px;
+  width: 95px;
 }
-.task-planning-panel .ev-col-title {
+/* Col: Nom (prend l'espace restant) */
+.task-planning-panel .ev-col-nom {
   flex: 1 1 0;
-  min-width: 80px;
+  min-width: 100px;
   font-weight: 600;
   font-size: 1.05rem;
   color: var(--theme-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
+  border-left: 1px solid var(--theme-border);
+  padding-left: 10px;
 }
+/* Col: Date (largeur fixe) */
 .task-planning-panel .ev-col-date {
   color: var(--theme-text-secondary);
   font-size: 0.9rem;
-  min-width: 90px;
+  min-width: 110px;
+  width: 110px;
+  border-left: 1px solid var(--theme-border);
+  padding-left: 10px;
 }
+/* Col: Heure / Période (largeur fixe) */
 .task-planning-panel .ev-col-time {
   color: var(--theme-text-secondary);
   font-size: 0.9rem;
-  min-width: 100px;
+  min-width: 135px;
+  width: 135px;
+  border-left: 1px solid var(--theme-border);
+  padding-left: 10px;
 }
-.task-planning-panel .ev-col-location {
-  color: var(--theme-text-tertiary, var(--theme-text-secondary));
-  font-size: 0.9rem;
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* Origine (badge compact dans actions) */
 .task-planning-panel .ev-col-origin {
   flex-shrink: 0;
   padding: 0 4px;
 }
+/* Statut (badge compact dans actions) */
 .task-planning-panel .ev-col-status {
   flex-shrink: 0;
   padding: 2px 8px;
 }
-.task-planning-panel .ev-col-type {
-  color: var(--theme-text-secondary);
-  font-size: 0.9rem;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.task-planning-panel .ev-col-notes {
-  color: var(--theme-text-tertiary, var(--theme-text-secondary));
-  font-size: 0.88rem;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 /* Tâche terminée en layout colonnes */
-.task-planning-panel .event-row-cols .ev-col-title.done {
+.task-planning-panel .event-row-cols .ev-col-nom.done {
   text-decoration: line-through;
   opacity: 0.6;
 }

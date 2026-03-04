@@ -622,7 +622,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     }
   };
 
-  // ═══ Articles BP (Location / Prestation) — liaison catalogue ═══
+  // ═══ Articles BP (Location / Prestation) — liaison matériel ═══
   const [bpItems, setBpItems] = useState({ items: [], total: 0, matched: 0, unmatched: 0 });
   const showBPArticles = affaire.type === 'Location' || affaire.type === 'Prestation';
   useEffect(() => {
@@ -1325,7 +1325,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               background: bpItems.unmatched === 0 ? 'var(--theme-success-bg-strong)' : 'var(--btn-warning-bg)',
               color: bpItems.unmatched === 0 ? 'var(--theme-success-text-alt)' : 'var(--theme-warning-text)'
             }}>
-              {bpItems.matched}/{bpItems.total} liés au catalogue
+              {bpItems.matched}/{bpItems.total} liés au matériel
             </span>
           </h3>
           <div className="bp-items-wrapper">
@@ -1344,7 +1344,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                       <th className="art-col-code">Réf.</th>
                       <th className="art-col-desc">Désignation</th>
                       <th className="art-col-qty">Qté</th>
-                      <th style={{ width: 100 }}>Catalogue</th>
+                      <th style={{ width: 100 }}>Matériel</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1376,7 +1376,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             ))}
             <div className="articles-summary">
               <span>{bpItems.total} article{bpItems.total > 1 ? 's' : ''}</span>
-              <span>{bpItems.matched} lié{bpItems.matched > 1 ? 's' : ''} au catalogue</span>
+              <span>{bpItems.matched} lié{bpItems.matched > 1 ? 's' : ''} au matériel</span>
               {bpItems.unmatched > 0 && (
                 <span style={{ color: '#d97706' }}>
                   <AlertCircle size={12} style={{ verticalAlign: -1 }} /> {bpItems.unmatched} non lié{bpItems.unmatched > 1 ? 's' : ''}

@@ -315,29 +315,71 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         }
       }
 
-      const stmt = db.prepare(`
-        INSERT INTO bl_imports (id, affaire_id, filename, file_path, mime_type, raw_text, parsed_data, status, affaire_type, doc_type, confidence_score, sections_data, field_confidence, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-      `);
+      // ── Dédoublonnage : si un import avec le même filename + affaire existe déjà, on le met à jour ──
+      const existingFilename = file ? file.originalname : 'text-import';
+      const existingImport = linkedAffaireId
+        ? db.prepare('SELECT id FROM bl_imports WHERE affaire_id = ? AND filename = ?').get(linkedAffaireId, existingFilename)
+        : null;
 
-      stmt.run(
-        id,
-        linkedAffaireId,
-        file ? file.originalname : 'text-import',
-        file ? file.filename : null,
-        file ? file.mimetype : 'text/plain',
-        raw_text || null,
-        parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null,
-        status || 'validated',
-        affaireTypeResolved,
-        docType,
-        confidenceScore,
-        sectionsData,
-        fieldConfidence,
-        req.user.id
-      );
+      let finalId;
+      let updated = false;
 
-      const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(id);
+      if (existingImport) {
+        // ── UPDATE : mettre à jour l'import existant ──
+        finalId = existingImport.id;
+        updated = true;
+
+        db.prepare(`
+          UPDATE bl_imports SET
+            file_path = ?, mime_type = ?, raw_text = ?, parsed_data = ?,
+            status = ?, affaire_type = ?, doc_type = ?, confidence_score = ?,
+            sections_data = ?, field_confidence = ?, created_by = ?, created_at = datetime('now')
+          WHERE id = ?
+        `).run(
+          file ? file.filename : null,
+          file ? file.mimetype : 'text/plain',
+          raw_text || null,
+          parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null,
+          status || 'validated',
+          affaireTypeResolved,
+          docType,
+          confidenceScore,
+          sectionsData,
+          fieldConfidence,
+          req.user.id,
+          finalId
+        );
+
+        // Supprimer les anciens bp_items pour cet import
+        db.prepare('DELETE FROM bp_items WHERE bl_import_id = ?').run(finalId);
+      } else {
+        // ── INSERT : nouvel import ──
+        finalId = id;
+
+        const stmt = db.prepare(`
+          INSERT INTO bl_imports (id, affaire_id, filename, file_path, mime_type, raw_text, parsed_data, status, affaire_type, doc_type, confidence_score, sections_data, field_confidence, created_by, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `);
+
+        stmt.run(
+          finalId,
+          linkedAffaireId,
+          existingFilename,
+          file ? file.filename : null,
+          file ? file.mimetype : 'text/plain',
+          raw_text || null,
+          parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null,
+          status || 'validated',
+          affaireTypeResolved,
+          docType,
+          confidenceScore,
+          sectionsData,
+          fieldConfidence,
+          req.user.id
+        );
+      }
+
+      const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(finalId);
 
       // ═══ Auto-persist BP items with catalogue matching ═══
       let bpItemsCount = 0;
@@ -374,7 +416,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
               }
 
               insertItem.run(
-                id,
+                finalId,
                 catalogId,
                 ref || null,
                 item.description || null,
@@ -395,7 +437,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         }
       }
 
-      res.status(201).json({ ...created, affaire_created: affaireCreated, bp_items_count: bpItemsCount });
+      res.status(updated ? 200 : 201).json({ ...created, affaire_created: affaireCreated, bp_items_count: bpItemsCount, updated });
     } catch (error) {
       logger.error('POST /api/communication/bl-imports error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });

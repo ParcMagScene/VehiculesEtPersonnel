@@ -999,9 +999,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const renderAffaireRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
     const dateBadge = getDateBadge(affaire.dateDebut || affaire.date_debut);
-    const isProcessed = affaire._googleId
-      ? processedGoogleIds.has(affaire._googleId)
-      : processedGoogleIds.has(`affaire-${affaire.id || affaire.numeroAffaire}`);
+    const planningStatus = affaire.planningStatus || 'pending';
+    const isDone = planningStatus === 'done';
+    const isProgress = planningStatus === 'in_progress';
     const displayNom = affaire.nom || affaire.event_name || affaire.titre || affaire.client || typeInfo.label;
     const displayClient = affaire.client || '';
     const timeStr = affaire._googleTime
@@ -1018,26 +1018,26 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     return (
       <div
         key={`aff-${affaire.numeroAffaire}`}
-        className={`task-row event-row-cols affaire-row ${isProcessed ? 'processed' : 'pending'} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
+        className={`task-row event-row-cols affaire-row ${isDone ? 'task-done-row' : ''} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
         onClick={() => openAffaireTaskModal(affaire)}
         style={{ cursor: 'pointer' }}
       >
         <button
-          className={`ev-col task-status-btn ${isProcessed ? 'done' : ''}`}
-          title={isProcessed ? 'Tâches définies' : 'Définir les tâches'}
-          onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}
+          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+          title={`Statut: ${planningStatus} — cliquer pour changer`}
+          onClick={(e) => { e.stopPropagation(); handleCycleAffaireStatus(affaire.numeroAffaire); }}
         >
-          {isProcessed && <Check size={14} />}
+          {isDone && <Check size={14} />}
+          {isProgress && <Clock size={12} />}
         </button>
 
         <span className="ev-col ev-col-affaire">
-          <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { /* stop propagation handled by AffaireBadge */ onNavigateToEntity('affaire', { numero: num }); } : undefined} />
+          <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { onNavigateToEntity('affaire', { numero: num }); } : undefined} />
         </span>
 
         <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }}>
           {displayNom}
           {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
-          {isProcessed && <span className="processed-badge" title="Tâches définies">✓</span>}
         </span>
 
         <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
@@ -1049,16 +1049,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <div className="task-actions">
-          {!isProcessed && (
-            <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }} title="Définir les tâches pour cette affaire">
-              <Plus size={14} />
-            </button>
-          )}
-          {isProcessed && (
-            <span className="task-status-btn done" title="Tâches déjà définies">
-              <Check size={14} />
-            </span>
-          )}
+          <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }} title="Définir les tâches pour cette affaire">
+            <Plus size={14} />
+          </button>
           <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }} title="Retirer de la planification">
             <X size={14} />
           </button>
@@ -1776,6 +1769,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       loadTasks(true);
     } catch (err) {
       toast.error('Erreur mise à jour statut');
+    }
+  };
+
+  const handleCycleAffaireStatus = async (numeroAffaire) => {
+    try {
+      await api.cycleAffaireStatus(numeroAffaire);
+      loadTasks(true);
+    } catch (err) {
+      toast.error('Erreur mise à jour statut affaire');
     }
   };
 

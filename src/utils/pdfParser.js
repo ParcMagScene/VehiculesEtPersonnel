@@ -589,12 +589,21 @@ export const parseBonPreparation = (text) => {
       info.fieldsFound++;
     }
 
-    // AF number (ligne isolée)
+    // AF number — essayer d'abord ligne isolée, sinon fallback regex souple
     const afMatch = text.match(/^(AF\d{4,6})$/m);
-    if (afMatch) { info.numeroAffaire = afMatch[1]; info.fieldsFound++; }
+    if (afMatch) {
+      info.numeroAffaire = afMatch[1]; info.fieldsFound++;
+    } else {
+      // Fallback : AF dans le texte (avec espace optionnel, milieu de ligne)
+      const afFallback = extractNumeroAffaire(text);
+      if (afFallback) { info.numeroAffaire = afFallback; info.fieldsFound++; }
+    }
 
-    // Trouver l'index AF dans les lignes
-    const afIdx = lines.findIndex(l => /^AF\d{4,6}$/.test(l));
+    // Trouver l'index AF dans les lignes (essai strict puis souple)
+    let afIdx = lines.findIndex(l => /^AF\d{4,6}$/.test(l));
+    if (afIdx < 0) {
+      afIdx = lines.findIndex(l => /\bAF\s?\d{4,6}\b/i.test(l));
+    }
     if (afIdx >= 0) {
       // Nom affaire = ligne après AF
       if (afIdx + 1 < lines.length && lines[afIdx + 1] !== 'Devis') {

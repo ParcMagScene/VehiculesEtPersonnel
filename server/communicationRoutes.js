@@ -254,7 +254,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // ── Auto-création / liaison affaire ──
-      let linkedAffaireId = affaire_id || null;
+      // Fallback : utiliser pd.numero si affaire_id non fourni
+      let linkedAffaireId = affaire_id || pd?.numero || null;
       let affaireCreated = false;
       if (linkedAffaireId) {
         const existingAffaire = db.prepare('SELECT id, numero_affaire FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
@@ -262,6 +263,25 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           // Créer l'affaire automatiquement à partir des données parsées
           try {
             const today = new Date().toISOString().slice(0, 10);
+
+            // Extraire date_debut et date_fin depuis les sections si disponibles
+            let dateDebut = pd?.date || pd?.dateLivraison || pd?.dateDebut || null;
+            let dateFin = pd?.dateFin || null;
+            if (pd?.sections && Array.isArray(pd.sections) && pd.sections.length > 0) {
+              for (const sec of pd.sections) {
+                const dmDebut = sec.dateDebut?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                if (dmDebut) {
+                  const iso = `${dmDebut[3]}-${dmDebut[2]}-${dmDebut[1]}`;
+                  if (!dateDebut || iso < dateDebut) dateDebut = iso;
+                }
+                const dmFin = sec.dateFin?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                if (dmFin) {
+                  const iso = `${dmFin[3]}-${dmFin[2]}-${dmFin[1]}`;
+                  if (!dateFin || iso > dateFin) dateFin = iso;
+                }
+              }
+            }
+
             db.prepare(`
               INSERT INTO affaires (numero_affaire, type, client, interlocuteur, tel, fax,
                 date_debut, date_fin, devis, adresse_livraison, titre, description,
@@ -274,8 +294,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
               pd?.interlocuteur || '',
               pd?.tel || '',
               pd?.fax || '',
-              pd?.date || today,
-              '',
+              dateDebut || today,
+              dateFin || '',
               pd?.devis || '',
               pd?.adresse || '',
               pd?.nomAffaire || pd?.objet || '',

@@ -427,7 +427,11 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                             <input
                               type="text"
                               value={val}
-                              onChange={e => setEditedFields(p => ({ ...p, [field.key]: e.target.value }))}
+                              onChange={e => {
+                                const v = e.target.value;
+                                setEditedFields(p => ({ ...p, [field.key]: v }));
+                                if (field.key === 'numero') setAffaireId(v);
+                              }}
                               placeholder={`${field.label} non détecté`}
                               style={inputStyle}
                             />

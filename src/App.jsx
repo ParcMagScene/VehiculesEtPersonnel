@@ -784,7 +784,8 @@ function App() {
       const numero = data.numero || data.numeroAffaire;
       if (!numero) return;
       api.getAffaires().then(all => {
-        const found = (Array.isArray(all) ? all : []).find(
+        const affairesArr = Array.isArray(all) ? all : (all?.affaires || []);
+        const found = affairesArr.find(
           a => a.numeroAffaire === numero || a.numero_affaire === numero
         );
         if (found) setGlobalAffaireDialog(found);

@@ -39,7 +39,9 @@ export default function AddressAutocomplete({
 }) {
   const inputRef = useRef(null);
   const autocompleteInstanceRef = useRef(null);
+  const placeElRef = useRef(null);
   const isInitializedRef = useRef(false);
+  const usesLegacyRef = useRef(false);
 
   const initAutocomplete = useCallback(async () => {
     if (isInitializedRef.current || !inputRef.current) return;
@@ -56,9 +58,59 @@ export default function AddressAutocomplete({
       if (!window.google?.maps?.places) return;
       if (!inputRef.current) return;
 
-      // Utiliser l'API Autocomplete classique (stable et compatible)
+      const countries = Array.isArray(country) ? country : [country];
+
+      // 1) Nouvelle API PlaceAutocompleteElement (recommandée par Google depuis mars 2025)
+      if (window.google.maps.places.PlaceAutocompleteElement) {
+        try {
+          const placeAC = new window.google.maps.places.PlaceAutocompleteElement();
+          placeAC.includedRegionCodes = countries;
+
+          // Connecter à notre input existant (supporté depuis la v3.59+)
+          if ('inputElement' in placeAC || placeAC.inputElement !== undefined) {
+            placeAC.inputElement = inputRef.current;
+          }
+
+          placeAC.addEventListener('gmp-placeselect', async ({ place }) => {
+            try {
+              await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+              const address = place.formattedAddress || place.displayName;
+              if (address) {
+                onChange(address);
+                if (onPlaceSelect) {
+                  // Format compatible avec l'ancien Autocomplete
+                  onPlaceSelect({
+                    formatted_address: place.formattedAddress,
+                    name: place.displayName,
+                    geometry: place.location ? { location: place.location } : undefined,
+                  });
+                }
+              }
+            } catch (fetchErr) {
+              console.warn('PlaceAutocomplete fetchFields error:', fetchErr);
+            }
+          });
+
+          // L'élément doit être dans le DOM pour fonctionner
+          placeAC.style.position = 'absolute';
+          placeAC.style.width = '0';
+          placeAC.style.height = '0';
+          placeAC.style.overflow = 'hidden';
+          placeAC.style.opacity = '0';
+          placeAC.style.pointerEvents = 'none';
+          inputRef.current.parentElement?.appendChild(placeAC);
+
+          placeElRef.current = placeAC;
+          autocompleteInstanceRef.current = placeAC;
+          isInitializedRef.current = true;
+          return; // Succès — pas besoin du fallback
+        } catch (e) {
+          console.warn('PlaceAutocompleteElement init error, fallback to legacy:', e.message);
+        }
+      }
+
+      // 2) Fallback : ancienne API Autocomplete (toujours fonctionnelle)
       if (window.google.maps.places.Autocomplete) {
-        const countries = Array.isArray(country) ? country : [country];
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
           componentRestrictions: { country: countries },
           fields: ['formatted_address', 'geometry', 'name'],
@@ -76,6 +128,7 @@ export default function AddressAutocomplete({
         });
 
         autocompleteInstanceRef.current = autocomplete;
+        usesLegacyRef.current = true;
         isInitializedRef.current = true;
       }
     } catch (error) {
@@ -92,11 +145,18 @@ export default function AddressAutocomplete({
   // Cleanup
   useEffect(() => {
     return () => {
-      if (autocompleteInstanceRef.current) {
-        window.google?.maps?.event?.clearInstanceListeners?.(autocompleteInstanceRef.current);
-        autocompleteInstanceRef.current = null;
+      // Retirer le PlaceAutocompleteElement du DOM s'il existe
+      if (placeElRef.current) {
+        placeElRef.current.remove();
+        placeElRef.current = null;
       }
+      // Nettoyer les listeners pour l'ancienne API
+      if (usesLegacyRef.current && autocompleteInstanceRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners?.(autocompleteInstanceRef.current);
+      }
+      autocompleteInstanceRef.current = null;
       isInitializedRef.current = false;
+      usesLegacyRef.current = false;
     };
   }, []);
 

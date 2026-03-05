@@ -16,6 +16,7 @@ const LocationIconsTab = lazy(() => import('./LocationIconsTab'));
 const SneakyTab = lazy(() => import('./SneakyTab'));
 const SonosTab = lazy(() => import('./SonosTab'));
 const TVPreviewPanel = lazy(() => import('./TVPreviewPanel'));
+const DashboardTasksSidebar = lazy(() => import('./DashboardTasksSidebar'));
 
 const CONFIG_TABS = [
   { id: 'screens', label: 'Écrans', icon: Monitor },
@@ -100,8 +101,13 @@ function DisplayDashboardPanel({ currentUser }) {
         </div>
       </div>
 
-      {/* Corps — split layout avec moniteurs Direct/Preview à droite */}
+      {/* Corps — split layout : tâches | config | divider | aperçu TV */}
       <div className="display-body split" ref={bodyRef}>
+      {/* Sidebar tâches du jour + Sonos */}
+      <Suspense fallback={<div className="display-loading">Chargement…</div>}>
+        <DashboardTasksSidebar refreshKey={refreshKey} />
+      </Suspense>
+
       <div className="display-tab-content">
         <Suspense fallback={<div className="display-loading">Chargement…</div>}>
           {activeTab === 'screens' && (

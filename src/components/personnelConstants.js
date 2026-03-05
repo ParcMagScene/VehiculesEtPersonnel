@@ -53,8 +53,8 @@ export const POSITION_CATEGORIES = [
   { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
 
-export const PERMANENT_TYPES = ['permanent', 'salarié'];
-export const NON_PERMANENT_TYPES = ['contractuel', 'stagiaire'];
+export const PERMANENT_TYPES = ['permanent'];
+export const NON_PERMANENT_TYPES = ['salarié', 'contractuel', 'stagiaire'];
 
 export const getCategoryColor = (category) => {
   return SKILL_CATEGORIES.find(c => c.value === category)?.color || 'var(--theme-text-gray)';

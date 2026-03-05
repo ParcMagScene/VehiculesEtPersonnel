@@ -660,69 +660,72 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         modifiedWorkingDays = calcWorkingDays(modifiedStartDate, modifiedEndDate, existing.start_period, existing.end_period);
       }
 
-      // Mettre à jour la demande
-      db.prepare(`
-        UPDATE leave_requests SET
-          status = ?, admin_comment = ?, decision_date = datetime('now'), decision_by = ?,
-          modified_start_date = ?, modified_end_date = ?, modified_working_days = ?,
-          signature_admin = ?, signature_admin_date = ?,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(
-        status, adminComment || null, req.user.id,
-        modifiedStartDate || null, modifiedEndDate || null, modifiedWorkingDays,
-        signatureAdmin || null, signatureAdmin ? new Date().toISOString() : null,
-        req.params.id,
-      );
-
-      // Si accepté ou modifié, mettre à jour le solde de congés (si type déductible)
-      if ((status === 'accepted' || status === 'modified') && LEAVE_TYPES[existing.leave_type]?.deductsBalance) {
-        const effectiveDays = status === 'modified' ? modifiedWorkingDays : existing.working_days;
-        const year = new Date(existing.start_date).getFullYear();
-
-        const balance = db.prepare(
-          'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?'
-        ).get(existing.person_id, year, existing.leave_type);
-
-        if (balance) {
-          db.prepare('UPDATE leave_balances SET days_taken = days_taken + ? WHERE id = ?')
-            .run(effectiveDays, balance.id);
-        } else {
-          db.prepare(
-            'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, ?)'
-          ).run(existing.person_id, year, existing.leave_type, DAYS_PER_YEAR, effectiveDays);
-        }
-      }
-
-      // Mettre à jour la disponibilité correspondante dans le planning
+      // Transaction atomique pour la décision
       const effectiveStartDate = status === 'modified' ? modifiedStartDate : existing.start_date;
       const effectiveEndDate = status === 'modified' ? modifiedEndDate : existing.end_date;
       const availStatus = status === 'accepted' || status === 'modified' ? 'approved' : 'rejected';
 
-      db.prepare(`
-        UPDATE availabilities SET 
-          status = ?, approved_by = ?, approved_at = datetime('now'),
-          rejection_reason = ?,
-          start_date = ?, end_date = ?
-        WHERE person_id = ? AND source = 'leave_request'
-          AND start_date = ? AND end_date = ?
-      `).run(
-        availStatus, req.user.id,
-        status === 'refused' ? adminComment : null,
-        effectiveStartDate, effectiveEndDate,
-        existing.person_id, existing.start_date, existing.end_date,
-      );
+      db.transaction(() => {
+        // Mettre à jour la demande
+        db.prepare(`
+          UPDATE leave_requests SET
+            status = ?, admin_comment = ?, decision_date = datetime('now'), decision_by = ?,
+            modified_start_date = ?, modified_end_date = ?, modified_working_days = ?,
+            signature_admin = ?, signature_admin_date = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(
+          status, adminComment || null, req.user.id,
+          modifiedStartDate || null, modifiedEndDate || null, modifiedWorkingDays,
+          signatureAdmin || null, signatureAdmin ? new Date().toISOString() : null,
+          req.params.id,
+        );
 
-      // Historiser la décision
-      db.prepare(`
-        INSERT INTO leave_request_history (leave_request_id, action, old_value, new_value, performed_by)
-        VALUES (?, 'status_changed', ?, ?, ?)
-      `).run(
-        req.params.id,
-        JSON.stringify({ status: 'pending' }),
-        JSON.stringify({ status, adminComment, modifiedStartDate, modifiedEndDate }),
-        req.user.id,
-      );
+        // Si accepté ou modifié, mettre à jour le solde de congés (si type déductible)
+        if ((status === 'accepted' || status === 'modified') && LEAVE_TYPES[existing.leave_type]?.deductsBalance) {
+          const effectiveDays = status === 'modified' ? modifiedWorkingDays : existing.working_days;
+          const year = new Date(existing.start_date).getFullYear();
+
+          const balance = db.prepare(
+            'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?'
+          ).get(existing.person_id, year, existing.leave_type);
+
+          if (balance) {
+            db.prepare('UPDATE leave_balances SET days_taken = days_taken + ? WHERE id = ?')
+              .run(effectiveDays, balance.id);
+          } else {
+            db.prepare(
+              'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, ?)'
+            ).run(existing.person_id, year, existing.leave_type, DAYS_PER_YEAR, effectiveDays);
+          }
+        }
+
+        // Mettre à jour la disponibilité correspondante dans le planning
+        db.prepare(`
+          UPDATE availabilities SET 
+            status = ?, approved_by = ?, approved_at = datetime('now'),
+            rejection_reason = ?,
+            start_date = ?, end_date = ?
+          WHERE person_id = ? AND source = 'leave_request'
+            AND start_date = ? AND end_date = ?
+        `).run(
+          availStatus, req.user.id,
+          status === 'refused' ? adminComment : null,
+          effectiveStartDate, effectiveEndDate,
+          existing.person_id, existing.start_date, existing.end_date,
+        );
+
+        // Historiser la décision
+        db.prepare(`
+          INSERT INTO leave_request_history (leave_request_id, action, old_value, new_value, performed_by)
+          VALUES (?, 'status_changed', ?, ?, ?)
+        `).run(
+          req.params.id,
+          JSON.stringify({ status: 'pending' }),
+          JSON.stringify({ status, adminComment, modifiedStartDate, modifiedEndDate }),
+          req.user.id,
+        );
+      })();
 
       addToHistory('leave_request', req.params.id, `decision_${status}`,
         { adminComment, modifiedStartDate, modifiedEndDate }, req.user.id, req.user.name);
@@ -772,25 +775,29 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         return res.status(403).json({ error: 'Accès admin requis' });
       }
 
-      if (role === 'employee') {
-        db.prepare(`
-          UPDATE leave_requests SET signature_employee = ?, signature_employee_date = datetime('now'), updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).run(signature, req.params.id);
-      } else if (role === 'admin') {
-        db.prepare(`
-          UPDATE leave_requests SET signature_admin = ?, signature_admin_date = datetime('now'), updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).run(signature, req.params.id);
-      } else {
+      if (role !== 'employee' && role !== 'admin') {
         return res.status(400).json({ error: 'Rôle invalide. Valeurs : employee, admin' });
       }
 
-      // Historiser
-      db.prepare(`
-        INSERT INTO leave_request_history (leave_request_id, action, new_value, performed_by)
-        VALUES (?, 'signed', ?, ?)
-      `).run(req.params.id, JSON.stringify({ role }), req.user.id);
+      db.transaction(() => {
+        if (role === 'employee') {
+          db.prepare(`
+            UPDATE leave_requests SET signature_employee = ?, signature_employee_date = datetime('now'), updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).run(signature, req.params.id);
+        } else {
+          db.prepare(`
+            UPDATE leave_requests SET signature_admin = ?, signature_admin_date = datetime('now'), updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).run(signature, req.params.id);
+        }
+
+        // Historiser
+        db.prepare(`
+          INSERT INTO leave_request_history (leave_request_id, action, new_value, performed_by)
+          VALUES (?, 'signed', ?, ?)
+        `).run(req.params.id, JSON.stringify({ role }), req.user.id);
+      })();
 
       const updated = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
       res.json(updated);
@@ -828,31 +835,33 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         });
       }
 
-      db.prepare(`
-        UPDATE leave_requests SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?
-      `).run(req.params.id);
-
-      // Si la demande était acceptée et avait réduit le solde, le rétablir
-      if (existing.status === 'accepted' && LEAVE_TYPES[existing.leave_type]?.deductsBalance) {
-        const year = new Date(existing.start_date).getFullYear();
+      db.transaction(() => {
         db.prepare(`
-          UPDATE leave_balances SET days_taken = MAX(0, days_taken - ?) 
-          WHERE person_id = ? AND year = ? AND type = ?
-        `).run(existing.working_days, existing.person_id, year, existing.leave_type);
-      }
+          UPDATE leave_requests SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?
+        `).run(req.params.id);
 
-      // Supprimer l'entrée de disponibilité correspondante
-      db.prepare(`
-        DELETE FROM availabilities 
-        WHERE person_id = ? AND source = 'leave_request'
-          AND start_date = ? AND end_date = ?
-      `).run(existing.person_id, existing.start_date, existing.end_date);
+        // Si la demande était acceptée et avait réduit le solde, le rétablir
+        if (existing.status === 'accepted' && LEAVE_TYPES[existing.leave_type]?.deductsBalance) {
+          const year = new Date(existing.start_date).getFullYear();
+          db.prepare(`
+            UPDATE leave_balances SET days_taken = MAX(0, days_taken - ?) 
+            WHERE person_id = ? AND year = ? AND type = ?
+          `).run(existing.working_days, existing.person_id, year, existing.leave_type);
+        }
 
-      // Historiser
-      db.prepare(`
-        INSERT INTO leave_request_history (leave_request_id, action, old_value, performed_by)
-        VALUES (?, 'cancelled', ?, ?)
-      `).run(req.params.id, JSON.stringify({ status: existing.status }), req.user.id);
+        // Supprimer l'entrée de disponibilité correspondante
+        db.prepare(`
+          DELETE FROM availabilities 
+          WHERE person_id = ? AND source = 'leave_request'
+            AND start_date = ? AND end_date = ?
+        `).run(existing.person_id, existing.start_date, existing.end_date);
+
+        // Historiser
+        db.prepare(`
+          INSERT INTO leave_request_history (leave_request_id, action, old_value, performed_by)
+          VALUES (?, 'cancelled', ?, ?)
+        `).run(req.params.id, JSON.stringify({ status: existing.status }), req.user.id);
+      })();
 
       res.json({ success: true, message: 'Demande annulée' });
     } catch (error) {

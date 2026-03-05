@@ -4,6 +4,7 @@
 .m-eq-qr {
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100dvh;
   background: var(--theme-bg-page);
   color: var(--theme-text-primary);
   padding-bottom: env(safe-area-inset-bottom, 20px);
@@ -559,7 +560,7 @@
   box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
 }
 .m-eq-qr-submit.ok {
-  background: linear-gradient(135deg, var(--theme-success-alt), #059669);
+  background: linear-gradient(135deg, var(--theme-success-alt), var(--theme-success-dark));
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
 }
 

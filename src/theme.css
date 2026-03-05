@@ -1080,3 +1080,21 @@
   align-items: center;
   justify-content: center;
 }
+
+/* ─── [AUDIT] Skip-link a11y ─── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: var(--z-tooltip);
+  padding: 8px 16px;
+  background: var(--theme-primary);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 8px;
+}

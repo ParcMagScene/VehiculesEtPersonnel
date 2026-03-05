@@ -201,7 +201,7 @@
 /* ═══ FILTRE CASCADE HOVER ═══ */
 .eq-cascade-filter {
   position: relative;
-  z-index: 100;
+  z-index: var(--z-dropdown);
 }
 
 .eq-cascade-btn {
@@ -424,9 +424,9 @@
   max-width: 160px;
 }
 .eq-btn-secondary.active {
-  background: var(--sec-color, #3b82f6);
+  background: var(--sec-color, var(--theme-info));
   color: var(--theme-text-inverse);
-  border-color: var(--sec-color, #3b82f6);
+  border-color: var(--sec-color, var(--theme-info));
 }
 
 .eq-content {
@@ -984,7 +984,7 @@
 .eq-modal-overlay {
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay-dark);
-  z-index: 1000;
+  z-index: var(--z-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -1189,7 +1189,7 @@
   background-color: var(--theme-overlay-dark, rgba(0, 0, 0, 0.5));
   display: flex;
   justify-content: flex-end;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   backdrop-filter: blur(4px);
   isolation: isolate;
   animation: fadeIn 0.2s ease;
@@ -1284,8 +1284,8 @@
 }
 
 .eq-mgmt-tab.active {
-  color: var(--tab-color, #6366f1);
-  border-bottom-color: var(--tab-color, #6366f1);
+  color: var(--tab-color, var(--theme-indigo));
+  border-bottom-color: var(--tab-color, var(--theme-indigo));
   background: var(--theme-bg-card);
 }
 
@@ -1569,7 +1569,7 @@
 }
 
 [data-theme="dark"] .eq-mgmt-tabs {
-  background: #0f172a;
+  background: var(--theme-bg-darker);
   border-bottom-color: var(--theme-border);
 }
 
@@ -1614,7 +1614,7 @@
 }
 [data-theme="dark"] .eq-cascade-item.selected {
   background: #1e1b4b;
-  color: #a5b4fc;
+  color: var(--theme-purple-accent);
 }
 [data-theme="dark"] .eq-cascade-all {
   border-color: var(--theme-border);
@@ -1635,7 +1635,7 @@
 }
 
 [data-theme="dark"] .eq-management-section {
-  background: #0f172a;
+  background: var(--theme-bg-darker);
   border-color: var(--theme-border);
 }
 
@@ -1670,7 +1670,7 @@
 }
 
 [data-theme="dark"] .eq-cat-leaves {
-  background: #0f172a;
+  background: var(--theme-bg-darker);
 }
 
 [data-theme="dark"] .eq-cat-leaf-name {
@@ -1814,7 +1814,7 @@
   background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2046,7 +2046,7 @@
 
 .eq-table-uid code {
   font-size: 11px;
-  color: #60a5fa;
+  color: var(--theme-info);
   background: rgba(96,165,250,0.1);
   padding: 2px 6px;
   border-radius: 4px;
@@ -2131,7 +2131,7 @@
 
 .eq-uid-code {
   font-size: 13px;
-  color: #60a5fa;
+  color: var(--theme-info);
   background: rgba(96,165,250,0.1);
   padding: 3px 10px;
   border-radius: 6px;
@@ -2445,7 +2445,7 @@
 }
 
 .eq-media-card.linked {
-  border-color: #10b981;
+  border-color: var(--theme-success-alt);
 }
 
 .eq-media-card.linked:hover {
@@ -2512,7 +2512,7 @@
   align-items: center;
   gap: 3px;
   font-size: 10px;
-  color: #10b981;
+  color: var(--theme-success-alt);
   font-weight: 500;
 }
 
@@ -2545,7 +2545,7 @@
 }
 
 .eq-media-card-delete:hover {
-  background: #dc2626;
+  background: var(--theme-danger-dark);
 }
 
 /* Action buttons row (rename, link, delete) */
@@ -2601,7 +2601,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: var(--z-tooltip);
   animation: fadeIn 0.2s;
 }
 
@@ -2675,7 +2675,7 @@
   margin-left: 8px;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #60a5fa;
+  color: var(--theme-info);
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.25);
   border-radius: 6px;
@@ -2695,7 +2695,7 @@
 .eq-depot-map-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-tooltip);
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
@@ -2706,7 +2706,7 @@
 .eq-depot-map-modal {
   background: #1a1a2e;
   border-radius: 16px;
-  border: 1px solid #334155;
+  border: 1px solid var(--theme-text-dark);
   width: 90vw;
   max-width: 900px;
   max-height: 85vh;
@@ -2721,14 +2721,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--theme-text-dark);
   flex-shrink: 0;
 }
 .eq-depot-map-modal-header h3 {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--theme-border);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2757,6 +2757,7 @@
   .eq-depot-map-modal {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     max-width: 100%;
     max-height: 100%;
     border-radius: 0;

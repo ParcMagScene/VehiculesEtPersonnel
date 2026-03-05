@@ -62,12 +62,12 @@
   opacity: 0.8;
 }
 
-.kpi-vehicles::before { background: #3b82f6; }
+.kpi-vehicles::before { background: var(--theme-info); }
 .kpi-reservations::before { background: var(--theme-secondary); }
-.kpi-maintenance::before { background: #f59e0b; }
-.kpi-personnel::before { background: #10b981; }
+.kpi-maintenance::before { background: var(--theme-warning); }
+.kpi-personnel::before { background: var(--theme-success-alt); }
 .kpi-affaires::before { background: #06b6d4; }
-.kpi-orders::before { background: #f97316; }
+.kpi-orders::before { background: var(--theme-warning); }
 
 .kpi-card:hover {
   transform: translateY(-2px);
@@ -203,7 +203,7 @@
 
 .reservation-item.today {
   background: var(--theme-info-bg);
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--theme-info);
 }
 
 .reservation-item:hover {
@@ -258,7 +258,7 @@
 
 .maintenance-item.overdue {
   background: var(--theme-warning-bg);
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid var(--theme-warning);
 }
 
 .maint-vehicle {

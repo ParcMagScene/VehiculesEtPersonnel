@@ -426,7 +426,7 @@
   display: grid;
   grid-template-columns: subgrid;
   pointer-events: none;
-  z-index: 100;
+  z-index: var(--z-dropdown);
   min-height: 50px;
 }
 

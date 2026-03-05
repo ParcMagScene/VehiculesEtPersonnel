@@ -4,7 +4,7 @@
   position: fixed;
   inset: 0;
   background: var(--theme-overlay);
-  z-index: 2000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,7 +29,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: linear-gradient(135deg, var(--theme-primary), #8b5cf6);
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-light));
   color: var(--theme-text-inverse);
 }
 .mailing-header-left {
@@ -170,7 +170,7 @@
 .mailing-recipient-tag button {
   background: none;
   border: none;
-  color: #a78bfa;
+  color: var(--theme-secondary);
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;

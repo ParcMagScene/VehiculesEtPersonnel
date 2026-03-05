@@ -428,16 +428,16 @@
 }
 
 .mloc-eq-status.available {
-  background: #d1fae5;
-  color: #059669;
+  background: var(--theme-success-bg-strong);
+  color: var(--theme-success-dark);
 }
 
 .mloc-eq-status.in_use {
-  background: #dbeafe;
+  background: var(--theme-info-bg-strong);
   color: #2563eb;
 }
 
 .mloc-eq-status.maintenance {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-dark);
 }

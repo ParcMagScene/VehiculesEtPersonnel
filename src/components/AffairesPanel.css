@@ -348,13 +348,13 @@
 }
 
 .affaires-tb-bl-import-btn.loc-presta {
-  border-color: #f59e0b;
+  border-color: var(--theme-warning);
   background: rgba(245, 158, 11, 0.06);
-  color: #f59e0b;
+  color: var(--theme-warning);
 }
 
 .affaires-tb-bl-import-btn.loc-presta:hover {
-  background: #f59e0b;
+  background: var(--theme-warning);
   color: #fff;
 }
 
@@ -1081,7 +1081,7 @@
   justify-content: center;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
   transition: all 0.2s;
-  z-index: 100;
+  z-index: var(--z-dropdown);
 }
 
 .affaire-fab-create:hover {

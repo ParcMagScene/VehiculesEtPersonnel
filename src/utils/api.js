@@ -304,27 +304,28 @@ class ApiClient {
     return this.request(`/history/${entityType}/${entityId}`);
   }
 
-  // Clients
+  // Clients — unifié vers annuaire
   async getClients() {
-    return this.request('/clients');
+    const result = await this.request('/annuaire/clients?limit=9999');
+    return result.data || result;
   }
 
   async createClient(client) {
-    return this.request('/clients', {
+    return this.request('/annuaire/clients', {
       method: 'POST',
       body: JSON.stringify(client),
     });
   }
 
   async updateClient(id, client) {
-    return this.request(`/clients/${id}`, {
+    return this.request(`/annuaire/clients/${id}`, {
       method: 'PUT',
       body: JSON.stringify(client),
     });
   }
 
   async deleteClient(id) {
-    return this.request(`/clients/${id}`, {
+    return this.request(`/annuaire/clients/${id}`, {
       method: 'DELETE',
     });
   }

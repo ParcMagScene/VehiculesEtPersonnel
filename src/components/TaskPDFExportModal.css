@@ -4,7 +4,7 @@
 .pdf-export-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9000;
+  z-index: var(--z-tooltip);
   background: var(--theme-overlay);
   display: flex;
   align-items: center;
@@ -261,7 +261,7 @@
 }
 
 .task-checkbox-row.done .task-cb-status {
-  color: #10b981;
+  color: var(--theme-success-alt);
 }
 
 .task-cb-person {
@@ -291,7 +291,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--theme-primary, #3b82f6);
+  background: var(--theme-primary, var(--theme-info));
   color: #fff;
   font-size: 0.55rem;
   font-weight: 700;
@@ -415,6 +415,7 @@
   .pdf-export-modal {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     max-width: none;
     max-height: none;
     border-radius: 0;

@@ -2324,4 +2324,4 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   );
 }
 
-export default TaskPlanningPanel;
+export default React.memo(TaskPlanningPanel);

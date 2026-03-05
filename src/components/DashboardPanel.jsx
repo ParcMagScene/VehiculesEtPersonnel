@@ -226,7 +226,7 @@ const DashboardPanel = ({
       {/* ═══ KPI Cards ═══ */}
       <div className="dashboard-kpi-grid">
         {/* Véhicules */}
-        <div className="kpi-card kpi-vehicles" onClick={() => onNavigateToModule?.('vehicles')}>
+        <div role="button" tabIndex={0} className="kpi-card kpi-vehicles" onClick={() => onNavigateToModule?.('vehicles')}>
           <div className="kpi-icon">🚛</div>
           <div className="kpi-body">
             <div className="kpi-value">{vehicleStats.total}</div>
@@ -242,7 +242,7 @@ const DashboardPanel = ({
         </div>
 
         {/* Réservations */}
-        <div className="kpi-card kpi-reservations" onClick={() => onNavigateToModule?.('vehicles')}>
+        <div role="button" tabIndex={0} className="kpi-card kpi-reservations" onClick={() => onNavigateToModule?.('vehicles')}>
           <div className="kpi-icon">📅</div>
           <div className="kpi-body">
             <div className="kpi-value">{reservationStats.todayCount}</div>
@@ -255,7 +255,7 @@ const DashboardPanel = ({
         </div>
 
         {/* Maintenances */}
-        <div className="kpi-card kpi-maintenance" onClick={() => onNavigateToModule?.('vehicles')}>
+        <div role="button" tabIndex={0} className="kpi-card kpi-maintenance" onClick={() => onNavigateToModule?.('vehicles')}>
           <div className="kpi-icon">🔧</div>
           <div className="kpi-body">
             <div className="kpi-value">{maintenanceStats.upcoming7d}</div>
@@ -272,7 +272,7 @@ const DashboardPanel = ({
         </div>
 
         {/* Personnel */}
-        <div className="kpi-card kpi-personnel" onClick={() => onNavigateToModule?.('personnel')}>
+        <div role="button" tabIndex={0} className="kpi-card kpi-personnel" onClick={() => onNavigateToModule?.('personnel')}>
           <div className="kpi-icon">👷</div>
           <div className="kpi-body">
             <div className="kpi-value">{personnelStats.total}</div>
@@ -281,7 +281,7 @@ const DashboardPanel = ({
         </div>
 
         {/* Affaires */}
-        <div className="kpi-card kpi-affaires" onClick={() => onNavigateToModule?.('affaires')}>
+        <div role="button" tabIndex={0} className="kpi-card kpi-affaires" onClick={() => onNavigateToModule?.('affaires')}>
           <div className="kpi-icon">📂</div>
           <div className="kpi-body">
             <div className="kpi-value">{affairesCount || '—'}</div>
@@ -290,7 +290,7 @@ const DashboardPanel = ({
         </div>
 
         {/* Commandes */}
-        <div className="kpi-card kpi-orders" onClick={() => onNavigateToModule?.('orders')}>
+        <div role="button" tabIndex={0} className="kpi-card kpi-orders" onClick={() => onNavigateToModule?.('orders')}>
           <div className="kpi-icon">🛒</div>
           <div className="kpi-body">
             <div className="kpi-value">{ordersCount.pending || 0}</div>

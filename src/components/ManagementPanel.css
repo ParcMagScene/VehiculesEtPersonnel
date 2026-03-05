@@ -7,7 +7,7 @@
   background-color: var(--theme-overlay-dark);
   display: flex;
   justify-content: flex-end;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   backdrop-filter: blur(4px);
   isolation: isolate;
 }
@@ -815,7 +815,7 @@
   background: var(--theme-warning-bg);
   padding: 1.5rem;
   border-radius: 8px;
-  border: 1px solid #fbbf24;
+  border: 1px solid var(--theme-warning);
 }
 
 .sync-instructions h4 {
@@ -983,7 +983,7 @@
 }
 
 .export-button {
-  background: linear-gradient(135deg, var(--theme-success-alt) 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-success-alt) 0%, var(--theme-success-dark) 100%);
   color: var(--theme-text-inverse);
 }
 

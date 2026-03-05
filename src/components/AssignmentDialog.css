@@ -8,7 +8,7 @@
   inset: 0;
   background: var(--theme-overlay);
   backdrop-filter: blur(4px);
-  z-index: 2000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -155,7 +155,7 @@
   transition: border-color 0.15s, background 0.15s;
 }
 .asd-person-badge.asd-person-selectable:hover {
-  border-color: var(--theme-info, #60a5fa);
+  border-color: var(--theme-info, var(--theme-info));
   background: var(--theme-info-bg);
 }
 .asd-person-chevron {
@@ -939,7 +939,7 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: var(--z-dropdown);
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
   border-radius: 10px;
@@ -1064,15 +1064,15 @@
   height: 20px;
   border: none;
   border-radius: 50%;
-  background: var(--theme-danger-bg, #fef2f2);
-  color: var(--theme-danger, #ef4444);
+  background: var(--theme-danger-bg, var(--theme-danger-bg));
+  color: var(--theme-danger, var(--theme-danger));
   cursor: pointer;
   padding: 0;
   margin-left: auto;
   transition: background 0.15s, color 0.15s;
 }
 .asd-person-remove:hover {
-  background: var(--theme-danger, #ef4444);
+  background: var(--theme-danger, var(--theme-danger));
   color: white;
 }
 

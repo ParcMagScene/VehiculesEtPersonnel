@@ -2,7 +2,7 @@
 .help-overlay {
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay-dark);
-  z-index: 3000;
+  z-index: var(--z-popover);
   animation: helpFadeIn 0.2s ease;
   backdrop-filter: blur(4px);
 }

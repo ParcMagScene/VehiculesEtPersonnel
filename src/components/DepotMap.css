@@ -33,7 +33,7 @@
   font-size: 0.75rem;
   font-weight: 500;
   background: var(--theme-info)20;
-  color: #60a5fa;
+  color: var(--theme-info);
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
 }
@@ -41,7 +41,7 @@
 .depot-map-unlocated {
   font-size: 0.75rem;
   font-weight: 500;
-  background: #f9731620;
+  background: var(--theme-warning)20;
   color: #fb923c;
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
@@ -80,7 +80,7 @@
 /* SVG wrapper */
 .depot-map-svg-wrapper {
   padding: 0.75rem;
-  background: #0f172a;
+  background: var(--theme-bg-darker);
   position: relative;
   overflow: hidden;
 }
@@ -131,7 +131,7 @@
 .depot-search-count {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #fbbf24;
+  color: var(--theme-warning);
   white-space: nowrap;
 }
 
@@ -194,14 +194,14 @@
 /* Tooltip */
 .depot-tooltip {
   position: absolute;
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: var(--theme-text-primary);
+  border: 1px solid var(--theme-text-dark);
   border-radius: 8px;
   padding: 0;
   min-width: 220px;
   max-width: 280px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 100;
+  z-index: var(--z-dropdown);
   pointer-events: auto;
   animation: tooltip-in 0.15s ease-out;
   overflow: hidden;
@@ -218,19 +218,19 @@
   align-items: center;
   padding: 8px 12px;
   border-left: 4px solid;
-  background: #0f172a;
+  background: var(--theme-bg-darker);
 }
 
 .depot-tooltip-header strong {
-  color: #e2e8f0;
+  color: var(--theme-border);
   font-size: 0.82rem;
 }
 
 .depot-tooltip-count {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #fbbf24;
-  background: #fbbf2420;
+  color: var(--theme-warning);
+  background: var(--theme-warning)20;
   padding: 2px 8px;
   border-radius: 10px;
 }
@@ -240,13 +240,13 @@
   gap: 4px;
   padding: 6px 12px;
   flex-wrap: wrap;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--theme-text-dark);
 }
 
 .depot-tooltip-code {
   font-size: 0.65rem;
   font-family: 'Monaco', monospace;
-  background: #334155;
+  background: var(--theme-text-dark);
   color: var(--theme-text-secondary);
   padding: 1px 6px;
   border-radius: 3px;
@@ -274,12 +274,12 @@
 }
 
 .depot-tooltip-item:hover {
-  background: #334155;
+  background: var(--theme-text-dark);
 }
 
 .tooltip-item-ref {
   font-family: 'Monaco', monospace;
-  color: #60a5fa;
+  color: var(--theme-info);
   font-weight: 500;
   flex-shrink: 0;
   font-size: 0.7rem;
@@ -308,14 +308,14 @@
 /* Legend search highlight */
 .legend-chip.highlighted {
   background: color-mix(in srgb, var(--chip-color) 30%, transparent);
-  border-color: #fbbf24;
+  border-color: var(--theme-warning);
   color: var(--theme-text-primary);
   font-weight: 600;
 }
 
 .legend-count.search-count {
-  color: #fbbf24;
-  background: #fbbf2420;
+  color: var(--theme-warning);
+  background: var(--theme-warning)20;
   padding: 0 4px;
   border-radius: 8px;
 }
@@ -383,7 +383,7 @@
 
 .legend-count {
   font-weight: 700;
-  color: #fbbf24;
+  color: var(--theme-warning);
   font-size: 0.7rem;
 }
 

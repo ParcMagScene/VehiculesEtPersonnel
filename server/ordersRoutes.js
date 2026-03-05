@@ -1198,9 +1198,19 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
         WHERE o.supplier_id = ? ORDER BY o.created_at DESC
       `).all(req.params.id);
 
-      // Get items for each order with affaire correspondence
+      // Get items for all orders in one query (évite N+1)
+      const orderIds = orders.map(o => o.id);
+      const itemsByOrder = {};
+      if (orderIds.length > 0) {
+        const placeholders = orderIds.map(() => '?').join(',');
+        const allItems = db.prepare(`SELECT * FROM order_items WHERE order_id IN (${placeholders}) ORDER BY id ASC`).all(...orderIds);
+        for (const item of allItems) {
+          if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+          itemsByOrder[item.order_id].push(item);
+        }
+      }
       for (const order of orders) {
-        order.items = db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(order.id);
+        order.items = itemsByOrder[order.id] || [];
       }
 
       const documents = db.prepare('SELECT * FROM supplier_documents WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);

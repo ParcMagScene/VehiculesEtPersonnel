@@ -1109,4 +1109,4 @@ function RefFormModal({ item, onSave, onClose }) {
   );
 }
 
-export default AnnuairePanel;
+export default React.memo(AnnuairePanel);

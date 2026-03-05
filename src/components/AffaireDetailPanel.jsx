@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { X, ChevronRight, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw } from 'lucide-react';
 import { AFFAIRE_TYPES, getTypeInfo, AFFAIRE_TYPE_SECTIONS } from '../utils/affaireConstants';
 import api, { getApiUrl } from '../utils/api';
@@ -940,7 +940,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         ) : (
           <div className="detail-list">
             {linkedReservations.map(r => (
-              <div key={r.id} className="detail-list-item resa-item clickable" onClick={() => handleViewReservation(r)} title="Cliquer pour ouvrir la réservation">
+              <div role="button" tabIndex={0} key={r.id} className="detail-list-item resa-item clickable" onClick={() => handleViewReservation(r)} title="Cliquer pour ouvrir la réservation">
                 <div className="resa-vehicle">
                   <Truck size={13} />
                   <strong
@@ -1062,7 +1062,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           ) : (
             <div className="detail-list">
               {googleEvents.map(ev => (
-                <div key={ev.id} className="detail-list-item event-item clickable" onClick={() => setViewedEvent(ev)} title="Cliquer pour voir les détails de l'événement">
+                <div role="button" tabIndex={0} key={ev.id} className="detail-list-item event-item clickable" onClick={() => setViewedEvent(ev)} title="Cliquer pour voir les détails de l'événement">
                   <div className="event-summary">
                     <Calendar size={13} />
                     <strong>{ev.summary || 'Événement'}</strong>
@@ -1961,4 +1961,4 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
 };
 
 export { AffaireSlidePanel, AffaireDetailDialog };
-export default AffaireSlidePanel;
+export default React.memo(AffaireSlidePanel);

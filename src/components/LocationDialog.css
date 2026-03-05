@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: var(--z-popover);
   padding: 2rem;
   animation: overlayFadeIn 0.2s ease-out;
 }
@@ -413,7 +413,7 @@
 }
 
 .coordinates-info {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #e0f2fe 100%);
   border: 2px solid #0ea5e9;
   padding: 1.25rem;
   border-radius: 10px;
@@ -441,7 +441,7 @@
 
 .route-info {
   background: linear-gradient(135deg, var(--theme-purple-bg) 0%, var(--theme-purple-bg-strong) 100%);
-  border: 2px solid #a78bfa;
+  border: 2px solid var(--theme-secondary);
   padding: 1.25rem;
   border-radius: 10px;
   margin-top: 1rem;
@@ -697,13 +697,13 @@
 [data-theme="dark"] .error-banner,
 [data-theme="dark"] .location-error {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.1) 100%);
-  color: #fca5a5;
+  color: var(--theme-danger-border);
 }
 [data-theme="dark"] .error-banner strong {
   color: #f87171;
 }
 [data-theme="dark"] .error-banner small {
-  color: #fca5a5;
+  color: var(--theme-danger-border);
 }
 [data-theme="dark"] .error-banner code {
   background: rgba(255, 255, 255, 0.1);
@@ -738,7 +738,7 @@
 }
 [data-theme="dark"] .route-detail svg,
 [data-theme="dark"] .route-item svg {
-  color: #a78bfa;
+  color: var(--theme-secondary);
 }
 [data-theme="dark"] .route-detail span,
 [data-theme="dark"] .route-item span {
@@ -746,5 +746,5 @@
 }
 [data-theme="dark"] .loading-route,
 [data-theme="dark"] .route-info .loading {
-  color: #a78bfa;
+  color: var(--theme-secondary);
 }

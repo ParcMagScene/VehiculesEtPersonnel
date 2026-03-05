@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
   padding: 20px;
   backdrop-filter: blur(2px);
 }
@@ -142,7 +142,7 @@
 }
 
 .lrp-stat:hover { background: var(--theme-border-light); }
-.lrp-stat[data-active="true"] { background: #1e40af; color: var(--theme-text-inverse); font-weight: 600; }
+.lrp-stat[data-active="true"] { background: var(--theme-info-text); color: var(--theme-text-inverse); font-weight: 600; }
 .lrp-stat.pending[data-active="true"] { background: var(--theme-warning); }
 .lrp-stat.accepted[data-active="true"] { background: var(--theme-success-alt); }
 .lrp-stat.refused[data-active="true"] { background: var(--theme-danger); }
@@ -197,7 +197,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: #1e40af;
+  background: var(--theme-info-text);
   color: var(--theme-text-inverse);
   border: none;
   border-radius: 8px;

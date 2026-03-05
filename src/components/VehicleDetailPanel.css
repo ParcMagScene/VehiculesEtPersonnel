@@ -229,7 +229,7 @@
 }
 
 .vdp-schedule {
-  background: linear-gradient(135deg, var(--theme-success-alt) 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-success-alt) 0%, var(--theme-success-dark) 100%);
 }
 .vdp-schedule:hover { box-shadow: 0 3px 8px rgba(16, 185, 129, 0.4); }
 

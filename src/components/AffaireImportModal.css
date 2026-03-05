@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: var(--z-popover);
   backdrop-filter: blur(4px);
   animation: aiFadeIn 0.2s ease-out;
   isolation: isolate;
@@ -247,7 +247,7 @@
 .replace-confirm {
   padding: 20px;
   background: var(--theme-warning-bg);
-  border: 2px solid #fbbf24;
+  border: 2px solid var(--theme-warning);
   border-radius: 8px;
   text-align: center;
 }
@@ -552,7 +552,7 @@
 }
 
 .batch-result-item.error {
-  border-color: #fca5a5;
+  border-color: var(--theme-danger-border);
   background: var(--theme-danger-bg);
   cursor: default;
   opacity: 0.7;
@@ -603,7 +603,7 @@
 
 .batch-result-error {
   font-size: 12px;
-  color: #ef4444;
+  color: var(--theme-danger);
 }
 
 /* PDF preview inline */

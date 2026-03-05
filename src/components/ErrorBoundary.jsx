@@ -21,6 +21,8 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       const isDev = import.meta.env.DEV;
+      const { moduleName } = this.props;
+      const isInline = !!moduleName;
       
       const bg = 'var(--theme-danger-bg, #fef2f2)';
       const textColor = 'var(--theme-danger-text, #991b1b)';
@@ -30,19 +32,24 @@ class ErrorBoundary extends React.Component {
       
       return (
         <div style={{
-          padding: '40px',
+          padding: isInline ? '24px' : '40px',
           background: bg,
           color: textColor,
           fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
           fontSize: '14px',
           overflow: 'auto',
-          height: '100vh',
+          height: isInline ? 'auto' : '100vh',
+          minHeight: isInline ? '200px' : undefined,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          borderRadius: isInline ? '12px' : undefined,
+          margin: isInline ? '16px' : undefined,
         }}>
-          <h1 style={{fontSize: '24px', marginBottom: '12px'}}>Une erreur est survenue</h1>
+          <h1 style={{fontSize: isInline ? '18px' : '24px', marginBottom: '12px'}}>
+            {moduleName ? `Erreur dans le module ${moduleName}` : 'Une erreur est survenue'}
+          </h1>
           <p style={{color: mutedColor, marginBottom: '20px', textAlign: 'center'}}>
             L'application a rencontré un problème inattendu.
           </p>
@@ -57,7 +64,7 @@ class ErrorBoundary extends React.Component {
             </>
           )}
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => isInline ? this.setState({ hasError: false, error: null, errorInfo: null }) : window.location.reload()}
             style={{
               marginTop: '20px',
               padding: '10px 24px',

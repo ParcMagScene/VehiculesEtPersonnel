@@ -143,7 +143,7 @@
 
 /* Header variants */
 .access-request-header-success {
-  background: linear-gradient(135deg, var(--theme-success-alt) 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-success-alt) 0%, var(--theme-success-dark) 100%);
 }
 
 .access-request-header-pending {

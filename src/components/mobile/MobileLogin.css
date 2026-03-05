@@ -1,6 +1,7 @@
 .mobile-login {
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100dvh;
   background: var(--theme-gradient);
   display: flex;
   align-items: center;
@@ -183,7 +184,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   padding: 1rem;
 }
 

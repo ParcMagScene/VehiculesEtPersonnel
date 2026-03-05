@@ -16,17 +16,22 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
     try {
       const persons = db.prepare('SELECT * FROM persons ORDER BY last_name, first_name').all();
 
-      // Enrichir avec les compétences
-      const skillsStmt = db.prepare(`
-        SELECT ps.skill_id, ps.level, s.name, s.category
+      // Charger toutes les compétences en une seule requête (évite N+1)
+      const allSkills = db.prepare(`
+        SELECT ps.person_id, ps.skill_id, ps.level, s.name, s.category
         FROM person_skills ps
         JOIN skills s ON s.id = ps.skill_id
-        WHERE ps.person_id = ?
-      `);
+      `).all();
+
+      const skillsByPerson = {};
+      for (const sk of allSkills) {
+        if (!skillsByPerson[sk.person_id]) skillsByPerson[sk.person_id] = [];
+        skillsByPerson[sk.person_id].push({ skill_id: sk.skill_id, level: sk.level, name: sk.name, category: sk.category });
+      }
 
       const enriched = persons.map(p => ({
         ...p,
-        skills: skillsStmt.all(p.id),
+        skills: skillsByPerson[p.id] || [],
       }));
 
       res.json(enriched);
@@ -872,29 +877,48 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
 
       const missions = db.prepare(sql).all(...params);
 
-      // Enrichir avec les affectations
-      const assignStmt = db.prepare(`
+      if (missions.length === 0) return res.json([]);
+
+      // Charger toutes les affectations + compétences en batch (évite N+1)
+      const missionIds = missions.map(m => m.id);
+      const placeholders = missionIds.map(() => '?').join(',');
+
+      const allAssignments = db.prepare(`
         SELECT ma.*, p.first_name, p.last_name, p.phone, p.email, p.photo,
                p.type as person_type, p.contract_type, p.default_positions, p.status as person_status
         FROM mission_assignments ma
         JOIN persons p ON p.id = ma.person_id
-        WHERE ma.mission_id = ?
-      `);
+        WHERE ma.mission_id IN (${placeholders})
+      `).all(...missionIds);
 
-      const skillsStmt = db.prepare(`
-        SELECT s.name FROM person_skills ps
-        JOIN skills s ON s.id = ps.skill_id
-        WHERE ps.person_id = ?
-        ORDER BY s.name
-      `);
+      // Collecter les person_ids uniques pour charger les compétences en une requête
+      const personIds = [...new Set(allAssignments.map(a => a.person_id))];
+      const skillsByPerson = {};
+      if (personIds.length > 0) {
+        const pPlaceholders = personIds.map(() => '?').join(',');
+        const allSkills = db.prepare(`
+          SELECT ps.person_id, s.name FROM person_skills ps
+          JOIN skills s ON s.id = ps.skill_id
+          WHERE ps.person_id IN (${pPlaceholders})
+          ORDER BY s.name
+        `).all(...personIds);
+        for (const sk of allSkills) {
+          if (!skillsByPerson[sk.person_id]) skillsByPerson[sk.person_id] = [];
+          skillsByPerson[sk.person_id].push(sk.name);
+        }
+      }
 
-      const enriched = missions.map(m => {
-        const assignments = assignStmt.all(m.id).map(a => ({
-          ...a,
-          skills: skillsStmt.all(a.person_id).map(s => s.name),
-        }));
-        return { ...m, assignments };
-      });
+      // Grouper par mission
+      const assignmentsByMission = {};
+      for (const a of allAssignments) {
+        if (!assignmentsByMission[a.mission_id]) assignmentsByMission[a.mission_id] = [];
+        assignmentsByMission[a.mission_id].push({ ...a, skills: skillsByPerson[a.person_id] || [] });
+      }
+
+      const enriched = missions.map(m => ({
+        ...m,
+        assignments: assignmentsByMission[m.id] || [],
+      }));
 
       res.json(enriched);
     } catch (error) {

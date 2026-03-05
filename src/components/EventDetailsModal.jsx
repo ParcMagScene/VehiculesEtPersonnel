@@ -915,4 +915,4 @@ function EventDetailsModal({
   );
 }
 
-export default EventDetailsModal;
+export default React.memo(EventDetailsModal);

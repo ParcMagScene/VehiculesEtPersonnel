@@ -70,7 +70,7 @@
 }
 
 .module-card.leaves {
-  border-left-color: #10b981;
+  border-left-color: var(--theme-success-alt);
 }
 
 .module-icon {
@@ -115,8 +115,8 @@
 }
 
 .module-card.leaves .module-icon {
-  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-  color: #059669;
+  background: linear-gradient(135deg, var(--theme-success-bg-strong), #a7f3d0);
+  color: var(--theme-success-dark);
 }
 
 .module-badge {

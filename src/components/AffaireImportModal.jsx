@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import logger from "../utils/logger";
 import api, { getApiUrl } from '../utils/api';
 import './AffaireImportModal.css';
@@ -1201,4 +1201,4 @@ const AffaireImportModal = ({
   );
 };
 
-export default AffaireImportModal;
+export default React.memo(AffaireImportModal);

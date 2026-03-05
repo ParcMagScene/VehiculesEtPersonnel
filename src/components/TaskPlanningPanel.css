@@ -1153,11 +1153,68 @@
   overflow-y: auto;
 }
 
-/* ── Rangée de colonnes (jours) ── */
-.wk-days-row {
+/* ── En-tête partagé (strip de jours cliquable) ── */
+.wk-header-strip {
+  flex: 0 0 auto;
+  min-height: auto;
+}
+.wk-header-strip .wk-day-col {
+  overflow: visible;
+}
+
+/* ── Compteurs séparés dans le header ── */
+.wk-header-counts {
   display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.wk-day-count.ev {
+  background: #4285f4;
+}
+.wk-day-count.task {
+  background: var(--theme-success-alt, #10b981);
+}
+.wk-col-header.today .wk-day-count.ev {
+  background: rgba(255,255,255,0.85);
+  color: #4285f4;
+}
+.wk-col-header.today .wk-day-count.task {
+  background: rgba(255,255,255,0.85);
+  color: var(--theme-success-alt, #10b981);
+}
+
+/* ── Bandes horizontales (événements / tâches) ── */
+.wk-band {
   flex: 1;
-  gap: 4px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--theme-border-color, var(--theme-border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+.wk-band + .wk-band {
+  margin-top: 4px;
+}
+.wk-band-label {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  background: var(--theme-bg-secondary, var(--theme-bg-page));
+  border-bottom: 1px solid var(--theme-border-color, var(--theme-border));
+  color: var(--theme-text-secondary, var(--theme-text-muted));
+}
+.wk-band-events .wk-band-label {
+  color: #4285f4;
+}
+.wk-band-tasks .wk-band-label {
+  color: var(--theme-success-alt, #10b981);
+}
+.wk-band > .wk-days-row {
+  flex: 1;
   min-height: 0;
 }
 
@@ -1173,6 +1230,22 @@
   overflow: hidden;
   transition: flex 0.3s ease, min-width 0.3s ease;
 }
+/* Dans les bandes, les colonnes sont plus simples (pas de border propre — la bande a la sienne) */
+.wk-band .wk-day-col {
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid var(--theme-border-color, var(--theme-border));
+  background: transparent;
+}
+.wk-band .wk-day-col:last-child {
+  border-right: none;
+}
+/* Highlight du jour actuel dans les bandes */
+.wk-band .wk-day-col.today {
+  background: color-mix(in srgb, var(--theme-primary, var(--theme-info)) 4%, transparent);
+  box-shadow: none;
+}
+
 .wk-day-col.today {
   border-color: var(--theme-primary, var(--theme-info));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-primary, var(--theme-info)) 25%, transparent);
@@ -1204,6 +1277,21 @@
   transition: background 0.15s;
   gap: 4px;
   flex-shrink: 0;
+}
+/* Header strip : les en-têtes sont les seuls enfants, pas de border-bottom */
+.wk-header-strip .wk-col-header {
+  border-bottom: none;
+  border-radius: 8px;
+}
+.wk-header-strip .wk-day-col {
+  border: none;
+  background: transparent;
+}
+.wk-header-strip .wk-day-col.today {
+  box-shadow: none;
+}
+.wk-header-strip .wk-col-header.today {
+  border-radius: 8px;
 }
 .wk-col-header:hover {
   background: var(--theme-hover-bg, #eef2f7);

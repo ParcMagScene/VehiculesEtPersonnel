@@ -59,7 +59,7 @@ function DashboardTasksSidebar({ refreshKey }) {
       const data = await api.getDisplaySonosNowPlaying();
       setNowPlaying(data);
     } catch {
-      setNowPlaying(null);
+      setNowPlaying({ playing: false, error: 'Erreur de connexion' });
     }
   }, []);
 

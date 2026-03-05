@@ -369,8 +369,8 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const displayLocation = task.eventLocation || linkedAffaire?.adresseLivraison?.split('\n')[0] || '';
       const clientLocationStr = [displayClient, displayLocation].filter(Boolean).join(' — ');
 
-      // Time
-      const timeStr = task.time ? (task.endTime ? `${task.time} → ${task.endTime}` : task.time) : '';
+      // Time (ou période AM/PM si pas d'heure)
+      const timeStr = task.time ? (task.endTime ? `${task.time} → ${task.endTime}` : task.time) : (task.period || '');
 
       const assignments = getAssignments('task', task.id);
       const courseInfo = courseType ? EVENT_TYPES[courseType] : null;

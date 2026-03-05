@@ -1073,8 +1073,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
             const displayClient = stripEmoji(t.event_client || (linkedAffaire ? linkedAffaire.client : '') || '');
             const displayLocation = stripEmoji(t.event_location || (linkedAffaire ? (linkedAffaire.adresse_livraison || '').split('\n')[0] : '') || '');
 
-            // Horaires
-            const timeStr = t.time ? (t.end_time ? `${t.time} > ${t.end_time}` : t.time) : '';
+            // Horaires (ou période AM/PM si pas d'heure)
+            const timeStr = t.time ? (t.end_time ? `${t.time} > ${t.end_time}` : t.time) : (t.period || '');
 
             // Multi-affectations ou personne unique
             const multiAssign = assignmentsByEntity.get(`task:${t.id}`) || [];

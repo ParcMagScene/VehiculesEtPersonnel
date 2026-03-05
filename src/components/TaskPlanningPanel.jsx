@@ -132,6 +132,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [addingSection, setAddingSection] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPerson, setNewTaskPerson] = useState('');
+  const [newTaskAffaire, setNewTaskAffaire] = useState('');
+  const [newTaskType, setNewTaskType] = useState('');
+  const [newTaskClient, setNewTaskClient] = useState('');
+  const [newTaskTime, setNewTaskTime] = useState('');
+  const [newTaskPeriod, setNewTaskPeriod] = useState('AM');
+  const [newTaskGoogleEvent, setNewTaskGoogleEvent] = useState('');
   const [showPdfExport, setShowPdfExport] = useState(false);
   const [displayEvents, setDisplayEvents] = useState([]);
   // Multi-assignment
@@ -804,18 +810,52 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       return;
     }
     try {
+      // Déterminer la section effective (pour courses, le type peut override)
+      let effectiveSection = section;
+      if (section === 'courses' && newTaskType) {
+        // Les types de course ont des alias sections: enlevement, retour, recuperation → courses
+        // On stocke le type dans le titre préfixé pour le badge
+        effectiveSection = 'courses';
+      }
+
+      // Trouver l'affaire sélectionnée pour pré-remplir google_event_title/affaire_num
+      const selectedAffaire = newTaskAffaire ? affaires.find(a => a.numeroAffaire === newTaskAffaire) : null;
+
+      // Trouver l'événement Google sélectionné
+      const allGoogleEvts = [...(dayGoogleEvents || []), ...(icalEvents || [])];
+      const selectedGoogEvent = newTaskGoogleEvent ? allGoogleEvts.find(e => e.id === newTaskGoogleEvent) : null;
+
+      // Construire le titre final
+      let finalTitle = newTaskTitle.trim();
+      if (section === 'courses' && newTaskType) {
+        const typeInfo = EVENT_TYPES[newTaskType];
+        if (typeInfo) {
+          finalTitle = `${typeInfo.emoji} ${typeInfo.label} — ${finalTitle}`;
+        }
+      }
+
       await api.createTask({
         date: selectedDate,
-        period: 'AM',
-        section,
-        title: newTaskTitle.trim(),
+        period: newTaskPeriod || 'AM',
+        time: newTaskTime || null,
+        section: effectiveSection,
+        title: finalTitle,
         person_id: newTaskPerson || null,
         status: 'pending',
-        source_type: 'manual',
+        source_type: selectedGoogEvent ? (selectedGoogEvent._source === 'ical' ? 'ical_event' : 'google_event') : selectedAffaire ? 'affaire' : 'manual',
+        source_id: selectedGoogEvent?.id || null,
+        google_event_title: selectedGoogEvent?.summary || selectedGoogEvent?.title || null,
+        affaire_num: newTaskAffaire || null,
       });
       toast.success('Tâche ajoutée');
       setNewTaskTitle('');
       setNewTaskPerson('');
+      setNewTaskAffaire('');
+      setNewTaskType('');
+      setNewTaskClient('');
+      setNewTaskTime('');
+      setNewTaskPeriod('AM');
+      setNewTaskGoogleEvent('');
       setAddingSection(null);
       loadTasks(true);
     } catch (err) {
@@ -978,6 +1018,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
+        <span className="ev-col ev-col-spacer" />
 
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
@@ -1142,6 +1183,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
+        <span className="ev-col ev-col-spacer" />
 
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
@@ -1233,6 +1275,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
+        <span className="ev-col ev-col-spacer" />
 
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
@@ -1314,6 +1357,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
         <span className="ev-col ev-col-nom" title={[displayNom, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
+        <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         <div className="task-actions">
@@ -1430,6 +1474,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
+        <span className="ev-col ev-col-spacer" />
 
         <span className="ev-col ev-col-date">{dateBadge || ''}</span>
 
@@ -1523,6 +1568,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
         <span className="ev-col ev-col-nom" title={[displayNom, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
+        <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-date">{dayStr}</span>
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         <div className="task-actions">
@@ -1824,6 +1870,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className="ev-col-h ev-col-h-affaire">Aff.</span>
           <span className="ev-col-h ev-col-h-nom">Titre</span>
           <span className="ev-col-h ev-col-h-client">Client</span>
+          <span className="ev-col-h ev-col-h-spacer"></span>
           <span className="ev-col-h ev-col-h-time">Heure</span>
           <span className="ev-col-h ev-col-h-actions">Actions</span>
         </div>
@@ -1966,33 +2013,141 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
         {/* Bouton Ajouter une tâche */}
         {(addingSection === sectionKey ? (
-          <div className="task-form-inline">
-            <input
-              type="text"
-              placeholder="Titre de la tâche..."
-              value={newTaskTitle}
-              onChange={e => setNewTaskTitle(e.target.value)}
-              autoFocus
-              onKeyDown={e => {
-                if (e.key === 'Enter') handleAddTask(sectionKey);
-                if (e.key === 'Escape') setAddingSection(null);
-              }}
-            />
-            <select value={newTaskPerson} onChange={e => setNewTaskPerson(e.target.value)}>
-              <option value="">— Responsable —</option>
-              {persons.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.firstName} {p.lastName}
-                </option>
-              ))}
-            </select>
-            <div className="form-actions">
-              <button className="btn-confirm" onClick={() => handleAddTask(sectionKey)} title="Ajouter">
-                <Check size={14} />
-              </button>
-              <button className="btn-cancel" onClick={() => setAddingSection(null)} title="Annuler">
-                <X size={14} />
-              </button>
+          <div className="task-form-inline task-form-enriched">
+            {/* Ligne 1 : Source (Affaire ou Google Event) */}
+            <div className="form-row">
+              <select
+                className="form-field-affaire"
+                value={newTaskAffaire}
+                onChange={e => {
+                  const num = e.target.value;
+                  setNewTaskAffaire(num);
+                  setNewTaskGoogleEvent('');
+                  if (num) {
+                    const aff = affaires.find(a => a.numeroAffaire === num);
+                    if (aff) {
+                      setNewTaskClient(aff.client || '');
+                      if (!newTaskTitle) setNewTaskTitle(aff.nom || aff.event_name || '');
+                    }
+                  } else {
+                    setNewTaskClient('');
+                  }
+                }}
+              >
+                <option value="">— Affaire —</option>
+                {affaires.map(a => (
+                  <option key={a.numeroAffaire} value={a.numeroAffaire}>
+                    {a.numeroAffaire} — {a.client || a.nom || ''}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="form-field-google"
+                value={newTaskGoogleEvent}
+                onChange={e => {
+                  const evId = e.target.value;
+                  setNewTaskGoogleEvent(evId);
+                  setNewTaskAffaire('');
+                  if (evId) {
+                    const allEvts = [...(dayGoogleEvents || []), ...(icalEvents || [])];
+                    const ev = allEvts.find(e2 => e2.id === evId);
+                    if (ev) {
+                      setNewTaskTitle(ev.summary || ev.title || '');
+                      const startDT = ev._source === 'ical' ? (ev.start || '') : (ev.start?.dateTime || '');
+                      if (startDT && startDT.includes('T')) {
+                        const d = new Date(startDT);
+                        setNewTaskTime(d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+                        setNewTaskPeriod(d.getHours() < 12 ? 'AM' : 'PM');
+                      }
+                    }
+                  }
+                }}
+              >
+                <option value="">— Événement Google / iCal —</option>
+                {[...(dayGoogleEvents || []), ...(icalEvents || [])].map(ev => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.summary || ev.title || '(sans titre)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ligne 2 : Titre + Type (courses) */}
+            <div className="form-row">
+              <input
+                type="text"
+                placeholder="Titre de la tâche..."
+                value={newTaskTitle}
+                onChange={e => setNewTaskTitle(e.target.value)}
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleAddTask(sectionKey);
+                  if (e.key === 'Escape') setAddingSection(null);
+                }}
+              />
+              {sectionKey === 'courses' && (
+                <select
+                  className="form-field-type"
+                  value={newTaskType}
+                  onChange={e => setNewTaskType(e.target.value)}
+                >
+                  <option value="">— Type —</option>
+                  {Object.entries(EVENT_TYPES).map(([key, info]) => (
+                    <option key={key} value={key}>{info.emoji} {info.label}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Ligne 3 : Responsable + Client */}
+            <div className="form-row">
+              <select value={newTaskPerson} onChange={e => setNewTaskPerson(e.target.value)}>
+                <option value="">— Responsable —</option>
+                {persons.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.firstName} {p.lastName}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                className="form-field-client"
+                placeholder="Client..."
+                value={newTaskClient}
+                onChange={e => setNewTaskClient(e.target.value)}
+              />
+            </div>
+
+            {/* Ligne 4 : Heure + Période + Actions */}
+            <div className="form-row">
+              <input
+                type="time"
+                className="form-field-time"
+                value={newTaskTime}
+                onChange={e => {
+                  setNewTaskTime(e.target.value);
+                  if (e.target.value) {
+                    const h = parseInt(e.target.value.split(':')[0], 10);
+                    setNewTaskPeriod(h < 12 ? 'AM' : 'PM');
+                  }
+                }}
+              />
+              <select
+                className="form-field-period"
+                value={newTaskPeriod}
+                onChange={e => setNewTaskPeriod(e.target.value)}
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+              <div className="form-actions">
+                <button className="btn-confirm" onClick={() => handleAddTask(sectionKey)} title="Ajouter">
+                  <Check size={14} />
+                </button>
+                <button className="btn-cancel" onClick={() => setAddingSection(null)} title="Annuler">
+                  <X size={14} />
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -2000,6 +2155,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             setAddingSection(sectionKey);
             setNewTaskTitle('');
             setNewTaskPerson('');
+            setNewTaskAffaire('');
+            setNewTaskType('');
+            setNewTaskClient('');
+            setNewTaskTime('');
+            setNewTaskPeriod('AM');
+            setNewTaskGoogleEvent('');
           }}>
             <Plus size={14} /> Ajouter une tâche
           </div>
@@ -2297,6 +2458,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <span className="ev-col-h ev-col-h-affaire">Affaire</span>
             <span className="ev-col-h ev-col-h-nom">Titre / Nom</span>
             <span className="ev-col-h ev-col-h-client">Client</span>
+            <span className="ev-col-h ev-col-h-spacer"></span>
             <span className="ev-col-h ev-col-h-date">Date</span>
             <span className="ev-col-h ev-col-h-time">Heure</span>
             <span className="ev-col-h ev-col-h-actions">Actions</span>

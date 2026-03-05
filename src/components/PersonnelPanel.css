@@ -555,6 +555,22 @@
 }
 
 /* Table overrides */
+
+/* Sous-headers de groupe dans la table liste */
+.pp-group-header td {
+  background: var(--theme-gradient);
+  padding: 0.45rem 1rem;
+  border-bottom: none;
+}
+
+.pp-group-label {
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--theme-text-inverse);
+}
+
 .pp-table th:first-child,
 .pp-table td:first-child {
   width: 40px;

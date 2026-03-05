@@ -2226,11 +2226,15 @@ function initializeDatabase() {
         FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE SET NULL
       )
     `);
+    // [AUDIT FIX P0-5] Migration : ajouter equipment_id si absente (AVANT index)
+    const bpCols = db.pragma('table_info(bp_items)').map(c => c.name);
+    if (!bpCols.includes('equipment_id')) {
+      db.exec('ALTER TABLE bp_items ADD COLUMN equipment_id INTEGER REFERENCES equipment(id) ON DELETE SET NULL');
+      logger.info('  ✅ Migration: bp_items.equipment_id ajouté');
+    }
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_bl ON bp_items(bl_import_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_catalog ON bp_items(equipment_catalog_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_equipment ON bp_items(equipment_id)');
-    // [AUDIT FIX P0-5] Migration : ajouter equipment_id si absente
-    safeAddColumn('bp_items', 'equipment_id', 'INTEGER REFERENCES equipment(id) ON DELETE SET NULL');
     logger.info('  ✅ Table bp_items (liaison BP ↔ matériel)');
   } catch (error) {
     logger.warn('⚠️ Migration bp_items:', error.message);
@@ -2728,7 +2732,15 @@ export function getHistory(entityType, entityId) {
 initializeDatabase();
 
 // [AUDIT FIX P0-5] Migration : ajouter colonne 'type' à locations (si absente)
-safeAddColumn('locations', 'type', 'TEXT', "'Salle de spectacle'");
+try {
+  const locCols = db.pragma('table_info(locations)').map(c => c.name);
+  if (!locCols.includes('type')) {
+    db.exec("ALTER TABLE locations ADD COLUMN type TEXT DEFAULT 'Salle de spectacle'");
+    logger.info('  ✅ Migration: locations.type ajouté');
+  }
+} catch (e) {
+  logger.warn('Migration locations.type:', e.message);
+}
 
 // ═══ Migration : RDV avec horaires précis, catégorie Pro/Perso, et sync Google Calendar ═══
 try {
@@ -3096,7 +3108,15 @@ try {
     )
   `);
   // [AUDIT FIX P0-5] Migration : ajouter last_sync_error si absente
-  safeAddColumn('ical_calendars', 'last_sync_error', 'TEXT');
+  try {
+    const icalCols = db.pragma('table_info(ical_calendars)').map(c => c.name);
+    if (!icalCols.includes('last_sync_error')) {
+      db.exec('ALTER TABLE ical_calendars ADD COLUMN last_sync_error TEXT');
+      logger.info('  ✅ Migration: ical_calendars.last_sync_error ajouté');
+    }
+  } catch (e) {
+    logger.warn('⚠️ ical_calendars:', e.message);
+  }
   logger.info('✅ Table ical_calendars vérifiée/créée');
 } catch (error) {
   logger.warn('⚠️ ical_calendars:', error.message);
@@ -3105,22 +3125,21 @@ try {
 // ═══════════════════════════════════════════════════════════════════
 // [AUDIT FIX] Migration : Index manquants critiques (idempotent)
 // ═══════════════════════════════════════════════════════════════════
-try {
-  db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_active_sessions_token_hash ON active_sessions(token_hash);
-    CREATE INDEX IF NOT EXISTS idx_active_sessions_expires ON active_sessions(expires_at);
-    CREATE INDEX IF NOT EXISTS idx_reservations_vehicle_dates ON reservations(vehicle_id, start_date, end_date);
-    CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
-    CREATE INDEX IF NOT EXISTS idx_maintenances_vehicle ON maintenances(vehicle_id, status, date);
-    CREATE INDEX IF NOT EXISTS idx_modification_history_entity ON modification_history(entity_type, entity_id);
-    CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests(status);
-    CREATE INDEX IF NOT EXISTS idx_mail_history_status ON mail_history(sent_by, status);
-    CREATE INDEX IF NOT EXISTS idx_bl_imports_affaire ON bl_imports(affaire_id);
-  `);
-  logger.info('✅ Index performance vérifiés/créés');
-} catch (error) {
-  logger.warn('⚠️ Création index:', error.message);
+const perfIndexes = [
+  'CREATE INDEX IF NOT EXISTS idx_active_sessions_token_hash ON active_sessions(token_hash)',
+  'CREATE INDEX IF NOT EXISTS idx_active_sessions_expires ON active_sessions(expires_at)',
+  'CREATE INDEX IF NOT EXISTS idx_reservations_vehicle_dates ON reservations(vehicle_id, start_date, end_date)',
+  'CREATE INDEX IF NOT EXISTS idx_maintenances_vehicle ON maintenances(vehicle_id, status, date)',
+  'CREATE INDEX IF NOT EXISTS idx_modification_history_entity ON modification_history(entity_type, entity_id)',
+  'CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests(status)',
+  'CREATE INDEX IF NOT EXISTS idx_mail_history_status ON mail_history(sent_by, status)',
+  'CREATE INDEX IF NOT EXISTS idx_bl_imports_affaire ON bl_imports(affaire_id)',
+];
+let idxOk = 0;
+for (const sql of perfIndexes) {
+  try { db.exec(sql); idxOk++; } catch (_) { /* colonne absente — ignoré */ }
 }
+logger.info(`✅ Index performance: ${idxOk}/${perfIndexes.length} créés/vérifiés`);
 
 // Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {

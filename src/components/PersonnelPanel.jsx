@@ -620,7 +620,10 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPersons.map(person => {
+                  {(() => {
+                    const permanentsList = filteredPersons.filter(p => PERMANENT_TYPES.includes(p.type));
+                    const nonPermanentsList = filteredPersons.filter(p => NON_PERMANENT_TYPES.includes(p.type));
+                    const renderRow = (person) => {
                     const badge = getTypeBadge(person);
                     let postes = [];
                     try {
@@ -673,7 +676,32 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                         </td>
                       </tr>
                     );
-                  })}
+                    };
+                    return (
+                      <>
+                        {permanentsList.length > 0 && (
+                          <>
+                            <tr className="pp-group-header">
+                              <td colSpan={9}>
+                                <span className="pp-group-label permanent">Permanents ({permanentsList.length})</span>
+                              </td>
+                            </tr>
+                            {permanentsList.map(renderRow)}
+                          </>
+                        )}
+                        {nonPermanentsList.length > 0 && (
+                          <>
+                            <tr className="pp-group-header">
+                              <td colSpan={9}>
+                                <span className="pp-group-label non-permanent">Non-permanents ({nonPermanentsList.length})</span>
+                              </td>
+                            </tr>
+                            {nonPermanentsList.map(renderRow)}
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
                 </tbody>
               </table>
             </div>

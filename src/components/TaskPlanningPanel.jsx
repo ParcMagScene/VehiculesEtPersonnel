@@ -1704,34 +1704,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           </div>
         )}
 
-        {/* Sections avec affaires + events + tâches */}
+        {/* Sections avec tâches */}
         {sectionOrder.map(secKey => {
           const secInfo = SECTIONS[secKey];
           if (!secInfo) return null;
-          const secAff = affBySection[secKey] || [];
-          const secEv = evBySection[secKey] || [];
           const secTasks = tasksBySection[secKey] || [];
-          const total = secAff.length + secEv.length + secTasks.length;
-          if (total === 0) return null;
-
-          // Dédoublonner events/tâches liées aux affaires affichées
-          const affaireNums = new Set(secAff.map(a => a.numeroAffaire).filter(Boolean));
-          const filteredEv = secEv.filter(ev => !(ev.affaireId && affaireNums.has(ev.affaireId)));
-          const filteredTasks = secTasks.filter(t => {
-            const an = t.affaireNum || extractAffaireNum(t.title);
-            return !(an && affaireNums.has(an.toUpperCase()));
-          });
-
-          if (secAff.length + filteredEv.length + filteredTasks.length === 0) return null;
+          if (secTasks.length === 0) return null;
 
           return (
             <div key={secKey} className="wk-expanded-section">
               <div className="wk-expanded-section-label" style={{ color: secInfo.color }}>
                 {secInfo.emoji} {secInfo.label}
               </div>
-              {secAff.map(renderAffaireRow)}
-              {filteredEv.map(renderDisplayEventRow)}
-              {filteredTasks.map(renderTaskRow)}
+              {secTasks.map(renderTaskRow)}
             </div>
           );
         })}
@@ -1746,16 +1731,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const renderSection = (sectionKey) => {
     const info = SECTIONS[sectionKey];
     const sectionTasks = grouped[sectionKey] || [];
-    const sectionEvents = eventsBySection[sectionKey] || [];
     const sectionAffaires = affairesBySection[sectionKey] || [];
     const isRdv = sectionKey === 'rdv';
     const isEvenements = sectionKey === 'evenements';
-    const isAffaireOnly = !!info.affaireOnly;
     const googleRdvCount = isRdv ? googleRdvEvents.length : 0;
     const mergedCount = isEvenements ? mergedOtherEvents.length : 0;
-    // Les affaires comptent dans toutes les sections (RDV + opérationnelles)
-    const affaireCount = sectionAffaires.length;
-    const totalCount = sectionTasks.length + sectionEvents.length + affaireCount + googleRdvCount + mergedCount;
+    // Les affaires comptent uniquement dans RDV
+    const affaireCount = isRdv ? sectionAffaires.length : 0;
+    const totalCount = sectionTasks.length + affaireCount + googleRdvCount + mergedCount;
 
     // Masquer les sections vides SAUF rdv (toujours visible)
     if (totalCount === 0 && !isRdv) return null;
@@ -1846,37 +1829,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           );
         })()}
 
-        {/* Sections opérationnelles : affaires + événements + tâches */}
-        {!isRdv && !isEvenements && (() => {
-          // Filtrer les display events redondants avec les affaires déjà affichées
-          const affaireNums = new Set(sectionAffaires.map(a => a.numeroAffaire).filter(Boolean));
-          const affaireIds = new Set(sectionAffaires.map(a => String(a.id)).filter(Boolean));
-          const filteredEvents = sectionEvents
-            .filter(ev => {
-              if (ev.affaireId && (affaireNums.has(ev.affaireId) || affaireIds.has(String(ev.affaireId)))) return false;
-              if (ev.affaire_id && (affaireNums.has(ev.affaire_id) || affaireIds.has(String(ev.affaire_id)))) return false;
-              return true;
-            });
-          // Filtrer les tâches redondantes : tâches dont l'affaire est déjà visible comme ligne affaire
-          const filteredTasks = sectionTasks.filter(t => {
-            // Par ID d'affaire (sourceType=affaire)
-            if (t.sourceType === 'affaire' && t.sourceId && affaireIds.has(String(t.sourceId))) return false;
-            // Par numéro d'affaire (tout sourceType : affaire, google_event, ical_event)
-            const taskAffNum = t.affaireNum || extractAffaireNum(t.title) || extractAffaireNum(t.googleEventTitle);
-            if (taskAffNum && affaireNums.has(taskAffNum.toUpperCase())) return false;
-            return true;
-          });
-          return (
-            <>
-              {sectionAffaires.map(renderAffaireRow)}
-              {filteredEvents.map(renderDisplayEventRow)}
-              {filteredTasks.map(renderTaskRow)}
-            </>
-          );
-        })()}
+        {/* Sections opérationnelles : uniquement des tâches */}
+        {!isRdv && !isEvenements && sectionTasks.map(renderTaskRow)}
 
-        {/* Bouton Ajouter une tâche : masqué pour les sections réservées aux affaires */}
-        {!isAffaireOnly && (addingSection === sectionKey ? (
+        {/* Bouton Ajouter une tâche */}
+        {(addingSection === sectionKey ? (
           <div className="task-form-inline">
             <input
               type="text"
@@ -2051,7 +2008,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               <div className="recurring-form-row">
                 <input type="text" placeholder="Titre de la tâche..." value={recurringForm.title || ''} onChange={e => setRecurringForm(f => ({ ...f, title: e.target.value }))} autoFocus />
                 <select value={recurringForm.section || 'manual'} onChange={e => setRecurringForm(f => ({ ...f, section: e.target.value }))}>
-                  {Object.entries(SECTIONS).filter(([, v]) => !v.affaireOnly).map(([k, v]) => (
+                  {Object.entries(SECTIONS).map(([k, v]) => (
                     <option key={k} value={k}>{v.emoji} {v.label}</option>
                   ))}
                 </select>

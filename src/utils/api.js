@@ -1909,6 +1909,9 @@ class ApiClient {
   async getDisplayTVState() {
     return this.request('/display/tv-state');
   }
+  async triggerTVAlarmTest() {
+    return this.request('/display/tv/test-alarm', { method: 'POST' });
+  }
 
   // ═══ Demandes de matériel ═══
   async getMaterialRequests(params = {}) {

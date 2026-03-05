@@ -19,6 +19,7 @@ let allEvents = [];
 const alarmTriggered = new Set();   // IDs des événements déjà signalés aujourd'hui
 let alarmAudio = null;              // Instance Audio réutilisable
 let lastAlarmDay = new Date().toDateString();
+let lastAlarmTestTs = 0;            // Dernier timestamp d'alarme test reçu du serveur
 
 function getAlarmAudio() {
   if (!alarmAudio) {
@@ -152,6 +153,14 @@ async function loadTVState() {
     // Événements (tâches planifiées)
     allEvents = state.events || [];
     renderEvents(allEvents);
+
+    // Alarme test déclenchée depuis l'admin
+    if (state.alarmTest && state.alarmTest > lastAlarmTestTs) {
+      lastAlarmTestTs = state.alarmTest;
+      console.log('🔔 Alarme test reçue depuis l\'admin');
+      playAlarmSound();
+      showAlarmFlash({ id: 'test', title: 'Test alarme admin' });
+    }
 
   } catch (error) {
     console.error('Erreur chargement état TV:', error);

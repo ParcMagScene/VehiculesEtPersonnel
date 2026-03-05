@@ -99,8 +99,13 @@ app.use((req, res, next) => {
       || req.path.startsWith('/tv-client')
       || req.path.startsWith('/display-')
       || req.path === '/tv'
+      || req.path === '/SNCF.wav'
       || (req.path.startsWith('/api/display/tv') && !req.headers.authorization)
       || (req.path.startsWith('/api/') && !req.path.startsWith('/api/display/') && !req.headers.authorization)) {
+    // Supprimer explicitement Strict-Transport-Security pour purger le cache HSTS
+    // des navigateurs qui l'auraient mémorisé depuis une config précédente
+    res.removeHeader('Strict-Transport-Security');
+    res.setHeader('Strict-Transport-Security', 'max-age=0');
     return next();
   }
   return helmetMiddleware(req, res, next);

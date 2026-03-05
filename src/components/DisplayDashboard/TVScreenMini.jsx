@@ -164,23 +164,15 @@ function TVScreenMini({ state = {} }) {
       )}
 
       {/* ─── Sonos widget (floating bottom center, like calendar-dashboard) ─── */}
-      {state.sonos && (
+      {state.sonos && state.sonos.title && (
         <div className={`tv-mini-sonos ${state.sonos.playing ? 'playing' : 'idle'}`} style={{ borderColor: primaryColor, color: primaryColor }}>
-          {state.sonos.playing ? (
-            <>
-              {(state.sonos.albumArtURI || state.sonos.albumArt) && (
-                <img src={state.sonos.albumArtURI || state.sonos.albumArt} alt="" className="tv-mini-sonos-art" />
-              )}
-              <div className="tv-mini-sonos-info">
-                <span className="tv-mini-sonos-title">{state.sonos.title}</span>
-                <span className="tv-mini-sonos-artist">{state.sonos.artist}</span>
-              </div>
-            </>
-          ) : (
-            <div className="tv-mini-sonos-info">
-              <span className="tv-mini-sonos-title" style={{ opacity: 0.5 }}>♪ Sonos — {state.sonos.error || 'En pause'}</span>
-            </div>
+          {state.sonos.albumArtURI && (
+            <img src={state.sonos.albumArtURI} alt="" className="tv-mini-sonos-art" />
           )}
+          <div className="tv-mini-sonos-info">
+            <span className="tv-mini-sonos-title">{state.sonos.title}</span>
+            <span className="tv-mini-sonos-artist">{state.sonos.artist}</span>
+          </div>
         </div>
       )}
     </div>

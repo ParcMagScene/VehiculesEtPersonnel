@@ -2557,6 +2557,10 @@
   animation: dash-sonos-spin 2s linear infinite;
 }
 
+.dash-sonos-playing.paused {
+  opacity: 0.6;
+}
+
 @keyframes dash-sonos-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

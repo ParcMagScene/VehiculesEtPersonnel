@@ -1232,42 +1232,68 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ── Helper: obtenir les infos Sonos (gère les groupes) ──
+  async function getSonosNowPlaying() {
+    const row = db.prepare("SELECT value FROM display_config WHERE key = 'sonosIP'").get();
+    const sonosIP = row ? JSON.parse(row.value) : '';
+    if (!sonosIP) return { playing: false, error: 'IP Sonos non configurée' };
+
+    let Sonos;
+    try {
+      const sonosModule = await import('sonos');
+      Sonos = sonosModule.Sonos || sonosModule.default?.Sonos;
+    } catch {
+      return { playing: false, error: 'Package sonos non installé' };
+    }
+
+    let device = new Sonos(sonosIP);
+    let coordinatorIP = sonosIP;
+
+    // Vérifier si ce speaker est membre d'un groupe — si oui, requêter le coordinateur
+    try {
+      const groups = await device.getAllGroups();
+      if (groups && groups.length > 0) {
+        for (const group of groups) {
+          const members = group.ZoneGroupMember || [];
+          const isMember = members.some(m => m.Location && m.Location.includes(sonosIP));
+          if (isMember && group.host && group.host !== sonosIP) {
+            // Ce speaker est dans un groupe mais n'est pas le coordinateur
+            coordinatorIP = group.host;
+            device = new Sonos(coordinatorIP);
+            break;
+          }
+        }
+      }
+    } catch { /* ignore group discovery errors */ }
+
+    const [track, state] = await Promise.all([
+      device.currentTrack().catch(() => null),
+      device.getCurrentState().catch(() => 'stopped'),
+    ]);
+
+    if (!track) return { playing: false, state };
+
+    // albumArtURL = URL complète, albumArtURI = chemin relatif
+    const artUrl = track.albumArtURL
+      || (track.albumArtURI ? `http://${coordinatorIP}:1400${track.albumArtURI}` : '');
+
+    return {
+      playing: state === 'playing',
+      state,
+      title: track.title || '',
+      artist: track.artist || '',
+      album: track.album || '',
+      albumArtURI: artUrl,
+      duration: track.duration || 0,
+      position: track.position || 0,
+    };
+  }
+
   // GET /api/display/sonos-now-playing — Titre en cours sur Sonos
   app.get('/api/display/sonos-now-playing', async (_req, res) => {
     try {
-      const row = db.prepare("SELECT value FROM display_config WHERE key = 'sonosIP'").get();
-      const sonosIP = row ? JSON.parse(row.value) : '';
-      if (!sonosIP) return res.json({ playing: false, error: 'IP Sonos non configurée' });
-
-      // Import dynamique du package sonos
-      let Sonos;
-      try {
-        const sonosModule = await import('sonos');
-        Sonos = sonosModule.Sonos || sonosModule.default?.Sonos;
-      } catch {
-        return res.json({ playing: false, error: 'Package sonos non installé' });
-      }
-
-      const device = new Sonos(sonosIP);
-      const [track, state] = await Promise.all([
-        device.currentTrack().catch(() => null),
-        device.getCurrentState().catch(() => 'stopped'),
-      ]);
-
-      if (!track || state === 'stopped') {
-        return res.json({ playing: false });
-      }
-
-      res.json({
-        playing: state === 'playing',
-        state,
-        title: track.title || '',
-        artist: track.artist || '',
-        album: track.album || '',
-        albumArtURI: track.albumArtURI || '',
-        duration: track.duration || 0,
-        position: track.position || 0,
-      });
+      const result = await getSonosNowPlaying();
+      res.json(result);
     } catch (error) {
       logger.error('Display sonos now playing:', error);
       res.json({ playing: false, error: error.message });
@@ -1399,34 +1425,10 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         return a.time.localeCompare(b.time);
       });
 
-      // ── Sonos now-playing ──
+      // ── Sonos now-playing (réutilise le helper avec gestion de groupe) ──
       let sonos = { playing: false };
       try {
-        const sonosRow = db.prepare("SELECT value FROM display_config WHERE key = 'sonosIP'").get();
-        const sonosIP = sonosRow ? JSON.parse(sonosRow.value) : '';
-        if (sonosIP) {
-          let Sonos;
-          try {
-            const sonosModule = await import('sonos');
-            Sonos = sonosModule.Sonos || sonosModule.default?.Sonos;
-          } catch { /* package not installed */ }
-          if (Sonos) {
-            const device = new Sonos(sonosIP);
-            const [track, state] = await Promise.all([
-              device.currentTrack().catch(() => null),
-              device.getCurrentState().catch(() => 'stopped'),
-            ]);
-            if (track && state !== 'stopped') {
-              sonos = {
-                playing: state === 'playing',
-                title: track.title || '',
-                artist: track.artist || '',
-                album: track.album || '',
-                albumArtURI: track.albumArtURI || '',
-              };
-            }
-          }
-        }
+        sonos = await getSonosNowPlaying();
       } catch (e) {
         logger.error('Sonos in tv-state:', e.message);
       }

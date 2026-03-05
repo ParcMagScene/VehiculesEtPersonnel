@@ -583,10 +583,18 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
                dde.client AS event_client,
                dde.location AS event_location,
                p.first_name AS person_first_name,
-               p.last_name AS person_last_name
+               p.last_name AS person_last_name,
+               r.vehicle_id AS reservation_vehicle_id,
+               v.name AS reservation_vehicle_name,
+               v.registration AS reservation_vehicle_reg,
+               r.start_date AS reservation_start,
+               r.end_date AS reservation_end,
+               r.driver_name AS reservation_driver
         FROM task_assignments ta
         LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
         LEFT JOIN persons p ON ta.person_id = p.id
+        LEFT JOIN reservations r ON ta.reservation_id = r.id
+        LEFT JOIN vehicles v ON r.vehicle_id = v.id
         WHERE ta.deleted_at IS NULL
       `;
       const params = [];
@@ -1310,7 +1318,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // ─── POST /api/communication/tasks ───
   app.post('/api/communication/tasks', authenticateToken, (req, res) => {
     try {
-      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status } = req.body;
+      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id } = req.body;
 
       if (!date) {
         return res.status(400).json({ error: 'Le champ date est obligatoire' });
@@ -1324,8 +1332,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const defaultVisible = EVENT_SECTIONS.includes(effectiveSection) ? 0 : 1;
 
       const stmt = db.prepare(`
-        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, reservation_id, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
       stmt.run(
@@ -1345,6 +1353,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         affaire_num || null,
         status || 'pending',
         defaultVisible,
+        reservation_id || null,
         req.user.id
       );
 
@@ -1455,11 +1464,11 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
 
-      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status } = req.body;
+      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id } = req.body;
 
       const stmt = db.prepare(`
         UPDATE task_assignments
-        SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, modified_by = ?, modified_at = datetime('now')
+        SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, reservation_id = ?, modified_by = ?, modified_at = datetime('now')
         WHERE id = ?
       `);
 
@@ -1478,6 +1487,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         google_event_title !== undefined ? google_event_title : existing.google_event_title,
         affaire_num !== undefined ? affaire_num : existing.affaire_num,
         status || existing.status,
+        reservation_id !== undefined ? reservation_id : existing.reservation_id,
         req.user.id,
         req.params.id
       );

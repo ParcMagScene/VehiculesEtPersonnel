@@ -1957,6 +1957,10 @@ function initializeDatabase() {
       db.exec('ALTER TABLE task_assignments ADD COLUMN affaire_num TEXT');
       logger.info('  + task_assignments.affaire_num');
     }
+    if (!taColNames.includes('reservation_id')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN reservation_id TEXT REFERENCES reservations(id) ON DELETE SET NULL');
+      logger.info('  + task_assignments.reservation_id');
+    }
 
     // Migration : corriger le CHECK constraint section pour inclure rdv et prep_installations
     try {

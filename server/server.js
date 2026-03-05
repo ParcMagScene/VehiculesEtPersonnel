@@ -2057,13 +2057,13 @@ app.post('/api/auth/set-new-password', async (req, res) => {
     );
     
     // Enregistrer la session
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
+    const sessionHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
     const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const insertSessionStmt = db.prepare(`
       INSERT INTO active_sessions (user_id, token_hash, expires_at)
       VALUES (?, ?, ?)
     `);
-    insertSessionStmt.run(user.id, tokenHash, expiresAt);
+    insertSessionStmt.run(user.id, sessionHash, expiresAt);
     
     logger.info('✅ Nouveau mot de passe défini');
     

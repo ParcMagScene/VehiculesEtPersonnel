@@ -973,10 +973,10 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const sectionOverhead = totalSections * (BANNER_H + SECTION_GAP);
       const notesH = BANNER_H + FREE_LINES * FREE_LINE_H + 6;
       const availableForItems = pageH - HEADER_H - FOOTER_H - sectionOverhead - notesH - 8;
-      const rowH = Math.max(10, Math.min(17, Math.floor(availableForItems / Math.max(totalItems, 1))));
-      const fs = rowH <= 11 ? 6.5 : rowH <= 13 ? 7.5 : 8;
+      const rowH = Math.max(12, Math.min(18, Math.floor(availableForItems / Math.max(totalItems, 1))));
+      const fs = rowH <= 12 ? 7.5 : rowH <= 14 ? 8.5 : 9;
       const fsSmall = fs - 1;
-      const cbSize = Math.min(7, rowH - 3);
+      const cbSize = Math.min(8, rowH - 3);
 
       // ── Badge helper ──
       const drawBadge = (text, x, y, color = '#f59e0b') => {
@@ -1038,7 +1038,6 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         items.forEach((item, i) => {
           if (item.type === 'task') {
             const t = item.data;
-            const statusLabel = STATUS_LABELS[t.status] || '[ ]';
             const taskSection = normalizeSection(t.section || 'manual');
             let titleStr = cleanTaskTitle(t, key);
             // Extraire le N° d'affaire depuis le champ OU depuis le titre/google_event_title
@@ -1093,11 +1092,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
             const cbX = leftX + 3;
             const cbY = rowY + Math.max(1, (rowH - cbSize) / 2);
             drawCheckbox(cbX, cbY, t.status === 'done', cbSize);
-            // Statut
-            doc.font('Helvetica').fontSize(fsSmall).fillColor('#777777')
-              .text(statusLabel, cbX + cbSize + 3, rowY + 2, { width: 36, lineBreak: false });
-            // Badge N° affaire
-            let titleX = leftX + 50;
+            // Badge N° affaire (directement après la checkbox)
+            let titleX = leftX + cbSize + 8;
             if (affNum) {
               const badgeW = drawBadge(affNum, titleX, rowY, badgeColor);
               titleX += badgeW;

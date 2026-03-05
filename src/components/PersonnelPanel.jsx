@@ -522,6 +522,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
     if (t === 'permanent') return { label: 'Permanent', cls: 'type-permanent' };
     if (t === 'salarié') return { label: 'Salarié', cls: 'type-salarie' };
     if (t === 'stagiaire') return { label: 'Stagiaire', cls: 'type-stagiaire' };
+    if (t === 'apprenti') return { label: 'Apprenti', cls: 'type-apprenti' };
     if (t === 'contractuel') {
       const sub = CONTRACT_TYPES.find(c => c.value === person.contractType)?.label || person.contractType || 'Contractuel';
       return { label: sub, cls: 'type-contractuel' };

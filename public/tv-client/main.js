@@ -236,8 +236,8 @@ function createEventElement(event) {
   const eventLocation = event.location || '';
   const eventDescription = event.description || '';
 
-  // Vérifier si terminé
-  const isCompleted = completedEvents.includes(eventId);
+  // Vérifier si terminé (status 'done' dans la planification OU marqué manuellement sur l'écran)
+  const isCompleted = event.status === 'done' || completedEvents.includes(eventId);
 
   // Rechercher icône de lieu (sur titre + sectionLabel + location)
   const searchTextForIcon = `${eventTitle} ${event.sectionLabel || ''} ${eventLocation}`;

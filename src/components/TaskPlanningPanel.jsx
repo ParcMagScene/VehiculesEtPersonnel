@@ -2013,7 +2013,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
         {/* Bouton Ajouter une tâche */}
         {(addingSection === sectionKey ? (
-          <div className="task-form-inline task-form-enriched">
+          <div className="task-form-inline task-form-enriched" ref={el => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }}>
             {/* Ligne 1 : Source (Affaire ou Google Event) */}
             <div className="form-row">
               <select

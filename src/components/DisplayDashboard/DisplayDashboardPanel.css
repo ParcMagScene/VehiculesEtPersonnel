@@ -2209,6 +2209,10 @@
   white-space: nowrap;
 }
 
+.tv-mini-sonos.idle {
+  opacity: 0.5;
+}
+
 /* ─── Responsive layout restructuré ─── */
 @media (max-width: 768px) {
   .display-tabs-container {

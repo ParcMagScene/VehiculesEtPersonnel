@@ -853,15 +853,29 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       }
     }
 
-    // 2b. Section Courses : extraire le type (Livraison, Récupération, etc.) puis le retirer du titre
+    // 2b. Section Courses : extraire le type (Livraison, Récupération, etc.)
+    //     Sources : 1) section originale (enlevement, retour, recuperation)
+    //               2) eventType du display_event lié (livraison, enlevement, etc.)
+    //               3) préfixe dans le titre (fallback legacy)
     let courseType = null;
     if (taskSection === 'courses') {
-      const courseMatch = displayTitle.match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\b/iu);
-      if (courseMatch) {
-        const rawType = courseMatch[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        const TYPE_MAP = { livraison: 'livraison', recuperation: 'recuperation', enlevement: 'enlevement', retour: 'retour' };
-        courseType = TYPE_MAP[rawType] || null;
-        // Retirer le type + emoji du titre pour éviter la redondance avec le badge
+      const SECTION_COURSE_TYPE = { enlevement: 'enlevement', retour: 'retour', recuperation: 'recuperation' };
+      const EVENT_COURSE_TYPE = { livraison: 'livraison', enlevement: 'enlevement', retour: 'retour', recuperation: 'recuperation' };
+      if (SECTION_COURSE_TYPE[task.section]) {
+        courseType = SECTION_COURSE_TYPE[task.section];
+      } else if (task.eventType && EVENT_COURSE_TYPE[task.eventType]) {
+        courseType = EVENT_COURSE_TYPE[task.eventType];
+      } else {
+        // Fallback : chercher dans le titre
+        const courseMatch = displayTitle.match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\b/iu);
+        if (courseMatch) {
+          const rawType = courseMatch[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const TYPE_MAP = { livraison: 'livraison', recuperation: 'recuperation', enlevement: 'enlevement', retour: 'retour' };
+          courseType = TYPE_MAP[rawType] || null;
+        }
+      }
+      // Retirer le type + emoji du titre pour éviter la redondance avec le badge
+      if (courseType) {
         displayTitle = displayTitle
           .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
           .replace(/^(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\s*—?\s*/i, '')

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   X, FileDown, Eye, Check, CheckSquare, Square, Minus,
-  User, Clock, Briefcase, Loader2, MapPin, Calendar
+  User, Clock, Loader2
 } from 'lucide-react';
 import api from '../utils/api';
-import { AFFAIRE_TYPE_INFO } from '../utils/affaireConstants';
 import { formatDateFr } from '../utils/formatUtils';
 import './TaskPDFExportModal.css';
 
@@ -13,20 +12,23 @@ const SECTIONS = {
   rdv:                 { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
   taches_prioritaires: { label: 'Tâches Prioritaires',  emoji: '🔴', color: '#ef4444' },
   courses:             { label: 'Courses',               emoji: '🚗', color: '#8b5cf6' },
-  prep_locations:      { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  prep_prestations:    { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6', affaireOnly: true },
-  prep_ventes:         { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981', affaireOnly: true },
-  prep_installations:  { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6', affaireOnly: true },
-  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6', affaireOnly: true },
-  enlevement:          { label: 'Enlèvement',           emoji: '🚚', color: '#10b981', affaireOnly: true },
-  retour:              { label: 'Retour',               emoji: '↩️', color: '#8b5cf6', affaireOnly: true },
-  recuperation:        { label: 'Récupération',         emoji: '📥', color: '#ef4444', affaireOnly: true },
-  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
+  prep_locations:      { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b' },
+  prep_prestations:    { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6' },
+  prep_ventes:         { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981' },
+  prep_installations:  { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6' },
+  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b' },
+  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6' },
+  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981' },
+  montage:             { label: 'Montage',              emoji: '🔩', color: '#0891b2' },
+  demontage:           { label: 'Démontage',            emoji: '🔧', color: '#dc2626' },
   evenements:          { label: 'Autres Événements',    emoji: '📌', color: '#64748b' },
   taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
   manual:              { label: 'Autres',                emoji: '📋', color: 'var(--theme-text-secondary)' },
 };
+
+// Aliases de section (identiques au planning)
+const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation: 'courses' };
+const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
 
 const EVENT_TYPES = {
   preparation:  { label: 'Préparation',  emoji: '🔧' },

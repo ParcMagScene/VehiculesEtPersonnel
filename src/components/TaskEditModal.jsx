@@ -29,12 +29,24 @@ const SECTIONS = {
   manual:             'Autres',
 };
 
+// Sections aliasées vers "courses"
+const COURSE_SECTIONS = new Set(['courses', 'enlevement', 'retour', 'recuperation']);
+
+// Nettoyer le titre d'une tâche courses : retirer emoji + préfixe type (Livraison, Récupération, etc.)
+const cleanCourseTitle = (title, section) => {
+  if (!title || !COURSE_SECTIONS.has(section)) return title || '';
+  return title
+    .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
+    .replace(/^(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\s*—?\s*/i, '')
+    .trim() || title;
+};
+
 function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
-    title: task.title || '',
+    title: cleanCourseTitle(task.title, task.section) || '',
     date: task.date || '',
     period: task.period || 'AM',
     time: task.time || '',
@@ -48,7 +60,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   // Sync if task changes
   useEffect(() => {
     setForm({
-      title: task.title || '',
+      title: cleanCourseTitle(task.title, task.section) || '',
       date: task.date || '',
       period: task.period || 'AM',
       time: task.time || '',

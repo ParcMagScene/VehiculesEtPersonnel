@@ -2323,8 +2323,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
       ) : viewMode === 'week' ? (
         <div className="wk-split-layout">
-          {/* ── En-tête partagé : jours de la semaine ── */}
-          <div className="wk-days-row wk-header-strip">
+          {/* ── Colonnes des jours ── */}
+          <div className="wk-days-row">
             {weekDays.map(d => {
               const dt = new Date(d + 'T00:00:00');
               const dayLabel = dt.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
@@ -2333,8 +2333,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
               const evCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
               const taskCount = dayData.tasks.length;
+              const total = evCount + taskCount;
+
               return (
                 <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>
+                  {/* En-tête cliquable */}
                   <div
                     className={`wk-col-header ${isToday ? 'today' : ''}`}
                     onClick={() => setExpandedWeekDay(isExpanded ? null : d)}
@@ -2347,27 +2350,27 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                     </span>
                     <ChevronDown size={14} className={`wk-expand-chevron ${isExpanded ? 'open' : ''}`} />
                   </div>
-                </div>
-              );
-            })}
-          </div>
 
-          {/* ── Bande haute : Événements / Affaires ── */}
-          <div className="wk-band wk-band-events">
-            <div className="wk-band-label">📅 Événements & Affaires</div>
-            <div className="wk-days-row">
-              {weekDays.map(d => {
-                const isToday = d === todayStr();
-                const isExpanded = expandedWeekDay === d;
-                const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
-                const evCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
-                return (
-                  <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>
-                    <div className="wk-day-content">
-                      {isExpanded ? (
-                        renderWeekDayExpandedEvents(d)
-                      ) : (
-                        <>
+                  {/* Contenu splitté en deux sections */}
+                  <div className="wk-day-content">
+                    {isExpanded ? (
+                      <>
+                        {/* ── Section Événements (expanded) ── */}
+                        <div className="wk-section wk-section-events">
+                          <div className="wk-section-label ev-label">📅 Événements</div>
+                          {renderWeekDayExpandedEvents(d)}
+                        </div>
+                        {/* ── Section Tâches (expanded) ── */}
+                        <div className="wk-section wk-section-tasks">
+                          <div className="wk-section-label task-label">📋 Tâches</div>
+                          {renderWeekDayExpandedTasks(d)}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* ── Section Événements (compact) ── */}
+                        <div className="wk-section wk-section-events">
+                          <div className="wk-section-label ev-label">📅 Événements</div>
                           {dayData.googleEvents.length > 0 && (
                             <div className="wk-compact-group">
                               {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
@@ -2383,31 +2386,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                               {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
                             </div>
                           )}
-                          {evCount === 0 && <div className="wk-empty">—</div>}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                          {evCount === 0 && <div className="wk-empty-mini">—</div>}
+                        </div>
 
-          {/* ── Bande basse : Tâches ── */}
-          <div className="wk-band wk-band-tasks">
-            <div className="wk-band-label">📋 Tâches</div>
-            <div className="wk-days-row">
-              {weekDays.map(d => {
-                const isToday = d === todayStr();
-                const isExpanded = expandedWeekDay === d;
-                const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
-                return (
-                  <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>
-                    <div className="wk-day-content">
-                      {isExpanded ? (
-                        renderWeekDayExpandedTasks(d)
-                      ) : (
-                        <>
+                        {/* ── Section Tâches (compact) ── */}
+                        <div className="wk-section wk-section-tasks">
+                          <div className="wk-section-label task-label">📋 Tâches</div>
                           {(() => {
                             const grouped = {};
                             dayData.tasks.forEach(t => {
@@ -2429,14 +2413,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                               );
                             });
                           })()}
-                          {dayData.tasks.length === 0 && <div className="wk-empty">—</div>}
-                        </>
-                      )}
-                    </div>
+                          {taskCount === 0 && <div className="wk-empty-mini">—</div>}
+                        </div>
+                      </>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (

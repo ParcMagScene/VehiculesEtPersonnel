@@ -23,6 +23,7 @@ if (isDev) {
   logger.info('');
 }
 
+import http from 'http';
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -166,6 +167,28 @@ app.use('/attachments', express.static(attachmentsPath));
 const avatarsPath = path.join(__dirname, '..', 'public', 'avatars');
 if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
 app.use('/avatars', express.static(avatarsPath));
+
+// ── Client TV standalone (fusion calendar-dashboard) ──
+// Servir les assets statiques du client TV (GIFs, logo, sneaky, médias)
+app.use('/display-gifs', express.static(path.join(__dirname, '..', 'public', 'display-gifs')));
+app.use('/display-logo', express.static(path.join(__dirname, '..', 'public', 'display-logo')));
+app.use('/display-sneaky', express.static(path.join(__dirname, '..', 'public', 'display-sneaky')));
+app.use('/display-media', express.static(path.join(__dirname, '..', 'public', 'display-media')));
+// Servir le client TV HTML/JS/CSS
+app.use('/tv-client', express.static(path.join(__dirname, '..', 'public', 'tv-client')));
+// Route racine /tv → redirige vers le client TV
+app.get('/tv', (_req, res) => res.redirect('/tv-client/index.html'));
+
+// ── Route catch-all pour port 3001 : si aucune route API/static ne match, servir le client TV ──
+// Ceci est géré par un middleware qui vérifie le port d'origine
+app.use((req, res, next) => {
+  // Sur le port 3001, la racine '/' sert le client TV
+  const port = req.socket.localPort;
+  if (port === 3001 && req.path === '/') {
+    return res.redirect('/tv-client/index.html');
+  }
+  next();
+});
 
 // Middleware d'authentification — vérifie JWT + session active en DB
 // [PERF] Cache LRU/TTL sur la vérification session (30s) pour éviter SHA-256 + SELECT à chaque requête
@@ -3174,6 +3197,22 @@ app.listen(PORT, '0.0.0.0', () => {
   // Nettoyage périodique des sessions expirées (toutes les 30 min)
   cleanExpiredSessions();
   setInterval(cleanExpiredSessions, 30 * 60 * 1000);
+});
+
+// ── Serveur secondaire sur port 3001 — Client TV standalone ──
+// Rétrocompatibilité avec les navigateurs des écrans TV (ex calendar-dashboard)
+// Sert la même app Express, les écrans existants sur http://192.168.205.75:3001/ continuent de fonctionner
+const TV_PORT = 3001;
+const tvServer = http.createServer(app);
+tvServer.listen(TV_PORT, '0.0.0.0', () => {
+  logger.info(`📺 Client TV accessible sur http://192.168.205.75:${TV_PORT}/tv-client/`);
+});
+tvServer.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    logger.warn(`⚠️  Port ${TV_PORT} déjà utilisé — le client TV reste accessible via http://192.168.205.75:${PORT}/tv`);
+  } else {
+    logger.error('Erreur serveur TV:', err.message);
+  }
 });
 
 /**

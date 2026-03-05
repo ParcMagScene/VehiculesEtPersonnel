@@ -1,0 +1,16 @@
+{
+  "name": "Dashboard TV",
+  "short_name": "Dashboard",
+  "start_url": "/tv-client/index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00e1ff",
+  "description": "Dashboard TV eM@g — Affichage des tâches planifiées",
+  "icons": [
+    {
+      "src": "/display-logo/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

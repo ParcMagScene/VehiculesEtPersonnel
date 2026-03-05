@@ -177,21 +177,21 @@ function DashboardTasksSidebar({ refreshKey }) {
             <RefreshCw size={10} />
           </button>
         </div>
-        {nowPlaying && nowPlaying.playing ? (
-          <div className="dash-sonos-playing">
+        {nowPlaying && nowPlaying.title ? (
+          <div className={`dash-sonos-playing ${nowPlaying.playing ? '' : 'paused'}`}>
             {nowPlaying.albumArtURI && (
               <img src={nowPlaying.albumArtURI} alt="" className="dash-sonos-art" />
             )}
             <div className="dash-sonos-info">
               <div className="dash-sonos-title">{nowPlaying.title}</div>
-              <div className="dash-sonos-artist">{nowPlaying.artist}</div>
+              <div className="dash-sonos-artist">{nowPlaying.artist}{nowPlaying.playing ? '' : ' — en pause'}</div>
               {nowPlaying.duration > 0 && (
                 <div className="dash-sonos-time">
                   {formatTime(nowPlaying.position)} / {formatTime(nowPlaying.duration)}
                 </div>
               )}
             </div>
-            <Disc size={16} className="dash-sonos-spinning" />
+            {nowPlaying.playing && <Disc size={16} className="dash-sonos-spinning" />}
           </div>
         ) : (
           <div className="dash-sonos-idle">

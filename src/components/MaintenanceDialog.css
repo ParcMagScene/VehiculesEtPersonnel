@@ -492,7 +492,7 @@
 
 .maintenance-card.status-rescheduled {
   background: linear-gradient(to right, var(--theme-orange-bg), var(--theme-bg-secondary));
-  border-left-color: #f97316;
+  border-left-color: var(--theme-warning);
 }
 
 .maintenance-card:hover {
@@ -706,7 +706,7 @@
 
 .conflict-warning-header {
   padding: 24px 24px 16px;
-  border-bottom: 2px solid #fbbf24;
+  border-bottom: 2px solid var(--theme-warning);
 }
 
 .conflict-warning-header h3 {
@@ -731,7 +731,7 @@
 
 .conflict-list {
   background: var(--theme-warning-bg);
-  border: 1px solid #fbbf24;
+  border: 1px solid var(--theme-warning);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 20px;
@@ -941,7 +941,7 @@
   gap: 8px;
   margin-top: 8px;
   padding: 10px 12px;
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #f0f9ff 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
   border: 1px solid var(--theme-info-border);
   border-radius: 8px;
   font-size: 13px;
@@ -1037,7 +1037,7 @@
 
 [data-theme="dark"] .maintenance-card.status-rescheduled {
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.05));
-  border-color: #f97316;
+  border-color: var(--theme-warning);
 }
 
 [data-theme="dark"] .conflict-warning-header {

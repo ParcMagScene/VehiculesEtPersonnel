@@ -1455,4 +1455,4 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   );
 }
 
-export default GoogleCalendarBanner;
+export default React.memo(GoogleCalendarBanner);

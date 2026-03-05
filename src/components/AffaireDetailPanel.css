@@ -559,7 +559,7 @@
   bottom: 0;
   background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -705,9 +705,9 @@
   gap: 6px;
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid #10b981;
+  border: 1px solid var(--theme-success-alt);
   background: rgba(16, 185, 129, 0.06);
-  color: #10b981;
+  color: var(--theme-success-alt);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -716,7 +716,7 @@
 }
 
 .slide-panel-display-btn:hover {
-  background: #10b981;
+  background: var(--theme-success-alt);
   color: var(--theme-text-inverse);
 }
 
@@ -976,10 +976,7 @@
   border-top: 1px solid var(--theme-border-light);
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+/* @keyframes spin is in theme.css */
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -1283,9 +1280,9 @@
 }
 
 .generate-orders-btn:hover:not(:disabled) {
-  background: #8b5cf6;
+  background: var(--theme-primary-light);
   color: white;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
   border-style: solid;
 }
 
@@ -1552,10 +1549,10 @@ select.edit-input {
 .link-search-input {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-muted);
   border-radius: 8px;
   font-size: 0.82rem;
-  background: #f9fafb;
+  background: var(--theme-bg-secondary);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -1569,7 +1566,7 @@ select.edit-input {
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.12);
   z-index: 20;
@@ -1587,14 +1584,14 @@ select.edit-input {
   font-size: 0.82rem;
 }
 .link-search-item:hover {
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
 }
 .link-search-client {
   font-weight: 500;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 .link-search-title {
-  color: #6b7280;
+  color: var(--theme-text-gray);
   font-size: 0.78rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1622,27 +1619,27 @@ select.edit-input {
 .linked-affaire-client {
   font-weight: 500;
   font-size: 0.82rem;
-  color: #1f2937;
+  color: var(--theme-bg-dark);
 }
 .linked-affaire-title {
   font-size: 0.76rem;
-  color: #6b7280;
+  color: var(--theme-text-gray);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .linked-affaire-relation {
   font-size: 0.72rem;
-  color: #9ca3af;
+  color: var(--theme-text-gray);
   white-space: nowrap;
   padding: 2px 6px;
-  background: #f3f4f6;
+  background: var(--theme-bg-tertiary);
   border-radius: 4px;
 }
 .linked-affaire-remove {
   background: none;
   border: none;
-  color: #d1d5db;
+  color: var(--theme-border-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -1650,8 +1647,8 @@ select.edit-input {
   margin-left: 6px;
 }
 .linked-affaire-remove:hover {
-  color: #ef4444;
-  background: #fee2e2;
+  color: var(--theme-danger);
+  background: var(--theme-danger-bg);
 }
 
 /* ═══════════════════════════════════════
@@ -1663,11 +1660,11 @@ select.edit-input {
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: var(--z-dropdown);
   max-height: 200px;
   overflow-y: auto;
   background: var(--theme-card-bg, #fff);
-  border: 1px solid var(--theme-border, #e5e7eb);
+  border: 1px solid var(--theme-border, var(--theme-border-medium));
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   list-style: none;
@@ -1683,12 +1680,12 @@ select.edit-input {
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
-  color: var(--theme-text, #1f2937);
+  color: var(--theme-text, var(--theme-bg-dark));
   transition: background 0.1s;
 }
 
 .autocomplete-dropdown li:hover {
-  background: var(--theme-primary-light, #eff6ff);
+  background: var(--theme-primary-light, var(--theme-info-bg));
 }
 
 .autocomplete-dropdown .ac-name {
@@ -1698,7 +1695,7 @@ select.edit-input {
 
 .autocomplete-dropdown .ac-detail {
   font-size: 11px;
-  color: var(--theme-text-secondary, #6b7280);
+  color: var(--theme-text-secondary, var(--theme-text-gray));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1708,7 +1705,7 @@ select.edit-input {
 .detail-nom {
   font-weight: 600;
   font-size: 15px;
-  color: var(--theme-text, #1f2937);
+  color: var(--theme-text, var(--theme-bg-dark));
 }
 
 /* AddressAutocomplete dans edit-mode */

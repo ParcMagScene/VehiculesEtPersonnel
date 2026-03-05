@@ -225,7 +225,7 @@
 
 [data-theme="dark"] .pi-action-badge.update {
   background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
+  color: var(--theme-warning);
 }
 
 [data-theme="dark"] .pi-action-badge.conflict {
@@ -235,12 +235,12 @@
 
 [data-theme="dark"] .pi-type-salari {
   background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  color: var(--theme-info);
 }
 
 [data-theme="dark"] .pi-type-intermittent {
   background: rgba(139, 92, 246, 0.2);
-  color: #a78bfa;
+  color: var(--theme-secondary);
 }
 
 [data-theme="dark"] .pi-type-autoentrepreneur {

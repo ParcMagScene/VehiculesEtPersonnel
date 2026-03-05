@@ -1100,4 +1100,4 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
   );
 }
 
-export default StockPanel;
+export default React.memo(StockPanel);

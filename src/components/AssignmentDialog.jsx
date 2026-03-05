@@ -1151,4 +1151,4 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   return ReactDOM.createPortal(dialogContent, document.body);
 };
 
-export default AssignmentDialog;
+export default React.memo(AssignmentDialog);

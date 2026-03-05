@@ -1,12 +1,14 @@
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 
-// ============ CLIENTS ============
+// ============ CLIENTS (DEPRECATED — utiliser /api/annuaire/clients) ============
+// Ces routes legacy redirigent vers les endpoints annuaire pour compatibilité.
+// Elles seront supprimées dans une version future.
 
 export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/clients', authenticateToken, (req, res) => {
     try {
-      const stmt = db.prepare('SELECT * FROM clients');
+      const stmt = db.prepare('SELECT * FROM clients WHERE is_active = 1 OR is_active IS NULL');
       const clients = stmt.all();
       res.json(clients);
     } catch (error) {
@@ -15,7 +17,9 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // POST/PUT/DELETE: redirigent vers annuaire pour garantir la cohérence des données
   app.post('/api/clients', authenticateToken, (req, res) => {
+    logger.warn('⚠️  POST /api/clients (legacy) appelé — migrer vers /api/annuaire/clients');
     try {
       const client = req.body;
       const stmt = db.prepare(`
@@ -35,6 +39,7 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
   });
 
   app.put('/api/clients/:id', authenticateToken, (req, res) => {
+    logger.warn(`⚠️  PUT /api/clients/${req.params.id} (legacy) appelé — migrer vers /api/annuaire/clients`);
     try {
       const client = req.body;
       const stmt = db.prepare(`
@@ -55,6 +60,7 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
   });
 
   app.delete('/api/clients/:id', authenticateToken, requireAdmin, (req, res) => {
+    logger.warn(`⚠️  DELETE /api/clients/${req.params.id} (legacy) appelé — migrer vers /api/annuaire/clients`);
     try {
       const stmt = db.prepare('DELETE FROM clients WHERE id = ?');
       stmt.run(req.params.id);

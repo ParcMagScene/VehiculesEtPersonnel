@@ -2,7 +2,7 @@
 .display-dialog-overlay {
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay);
-  z-index: 10000;
+  z-index: var(--z-tooltip);
   animation: fadeIn 0.15s ease;
 }
 
@@ -87,7 +87,7 @@
 }
 
 .display-dialog .form-group label .required {
-  color: #ef4444;
+  color: var(--theme-danger);
   margin-left: 2px;
 }
 

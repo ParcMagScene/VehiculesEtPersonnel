@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
   backdrop-filter: blur(4px);
   isolation: isolate;
 }
@@ -198,7 +198,7 @@
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  background: linear-gradient(135deg, var(--theme-success-alt) 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--theme-success-alt) 0%, var(--theme-success-dark) 100%);
   color: var(--theme-text-inverse);
   padding: 0.5rem 1rem;
   border-radius: 6px;

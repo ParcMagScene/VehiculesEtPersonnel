@@ -2,7 +2,7 @@
 .prefs-overlay {
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay-dark);
-  z-index: 2000;
+  z-index: var(--z-modal);
   animation: fadeIn 0.2s ease;
 }
 

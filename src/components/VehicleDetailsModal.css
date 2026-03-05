@@ -2,7 +2,7 @@
 .vd-overlay {
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: rgba(15, 23, 42, 0.5);
-  z-index: 2000;
+  z-index: var(--z-modal);
   padding: 1rem;
   backdrop-filter: blur(4px);
   isolation: isolate;
@@ -399,7 +399,7 @@
 
 .vehicle-details-modal .maintenance-item.status-rescheduled {
   background: linear-gradient(to right, var(--theme-orange-bg, #fff7ed), var(--theme-bg-card));
-  border-left-color: #f97316;
+  border-left-color: var(--theme-warning);
 }
 
 .vehicle-details-modal .maintenance-item:hover {
@@ -662,7 +662,7 @@
   gap: 8px;
   margin-top: 8px;
   padding: 10px 12px;
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #f0f9ff 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
   border: 1px solid var(--theme-info-border);
   border-radius: 8px;
   font-size: 13px;

@@ -94,7 +94,7 @@
   font-size: 0.7rem;
   font-weight: 700;
   background: var(--theme-text-primary);
-  color: #f97316;
+  color: var(--theme-warning);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
 }
@@ -103,7 +103,7 @@
   font-size: 0.7rem;
   font-weight: 600;
   background: var(--theme-text-primary);
-  color: #a78bfa;
+  color: var(--theme-secondary);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
 }
@@ -112,7 +112,7 @@
   font-size: 0.7rem;
   font-weight: 700;
   background: var(--theme-text-primary);
-  color: #60a5fa;
+  color: var(--theme-info);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
 }

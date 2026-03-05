@@ -189,7 +189,7 @@
 }
 
 .ebl-checkbox.partial {
-  color: #a5b4fc;
+  color: var(--theme-purple-accent);
 }
 
 .ebl-group-ref {

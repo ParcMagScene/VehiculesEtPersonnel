@@ -33,6 +33,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import helmet from 'helmet';
+import xssFilter from 'xss';
 import db, { addToHistory, getHistory, closeDatabase, checkpointDatabase } from './database.js';
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
 import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
@@ -46,7 +48,7 @@ import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsR
 import { setupCommunicationRoutes } from './communicationRoutes.js';
 import { setupDisplayRoutes } from './displayRoutes.js';
 import { setupAnnuaireClientsRoutes, setupAnnuaireSuppliersRoutes, setupAnnuairePrestatairesRoutes, setupAnnuaireContactsRoutes, setupAnnuaireLookupsRoutes, setupAnnuaireSearchRoutes, setupAnnuaireImportRoutes } from './annuaireRoutes.js';
-import { initEmailTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated, alertMaintenanceCreated } from './emailService.js';
+import { initEmailTransporter, getTransporter, alertAccessRequest, alertReservationCreated, alertAssignmentCreated, alertMaintenanceCreated } from './emailService.js';
 import logger from "./logger.js";
 import { authCache, statsCache, listCache, cacheMiddleware, invalidateEntity, getAllCacheStats, ALL_CACHES } from './cache.js';
 
@@ -68,18 +70,25 @@ if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHA
 
 // CORS — restriction aux domaines autorisés
 
-// Headers de sécurité HTTP
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
-  if (process.env.NODE_ENV === 'production') {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  }
-  next();
-});
+// Headers de sécurité HTTP via Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // nécessaire pour charger images/fonts cross-origin
+  hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true } : false,
+}));
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://magsav.duckdns.org,http://magsav.duckdns.org:4173,http://magsav.duckdns.org,http://192.168.205.75:4173,http://localhost:5174,http://localhost:4173')
   .split(',')
   .map(s => s.trim());
@@ -99,6 +108,31 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
+
+// Middleware global de sanitisation XSS sur les entrées texte
+const xssOptions = { whiteList: {}, stripIgnoreTag: true, stripIgnoreTagBody: ['script'] };
+function sanitizeValue(val) {
+  if (typeof val === 'string') return xssFilter(val, xssOptions);
+  if (Array.isArray(val)) return val.map(sanitizeValue);
+  if (val && typeof val === 'object') {
+    const clean = {};
+    for (const [k, v] of Object.entries(val)) clean[k] = sanitizeValue(v);
+    return clean;
+  }
+  return val;
+}
+app.use((req, _res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    // Exempter les champs signature (base64 data URLs) et les mots de passe
+    const exempt = ['signature', 'signatureAdmin', 'signatureEmployee', 'signature_admin', 'signature_employee', 'password', 'newPassword', 'currentPassword'];
+    for (const [key, value] of Object.entries(req.body)) {
+      if (!exempt.includes(key)) {
+        req.body[key] = sanitizeValue(value);
+      }
+    }
+  }
+  next();
+});
 
 // Rate limiting — protection contre le brute force
 const authLimiter = rateLimit({
@@ -322,7 +356,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Mot de passe oublié (self-service)
+// Mot de passe oublié (self-service) — [AUDIT FIX CRIT-1] Envoie OTP par email
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -330,17 +364,47 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       return res.status(400).json({ error: 'Email requis' });
     }
 
-    const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const user = db.prepare('SELECT id, email, name FROM users WHERE email = ?').get(email);
     if (user) {
-      // Marquer le compte pour réinitialisation et fermer les sessions
-      db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?').run(user.id);
+      // Générer OTP et l'envoyer par email
+      const otp = String(crypto.randomInt(100000, 999999));
+      const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+      db.prepare('UPDATE users SET password_reset_required = 1, reset_token_hash = ?, reset_token_expires = ? WHERE id = ?')
+        .run(otpHash, expiresAt, user.id);
       db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
-      logger.info('🔑 Mot de passe oublié demandé');
+
+      const { transporter, emailConfig } = getTransporter();
+      if (transporter && emailConfig?.enabled) {
+        try {
+          await transporter.sendMail({
+            from: `"${emailConfig.from_name || 'eM@g'}" <${emailConfig.smtp_user}>`,
+            to: user.email,
+            subject: '[eM@g] Code de réinitialisation de mot de passe',
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+                <h2 style="color: #2563eb;">🔑 Réinitialisation de mot de passe</h2>
+                <p>Bonjour <strong>${user.name}</strong>,</p>
+                <p>Votre code de vérification est :</p>
+                <div style="background: #f0f4ff; border: 2px solid #2563eb; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
+                  <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">${otp}</span>
+                </div>
+                <p><strong>Ce code expire dans 15 minutes.</strong></p>
+                <p style="color: #666; font-size: 12px;">Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+              </div>
+            `,
+          });
+        } catch (emailErr) {
+          logger.warn('Erreur envoi OTP email:', emailErr.message);
+        }
+      }
+      logger.info('🔑 Mot de passe oublié — OTP généré');
     }
 
     // Toujours retourner le même message (ne pas révéler si l'email existe)
     res.json({
-      message: 'Si cette adresse correspond à un compte, il a été préparé pour une réinitialisation. Reconnectez-vous pour définir un nouveau mot de passe.'
+      message: 'Si cette adresse correspond à un compte, un code de vérification a été envoyé par email.'
     });
   } catch (error) {
     logger.error(error);
@@ -349,9 +413,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 });
 
 // Réinitialisation directe du mot de passe (self-service, sans ancien mot de passe)
-// [AUDIT FIX CRIT-1] Sécurisé : seul un admin peut déclencher le self-reset
-// L'utilisateur s'identifie avec email + nom → on positionne le flag reset
-// Le nouveau MDP est choisi ensuite via set-new-password (protégé par le flag)
+// [AUDIT FIX CRIT-1] Sécurisé : OTP 6 chiffres envoyé par email, token hashé en DB, expire en 15min
 app.post('/api/auth/self-reset-password', async (req, res) => {
   try {
     const { email, name } = req.body;
@@ -372,18 +434,51 @@ app.post('/api/auth/self-reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Les informations saisies ne correspondent à aucun compte' });
     }
 
-    // [AUDIT FIX] Ne PAS changer le mot de passe ici — seulement activer le flag
-    db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?').run(user.id);
+    // [AUDIT FIX CRIT-1] Générer un OTP 6 chiffres et l'envoyer par email
+    const otp = String(crypto.randomInt(100000, 999999));
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
+
+    // Stocker le hash OTP + expiration en DB
+    db.prepare('UPDATE users SET password_reset_required = 1, reset_token_hash = ?, reset_token_expires = ? WHERE id = ?')
+      .run(otpHash, expiresAt, user.id);
 
     // Fermer toutes les sessions existantes pour forcer la re-connexion
     db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
 
-    logger.info(`🔑 Reset password demandé (self-service) pour user ${user.id}`);
+    // Envoyer l'OTP par email
+    const { transporter, emailConfig } = getTransporter();
+    if (transporter && emailConfig?.enabled) {
+      try {
+        await transporter.sendMail({
+          from: `"${emailConfig.from_name || 'eM@g'}" <${emailConfig.smtp_user}>`,
+          to: user.email,
+          subject: '[eM@g] Code de réinitialisation de mot de passe',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+              <h2 style="color: #2563eb;">🔑 Réinitialisation de mot de passe</h2>
+              <p>Bonjour <strong>${user.name}</strong>,</p>
+              <p>Votre code de vérification est :</p>
+              <div style="background: #f0f4ff; border: 2px solid #2563eb; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">${otp}</span>
+              </div>
+              <p><strong>Ce code expire dans 15 minutes.</strong></p>
+              <p style="color: #666; font-size: 12px;">Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+            </div>
+          `,
+        });
+        logger.info(`🔑 OTP envoyé par email pour user ${user.id}`);
+      } catch (emailErr) {
+        logger.warn('Erreur envoi OTP email:', emailErr.message);
+      }
+    } else {
+      logger.warn(`🔑 OTP généré pour user ${user.id} mais email non configuré. OTP (dev): ${isDev ? otp : '[masqué]'}`);
+    }
 
     res.json({
       success: true,
-      message: 'Réinitialisation activée. Veuillez définir un nouveau mot de passe.',
-      requireNewPassword: true,
+      message: 'Un code de vérification a été envoyé à votre adresse email.',
+      requireOtp: true,
       email: user.email
     });
   } catch (error) {
@@ -544,7 +639,8 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 });
 
 // Liste des utilisateurs (pour le sélecteur de connexion)
-app.get('/api/auth/users', (req, res) => {
+// [AUDIT FIX CRIT-3] Endpoint protégé par authentification
+app.get('/api/auth/users', authenticateToken, (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, email, name, avatar FROM users ORDER BY name');
     const users = stmt.all();
@@ -1903,9 +1999,10 @@ app.post('/api/auth/check-reset', async (req, res) => {
 });
 
 // Définir un nouveau mot de passe après réinitialisation
+// [AUDIT FIX CRIT-1] Exige un token OTP valide (envoyé par email) en plus de l'email
 app.post('/api/auth/set-new-password', async (req, res) => {
   try {
-    const { email, newPassword } = req.body;
+    const { email, newPassword, resetToken } = req.body;
     
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
@@ -1921,12 +2018,29 @@ app.post('/api/auth/set-new-password', async (req, res) => {
     if (user.password_reset_required !== 1) {
       return res.status(400).json({ error: 'Aucune réinitialisation en attente pour ce compte' });
     }
+
+    // [AUDIT FIX CRIT-1] Vérifier le token OTP
+    if (!resetToken) {
+      return res.status(400).json({ error: 'Code de vérification requis' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    if (!user.reset_token_hash || tokenHash !== user.reset_token_hash) {
+      return res.status(400).json({ error: 'Code de vérification invalide' });
+    }
+
+    // Vérifier l'expiration du token
+    if (user.reset_token_expires && new Date(user.reset_token_expires) < new Date()) {
+      // Nettoyer le token expiré
+      db.prepare('UPDATE users SET password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?').run(user.id);
+      return res.status(400).json({ error: 'Code de vérification expiré. Veuillez refaire une demande.' });
+    }
     
-    // Mettre à jour le mot de passe et retirer le flag
+    // Mettre à jour le mot de passe et retirer le flag + token
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const updateStmt = db.prepare(`
       UPDATE users 
-      SET password_hash = ?, password_reset_required = 0 
+      SET password_hash = ?, password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL
       WHERE id = ?
     `);
     updateStmt.run(passwordHash, user.id);
@@ -2814,8 +2928,8 @@ const uploadAttachment = multer({
       'text/plain', 'text/csv',
       'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
       'video/mp4', 'video/quicktime', 'video/x-msvideo',
-      'audio/mpeg', 'audio/wav',
-      'application/octet-stream'
+      'audio/mpeg', 'audio/wav'
+      // [AUDIT FIX HIGH-5] application/octet-stream retiré — contournait le filtrage MIME
     ];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
@@ -3056,7 +3170,26 @@ app.listen(PORT, '0.0.0.0', () => {
   // Lancer le nettoyage périodique des fichiers TEMP
   cleanTempFiles();
   setInterval(cleanTempFiles, 6 * 60 * 60 * 1000); // toutes les 6h
+
+  // Nettoyage périodique des sessions expirées (toutes les 30 min)
+  cleanExpiredSessions();
+  setInterval(cleanExpiredSessions, 30 * 60 * 1000);
 });
+
+/**
+ * Nettoyage des sessions expirées et tokens de reset expirés
+ */
+function cleanExpiredSessions() {
+  try {
+    const sessResult = db.prepare("DELETE FROM active_sessions WHERE expires_at < datetime('now')").run();
+    const tokenResult = db.prepare("UPDATE users SET reset_token_hash = NULL, reset_token_expires = NULL WHERE reset_token_expires < datetime('now')").run();
+    if (sessResult.changes > 0 || tokenResult.changes > 0) {
+      logger.info(`🧹 Session cleanup: ${sessResult.changes} session(s), ${tokenResult.changes} token(s) expirés supprimés`);
+    }
+  } catch (err) {
+    logger.error('Erreur nettoyage sessions:', err.message);
+  }
+}
 
 /**
  * Nettoyage des fichiers temporaires > 24h dans /attachments/TEMP/

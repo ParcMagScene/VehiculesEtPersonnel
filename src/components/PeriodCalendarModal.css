@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: var(--z-popover);
   animation: fadeIn 0.2s ease;
 }
 
@@ -501,9 +501,9 @@
 }
 
 .pcm-cat-btn.active.perso {
-  background: #8b5cf6;
+  background: var(--theme-primary-light);
   color: white;
-  border-color: #8b5cf6;
+  border-color: var(--theme-primary-light);
 }
 
 /* Google Calendar sync */
@@ -529,6 +529,6 @@
 
 .pcm-google-warn {
   font-size: 11px;
-  color: var(--theme-warning-text, #f59e0b);
+  color: var(--theme-warning-text, var(--theme-warning));
   margin-left: auto;
 }

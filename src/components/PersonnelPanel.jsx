@@ -33,64 +33,13 @@ import './Calendar.css';
 import { useToast } from '../hooks/useToast';
 import PersonnelAgenda from './PersonnelAgenda';
 import LeavesTab from './LeavesTab';
-
-// ═══════════════════════════════════════
-// Constantes
-// ═══════════════════════════════════════
-
-const PERSON_TYPES = [
-  { value: 'permanent', label: 'Permanent' },
-  { value: 'salarié', label: 'Salarié' },
-  { value: 'contractuel', label: 'Contractuel' },
-  { value: 'stagiaire', label: 'Stagiaire' },
-];
-
-const CONTRACT_TYPES = [
-  { value: 'intermittent', label: 'Intermittent' },
-  { value: 'CDD', label: 'CDD' },
-  { value: 'freelance', label: 'Freelance' },
-  { value: 'prestataire', label: 'Prestataire' },
-  { value: 'auto-entrepreneur', label: 'Auto-entrepreneur' },
-  { value: 'entreprise', label: 'Entreprise' },
-];
-
-const SKILL_CATEGORIES = [
-  { value: 'son', label: 'Son', color: '#3b82f6' },
-  { value: 'lumière', label: 'Lumière', color: '#eab308' },
-  { value: 'vidéo', label: 'Vidéo', color: '#8b5cf6' },
-  { value: 'plateau', label: 'Plateau', color: '#ef4444' },
-  { value: 'régie', label: 'Régie', color: '#f97316' },
-  { value: 'conduite', label: 'Conduite', color: '#06b6d4' },
-  { value: 'logistique', label: 'Logistique', color: '#10b981' },
-  { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
-];
-
-const SKILL_LEVELS = [
-  { value: 'débutant', label: 'Débutant' },
-  { value: 'intermédiaire', label: 'Intermédiaire' },
-  { value: 'confirmé', label: 'Confirmé' },
-  { value: 'expert', label: 'Expert' },
-];
-
-const POSITION_CATEGORIES = [
-  { value: 'administratif', label: 'Administration & Direction', color: '#7c3aed' },
-  { value: 'direction', label: 'Direction technique & Régie', color: '#dc2626' },
-  { value: 'son', label: 'Son (Audio)', color: '#3b82f6' },
-  { value: 'lumiere', label: 'Lumière', color: '#eab308' },
-  { value: 'video', label: 'Vidéo & Média', color: '#8b5cf6' },
-  { value: 'plateau', label: 'Plateau, Décors & Machinerie', color: '#ef4444' },
-  { value: 'backline', label: 'Backline', color: '#f97316' },
-  { value: 'costumes', label: 'Costumes, Maquillage & Habillage', color: '#ec4899' },
-  { value: 'electricite', label: 'Électricité & Réseaux', color: '#06b6d4' },
-  { value: 'logistique', label: 'Logistique & Transport', color: '#10b981' },
-  { value: 'captation', label: 'Audiovisuel & Captation', color: '#6366f1' },
-  { value: 'production', label: 'Production & Coordination', color: '#78716c' },
-  { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
-];
-
-const getCategoryColor = (category) => {
-  return SKILL_CATEGORIES.find(c => c.value === category)?.color || 'var(--theme-text-gray)';
-};
+import SkillsTab from './SkillsTab';
+import PositionsTab from './PositionsTab';
+import {
+  PERSON_TYPES, CONTRACT_TYPES, SKILL_CATEGORIES, SKILL_LEVELS,
+  POSITION_CATEGORIES, PERMANENT_TYPES, NON_PERMANENT_TYPES,
+  getCategoryColor, getPositionCategoryColor,
+} from './personnelConstants';
 
 // ═══════════════════════════════════════
 // Composant principal
@@ -493,9 +442,6 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
 // Onglet PERSONNES (pattern Parc : table + modal)
 // ═══════════════════════════════════════
 
-const PERMANENT_TYPES = ['permanent', 'stagiaire'];
-const NON_PERMANENT_TYPES = ['contractuel', 'salarié'];
-
 const PersonsTab = ({ persons, setPersons, skills, positions = [], users, currentUser, personToEdit, onPersonToEditConsumed }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -588,28 +534,28 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
       {/* Stats row */}
       <div className="eq-header pp-header">
         <div className="eq-stats-row">
-          <div className={`eq-stat ${!filterType && !filterStatus ? 'active' : ''}`} onClick={() => { setFilterType(''); setFilterStatus(''); }}>
+          <div role="button" tabIndex={0} className={`eq-stat ${!filterType && !filterStatus ? 'active' : ''}`} onClick={() => { setFilterType(''); setFilterStatus(''); }}>
             <Users size={16} />
             <span className="eq-stat-value">{stats.total}</span>
             <span className="eq-stat-label">Total</span>
           </div>
-          <div className={`eq-stat eq-stat-available ${filterStatus === 'active' ? 'active' : ''}`} onClick={() => { setFilterStatus(filterStatus === 'active' ? '' : 'active'); setFilterType(''); }}>
+          <div role="button" tabIndex={0} className={`eq-stat eq-stat-available ${filterStatus === 'active' ? 'active' : ''}`} onClick={() => { setFilterStatus(filterStatus === 'active' ? '' : 'active'); setFilterType(''); }}>
             <CheckCircle size={16} />
             <span className="eq-stat-value">{stats.active}</span>
             <span className="eq-stat-label">Actifs</span>
           </div>
-          <div className={`eq-stat eq-stat-inuse ${filterType === '_permanent' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setFilterType(filterType === '_permanent' ? '' : '_permanent'); }}>
+          <div role="button" tabIndex={0} className={`eq-stat eq-stat-inuse ${filterType === '_permanent' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setFilterType(filterType === '_permanent' ? '' : '_permanent'); }}>
             <User size={16} />
             <span className="eq-stat-value">{stats.permanent}</span>
             <span className="eq-stat-label">Permanents</span>
           </div>
-          <div className={`eq-stat eq-stat-maint ${filterType === '_non_permanent' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setFilterType(filterType === '_non_permanent' ? '' : '_non_permanent'); }}>
+          <div role="button" tabIndex={0} className={`eq-stat eq-stat-maint ${filterType === '_non_permanent' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setFilterType(filterType === '_non_permanent' ? '' : '_non_permanent'); }}>
             <Clock size={16} />
             <span className="eq-stat-value">{stats.nonPermanent}</span>
             <span className="eq-stat-label">Non-permanents</span>
           </div>
           {stats.inactive > 0 && (
-            <div className={`eq-stat eq-stat-tickets ${filterStatus === 'inactive' ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === 'inactive' ? '' : 'inactive')}>
+            <div role="button" tabIndex={0} className={`eq-stat eq-stat-tickets ${filterStatus === 'inactive' ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === 'inactive' ? '' : 'inactive')}>
               <AlertTriangle size={16} />
               <span className="eq-stat-value">{stats.inactive}</span>
               <span className="eq-stat-label">Inactifs</span>
@@ -951,278 +897,8 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
 };
 
 // ═══════════════════════════════════════
-// Onglet COMPÉTENCES
-// ═══════════════════════════════════════
-
-const SkillsTab = ({ skills, setSkills, currentUser }) => {
-  const [showForm, setShowForm] = useState(false);
-  const [editingSkill, setEditingSkill] = useState(null);
-  const [form, setForm] = useState({ name: '', category: 'autre', description: '' });
-
-  const groupedSkills = SKILL_CATEGORIES.map(cat => ({
-    ...cat,
-    skills: skills.filter(s => s.category === cat.value),
-  })).filter(g => g.skills.length > 0);
-
-  const resetForm = () => {
-    setForm({ name: '', category: 'autre', description: '' });
-    setEditingSkill(null);
-    setShowForm(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingSkill) {
-        const updated = await api.updateSkill(editingSkill.id, form);
-        setSkills(prev => prev.map(s => s.id === editingSkill.id ? updated : s));
-      } else {
-        const created = await api.createSkill(form);
-        setSkills(prev => [...prev, created]);
-      }
-      resetForm();
-    } catch (err) {
-      toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm('Supprimer cette compétence ?')) return;
-    try {
-      await api.deleteSkill(id);
-      setSkills(prev => prev.filter(s => s.id !== id));
-    } catch (err) {
-      toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
-    }
-  };
-
-  return (
-    <div className="personnel-tab-content">
-      {currentUser?.isAdmin && (
-        <div className="personnel-toolbar">
-          <div style={{ flex: 1 }} />
-          <button className="personnel-add-btn" onClick={() => { resetForm(); setShowForm(true); }}>
-            <Plus size={16} /> Ajouter une compétence
-          </button>
-        </div>
-      )}
-
-      {showForm && currentUser?.isAdmin && (
-        <div className="personnel-form-overlay">
-          <form className="personnel-form compact" onSubmit={handleSubmit}>
-            <div className="personnel-form-header">
-              <h3>{editingSkill ? 'Modifier' : 'Nouvelle compétence'}</h3>
-              <button type="button" className="close-btn" onClick={resetForm}><X size={18} /></button>
-            </div>
-            <div className="personnel-form-grid">
-              <div className="form-field">
-                <label>Nom *</label>
-                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Catégorie</label>
-                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
-                  {SKILL_CATEGORIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="form-field full-width">
-              <label>Description</label>
-              <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
-            </div>
-            <div className="personnel-form-actions">
-              <button type="button" className="cancel-btn" onClick={resetForm}>Annuler</button>
-              <button type="submit" className="save-btn"><Save size={16} /> Enregistrer</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="skills-grid">
-        {groupedSkills.map(group => (
-          <div key={group.value} className="skill-group">
-            <h4 className="skill-group-title" style={{ '--group-color': group.color }}>
-              <span className="skill-group-dot" style={{ background: group.color }} />
-              {group.label} ({group.skills.length})
-            </h4>
-            <div className="skill-group-items">
-              {group.skills.map(skill => (
-                <div key={skill.id} className="skill-item" style={{ '--chip-color': group.color }}>
-                  <span className="skill-item-name">{skill.name}</span>
-                  {skill.description && <span className="skill-item-desc">{skill.description}</span>}
-                  {currentUser?.isAdmin && (
-                    <div className="skill-item-actions">
-                      <button className="icon-btn" onClick={() => { setForm({ name: skill.name, category: skill.category, description: skill.description || '' }); setEditingSkill(skill); setShowForm(true); }}>
-                        <Edit2 size={12} />
-                      </button>
-                      <button className="icon-btn danger" onClick={() => handleDelete(skill.id)}>
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-        {groupedSkills.length === 0 && (
-          <div className="personnel-empty">
-            <Award size={48} />
-            <p>Aucune compétence enregistrée</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ═══════════════════════════════════════
-// Onglet POSTES
-// ═══════════════════════════════════════
-
-const PositionsTab = ({ positions, setPositions, currentUser }) => {
-  const [showForm, setShowForm] = useState(false);
-  const [editingPosition, setEditingPosition] = useState(null);
-  const [form, setForm] = useState({ name: '', category: 'autre', is_common: false });
-
-  const groupedPositions = POSITION_CATEGORIES.map(cat => ({
-    ...cat,
-    positions: positions.filter(p => p.category === cat.value),
-  })).filter(g => g.positions.length > 0);
-
-  const resetForm = () => {
-    setForm({ name: '', category: 'autre', is_common: false });
-    setEditingPosition(null);
-    setShowForm(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingPosition) {
-        const updated = await api.updatePosition(editingPosition.id, form);
-        setPositions(prev => prev.map(p => p.id === editingPosition.id ? updated : p));
-      } else {
-        const created = await api.createPosition(form);
-        setPositions(prev => [...prev, created]);
-      }
-      resetForm();
-    } catch (err) {
-      toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm('Supprimer ce poste ?')) return;
-    try {
-      await api.deletePosition(id);
-      setPositions(prev => prev.filter(p => p.id !== id));
-    } catch (err) {
-      toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
-    }
-  };
-
-  return (
-    <div className="personnel-tab-content">
-      {currentUser?.isAdmin && (
-        <div className="personnel-toolbar">
-          <div style={{ flex: 1 }} />
-          <button className="personnel-add-btn" onClick={() => { resetForm(); setShowForm(true); }}>
-            <Plus size={16} /> Ajouter un poste
-          </button>
-        </div>
-      )}
-
-      {showForm && currentUser?.isAdmin && (
-        <div className="personnel-form-overlay">
-          <form className="personnel-form compact" onSubmit={handleSubmit}>
-            <div className="personnel-form-header">
-              <h3>{editingPosition ? 'Modifier' : 'Nouveau poste'}</h3>
-              <button type="button" className="close-btn" onClick={resetForm}><X size={18} /></button>
-            </div>
-            <div className="personnel-form-grid">
-              <div className="form-field">
-                <label>Nom du poste *</label>
-                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div className="form-field">
-                <label>Catégorie</label>
-                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
-                  {POSITION_CATEGORIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="form-field">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={form.is_common}
-                  onChange={e => setForm({ ...form, is_common: e.target.checked })}
-                />
-                Poste couramment occupé (affiché en priorité)
-              </label>
-            </div>
-            <div className="personnel-form-actions">
-              <button type="button" className="cancel-btn" onClick={resetForm}>Annuler</button>
-              <button type="submit" className="save-btn"><Save size={16} /> Enregistrer</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="skills-grid">
-        {groupedPositions.map(group => (
-          <div key={group.value} className="skill-group">
-            <h4 className="skill-group-title" style={{ '--group-color': group.color }}>
-              <span className="skill-group-dot" style={{ background: group.color }} />
-              {group.label} ({group.positions.length})
-            </h4>
-            <div className="skill-group-items">
-              {group.positions.map(pos => (
-                <div key={pos.id} className="skill-item" style={{ '--chip-color': group.color }}>
-                  <span className="skill-item-name">
-                    {pos.name}
-                    {pos.isCommon ? ' ⭐' : ''}
-                  </span>
-                  {currentUser?.isAdmin && (
-                    <div className="skill-item-actions">
-                      <button className="icon-btn" onClick={() => {
-                        setForm({ name: pos.name, category: pos.category, is_common: !!pos.isCommon });
-                        setEditingPosition(pos);
-                        setShowForm(true);
-                      }}>
-                        <Edit2 size={12} />
-                      </button>
-                      <button className="icon-btn danger" onClick={() => handleDelete(pos.id)}>
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-        {groupedPositions.length === 0 && (
-          <div className="personnel-empty">
-            <Briefcase size={48} />
-            <p>Aucun poste enregistré</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ═══════════════════════════════════════
 // Onglet PLANNING
 // ═══════════════════════════════════════
-
-// NON_PERMANENT_TYPES défini en haut du fichier avec PERMANENT_TYPES
 
 const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, currentDate = new Date(), setCurrentDate, googleEvents = [], onPersonEdit, onPersonCreate, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled, currentUser }) => {
   const scrollAreaRef = useRef(null);
@@ -2388,4 +2064,4 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   );
 };
 
-export default PersonnelPanel;
+export default React.memo(PersonnelPanel);

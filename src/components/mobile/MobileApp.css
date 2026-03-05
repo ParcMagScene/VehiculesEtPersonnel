@@ -1,6 +1,7 @@
 .mobile-app {
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100dvh;
   background: var(--theme-bg-page);
   display: flex;
   flex-direction: column;
@@ -16,7 +17,7 @@
   justify-content: space-between;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--z-dropdown);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -226,6 +227,7 @@
   justify-content: center;
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100dvh;
   gap: 1rem;
 }
 
@@ -276,7 +278,7 @@
   font-size: 14px;
   font-weight: 500;
   box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
-  z-index: 9999;
+  z-index: var(--z-tooltip);
   cursor: pointer;
   animation: toast-slide-up 0.3s ease-out;
 }

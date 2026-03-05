@@ -49,3 +49,4 @@ check_localstorage.html
 test_*.js
 analyze.js
 server/_tmp_*.mjs
+backups/

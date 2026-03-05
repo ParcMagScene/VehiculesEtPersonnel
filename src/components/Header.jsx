@@ -1136,4 +1136,4 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   );
 };
 
-export default Header;
+export default React.memo(Header);

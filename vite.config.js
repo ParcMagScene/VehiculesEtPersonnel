@@ -8,7 +8,7 @@ export default defineConfig({
     minify: 'esbuild',
     target: 'es2020',
     // Source maps pour le debugging production
-    sourcemap: true,
+    sourcemap: false, // [AUDIT FIX] Désactivé en production pour ne pas exposer le code source
     rollupOptions: {
       output: {
         manualChunks: {

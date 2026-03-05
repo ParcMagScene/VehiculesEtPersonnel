@@ -38,7 +38,21 @@ db.pragma('synchronous = FULL');
 db.pragma('wal_autocheckpoint = 1000');
 
 // Créer les tables
+// [AUDIT FIX P1-12] Les clauses ON DELETE des FOREIGN KEY ne s'appliquent qu'aux nouvelles bases.
+// Pour les bases existantes, SQLite ne permet pas de modifier les FK via ALTER TABLE.
 function initializeDatabase() {
+  // [AUDIT FIX P0-5] Helper pour migrations ALTER TABLE idempotentes
+  function safeAddColumn(table, column, type, defaultVal) {
+    const cols = db.pragma(`table_info(${table})`).map(c => c.name);
+    if (!cols.includes(column)) {
+      const defClause = defaultVal !== undefined ? ` DEFAULT ${defaultVal}` : '';
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${defClause}`);
+      logger.info(`  ✅ Migration: ${table}.${column} ajouté`);
+      return true;
+    }
+    return false;
+  }
+
   // Table des utilisateurs
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -48,6 +62,8 @@ function initializeDatabase() {
       password_hash TEXT NOT NULL,
       is_admin BOOLEAN DEFAULT 0,
       password_reset_required BOOLEAN DEFAULT 0,
+      reset_token_hash TEXT,
+      reset_token_expires TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -62,7 +78,7 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       reviewed_by INTEGER,
       reviewed_at DATETIME,
-      FOREIGN KEY (reviewed_by) REFERENCES users(id)
+      FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -75,7 +91,7 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       expires_at DATETIME NOT NULL,
       last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
 
@@ -99,8 +115,8 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -128,8 +144,8 @@ function initializeDatabase() {
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -145,8 +161,8 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -161,8 +177,8 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -180,8 +196,8 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -197,8 +213,8 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -229,10 +245,10 @@ function initializeDatabase() {
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
-      FOREIGN KEY (garage_id) REFERENCES garages(id),
-      FOREIGN KEY (reported_by) REFERENCES users(id),
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (garage_id) REFERENCES garages(id) ON DELETE SET NULL,
+      FOREIGN KEY (reported_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -247,7 +263,7 @@ function initializeDatabase() {
       user_id INTEGER,
       user_name TEXT,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -258,7 +274,7 @@ function initializeDatabase() {
       value TEXT,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -294,8 +310,8 @@ function initializeDatabase() {
       reviewed_at DATETIME,
       rejection_reason TEXT,
       FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
-      FOREIGN KEY (requested_by) REFERENCES users(id),
-      FOREIGN KEY (reviewed_by) REFERENCES users(id)
+      FOREIGN KEY (requested_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -325,8 +341,8 @@ function initializeDatabase() {
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
       FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE SET NULL,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -375,8 +391,8 @@ function initializeDatabase() {
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (approved_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -438,8 +454,8 @@ function initializeDatabase() {
       FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL,
       FOREIGN KEY (required_skill_id) REFERENCES skills(id) ON DELETE SET NULL,
       FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -460,8 +476,8 @@ function initializeDatabase() {
       UNIQUE(mission_id, person_id),
       FOREIGN KEY (mission_id) REFERENCES missions(id) ON DELETE CASCADE,
       FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -533,8 +549,8 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (created_by) REFERENCES users(id),
-      FOREIGN KEY (modified_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
 
@@ -981,6 +997,13 @@ function initializeDatabase() {
       db.prepare("ALTER TABLE users ADD COLUMN permissions TEXT DEFAULT '{}'").run();
       logger.info('✅ Colonne permissions ajoutée à users');
     }
+    // [AUDIT FIX CRIT-1] Colonnes OTP reset password
+    const hasResetToken = userColumns.some(col => col.name === 'reset_token_hash');
+    if (!hasResetToken) {
+      db.prepare("ALTER TABLE users ADD COLUMN reset_token_hash TEXT").run();
+      db.prepare("ALTER TABLE users ADD COLUMN reset_token_expires TEXT").run();
+      logger.info('✅ Colonnes reset_token_hash/expires ajoutées à users');
+    }
   } catch (error) {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }
@@ -1032,31 +1055,26 @@ function initializeDatabase() {
     logger.info('Info: Colonne contract_type déjà présente ou erreur migration:', error.message);
   }
 
-  // Migration: ajouter day_states (JSON) dans missions pour stocker les jours ON/OFF
-  try {
-    db.prepare("ALTER TABLE missions ADD COLUMN day_states TEXT").run();
-    logger.info('✅ Migration: colonne day_states ajoutée à missions');
-  } catch (error) {
-    // Colonne déjà présente — OK
-  }
+  // [AUDIT FIX P0-5] Migration: ajouter day_states (JSON) dans missions pour stocker les jours ON/OFF
+  safeAddColumn('missions', 'day_states', 'TEXT');
 
-  // Migration: ajouter colonne 'affaire' dans missions pour lien direct affaire↔mission
+  // [AUDIT FIX P0-5] Migration: ajouter colonne 'affaire' dans missions pour lien direct affaire↔mission
   try {
-    db.prepare("ALTER TABLE missions ADD COLUMN affaire TEXT").run();
-    logger.info('✅ Migration: colonne affaire ajoutée à missions');
-    // Backfill: extraire le numéro d'affaire depuis le titre (ex: "AF32512 — ...")
-    const missionsToFix = db.prepare("SELECT id, title, notes FROM missions WHERE affaire IS NULL").all();
-    for (const m of missionsToFix) {
-      // Chercher un pattern AF\d+ dans le titre ou les notes
-      const match = (m.title || '').match(/AF\d+/i) || (m.notes || '').match(/AF\d+/i);
-      if (match) {
-        db.prepare('UPDATE missions SET affaire = ? WHERE id = ?').run(match[0].toUpperCase(), m.id);
+    if (safeAddColumn('missions', 'affaire', 'TEXT')) {
+      // Backfill: extraire le numéro d'affaire depuis le titre (ex: "AF32512 — ...")
+      const missionsToFix = db.prepare("SELECT id, title, notes FROM missions WHERE affaire IS NULL").all();
+      for (const m of missionsToFix) {
+        // Chercher un pattern AF\d+ dans le titre ou les notes
+        const match = (m.title || '').match(/AF\d+/i) || (m.notes || '').match(/AF\d+/i);
+        if (match) {
+          db.prepare('UPDATE missions SET affaire = ? WHERE id = ?').run(match[0].toUpperCase(), m.id);
+        }
       }
+      logger.info('✅ Migration: backfill affaire dans missions effectué');
     }
     db.exec('CREATE INDEX IF NOT EXISTS idx_missions_affaire ON missions(affaire)');
-    logger.info('✅ Migration: backfill affaire dans missions effectué');
   } catch (error) {
-    // Colonne déjà présente — OK
+    logger.warn('⚠️ Migration missions.affaire:', error.message);
   }
 
   // ═══ Migration: Tables de messagerie interne ═══
@@ -1069,7 +1087,7 @@ function initializeDatabase() {
         created_by INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (created_by) REFERENCES users(id)
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
     db.exec(`
@@ -1080,7 +1098,7 @@ function initializeDatabase() {
         joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         last_read_at DATETIME,
         FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         UNIQUE(conversation_id, user_id)
       )
     `);
@@ -1094,7 +1112,7 @@ function initializeDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         edited_at DATETIME,
         FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-        FOREIGN KEY (sender_id) REFERENCES users(id)
+        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
     db.exec(`
@@ -1155,17 +1173,12 @@ function initializeDatabase() {
     logger.warn('⚠️ Migration email_config:', error.message);
   }
 
-  // ═══ Migration: Système de gestion des congés ═══
+  // [AUDIT FIX P0-5] Migration: Système de gestion des congés (colonne par colonne, idempotent)
   try {
-    const availCols = db.prepare("PRAGMA table_info(availabilities)").all();
-    const hasStatus = availCols.some(col => col.name === 'status');
-    if (!hasStatus) {
-      db.prepare("ALTER TABLE availabilities ADD COLUMN status TEXT NOT NULL DEFAULT 'approved'").run();
-      db.prepare("ALTER TABLE availabilities ADD COLUMN approved_by INTEGER").run();
-      db.prepare("ALTER TABLE availabilities ADD COLUMN approved_at DATETIME").run();
-      db.prepare("ALTER TABLE availabilities ADD COLUMN rejection_reason TEXT").run();
-      logger.info('✅ Migration: colonnes leave management ajoutées à availabilities');
-    }
+    safeAddColumn('availabilities', 'status', "TEXT NOT NULL", "'approved'");
+    safeAddColumn('availabilities', 'approved_by', 'INTEGER');
+    safeAddColumn('availabilities', 'approved_at', 'DATETIME');
+    safeAddColumn('availabilities', 'rejection_reason', 'TEXT');
   } catch (error) {
     logger.warn('⚠️ Migration leave management:', error.message);
   }
@@ -1182,7 +1195,7 @@ function initializeDatabase() {
         color TEXT DEFAULT '#6366f1',
         description TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (parent_id) REFERENCES equipment_categories(id)
+        FOREIGN KEY (parent_id) REFERENCES equipment_categories(id) ON DELETE SET NULL
       )
     `);
 
@@ -1206,8 +1219,8 @@ function initializeDatabase() {
         created_by INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (category_id) REFERENCES equipment_categories(id),
-        FOREIGN KEY (created_by) REFERENCES users(id)
+        FOREIGN KEY (category_id) REFERENCES equipment_categories(id) ON DELETE SET NULL,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -1223,9 +1236,9 @@ function initializeDatabase() {
         notes TEXT,
         status TEXT NOT NULL DEFAULT 'active',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (equipment_id) REFERENCES equipment(id),
-        FOREIGN KEY (assigned_to) REFERENCES persons(id),
-        FOREIGN KEY (assigned_by) REFERENCES users(id)
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE,
+        FOREIGN KEY (assigned_to) REFERENCES persons(id) ON DELETE SET NULL,
+        FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -1245,9 +1258,9 @@ function initializeDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         resolved_at DATETIME,
-        FOREIGN KEY (equipment_id) REFERENCES equipment(id),
-        FOREIGN KEY (reported_by) REFERENCES users(id),
-        FOREIGN KEY (assigned_to) REFERENCES persons(id)
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE,
+        FOREIGN KEY (reported_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (assigned_to) REFERENCES persons(id) ON DELETE SET NULL
       )
     `);
 
@@ -1329,9 +1342,9 @@ function initializeDatabase() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             resolved_at DATETIME,
-            FOREIGN KEY (equipment_id) REFERENCES equipment(id),
-            FOREIGN KEY (reported_by) REFERENCES users(id),
-            FOREIGN KEY (assigned_to) REFERENCES persons(id)
+            FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE,
+            FOREIGN KEY (reported_by) REFERENCES users(id) ON DELETE SET NULL,
+            FOREIGN KEY (assigned_to) REFERENCES persons(id) ON DELETE SET NULL
           );
           INSERT INTO sav_tickets_new (id, equipment_id, reported_by, assigned_to, type, priority, status, title, description, resolution, cost, created_at, updated_at, resolved_at)
             SELECT id, equipment_id, reported_by, assigned_to, type, priority, status, title, description, resolution, cost, created_at, updated_at, resolved_at FROM sav_tickets;
@@ -1398,8 +1411,8 @@ function initializeDatabase() {
         created_by INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
-        FOREIGN KEY (created_by) REFERENCES users(id)
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -1439,8 +1452,8 @@ function initializeDatabase() {
         created_by INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (converted_to_order_id) REFERENCES orders(id),
-        FOREIGN KEY (created_by) REFERENCES users(id)
+        FOREIGN KEY (converted_to_order_id) REFERENCES orders(id) ON DELETE SET NULL,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -1549,8 +1562,8 @@ function initializeDatabase() {
       metadata TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE,
-      FOREIGN KEY (equipment_id) REFERENCES equipment_catalog(id),
-      FOREIGN KEY (flightcase_id) REFERENCES flightcases(id)
+      FOREIGN KEY (equipment_id) REFERENCES equipment_catalog(id) ON DELETE CASCADE,
+      FOREIGN KEY (flightcase_id) REFERENCES flightcases(id) ON DELETE SET NULL
     )
   `);
 
@@ -1709,7 +1722,7 @@ function initializeDatabase() {
         sent_by INTEGER,
         sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (template_id) REFERENCES mail_templates(id) ON DELETE SET NULL,
-        FOREIGN KEY (sent_by) REFERENCES users(id)
+        FOREIGN KEY (sent_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
     db.exec('CREATE INDEX IF NOT EXISTS idx_mail_history_sent_at ON mail_history(sent_at)');
@@ -1774,7 +1787,7 @@ function initializeDatabase() {
         user_name TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (stock_item_id) REFERENCES stock_items(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -2216,8 +2229,8 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_bl ON bp_items(bl_import_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_catalog ON bp_items(equipment_catalog_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_equipment ON bp_items(equipment_id)');
-    // Migration : ajouter equipment_id si absente
-    try { db.exec('ALTER TABLE bp_items ADD COLUMN equipment_id INTEGER REFERENCES equipment(id) ON DELETE SET NULL'); } catch (_) { /* déjà présente */ }
+    // [AUDIT FIX P0-5] Migration : ajouter equipment_id si absente
+    safeAddColumn('bp_items', 'equipment_id', 'INTEGER REFERENCES equipment(id) ON DELETE SET NULL');
     logger.info('  ✅ Table bp_items (liaison BP ↔ matériel)');
   } catch (error) {
     logger.warn('⚠️ Migration bp_items:', error.message);
@@ -2245,8 +2258,8 @@ function initializeDatabase() {
         created_at TEXT DEFAULT (datetime('now')),
         modified_by INTEGER,
         modified_at TEXT,
-        FOREIGN KEY (created_by) REFERENCES users(id),
-        FOREIGN KEY (modified_by) REFERENCES users(id)
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -2263,8 +2276,8 @@ function initializeDatabase() {
         created_at TEXT DEFAULT (datetime('now')),
         modified_by INTEGER,
         modified_at TEXT,
-        FOREIGN KEY (created_by) REFERENCES users(id),
-        FOREIGN KEY (modified_by) REFERENCES users(id)
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -2301,8 +2314,8 @@ function initializeDatabase() {
         created_at TEXT DEFAULT (datetime('now')),
         modified_by INTEGER,
         modified_at TEXT,
-        FOREIGN KEY (created_by) REFERENCES users(id),
-        FOREIGN KEY (modified_by) REFERENCES users(id)
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -2323,8 +2336,8 @@ function initializeDatabase() {
         modified_by INTEGER,
         modified_at TEXT,
         FOREIGN KEY (template_id) REFERENCES display_templates(id) ON DELETE SET NULL,
-        FOREIGN KEY (created_by) REFERENCES users(id),
-        FOREIGN KEY (modified_by) REFERENCES users(id)
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
     db.exec('CREATE INDEX IF NOT EXISTS idx_dm_active ON display_messages(is_active, date_start, date_end)');
@@ -2347,7 +2360,7 @@ function initializeDatabase() {
         is_active INTEGER DEFAULT 1,
         created_by INTEGER,
         created_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (created_by) REFERENCES users(id)
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
     db.exec('CREATE INDEX IF NOT EXISTS idx_dmed_type ON display_media(media_type)');
@@ -2362,7 +2375,7 @@ function initializeDatabase() {
         user_id INTEGER,
         created_at TEXT DEFAULT (datetime('now')),
         FOREIGN KEY (screen_id) REFERENCES display_screens(id) ON DELETE SET NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
     db.exec('CREATE INDEX IF NOT EXISTS idx_dlog_screen ON display_logs(screen_id)');
@@ -2493,8 +2506,8 @@ function initializeDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         modified_by INTEGER,
         modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (created_by) REFERENCES users(id),
-        FOREIGN KEY (modified_by) REFERENCES users(id)
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -2522,8 +2535,8 @@ function initializeDatabase() {
         FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
         FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE,
         FOREIGN KEY (prestataire_id) REFERENCES prestataires(id) ON DELETE CASCADE,
-        FOREIGN KEY (created_by) REFERENCES users(id),
-        FOREIGN KEY (modified_by) REFERENCES users(id)
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -2714,13 +2727,8 @@ export function getHistory(entityType, entityId) {
 
 initializeDatabase();
 
-// ═══ Migration : ajouter colonne 'type' à locations (si absente) ═══
-try {
-  db.exec("ALTER TABLE locations ADD COLUMN type TEXT DEFAULT 'Salle de spectacle'");
-  logger.info('✅ Migration: ajout colonne type à locations');
-} catch {
-  // Colonne déjà existante
-}
+// [AUDIT FIX P0-5] Migration : ajouter colonne 'type' à locations (si absente)
+safeAddColumn('locations', 'type', 'TEXT', "'Salle de spectacle'");
 
 // ═══ Migration : RDV avec horaires précis, catégorie Pro/Perso, et sync Google Calendar ═══
 try {
@@ -2819,8 +2827,8 @@ try {
     notes TEXT,
     created_by INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
-    FOREIGN KEY (order_id) REFERENCES orders(id)
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
   )`);
   db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_documents_supplier ON supplier_documents(supplier_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_documents_order ON supplier_documents(order_id)');
@@ -3087,8 +3095,8 @@ try {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
-  // Migration : ajouter last_sync_error si absente
-  try { db.exec('ALTER TABLE ical_calendars ADD COLUMN last_sync_error TEXT'); } catch {}
+  // [AUDIT FIX P0-5] Migration : ajouter last_sync_error si absente
+  safeAddColumn('ical_calendars', 'last_sync_error', 'TEXT');
   logger.info('✅ Table ical_calendars vérifiée/créée');
 } catch (error) {
   logger.warn('⚠️ ical_calendars:', error.message);

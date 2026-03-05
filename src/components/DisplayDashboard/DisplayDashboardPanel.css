@@ -48,9 +48,9 @@
 }
 
 .display-stat-icon.screens { background: var(--theme-gradient); }
-.display-stat-icon.playlists { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.display-stat-icon.media { background: linear-gradient(135deg, #10b981, #059669); }
-.display-stat-icon.messages { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.display-stat-icon.playlists { background: linear-gradient(135deg, var(--theme-warning), var(--theme-warning-dark)); }
+.display-stat-icon.media { background: linear-gradient(135deg, var(--theme-success-alt), var(--theme-success-dark)); }
+.display-stat-icon.messages { background: linear-gradient(135deg, var(--theme-info), #2563eb); }
 
 .display-stat-value {
   font-size: 1.25rem;
@@ -501,7 +501,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: var(--z-popover);
   padding: 2rem;
   cursor: pointer;
 }
@@ -1231,7 +1231,7 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  background: #10b981;
+  background: var(--theme-success-alt);
   color: white;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1456,7 +1456,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1597,7 +1597,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  color: #10b981;
+  color: var(--theme-success-alt);
   font-size: 0.72rem;
   font-weight: 600;
   flex-shrink: 0;
@@ -1818,10 +1818,10 @@
 
 /* Direct (live) monitor */
 .tv-preview-zone.live .tv-preview-label {
-  color: #10b981;
+  color: var(--theme-success-alt);
 }
 .tv-preview-zone.live .tv-preview-label svg {
-  color: #10b981;
+  color: var(--theme-success-alt);
   animation: pulse-live 2s ease-in-out infinite;
 }
 @keyframes pulse-live {
@@ -1835,10 +1835,10 @@
 
 /* Preview (draft) monitor */
 .tv-preview-zone.draft .tv-preview-label {
-  color: #f59e0b;
+  color: var(--theme-warning);
 }
 .tv-preview-zone.draft .tv-preview-label svg {
-  color: #f59e0b;
+  color: var(--theme-warning);
 }
 
 .tv-preview-refresh {

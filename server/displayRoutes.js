@@ -988,9 +988,12 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // DELETE /api/display/location-gifs/:filename — Supprimer un GIF
+  // [AUDIT FIX CRIT-2] Protection path traversal
   app.delete('/api/display/location-gifs/:filename', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const filePath = join(gifsDir, req.params.filename);
+      const sanitized = req.params.filename.replace(/\.\.[\/\\]/g, '').replace(/[\/\\]/g, '');
+      const filePath = join(gifsDir, sanitized);
+      if (!filePath.startsWith(gifsDir)) return res.status(403).json({ error: 'Accès interdit' });
       if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Fichier introuvable' });
       fs.unlinkSync(filePath);
       logAction(null, 'gif_deleted', { filename: req.params.filename }, req.user.id);
@@ -1453,8 +1456,14 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ── Servir les GIFs statiques (accès public pour l'écran TV) ──
+  // [AUDIT FIX CRIT-2] Protection path traversal
   app.get('/api/display/gifs/:filename', (req, res) => {
-    const filePath = join(gifsDir, req.params.filename);
+    const sanitized = req.params.filename.replace(/\.\.[\/\\]/g, '').replace(/[\/\\]/g, '');
+    const filePath = join(gifsDir, sanitized);
+    // Vérifier que le chemin résolu reste dans gifsDir
+    if (!filePath.startsWith(gifsDir)) {
+      return res.status(403).json({ error: 'Accès interdit' });
+    }
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath);
     } else {

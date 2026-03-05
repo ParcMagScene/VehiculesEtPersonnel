@@ -2,11 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRe
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Header from './components/Header';
-import GoogleCalendarBanner from './components/GoogleCalendarBanner';
+const GoogleCalendarBanner = lazy(() => import('./components/GoogleCalendarBanner'));
 import { VehicleSlidePanel } from './components/VehicleDetailPanel';
 import LoginForm from './components/LoginForm';
-import PlanningView from './components/PlanningView';
 import ErrorBoundary from './components/ErrorBoundary';
+const PlanningView = lazy(() => import('./components/PlanningView'));
 import api from './utils/api';
 import { saveToIndexedDB, STORES } from './utils/indexedDB';
 import { getPeriodTimestamp } from './utils/dateUtils';
@@ -143,7 +143,7 @@ function App() {
         api.syncGoogleEventsToAffaires(eventsToSync)
           .then(result => {
             if (result && (result.created > 0 || result.linked > 0)) {
-              console.log(`🔗 Sync affaires: ${result.created} créée(s), ${result.linked} liée(s)`, result.results);
+              // Sync result logged silently (see network tab for details)
             }
           })
           .catch(err => {
@@ -918,6 +918,7 @@ function App() {
     <ToastProvider toast={toast}>
     <NavigationProvider value={handleNavigateToEntity}>
     <div className="app">
+      <a href="#main-content" className="skip-link">Aller au contenu principal</a>
       <Header
         view={view}
         setView={setView}
@@ -1038,7 +1039,7 @@ function App() {
       />
       )}
 
-
+      <main id="main-content">
 
       {activeModule === 'vehicles' && (
         <>
@@ -1061,6 +1062,7 @@ function App() {
             />
           ) : (
             <div className="calendar-with-vehicle-panel">
+              <ErrorBoundary moduleName="Calendrier">
               <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div><p>Chargement du calendrier...</p></div>}>
               <Calendar
                 view={view}
@@ -1098,6 +1100,7 @@ function App() {
                 onQuickReservationHandled={() => setQuickReservationSlot(null)}
               />
               </Suspense>
+              </ErrorBoundary>
               <VehicleSlidePanel
                 vehicle={selectedVehicleForDetails}
                 maintenances={maintenances}
@@ -1119,6 +1122,7 @@ function App() {
       )}
 
       {activeModule === 'personnel' && (
+        <ErrorBoundary moduleName="Personnel">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -1140,9 +1144,11 @@ function App() {
             onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {activeModule === 'affaires' && (
+        <ErrorBoundary moduleName="Affaires">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -1154,9 +1160,11 @@ function App() {
             onNavigateToEntity={handleNavigateToEntity}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {activeModule === 'equipment' && (
+        <ErrorBoundary moduleName="Équipement">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -1169,9 +1177,11 @@ function App() {
             onCloseManagement={() => setShowEquipmentManagement(false)}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {activeModule === 'orders' && (
+        <ErrorBoundary moduleName="Commandes">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -1182,9 +1192,11 @@ function App() {
             currentUser={currentUser}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {activeModule === 'catalog' && (
+        <ErrorBoundary moduleName="Catalogue">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -1195,9 +1207,11 @@ function App() {
             currentUser={currentUser}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {activeModule === 'stock' && (
+        <ErrorBoundary moduleName="Stock">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -1208,9 +1222,11 @@ function App() {
             currentUser={currentUser}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {activeModule === 'communication' && (
+        <ErrorBoundary moduleName="Communication">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -1223,9 +1239,11 @@ function App() {
             onNavigateToEntity={handleNavigateToEntity}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {activeModule === 'annuaire' && (
+        <ErrorBoundary moduleName="Annuaire">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
@@ -1234,6 +1252,7 @@ function App() {
         }>
           <AnnuairePanel currentUser={currentUser} />
         </Suspense>
+        </ErrorBoundary>
       )}
 
 
@@ -1457,6 +1476,7 @@ function App() {
           />
         </Suspense>
       )}
+      </main>
     </div>
     </NavigationProvider>
     </ToastProvider>

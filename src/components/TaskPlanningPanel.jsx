@@ -976,8 +976,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       }
     }
     // Montrer le sous-titre uniquement s'il apporte une info différente du titre
+    // — vérifier aussi que le titre ne contient pas déjà le sous-titre (évite "NOM — CLIENT — NOM")
+    const cleanEventNorm = cleanEventTitle.toLowerCase().replace(/\s+/g, '');
+    const displayTitleNorm = displayTitle.toLowerCase().replace(/\s+/g, '');
     const showSubtitle = cleanEventTitle &&
-      cleanEventTitle.toLowerCase().replace(/\s+/g, '') !== displayTitle.toLowerCase().replace(/\s+/g, '');
+      cleanEventNorm !== displayTitleNorm &&
+      !displayTitleNorm.includes(cleanEventNorm);
 
     // Masquer l'eventType quand il est redondant avec le nom de la section
     const SECTION_EVENT_TYPES = {

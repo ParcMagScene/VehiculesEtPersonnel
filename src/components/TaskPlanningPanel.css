@@ -140,8 +140,11 @@
 .task-planning-panel .tp-columns-header .ev-col-h-client {
   width: 160px;
   flex: 0 0 160px;
-  border-left: 1px solid var(--theme-border);
   padding-left: 10px;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-spacer {
+  width: 30px;
+  flex: 0 0 30px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-date {
   width: 120px;
@@ -413,6 +416,56 @@
 .task-planning-panel .task-form-inline .form-actions .btn-cancel {
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-secondary);
+}
+
+/* ═══ Formulaire enrichi (multi-lignes) ═══ */
+.task-planning-panel .task-form-enriched {
+  flex-direction: column;
+  gap: 6px;
+}
+.task-planning-panel .task-form-enriched .form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.task-planning-panel .task-form-enriched .form-row > input,
+.task-planning-panel .task-form-enriched .form-row > select {
+  padding: 6px 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  font-size: 0.85rem;
+}
+.task-planning-panel .task-form-enriched .form-row > input:focus,
+.task-planning-panel .task-form-enriched .form-row > select:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+}
+.task-planning-panel .task-form-enriched .form-field-affaire {
+  flex: 1 1 200px;
+  min-width: 140px;
+}
+.task-planning-panel .task-form-enriched .form-field-google {
+  flex: 1 1 200px;
+  min-width: 140px;
+}
+.task-planning-panel .task-form-enriched .form-field-type {
+  flex: 0 0 160px;
+}
+.task-planning-panel .task-form-enriched .form-field-client {
+  flex: 1 1 140px;
+  min-width: 100px;
+}
+.task-planning-panel .task-form-enriched .form-field-time {
+  flex: 0 0 100px;
+}
+.task-planning-panel .task-form-enriched .form-field-period {
+  flex: 0 0 70px;
+}
+.task-planning-panel .task-form-enriched .form-row .form-actions {
+  margin-left: auto;
 }
 
 /* Empty state */
@@ -709,8 +762,12 @@
   color: var(--theme-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
-  border-left: 1px solid var(--theme-border);
   padding-left: 10px;
+}
+/* Col: Spacer (espace entre Client et Date) */
+.task-planning-panel .ev-col-spacer {
+  width: 30px;
+  flex: 0 0 30px;
 }
 /* Col: Date (largeur fixe) */
 .task-planning-panel .ev-col-date {

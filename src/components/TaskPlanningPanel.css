@@ -1187,9 +1187,39 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px;
 }
-.wk-section + .wk-section {
-  border-top: 1.5px solid var(--theme-border-color, var(--theme-border));
+.wk-section-events {
+  flex: 50 0 0;
+}
+.wk-section-tasks {
+  flex: 50 0 0;
+}
+
+/* ── Séparateur draggable entre événements et tâches ── */
+.wk-split-handle {
+  flex: 0 0 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  background: var(--theme-border-color, var(--theme-border));
+  transition: background 0.15s;
+  position: relative;
+  z-index: 1;
+}
+.wk-split-handle:hover,
+.wk-split-handle:active {
+  background: var(--theme-primary, var(--theme-info));
+}
+.wk-split-handle-grip {
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 .wk-section-label {
   font-size: 0.6rem;
@@ -1209,14 +1239,6 @@
 .wk-section-label.task-label {
   color: var(--theme-success-alt, #10b981);
   background: rgba(16, 185, 129, 0.05);
-}
-.wk-section-events {
-  flex: 0 0 auto;
-}
-.wk-section-tasks {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
 }
 .wk-empty-mini {
   color: var(--theme-text-muted, var(--theme-text-muted));
@@ -1322,11 +1344,11 @@
 /* ── Contenu de la colonne jour ── */
 .wk-day-content {
   flex: 1;
-  overflow-y: auto;
-  padding: 4px;
+  overflow: hidden;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
 }
 
 /* ── Groupe compact (mini-cartes) ── */

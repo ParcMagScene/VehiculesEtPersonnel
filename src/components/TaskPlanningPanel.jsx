@@ -126,6 +126,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [viewMode, setViewMode] = useState('day'); // 'day' | 'week'
   const [expandedWeekDay, setExpandedWeekDay] = useState(null); // dayStr to expand in week view
+  const [wkSplitRatio, setWkSplitRatio] = useState(50); // % height for events section
+  const wkSplitDragging = useRef(false);
+  const wkSplitContentRef = useRef(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Inline add form
@@ -269,6 +272,39 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     } catch { setRecurringTasks([]); }
   }, []);
   useEffect(() => { if (showRecurring) loadRecurringTasks(); }, [showRecurring, loadRecurringTasks]);
+
+  // ── Draggable week-view split ──
+  const handleWkSplitMouseDown = useCallback((e) => {
+    e.preventDefault();
+    wkSplitDragging.current = true;
+    wkSplitContentRef.current = e.target.closest('.wk-day-content');
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      if (!wkSplitDragging.current || !wkSplitContentRef.current) return;
+      const rect = wkSplitContentRef.current.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const pct = Math.max(10, Math.min(90, (y / rect.height) * 100));
+      setWkSplitRatio(Math.round(pct));
+    };
+    const handleUp = () => {
+      if (wkSplitDragging.current) {
+        wkSplitDragging.current = false;
+        wkSplitContentRef.current = null;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+    };
+  }, []);
 
   const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
@@ -2356,12 +2392,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                     {isExpanded ? (
                       <>
                         {/* ── Section Événements (expanded) ── */}
-                        <div className="wk-section wk-section-events">
+                        <div className="wk-section wk-section-events" style={{ flex: `${wkSplitRatio} 0 0` }}>
                           <div className="wk-section-label ev-label">📅 Événements</div>
                           {renderWeekDayExpandedEvents(d)}
                         </div>
+                        {/* ── Séparateur draggable ── */}
+                        <div className="wk-split-handle" onMouseDown={handleWkSplitMouseDown} title="Glisser pour redimensionner">
+                          <div className="wk-split-handle-grip" />
+                        </div>
                         {/* ── Section Tâches (expanded) ── */}
-                        <div className="wk-section wk-section-tasks">
+                        <div className="wk-section wk-section-tasks" style={{ flex: `${100 - wkSplitRatio} 0 0` }}>
                           <div className="wk-section-label task-label">📋 Tâches</div>
                           {renderWeekDayExpandedTasks(d)}
                         </div>
@@ -2369,7 +2409,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                     ) : (
                       <>
                         {/* ── Section Événements (compact) ── */}
-                        <div className="wk-section wk-section-events">
+                        <div className="wk-section wk-section-events" style={{ flex: `${wkSplitRatio} 0 0` }}>
                           <div className="wk-section-label ev-label">📅 Événements</div>
                           {dayData.googleEvents.length > 0 && (
                             <div className="wk-compact-group">
@@ -2389,8 +2429,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                           {evCount === 0 && <div className="wk-empty-mini">—</div>}
                         </div>
 
+                        {/* ── Séparateur draggable ── */}
+                        <div className="wk-split-handle" onMouseDown={handleWkSplitMouseDown} title="Glisser pour redimensionner">
+                          <div className="wk-split-handle-grip" />
+                        </div>
+
                         {/* ── Section Tâches (compact) ── */}
-                        <div className="wk-section wk-section-tasks">
+                        <div className="wk-section wk-section-tasks" style={{ flex: `${100 - wkSplitRatio} 0 0` }}>
                           <div className="wk-section-label task-label">📋 Tâches</div>
                           {(() => {
                             const grouped = {};

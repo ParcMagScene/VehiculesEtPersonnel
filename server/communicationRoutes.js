@@ -743,13 +743,22 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         prep_installations:  { label: 'Préparations Installations' },
         chargement:          { label: 'Chargement' },
         depart:              { label: 'Départ' },
-        enlevement:          { label: 'Enlèvement' },
-        retour:              { label: 'Retour' },
-        recuperation:        { label: 'Récupération' },
         installation:        { label: 'Installation' },
         evenements:          { label: 'Autres Événements' },
         taches_secondaires:  { label: 'Tâches Secondaires' },
         manual:              { label: 'Autres' },
+      };
+
+      // Aliases de section (identiques au frontend)
+      const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation: 'courses' };
+      const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
+
+      // Couleurs et labels des types de course
+      const COURSE_TYPE_INFO = {
+        livraison:    { label: 'Livraison',     color: '#10b981' },
+        enlevement:   { label: 'Enlevement',    color: '#f59e0b' },
+        retour:       { label: 'Retour',         color: '#8b5cf6' },
+        recuperation: { label: 'Recuperation',   color: '#ef4444' },
       };
 
       const SECTION_COLORS = {
@@ -865,9 +874,9 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       const grouped = {};
       Object.keys(SECTIONS).forEach(k => { grouped[k] = []; });
 
-      // Tasks
+      // Tasks (normaliser les sections courses)
       tasks.forEach(t => {
-        const sec = t.section || 'manual';
+        const sec = normalizeSection(t.section || 'manual');
         if (!grouped[sec]) grouped[sec] = [];
         grouped[sec].push({ type: 'task', data: t });
       });
@@ -883,7 +892,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         }
       });
 
-      // Display events (exclure les terminés)
+      // Display events (exclure les terminés, normaliser sections)
       const linkedEventIds = new Set(tasks.filter(t => t.display_event_id).map(t => t.display_event_id));
       displayEvts.filter(ev => !linkedEventIds.has(ev.id) && ev.status !== 'done').forEach(ev => {
         let sec = EVENT_TYPE_MAP[ev.type] || 'manual';
@@ -893,6 +902,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           else if (ev.category === 'installation') sec = 'prep_installations';
           else sec = 'prep_locations';
         }
+        sec = normalizeSection(sec);
         if (!grouped[sec]) grouped[sec] = [];
         grouped[sec].push({ type: 'event', data: ev });
       });
@@ -1029,12 +1039,44 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           if (item.type === 'task') {
             const t = item.data;
             const statusLabel = STATUS_LABELS[t.status] || '[ ]';
-            const titleStr = cleanTaskTitle(t, key);
+            const taskSection = normalizeSection(t.section || 'manual');
+            let titleStr = cleanTaskTitle(t, key);
             // Extraire le N° d'affaire depuis le champ OU depuis le titre/google_event_title
             const affNum = t.affaire_num
               || ((t.title || '').match(/\bAF\s*\d{3,}/i) || [''])[0].toUpperCase().replace(/\s+/g, '')
               || ((t.google_event_title || '').match(/\bAF\s*\d{3,}/i) || [''])[0].toUpperCase().replace(/\s+/g, '')
               || '';
+            const linkedAffaire = affNum ? affaireByNum.get(affNum.toUpperCase()) : null;
+
+            // Extraction du type de course (3 sources: section -> eventType -> regex titre)
+            let courseType = null;
+            if (taskSection === 'courses') {
+              const SECTION_COURSE = { enlevement: 'enlevement', retour: 'retour', recuperation: 'recuperation' };
+              const EVENT_COURSE = { livraison: 'livraison', enlevement: 'enlevement', retour: 'retour', recuperation: 'recuperation' };
+              if (SECTION_COURSE[t.section]) courseType = SECTION_COURSE[t.section];
+              else if (t.event_type && EVENT_COURSE[t.event_type]) courseType = EVENT_COURSE[t.event_type];
+              else {
+                const cm = (t.title || '').match(/^[^a-zA-Z]*(Livraison|R[eé]cup[eé]ration|Enl[eè]vement|Retour)\b/i);
+                if (cm) {
+                  const raw = cm[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  courseType = { livraison: 'livraison', recuperation: 'recuperation', enlevement: 'enlevement', retour: 'retour' }[raw] || null;
+                }
+              }
+              // Retirer le type du titre (redondant avec badge)
+              if (courseType) {
+                titleStr = titleStr
+                  .replace(/^(Livraison|R[eé]cup[eé]ration|Enl[eè]vement|Retour)\s*-?\s*/i, '')
+                  .trim() || stripEmoji(t.google_event_title) || t.notes || '-';
+              }
+            }
+
+            // Client et lieu
+            const displayClient = stripEmoji(t.event_client || (linkedAffaire ? linkedAffaire.client : '') || '');
+            const displayLocation = stripEmoji(t.event_location || (linkedAffaire ? (linkedAffaire.adresse_livraison || '').split('\n')[0] : '') || '');
+
+            // Horaires
+            const timeStr = t.time ? (t.end_time ? `${t.time} > ${t.end_time}` : t.time) : '';
+
             // Multi-affectations ou personne unique
             const multiAssign = assignmentsByEntity.get(`task:${t.id}`) || [];
             const personStr = multiAssign.length > 0
@@ -1053,35 +1095,53 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
             drawCheckbox(cbX, cbY, t.status === 'done', cbSize);
             // Statut
             doc.font('Helvetica').fontSize(fsSmall).fillColor('#777777')
-              .text(statusLabel, cbX + cbSize + 3, rowY + 2, { width: 44, lineBreak: false });
+              .text(statusLabel, cbX + cbSize + 3, rowY + 2, { width: 36, lineBreak: false });
             // Badge N° affaire
-            let titleX = leftX + 56;
+            let titleX = leftX + 50;
             if (affNum) {
               const badgeW = drawBadge(affNum, titleX, rowY, badgeColor);
               titleX += badgeW;
             }
+            // Badge type de course
+            if (courseType && COURSE_TYPE_INFO[courseType]) {
+              const ct = COURSE_TYPE_INFO[courseType];
+              const badgeW = drawBadge(ct.label, titleX, rowY, ct.color);
+              titleX += badgeW;
+            }
             // Titre
-            const titleW = leftX + pageW - titleX - 110;
+            const rightInfoW = (timeStr ? 42 : 0) + (displayClient ? 65 : displayLocation ? 55 : 0) + (personStr ? 60 : 0) + 8;
+            const titleW = leftX + pageW - titleX - rightInfoW;
             if (t.status === 'done') {
               doc.font('Helvetica-Oblique').fontSize(fs).fillColor('#999999');
             } else {
               doc.font('Helvetica').fontSize(fs).fillColor('#111111');
             }
-            doc.text(titleStr, titleX, rowY + 2, { width: Math.max(titleW, 60), lineBreak: false });
+            doc.text(titleStr, titleX, rowY + 2, { width: Math.max(titleW, 40), lineBreak: false });
             if (t.status === 'done') {
               const tw = doc.widthOfString(titleStr, { width: titleW });
               doc.moveTo(titleX, rowY + rowH / 2).lineTo(titleX + Math.min(tw, titleW), rowY + rowH / 2)
                 .strokeColor('#999999').lineWidth(0.4).stroke();
             }
-            // Personne (droite)
+            // Horaires
+            let rightX = leftX + pageW;
             if (personStr) {
+              rightX -= 60;
               doc.font('Helvetica').fontSize(fsSmall).fillColor('#555555')
-                .text(personStr, leftX + pageW - 105, rowY + 2, { width: 60, lineBreak: false });
+                .text(personStr, rightX, rowY + 2, { width: 58, lineBreak: false });
             }
-            // Client (extrême droite)
-            if (t.event_client) {
+            if (displayClient) {
+              rightX -= 65;
+              doc.font('Helvetica-Oblique').fontSize(fsSmall).fillColor('#888888')
+                .text(displayClient.slice(0, 18), rightX, rowY + 2, { width: 63, lineBreak: false });
+            } else if (displayLocation) {
+              rightX -= 55;
               doc.font('Helvetica').fontSize(fsSmall).fillColor('#888888')
-                .text(t.event_client.slice(0, 12), leftX + pageW - 45, rowY + 2, { width: 42, lineBreak: false, align: 'right' });
+                .text(displayLocation.slice(0, 16), rightX, rowY + 2, { width: 53, lineBreak: false });
+            }
+            if (timeStr) {
+              rightX -= 42;
+              doc.font('Helvetica-Bold').fontSize(fsSmall).fillColor('#444444')
+                .text(timeStr, rightX, rowY + 2, { width: 40, lineBreak: false });
             }
             doc.fillColor('#000000');
             doc.y = rowY + rowH;

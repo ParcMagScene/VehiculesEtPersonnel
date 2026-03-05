@@ -1609,6 +1609,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const events = dayTasks.map(t => ({
         id: String(t.id),
         time: t.time ? t.time.substring(0, 5) : '',
+        end_time: t.end_time ? t.end_time.substring(0, 5) : '',
         period: t.period || '',
         title: t.google_event_title || t.title || '',
         section: t.section || 'manual',

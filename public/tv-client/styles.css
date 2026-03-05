@@ -471,3 +471,69 @@ footer {
   header { flex-direction: column; text-align: center; }
   #datetime { text-align: center; margin-top: 1em; }
 }
+
+/* ═══════════ BOUTON TEST SONORE ═══════════ */
+#btn-test-sound {
+  background: rgba(0, 225, 255, 0.15);
+  border: 2px solid rgba(0, 225, 255, 0.4);
+  color: var(--primary-color, #00e1ff);
+  font-size: 1.5em;
+  padding: 0.3em 0.5em;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+#btn-test-sound:hover {
+  background: rgba(0, 225, 255, 0.3);
+  border-color: var(--primary-color, #00e1ff);
+  transform: scale(1.1);
+}
+#btn-test-sound:active,
+#btn-test-sound.test-playing {
+  background: rgba(255, 200, 0, 0.3);
+  border-color: #ffc800;
+  animation: bell-ring 0.4s ease 3;
+}
+
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(15deg); }
+  75% { transform: rotate(-15deg); }
+}
+
+/* ═══════════ ALARME FLASH ═══════════ */
+.alarm-flash {
+  animation: alarm-border-flash 0.5s ease 3;
+}
+
+@keyframes alarm-border-flash {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: inset 0 0 40px rgba(255, 0, 0, 0.4), 0 0 30px rgba(255, 0, 0, 0.3); }
+}
+
+/* Événement en alarme */
+.event-item.alarm-active {
+  animation: event-alarm-pulse 1s ease infinite;
+  border-left: 4px solid #ff0000 !important;
+  position: relative;
+}
+.event-item.alarm-active::after {
+  content: '🔔';
+  position: absolute;
+  right: 1em;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5em;
+  animation: bell-ring 0.4s ease infinite;
+}
+
+@keyframes event-alarm-pulse {
+  0%, 100% { background: rgba(255, 0, 0, 0.1); }
+  50% { background: rgba(255, 0, 0, 0.25); }
+}
+
+/* Affichage end_time dans la colonne horaire */
+.col-time {
+  white-space: nowrap;
+}

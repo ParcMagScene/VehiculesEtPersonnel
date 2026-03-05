@@ -11,6 +11,76 @@ let colorRules = [];
 let locationIconRules = [];
 let completedEvents = [];
 let tvConfig = {};
+let allEvents = [];
+
+// ===============================================
+//  ALARME SONORE — SNCF.wav à l'échéance
+// ===============================================
+const alarmTriggered = new Set();   // IDs des événements déjà signalés aujourd'hui
+let alarmAudio = null;              // Instance Audio réutilisable
+let lastAlarmDay = new Date().toDateString();
+
+function getAlarmAudio() {
+  if (!alarmAudio) {
+    alarmAudio = new Audio('/SNCF.wav');
+    alarmAudio.volume = 1.0;
+  }
+  return alarmAudio;
+}
+
+/** Joue le signal SNCF */
+function playAlarmSound() {
+  const audio = getAlarmAudio();
+  audio.currentTime = 0;
+  const playPromise = audio.play();
+  if (playPromise) {
+    playPromise.catch(err => {
+      console.warn('⚠️ Lecture audio bloquée (autoplay) :', err.message);
+    });
+  }
+}
+
+/** Vérifie toutes les secondes si une tâche arrive à échéance */
+function checkAlarms() {
+  const now = new Date();
+  const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const today = now.toDateString();
+
+  // Reset des alarmes si nouveau jour
+  if (today !== lastAlarmDay) {
+    alarmTriggered.clear();
+    lastAlarmDay = today;
+  }
+
+  for (const event of allEvents) {
+    if (!event.end_time || event.end_time === '') continue;
+    const eventId = String(event.id);
+    if (alarmTriggered.has(eventId)) continue;
+    // Ne pas sonner pour les tâches déjà terminées
+    if (completedEvents.includes(eventId)) continue;
+
+    if (currentHHMM >= event.end_time) {
+      console.log(`🔔 ALARME — Tâche "${event.title}" échue à ${event.end_time}`);
+      alarmTriggered.add(eventId);
+      playAlarmSound();
+      showAlarmFlash(event);
+    }
+  }
+}
+
+/** Flash visuel quand une alarme se déclenche */
+function showAlarmFlash(event) {
+  // Flash rouge sur le body
+  document.body.classList.add('alarm-flash');
+  setTimeout(() => document.body.classList.remove('alarm-flash'), 3000);
+
+  // Mettre en surbrillance l'événement concerné
+  const eventEl = document.querySelector(`[data-event-id="${event.id}"]`);
+  if (eventEl) {
+    eventEl.classList.add('alarm-active');
+    setTimeout(() => eventEl.classList.remove('alarm-active'), 10000);
+  }
+}
 
 // ===============================================
 //  FONCTIONS UTILITAIRES
@@ -80,7 +150,8 @@ async function loadTVState() {
     updateSonosWidget(state.sonos);
 
     // Événements (tâches planifiées)
-    renderEvents(state.events || []);
+    allEvents = state.events || [];
+    renderEvents(allEvents);
 
   } catch (error) {
     console.error('Erreur chargement état TV:', error);
@@ -150,6 +221,8 @@ function createEventElement(event) {
   if (isAllDay) li.classList.add('all-day-event');
 
   const timeStr = event.time || '';
+  const endTimeStr = event.end_time || '';
+  const timeDisplay = endTimeStr ? `${timeStr} → ${endTimeStr}` : timeStr;
   const eventTitle = event.title || 'Sans titre';
   const eventLocation = event.location || '';
   const eventDescription = event.description || '';
@@ -176,7 +249,7 @@ function createEventElement(event) {
 
   li.innerHTML = `
     <div class="event-columns">
-      <div class="col-time">${timeStr}</div>
+      <div class="col-time">${timeDisplay}</div>
       <div class="col-title">${isCompleted ? '<span class="completed-icon">✅</span>' : ''}${eventTitle}</div>
       <div class="col-location">${locationContent}</div>
       <div class="col-description">${eventDescription}</div>
@@ -407,6 +480,21 @@ function startAutoScroll() {
 }
 
 // ===============================================
+//  BOUTON DE TEST SONORE
+// ===============================================
+function setupTestSoundButton() {
+  const btn = document.getElementById('btn-test-sound');
+  if (!btn) return;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    console.log('🔔 Test sonore SNCF.wav');
+    playAlarmSound();
+    btn.classList.add('test-playing');
+    setTimeout(() => btn.classList.remove('test-playing'), 2000);
+  });
+}
+
+// ===============================================
 //  INITIALISATION
 // ===============================================
 async function init() {
@@ -424,6 +512,10 @@ async function init() {
   setInterval(loadTVState, 30000);              // État complet : toutes les 30s
   setInterval(loadWeather, 600000);             // Météo : toutes les 10 min
   setInterval(loadSonosNowPlaying, 5000);       // Sonos : toutes les 5s
+  setInterval(checkAlarms, 1000);               // Alarmes : chaque seconde
+
+  // Bouton de test sonore
+  setupTestSoundButton();
 
   // Démarrer le défilement automatique
   startAutoScroll();

@@ -189,6 +189,10 @@ app.use('/display-gifs', express.static(path.join(__dirname, '..', 'public', 'di
 app.use('/display-logo', express.static(path.join(__dirname, '..', 'public', 'display-logo')));
 app.use('/display-sneaky', express.static(path.join(__dirname, '..', 'public', 'display-sneaky')));
 app.use('/display-media', express.static(path.join(__dirname, '..', 'public', 'display-media')));
+// Fichier son alarme SNCF accessible depuis le client TV
+app.get('/SNCF.wav', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'SNCF.wav'));
+});
 // Servir le client TV HTML/JS/CSS (no-cache sur HTML pour garantir la version à jour)
 const tvClientDir = path.join(__dirname, '..', 'public', 'tv-client');
 app.use('/tv-client', (req, res, next) => {

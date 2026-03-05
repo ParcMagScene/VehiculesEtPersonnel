@@ -72,7 +72,9 @@ if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHA
 // CORS — restriction aux domaines autorisés
 
 // Headers de sécurité HTTP via Helmet
-app.use(helmet({
+// Le client TV (port 3001) est sur réseau local HTTP — on bypass helmet pour éviter
+// que upgrade-insecure-requests et CSP ne bloquent le chargement des ressources
+const helmetMiddleware = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -89,7 +91,20 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false, // nécessaire pour charger images/fonts cross-origin
   hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true } : false,
-}));
+});
+app.use((req, res, next) => {
+  // Bypass helmet pour le client TV (port 3001 ou chemins TV/display)
+  const port = req.socket.localPort;
+  if (port === 3001
+      || req.path.startsWith('/tv-client')
+      || req.path.startsWith('/display-')
+      || req.path === '/tv'
+      || (req.path.startsWith('/api/display/tv') && !req.headers.authorization)
+      || (req.path.startsWith('/api/') && !req.path.startsWith('/api/display/') && !req.headers.authorization)) {
+    return next();
+  }
+  return helmetMiddleware(req, res, next);
+});
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://magsav.duckdns.org,http://magsav.duckdns.org:4173,http://magsav.duckdns.org,http://192.168.205.75:4173,http://localhost:5174,http://localhost:4173')
   .split(',')
   .map(s => s.trim());

@@ -8,6 +8,7 @@ export const PERSON_TYPES = [
   { value: 'salarié', label: 'Salarié' },
   { value: 'contractuel', label: 'Contractuel' },
   { value: 'stagiaire', label: 'Stagiaire' },
+  { value: 'apprenti', label: 'Apprenti' },
 ];
 
 export const CONTRACT_TYPES = [
@@ -54,7 +55,7 @@ export const POSITION_CATEGORIES = [
 ];
 
 export const PERMANENT_TYPES = ['permanent'];
-export const NON_PERMANENT_TYPES = ['salarié', 'contractuel', 'stagiaire'];
+export const NON_PERMANENT_TYPES = ['salarié', 'contractuel', 'stagiaire', 'apprenti'];
 
 export const getCategoryColor = (category) => {
   return SKILL_CATEGORIES.find(c => c.value === category)?.color || 'var(--theme-text-gray)';

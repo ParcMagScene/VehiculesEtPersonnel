@@ -2291,6 +2291,132 @@
   color: var(--theme-text-secondary);
 }
 
+/* ─── Bouton filtre (engrenage) ─── */
+.dash-filter-btn {
+  margin-left: 4px;
+  border: none;
+  background: none;
+  padding: 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--theme-text-muted);
+  transition: all 0.15s;
+}
+
+.dash-filter-btn:hover {
+  color: var(--theme-primary);
+  background: var(--theme-bg-hover);
+}
+
+.dash-filter-btn.active {
+  color: var(--theme-primary);
+  background: var(--theme-bg-tertiary);
+}
+
+/* ─── Panneau de filtrage des sections ─── */
+.dash-filter-panel {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--theme-border-light);
+  background: var(--theme-bg-secondary);
+}
+
+.dash-filter-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.dash-filter-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--theme-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dash-filter-all {
+  border: none;
+  background: none;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--theme-primary);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.dash-filter-all:hover {
+  background: var(--theme-bg-hover);
+}
+
+.dash-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dash-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1.5px solid var(--theme-border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--theme-text-muted);
+  transition: all 0.15s;
+}
+
+.dash-filter-chip.on {
+  background: var(--theme-bg-main);
+}
+
+.dash-filter-chip.off {
+  opacity: 0.45;
+  border-color: var(--theme-border-light);
+}
+
+.dash-filter-chip:hover {
+  background: var(--theme-bg-hover);
+  opacity: 1;
+}
+
+.dash-filter-chip-count {
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 0 3px;
+  border-radius: 6px;
+  background: var(--theme-bg-tertiary);
+}
+
+.dash-filter-save {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--theme-primary);
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  justify-content: center;
+}
+
+.dash-filter-save:hover {
+  filter: brightness(1.1);
+}
+
 /* ─── Date ─── */
 .dash-tasks-date {
   padding: 0 14px 10px;
@@ -2380,6 +2506,7 @@
   gap: 6px;
   padding: 4px 6px;
   border-radius: 5px;
+  border-left: 3px solid transparent;
   transition: background 0.15s;
 }
 
@@ -2462,6 +2589,41 @@
   font-size: 0.65rem;
   font-weight: 600;
   color: var(--theme-primary);
+}
+
+/* ─── Ligne nom + badge affaire ─── */
+.dash-task-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dash-task-name-row .dash-task-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-task-affaire {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-task-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ═══════════════════════════════════════════════════════

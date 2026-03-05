@@ -1,12 +1,17 @@
 // ═══════════════════════════════════════════════════════════════
 // DashboardTasksSidebar — Panneau latéral gauche dans Dashboard Écrans
-// Affiche les tâches du jour (comme dans la planification, sans événements)
-// + widget Sonos lecture en cours en bas
+// Affiche les tâches du jour (filtrable par section) avec couleurs
+// automatiques (type de tâche + type d'affaire) + widget Sonos
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
-import { ClipboardList, Clock, Check, Music, Disc, RefreshCw, ChevronDown, ChevronRight, Truck } from 'lucide-react';
+import {
+  ClipboardList, Clock, Check, Music, Disc, RefreshCw,
+  ChevronDown, ChevronRight, Truck, Settings, Eye, EyeOff,
+  Save, Briefcase
+} from 'lucide-react';
 import api from '../../utils/api';
+import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 
 // ─── Sections (mêmes que TaskPlanningPanel, sans rdv/evenements) ───
 const SECTIONS = {
@@ -30,10 +35,21 @@ const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation
 const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
 const SECTION_ORDER = Object.keys(SECTIONS);
 
+// Lookup rapide type d'affaire par clé
+const AFFAIRE_TYPE_MAP = Object.fromEntries(AFFAIRE_TYPES.map(t => [t.value, t]));
+
 function DashboardTasksSidebar({ refreshKey }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState({});
+
+  // Section filter
+  const [visibleSections, setVisibleSections] = useState(null); // null = all visible
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [filterDirty, setFilterDirty] = useState(false);
+
+  // Affaires cache (pour résoudre la couleur du type d'affaire)
+  const [affairesMap, setAffairesMap] = useState({});
 
   // Sonos state
   const [nowPlaying, setNowPlaying] = useState(null);
@@ -53,6 +69,26 @@ function DashboardTasksSidebar({ refreshKey }) {
     }
   }, [today]);
 
+  // ─── Chargement config sidebar (sections visibles) ───
+  const loadSidebarConfig = useCallback(async () => {
+    try {
+      const data = await api.getDisplaySidebarConfig();
+      setVisibleSections(data.sections); // null = all
+    } catch { /* ignore */ }
+  }, []);
+
+  // ─── Chargement des affaires (pour résoudre les types) ───
+  const loadAffaires = useCallback(async () => {
+    try {
+      const data = await api.getAffaires();
+      const map = {};
+      (Array.isArray(data) ? data : []).forEach(a => {
+        if (a.numeroAffaire) map[a.numeroAffaire.toUpperCase()] = a;
+      });
+      setAffairesMap(map);
+    } catch { /* ignore */ }
+  }, []);
+
   // ─── Sonos now playing ───
   const loadNowPlaying = useCallback(async () => {
     try {
@@ -66,21 +102,47 @@ function DashboardTasksSidebar({ refreshKey }) {
   useEffect(() => {
     loadTasks();
     loadNowPlaying();
-    // Refresh tâches toutes les 60s, Sonos toutes les 10s
+    loadSidebarConfig();
+    loadAffaires();
     const taskTimer = setInterval(loadTasks, 60000);
     sonosInterval.current = setInterval(loadNowPlaying, 10000);
     return () => {
       clearInterval(taskTimer);
       if (sonosInterval.current) clearInterval(sonosInterval.current);
     };
-  }, [loadTasks, loadNowPlaying, refreshKey]);
+  }, [loadTasks, loadNowPlaying, loadSidebarConfig, loadAffaires, refreshKey]);
+
+  // ─── Résoudre la couleur d'une tâche ───
+  const getTaskColor = useCallback((task) => {
+    // 1. Si une affaire est liée → couleur du type d'affaire
+    const affNum = (task.affaire_num || task.affaireNum || '').toUpperCase();
+    if (affNum) {
+      const affaire = affairesMap[affNum];
+      if (affaire && affaire.type) {
+        const typeInfo = AFFAIRE_TYPE_MAP[affaire.type];
+        if (typeInfo) return typeInfo.color;
+      }
+      // Fallback : essayer depuis event_category
+      if (task.event_category) {
+        const cat = task.event_category.toLowerCase();
+        if (cat === 'prestation') return '#3b82f6';
+        if (cat === 'location') return '#f59e0b';
+        if (cat === 'installation') return '#10b981';
+        if (cat === 'vente') return '#8b5cf6';
+        if (cat.includes('tourn')) return '#ec4899';
+      }
+    }
+    // 2. Couleur de la section
+    const sec = normalizeSection(task.section || 'manual');
+    const sectionInfo = SECTIONS[sec];
+    return sectionInfo ? sectionInfo.color : '#64748b';
+  }, [affairesMap]);
 
   // ─── Grouper par section ───
   const grouped = useMemo(() => {
     const groups = {};
     SECTION_ORDER.forEach(key => { groups[key] = []; });
     tasks.forEach(t => {
-      // Exclure les événements Google Calendar (sourceType === 'google_event' sans section opérationnelle)
       if (t.sourceType === 'google_event' && !t.section) return;
       const sec = normalizeSection(t.section || 'manual');
       if (!groups[sec]) groups[sec] = [];
@@ -89,13 +151,55 @@ function DashboardTasksSidebar({ refreshKey }) {
     return groups;
   }, [tasks]);
 
-  // Compteur total tâches
-  const totalTasks = tasks.filter(t => !(t.sourceType === 'google_event' && !t.section)).length;
-  const doneTasks = tasks.filter(t => t.status === 'done' && !(t.sourceType === 'google_event' && !t.section)).length;
+  // Sections filtrées
+  const filteredOrder = useMemo(() => {
+    if (!visibleSections) return SECTION_ORDER;
+    return SECTION_ORDER.filter(k => visibleSections.includes(k));
+  }, [visibleSections]);
+
+  // Compteur total tâches (dans sections visibles)
+  const totalTasks = useMemo(() => {
+    let count = 0;
+    filteredOrder.forEach(k => { count += (grouped[k] || []).length; });
+    return count;
+  }, [grouped, filteredOrder]);
+
+  const doneTasks = useMemo(() => {
+    let count = 0;
+    filteredOrder.forEach(k => {
+      (grouped[k] || []).forEach(t => { if (t.status === 'done') count++; });
+    });
+    return count;
+  }, [grouped, filteredOrder]);
 
   const toggleSection = (key) => {
     setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  // ─── Filter toggles ───
+  const toggleSectionFilter = (key) => {
+    setFilterDirty(true);
+    setVisibleSections(prev => {
+      const current = prev || [...SECTION_ORDER];
+      if (current.includes(key)) {
+        const next = current.filter(k => k !== key);
+        return next.length === 0 ? [key] : next; // empêcher vide
+      }
+      return [...current, key];
+    });
+  };
+
+  const selectAllSections = () => {
+    setFilterDirty(true);
+    setVisibleSections(null);
+  };
+
+  const saveSidebarConfig = useCallback(async () => {
+    try {
+      await api.saveDisplaySidebarConfig(visibleSections);
+      setFilterDirty(false);
+    } catch { /* ignore */ }
+  }, [visibleSections]);
 
   const formatTime = (seconds) => {
     if (!seconds) return '0:00';
@@ -104,6 +208,15 @@ function DashboardTasksSidebar({ refreshKey }) {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Résoudre badge affaire sur la tâche
+  const getAffaireBadge = useCallback((task) => {
+    const affNum = (task.affaire_num || task.affaireNum || '').toUpperCase();
+    if (!affNum) return null;
+    const affaire = affairesMap[affNum];
+    const typeInfo = affaire?.type ? AFFAIRE_TYPE_MAP[affaire.type] : null;
+    return { num: affNum, color: typeInfo?.color || '#6366f1', icon: typeInfo?.icon || '📋' };
+  }, [affairesMap]);
+
   return (
     <div className="dash-tasks-sidebar">
       {/* ─── En-tête ─── */}
@@ -111,7 +224,48 @@ function DashboardTasksSidebar({ refreshKey }) {
         <ClipboardList size={16} />
         <span className="dash-tasks-title">Tâches du jour</span>
         <span className="dash-tasks-count">{doneTasks}/{totalTasks}</span>
+        <button
+          className={`dash-filter-btn ${showFilterPanel ? 'active' : ''}`}
+          onClick={() => setShowFilterPanel(p => !p)}
+          title="Filtrer les sections"
+        >
+          <Settings size={13} />
+        </button>
       </div>
+
+      {/* ─── Panneau filtre sections ─── */}
+      {showFilterPanel && (
+        <div className="dash-filter-panel">
+          <div className="dash-filter-top">
+            <span className="dash-filter-label">Sections affichées</span>
+            <button className="dash-filter-all" onClick={selectAllSections}>Toutes</button>
+          </div>
+          <div className="dash-filter-grid">
+            {SECTION_ORDER.map(key => {
+              const sec = SECTIONS[key];
+              const isVisible = !visibleSections || visibleSections.includes(key);
+              const count = (grouped[key] || []).length;
+              return (
+                <button
+                  key={key}
+                  className={`dash-filter-chip ${isVisible ? 'on' : 'off'}`}
+                  onClick={() => toggleSectionFilter(key)}
+                  style={isVisible ? { borderColor: sec.color, color: sec.color } : {}}
+                >
+                  {isVisible ? <Eye size={10} /> : <EyeOff size={10} />}
+                  <span>{sec.emoji} {sec.label}</span>
+                  {count > 0 && <span className="dash-filter-chip-count">{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+          {filterDirty && (
+            <button className="dash-filter-save" onClick={saveSidebarConfig}>
+              <Save size={12} /> Enregistrer
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ─── Date ─── */}
       <div className="dash-tasks-date">
@@ -125,7 +279,7 @@ function DashboardTasksSidebar({ refreshKey }) {
         ) : totalTasks === 0 ? (
           <div className="dash-tasks-empty">Aucune tâche aujourd'hui</div>
         ) : (
-          SECTION_ORDER.map(key => {
+          filteredOrder.map(key => {
             const items = grouped[key];
             if (!items || items.length === 0) return null;
             const section = SECTIONS[key];
@@ -143,19 +297,38 @@ function DashboardTasksSidebar({ refreshKey }) {
                     {items.map(task => {
                       const isDone = task.status === 'done';
                       const isProgress = task.status === 'in_progress';
+                      const taskColor = getTaskColor(task);
+                      const affBadge = getAffaireBadge(task);
                       return (
-                        <div key={task.id} className={`dash-task-item ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''}`}>
+                        <div
+                          key={task.id}
+                          className={`dash-task-item ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''}`}
+                          style={{ borderLeftColor: taskColor }}
+                        >
                           <span className={`dash-task-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}>
                             {isDone ? <Check size={10} /> : isProgress ? <Clock size={10} /> : null}
                           </span>
                           <div className="dash-task-info">
-                            <div className="dash-task-name">{task.title}</div>
-                            {task.time && (
-                              <span className="dash-task-time"><Clock size={9} /> {task.time}{task.endTime ? ` → ${task.endTime}` : ''}</span>
-                            )}
-                            {task.reservation_vehicle_name && (
-                              <span className="dash-task-vehicle"><Truck size={9} /> {task.reservation_vehicle_name}</span>
-                            )}
+                            <div className="dash-task-name-row">
+                              {affBadge && (
+                                <span
+                                  className="dash-task-affaire"
+                                  style={{ background: `${affBadge.color}14`, color: affBadge.color, borderColor: `${affBadge.color}40` }}
+                                  title={affBadge.num}
+                                >
+                                  <Briefcase size={8} /> {affBadge.num}
+                                </span>
+                              )}
+                              <span className="dash-task-name">{task.title}</span>
+                            </div>
+                            <div className="dash-task-meta">
+                              {task.time && (
+                                <span className="dash-task-time"><Clock size={9} /> {task.time}{task.endTime ? ` → ${task.endTime}` : ''}</span>
+                              )}
+                              {task.reservation_vehicle_name && (
+                                <span className="dash-task-vehicle"><Truck size={9} /> {task.reservation_vehicle_name}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );

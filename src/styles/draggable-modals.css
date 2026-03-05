@@ -1,0 +1,279 @@
+/* ================================================================= */
+/*  Draggable & Resizable Modals — Styles globaux                     */
+/*  Importé une seule fois dans App.jsx                                */
+/* ================================================================= */
+
+/* --- Drag handle (header) ---------------------------------------- */
+
+.modal-drag-handle {
+  cursor: grab !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.modal-drag-handle:active,
+.modal-dragging .modal-drag-handle {
+  cursor: grabbing !important;
+}
+
+/* --- Feedback visuel pendant le drag ----------------------------- */
+
+.modal-dragging {
+  opacity: 0.92;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35) !important;
+  transition: none !important;
+  z-index: 100001 !important;
+}
+
+.modal-resizing {
+  transition: none !important;
+  z-index: 100001 !important;
+}
+
+/* --- Enhanced modal base ----------------------------------------- */
+
+.modal-draggable-enhanced {
+  /* Position relative pour les handles absolus qui dépassent */
+  position: relative;
+  /* On ne force PAS overflow:visible car ça casse le scroll interne.
+     Les resize handles sont positionnés en absolute avec des valeurs
+     négatives, et comme les modals ont généralement overflow-x:hidden,
+     on gère les handles via z-index et clip-path override */
+}
+
+/* Les modals qui ont déjà overflow:auto sur le body, on le garde là */
+.modal-draggable-enhanced > [class*="body"],
+.modal-draggable-enhanced > [class*="content"],
+.modal-draggable-enhanced > .pdf-export-body,
+.modal-draggable-enhanced > .etm-body,
+.modal-draggable-enhanced > .tem-body {
+  overflow: auto;
+}
+
+/* --- Resize handles ---------------------------------------------- */
+
+.modal-resize-handle {
+  position: absolute;
+  z-index: 10;
+  /* Invisible par défaut, visible au hover du modal */
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.modal-draggable-enhanced:hover .modal-resize-handle {
+  opacity: 1;
+}
+
+/* Corner handles (8x8 zones avec indicateur visuel) */
+.modal-resize-se {
+  bottom: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+}
+.modal-resize-se::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-bottom: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-radius: 0 0 2px 0;
+}
+
+.modal-resize-sw {
+  bottom: -3px;
+  left: -3px;
+  width: 16px;
+  height: 16px;
+  cursor: sw-resize;
+}
+.modal-resize-sw::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  border-left: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-bottom: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-radius: 0 0 0 2px;
+}
+
+.modal-resize-ne {
+  top: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
+  cursor: ne-resize;
+}
+.modal-resize-ne::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-top: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-radius: 0 2px 0 0;
+}
+
+.modal-resize-nw {
+  top: -3px;
+  left: -3px;
+  width: 16px;
+  height: 16px;
+  cursor: nw-resize;
+}
+.modal-resize-nw::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  border-left: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-top: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-radius: 2px 0 0 0;
+}
+
+/* Edge handles (bandes fines sur les bords) */
+.modal-resize-n {
+  top: -3px;
+  left: 16px;
+  right: 16px;
+  height: 6px;
+  cursor: n-resize;
+}
+
+.modal-resize-s {
+  bottom: -3px;
+  left: 16px;
+  right: 16px;
+  height: 6px;
+  cursor: s-resize;
+}
+
+.modal-resize-e {
+  top: 16px;
+  bottom: 16px;
+  right: -3px;
+  width: 6px;
+  cursor: e-resize;
+}
+
+.modal-resize-w {
+  top: 16px;
+  bottom: 16px;
+  left: -3px;
+  width: 6px;
+  cursor: w-resize;
+}
+
+/* Edge handles hover : bande colorée */
+.modal-resize-n:hover,
+.modal-resize-s:hover {
+  background: linear-gradient(to bottom, transparent, var(--drag-handle-color, rgba(100, 149, 237, 0.3)), transparent);
+}
+
+.modal-resize-e:hover,
+.modal-resize-w:hover {
+  background: linear-gradient(to right, transparent, var(--drag-handle-color, rgba(100, 149, 237, 0.3)), transparent);
+}
+
+/* Corner handles hover */
+.modal-resize-se:hover::after,
+.modal-resize-sw:hover::after,
+.modal-resize-ne:hover::after,
+.modal-resize-nw:hover::after {
+  border-color: var(--drag-handle-hover, rgba(100, 149, 237, 0.9));
+}
+
+/* --- Indicateur visuel sur le header (petits points de grip) ----- */
+
+.modal-drag-handle::before {
+  content: '⠿';
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--drag-handle-color, rgba(120, 120, 120, 0.4));
+  pointer-events: none;
+  letter-spacing: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.modal-drag-handle:hover::before {
+  opacity: 1;
+}
+
+/* --- Dark theme support ------------------------------------------ */
+
+[data-theme="dark"] {
+  --drag-handle-color: rgba(180, 180, 180, 0.5);
+  --drag-handle-hover: rgba(100, 180, 255, 0.9);
+}
+
+[data-theme="light"],
+:root {
+  --drag-handle-color: rgba(100, 100, 100, 0.4);
+  --drag-handle-hover: rgba(60, 120, 220, 0.9);
+}
+
+/* --- Fix: empêcher que overflow:visible casse les scroll internes - */
+
+.modal-draggable-enhanced {
+  /* Le body du modal garde son scroll */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Quand le modal a été déplacé/redimensionné et a height défini */
+.modal-draggable-enhanced[style*="height"] > :last-child:not(.modal-resize-handle) {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+/* --- Transition douce pour le reset (double-click) --------------- */
+
+.modal-draggable-enhanced:not(.modal-dragging):not(.modal-resizing) {
+  transition: left 0.3s ease, top 0.3s ease, width 0.3s ease, height 0.3s ease;
+}
+
+/* --- Mini grip bar pour modals sans header ------------------------ */
+
+.modal-grip-bar {
+  width: 100%;
+  height: 14px;
+  min-height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  background: transparent;
+  border-radius: inherit;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.modal-grip-bar::before {
+  content: '';
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--drag-handle-color, rgba(120, 120, 120, 0.35));
+  transition: background 0.2s ease, width 0.2s ease;
+}
+
+.modal-grip-bar:hover::before {
+  background: var(--drag-handle-hover, rgba(100, 149, 237, 0.8));
+  width: 48px;
+}

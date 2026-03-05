@@ -1436,12 +1436,15 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       };
 
       const events = dayTasks.map(t => ({
+        id: String(t.id),
         time: t.time ? t.time.substring(0, 5) : '',
         period: t.period || '',
         title: t.google_event_title || t.title || '',
         section: t.section || 'manual',
         sectionLabel: SECTION_LABELS[t.section] || t.section || 'Divers',
         status: t.status || 'pending',
+        location: t.event_location || '',
+        client: t.event_client || '',
         description: t.affaire_num ? `Affaire ${t.affaire_num}` : (t.notes || ''),
         is_recurrent: 0,
       }));
@@ -1503,5 +1506,210 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  logger.info('✅ Routes Dashboard TV (apparence, messages, couleurs, icônes, Sonos) configurées');
+  // ═══════════════════════════════════════════════════════════════
+  // ENDPOINTS PUBLICS — Client TV standalone (ex calendar-dashboard)
+  // Accessible sans authentification pour les écrans TV
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /api/display/tv-public-state — État complet sans auth pour l'écran TV
+  app.get('/api/display/tv-public-state', async (_req, res) => {
+    try {
+      // Config apparence
+      const configRows = db.prepare('SELECT key, value FROM display_config').all();
+      const config = {};
+      configRows.forEach(r => {
+        try { config[r.key] = JSON.parse(r.value); } catch { config[r.key] = r.value; }
+      });
+
+      // Message d'accueil courant
+      const now = new Date();
+      const joursFR = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+      const day = joursFR[now.getDay()];
+      const hh = now.getHours();
+      const mm = now.getMinutes();
+      let slot = 'soir';
+      if (hh >= 6 && (hh < 9 || (hh === 9 && mm < 30))) slot = 'matin';
+      else if ((hh === 9 && mm >= 30) || (hh >= 10 && hh < 12)) slot = 'matinee';
+      else if (hh >= 12 && hh < 13) slot = 'midi';
+      else if (hh >= 13 && hh < 18) slot = 'apres_midi';
+
+      // Sneaky message prioritaire
+      let welcomeMessage = 'Bienvenue !';
+      const sneakyMsgPath = join(displayDataDir, 'sneaky-message.json');
+      if (fs.existsSync(sneakyMsgPath)) {
+        try {
+          const sneaky = JSON.parse(fs.readFileSync(sneakyMsgPath, 'utf8'));
+          if (sneaky.active && sneaky.expiresAt && new Date(sneaky.expiresAt) > now) {
+            welcomeMessage = sneaky.message;
+          } else {
+            const row = db.prepare('SELECT message FROM display_welcome_messages WHERE day = ? AND slot = ?').get(day, slot);
+            if (row?.message) welcomeMessage = row.message;
+          }
+        } catch {
+          const row = db.prepare('SELECT message FROM display_welcome_messages WHERE day = ? AND slot = ?').get(day, slot);
+          if (row?.message) welcomeMessage = row.message;
+        }
+      } else {
+        const row = db.prepare('SELECT message FROM display_welcome_messages WHERE day = ? AND slot = ?').get(day, slot);
+        if (row?.message) welcomeMessage = row.message;
+      }
+
+      // Règles couleurs + icônes
+      const colorRules = db.prepare('SELECT keyword, color, description FROM display_color_rules ORDER BY sort_order').all();
+      const iconRules = db.prepare('SELECT keyword, gif_filename FROM display_location_icon_rules ORDER BY sort_order').all();
+
+      // Logo
+      let logoUrl = null;
+      if (config.logoPath) {
+        logoUrl = config.logoPath;
+      } else {
+        const files = fs.readdirSync(logoDir).filter(f => /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(f));
+        if (files.length > 0) logoUrl = `/display-logo/${files[0]}`;
+      }
+
+      // Sneaky photo
+      let sneakyPhoto = { active: false };
+      const photoPath = join(displayDataDir, 'sneaky-photo.json');
+      if (fs.existsSync(photoPath)) {
+        try {
+          const sp = JSON.parse(fs.readFileSync(photoPath, 'utf8'));
+          if (sp.active && sp.expiresAt && new Date(sp.expiresAt) > now) {
+            sneakyPhoto = { active: true, path: sp.path };
+          }
+        } catch { /* ignore */ }
+      }
+
+      // ── Tâches du jour visibles (planification → écran TV) ──
+      const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      const dayTasks = db.prepare(
+        `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.period,
+                ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
+                dde.client AS event_client, dde.location AS event_location,
+                dde.type AS event_type, dde.category AS event_category
+         FROM task_assignments ta
+         LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
+         WHERE ta.date = ? AND ta.visible = 1
+           AND ta.status != 'cancelled'
+           AND ta.deleted_at IS NULL
+         ORDER BY ta.time ASC, ta.created_at ASC`
+      ).all(todayISO);
+
+      const SECTION_LABELS = {
+        rdv: 'RDV', evenements: 'Événement',
+        taches_prioritaires: 'Prioritaire', courses: 'Courses',
+        prep_locations: 'Prépa Location', prep_prestations: 'Prépa Prestation',
+        prep_ventes: 'Prépa Vente', prep_installations: 'Prépa Installation',
+        prep_tournees: 'Prépa Tournée',
+        chargement: 'Chargement', depart: 'Départ', enlevement: 'Enlèvement',
+        retour: 'Retour', recuperation: 'Récupération', installation: 'Installation',
+        taches_secondaires: 'Secondaire', manual: 'Divers',
+      };
+
+      const events = dayTasks.map(t => ({
+        id: String(t.id),
+        time: t.time ? t.time.substring(0, 5) : '',
+        period: t.period || '',
+        title: t.google_event_title || t.title || '',
+        section: t.section || 'manual',
+        sectionLabel: SECTION_LABELS[t.section] || t.section || 'Divers',
+        status: t.status || 'pending',
+        location: t.event_location || '',
+        client: t.event_client || '',
+        description: t.affaire_num ? `Affaire ${t.affaire_num}` : (t.notes || ''),
+        is_recurrent: t.source_type === 'recurring' ? 1 : 0,
+      }));
+
+      events.sort((a, b) => {
+        if (!a.time && !b.time) return 0;
+        if (!a.time) return 1;
+        if (!b.time) return -1;
+        return a.time.localeCompare(b.time);
+      });
+
+      // Événements terminés du jour
+      const completedRows = db.prepare(
+        'SELECT event_id FROM display_completed_events WHERE event_date = ?'
+      ).all(todayISO);
+      const completedEvents = completedRows.map(r => r.event_id);
+
+      // Sonos
+      let sonos = { playing: false };
+      try {
+        sonos = await getSonosNowPlaying();
+      } catch (e) {
+        logger.error('Sonos in tv-public-state:', e.message);
+      }
+
+      res.json({
+        config: {
+          primaryColor: config.primaryColor || '#00e1ff',
+          secondaryColor: config.secondaryColor || '#000000',
+          eventBgColor: config.eventBgColor || '#000000',
+          eventTextColor: config.eventTextColor || '#ffffff',
+          fontFamily: config.fontFamily || 'Arial, sans-serif',
+          showWeather: config.showWeather ?? false,
+          autoScroll: config.autoScroll ?? true,
+        },
+        welcomeMessage,
+        colorRules,
+        iconRules,
+        logoUrl,
+        sneakyPhoto,
+        events,
+        completedEvents,
+        sonos,
+      });
+    } catch (error) {
+      logger.error('Display tv-public-state:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // ── Completed events toggle (public pour écran TV) ──
+
+  // GET /api/display/tv/completed-events — Liste des tâches terminées du jour
+  app.get('/api/display/tv/completed-events', (_req, res) => {
+    try {
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const rows = db.prepare('SELECT event_id FROM display_completed_events WHERE event_date = ?').all(dateStr);
+      res.json({ completed: rows.map(r => r.event_id) });
+    } catch (error) {
+      logger.error('Display completed-events:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/display/tv/complete-event — Marquer une tâche comme terminée
+  app.post('/api/display/tv/complete-event', (req, res) => {
+    try {
+      const { eventId } = req.body;
+      if (!eventId) return res.status(400).json({ error: 'eventId requis' });
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      db.prepare('INSERT OR IGNORE INTO display_completed_events (event_id, event_date) VALUES (?, ?)').run(String(eventId), dateStr);
+      res.json({ success: true, eventId });
+    } catch (error) {
+      logger.error('Display complete-event:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/display/tv/uncomplete-event — Démarquer une tâche
+  app.post('/api/display/tv/uncomplete-event', (req, res) => {
+    try {
+      const { eventId } = req.body;
+      if (!eventId) return res.status(400).json({ error: 'eventId requis' });
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      db.prepare('DELETE FROM display_completed_events WHERE event_id = ? AND event_date = ?').run(String(eventId), dateStr);
+      res.json({ success: true, eventId });
+    } catch (error) {
+      logger.error('Display uncomplete-event:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  logger.info('✅ Routes Dashboard TV (apparence, messages, couleurs, icônes, Sonos, TV public) configurées');
 }

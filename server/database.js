@@ -2439,6 +2439,17 @@ function initializeDatabase() {
       )
     `);
 
+    // --- Événements terminés (toggle sur écran TV) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS display_completed_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT NOT NULL,
+        event_date TEXT NOT NULL,
+        completed_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(event_id, event_date)
+      )
+    `);
+
     logger.info('  ✅ Module Dashboard TV (config, messages accueil, couleurs, icônes)');
   } catch (error) {
     logger.warn('⚠️ Migration Dashboard TV:', error.message);

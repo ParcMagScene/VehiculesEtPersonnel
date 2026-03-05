@@ -15,9 +15,11 @@ import { playNotificationSound, requestNotificationPermission, showBrowserNotifi
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFeedback } from './hooks/useFeedback';
 import { useTheme } from './hooks/useTheme';
+import { useDraggableModals } from './hooks/useDraggableModals';
 import { ToastProvider } from './hooks/useToast';
 import { NavigationProvider } from './contexts/NavigationContext';
 import './App.css';
+import './styles/draggable-modals.css';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
 
@@ -181,6 +183,7 @@ function App() {
   const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
   const { toastRef, toast } = useFeedback();
   const { theme, toggleTheme, isDark, palette, setPalette } = useTheme();
+  useDraggableModals(); // Rend tous les modals/dialogs déplaçables et redimensionnables
 
   // Raccourcis clavier globaux avec détection OS
   useKeyboardShortcuts({

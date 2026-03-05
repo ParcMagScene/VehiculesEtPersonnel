@@ -2091,10 +2091,23 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   function formatICalDate(dateStr) {
     // Formats: 20260303T140000Z, 20260303T140000, 20260303
     const clean = dateStr.replace(/[^0-9TZ]/g, '');
+    const isUTC = clean.endsWith('Z');
     if (clean.length >= 15) {
-      // YYYYMMDDTHHMMSS
+      // YYYYMMDDTHHMMSS[Z]
       const y = clean.slice(0, 4), m = clean.slice(4, 6), d = clean.slice(6, 8);
-      const hh = clean.slice(9, 11), mm = clean.slice(11, 13);
+      const hh = clean.slice(9, 11), mm = clean.slice(11, 13), ss = clean.slice(13, 15) || '00';
+      if (isUTC) {
+        // Conserver le Z pour que new Date() interprète correctement en UTC
+        // puis convertir en heure locale (Europe/Paris) pour l'affichage
+        const utcDate = new Date(`${y}-${m}-${d}T${hh}:${mm}:${ss}Z`);
+        const localY = utcDate.getFullYear();
+        const localM = String(utcDate.getMonth() + 1).padStart(2, '0');
+        const localD = String(utcDate.getDate()).padStart(2, '0');
+        const localHH = String(utcDate.getHours()).padStart(2, '0');
+        const localMM = String(utcDate.getMinutes()).padStart(2, '0');
+        return `${localY}-${localM}-${localD}T${localHH}:${localMM}`;
+      }
+      // Pas de Z → heure locale (TZID=Europe/Paris ou sans timezone)
       return `${y}-${m}-${d}T${hh}:${mm}`;
     }
     if (clean.length >= 8) {

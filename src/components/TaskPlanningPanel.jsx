@@ -2376,7 +2376,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                   {/* En-tête cliquable */}
                   <div
                     className={`wk-col-header ${isToday ? 'today' : ''}`}
-                    onClick={() => setExpandedWeekDay(isExpanded ? null : d)}
+                    onClick={() => { setExpandedWeekDay(isExpanded ? null : d); setSelectedDate(d); }}
                     title={isExpanded ? 'Réduire' : 'Cliquer pour agrandir'}
                   >
                     <span className="wk-day-label">{dayLabel}</span>

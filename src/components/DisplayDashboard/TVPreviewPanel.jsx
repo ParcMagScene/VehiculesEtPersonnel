@@ -4,13 +4,14 @@
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { Monitor, Eye, RefreshCw, Radio } from 'lucide-react';
+import { Monitor, Eye, RefreshCw, Radio, Bell } from 'lucide-react';
 import api from '../../utils/api';
 import TVScreenMini from './TVScreenMini';
 
 function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
   const [liveState, setLiveState] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [alarmSending, setAlarmSending] = useState(false);
 
   const fetchLiveState = useCallback(async () => {
     try {
@@ -20,6 +21,17 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
       // Silent — preview non critique
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const handleTestAlarm = useCallback(async () => {
+    setAlarmSending(true);
+    try {
+      await api.triggerTVAlarmTest();
+    } catch (err) {
+      console.error('Erreur test alarme:', err);
+    } finally {
+      setTimeout(() => setAlarmSending(false), 2000);
     }
   }, []);
 
@@ -72,6 +84,15 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
             title="Rafraîchir"
           >
             <RefreshCw size={10} />
+          </button>
+          <button
+            className={`tv-preview-alarm-test${alarmSending ? ' sending' : ''}`}
+            onClick={handleTestAlarm}
+            title="Tester le signal sonore sur l'écran distant"
+            disabled={alarmSending}
+          >
+            <Bell size={10} />
+            <span>{alarmSending ? 'Envoyé !' : 'Test son'}</span>
           </button>
         </div>
         <div className="tv-preview-frame">

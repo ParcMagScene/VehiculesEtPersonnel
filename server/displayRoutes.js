@@ -14,6 +14,9 @@ import { randomBytes } from 'node:crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Flag en mémoire pour déclencher l'alarme sonore à distance depuis l'admin
+let alarmTestTimestamp = 0;
+
 // ── Répertoires Dashboard TV ──────────────────────────────────
 const displayDataDir = join(__dirname, 'display-data');
 const gifsDir = join(__dirname, '..', 'public', 'display-gifs');
@@ -1660,11 +1663,19 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         events,
         completedEvents,
         sonos,
+        alarmTest: alarmTestTimestamp,
       });
     } catch (error) {
       logger.error('Display tv-public-state:', error);
       res.status(500).json({ error: 'Erreur serveur' });
     }
+  });
+
+  // POST /api/display/tv/test-alarm — Déclencher l'alarme sonore sur l'écran TV distant
+  app.post('/api/display/tv/test-alarm', authenticateToken, (_req, res) => {
+    alarmTestTimestamp = Date.now();
+    logger.info('🔔 Alarme test déclenchée depuis l\'admin');
+    res.json({ success: true, timestamp: alarmTestTimestamp });
   });
 
   // ── Completed events toggle (public pour écran TV) ──

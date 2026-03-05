@@ -1856,6 +1856,36 @@
   background: var(--theme-bg-hover);
 }
 
+/* Bouton test alarme sonore */
+.tv-preview-alarm-test {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-hover);
+  padding: 2px 8px;
+  cursor: pointer;
+  color: var(--theme-text-muted);
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 0.75em;
+  margin-left: 4px;
+}
+.tv-preview-alarm-test:hover {
+  color: #ff6600;
+  border-color: #ff6600;
+  background: rgba(255, 102, 0, 0.1);
+}
+.tv-preview-alarm-test.sending {
+  color: #2ecc40;
+  border-color: #2ecc40;
+  background: rgba(46, 204, 64, 0.1);
+  pointer-events: none;
+}
+.tv-preview-alarm-test svg {
+  flex-shrink: 0;
+}
+
 .tv-preview-frame {
   border-radius: 8px;
   overflow: hidden;

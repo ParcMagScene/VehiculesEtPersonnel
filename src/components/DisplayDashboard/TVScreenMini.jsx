@@ -63,24 +63,23 @@ function TVScreenMini({ state = {} }) {
   const dateStr = clock.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   const timeStr = clock.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-  // Couleur par type de tâche (section)
-  const getTaskColor = (section) => {
-    if (!section) return eventTextColor;
-    const sectionLower = section.toLowerCase();
+  // Couleur par recherche substring (aligné sur le vrai client TV main.js)
+  // Cherche le keyword dans title + sectionLabel + location (pas juste section)
+  const getTaskColor = (task) => {
+    const searchText = `${task.title || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
     for (const rule of colorRules) {
-      if (rule.keyword && sectionLower === rule.keyword.toLowerCase()) {
+      if (rule.keyword && searchText.includes(rule.keyword.toLowerCase())) {
         return rule.color;
       }
     }
     return eventTextColor;
   };
 
-  // Icône animée par type de tâche (section)
-  const getTaskIcon = (section) => {
-    if (!section) return null;
-    const sectionLower = section.toLowerCase();
+  // Icône animée par recherche substring (aligné sur le vrai client TV main.js)
+  const getTaskIcon = (task) => {
+    const searchText = `${task.title || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
     for (const rule of iconRules) {
-      if (rule.keyword && sectionLower === rule.keyword.toLowerCase()) {
+      if (rule.keyword && searchText.includes(rule.keyword.toLowerCase())) {
         return rule.gif_filename;
       }
     }
@@ -88,8 +87,8 @@ function TVScreenMini({ state = {} }) {
   };
 
   const renderTask = (task, i) => {
-    const color = getTaskColor(task.section);
-    const iconFile = getTaskIcon(task.section);
+    const color = getTaskColor(task);
+    const iconFile = getTaskIcon(task);
     const isDone = task.status === 'done';
     const timeDisplay = task.time || (task.period === 'AM' ? 'Matin' : task.period === 'PM' ? 'Après-midi' : '');
     return (

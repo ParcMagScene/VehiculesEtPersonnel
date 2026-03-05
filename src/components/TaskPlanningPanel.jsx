@@ -530,6 +530,22 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [linkingEvent, setLinkingEvent] = useState(null); // Google event en cours de liaison
   const [linkSearchQuery, setLinkSearchQuery] = useState('');
 
+  // ── Liaison manuelle tâche → affaire ──
+  const [linkingTaskId, setLinkingTaskId] = useState(null);
+  const [linkTaskSearchQuery, setLinkTaskSearchQuery] = useState('');
+
+  const handleLinkTaskToAffaire = async (taskId, affaireNum) => {
+    try {
+      await api.updateTask(taskId, { affaire_num: affaireNum });
+      setLinkingTaskId(null);
+      setLinkTaskSearchQuery('');
+      await loadTasks(true);
+      toast.success(`Tâche liée à ${affaireNum}`);
+    } catch (err) {
+      toast.error('Erreur lors de la liaison');
+    }
+  };
+
   const handleManualLink = async (event, affaireNum) => {
     try {
       // Créer/mettre à jour l'affaire avec cet event
@@ -972,6 +988,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="task-actions">
           {/* Multi-affectation personnel */}
           {renderMultiAssign('task', task.id)}
+          {/* Lier à une affaire (seulement si pas déjà liée) */}
+          {!affaireNum && (
+            <button
+              className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
+              title="Lier à une affaire"
+              onClick={(e) => { e.stopPropagation(); setLinkingTaskId(linkingTaskId === task.id ? null : task.id); setLinkTaskSearchQuery(''); }}
+            >
+              <Link size={13} />
+            </button>
+          )}
           <button
             className={`toggle-visible ${isHidden ? 'off' : ''}`}
             onClick={() => handleToggleTaskVisible(task)}
@@ -990,6 +1016,64 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <Trash2 size={14} />
           </button>
         </div>
+        {/* Popover de liaison manuelle tâche → affaire */}
+        {linkingTaskId === task.id && (() => {
+          const linkableAff = linkTaskSearchQuery.length >= 2
+            ? affaires.filter(a => {
+                const q = linkTaskSearchQuery.toUpperCase();
+                return (a.numeroAffaire || '').toUpperCase().includes(q)
+                  || (a.client || '').toUpperCase().includes(q)
+                  || (a.titre || '').toUpperCase().includes(q);
+              }).slice(0, 8)
+            : [];
+          return (
+            <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
+              <div className="link-popover-header">
+                <span>🔗 Lier à une affaire</span>
+                <button className="link-popover-close" onClick={() => { setLinkingTaskId(null); setLinkTaskSearchQuery(''); }}>
+                  <X size={14} />
+                </button>
+              </div>
+              <input
+                type="text"
+                className="link-search-input"
+                placeholder="Rechercher AF, client…"
+                value={linkTaskSearchQuery}
+                onChange={(e) => setLinkTaskSearchQuery(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Escape') { setLinkingTaskId(null); setLinkTaskSearchQuery(''); } }}
+              />
+              {linkTaskSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
+                <button
+                  className="link-option link-option-create"
+                  onClick={() => {
+                    const num = linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
+                    handleLinkTaskToAffaire(task.id, num);
+                  }}
+                >
+                  ➕ Lier à <strong>{linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
+                </button>
+              )}
+              {linkableAff.length > 0 && (
+                <div className="link-options-list">
+                  {linkableAff.map(a => (
+                    <button
+                      key={a.id || a.numeroAffaire}
+                      className="link-option"
+                      onClick={() => handleLinkTaskToAffaire(task.id, a.numeroAffaire)}
+                    >
+                      <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
+                      <span className="link-option-client">{a.client || 'Sans client'}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {linkTaskSearchQuery.length >= 2 && linkableAff.length === 0 && !linkTaskSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
+                <div className="link-no-results">Aucune affaire trouvée</div>
+              )}
+            </div>
+          );
+        })()}
       </div>
     );
   };

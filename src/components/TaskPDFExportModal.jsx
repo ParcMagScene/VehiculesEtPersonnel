@@ -31,12 +31,12 @@ const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation
 const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
 
 const EVENT_TYPES = {
-  preparation:  { label: 'Préparation',  emoji: '🔧' },
-  enlevement:   { label: 'Enlèvement',   emoji: '📦' },
-  livraison:    { label: 'Livraison',     emoji: '🚚' },
-  depart:       { label: 'Départ',        emoji: '🚀' },
-  retour:       { label: 'Retour',        emoji: '↩️' },
-  recuperation: { label: 'Récupération',  emoji: '📥' },
+  preparation:  { label: 'Préparation',  emoji: '🔧', color: '#0891b2' },
+  enlevement:   { label: 'Enlèvement',   emoji: '📦', color: '#f59e0b' },
+  livraison:    { label: 'Livraison',     emoji: '🚚', color: '#10b981' },
+  depart:       { label: 'Départ',        emoji: '🚀', color: '#3b82f6' },
+  retour:       { label: 'Retour',        emoji: '↩️', color: '#8b5cf6' },
+  recuperation: { label: 'Récupération',  emoji: '📥', color: '#ef4444' },
 };
 
 const STATUS_ICONS = {
@@ -335,13 +335,59 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     if (item.type === 'task') {
       const task = item.data;
       const isDone = task.status === 'done';
-      const displayTitle = cleanTaskTitle(task);
+      const taskSection = normalizeSection(task.section || 'manual');
+      const affaireNum = task.affaireNum || '';
+      const linkedAffaire = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
+
+      // Course type extraction (3-source: section → eventType → title regex)
+      let courseType = null;
+      if (taskSection === 'courses') {
+        const SECTION_COURSE = { enlevement: 'enlevement', retour: 'retour', recuperation: 'recuperation' };
+        const EVENT_COURSE = { livraison: 'livraison', enlevement: 'enlevement', retour: 'retour', recuperation: 'recuperation' };
+        if (SECTION_COURSE[task.section]) courseType = SECTION_COURSE[task.section];
+        else if (task.eventType && EVENT_COURSE[task.eventType]) courseType = EVENT_COURSE[task.eventType];
+        else {
+          const m = (task.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\b/iu);
+          if (m) {
+            const raw = m[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            courseType = { livraison: 'livraison', recuperation: 'recuperation', enlevement: 'enlevement', retour: 'retour' }[raw] || null;
+          }
+        }
+      }
+
+      // Clean title + strip course prefix
+      let displayTitle = cleanTaskTitle(task);
+      if (courseType) {
+        displayTitle = displayTitle
+          .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
+          .replace(/^(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\s*—?\s*/i, '')
+          .trim() || task.googleEventTitle || task.notes || '-';
+      }
+
+      // Client & Location
+      const displayClient = task.eventClient || linkedAffaire?.client || '';
+      const displayLocation = task.eventLocation || linkedAffaire?.adresseLivraison?.split('\n')[0] || '';
+      const clientLocationStr = [displayClient, displayLocation].filter(Boolean).join(' — ');
+
+      // Time
+      const timeStr = task.time ? (task.endTime ? `${task.time} → ${task.endTime}` : task.time) : '';
+
       const assignments = getAssignments('task', task.id);
+      const courseInfo = courseType ? EVENT_TYPES[courseType] : null;
       return (
         <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <span className="task-cb-status" title={STATUS_LABELS[task.status]}>{STATUS_ICONS[task.status]}</span>
-          <span className={`task-cb-title ${isDone ? 'done' : ''}`}>{displayTitle}</span>
+          {affaireNum && <span className="task-cb-affaire" title={affaireNum}>{affaireNum}</span>}
+          {courseInfo && (
+            <span className="task-cb-course-badge" style={{ background: `${courseInfo.color}18`, color: courseInfo.color, borderColor: `${courseInfo.color}40` }}>
+              {courseInfo.emoji} {courseInfo.label}
+            </span>
+          )}
+          <span className={`task-cb-title ${isDone ? 'done' : ''}`} title={[displayTitle, displayLocation && `📍 ${displayLocation}`, task.notes && `📝 ${task.notes}`].filter(Boolean).join('\n')}>{displayTitle}</span>
+          {timeStr && <span className="task-cb-time"><Clock size={10} /> {timeStr}</span>}
+          {displayClient && <span className="task-cb-client" title={clientLocationStr}>{displayClient}</span>}
+          {!displayClient && displayLocation && <span className="task-cb-client" title={displayLocation}>📍 {displayLocation.slice(0, 25)}</span>}
           {assignments.length > 0 ? (
             <span className="task-cb-persons">
               {assignments.map(a => (

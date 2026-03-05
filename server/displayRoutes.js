@@ -1711,5 +1711,243 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  logger.info('✅ Routes Dashboard TV (apparence, messages, couleurs, icônes, Sonos, TV public) configurées');
+  // ══════════════════════════════════════════════════════════════════
+  //  ROUTES DE COMPATIBILITÉ — ancien client calendar-dashboard
+  //  Ces routes redirigent les anciens endpoints (/api/xxx) vers les
+  //  endpoints eM@g (/api/display/xxx), permettant à l'ancien JS
+  //  en cache de fonctionner le temps que le navigateur se rafraîchisse.
+  // ══════════════════════════════════════════════════════════════════
+
+  // /api/events → Tâches du jour au format { regular, recurrent }
+  app.get('/api/events', async (_req, res) => {
+    try {
+      const now = new Date();
+      const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      const dayTasks = db.prepare(
+        `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.period,
+                ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
+                dde.client AS event_client, dde.location AS event_location
+         FROM task_assignments ta
+         LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
+         WHERE ta.date = ? AND ta.visible = 1
+           AND ta.status != 'cancelled'
+           AND ta.deleted_at IS NULL
+         ORDER BY ta.time ASC, ta.created_at ASC`
+      ).all(todayISO);
+
+      const SECTION_LABELS = {
+        rdv: 'RDV', evenements: 'Événement',
+        taches_prioritaires: 'Prioritaire', courses: 'Courses',
+        prep_locations: 'Prépa Location', prep_prestations: 'Prépa Prestation',
+        prep_ventes: 'Prépa Vente', prep_installations: 'Prépa Installation',
+        prep_tournees: 'Prépa Tournée',
+        chargement: 'Chargement', depart: 'Départ', enlevement: 'Enlèvement',
+        retour: 'Retour', recuperation: 'Récupération', installation: 'Installation',
+        taches_secondaires: 'Secondaire', manual: 'Divers',
+      };
+
+      const events = dayTasks.map(t => ({
+        id: String(t.id),
+        start: t.time ? `${todayISO}T${t.time}` : todayISO,
+        end: t.end_time ? `${todayISO}T${t.end_time}` : '',
+        summary: t.google_event_title || t.title || '',
+        title: t.google_event_title || t.title || '',
+        section: t.section || 'manual',
+        sectionLabel: SECTION_LABELS[t.section] || t.section || 'Divers',
+        status: t.status || 'pending',
+        location: t.event_location || '',
+        client: t.event_client || '',
+        description: t.affaire_num ? `Affaire ${t.affaire_num}` : (t.notes || ''),
+        is_recurrent: t.source_type === 'recurring' ? 1 : 0,
+      }));
+
+      events.sort((a, b) => a.start.localeCompare(b.start));
+
+      res.json({
+        regular: events.filter(e => !e.is_recurrent),
+        recurrent: events.filter(e => e.is_recurrent),
+        all: events,
+      });
+    } catch (error) {
+      logger.error('Compat /api/events:', error);
+      res.status(500).json({ error: 'Impossible de récupérer les événements' });
+    }
+  });
+
+  // /api/config → config apparence
+  app.get('/api/config', (_req, res) => {
+    try {
+      const rows = db.prepare('SELECT key, value FROM display_config').all();
+      const config = {};
+      rows.forEach(r => {
+        try { config[r.key] = JSON.parse(r.value); } catch { config[r.key] = r.value; }
+      });
+      res.json(config);
+    } catch (error) {
+      logger.error('Compat /api/config:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/welcome-message → message d'accueil
+  app.get('/api/welcome-message', (_req, res) => {
+    try {
+      const sneakyFile = join(displayDataDir, 'sneaky-message.json');
+      const sneaky = readJsonFile(sneakyFile, null);
+      if (sneaky && sneaky.active && new Date(sneaky.expiresAt) > new Date()) {
+        return res.json({ message: sneaky.message });
+      }
+      const now = new Date();
+      const joursFR = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+      const day = joursFR[now.getDay()];
+      const hh = now.getHours();
+      const mm = now.getMinutes();
+      let slot = 'soir';
+      if (hh >= 6 && (hh < 9 || (hh === 9 && mm < 30))) slot = 'matin';
+      else if ((hh === 9 && mm >= 30) || (hh >= 10 && hh < 12)) slot = 'matinee';
+      else if (hh >= 12 && hh < 13) slot = 'midi';
+      else if (hh >= 13 && hh < 18) slot = 'apres_midi';
+      const row = db.prepare('SELECT message FROM display_welcome_messages WHERE day = ? AND slot = ?').get(day, slot);
+      res.json({ message: row?.message || '' });
+    } catch (error) {
+      logger.error('Compat /api/welcome-message:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/completed-events → événements terminés du jour
+  app.get('/api/completed-events', (_req, res) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const rows = db.prepare('SELECT event_id FROM display_completed_events WHERE event_date = ?').all(today);
+      res.json({ completed: rows.map(r => r.event_id) });
+    } catch (error) {
+      logger.error('Compat /api/completed-events:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/complete-event → marquer terminé
+  app.post('/api/complete-event', (req, res) => {
+    try {
+      const { eventId } = req.body;
+      if (!eventId) return res.status(400).json({ error: 'eventId requis' });
+      const today = new Date().toISOString().split('T')[0];
+      db.prepare('INSERT OR IGNORE INTO display_completed_events (event_id, event_date) VALUES (?, ?)').run(String(eventId), today);
+      res.json({ success: true, eventId });
+    } catch (error) {
+      logger.error('Compat /api/complete-event:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/uncomplete-event → démarquer
+  app.post('/api/uncomplete-event', (req, res) => {
+    try {
+      const { eventId } = req.body;
+      if (!eventId) return res.status(400).json({ error: 'eventId requis' });
+      const today = new Date().toISOString().split('T')[0];
+      db.prepare('DELETE FROM display_completed_events WHERE event_id = ? AND event_date = ?').run(String(eventId), today);
+      res.json({ success: true, eventId });
+    } catch (error) {
+      logger.error('Compat /api/uncomplete-event:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/event-color-rules → règles de couleurs
+  app.get('/api/event-color-rules', (_req, res) => {
+    try {
+      const rules = db.prepare('SELECT keyword, color, description FROM display_color_rules ORDER BY sort_order').all();
+      res.json(rules);
+    } catch (error) {
+      logger.error('Compat /api/event-color-rules:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/location-icons → icônes de lieux
+  app.get('/api/location-icons', (_req, res) => {
+    try {
+      const rules = db.prepare('SELECT keyword, gif_filename FROM display_location_icon_rules ORDER BY sort_order').all();
+      res.json(rules);
+    } catch (error) {
+      logger.error('Compat /api/location-icons:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/weather → météo (proxy)
+  app.get('/api/weather', async (_req, res) => {
+    try {
+      const apiKeyRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherApiKey'").get();
+      const cityRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherCity'").get();
+      const apiKey = apiKeyRow ? JSON.parse(apiKeyRow.value) : '';
+      const city = cityRow ? JSON.parse(cityRow.value) : 'Saint-Denis,RE,FR';
+      if (!apiKey) return res.json({ error: 'Clé API météo non configurée' });
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=fr`;
+      const response = await fetch(url);
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      logger.error('Compat /api/weather:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/sonos-now-playing → Sonos
+  app.get('/api/sonos-now-playing', async (_req, res) => {
+    try {
+      const data = await getSonosNowPlaying();
+      res.json(data);
+    } catch (error) {
+      logger.error('Compat /api/sonos-now-playing:', error);
+      res.json({ playing: false, error: error.message });
+    }
+  });
+
+  // /api/sneaky-photo/status → photo furtive
+  app.get('/api/sneaky-photo/status', (_req, res) => {
+    try {
+      const config = readJsonFile(join(displayDataDir, 'sneaky-photo.json'), null);
+      if (config && config.active && new Date(config.expiresAt) > new Date()) {
+        res.json({ active: true, expiresAt: config.expiresAt, path: config.path });
+      } else {
+        res.json({ active: false });
+      }
+    } catch (error) {
+      logger.error('Compat /api/sneaky-photo/status:', error);
+      res.json({ active: false });
+    }
+  });
+
+  // /api/sneaky-photo/image → image furtive
+  app.get('/api/sneaky-photo/image', (_req, res) => {
+    try {
+      const config = readJsonFile(join(displayDataDir, 'sneaky-photo.json'), null);
+      if (config && config.active && config.filename) {
+        const filePath = join(sneakyDir, config.filename);
+        if (fs.existsSync(filePath)) return res.sendFile(filePath);
+      }
+      res.status(404).json({ error: 'Aucune photo active' });
+    } catch (error) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // /api/logo → logo
+  app.get('/api/logo', (_req, res) => {
+    try {
+      const files = fs.readdirSync(logoDir).filter(f => /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(f));
+      if (files.length > 0) {
+        return res.sendFile(join(logoDir, files[0]));
+      }
+      res.status(404).json({ error: 'Aucun logo trouvé' });
+    } catch (error) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  logger.info('✅ Routes Dashboard TV (apparence, messages, couleurs, icônes, Sonos, TV public, compat legacy) configurées');
 }

@@ -174,18 +174,37 @@ app.use('/display-gifs', express.static(path.join(__dirname, '..', 'public', 'di
 app.use('/display-logo', express.static(path.join(__dirname, '..', 'public', 'display-logo')));
 app.use('/display-sneaky', express.static(path.join(__dirname, '..', 'public', 'display-sneaky')));
 app.use('/display-media', express.static(path.join(__dirname, '..', 'public', 'display-media')));
-// Servir le client TV HTML/JS/CSS
-app.use('/tv-client', express.static(path.join(__dirname, '..', 'public', 'tv-client')));
+// Servir le client TV HTML/JS/CSS (no-cache sur HTML pour garantir la version à jour)
+const tvClientDir = path.join(__dirname, '..', 'public', 'tv-client');
+app.use('/tv-client', (req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/') {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+  }
+  next();
+}, express.static(tvClientDir));
 // Route racine /tv → redirige vers le client TV
 app.get('/tv', (_req, res) => res.redirect('/tv-client/index.html'));
 
-// ── Route catch-all pour port 3001 : si aucune route API/static ne match, servir le client TV ──
-// Ceci est géré par un middleware qui vérifie le port d'origine
+// ── Compat port 3001 : ancien client calendar-dashboard ──
+// Servir les fichiers du nouveau client TV aussi à la racine / pour le port 3001
+// L'ancien client chargeait styles.css, main.js, manifest.json depuis /
+// Le nouveau client les sert depuis /tv-client/ — on ajoute un fallback racine
 app.use((req, res, next) => {
-  // Sur le port 3001, la racine '/' sert le client TV
   const port = req.socket.localPort;
+  // Sur le port 3001, racine '/' → servir directement le HTML du nouveau client
   if (port === 3001 && req.path === '/') {
-    return res.redirect('/tv-client/index.html');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(tvClientDir, 'index.html'));
+  }
+  // Sur le port 3001, servir les fichiers statiques du TV client à la racine aussi
+  // (compat avec ancien client qui chargeait /styles.css, /main.js, /manifest.json)
+  if (port === 3001 && ['styles.css', 'main.js', 'manifest.json'].includes(req.path.slice(1))) {
+    const filePath = path.join(tvClientDir, req.path.slice(1));
+    if (fs.existsSync(filePath)) return res.sendFile(filePath);
   }
   next();
 });

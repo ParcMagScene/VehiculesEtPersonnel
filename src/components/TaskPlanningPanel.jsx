@@ -951,16 +951,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const linkedAffaire = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
     const isGenericTitle = !displayTitle || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(displayTitle);
     if (isGenericTitle && linkedAffaire) {
-      const client = linkedAffaire.client || '';
+      // Titre générique → utiliser le titre/objet de l'affaire (le client est déjà dans sa colonne dédiée)
       const titre = linkedAffaire.titre || linkedAffaire.eventName || '';
-      displayTitle = client || titre || displayTitle || '-';
-    } else if (linkedAffaire) {
-      // Même titre non-générique : ajouter le client s'il n'apparaît pas déjà
-      const client = linkedAffaire.client || '';
-      if (client && !displayTitle.toLowerCase().includes(client.toLowerCase())) {
-        displayTitle = `${displayTitle} — ${client}`;
-      }
+      displayTitle = titre || displayTitle || '-';
     }
+    // NB : le client n'est plus ajouté au titre — il a sa propre colonne (ev-col-client)
 
     // --- Nettoyage du sous-titre (googleEventTitle) ---
     let cleanEventTitle = task.googleEventTitle || '';

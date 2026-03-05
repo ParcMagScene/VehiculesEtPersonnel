@@ -1363,6 +1363,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
          LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
          WHERE ta.date = ? AND ta.visible = 1
            AND ta.status != 'cancelled'
+           AND ta.deleted_at IS NULL
          ORDER BY ta.time ASC, ta.created_at ASC`
       ).all(todayISO);
 

@@ -1783,87 +1783,51 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     return null;
   };
 
-  // ── Colonne d'un jour (événements uniquement) ──
-  const renderWeekEventCol = (dayStr) => {
+  // ── Colonne étendue d'un jour — bande ÉVÉNEMENTS (Google, affaires, display events) ──
+  const renderWeekDayExpandedEvents = (dayStr) => {
     const dayData = weekGroupedByDay?.[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
-    const eventsCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
+    const totalEvents = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
+    if (totalEvents === 0) return <div className="wk-empty">—</div>;
     return (
-      <div key={dayStr} className="wk-band-col">
-        {eventsCount === 0 && <div className="wk-empty">—</div>}
-        {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
-        {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
-        {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
+      <div className="wk-day-expanded">
+        {dayData.googleEvents.length > 0 && (
+          <div className="wk-expanded-section">
+            <div className="wk-expanded-section-label" style={{ color: '#4285f4' }}>📅 Google Calendar</div>
+            {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
+          </div>
+        )}
+        {dayData.affaires.length > 0 && (
+          <div className="wk-expanded-section">
+            <div className="wk-expanded-section-label" style={{ color: 'var(--theme-primary, #3b82f6)' }}>📋 Affaires</div>
+            {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
+          </div>
+        )}
+        {dayData.events.length > 0 && (
+          <div className="wk-expanded-section">
+            <div className="wk-expanded-section-label" style={{ color: 'var(--theme-text-secondary)' }}>📺 Écran</div>
+            {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
+          </div>
+        )}
       </div>
     );
   };
 
-  // ── Colonne d'un jour (tâches groupées par section) ──
-  const renderWeekTaskCol = (dayStr) => {
+  // ── Colonne étendue d'un jour — bande TÂCHES (groupées par section avec lignes complètes) ──
+  const renderWeekDayExpandedTasks = (dayStr) => {
     const dayData = weekGroupedByDay?.[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
-    const tasksCount = dayData.tasks.length;
-    if (tasksCount === 0) return <div key={dayStr} className="wk-band-col"><div className="wk-empty">—</div></div>;
+    if (dayData.tasks.length === 0) return <div className="wk-empty">—</div>;
 
-    // Grouper par section en respectant l'ordre SECTIONS
-    const grouped = {};
-    dayData.tasks.forEach(t => {
-      const sec = normalizeSection(t.section || 'manual');
-      if (!grouped[sec]) grouped[sec] = [];
-      grouped[sec].push(t);
-    });
-    const sectionOrder = Object.keys(SECTIONS);
-
-    return (
-      <div key={dayStr} className="wk-band-col">
-        {sectionOrder.map(secKey => {
-          const items = grouped[secKey];
-          if (!items || items.length === 0) return null;
-          const info = SECTIONS[secKey] || SECTIONS.manual;
-          return (
-            <div key={secKey} className="wk-task-group">
-              <div className="wk-task-group-label" style={{ color: info.color }}>
-                <span>{info.emoji}</span> {info.label}
-              </div>
-              {items.map(t => renderWeekMiniCard(t, 'task'))}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // ── Colonne étendue d'un jour : même présentation que la vue jour ──
-  const renderWeekDayExpanded = (dayStr) => {
-    const dayData = weekGroupedByDay?.[dayStr] || { tasks: [], events: [], affaires: [], googleEvents: [] };
-
-    // Grouper les tâches par section
     const tasksBySection = {};
     dayData.tasks.forEach(t => {
       const sec = normalizeSection(t.section || 'manual');
       if (!tasksBySection[sec]) tasksBySection[sec] = [];
       tasksBySection[sec].push(t);
     });
-
-    // Affaires par section
-    const affBySection = {};
-    dayData.affaires.forEach(a => {
-      const sec = mapAffaireToSection(a);
-      if (!affBySection[sec]) affBySection[sec] = [];
-      affBySection[sec].push(a);
-    });
-
-    // Display events par section
-    const evBySection = {};
-    dayData.events.forEach(ev => {
-      const sec = mapEventToSection(ev);
-      if (!evBySection[sec]) evBySection[sec] = [];
-      evBySection[sec].push(ev);
-    });
-
     const sectionOrder = Object.keys(SECTIONS);
 
     return (
       <div className="wk-day-expanded">
-        {/* En-tête de colonnes comme la vue jour */}
+        {/* En-tête de colonnes */}
         <div className="tp-columns-header tp-columns-header-mini">
           <span className="ev-col-h ev-col-h-status">✔</span>
           <span className="ev-col-h ev-col-h-affaire">Aff.</span>
@@ -1873,22 +1837,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className="ev-col-h ev-col-h-time">Heure</span>
           <span className="ev-col-h ev-col-h-actions">Actions</span>
         </div>
-
-        {/* Google events */}
-        {dayData.googleEvents.length > 0 && (
-          <div className="wk-expanded-section">
-            <div className="wk-expanded-section-label" style={{ color: '#4285f4' }}>📅 Google Calendar</div>
-            {dayData.googleEvents.map(ev => renderGoogleRdvRow(ev))}
-          </div>
-        )}
-
-        {/* Sections avec tâches */}
         {sectionOrder.map(secKey => {
           const secInfo = SECTIONS[secKey];
           if (!secInfo) return null;
           const secTasks = tasksBySection[secKey] || [];
           if (secTasks.length === 0) return null;
-
           return (
             <div key={secKey} className="wk-expanded-section">
               <div className="wk-expanded-section-label" style={{ color: secInfo.color }}>
@@ -1898,10 +1851,6 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             </div>
           );
         })}
-
-        {dayData.tasks.length + dayData.events.length + dayData.affaires.length + dayData.googleEvents.length === 0 && (
-          <div className="wk-empty" style={{ padding: '20px 0' }}>Aucun élément</div>
-        )}
       </div>
     );
   };
@@ -2374,79 +2323,120 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
       ) : viewMode === 'week' ? (
         <div className="wk-split-layout">
-          {/* ── Colonnes des jours ── */}
-          <div className="wk-days-row">
+          {/* ── En-tête partagé : jours de la semaine ── */}
+          <div className="wk-days-row wk-header-strip">
             {weekDays.map(d => {
               const dt = new Date(d + 'T00:00:00');
               const dayLabel = dt.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
               const isToday = d === todayStr();
               const isExpanded = expandedWeekDay === d;
               const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
-              const total = dayData.tasks.length + dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
-
+              const evCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
+              const taskCount = dayData.tasks.length;
               return (
                 <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>
-                  {/* En-tête cliquable */}
                   <div
                     className={`wk-col-header ${isToday ? 'today' : ''}`}
                     onClick={() => setExpandedWeekDay(isExpanded ? null : d)}
                     title={isExpanded ? 'Réduire' : 'Cliquer pour agrandir'}
                   >
                     <span className="wk-day-label">{dayLabel}</span>
-                    {total > 0 && <span className="wk-day-count">{total}</span>}
+                    <span className="wk-header-counts">
+                      {evCount > 0 && <span className="wk-day-count ev">{evCount}</span>}
+                      {taskCount > 0 && <span className="wk-day-count task">{taskCount}</span>}
+                    </span>
                     <ChevronDown size={14} className={`wk-expand-chevron ${isExpanded ? 'open' : ''}`} />
-                  </div>
-
-                  {/* Contenu */}
-                  <div className="wk-day-content">
-                    {isExpanded ? (
-                      renderWeekDayExpanded(d)
-                    ) : (
-                      <>
-                        {/* Vue compacte : mini-cartes par catégorie */}
-                        {dayData.googleEvents.length > 0 && (
-                          <div className="wk-compact-group">
-                            {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
-                          </div>
-                        )}
-                        {dayData.affaires.length > 0 && (
-                          <div className="wk-compact-group">
-                            {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
-                          </div>
-                        )}
-                        {dayData.events.length > 0 && (
-                          <div className="wk-compact-group">
-                            {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
-                          </div>
-                        )}
-                        {(() => {
-                          const grouped = {};
-                          dayData.tasks.forEach(t => {
-                            const sec = normalizeSection(t.section || 'manual');
-                            if (!grouped[sec]) grouped[sec] = [];
-                            grouped[sec].push(t);
-                          });
-                          return Object.keys(SECTIONS).map(secKey => {
-                            const items = grouped[secKey];
-                            if (!items || items.length === 0) return null;
-                            const info = SECTIONS[secKey] || SECTIONS.manual;
-                            return (
-                              <div key={secKey} className="wk-compact-group">
-                                <div className="wk-task-group-label" style={{ color: info.color }}>
-                                  <span>{info.emoji}</span> {info.label}
-                                </div>
-                                {items.map(t => renderWeekMiniCard(t, 'task'))}
-                              </div>
-                            );
-                          });
-                        })()}
-                        {total === 0 && <div className="wk-empty">—</div>}
-                      </>
-                    )}
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* ── Bande haute : Événements / Affaires ── */}
+          <div className="wk-band wk-band-events">
+            <div className="wk-band-label">📅 Événements & Affaires</div>
+            <div className="wk-days-row">
+              {weekDays.map(d => {
+                const isToday = d === todayStr();
+                const isExpanded = expandedWeekDay === d;
+                const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
+                const evCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
+                return (
+                  <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>
+                    <div className="wk-day-content">
+                      {isExpanded ? (
+                        renderWeekDayExpandedEvents(d)
+                      ) : (
+                        <>
+                          {dayData.googleEvents.length > 0 && (
+                            <div className="wk-compact-group">
+                              {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
+                            </div>
+                          )}
+                          {dayData.affaires.length > 0 && (
+                            <div className="wk-compact-group">
+                              {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
+                            </div>
+                          )}
+                          {dayData.events.length > 0 && (
+                            <div className="wk-compact-group">
+                              {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
+                            </div>
+                          )}
+                          {evCount === 0 && <div className="wk-empty">—</div>}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Bande basse : Tâches ── */}
+          <div className="wk-band wk-band-tasks">
+            <div className="wk-band-label">📋 Tâches</div>
+            <div className="wk-days-row">
+              {weekDays.map(d => {
+                const isToday = d === todayStr();
+                const isExpanded = expandedWeekDay === d;
+                const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
+                return (
+                  <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>
+                    <div className="wk-day-content">
+                      {isExpanded ? (
+                        renderWeekDayExpandedTasks(d)
+                      ) : (
+                        <>
+                          {(() => {
+                            const grouped = {};
+                            dayData.tasks.forEach(t => {
+                              const sec = normalizeSection(t.section || 'manual');
+                              if (!grouped[sec]) grouped[sec] = [];
+                              grouped[sec].push(t);
+                            });
+                            return Object.keys(SECTIONS).map(secKey => {
+                              const items = grouped[secKey];
+                              if (!items || items.length === 0) return null;
+                              const info = SECTIONS[secKey] || SECTIONS.manual;
+                              return (
+                                <div key={secKey} className="wk-compact-group">
+                                  <div className="wk-task-group-label" style={{ color: info.color }}>
+                                    <span>{info.emoji}</span> {info.label}
+                                  </div>
+                                  {items.map(t => renderWeekMiniCard(t, 'task'))}
+                                </div>
+                              );
+                            });
+                          })()}
+                          {dayData.tasks.length === 0 && <div className="wk-empty">—</div>}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : (

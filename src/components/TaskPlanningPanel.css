@@ -458,6 +458,20 @@
   flex: 1 1 140px;
   min-width: 100px;
 }
+.task-planning-panel .task-form-enriched .form-row-vehicle {
+  background: rgba(59, 130, 246, 0.04);
+  border: 1px dashed rgba(59, 130, 246, 0.25);
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+.task-planning-panel .task-form-enriched .form-field-reservation {
+  flex: 1 1 250px;
+  min-width: 160px;
+}
+.task-planning-panel .task-form-enriched .form-field-vehicle {
+  flex: 1 1 180px;
+  min-width: 120px;
+}
 .task-planning-panel .task-form-enriched .form-field-time {
   flex: 0 0 100px;
 }
@@ -807,6 +821,22 @@
   margin-left: 8px;
   border-radius: 10px;
   border: 1px solid;
+  white-space: nowrap;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+.task-planning-panel .vehicle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  margin-left: 4px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
   white-space: nowrap;
   line-height: 1.5;
   vertical-align: middle;

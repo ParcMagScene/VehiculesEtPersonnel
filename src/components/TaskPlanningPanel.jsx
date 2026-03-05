@@ -3,7 +3,7 @@ import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, ChevronDown, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
   CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings,
-  Repeat, SkipForward, Link, RefreshCw, Palette
+  Repeat, SkipForward, Link, RefreshCw, Palette, Truck
 } from 'lucide-react';
 import api from '../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../utils/affaireConstants';
@@ -141,8 +141,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [newTaskTime, setNewTaskTime] = useState('');
   const [newTaskPeriod, setNewTaskPeriod] = useState('AM');
   const [newTaskGoogleEvent, setNewTaskGoogleEvent] = useState('');
+  const [newTaskReservation, setNewTaskReservation] = useState(''); // reservation ID or '__new__'
+  const [newTaskVehicle, setNewTaskVehicle] = useState(''); // vehicle ID (for new reservation)
   const [showPdfExport, setShowPdfExport] = useState(false);
   const [displayEvents, setDisplayEvents] = useState([]);
+  // Véhicules & réservations (pour le picker dans le formulaire courses/chargement)
+  const [vehicles, setVehicles] = useState([]);
+  const [reservations, setReservations] = useState([]);
   // Multi-assignment
   const [planningAssignments, setPlanningAssignments] = useState([]);
   const [assigningEntity, setAssigningEntity] = useState(null); // "task:123" | "display_event:456" | "affaire:AF1234"
@@ -235,6 +240,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
   useEffect(() => { loadTasks(); }, [loadTasks, refreshKey]);
   useEffect(() => { loadPersons(); }, [loadPersons]);
+
+  // ── Véhicules & réservations (pour picker dans formulaire) ──
+  const loadVehiclesAndReservations = useCallback(async () => {
+    try {
+      const [vehs, rezs] = await Promise.all([api.getVehicles(), api.getReservations()]);
+      setVehicles(vehs || []);
+      setReservations(rezs || []);
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { loadVehiclesAndReservations(); }, [loadVehiclesAndReservations]);
 
   // ── iCal : chargement des calendriers configurés ──
   const loadIcalCalendars = useCallback(async () => {
@@ -870,6 +885,34 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         }
       }
 
+      // Gérer la réservation véhicule (sections nécessitant un véhicule)
+      let reservationId = null;
+      if (newTaskReservation && newTaskReservation !== '__new__') {
+        reservationId = newTaskReservation;
+      } else if (newTaskReservation === '__new__' && newTaskVehicle) {
+        // Créer une nouvelle réservation inline
+        try {
+          const newRez = await api.createReservation({
+            id: `${Date.now()}.${Math.random()}`,
+            vehicle_id: newTaskVehicle,
+            start_date: selectedDate,
+            start_period: newTaskPeriod || 'AM',
+            end_date: selectedDate,
+            end_period: newTaskPeriod || 'PM',
+            client_name: newTaskClient || (selectedAffaire?.client) || '',
+            driver_name: newTaskPerson ? persons.find(p => String(p.id) === String(newTaskPerson))?.firstName || '' : '',
+            prestation_name: finalTitle,
+            affaire: newTaskAffaire || '',
+            notes: '',
+          });
+          reservationId = newRez.id;
+          loadVehiclesAndReservations(); // refresh
+        } catch (err) {
+          toast.error('Erreur création réservation véhicule');
+          return;
+        }
+      }
+
       await api.createTask({
         date: selectedDate,
         period: newTaskPeriod || 'AM',
@@ -882,6 +925,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         source_id: selectedGoogEvent?.id || null,
         google_event_title: selectedGoogEvent?.summary || selectedGoogEvent?.title || null,
         affaire_num: newTaskAffaire || null,
+        reservation_id: reservationId,
       });
       toast.success('Tâche ajoutée');
       setNewTaskTitle('');
@@ -892,6 +936,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       setNewTaskTime('');
       setNewTaskPeriod('AM');
       setNewTaskGoogleEvent('');
+      setNewTaskReservation('');
+      setNewTaskVehicle('');
       setAddingSection(null);
       loadTasks(true);
     } catch (err) {
@@ -1049,6 +1095,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`} title={[fullTitle, showEventType && task.eventType, (task.eventLocation || linkedAffaire?.location) && '📍 ' + (task.eventLocation || linkedAffaire?.location), task.notes && '📝 ' + task.notes, (task.personFirstName || task.personLastName) && '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' ')].filter(Boolean).join('\n')}>
           {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
           {courseType && (() => { const ct = EVENT_TYPES[courseType]; return ct ? <span className="course-type-badge" style={{ background: `${ct.color}18`, color: ct.color, borderColor: `${ct.color}40` }}>{ct.emoji} {ct.label}</span> : null; })()}
+          {task.reservation_vehicle_name && (
+            <span className="vehicle-badge" title={`🚗 ${task.reservation_vehicle_name} ${task.reservation_vehicle_reg || ''}`}>
+              <Truck size={11} /> {task.reservation_vehicle_name}
+            </span>
+          )}
           {displayNom}
         </span>
 
@@ -2102,6 +2153,44 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               />
             </div>
 
+            {/* Ligne 3b : Réservation véhicule (pour courses/chargement/départ) */}
+            {['courses', 'chargement', 'depart', 'enlevement', 'retour', 'recuperation'].includes(sectionKey) && (
+              <div className="form-row form-row-vehicle">
+                <select
+                  className="form-field-reservation"
+                  value={newTaskReservation}
+                  onChange={e => {
+                    setNewTaskReservation(e.target.value);
+                    if (e.target.value !== '__new__') setNewTaskVehicle('');
+                  }}
+                >
+                  <option value="">— Réservation véhicule —</option>
+                  {reservations
+                    .filter(r => r.startDate <= selectedDate && r.endDate >= selectedDate)
+                    .map(r => (
+                      <option key={r.id} value={r.id}>
+                        🚗 {r.vehicleName || '?'} {r.immatriculation ? `(${r.immatriculation})` : ''} — {r.clientName || r.prestationName || r.driverName || 'Sans nom'}
+                      </option>
+                    ))}
+                  <option value="__new__">＋ Nouvelle réservation…</option>
+                </select>
+                {newTaskReservation === '__new__' && (
+                  <select
+                    className="form-field-vehicle"
+                    value={newTaskVehicle}
+                    onChange={e => setNewTaskVehicle(e.target.value)}
+                  >
+                    <option value="">— Véhicule —</option>
+                    {vehicles.map(v => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} {v.registration ? `(${v.registration})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+
             {/* Ligne 4 : Heure + Période + Actions */}
             <div className="form-row">
               <input
@@ -2145,6 +2234,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             setNewTaskTime('');
             setNewTaskPeriod('AM');
             setNewTaskGoogleEvent('');
+            setNewTaskReservation('');
+            setNewTaskVehicle('');
           }}>
             <Plus size={14} /> Ajouter une tâche
           </div>

@@ -1824,6 +1824,14 @@ class ApiClient {
     return this.request('/display/color-rules', { method: 'POST', body: JSON.stringify({ rules }) });
   }
 
+  // --- Sidebar config (sections visibles) ---
+  async getDisplaySidebarConfig() {
+    return this.request('/display/sidebar-config');
+  }
+  async saveDisplaySidebarConfig(sections) {
+    return this.request('/display/sidebar-config', { method: 'POST', body: JSON.stringify({ sections }) });
+  }
+
   // --- GIFs / Icônes de lieux ---
   async getDisplayLocationGifs() {
     return this.request('/display/location-gifs');

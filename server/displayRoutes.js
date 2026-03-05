@@ -929,6 +929,35 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
 
   // ────────────────── RÈGLES DE COULEURS ────────────────────────
 
+  // GET /api/display/sidebar-config — Config du sidebar tâches (sections visibles)
+  app.get('/api/display/sidebar-config', authenticateToken, (_req, res) => {
+    try {
+      const row = db.prepare("SELECT value FROM display_config WHERE key = 'sidebarSections'").get();
+      const sections = row ? JSON.parse(row.value) : null; // null = toutes visibles
+      res.json({ sections });
+    } catch (error) {
+      logger.error('Display sidebar-config get:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/display/sidebar-config — Sauvegarder les sections visibles
+  app.post('/api/display/sidebar-config', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { sections } = req.body; // string[] | null
+      const upsert = db.prepare(`
+        INSERT INTO display_config (key, value, updated_at) VALUES (?, ?, datetime('now'))
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
+      `);
+      upsert.run('sidebarSections', JSON.stringify(sections));
+      logAction(null, 'sidebar_config_updated', { sections }, req.user?.id);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('Display sidebar-config save:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
   // GET /api/display/color-rules
   app.get('/api/display/color-rules', authenticateToken, (_req, res) => {
     try {

@@ -852,6 +852,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         displayTitle = task.googleEventTitle || task.notes || '';
       }
     }
+
+    // 2b. Section Courses : extraire le type (Livraison, Récupération, etc.) puis le retirer du titre
+    let courseType = null;
+    if (taskSection === 'courses') {
+      const courseMatch = displayTitle.match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\b/iu);
+      if (courseMatch) {
+        const rawType = courseMatch[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const TYPE_MAP = { livraison: 'livraison', recuperation: 'recuperation', enlevement: 'enlevement', retour: 'retour' };
+        courseType = TYPE_MAP[rawType] || null;
+        // Retirer le type + emoji du titre pour éviter la redondance avec le badge
+        displayTitle = displayTitle
+          .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
+          .replace(/^(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\s*—?\s*/i, '')
+          .trim();
+        if (!displayTitle) {
+          displayTitle = task.googleEventTitle || task.notes || '';
+        }
+      }
+    }
     // 3. Retirer le N° d'affaire du titre (déjà affiché en badge)
     if (affaireNum) {
       const escaped = affaireNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -924,6 +943,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
         <span className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`} title={[fullTitle, showEventType && task.eventType, (task.eventLocation || linkedAffaire?.location) && '📍 ' + (task.eventLocation || linkedAffaire?.location), task.notes && '📝 ' + task.notes, (task.personFirstName || task.personLastName) && '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' ')].filter(Boolean).join('\n')}>
           {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
+          {courseType && (() => { const ct = EVENT_TYPES[courseType]; return ct ? <span className="course-type-badge" style={{ background: `${ct.color}18`, color: ct.color, borderColor: `${ct.color}40` }}>{ct.emoji} {ct.label}</span> : null; })()}
           {displayNom}
         </span>
 

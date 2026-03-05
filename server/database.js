@@ -3070,6 +3070,17 @@ try {
   logger.warn('Migration montage/demontage:', migErr7.message);
 }
 
+// ── Migration : soft delete task_assignments (deleted_at) ──
+try {
+  const taCols = db.pragma('table_info(task_assignments)').map(c => c.name);
+  if (!taCols.includes('deleted_at')) {
+    db.exec('ALTER TABLE task_assignments ADD COLUMN deleted_at TEXT');
+    logger.info('  ✅ Migration: task_assignments.deleted_at ajouté');
+  }
+} catch (e) {
+  logger.warn('⚠️ Migration deleted_at:', e.message);
+}
+
 // ── Table recurring_tasks : tâches récurrentes ──
 try {
   db.exec(`

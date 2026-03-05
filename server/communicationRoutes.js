@@ -587,7 +587,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         FROM task_assignments ta
         LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
         LEFT JOIN persons p ON ta.person_id = p.id
-        WHERE 1=1
+        WHERE ta.deleted_at IS NULL
       `;
       const params = [];
 
@@ -657,7 +657,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         FROM task_assignments ta
         LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
         LEFT JOIN persons p ON ta.person_id = p.id
-        WHERE ta.date = ?
+        WHERE ta.date = ? AND ta.deleted_at IS NULL
         ORDER BY ta.section ASC, ta.period ASC, ta.time ASC
       `).all(date);
 
@@ -1240,7 +1240,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         FROM task_assignments ta
         LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
         LEFT JOIN persons p ON ta.person_id = p.id
-        WHERE ta.id = ?
+        WHERE ta.id = ? AND ta.deleted_at IS NULL
       `).get(req.params.id);
 
       if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
@@ -1385,7 +1385,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // Supprimer toutes les tâches liées à un événement source
   app.delete('/api/communication/tasks/by-source/:sourceId', authenticateToken, (req, res) => {
     try {
-      const result = db.prepare("DELETE FROM task_assignments WHERE source_type = 'google_event' AND source_id = ?").run(req.params.sourceId);
+      const result = db.prepare("UPDATE task_assignments SET deleted_at = datetime('now') WHERE source_type = 'google_event' AND source_id = ? AND deleted_at IS NULL").run(req.params.sourceId);
       res.json({ success: true, deleted: result.changes });
     } catch (error) {
       logger.error('DELETE /api/communication/tasks/by-source error:', error);
@@ -1396,7 +1396,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // ─── PUT /api/communication/tasks/:id ───
   app.put('/api/communication/tasks/:id', authenticateToken, (req, res) => {
     try {
-      const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ?').get(req.params.id);
+      const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
 
       const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status } = req.body;
@@ -1446,13 +1446,13 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // ─── DELETE /api/communication/tasks/:id ───
+  // ─── DELETE /api/communication/tasks/:id ─── (soft delete)
   app.delete('/api/communication/tasks/:id', authenticateToken, (req, res) => {
     try {
-      const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ?').get(req.params.id);
+      const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
 
-      db.prepare('DELETE FROM task_assignments WHERE id = ?').run(req.params.id);
+      db.prepare("UPDATE task_assignments SET deleted_at = datetime('now'), modified_by = ?, modified_at = datetime('now') WHERE id = ?").run(req.user.id, req.params.id);
       res.json({ success: true, message: 'Tâche supprimée' });
     } catch (error) {
       logger.error('DELETE /api/communication/tasks/:id error:', error);
@@ -1479,11 +1479,11 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
       ).get();
 
       const tasksToday = db.prepare(
-        'SELECT COUNT(*) as count FROM task_assignments WHERE date = ?'
+        "SELECT COUNT(*) as count FROM task_assignments WHERE date = ? AND deleted_at IS NULL"
       ).get(today);
 
       const tasksPending = db.prepare(
-        "SELECT COUNT(*) as count FROM task_assignments WHERE status = 'pending'"
+        "SELECT COUNT(*) as count FROM task_assignments WHERE status = 'pending' AND deleted_at IS NULL"
       ).get();
 
       const blImportsTotal = db.prepare(
@@ -1533,17 +1533,17 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           SELECT DISTINCT a.*, 
             (SELECT COUNT(*) FROM bl_imports WHERE affaire_id = a.numero_affaire) as bl_count,
             (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
-            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
+            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire AND deleted_at IS NULL) as task_count
           FROM affaires a
           WHERE (
             (a.date_debut <= ? AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?))
             OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire AND date = ?)
-            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND date = ?)
+            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND date = ? AND deleted_at IS NULL)
           )
           AND (
             EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
             OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
-            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
+            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND deleted_at IS NULL)
           )
           ORDER BY a.type, a.date_debut
         `;
@@ -1554,17 +1554,17 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           SELECT DISTINCT a.*, 
             (SELECT COUNT(*) FROM bl_imports WHERE affaire_id = a.numero_affaire) as bl_count,
             (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
-            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
+            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire AND deleted_at IS NULL) as task_count
           FROM affaires a
           WHERE (
             (a.date_debut <= ? AND (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?))
             OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire AND date >= ? AND date <= ?)
-            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND date >= ? AND date <= ?)
+            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND date >= ? AND date <= ? AND deleted_at IS NULL)
           )
           AND (
             EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
             OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
-            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
+            OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND deleted_at IS NULL)
           )
           ORDER BY a.type, a.date_debut
         `;
@@ -1576,13 +1576,13 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
           SELECT a.*, 
             (SELECT COUNT(*) FROM bl_imports WHERE affaire_id = a.numero_affaire) as bl_count,
             (SELECT COUNT(*) FROM dynamic_display_events WHERE affaire_id = a.numero_affaire) as events_count,
-            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire) as task_count
+            (SELECT COUNT(*) FROM task_assignments WHERE affaire_num = a.numero_affaire AND deleted_at IS NULL) as task_count
           FROM affaires a
           WHERE (a.date_fin IS NULL OR a.date_fin = '' OR a.date_fin >= ?)
             AND (
               EXISTS (SELECT 1 FROM bl_imports WHERE affaire_id = a.numero_affaire)
               OR EXISTS (SELECT 1 FROM dynamic_display_events WHERE affaire_id = a.numero_affaire)
-              OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire)
+              OR EXISTS (SELECT 1 FROM task_assignments WHERE affaire_num = a.numero_affaire AND deleted_at IS NULL)
             )
           ORDER BY a.type, a.date_debut
         `;
@@ -1695,7 +1695,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
   // Basculer la visibilité d'une tâche (affichage écran dynamique)
   app.patch('/api/communication/tasks/:id/toggle-visible', authenticateToken, (req, res) => {
     try {
-      const task = db.prepare('SELECT * FROM task_assignments WHERE id = ?').get(req.params.id);
+      const task = db.prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
       if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
 
       const newVisible = (task.visible === 0) ? 1 : 0;
@@ -2080,7 +2080,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
 
       if (!shouldGenerate) continue;
 
-      // Vérifier qu'on n'a pas déjà créé cette tâche (source_type=recurring, source_id=rt.id, date=dateStr)
+      // Vérifier qu'on n'a pas déjà créé cette tâche (y compris si elle a été soft-deleted)
       const existing = db.prepare(
         "SELECT 1 FROM task_assignments WHERE source_type = 'recurring' AND source_id = ? AND date = ?"
       ).get(rt.id, dateStr);
@@ -2099,28 +2099,38 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     d.setDate(d.getDate() + 1);
     const nextDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-    // Tâches pending/in_progress du jour qui ne sont pas des RDV/événements
+    // Tâches pending/in_progress du jour qui ne sont pas des RDV/événements (exclure les soft-deleted)
     const pending = db.prepare(`
       SELECT * FROM task_assignments
       WHERE date = ? AND status IN ('pending', 'in_progress')
         AND section NOT IN ('rdv', 'evenements')
+        AND deleted_at IS NULL
     `).all(fromDate);
 
     const insertStmt = db.prepare(`
       INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'))
     `);
+    // Soft-delete l'originale après report pour éviter les copies infinies
+    const markRolledStmt = db.prepare(
+      "UPDATE task_assignments SET deleted_at = datetime('now'), notes = COALESCE(notes, '') || ' [reportée]' WHERE id = ?"
+    );
 
     let count = 0;
     for (const t of pending) {
-      // Vérifier pas de doublon (même titre + section + date cible)
+      // Vérifier pas de doublon (même titre + section + date cible, y compris soft-deleted)
       const dup = db.prepare(
-        "SELECT 1 FROM task_assignments WHERE date = ? AND section = ? AND title = ? AND status != 'cancelled'"
+        "SELECT 1 FROM task_assignments WHERE date = ? AND section = ? AND title = ?"
       ).get(nextDate, t.section, t.title);
-      if (dup) continue;
+      if (dup) {
+        // Doublon trouvé : soft-delete l'originale quand même
+        markRolledStmt.run(t.id);
+        continue;
+      }
 
       const id = crypto.randomUUID().replace(/-/g, '');
       insertStmt.run(id, t.display_event_id, t.person_id, nextDate, t.period, t.time, t.end_time, t.section, t.title, t.notes || '', t.source_type, t.source_id, t.google_event_title, t.affaire_num, t.visible ?? 1);
+      markRolledStmt.run(t.id);
       count++;
     }
     return count;
@@ -2254,16 +2264,21 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         SELECT DISTINCT date FROM task_assignments
         WHERE date < ? AND status IN ('pending', 'in_progress')
           AND section NOT IN ('rdv', 'evenements')
+          AND deleted_at IS NULL
         ORDER BY date ASC
       `).all(todayStr).map(r => r.date);
 
       let totalRolled = 0;
+      const markRolledStmt = db.prepare(
+        "UPDATE task_assignments SET deleted_at = datetime('now'), notes = COALESCE(notes, '') || ' [reportée]' WHERE id = ?"
+      );
       for (const pastDate of pendingDays) {
-        // Reporter directement vers aujourd'hui (pas jour par jour)
+        // Reporter directement vers aujourd'hui (pas jour par jour) — exclure les soft-deleted
         const pending = db.prepare(`
           SELECT * FROM task_assignments
           WHERE date = ? AND status IN ('pending', 'in_progress')
             AND section NOT IN ('rdv', 'evenements')
+            AND deleted_at IS NULL
         `).all(pastDate);
 
         const insertStmt = db.prepare(`
@@ -2272,14 +2287,19 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         `);
 
         for (const t of pending) {
-          // Pas de doublon : même titre + section + date cible
+          // Pas de doublon : même titre + section + date cible (y compris soft-deleted)
           const dup = db.prepare(
-            "SELECT 1 FROM task_assignments WHERE date = ? AND section = ? AND title = ? AND status != 'cancelled'"
+            "SELECT 1 FROM task_assignments WHERE date = ? AND section = ? AND title = ?"
           ).get(todayStr, t.section, t.title);
-          if (dup) continue;
+          if (dup) {
+            // Doublon trouvé : soft-delete l'originale quand même
+            markRolledStmt.run(t.id);
+            continue;
+          }
 
           const id = crypto.randomUUID().replace(/-/g, '');
           insertStmt.run(id, t.display_event_id, t.person_id, todayStr, t.period, t.time, t.end_time, t.section, t.title, t.notes || '', t.source_type, t.source_id, t.google_event_title, t.affaire_num, t.visible ?? 1);
+          markRolledStmt.run(t.id);
           totalRolled++;
         }
       }

@@ -1018,14 +1018,28 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
         {/* Popover de liaison manuelle tâche → affaire */}
         {linkingTaskId === task.id && (() => {
-          const linkableAff = linkTaskSearchQuery.length >= 2
-            ? affaires.filter(a => {
-                const q = linkTaskSearchQuery.toUpperCase();
-                return (a.numeroAffaire || '').toUpperCase().includes(q)
-                  || (a.client || '').toUpperCase().includes(q)
-                  || (a.titre || '').toUpperCase().includes(q);
-              }).slice(0, 8)
-            : [];
+          const today = selectedDate || new Date().toISOString().slice(0, 10);
+          const q = linkTaskSearchQuery.toUpperCase().trim();
+          // Trier : en cours/à venir d'abord, puis par date début décroissante
+          const sorted = [...affaires].sort((a, b) => {
+            const aDebut = a.dateDebut || a.date_debut || '';
+            const aFin = a.dateFin || a.date_fin || '';
+            const bDebut = b.dateDebut || b.date_debut || '';
+            const bFin = b.dateFin || b.date_fin || '';
+            const aActive = aDebut <= today && (!aFin || aFin >= today) ? 0 : aDebut > today ? 1 : 2;
+            const bActive = bDebut <= today && (!bFin || bFin >= today) ? 0 : bDebut > today ? 1 : 2;
+            if (aActive !== bActive) return aActive - bActive;
+            return (bDebut || '').localeCompare(aDebut || '');
+          });
+          const filtered = q.length >= 1
+            ? sorted.filter(a =>
+                (a.numeroAffaire || '').toUpperCase().includes(q)
+                || (a.client || '').toUpperCase().includes(q)
+                || (a.titre || '').toUpperCase().includes(q)
+                || (a.eventName || '').toUpperCase().includes(q)
+              )
+            : sorted;
+          const linkableAff = filtered.slice(0, 10);
           return (
             <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
               <div className="link-popover-header">
@@ -1037,13 +1051,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               <input
                 type="text"
                 className="link-search-input"
-                placeholder="Rechercher AF, client…"
+                placeholder="Filtrer par AF, client…"
                 value={linkTaskSearchQuery}
                 onChange={(e) => setLinkTaskSearchQuery(e.target.value)}
                 autoFocus
                 onKeyDown={(e) => { if (e.key === 'Escape') { setLinkingTaskId(null); setLinkTaskSearchQuery(''); } }}
               />
-              {linkTaskSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
+              {linkTaskSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && !affaires.some(a => (a.numeroAffaire || '').toUpperCase() === linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim()) && (
                 <button
                   className="link-option link-option-create"
                   onClick={() => {
@@ -1054,7 +1068,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                   ➕ Lier à <strong>{linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
                 </button>
               )}
-              {linkableAff.length > 0 && (
+              {linkableAff.length > 0 ? (
                 <div className="link-options-list">
                   {linkableAff.map(a => (
                     <button
@@ -1063,12 +1077,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                       onClick={() => handleLinkTaskToAffaire(task.id, a.numeroAffaire)}
                     >
                       <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
-                      <span className="link-option-client">{a.client || 'Sans client'}</span>
+                      <span className="link-option-client">{a.client || a.titre || 'Sans client'}</span>
                     </button>
                   ))}
+                  {filtered.length > 10 && <div className="link-no-results" style={{ fontSize: '0.7rem', opacity: 0.6 }}>+{filtered.length - 10} autres…</div>}
                 </div>
-              )}
-              {linkTaskSearchQuery.length >= 2 && linkableAff.length === 0 && !linkTaskSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
+              ) : (
                 <div className="link-no-results">Aucune affaire trouvée</div>
               )}
             </div>

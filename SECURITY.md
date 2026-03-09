@@ -4,9 +4,8 @@
 
 | Version | Support Sécurité |
 | ------- | ---------------- |
-| 4.x     | ✅ Support actif |
-| 3.x     | ✅ Support actif |
-| 2.x     | ⚠️ Maintenance uniquement |
+| 2.x     | ✅ Support actif |
+| 1.x     | ⚠️ Maintenance uniquement |
 
 ---
 
@@ -188,6 +187,11 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ## 🔄 Historique des Mises à Jour Sécurité
 
+### 2026-03-09 — Mise à jour documentation
+- ✅ Documentation complète mise à jour (ARCHITECTURE, README, SECURITY, GUIDE)
+- ✅ 86 tables DB, ~428 routes API, 130 composants React
+- ✅ Fix UX planification affaires (event handling, scroll anchor, animation CSS)
+
 ### 2026-03-07 — Audit Complet Session 19
 - ✅ **96 problèmes identifiés** (9 critiques, 14 hauts, 38 moyens, 19 bas, 16 info)
 - ✅ **13 bugs critiques/hauts corrigés** (displayRoutes, communicationRoutes, ordersRoutes, stockRoutes, api.js, LoginForm, MobileLogin, MailingPanel)
@@ -198,7 +202,7 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 - ✅ Fix localStorage bypass → `api.setAuth()` partout
 - ✅ Enrichissement Annuaire : validation SIRET/TVA, normalisation téléphone, code NAF, sécurisation DELETE contacts
 - ✅ Migrations DB : `assigned_person_id` (display events), `naf_code` (clients/fournisseurs/prestataires)
-- ✅ 80+ tables DB, ~380+ routes API, 118 composants React
+- ✅ 86 tables DB, ~428 routes API, 130 composants React
 
 ### 2026-03-02
 - ✅ Mise à jour documentation (README, ARCHITECTURE, SECURITY, GUIDE)
@@ -238,5 +242,5 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ---
 
-**Dernière mise à jour :** 7 mars 2026
+**Dernière mise à jour :** 9 mars 2026
 **Prochaine révision :** Mensuelle

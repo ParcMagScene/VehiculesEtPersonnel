@@ -493,9 +493,10 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
 
   useEffect(() => { loadAffaireTasks(); }, [loadAffaireTasks]);
 
-  const toggleTaskStep = (key) => {
+  const toggleTaskStep = useCallback((key, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     setTaskSteps(prev => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled } }));
-  };
+  }, []);
 
   const updateTaskStep = (key, field, value) => {
     setTaskSteps(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
@@ -1104,7 +1105,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               const statusInfo = TASK_STATUS_MAP[s.status] || TASK_STATUS_MAP.pending;
               return (
                 <div key={step.key} className={`task-step-item ${s.enabled ? 'enabled' : ''}`} style={s.enabled ? { borderLeftColor: step.color } : {}}>
-                  <div className="task-step-header" onClick={() => toggleTaskStep(step.key)} style={{ cursor: 'pointer' }}>
+                  <div className="task-step-header" onClick={(e) => toggleTaskStep(step.key, e)} style={{ cursor: 'pointer' }}>
                     <div className="task-step-check" style={s.enabled ? { background: step.color, borderColor: step.color } : {}}>
                       {s.enabled && <Check size={10} color="#fff" />}
                     </div>
@@ -1120,7 +1121,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                     )}
                   </div>
                   {s.enabled && (
-                    <div className="task-step-fields">
+                    <div className="task-step-fields" onClick={(e) => e.stopPropagation()}>
                       <div className="tsf-row">
                         <label>Date</label>
                         <input type="date" value={s.date} onChange={e => updateTaskStep(step.key, 'date', e.target.value)} />

@@ -64,6 +64,8 @@ export default function BLMultiImportModal({ onClose, onImported }) {
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  // Global type applied to all items (when multi-import)
+  const [globalType, setGlobalType] = useState('');
 
   // Drag & Drop handlers
   const handleDragOver = useCallback((e) => { e.preventDefault(); setDragOver(true); }, []);
@@ -188,13 +190,16 @@ export default function BLMultiImportModal({ onClose, onImported }) {
       validItems.forEach((item, i) => {
         formData.append('files', item.file);
         const merged = getMergedData(item);
+        // Type effectif : celui du fichier, sinon le type global
+        const effectiveType = item.affaireType || globalType || null;
         itemsMeta.push({
           index: i,
           affaire_id: item.affaireId || null,
-          affaire_type: item.affaireType || null,
+          affaire_type: effectiveType,
           parsed_data: merged,
           raw_text: item.rawText,
           status: 'validated',
+          force_type: !!effectiveType,
         });
       });
 
@@ -274,6 +279,32 @@ export default function BLMultiImportModal({ onClose, onImported }) {
             </div>
           )}
 
+          {/* ─── Global type selector (multi-import) ─── */}
+          {items.length > 1 && !importResults && (
+            <div className="batch-global-type">
+              <div className="batch-global-type-label">
+                <Tag size={14} />
+                <span>Type d'affaire pour l'import</span>
+                <span className="batch-global-type-hint">(appliqué à tous les fichiers sans type individuel)</span>
+              </div>
+              <div className="type-pills global">
+                {AFFAIRE_TYPE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={globalType === opt.value ? 'active' : ''}
+                    style={globalType === opt.value ? { borderColor: opt.color, background: `${opt.color}18`, color: opt.color } : {}}
+                    onClick={() => {
+                      setGlobalType(prev => prev === opt.value ? '' : opt.value);
+                    }}
+                  >
+                    {opt.icon} {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Summary */}
           {items.length > 0 && !importResults && (
             <div className="batch-summary">
@@ -323,6 +354,11 @@ export default function BLMultiImportModal({ onClose, onImported }) {
                     {item.affaireId && (
                       <span className="affaire-badge">
                         <Briefcase size={11} /> {item.affaireId}
+                      </span>
+                    )}
+                    {(item.affaireType || globalType) && (
+                      <span className="type-badge-mini" style={{ color: AFFAIRE_TYPE_OPTIONS.find(o => o.value === (item.affaireType || globalType))?.color }}>
+                        {AFFAIRE_TYPE_OPTIONS.find(o => o.value === (item.affaireType || globalType))?.icon}
                       </span>
                     )}
                     {item.parsedData?.confidence != null && (

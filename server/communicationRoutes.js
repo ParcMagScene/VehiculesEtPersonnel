@@ -582,7 +582,8 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
                 if (!aff.devis && pd?.devis) { updates.push('devis = ?'); params.push(pd.devis); }
                 if (!aff.adresse_livraison && pd?.adresse) { updates.push('adresse_livraison = ?'); params.push(pd.adresse); }
                 if (!aff.titre && (pd?.nomAffaire || pd?.objet)) { updates.push('titre = ?'); params.push(pd.nomAffaire || pd.objet); }
-                if (affaireTypeResolved && !aff.type) { updates.push('type = ?'); params.push(affaireTypeResolved); }
+                // Si force_type est vrai, on met à jour le type même s'il existe déjà
+                if (affaireTypeResolved && (item.force_type ? aff.type !== affaireTypeResolved : !aff.type)) { updates.push('type = ?'); params.push(affaireTypeResolved); }
                 if (dateDebut && !aff.date_debut) { updates.push('date_debut = ?'); params.push(dateDebut); }
                 if (dateFin && !aff.date_fin) { updates.push('date_fin = ?'); params.push(dateFin); }
                 if (updates.length > 0) {

@@ -1681,6 +1681,15 @@
   color: var(--theme-text-inverse);
   border-color: var(--theme-primary);
 }
+.task-planning-panel .btn-clear-done:not(:disabled):hover {
+  background: #e74c3c;
+  color: #fff;
+  border-color: #e74c3c;
+}
+.task-planning-panel .btn-clear-done:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* ═══ Recurring Tasks Panel ═══ */
 .task-planning-panel .recurring-panel {

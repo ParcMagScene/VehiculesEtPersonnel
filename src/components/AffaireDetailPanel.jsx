@@ -1692,7 +1692,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
         </button>
       </div>
       <div className="slide-panel-body">
-        <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} onNavigateToEntity={onNavigateToEntity} />
+        <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onNavigateToEntity={onNavigateToEntity} />
       </div>
       <div className="slide-panel-footer">
         <button className="slide-panel-display-btn" onClick={() => setShowDisplayDialog(true)} title="Ajouter cet événement à l'affichage dynamique">

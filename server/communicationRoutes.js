@@ -498,6 +498,251 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ─── POST /api/communication/bl-imports/batch ───
+  // Import multiple BL/BP en une seule requête
+  // Multipart : fichiers dans "files", métadonnées dans "items" (JSON array)
+  // Chaque item: { index, affaire_id, affaire_type, parsed_data, status }
+  // index = position dans le tableau files[] (correspondance fichier ↔ métadonnées)
+  app.post('/api/communication/bl-imports/batch', authenticateToken, uploadBL.array('files', 50), (req, res) => {
+    try {
+      let items = [];
+      try {
+        items = JSON.parse(req.body.items || '[]');
+      } catch { /* ignore */ }
+
+      if (!req.files?.length && !items.length) {
+        return res.status(400).json({ error: 'Aucun fichier ou métadonnées fourni' });
+      }
+
+      const results = [];
+      const filesMap = {};
+      (req.files || []).forEach((f, idx) => { filesMap[idx] = f; });
+
+      // Equipment matching queries (réutilisé pour chaque import)
+      const findExact = db.prepare('SELECT id FROM equipment WHERE reference = ? LIMIT 1');
+      const findNorm = db.prepare("SELECT id FROM equipment WHERE REPLACE(REPLACE(reference, '-', ''), ' ', '') = REPLACE(REPLACE(?, '-', ''), ' ', '') LIMIT 1");
+      const findPartial = db.prepare("SELECT id FROM equipment WHERE reference LIKE ? || '%' LIMIT 1");
+      const insertBPItem = db.prepare(`
+        INSERT INTO bp_items (bl_import_id, equipment_id, reference, description, section, quantity, poids, volume, match_status, match_confidence)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const file = filesMap[item.index ?? i];
+
+        try {
+          const { affaire_id, affaire_type, parsed_data, status } = item;
+          const id = crypto.randomUUID().replace(/-/g, '');
+
+          // Parse des données
+          let pd = null;
+          let affaireTypeResolved = affaire_type || null;
+          let docType = null, confidenceScore = null, sectionsData = null, fieldConfidence = null;
+          if (parsed_data) {
+            try {
+              pd = typeof parsed_data === 'string' ? JSON.parse(parsed_data) : parsed_data;
+              if (!affaireTypeResolved) affaireTypeResolved = pd.type || null;
+              docType = pd.docType || null;
+              confidenceScore = pd.confidence || null;
+              sectionsData = pd.sections?.length > 0 ? JSON.stringify(pd.sections) : null;
+              fieldConfidence = pd._fieldConfidence ? JSON.stringify(pd._fieldConfidence) : null;
+            } catch (_) { /* ignore */ }
+          }
+
+          // Auto-création / mise à jour affaire
+          let linkedAffaireId = affaire_id || pd?.numero || null;
+          let affaireCreated = false;
+          let affaireUpdated = false;
+
+          if (linkedAffaireId) {
+            const existingAffaire = db.prepare('SELECT id, numero_affaire FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
+            if (existingAffaire) {
+              // Mise à jour de l'affaire avec les nouvelles données parsées (si des champs sont vides)
+              try {
+                const today = new Date().toISOString().slice(0, 10);
+                let dateDebut = pd?.date || pd?.dateLivraison || pd?.dateDebut || null;
+                let dateFin = pd?.dateFin || null;
+                if (pd?.sections && Array.isArray(pd.sections)) {
+                  for (const sec of pd.sections) {
+                    const dmD = sec.dateDebut?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                    if (dmD) { const iso = `${dmD[3]}-${dmD[2]}-${dmD[1]}`; if (!dateDebut || iso < dateDebut) dateDebut = iso; }
+                    const dmF = sec.dateFin?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                    if (dmF) { const iso = `${dmF[3]}-${dmF[2]}-${dmF[1]}`; if (!dateFin || iso > dateFin) dateFin = iso; }
+                  }
+                }
+                // Mettre à jour les champs vides de l'affaire existante
+                const aff = db.prepare('SELECT * FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
+                const updates = [];
+                const params = [];
+                if (!aff.client && pd?.client) { updates.push('client = ?'); params.push(pd.client); }
+                if (!aff.interlocuteur && pd?.interlocuteur) { updates.push('interlocuteur = ?'); params.push(pd.interlocuteur); }
+                if (!aff.tel && pd?.tel) { updates.push('tel = ?'); params.push(pd.tel); }
+                if (!aff.fax && pd?.fax) { updates.push('fax = ?'); params.push(pd.fax); }
+                if (!aff.devis && pd?.devis) { updates.push('devis = ?'); params.push(pd.devis); }
+                if (!aff.adresse_livraison && pd?.adresse) { updates.push('adresse_livraison = ?'); params.push(pd.adresse); }
+                if (!aff.titre && (pd?.nomAffaire || pd?.objet)) { updates.push('titre = ?'); params.push(pd.nomAffaire || pd.objet); }
+                if (affaireTypeResolved && !aff.type) { updates.push('type = ?'); params.push(affaireTypeResolved); }
+                if (dateDebut && !aff.date_debut) { updates.push('date_debut = ?'); params.push(dateDebut); }
+                if (dateFin && !aff.date_fin) { updates.push('date_fin = ?'); params.push(dateFin); }
+                if (updates.length > 0) {
+                  updates.push("modified_by = ?", "modified_at = datetime('now')");
+                  params.push(req.user.id);
+                  params.push(linkedAffaireId);
+                  db.prepare(`UPDATE affaires SET ${updates.join(', ')} WHERE numero_affaire = ?`).run(...params);
+                  affaireUpdated = true;
+                }
+              } catch (updErr) {
+                logger.error('Erreur update affaire batch:', updErr.message);
+              }
+            } else {
+              // Créer l'affaire
+              try {
+                const today = new Date().toISOString().slice(0, 10);
+                let dateDebut = pd?.date || pd?.dateLivraison || pd?.dateDebut || null;
+                let dateFin = pd?.dateFin || null;
+                if (pd?.sections && Array.isArray(pd.sections)) {
+                  for (const sec of pd.sections) {
+                    const dmD = sec.dateDebut?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                    if (dmD) { const iso = `${dmD[3]}-${dmD[2]}-${dmD[1]}`; if (!dateDebut || iso < dateDebut) dateDebut = iso; }
+                    const dmF = sec.dateFin?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                    if (dmF) { const iso = `${dmF[3]}-${dmF[2]}-${dmF[1]}`; if (!dateFin || iso > dateFin) dateFin = iso; }
+                  }
+                }
+                db.prepare(`
+                  INSERT INTO affaires (numero_affaire, type, client, interlocuteur, tel, fax,
+                    date_debut, date_fin, devis, adresse_livraison, titre, description,
+                    created_by, modified_by)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `).run(
+                  linkedAffaireId,
+                  affaireTypeResolved || 'Prestation',
+                  pd?.client || '', pd?.interlocuteur || '', pd?.tel || '', pd?.fax || '',
+                  dateDebut || today, dateFin || '',
+                  pd?.devis || '', pd?.adresse || '',
+                  pd?.nomAffaire || pd?.objet || '',
+                  `Créée automatiquement — import batch BL ${file ? file.originalname : 'text-import'}`,
+                  req.user.id, req.user.id
+                );
+                affaireCreated = true;
+              } catch (affErr) {
+                if (!affErr.message?.includes('UNIQUE')) {
+                  logger.error('Erreur création affaire batch:', affErr.message);
+                }
+              }
+            }
+          }
+
+          // Dédoublonnage BL import
+          const existingFilename = file ? file.originalname : `text-import-${i}`;
+          const existingImport = linkedAffaireId
+            ? db.prepare('SELECT id FROM bl_imports WHERE affaire_id = ? AND filename = ?').get(linkedAffaireId, existingFilename)
+            : null;
+
+          let finalId;
+          let updated = false;
+          const parsedDataStr = parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null;
+
+          if (existingImport) {
+            finalId = existingImport.id;
+            updated = true;
+            db.prepare(`
+              UPDATE bl_imports SET
+                file_path = ?, mime_type = ?, raw_text = ?, parsed_data = ?,
+                status = ?, affaire_type = ?, doc_type = ?, confidence_score = ?,
+                sections_data = ?, field_confidence = ?, created_by = ?, created_at = datetime('now')
+              WHERE id = ?
+            `).run(
+              file ? file.filename : null, file ? file.mimetype : 'text/plain',
+              item.raw_text || null, parsedDataStr,
+              status || 'validated', affaireTypeResolved, docType, confidenceScore,
+              sectionsData, fieldConfidence, req.user.id, finalId
+            );
+            db.prepare('DELETE FROM bp_items WHERE bl_import_id = ?').run(finalId);
+          } else {
+            finalId = id;
+            db.prepare(`
+              INSERT INTO bl_imports (id, affaire_id, filename, file_path, mime_type, raw_text, parsed_data, status, affaire_type, doc_type, confidence_score, sections_data, field_confidence, created_by, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `).run(
+              finalId, linkedAffaireId, existingFilename,
+              file ? file.filename : null, file ? file.mimetype : 'text/plain',
+              item.raw_text || null, parsedDataStr,
+              status || 'validated', affaireTypeResolved, docType, confidenceScore,
+              sectionsData, fieldConfidence, req.user.id
+            );
+          }
+
+          // Auto-persist BP items with equipment matching
+          let bpItemsCount = 0;
+          if (pd?.items?.length > 0) {
+            try {
+              const insertMany = db.transaction((bpItems) => {
+                for (const bpItem of bpItems) {
+                  const ref = (bpItem.reference || bpItem.code || '').trim();
+                  let equipmentId = null, matchStatus = 'unmatched', matchConf = 0;
+                  if (ref) {
+                    const exact = findExact.get(ref);
+                    if (exact) { equipmentId = exact.id; matchStatus = 'matched'; matchConf = 1.0; }
+                    else {
+                      const norm = findNorm.get(ref);
+                      if (norm) { equipmentId = norm.id; matchStatus = 'matched'; matchConf = 0.8; }
+                      else {
+                        const partial = findPartial.get(ref);
+                        if (partial) { equipmentId = partial.id; matchStatus = 'matched'; matchConf = 0.7; }
+                      }
+                    }
+                  }
+                  insertBPItem.run(finalId, equipmentId, ref || null, bpItem.description || null, bpItem.section || null, bpItem.quantity || 1, bpItem.poids || null, bpItem.volume || null, matchStatus, matchConf);
+                }
+              });
+              insertMany(pd.items);
+              bpItemsCount = pd.items.length;
+            } catch (bpErr) {
+              logger.error('Erreur bp_items batch:', bpErr.message);
+            }
+          }
+
+          results.push({
+            index: i,
+            filename: existingFilename,
+            affaire_id: linkedAffaireId,
+            affaire_created: affaireCreated,
+            affaire_updated: affaireUpdated,
+            bl_import_id: finalId,
+            bp_items_count: bpItemsCount,
+            updated,
+            success: true,
+          });
+        } catch (itemErr) {
+          results.push({
+            index: i,
+            filename: file?.originalname || `item-${i}`,
+            error: itemErr.message,
+            success: false,
+          });
+        }
+      }
+
+      // Invalider les caches
+      invalidateEntity('affaires');
+      listCache.invalidatePattern(/^planning-affaires/);
+
+      const created = results.filter(r => r.success && r.affaire_created).length;
+      const updatedAff = results.filter(r => r.success && r.affaire_updated).length;
+      const imported = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+
+      res.json({
+        results,
+        summary: { total: items.length, imported, created, updated: updatedAff, failed },
+      });
+    } catch (error) {
+      logger.error('POST /api/communication/bl-imports/batch error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
   // ─── GET /api/communication/bp-items?affaire_id=AFxxxxx ───
   // Retourne les articles BP avec leur statut de matching matériel
   app.get('/api/communication/bp-items', authenticateToken, (req, res) => {

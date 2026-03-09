@@ -1,6 +1,6 @@
 # 🏗️ Architecture Complète — eM@g
 
-> **Dernière mise à jour** : 2 mars 2026
+> **Dernière mise à jour** : 9 mars 2026
 > **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
 > **Domaine** : `magsav.duckdns.org`
 
@@ -98,10 +98,10 @@ eM@g/
 │
 ├── src/                            # ══ CODE SOURCE FRONTEND ══
 │   ├── main.jsx                    # Point d'entrée React
-│   ├── App.jsx                     # Composant racine (~1408 lignes)
+│   ├── App.jsx                     # Composant racine (~1490 lignes)
 │   ├── App.css / index.css / theme.css
 │   │
-│   ├── components/                 # 82 composants React desktop
+│   ├── components/                 # 87 composants React desktop
 │   │   ├── Calendar.jsx            # Calendrier principal (semaine/mois/année)
 │   │   ├── Header.jsx              # Barre de navigation + boutons contextuels
 │   │   ├── ManagementPanel.jsx     # Panel admin (multi-onglets)
@@ -138,7 +138,7 @@ eM@g/
 │   │       ├── MobileHome.jsx      # Accueil mobile
 │   │       └── ...                 # Planning, réservations, maintenances, etc.
 │   │
-│   ├── hooks/                      # 6 hooks React custom
+│   ├── hooks/                      # 7 hooks React custom
 │   │   ├── useAutocomplete.js
 │   │   ├── useFeedback.js
 │   │   ├── useKeyboardShortcuts.js
@@ -147,15 +147,15 @@ eM@g/
 │   │   └── useWindowWidth.js
 │   │
 │   └── utils/                      # Fonctions utilitaires
-│       ├── api.js                  # Client API (~1895 lignes, ~350 méthodes)
+│       ├── api.js                  # Client API (~2006 lignes, ~375 méthodes)
 │       ├── deepLinking.js          # URL builders, ouverture protocole Chargement 3D
 │       ├── dateUtils.js            # Utilitaires de dates
-│       ├── indexedDB.js            # Cache IndexedDB (12 stores)
+│       ├── indexedDB.js            # Cache IndexedDB (11 stores)
 │       ├── pdfParser.js            # Parsing PDF (pdfjs-dist)
 │       └── ...
 │
 ├── server/                         # ══ CODE SOURCE BACKEND ══
-│   ├── server.js                   # Serveur Express principal (~3100 lignes)
+│   ├── server.js                   # Serveur Express principal (~3330 lignes)
 │   ├── cache.js                    # Cache LRU/TTL en mémoire (auth, stats, listes, iCal, config)
 │   ├── routes.js                   # Routes secondaires (~672 lignes)
 │   ├── personnelRoutes.js          # Routes personnel (~1337 lignes)
@@ -170,7 +170,7 @@ eM@g/
 │   ├── displayRoutes.js            # Routes Dashboard écrans (~1383 lignes)
 │   ├── annuaireRoutes.js           # Routes annuaire (~833 lignes)
 │   ├── emailService.js             # Service d'envoi d'emails (~383 lignes)
-│   ├── database.js                 # Init SQLite + schéma + migrations (~2818 lignes)
+│   ├── database.js                 # Init SQLite + schéma + migrations (~3198 lignes)
 │   ├── logger.js                   # Logger conditionnel
 │   ├── package.json                # Dépendances backend
 │   ├── ecosystem.config.js         # Configuration PM2
@@ -290,7 +290,7 @@ Client HTTP
 │  ┌──────────────────────────────────────┐    │
 │  │ SQLite (better-sqlite3)              │    │
 │  │ vehicules.db — WAL mode             │    │
-│  │ 79 tables, FK enforced              │    │
+│  │ 86 tables, FK enforced              │    │
 │  └──────────────────────────────────────┘    │
 └─────────────────────────────────────────────┘
 ```
@@ -299,21 +299,21 @@ Client HTTP
 
 | Fichier | Lignes | Rôle |
 |---------|--------|------|
-| `server.js` | ~2911 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads, messagerie) |
-| `routes.js` | ~672 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
-| `personnelRoutes.js` | ~1337 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations) |
-| `leaveRoutes.js` | ~1337 | Routes module congés (demandes, approbation, solde, planning) |
+| `server.js` | ~3330 | Routes principales (auth, véhicules, réservations, maintenances, utilisateurs, uploads, messagerie) |
+| `routes.js` | ~678 | Routes secondaires (clients, conducteurs, lieux, garages, config, trip-details) |
+| `personnelRoutes.js` | ~1361 | Routes module personnel (personnes, compétences, disponibilités, missions, affectations) |
+| `leaveRoutes.js` | ~1346 | Routes module congés (demandes, approbation, solde, planning) |
 | `equipmentRoutes.js` | ~1299 | Routes équipements individualisés (UID, SAV, localisation multi-dépôt) |
-| `communicationRoutes.js` | ~1522 | Routes communication (événements, notes, tâches, planning, PDF export) |
-| `displayRoutes.js` | ~1383 | Routes Dashboard écrans (screens, playlists, médias, messages, templates, logs) |
-| `ordersRoutes.js` | ~1367 | Routes commandes fournisseurs |
-| `annuaireRoutes.js` | ~833 | Routes annuaire (clients, fournisseurs, prestataires, contacts, import) |
+| `communicationRoutes.js` | ~2672 | Routes communication (événements, notes, tâches, planning, PDF export) |
+| `displayRoutes.js` | ~1965 | Routes Dashboard écrans (screens, playlists, médias, messages, templates, logs) |
+| `ordersRoutes.js` | ~1377 | Routes commandes fournisseurs |
+| `annuaireRoutes.js` | ~1069 | Routes annuaire (clients, fournisseurs, prestataires, contacts, import) |
 | `catalogRoutes.js` | ~775 | Routes catalogue (équipements, flight-cases, camions, réservation-équipement) |
 | `stockRoutes.js` | ~433 | Routes gestion de stock (mouvements, inventaire) |
 | `messagingRoutes.js` | ~368 | Routes messagerie interne |
 | `mailingRoutes.js` | ~299 | Routes mailing avancé (templates, campagnes) |
 | `emailService.js` | ~383 | Service d'envoi d'emails (nodemailer) |
-| `database.js` | ~2818 | Initialisation schéma SQLite, pragmas, migrations, 79 tables |
+| `database.js` | ~3198 | Initialisation schéma SQLite, pragmas, migrations, 86 tables |
 | `logger.js` | ~28 | Logger conditionnel |
 
 ### Variables d'environnement (`server/.env`)
@@ -327,7 +327,7 @@ JWT_EXPIRY_DAYS=30
 
 ## 5. Architecture Frontend
 
-### Composant racine : `App.jsx` (~1408 lignes)
+### Composant racine : `App.jsx` (~1490 lignes)
 
 ```
 main.jsx
@@ -380,9 +380,9 @@ Le frontend persiste les données dans IndexedDB (via `src/utils/indexedDB.js`) 
 | `skills` | Compétences |
 | `missions` | Missions |
 
-### Client API (`src/utils/api.js` — ~1895 lignes)
+### Client API (`src/utils/api.js` — ~2006 lignes)
 
-Classe `ApiClient` avec ~350 méthodes. Fonctionnalités :
+Classe `ApiClient` avec ~375 méthodes. Fonctionnalités :
 - Détection automatique de l'URL backend (DuckDNS / localhost / IP)
 - Injection automatique du Bearer token JWT
 - Conversion `snake_case` ↔ `camelCase` transparente
@@ -400,7 +400,7 @@ Classe `ApiClient` avec ~350 méthodes. Fonctionnalités :
 - `PRAGMA synchronous = FULL` — Durabilité maximale
 - Checkpoint automatique toutes les 5 minutes
 
-### Schéma — 79 tables
+### Schéma — 86 tables
 
 #### Tables principales
 
@@ -492,7 +492,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 
 ## 7. API — Catalogue des routes
 
-> **Total : ~350+ routes API** réparties en 15 fichiers
+> **Total : ~428 routes API** réparties en 12 fichiers
 
 ### Authentification (`/api/auth/*`)
 
@@ -693,7 +693,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 - **Fonctionnalités** : Détection conflits d'affectation, vérification indisponibilités, passage auto au statut `confirmed`
 
 ### 🏖️ Module Congés
-- **Backend** : `leaveRoutes.js` (~1323 lignes)
+- **Backend** : `leaveRoutes.js` (~1346 lignes)
 - **Fonctionnalités** : Demandes de congé, workflow d'approbation, solde par employé, planning intégré, types de congé configurables
 
 ### 📎 Module Affaires
@@ -734,8 +734,8 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 - **Configuration stockée** : Google Client ID, Calendar ID, Maps API Key, adresse entreprise
 
 ### 📒 Module Annuaire
-- **Composants** : `AnnuairePanel` (~1100 lignes, 6 sous-composants)
-- **Backend** : `annuaireRoutes.js` (~914 lignes, 30 routes)
+- **Composants** : `AnnuairePanel` (~1112 lignes, 6 sous-composants)
+- **Backend** : `annuaireRoutes.js` (~1069 lignes, 29 routes)
 - **Tables** : `clients` (enrichie), `suppliers` (enrichie), `prestataires`, `annuaire_contacts`, 4 tables lookup (legal_structures, service_types, activity_sectors, contact_categories)
 - **Validation** : SIRET (algorithme de Luhn), TVA intracommunautaire (format FR+11), normalisation téléphone automatique
 - **Fonctionnalités** : Répertoire unifié clients/fournisseurs/prestataires, contacts multiples par entité, recherche globale, import CSV avec UPSERT, lookups éditables, code NAF
@@ -1157,21 +1157,22 @@ conversations → conversation_participants, messages
 
 | Métrique | Valeur |
 |----------|--------|
-| Tables DB | 80+ |
-| Routes API | ~380+ |
-| Composants React (desktop) | 82 |
+| Tables DB | 86 |
+| Routes API | ~428 |
+| Composants React (desktop) | 87 |
 | Composants React (mobile) | 16 |
-| Composants DisplayDashboard | 20 |
-| Total composants React | 118 |
+| Composants DisplayDashboard | 21 |
+| Composants UI réutilisables | 6 |
+| Total composants React | 130 |
 | Utilitaires | 13 |
-| Hooks custom | 6 |
-| Méthodes API client | ~350 |
-| Code splitting (lazy) | ~15 composants |
-| Stores IndexedDB | 12 |
-| Fichiers routes backend | 15 |
-| Lignes backend total | ~17 800 |
-| Lignes frontend composants | ~58 400 |
+| Hooks custom | 7 |
+| Méthodes API client | ~375 |
+| Code splitting (lazy) | ~24 composants |
+| Stores IndexedDB | 11 |
+| Fichiers routes backend | 12 |
+| Lignes backend total | ~20 170 |
+| Lignes frontend composants | ~60 900 |
 | Palettes de thème | 7 (défaut + 6 Flat Design) |
 | Variables CSS --theme-* | ~145 |
 | Migrations SQL | 17 |
-| Scripts utilitaires | 15 |
+| Scripts utilitaires | 17 |

@@ -160,16 +160,16 @@ eM@g/
 ├── vite.config.js          # Configuration Vite (proxy /api → :3003)
 ├── src/
 │   ├── main.jsx            # Point d'entrée React
-│   ├── App.jsx             # Composant racine (~1408 lignes)
-│   ├── components/         # 82 composants React desktop
-│   │   ├── DisplayDashboard/ # 20 composants affichage dynamique
+│   ├── App.jsx             # Composant racine (~1490 lignes)
+│   ├── components/         # 87 composants React desktop
+│   │   ├── DisplayDashboard/ # 21 composants affichage dynamique
 │   │   └── mobile/         # 16 composants mobile
-│   ├── hooks/              # 6 hooks custom
-│   └── utils/              # 13 utilitaires (API client ~1895 lignes, dates, import, etc.)
+│   ├── hooks/              # 7 hooks custom
+│   └── utils/              # 13 utilitaires (API client ~2006 lignes, dates, import, etc.)
 ├── server/
-│   ├── server.js           # Express (~2912 lignes)
-│   ├── database.js         # SQLite 80+ tables (~2825 lignes)
-│   ├── 15 fichiers routes  # ~17 800 lignes de routes API
+│   ├── server.js           # Express (~3330 lignes)
+│   ├── database.js         # SQLite 86 tables (~3198 lignes)
+│   ├── 12 fichiers routes  # ~13 642 lignes de routes API
 │   ├── emailService.js     # Service d'envoi d'emails (~383 lignes)
 │   └── migrations/         # 17 fichiers SQL
 ├── public/

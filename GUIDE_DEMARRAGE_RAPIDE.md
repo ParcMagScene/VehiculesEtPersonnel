@@ -61,8 +61,10 @@
 | Camions | 🚛 | Modèles de camions (chargement 3D) |
 | Communication | 📢 | Événements d'entreprise, notes internes, planning tâches |
 | Mailing | ✉️ | Templates, envoi groupé, historique campagnes |
+| Messagerie | 💬 | Conversations temps réel entre utilisateurs |
 | Annuaire | 📒 | Clients, fournisseurs, prestataires, contacts |
 | Dashboard Écrans | 📺 | Affichage dynamique : écrans, playlists, médias |
+| Congés | 🏖️ | Demandes, approbation, solde, planning intégré |
 | Stock | 📊 | Mouvements de stock, inventaire |
 | Commandes | 🛒 | Commandes fournisseurs |
 
@@ -247,6 +249,6 @@ Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès 
 
 ---
 
-**Version :** 4.0
-**Dernière mise à jour :** 2 mars 2026
+**Version :** 4.1
+**Dernière mise à jour :** 9 mars 2026
 © MagScene — Usage interne uniquement

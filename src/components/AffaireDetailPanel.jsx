@@ -1104,7 +1104,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               const statusInfo = TASK_STATUS_MAP[s.status] || TASK_STATUS_MAP.pending;
               return (
                 <div key={step.key} className={`task-step-item ${s.enabled ? 'enabled' : ''}`} style={s.enabled ? { borderLeftColor: step.color } : {}}>
-                  <div className="task-step-header" onClick={editable ? () => toggleTaskStep(step.key) : undefined} style={editable ? { cursor: 'pointer' } : {}}>
+                  <div className="task-step-header" onClick={() => toggleTaskStep(step.key)} style={{ cursor: 'pointer' }}>
                     <div className="task-step-check" style={s.enabled ? { background: step.color, borderColor: step.color } : {}}>
                       {s.enabled && <Check size={10} color="#fff" />}
                     </div>
@@ -1119,7 +1119,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                       <span className="task-step-date">{fmtDate(s.date)}{s.period ? ` · ${s.period === 'AM' ? 'Matin' : 'Après-midi'}` : ''}</span>
                     )}
                   </div>
-                  {s.enabled && editable && (
+                  {s.enabled && (
                     <div className="task-step-fields">
                       <div className="tsf-row">
                         <label>Date</label>
@@ -1147,7 +1147,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             })}
 
             {/* Bouton Enregistrer si des changements existent */}
-            {editable && hasTaskChanges && (
+            {hasTaskChanges && (
               <div className="task-form-actions">
                 <button className="section-action-btn" onClick={loadAffaireTasks}>Annuler</button>
                 <button className="section-action-btn primary" onClick={handleSaveTaskSteps} disabled={savingTasks}>

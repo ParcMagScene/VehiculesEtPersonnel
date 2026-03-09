@@ -55,7 +55,39 @@
 .batch-progress-label {
   font-size: 0.78rem;
   color: var(--theme-text-secondary);
-  white-space: nowrap;
+/* Global type selector (multi-import) */
+.batch-global-type {
+  padding: 10px 14px;
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  border-radius: 10px;
+}
+.batch-global-type-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  margin-bottom: 8px;
+}
+.batch-global-type-hint {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--theme-text-muted);
+}
+.type-pills.global {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.type-pills.global button {
+  font-size: 0.82rem;
+  padding: 5px 14px;
+}
+.type-badge-mini {
+  font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 /* Summary bar */

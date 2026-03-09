@@ -1557,6 +1557,9 @@ class ApiClient {
   async rolloverTasks(fromDate) {
     return this.request('/communication/tasks/rollover', { method: 'POST', body: JSON.stringify({ fromDate }) });
   }
+  async clearCompletedTasks(date) {
+    return this.request('/communication/tasks/clear-completed', { method: 'POST', body: JSON.stringify({ date }) });
+  }
 
   // --- iCal Calendars ---
   async getIcalCalendars() {

@@ -3,7 +3,7 @@ import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, ChevronDown, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
   CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings,
-  Repeat, SkipForward, Link, RefreshCw, Palette, Truck
+  Repeat, SkipForward, Link, RefreshCw, Palette, Truck, CheckCheck
 } from 'lucide-react';
 import api from '../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../utils/affaireConstants';
@@ -409,6 +409,22 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           toast.success(`${res.rolled || 0} tâche(s) reportée(s)`);
           loadTasks(true);
         } catch { toast.error('Erreur report'); }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
+
+  const handleClearCompleted = async () => {
+    setConfirmDialog({
+      title: 'Effacer les tâches terminées',
+      message: `Supprimer toutes les tâches terminées du ${formatDateFr(selectedDate)} du planning et du dashboard ?`,
+      onConfirm: async () => {
+        try {
+          const res = await api.clearCompletedTasks(selectedDate);
+          toast.success(`${res.cleared || 0} tâche(s) terminée(s) effacée(s)`);
+          loadTasks(true);
+        } catch { toast.error('Erreur suppression'); }
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null),
@@ -2347,6 +2363,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="tp-toolbar-right">
           <button className="btn-toolbar-action" onClick={handleRollover} title="Reporter les tâches non terminées au lendemain">
             <SkipForward size={16} /> Reporter
+          </button>
+          <button className="btn-toolbar-action btn-clear-done" onClick={handleClearCompleted} title="Effacer les tâches terminées du planning et du dashboard" disabled={doneTasks === 0}>
+            <CheckCheck size={16} /> Effacer terminées
           </button>
           <button className="btn-toolbar-action" onClick={handleGenerateRecurring} title="Générer les tâches récurrentes pour ce jour">
             <Repeat size={16} /> Générer

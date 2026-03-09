@@ -1921,6 +1921,31 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // POST /api/communication/tasks/clear-completed
+  // Soft-delete toutes les tâches terminées d'une date donnée
+  app.post('/api/communication/tasks/clear-completed', authenticateToken, (req, res) => {
+    try {
+      const { date } = req.body;
+      if (!date) return res.status(400).json({ error: 'Date requise' });
+      const result = db.prepare(`
+        UPDATE task_assignments
+        SET deleted_at = datetime('now'), modified_by = ?, modified_at = datetime('now')
+        WHERE date = ? AND status = 'done' AND deleted_at IS NULL
+      `).run(req.user.id, date);
+      // Aussi nettoyer display_completed_events associés
+      db.prepare(`
+        DELETE FROM display_completed_events
+        WHERE event_id IN (
+          SELECT id FROM task_assignments WHERE date = ? AND status = 'done'
+        )
+      `).run(date);
+      res.json({ cleared: result.changes });
+    } catch (error) {
+      logger.error('POST /api/communication/tasks/clear-completed error:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
   // POST /api/communication/tasks/rollover
   // Reporter les tâches non terminées au lendemain
   app.post('/api/communication/tasks/rollover', authenticateToken, (req, res) => {
@@ -2178,11 +2203,13 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
     d.setDate(d.getDate() + 1);
     const nextDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-    // Tâches pending/in_progress du jour qui ne sont pas des RDV/événements (exclure les soft-deleted)
+    // Tâches pending/in_progress du jour qui ne sont pas des RDV/événements
+    // Exclure les soft-deleted ET les tâches récurrentes (elles seront re-générées)
     const pending = db.prepare(`
       SELECT * FROM task_assignments
       WHERE date = ? AND status IN ('pending', 'in_progress')
         AND section NOT IN ('rdv', 'evenements')
+        AND source_type != 'recurring'
         AND deleted_at IS NULL
     `).all(fromDate);
 
@@ -2343,6 +2370,7 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         SELECT DISTINCT date FROM task_assignments
         WHERE date < ? AND status IN ('pending', 'in_progress')
           AND section NOT IN ('rdv', 'evenements')
+          AND source_type != 'recurring'
           AND deleted_at IS NULL
         ORDER BY date ASC
       `).all(todayStr).map(r => r.date);
@@ -2352,11 +2380,12 @@ export function setupCommunicationRoutes(app, authenticateToken, requireAdmin) {
         "UPDATE task_assignments SET deleted_at = datetime('now'), notes = COALESCE(notes, '') || ' [reportée]' WHERE id = ?"
       );
       for (const pastDate of pendingDays) {
-        // Reporter directement vers aujourd'hui (pas jour par jour) — exclure les soft-deleted
+        // Reporter directement vers aujourd'hui (pas jour par jour) — exclure les soft-deleted et les récurrentes
         const pending = db.prepare(`
           SELECT * FROM task_assignments
           WHERE date = ? AND status IN ('pending', 'in_progress')
             AND section NOT IN ('rdv', 'evenements')
+            AND source_type != 'recurring'
             AND deleted_at IS NULL
         `).all(pastDate);
 

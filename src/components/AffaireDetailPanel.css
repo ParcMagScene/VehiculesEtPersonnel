@@ -517,7 +517,6 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  background: rgba(255, 255, 255, 0.2) !important;
   backdrop-filter: blur(4px);
 }
 
@@ -635,7 +634,6 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  background: rgba(255, 255, 255, 0.2) !important;
   backdrop-filter: blur(4px);
 }
 

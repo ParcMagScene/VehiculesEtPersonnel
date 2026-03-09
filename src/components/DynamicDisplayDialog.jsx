@@ -16,10 +16,10 @@ const EVENT_TYPES = {
 };
 
 const EVENT_CATEGORIES = {
-  vente:        { label: 'Vente',        color: '#10b981' },
-  location:     { label: 'Location',     color: '#3b82f6' },
-  prestation:   { label: 'Prestation',   color: '#f59e0b' },
-  installation: { label: 'Installation', color: '#8b5cf6' },
+  vente:        { label: 'Vente',        color: '#8b5cf6' },
+  location:     { label: 'Location',     color: '#f59e0b' },
+  prestation:   { label: 'Prestation',   color: '#3b82f6' },
+  installation: { label: 'Installation', color: '#10b981' },
 };
 
 // ═══ Composant Principal ═══

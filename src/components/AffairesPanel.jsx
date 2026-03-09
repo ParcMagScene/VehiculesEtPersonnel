@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare } from 'lucide-react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare, PackagePlus } from 'lucide-react';
 import api from '../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -10,8 +10,6 @@ import MonthSelector from './MonthSelector';
 import WeekSelector from './WeekSelector';
 import './AffairesPanel.css';
 
-const BLImportModal = lazy(() => import('./BLImportModal'));
-const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));
 
@@ -88,9 +86,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const clickTimerRef = useRef(null);
 
   // BL Import modal
-  const [showBLImport, setShowBLImport] = useState(false);
-  const [showBLImportLocPresta, setShowBLImportLocPresta] = useState(false);
-  const [blImportAffaireId, setBlImportAffaireId] = useState(null);
   const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
   const [showMultiImport, setShowMultiImport] = useState(false);
 
@@ -913,25 +908,15 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           <div className="affaires-tb-divider" />
 
-          {/* Import BL — dynamique selon le filtre type actif */}
-          {(!filterType || filterType === 'Vente' || filterType === 'Installation') && (
-            <button
-              className="affaires-tb-bl-import-btn"
-              onClick={() => { setBlImportAffaireId(null); setShowBLImport(true); }}
-              title="Importer un BL Vente / Installation"
-            >
-              <FileText size={14} /> BL Vente
-            </button>
-          )}
-          {(!filterType || filterType === 'Location' || filterType === 'Prestation') && (
-            <button
-              className="affaires-tb-bl-import-btn loc-presta"
-              onClick={() => { setBlImportAffaireId(null); setShowBLImportLocPresta(true); }}
-              title="Importer un Bon de Préparation (Location / Prestation)"
-            >
-              <FileText size={14} /> BP Loc/Presta
-            </button>
-          )}
+          {/* Import BL/BP unifié */}
+          <button
+            className="affaires-tb-bl-import-btn multi-import"
+            onClick={() => setShowMultiImport(true)}
+            title="Importer un ou plusieurs BL / BP"
+            style={{ gap: 4 }}
+          >
+            <PackagePlus size={14} /> Import BL/BP
+          </button>
           <button
             className="affaires-tb-bl-import-btn"
             onClick={() => setShowBatchAnalysis(true)}
@@ -939,14 +924,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             style={{ gap: 4 }}
           >
             <BarChart2 size={14} /> Analyse batch
-          </button>
-          <button
-            className="affaires-tb-bl-import-btn multi-import"
-            onClick={() => setShowMultiImport(true)}
-            title="Importer plusieurs BL/BP d'un seul coup"
-            style={{ gap: 4 }}
-          >
-            <FileText size={14} /> Import multiple
           </button>
 
           <div className="affaires-tb-divider" />
@@ -1198,28 +1175,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           onClose={() => setShowWeekSelector(false)}
           reservations={reservations}
         />
-      )}
-
-      {/* BL Import Modal */}
-      {showBLImport && (
-        <Suspense fallback={null}>
-          <BLImportModal
-            onClose={() => { setShowBLImport(false); setBlImportAffaireId(null); }}
-            onImported={() => { setShowBLImport(false); setBlImportAffaireId(null); handleRefresh(); }}
-            defaultAffaireId={blImportAffaireId}
-          />
-        </Suspense>
-      )}
-
-      {/* BL Import Loc/Presta Modal */}
-      {showBLImportLocPresta && (
-        <Suspense fallback={null}>
-          <BLImportLocPrestaModal
-            onClose={() => { setShowBLImportLocPresta(false); setBlImportAffaireId(null); }}
-            onImported={() => { setShowBLImportLocPresta(false); setBlImportAffaireId(null); handleRefresh(); }}
-            defaultAffaireId={blImportAffaireId}
-          />
-        </Suspense>
       )}
 
       {/* Batch Analysis Modal */}

@@ -1,15 +1,16 @@
 /**
- * BLMultiImportModal — Import multiple de BL et BP
- * Drop multiple PDFs, parse them all, review, then batch import
- * Creates new affaires or updates existing ones
+ * BLMultiImportModal — Import unifié BL / BP (un ou plusieurs)
+ * Drop one or many PDFs, parse them, review with full detail, then batch import.
+ * Creates new affaires or updates existing ones.
  */
 import React, { useState, useCallback, useRef } from 'react';
 import {
   FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase,
-  Trash2, Loader, Tag, ChevronDown, ChevronRight, PackagePlus
+  Trash2, Loader, Tag, ChevronDown, ChevronRight, PackagePlus,
+  Eye, EyeOff, Layers, Package
 } from 'lucide-react';
 import api from '../utils/api';
-import { extractTextFromPDF, smartParse, getDocTypeLabel } from '../utils/pdfParser';
+import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../utils/pdfParser';
 import { AFFAIRE_TYPES } from '../utils/affaireConstants';
 import { useToast } from '../hooks/useToast';
 import './BLMultiImportModal.css';
@@ -28,11 +29,36 @@ const STATUS_ICONS = {
   error: <AlertTriangle size={14} style={{ color: '#ef4444' }} />,
 };
 
+const FIELD_DEFS = [
+  { key: 'numero', label: 'N° Affaire' },
+  { key: 'client', label: 'Client' },
+  { key: 'date', label: 'Date' },
+  { key: 'nomAffaire', label: 'Nom / Objet' },
+  { key: 'interlocuteur', label: 'Interlocuteur' },
+  { key: 'adresse', label: 'Adresse' },
+  { key: 'devis', label: 'Devis' },
+  { key: 'tel', label: 'Téléphone' },
+];
+
+const CONF_COLORS = { high: '#10b981', medium: '#f59e0b', low: '#ef4444' };
+const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
+
+const SECTION_COLORS = {
+  SONORISATION: { bg: 'rgba(99, 102, 241, 0.10)', border: 'rgba(99, 102, 241, 0.3)', text: '#818cf8', icon: '🔊' },
+  LUMIERE: { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '💡' },
+  'REGIE/PLATEAU': { bg: 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399', icon: '🎬' },
+  STRUCTURE: { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '🏗️' },
+  VIDEO: { bg: 'rgba(139, 92, 246, 0.10)', border: 'rgba(139, 92, 246, 0.3)', text: '#a78bfa', icon: '📹' },
+  DIVERS: { bg: 'rgba(148, 163, 184, 0.10)', border: 'rgba(148, 163, 184, 0.3)', text: 'var(--theme-text-muted)', icon: '📦' },
+};
+const getSecColor = (name) => SECTION_COLORS[name] || SECTION_COLORS.DIVERS;
+
 export default function BLMultiImportModal({ onClose, onImported }) {
   const toast = useToast();
   const fileInputRef = useRef(null);
 
-  const [items, setItems] = useState([]); // { file, status, parsedData, rawText, docType, affaireId, affaireType, error, expanded }
+  // items: { file, status, parsedData, rawText, docType, affaireId, affaireType, editedFields, error, expanded, showRaw, showArticles, expandedSections }
+  const [items, setItems] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -51,7 +77,6 @@ export default function BLMultiImportModal({ onClose, onImported }) {
   }, []);
 
   const addFiles = async (newFiles) => {
-    // Filter duplicates
     const existingNames = new Set(items.map(it => it.file.name));
     const filesToAdd = newFiles.filter(f => !existingNames.has(f.name));
     if (filesToAdd.length === 0) {
@@ -59,7 +84,6 @@ export default function BLMultiImportModal({ onClose, onImported }) {
       return;
     }
 
-    // Add items with pending status
     const newItems = filesToAdd.map(f => ({
       file: f,
       status: 'pending',
@@ -68,14 +92,17 @@ export default function BLMultiImportModal({ onClose, onImported }) {
       docType: null,
       affaireId: '',
       affaireType: '',
+      editedFields: {},
       error: null,
       expanded: false,
+      showRaw: false,
+      showArticles: false,
+      expandedSections: {},
     }));
 
     const allItems = [...items, ...newItems];
     setItems(allItems);
 
-    // Parse each new file
     setParsing(true);
     setProgress({ current: 0, total: filesToAdd.length });
 
@@ -90,12 +117,14 @@ export default function BLMultiImportModal({ onClose, onImported }) {
         item.docType = parsed.docType;
         item.affaireId = parsed.numero || '';
         item.affaireType = parsed.type || '';
+        // Auto-expand if single file
+        if (allItems.length === 1) item.expanded = true;
       } catch (err) {
         item.status = 'error';
         item.error = err.message;
       }
       setProgress({ current: i + 1, total: filesToAdd.length });
-      setItems([...allItems]); // Force re-render
+      setItems([...allItems]);
     }
 
     setParsing(false);
@@ -109,8 +138,36 @@ export default function BLMultiImportModal({ onClose, onImported }) {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, ...updates } : item));
   };
 
+  const updateField = (idx, key, value) => {
+    setItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item;
+      const ef = { ...item.editedFields, [key]: value };
+      const updates = { editedFields: ef };
+      if (key === 'numero') updates.affaireId = value;
+      return { ...item, ...updates };
+    }));
+  };
+
   const toggleExpand = (idx) => {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, expanded: !item.expanded } : item));
+  };
+
+  const toggleSection = (idx, secIdx) => {
+    setItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item;
+      return { ...item, expandedSections: { ...item.expandedSections, [secIdx]: !item.expandedSections[secIdx] } };
+    }));
+  };
+
+  const getVal = (item, key) => {
+    if (item.editedFields[key] !== undefined) return item.editedFields[key];
+    return item.parsedData?.[key] || '';
+  };
+
+  // getMergedData for an item
+  const getMergedData = (item) => {
+    if (!item.parsedData) return null;
+    return { ...item.parsedData, ...item.editedFields };
   };
 
   // Batch import
@@ -127,15 +184,15 @@ export default function BLMultiImportModal({ onClose, onImported }) {
     try {
       const formData = new FormData();
 
-      // Add all files
       const itemsMeta = [];
       validItems.forEach((item, i) => {
         formData.append('files', item.file);
+        const merged = getMergedData(item);
         itemsMeta.push({
           index: i,
           affaire_id: item.affaireId || null,
           affaire_type: item.affaireType || null,
-          parsed_data: item.parsedData,
+          parsed_data: merged,
           raw_text: item.rawText,
           status: 'validated',
         });
@@ -147,7 +204,7 @@ export default function BLMultiImportModal({ onClose, onImported }) {
       setImportResults(result);
 
       const s = result.summary;
-      let msg = `${s.imported} BL importé(s)`;
+      let msg = `${s.imported} BL/BP importé(s)`;
       if (s.created > 0) msg += `, ${s.created} affaire(s) créée(s)`;
       if (s.updated > 0) msg += `, ${s.updated} affaire(s) mise(s) à jour`;
       if (s.failed > 0) msg += ` — ${s.failed} erreur(s)`;
@@ -155,7 +212,7 @@ export default function BLMultiImportModal({ onClose, onImported }) {
 
       if (onImported) onImported();
     } catch (err) {
-      toast.error('Erreur import batch : ' + err.message);
+      toast.error('Erreur import : ' + err.message);
     } finally {
       setImporting(false);
     }
@@ -164,13 +221,14 @@ export default function BLMultiImportModal({ onClose, onImported }) {
   const parsedCount = items.filter(it => it.status === 'parsed').length;
   const errorCount = items.filter(it => it.status === 'error').length;
   const uniqueAffaires = new Set(items.filter(it => it.affaireId).map(it => it.affaireId)).size;
+  const totalArticles = items.reduce((sum, it) => sum + (it.parsedData?.items?.length || 0), 0);
 
   return (
     <div className="bl-import-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bl-multi-import-modal" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
-          <h3><PackagePlus size={20} /> Import Multiple BL / BP</h3>
+          <h3><PackagePlus size={20} /> Import BL / BP</h3>
           <button className="modal-close" onClick={onClose}><X size={18} /></button>
         </div>
 
@@ -188,10 +246,10 @@ export default function BLMultiImportModal({ onClose, onImported }) {
             <p className="drop-text">
               {items.length > 0
                 ? <span>Ajouter d'autres PDFs</span>
-                : <span>Glissez plusieurs PDF ici ou <strong>cliquez pour sélectionner</strong></span>
+                : <span>Glissez un ou plusieurs PDF ici ou <strong>cliquez pour sélectionner</strong></span>
               }
             </p>
-            {items.length === 0 && <p className="drop-hint">PDF uniquement — 20 Mo max par fichier — Jusqu'à 50 fichiers</p>}
+            {items.length === 0 && <p className="drop-hint">BL Vente, Bons de Préparation, BL Location… — PDF uniquement — 20 Mo max</p>}
             <input
               ref={fileInputRef}
               type="file"
@@ -223,6 +281,7 @@ export default function BLMultiImportModal({ onClose, onImported }) {
               {parsedCount > 0 && <span className="badge success"><CheckCircle size={12} /> {parsedCount} analysé{parsedCount > 1 ? 's' : ''}</span>}
               {errorCount > 0 && <span className="badge error"><AlertTriangle size={12} /> {errorCount} erreur{errorCount > 1 ? 's' : ''}</span>}
               {uniqueAffaires > 0 && <span className="badge info"><Briefcase size={12} /> {uniqueAffaires} affaire{uniqueAffaires > 1 ? 's' : ''}</span>}
+              {totalArticles > 0 && <span className="badge info"><Package size={12} /> {totalArticles} article{totalArticles > 1 ? 's' : ''}</span>}
             </div>
           )}
 
@@ -257,7 +316,7 @@ export default function BLMultiImportModal({ onClose, onImported }) {
                       <span className="batch-file-size">{formatFileSize(item.file.size)}</span>
                     </div>
                     {item.docType && (
-                      <span className={`doc-type-badge ${['bon_livraison','bl_vente','bon_preparation'].includes(item.docType) ? 'success' : 'warning'}`}>
+                      <span className={`doc-type-badge ${[DOC_TYPES.BON_LIVRAISON, DOC_TYPES.BL_VENTE, DOC_TYPES.BON_PREPARATION].includes(item.docType) ? 'success' : 'warning'}`}>
                         {getDocTypeLabel(item.docType)}
                       </span>
                     )}
@@ -280,16 +339,16 @@ export default function BLMultiImportModal({ onClose, onImported }) {
                     </button>
                   </div>
 
-                  {/* Expanded details */}
+                  {/* ─── Expanded details ─── */}
                   {item.expanded && item.parsedData && (
                     <div className="batch-file-details">
-                      {/* Editable affaire ID + type */}
+                      {/* Affaire ID + Type */}
                       <div className="detail-row">
                         <label><Briefcase size={13} /> Affaire</label>
                         <input
                           type="text"
                           value={item.affaireId}
-                          onChange={e => updateItem(idx, { affaireId: e.target.value })}
+                          onChange={e => updateItem(idx, { affaireId: e.target.value, editedFields: { ...item.editedFields, numero: e.target.value } })}
                           placeholder="AF32844..."
                           onClick={e => e.stopPropagation()}
                         />
@@ -310,19 +369,137 @@ export default function BLMultiImportModal({ onClose, onImported }) {
                           ))}
                         </div>
                       </div>
-                      {/* Parsed fields summary */}
-                      <div className="detail-fields">
-                        {item.parsedData.client && <div><strong>Client :</strong> {item.parsedData.client}</div>}
-                        {item.parsedData.date && <div><strong>Date :</strong> {item.parsedData.date}</div>}
-                        {item.parsedData.nomAffaire && <div><strong>Objet :</strong> {item.parsedData.nomAffaire}</div>}
-                        {item.parsedData.adresse && <div><strong>Adresse :</strong> {item.parsedData.adresse}</div>}
-                        {item.parsedData.items?.length > 0 && (
-                          <div><strong>Articles :</strong> {item.parsedData.items.length} article(s)</div>
-                        )}
-                        {item.parsedData.sections?.length > 0 && (
-                          <div><strong>Sections :</strong> {item.parsedData.sections.map(s => s.name).join(', ')}</div>
-                        )}
+
+                      {/* ─── Full field grid with confidence ─── */}
+                      <div className="detail-fields-grid">
+                        <div className="detail-fields-header">
+                          <CheckCircle size={13} style={{ color: '#10b981' }} />
+                          <span>Données extraites</span>
+                          <span className="detail-fields-meta">
+                            {item.parsedData.fieldsFound}/{item.parsedData.fieldsTotal} champs • {item.parsedData.confidence}%
+                          </span>
+                        </div>
+                        {FIELD_DEFS.map(field => {
+                          const val = getVal(item, field.key);
+                          const fc = item.parsedData._fieldConfidence || {};
+                          const conf = fc[field.key];
+                          const isEdited = item.editedFields[field.key] !== undefined;
+                          return (
+                            <div key={field.key} className="detail-parsed-field">
+                              <span
+                                className="conf-dot"
+                                title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
+                                style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)' }}
+                              >●</span>
+                              <span className="field-label">{field.label}</span>
+                              <input
+                                type="text"
+                                value={val}
+                                onChange={e => updateField(idx, field.key, e.target.value)}
+                                onClick={e => e.stopPropagation()}
+                                placeholder={`${field.label} non détecté`}
+                                className={`field-input ${isEdited ? 'edited' : ''} ${!val ? 'empty' : ''}`}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
+
+                      {/* ─── Sections (for BP documents) ─── */}
+                      {item.parsedData.sections && item.parsedData.sections.length > 0 && (
+                        <div className="detail-sections">
+                          <div className="detail-sections-title">
+                            <Layers size={13} />
+                            Sections ({item.parsedData.sections.length})
+                            <span className="detail-sections-total">{item.parsedData.items?.length || 0} article(s)</span>
+                          </div>
+                          {item.parsedData.sections.map((sec, sIdx) => {
+                            const sc = getSecColor(sec.name);
+                            const isOpen = item.expandedSections[sIdx];
+                            return (
+                              <div key={sIdx} className="detail-section" style={{ '--sec-bg': sc.bg, '--sec-border': sc.border, '--sec-text': sc.text }}>
+                                <div className="detail-section-header" onClick={(e) => { e.stopPropagation(); toggleSection(idx, sIdx); }}>
+                                  <span>{sc.icon}</span>
+                                  <span className="detail-section-name">{sec.name}</span>
+                                  <span className="detail-section-count">{sec.items?.length || 0} art.</span>
+                                  {sec.dateDebut && <span className="detail-section-dates">{sec.dateDebut} → {sec.dateFin}</span>}
+                                  <span className={`detail-section-chevron ${isOpen ? 'open' : ''}`}>▸</span>
+                                </div>
+                                {isOpen && sec.items && sec.items.length > 0 && (
+                                  <div className="detail-section-items">
+                                    {sec.items.slice(0, 25).map((si, siIdx) => (
+                                      <div key={siIdx} className="detail-section-item-row">
+                                        <span className="item-ref">{si.reference || '—'}</span>
+                                        <span className="item-desc">{si.description || '—'}</span>
+                                        <span className="item-qty">{si.quantity || 0}</span>
+                                      </div>
+                                    ))}
+                                    {sec.items.length > 25 && (
+                                      <div className="detail-section-more">... +{sec.items.length - 25} autre(s)</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* ─── Articles (flat, for non-section docs) ─── */}
+                      {(!item.parsedData.sections || item.parsedData.sections.length === 0) && item.parsedData.items && item.parsedData.items.length > 0 && (
+                        <div className="detail-articles">
+                          <button
+                            type="button"
+                            className="detail-articles-toggle"
+                            onClick={(e) => { e.stopPropagation(); updateItem(idx, { showArticles: !item.showArticles }); }}
+                          >
+                            <Package size={13} />
+                            Articles ({item.parsedData.items.length})
+                            {item.showArticles ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                          </button>
+                          {item.showArticles && (
+                            <div className="detail-articles-list">
+                              {item.parsedData.items.slice(0, 30).map((art, aIdx) => (
+                                <div key={aIdx} className="detail-article-row">
+                                  <span className="item-qty">{art.quantity || art.qte || '1'}</span>
+                                  <span className="item-desc">
+                                    {art.description || art.designation || art.label || '—'}
+                                    {art.code && <span className="item-code">({art.code})</span>}
+                                  </span>
+                                  {(art.reference || art.section) && <span className="item-ref-small">{art.reference || art.section}</span>}
+                                  {art.fournisseur && <span className="item-supplier">{art.fournisseur}</span>}
+                                </div>
+                              ))}
+                              {item.parsedData.items.length > 30 && (
+                                <div className="detail-section-more">... +{item.parsedData.items.length - 30} autre(s)</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ─── Fournisseurs ─── */}
+                      {item.parsedData.fournisseurs && item.parsedData.fournisseurs.length > 0 && (
+                        <div className="detail-fournisseurs">
+                          <span className="detail-fourn-label">🏭 Fournisseurs :</span>
+                          {item.parsedData.fournisseurs.map((f, fi) => (
+                            <span key={fi} className="detail-fourn-tag">{f}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* ─── Raw text toggle ─── */}
+                      <button
+                        type="button"
+                        className="detail-raw-toggle"
+                        onClick={(e) => { e.stopPropagation(); updateItem(idx, { showRaw: !item.showRaw }); }}
+                      >
+                        {item.showRaw ? <EyeOff size={13} /> : <Eye size={13} />}
+                        {item.showRaw ? 'Masquer texte brut' : 'Voir texte brut'}
+                      </button>
+                      {item.showRaw && (
+                        <div className="detail-raw-text">{item.rawText}</div>
+                      )}
                     </div>
                   )}
 
@@ -358,7 +535,7 @@ export default function BLMultiImportModal({ onClose, onImported }) {
                 disabled={parsedCount === 0 || importing}
               >
                 <PackagePlus size={15} />
-                {importing ? `Import en cours...` : `Importer ${parsedCount} BL/BP`}
+                {importing ? 'Import en cours...' : `Importer ${parsedCount} BL/BP`}
               </button>
             )}
           </div>

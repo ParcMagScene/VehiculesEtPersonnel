@@ -1406,6 +1406,20 @@ class ApiClient {
   async deleteBLImport(id) {
     return this.request(`/communication/bl-imports/${id}`, { method: 'DELETE' });
   }
+  async uploadBLImportBatch(formData) {
+    const headers = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    const response = await fetch(`${API_URL}/communication/bl-imports/batch`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Erreur import batch');
+    }
+    return response.json();
+  }
 
   // --- Articles BP (liaison matériel) ---
   async getBPItems(params = {}) {

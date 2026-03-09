@@ -13,6 +13,7 @@ import './AffairesPanel.css';
 const BLImportModal = lazy(() => import('./BLImportModal'));
 const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
+const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
@@ -91,6 +92,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const [showBLImportLocPresta, setShowBLImportLocPresta] = useState(false);
   const [blImportAffaireId, setBlImportAffaireId] = useState(null);
   const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
+  const [showMultiImport, setShowMultiImport] = useState(false);
 
   // Timeline / frise chronologique
   const timelineRef = useRef(null);
@@ -938,6 +940,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           >
             <BarChart2 size={14} /> Analyse batch
           </button>
+          <button
+            className="affaires-tb-bl-import-btn multi-import"
+            onClick={() => setShowMultiImport(true)}
+            title="Importer plusieurs BL/BP d'un seul coup"
+            style={{ gap: 4 }}
+          >
+            <FileText size={14} /> Import multiple
+          </button>
 
           <div className="affaires-tb-divider" />
 
@@ -1216,6 +1226,16 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       {showBatchAnalysis && (
         <Suspense fallback={null}>
           <BLBatchAnalysis onClose={() => setShowBatchAnalysis(false)} />
+        </Suspense>
+      )}
+
+      {/* Multi Import Modal */}
+      {showMultiImport && (
+        <Suspense fallback={null}>
+          <BLMultiImportModal
+            onClose={() => setShowMultiImport(false)}
+            onImported={() => { setShowMultiImport(false); handleRefresh(); }}
+          />
         </Suspense>
       )}
     </div>

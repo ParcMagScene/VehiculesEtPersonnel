@@ -194,6 +194,7 @@
 
 .tem-affaire-picker {
   position: relative;
+  z-index: 10;
 }
 
 .tem-affaire-search-wrap {
@@ -233,8 +234,8 @@
   background: var(--theme-bg-primary);
   border: 1px solid var(--theme-border-primary);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
   padding: 4px;
 }
 
@@ -253,7 +254,7 @@
   padding: 0.4rem 0.5rem;
   border: none;
   border-radius: 6px;
-  background: transparent;
+  background: var(--theme-bg-primary);
   color: var(--theme-text-primary);
   font-size: 0.82rem;
   font-family: inherit;

@@ -1,0 +1,710 @@
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import db from './database.js';
+import { alertAccessRequest, initEmailTransporter, getTransporter } from './emailService.js';
+import logger from './logger.js';
+import { getAllCacheStats, ALL_CACHES } from './cache.js';
+
+export function setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS }) {
+
+// Réinitialiser le mot de passe d'un utilisateur
+app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+    stmt.run(passwordHash, userId);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
+// Changer son propre mot de passe
+app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+    const user = stmt.get(req.user.id);
+    
+    if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) {
+      return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+    }
+    
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const updateStmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+    updateStmt.run(passwordHash, req.user.id);
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
+// ============ DEMANDES D'ACCÈS ============
+
+// Créer une demande d'accès (ou auto-approuver si email déjà autorisé)
+app.post('/api/access-requests', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    
+    if (!email || !name) {
+      return res.status(400).json({ error: 'Email et nom requis' });
+    }
+
+    // Vérifier si l'email existe déjà en tant qu'utilisateur
+    const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (existingUser) {
+      return res.status(400).json({ error: 'Cet email est déjà enregistré. Connectez-vous directement.' });
+    }
+
+    // Vérifier si l'email est déjà autorisé par un admin
+    const authorizedEmail = db.prepare(
+      'SELECT * FROM authorized_emails WHERE email = ? AND status = ?'
+    ).get(email, 'pending');
+
+    if (authorizedEmail) {
+      // Email déjà autorisé → l'utilisateur peut créer son mot de passe directement
+      return res.json({ 
+        success: true,
+        autoApproved: true,
+        message: 'Votre email est déjà autorisé ! Vous pouvez créer votre mot de passe.'
+      });
+    }
+
+    // Vérifier si une demande est déjà en cours
+    const existingRequest = db.prepare(
+      'SELECT * FROM access_requests WHERE email = ? AND status = ?'
+    ).get(email, 'pending');
+    
+    if (existingRequest) {
+      return res.status(400).json({ error: 'Une demande est déjà en cours pour cet email' });
+    }
+
+    // Créer la demande (email non autorisé → besoin approbation admin)
+    const stmt = db.prepare(`
+      INSERT INTO access_requests (email, name, status)
+      VALUES (?, ?, 'pending')
+    `);
+    
+    const result = stmt.run(email, name);
+    
+    // Alerte email aux admins
+    alertAccessRequest(db, { name, email }).catch(() => {});
+    
+    res.json({ 
+      success: true,
+      autoApproved: false,
+      message: 'Un email d\'activation vous sera envoyé après validation par un administrateur.',
+      id: result.lastInsertRowid 
+    });
+  } catch (error) {
+    logger.error('Erreur création demande d\'accès:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Vérifier si un email est autorisé (pour le lien direct de création de compte)
+app.post('/api/access-requests/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+    
+    // Vérifier si déjà utilisateur
+    const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existingUser) {
+      return res.json({ authorized: false, reason: 'already_registered' });
+    }
+    
+    // Vérifier si autorisé
+    const authorized = db.prepare(
+      'SELECT * FROM authorized_emails WHERE email = ? AND status = ?'
+    ).get(email, 'pending');
+    
+    // Récupérer le nom depuis la demande d'accès si elle existe
+    let name = null;
+    if (authorized) {
+      const request = db.prepare(
+        'SELECT name FROM access_requests WHERE email = ? ORDER BY created_at DESC LIMIT 1'
+      ).get(email);
+      name = request?.name || null;
+    }
+    
+    res.json({ authorized: !!authorized, name });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Lister les demandes d'accès (admin seulement)
+app.get('/api/access-requests', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const stmt = db.prepare(`
+      SELECT ar.*, u.name as reviewed_by_name
+      FROM access_requests ar
+      LEFT JOIN users u ON ar.reviewed_by = u.id
+      ORDER BY 
+        CASE ar.status 
+          WHEN 'pending' THEN 1 
+          WHEN 'approved' THEN 2 
+          WHEN 'rejected' THEN 3 
+        END,
+        ar.created_at DESC
+    `);
+    
+    const requests = stmt.all();
+    res.json(requests);
+  } catch (error) {
+    logger.error('Erreur récupération demandes:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Approuver/rejeter une demande (admin seulement)
+app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, is_admin } = req.body;
+    
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Status invalide' });
+    }
+
+    // Récupérer la demande
+    const request = db.prepare('SELECT * FROM access_requests WHERE id = ?').get(id);
+    if (!request) {
+      return res.status(404).json({ error: 'Demande non trouvée' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({ error: 'Cette demande a déjà été traitée' });
+    }
+
+    // Mettre à jour le statut
+    const updateStmt = db.prepare(`
+      UPDATE access_requests 
+      SET status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    
+    updateStmt.run(status, req.user.id, id);
+
+    // Si approuvée, créer l'email autorisé
+    if (status === 'approved') {
+      const authStmt = db.prepare(`
+        INSERT INTO authorized_emails (email, status, is_admin)
+        VALUES (?, 'pending', ?)
+        ON CONFLICT(email) DO UPDATE SET is_admin = excluded.is_admin
+      `);
+      
+      try {
+        authStmt.run(request.email, is_admin ? 1 : 0);
+        logger.info('✅ Email autorisé');
+      } catch (error) {
+        logger.error('Erreur ajout email autorisé:', error);
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Demande ${status === 'approved' ? 'approuvée' : 'rejetée'}`,
+      request: {
+        email: request.email,
+        name: request.name
+      }
+    });
+  } catch (error) {
+    logger.error('Erreur traitement demande:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Compter les demandes en attente (admin)
+app.get('/api/access-requests/count/pending', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM access_requests WHERE status = ?');
+    const result = stmt.get('pending');
+    res.json({ count: result.count });
+  } catch (error) {
+    logger.error('Erreur comptage demandes:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Compter les demandes en attente (interventions + réservations) pour badge admin
+app.get('/api/pending-requests-count', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const interventionStmt = db.prepare("SELECT COUNT(*) as count FROM maintenances WHERE status IN ('pending', 'reported')");
+    const interventionResult = interventionStmt.get();
+    
+    const reservationStmt = db.prepare("SELECT COUNT(*) as count FROM reservation_requests WHERE status = 'pending'");
+    const reservationResult = reservationStmt.get();
+    
+    res.json({
+      interventionRequests: interventionResult.count,
+      reservationRequests: reservationResult.count,
+      total: interventionResult.count + reservationResult.count
+    });
+  } catch (error) {
+    logger.error('Erreur comptage demandes:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer les demandes de réservation en attente (pour le popup)
+app.get('/api/reservation-requests/pending', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const stmt = db.prepare(`
+      SELECT rr.*, u.name as requester_name, v.name as vehicle_name, v.registration
+      FROM reservation_requests rr
+      LEFT JOIN users u ON rr.requested_by = u.id
+      LEFT JOIN vehicles v ON rr.vehicle_id = v.id
+      WHERE rr.status = 'pending'
+      ORDER BY rr.requested_at DESC
+    `);
+    const requests = stmt.all();
+    res.json(requests);
+  } catch (error) {
+    logger.error('Erreur récupération demandes:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ============ GESTION DES EMAILS AUTORISÉS (ADMIN) ============
+
+// Récupérer tous les emails autorisés
+app.get('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT * FROM authorized_emails ORDER BY created_at DESC');
+    const emails = stmt.all();
+    res.json(emails);
+  } catch (error) {
+    logger.error('Erreur récupération emails:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Ajouter un email autorisé (admin)
+app.post('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+    
+    // Vérifier si l'email existe déjà
+    const checkStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ?');
+    const existing = checkStmt.get(email);
+    
+    if (existing) {
+      return res.status(400).json({ error: 'Cet email est déjà autorisé' });
+    }
+    
+    const stmt = db.prepare('INSERT INTO authorized_emails (email, status) VALUES (?, ?)');
+    const result = stmt.run(email, 'pending');
+    
+    res.json({ id: result.lastInsertRowid, email, status: 'pending' });
+  } catch (error) {
+    logger.error('Erreur ajout email:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer un email autorisé (admin)
+app.delete('/api/authorized-emails/:id', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const stmt = db.prepare('DELETE FROM authorized_emails WHERE id = ?');
+    stmt.run(id);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Erreur suppression email:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ============ GESTION DES UTILISATEURS (ADMIN) ============
+
+// Récupérer les noms des utilisateurs (tous les utilisateurs authentifiés)
+app.get('/api/users/names', authenticateToken, (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT id, name, email, avatar FROM users ORDER BY name');
+    const users = stmt.all();
+    res.json(users);
+  } catch (error) {
+    logger.error('Erreur récupération noms utilisateurs:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer tous les utilisateurs (admin uniquement)
+app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const stmt = db.prepare('SELECT id, email, name, is_admin, avatar, permissions, created_at FROM users ORDER BY created_at DESC');
+    const users = stmt.all();
+    res.json(users.map(u => {
+      let perms = {};
+      try { perms = u.permissions ? JSON.parse(u.permissions) : {}; } catch { perms = {}; }
+      return {
+        ...u,
+        isAdmin: u.is_admin === 1,
+        permissions: perms,
+      };
+    }));
+  } catch (error) {
+    logger.error('Erreur récupération utilisateurs:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Mettre à jour un utilisateur (admin)
+app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isAdmin, newPassword, permissions } = req.body;
+    
+    if (isAdmin !== undefined) {
+      const stmt = db.prepare('UPDATE users SET is_admin = ? WHERE id = ?');
+      stmt.run(isAdmin ? 1 : 0, id);
+      
+      // Invalider toutes les sessions de cet utilisateur pour qu'il se reconnecte avec le nouveau statut
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      const result = deleteSessionsStmt.run(id);
+      logger.info(`🔄 Statut admin modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
+    }
+
+    if (permissions !== undefined) {
+      const permStr = typeof permissions === 'string' ? permissions : JSON.stringify(permissions);
+      db.prepare('UPDATE users SET permissions = ? WHERE id = ?').run(permStr, id);
+      // Invalider les sessions pour forcer un re-login avec les nouvelles permissions
+      db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(id);
+      logger.info(`🔐 Permissions modifiées pour user ${id}`);
+    }
+    
+    if (newPassword) {
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+      stmt.run(passwordHash, id);
+      
+      // Invalider toutes les sessions lors du changement de mot de passe
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      const result = deleteSessionsStmt.run(id);
+      logger.info(`🔑 Mot de passe modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
+    }
+    
+    res.json({ success: true, message: 'Utilisateur mis à jour. Les sessions actives ont été fermées.' });
+  } catch (error) {
+    logger.error('Erreur mise à jour utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Demander une réinitialisation de mot de passe (admin)
+app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Marquer le compte comme nécessitant une réinitialisation
+    const stmt = db.prepare('UPDATE users SET password_reset_required = 1 WHERE id = ?');
+    stmt.run(id);
+    
+    // Invalider toutes les sessions
+    const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    const result = deleteSessionsStmt.run(id);
+    
+    // Récupérer l'email pour le retour
+    const userStmt = db.prepare('SELECT email FROM users WHERE id = ?');
+    const user = userStmt.get(id);
+    
+    logger.info(`🔄 Réinitialisation demandée pour user ${id}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Réinitialisation demandée. L\'utilisateur devra définir un nouveau mot de passe.',
+      email: user?.email
+    });
+  } catch (error) {
+    logger.error('Erreur demande réinitialisation:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Vérifier si un compte nécessite une réinitialisation
+app.post('/api/auth/check-reset', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    const stmt = db.prepare('SELECT id, email, name, password_reset_required FROM users WHERE email = ?');
+    const user = stmt.get(email);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    res.json({ 
+      resetRequired: user.password_reset_required === 1,
+      user: { id: user.id, email: user.email, name: user.name }
+    });
+  } catch (error) {
+    logger.error('Erreur check reset:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Définir un nouveau mot de passe après réinitialisation
+// [AUDIT FIX CRIT-1] Exige un token OTP valide (envoyé par email) en plus de l'email
+app.post('/api/auth/set-new-password', async (req, res) => {
+  try {
+    const { email, newPassword, resetToken } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    }
+    
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    const user = stmt.get(email);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    if (user.password_reset_required !== 1) {
+      return res.status(400).json({ error: 'Aucune réinitialisation en attente pour ce compte' });
+    }
+
+    // [AUDIT FIX CRIT-1] Vérifier le token OTP
+    if (!resetToken) {
+      return res.status(400).json({ error: 'Code de vérification requis' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    if (!user.reset_token_hash || tokenHash !== user.reset_token_hash) {
+      return res.status(400).json({ error: 'Code de vérification invalide' });
+    }
+
+    // Vérifier l'expiration du token
+    if (user.reset_token_expires && new Date(user.reset_token_expires) < new Date()) {
+      // Nettoyer le token expiré
+      db.prepare('UPDATE users SET password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?').run(user.id);
+      return res.status(400).json({ error: 'Code de vérification expiré. Veuillez refaire une demande.' });
+    }
+    
+    // Mettre à jour le mot de passe et retirer le flag + token
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const updateStmt = db.prepare(`
+      UPDATE users 
+      SET password_hash = ?, password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL
+      WHERE id = ?
+    `);
+    updateStmt.run(passwordHash, user.id);
+    
+    // Supprimer toutes les anciennes sessions avant d'en créer une nouvelle
+    const deleteOldSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+    deleteOldSessionsStmt.run(user.id);
+    
+    // Créer un token pour connecter directement l'utilisateur
+    let resetPerms = {};
+    try { resetPerms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { resetPerms = {}; }
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, permissions: resetPerms },
+      JWT_SECRET,
+      { expiresIn: `${JWT_EXPIRY_DAYS}d` }
+    );
+    
+    // Enregistrer la session
+    const sessionHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
+    const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    const insertSessionStmt = db.prepare(`
+      INSERT INTO active_sessions (user_id, token_hash, expires_at)
+      VALUES (?, ?, ?)
+    `);
+    insertSessionStmt.run(user.id, sessionHash, expiresAt);
+    
+    logger.info('✅ Nouveau mot de passe défini');
+    
+    res.json({ 
+      success: true,
+      token,
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null },
+      message: 'Mot de passe défini avec succès'
+    });
+  } catch (error) {
+    logger.error('Erreur définition mot de passe:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer un utilisateur (admin)
+app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Empêcher la suppression de son propre compte
+    if (parseInt(id) === req.user.id) {
+      return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' });
+    }
+    
+    // Avant de supprimer l'utilisateur, réassigner toutes ses données à l'admin qui fait la suppression
+    const userId = parseInt(id);
+    const adminId = req.user.id;
+    
+    // Réassigner les enregistrements dans toutes les tables qui référencent l'utilisateur
+    const reassignQueries = [
+      'UPDATE access_requests SET reviewed_by = ? WHERE reviewed_by = ?',
+      'UPDATE vehicles SET created_by = ? WHERE created_by = ?',
+      'UPDATE vehicles SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE reservations SET created_by = ? WHERE created_by = ?',
+      'UPDATE reservations SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE clients SET created_by = ? WHERE created_by = ?',
+      'UPDATE clients SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE drivers SET created_by = ? WHERE created_by = ?',
+      'UPDATE drivers SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE locations SET created_by = ? WHERE created_by = ?',
+      'UPDATE locations SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE garages SET created_by = ? WHERE created_by = ?',
+      'UPDATE garages SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE maintenances SET reported_by = ? WHERE reported_by = ?',
+      'UPDATE maintenances SET created_by = ? WHERE created_by = ?',
+      'UPDATE maintenances SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE modification_history SET user_id = ? WHERE user_id = ?',
+      'UPDATE config SET modified_by = ? WHERE modified_by = ?',
+      'UPDATE reservation_requests SET requested_by = ? WHERE requested_by = ?',
+      'UPDATE reservation_requests SET reviewed_by = ? WHERE reviewed_by = ?'
+    ];
+    
+    // Exécuter toutes les mises à jour dans une transaction
+    const transaction = db.transaction(() => {
+      for (const query of reassignQueries) {
+        const stmt = db.prepare(query);
+        stmt.run(adminId, userId);
+      }
+      
+      // Supprimer les sessions actives de l'utilisateur
+      const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
+      deleteSessionsStmt.run(userId);
+      
+      // Enfin supprimer l'utilisateur
+      const deleteUserStmt = db.prepare('DELETE FROM users WHERE id = ?');
+      deleteUserStmt.run(userId);
+    });
+    
+    transaction();
+    
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Erreur suppression utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
+// ═══ CONFIGURATION EMAIL ═══
+
+// GET /api/email-config — Récupérer la config email (admin uniquement, masque le mot de passe)
+app.get('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const config = db.prepare('SELECT * FROM email_config WHERE id = 1').get();
+    if (config) {
+      // Masquer le mot de passe SMTP
+      config.smtp_pass = config.smtp_pass ? '••••••••' : '';
+    }
+    res.json(config || {});
+  } catch (error) {
+    logger.error('Erreur lecture config email:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// PUT /api/email-config — Mettre à jour la config email (admin uniquement)
+app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { enabled, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_pass, from_name,
+            alert_access_request, alert_reservation, alert_assignment, alert_overdue,
+            alert_leave, alert_sav, alert_maintenance } = req.body;
+    
+    // Si le mot de passe est masqué, ne pas le mettre à jour
+    const currentConfig = db.prepare('SELECT smtp_pass FROM email_config WHERE id = 1').get();
+    const finalPass = (smtp_pass && smtp_pass !== '••••••••') ? smtp_pass : (currentConfig?.smtp_pass || '');
+
+    db.prepare(`
+      UPDATE email_config SET
+        enabled = ?, smtp_host = ?, smtp_port = ?, smtp_secure = ?,
+        smtp_user = ?, smtp_pass = ?, from_name = ?,
+        alert_access_request = ?, alert_reservation = ?, alert_assignment = ?, alert_overdue = ?,
+        alert_leave = ?, alert_sav = ?, alert_maintenance = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = 1
+    `).run(
+      enabled ? 1 : 0, smtp_host || '', smtp_port || 587, smtp_secure ? 1 : 0,
+      smtp_user || '', finalPass, from_name || 'eM@g',
+      alert_access_request !== false ? 1 : 0, alert_reservation !== false ? 1 : 0,
+      alert_assignment !== false ? 1 : 0, alert_overdue !== false ? 1 : 0,
+      alert_leave !== false ? 1 : 0, alert_sav !== false ? 1 : 0, alert_maintenance !== false ? 1 : 0
+    );
+
+    // Réinitialiser le transporteur avec la nouvelle config
+    initEmailTransporter(db);
+
+    res.json({ success: true, message: 'Configuration email mise à jour' });
+  } catch (error) {
+    logger.error('Erreur mise à jour config email:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// POST /api/email-config/test — Envoyer un email de test
+app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const config = db.prepare('SELECT * FROM email_config WHERE id = 1').get();
+    if (!config || !config.smtp_host || !config.smtp_user) {
+      return res.status(400).json({ error: 'Configuration SMTP incomplète' });
+    }
+
+    const nodemailer = (await import('nodemailer')).default;
+    const testTransporter = nodemailer.createTransport({
+      host: config.smtp_host,
+      port: config.smtp_port || 587,
+      secure: config.smtp_secure === 1,
+      auth: { user: config.smtp_user, pass: config.smtp_pass },
+    });
+
+    await testTransporter.sendMail({
+      from: `"${config.from_name || 'eM@g'}" <${config.smtp_user}>`,
+      to: req.user.email,
+      subject: '[eM@g] Email de test',
+      html: '<div style="font-family:Arial;padding:20px;"><h2>✅ Configuration email fonctionnelle !</h2><p>Cet email confirme que la configuration SMTP est correcte.</p></div>',
+    });
+
+    res.json({ success: true, message: `Email de test envoyé à ${req.user.email}` });
+  } catch (error) {
+    logger.error('Erreur test email:', error);
+    res.status(500).json({ error: 'Erreur lors du test SMTP' });
+  }
+});
+
+// ─── Cache monitoring endpoint (admin only) ───
+app.get('/api/cache/stats', authenticateToken, requireAdmin, (req, res) => {
+  res.json(getAllCacheStats());
+});
+app.post('/api/cache/clear', authenticateToken, requireAdmin, (req, res) => {
+  const { name } = req.body || {};
+  if (name) {
+    const stats = getAllCacheStats();
+    const target = stats.find(s => s.name === name);
+    if (!target) return res.status(404).json({ error: `Cache '${name}' non trouvé` });
+    // Clear by name
+    const cache = ALL_CACHES.find(c => c.name === name);
+    if (cache) cache.clear();
+  } else {
+    ALL_CACHES.forEach(c => c.clear());
+  }
+  res.json({ success: true, message: name ? `Cache '${name}' vidé` : 'Tous les caches vidés' });
+});
+
+} // end setupAdminRoutes

@@ -10,6 +10,7 @@ import multer from 'multer';
 import db from './database.js';
 import logger from './logger.js';
 import { randomBytes } from 'node:crypto';
+import { uploadMedia } from './middleware/upload.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,38 +27,25 @@ const sneakyDir = join(__dirname, '..', 'public', 'display-sneaky');
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
 
-// ── Multer : stockage des médias ──────────────────────────────
-const mediaDir = join(__dirname, '..', 'public', 'display-media');
-if (!fs.existsSync(mediaDir)) fs.mkdirSync(mediaDir, { recursive: true });
+// ── Nettoyage titre tâche pour affichage TV (retire emojis, label section, numéro AF) ──
+const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u2700-\u27BF]/gu;
+const SECTION_LABEL_RE = /^(Pr[eé]paration|Chargement|D[eé]part|Enl[eè]vement|Retour|R[eé]cup[eé]ration|Installation|Livraison|Montage|D[eé]montage|Prioritaires?|Secondaires?|Courses?|Divers)\s*[—–\-:]?\s*/i;
 
-const mediaStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, mediaDir),
-  filename: (_req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = extname(file.originalname).toLowerCase();
-    // Sanitize original filename
-    const safeName = file.originalname
-      .replace(/[^a-zA-Z0-9._-]/g, '_')
-      .replace(/_{2,}/g, '_');
-    cb(null, `display-${unique}-${safeName}`);
-  },
-});
-
-const uploadMedia = multer({
-  storage: mediaStorage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max
-  fileFilter: (_req, file, cb) => {
-    const allowedMimes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-      'video/mp4', 'video/webm', 'video/ogg',
-    ];
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`Type MIME non autorisé : ${file.mimetype}`));
+function cleanTvTitle(t) {
+  let title = (t.google_event_title || t.title || '').replace(EMOJI_RE, '').trim();
+  title = title.replace(SECTION_LABEL_RE, '').trim();
+  const affNum = t.affaire_num || '';
+  if (affNum) {
+    const digits = affNum.replace(/^AF/i, '');
+    if (digits) {
+      const flexDigits = digits.split('').join('\\s*');
+      const pattern = new RegExp('\\bAF\\s*' + flexDigits + '\\b', 'gi');
+      title = title.replace(pattern, '');
     }
-  },
-});
+  }
+  title = title.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
+  return title || t.notes || '-';
+}
 
 // ── Multer : upload GIF icônes ────────────────────────────────
 const gifStorage = multer.diskStorage({
@@ -1442,13 +1430,14 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         id: String(t.id),
         time: t.time ? t.time.substring(0, 5) : '',
         period: t.period || '',
-        title: t.google_event_title || t.title || '',
+        title: cleanTvTitle(t),
         section: t.section || 'manual',
         sectionLabel: SECTION_LABELS[t.section] || t.section || 'Divers',
         status: t.status || 'pending',
         location: t.event_location || '',
         client: t.event_client || '',
-        description: t.affaire_num ? `Affaire ${t.affaire_num}` : (t.notes || ''),
+        notes: t.notes || '',
+        description: [t.affaire_num ? `Affaire ${t.affaire_num}` : '', t.notes || ''].filter(Boolean).join(' — ') || '',
         is_recurrent: 0,
       }));
 
@@ -1614,13 +1603,14 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         time: t.time ? t.time.substring(0, 5) : '',
         end_time: t.end_time ? t.end_time.substring(0, 5) : '',
         period: t.period || '',
-        title: t.google_event_title || t.title || '',
+        title: cleanTvTitle(t),
         section: t.section || 'manual',
         sectionLabel: SECTION_LABELS[t.section] || t.section || 'Divers',
         status: t.status || 'pending',
         location: t.event_location || '',
         client: t.event_client || '',
-        description: t.affaire_num ? `Affaire ${t.affaire_num}` : (t.notes || ''),
+        notes: t.notes || '',
+        description: [t.affaire_num ? `Affaire ${t.affaire_num}` : '', t.notes || ''].filter(Boolean).join(' — ') || '',
         is_recurrent: t.source_type === 'recurring' ? 1 : 0,
       }));
 

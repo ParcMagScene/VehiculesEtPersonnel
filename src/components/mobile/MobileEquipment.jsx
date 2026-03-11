@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
-const EquipmentPanel = lazy(() => import('../EquipmentPanel'));
+const EquipmentPanel = lazy(() => import('../equipment/EquipmentPanel'));
 
 function MobileEquipment({ onBack }) {
   return (

@@ -1,14 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
 // DisplayDashboardPanel — Panneau principal du module Dashboard
-// Sous-module de Communication → onglet « Dashboard Écrans »
+// Sous-module de Planning → onglet « Dashboard Écrans »
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
-import { Monitor, Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
+import { Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
 import './DisplayDashboardPanel.css';
 
 // Lazy sub-tabs
-const ScreensTab = lazy(() => import('./ScreensTab'));
 const AppearanceTab = lazy(() => import('./AppearanceTab'));
 const WelcomeMessagesTab = lazy(() => import('./WelcomeMessagesTab'));
 const ColorRulesTab = lazy(() => import('./ColorRulesTab'));
@@ -19,7 +18,6 @@ const TVPreviewPanel = lazy(() => import('./TVPreviewPanel'));
 const DashboardTasksSidebar = lazy(() => import('./DashboardTasksSidebar'));
 
 const CONFIG_TABS = [
-  { id: 'screens', label: 'Écrans', icon: Monitor },
   { id: 'appearance', label: 'Apparence', icon: Palette },
   { id: 'welcomeMessages', label: 'Messages TV', icon: MessageCircle },
   { id: 'colorRules', label: 'Couleurs', icon: Tag },
@@ -29,29 +27,41 @@ const CONFIG_TABS = [
 ];
 
 function DisplayDashboardPanel({ currentUser }) {
-  const [activeTab, setActiveTab] = useState('screens');
+  const [activeTab, setActiveTab] = useState('appearance');
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewOverrides, setPreviewOverrides] = useState({});
   const [previewWidth, setPreviewWidth] = useState(() => {
     const saved = localStorage.getItem('ddp-preview-width');
     return saved ? Number(saved) : 360;
   });
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('ddp-sidebar-width');
+    return saved ? Number(saved) : 280;
+  });
   const isDragging = useRef(false);
+  const draggingTarget = useRef(null); // 'preview' | 'sidebar'
   const bodyRef = useRef(null);
 
-  // Drag handler for the resizable divider
-  const handleDividerMouseDown = useCallback((e) => {
+  // Generic drag handler for resizable dividers
+  const handleDividerMouseDown = useCallback((target) => (e) => {
     e.preventDefault();
     isDragging.current = true;
+    draggingTarget.current = target;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
 
     const onMouseMove = (ev) => {
       if (!isDragging.current || !bodyRef.current) return;
       const rect = bodyRef.current.getBoundingClientRect();
-      const newWidth = Math.round(rect.right - ev.clientX);
-      const clamped = Math.max(200, Math.min(newWidth, rect.width - 300));
-      setPreviewWidth(clamped);
+      if (draggingTarget.current === 'preview') {
+        const newWidth = Math.round(rect.right - ev.clientX);
+        const clamped = Math.max(200, Math.min(newWidth, rect.width - 300));
+        setPreviewWidth(clamped);
+      } else if (draggingTarget.current === 'sidebar') {
+        const newWidth = Math.round(ev.clientX - rect.left);
+        const clamped = Math.max(200, Math.min(newWidth, 500));
+        setSidebarWidth(clamped);
+      }
     };
 
     const onMouseUp = () => {
@@ -60,7 +70,12 @@ function DisplayDashboardPanel({ currentUser }) {
       document.body.style.userSelect = '';
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
-      setPreviewWidth(w => { localStorage.setItem('ddp-preview-width', w); return w; });
+      if (draggingTarget.current === 'preview') {
+        setPreviewWidth(w => { localStorage.setItem('ddp-preview-width', w); return w; });
+      } else {
+        setSidebarWidth(w => { localStorage.setItem('ddp-sidebar-width', w); return w; });
+      }
+      draggingTarget.current = null;
     };
 
     document.addEventListener('mousemove', onMouseMove);
@@ -105,18 +120,18 @@ function DisplayDashboardPanel({ currentUser }) {
       <div className="display-body split" ref={bodyRef}>
       {/* Sidebar tâches du jour + Sonos */}
       <Suspense fallback={<div className="display-loading">Chargement…</div>}>
-        <DashboardTasksSidebar refreshKey={refreshKey} />
+        <DashboardTasksSidebar refreshKey={refreshKey} style={{ width: sidebarWidth }} />
       </Suspense>
+
+      {/* Divider sidebar ↔ config */}
+      <div
+        className="display-split-divider"
+        onMouseDown={handleDividerMouseDown('sidebar')}
+        title="Glisser pour redimensionner"
+      />
 
       <div className="display-tab-content">
         <Suspense fallback={<div className="display-loading">Chargement…</div>}>
-          {activeTab === 'screens' && (
-            <ScreensTab
-              currentUser={currentUser}
-              refreshKey={refreshKey}
-              onRefresh={handleRefresh}
-            />
-          )}
           {activeTab === 'appearance' && (
             <AppearanceTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
           )}
@@ -139,9 +154,10 @@ function DisplayDashboardPanel({ currentUser }) {
       </div>
 
         {/* Divider draggable */}
+        {/* Divider config ↔ aperçu TV */}
         <div
           className="display-split-divider"
-          onMouseDown={handleDividerMouseDown}
+          onMouseDown={handleDividerMouseDown('preview')}
           title="Glisser pour redimensionner"
         />
 

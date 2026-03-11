@@ -4,7 +4,7 @@ import {
   Calendar, ChevronDown, FileText, Send, Trash2, Filter, RefreshCw, X
 } from 'lucide-react';
 import api from '../../utils/api';
-import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaveConstants';
+import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import './MobileLeaves.css';
 
 // ─── Composant principal ────────────────────────────────

@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
-const OrdersPanel = lazy(() => import('../OrdersPanel'));
+const OrdersPanel = lazy(() => import('../orders/OrdersPanel'));
 
 function MobileOrders({ onBack }) {
   return (

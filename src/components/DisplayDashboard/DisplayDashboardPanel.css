@@ -2280,13 +2280,12 @@
    ═══════════════════════════════════════════════════════ */
 
 .dash-tasks-sidebar {
-  width: 280px;
-  min-width: 240px;
-  max-width: 360px;
+  min-width: 200px;
+  max-width: 500px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--theme-border);
+  border-right: none;
   background: var(--theme-bg-card);
   overflow: hidden;
 }
@@ -2654,6 +2653,17 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.dash-task-notes {
+  font-size: 0.62rem;
+  color: var(--theme-text-muted);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+  opacity: 0.85;
 }
 
 /* ═══════════════════════════════════════════════════════

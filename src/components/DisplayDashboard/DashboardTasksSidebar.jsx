@@ -38,7 +38,44 @@ const SECTION_ORDER = Object.keys(SECTIONS);
 // Lookup rapide type d'affaire par clé
 const AFFAIRE_TYPE_MAP = Object.fromEntries(AFFAIRE_TYPES.map(t => [t.value, t]));
 
-function DashboardTasksSidebar({ refreshKey }) {
+// ─── Nettoyage du titre de tâche (retire emojis, label de section, numéro AF) ───
+const SECTION_LABEL_RE = /^(Pr[eé]paration|Chargement|D[eé]part|Enl[eè]vement|Retour|R[eé]cup[eé]ration|Installation|Livraison|Montage|D[eé]montage|Prioritaires?|Secondaires?|Courses?|Divers)\s*[—–\-:]?\s*/i;
+const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u2700-\u27BF]/gu;
+
+function stripAfNum(text, task) {
+  const affNum = (task.affaire_num || task.affaireNum || '');
+  if (!affNum) return text;
+  const digits = affNum.replace(/^AF/i, '');
+  if (!digits) return text;
+  const flexDigits = digits.split('').join('\\s*');
+  return text.replace(new RegExp('\\bAF\\s*' + flexDigits + '\\b', 'gi'), '');
+}
+
+function cleanTaskDisplayTitle(task) {
+  const rawGev = (task.google_event_title || '').trim();
+  const rawTitle = (task.title || '').trim();
+
+  // 1. Si google_event_title existe → utiliser (nettoyé)
+  if (rawGev) {
+    let t = rawGev.replace(EMOJI_RE, '').trim();
+    t = t.replace(SECTION_LABEL_RE, '').trim();
+    t = stripAfNum(t, task);
+    t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
+    if (t) return t;
+  }
+
+  // 2. Sinon, utiliser le titre brut (retirer juste les emojis + AF, garder le label de section)
+  if (rawTitle) {
+    let t = rawTitle.replace(EMOJI_RE, '').trim();
+    t = stripAfNum(t, task);
+    t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
+    if (t) return t;
+  }
+
+  return task.notes || '-';
+}
+
+function DashboardTasksSidebar({ refreshKey, style }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState({});
@@ -218,7 +255,7 @@ function DashboardTasksSidebar({ refreshKey }) {
   }, [affairesMap]);
 
   return (
-    <div className="dash-tasks-sidebar">
+    <div className="dash-tasks-sidebar" style={style}>
       {/* ─── En-tête ─── */}
       <div className="dash-tasks-header">
         <ClipboardList size={16} />
@@ -319,7 +356,7 @@ function DashboardTasksSidebar({ refreshKey }) {
                                   <Briefcase size={8} /> {affBadge.num}
                                 </span>
                               )}
-                              <span className="dash-task-name">{task.title}</span>
+                              <span className="dash-task-name">{cleanTaskDisplayTitle(task)}</span>
                             </div>
                             <div className="dash-task-meta">
                               {task.time && (
@@ -329,6 +366,9 @@ function DashboardTasksSidebar({ refreshKey }) {
                                 <span className="dash-task-vehicle"><Truck size={9} /> {task.reservation_vehicle_name}</span>
                               )}
                             </div>
+                            {task.notes && (
+                              <div className="dash-task-notes">{task.notes}</div>
+                            )}
                           </div>
                         </div>
                       );

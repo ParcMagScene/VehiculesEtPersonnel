@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LogIn, UserPlus, Mail, Key } from 'lucide-react';
 import api, { getApiUrl } from '../../utils/api';
-import AccessRequestModal from '../AccessRequestModal';
+import AccessRequestModal from '../management/AccessRequestModal';
 import './MobileLogin.css';
 import { useToast } from '../../hooks/useToast';
 

@@ -59,11 +59,13 @@
 | Catalogue | 📦 | Équipements catalogue (familles, catégories) |
 | Équipements | 🏷️ | Matériel individualisé (UID, SAV, localisation) |
 | Camions | 🚛 | Modèles de camions (chargement 3D) |
-| Communication | 📢 | Événements d'entreprise, notes internes, planning tâches |
+| Communication | 📢 | Événements d'entreprise, notes internes, planning tâches avec affectation d'affaires, import BL lot |
+| Dashboard TV | 📺 | Affichage dynamique : écrans, playlists, Sonos, apparence, couleurs |
+| Mon Espace | 👤 | Espace personnel de l'utilisateur |
 | Mailing | ✉️ | Templates, envoi groupé, historique campagnes |
 | Messagerie | 💬 | Conversations temps réel entre utilisateurs |
 | Annuaire | 📒 | Clients, fournisseurs, prestataires, contacts |
-| Dashboard Écrans | 📺 | Affichage dynamique : écrans, playlists, médias |
+| Dashboard Écrans | 📺 | Affichage dynamique : écrans, playlists, médias, Sonos |
 | Congés | 🏖️ | Demandes, approbation, solde, planning intégré |
 | Stock | 📊 | Mouvements de stock, inventaire |
 | Commandes | 🛒 | Commandes fournisseurs |
@@ -163,10 +165,23 @@ Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès 
 ### Communication & Mailing
 - Événements d'entreprise (calendrier, affichage écran déporté)
 - Notes internes
-- **Planning des tâches** : Vue jour/semaine, 9 sections, édition individuelle, export PDF
+- **Planning des tâches** : Vue jour/semaine, 9 sections, édition individuelle avec sélecteur d'affaire, tâches récurrentes, export PDF
+- **Import BL en lot** : Import multi-fichiers de bons de livraison
 - Mailing avancé : templates, envoi groupé, historique
 
-### Annuaire
+### Dashboard TV (Affichage dynamique)
+- Gestion multi-écrans d'affichage dynamique
+- Playlists de contenu, médias, messages, templates
+- **Apparence** : Règles de couleurs dynamiques, icônes de localisation
+- **Sonos** : Contrôle musique intégré (now playing)
+- **Sneaky** : Affichage furtif de GIFs
+- **Messages de bienvenue** : Configuration personnalisée
+- **Alarme SNCF** : Alarme sonore à l'échéance des tâches + test admin
+- Prévisualisation temps réel des écrans TV
+- Logs d'activité
+
+### Mon Espace
+- Espace personnel de l'utilisateur connecté
 - Répertoire unifié : clients, fournisseurs, prestataires
 - Contacts multiples par entité
 - Recherche globale sur tous les types
@@ -176,6 +191,8 @@ Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès 
 - Gestion multi-écrans d'affichage dynamique
 - Playlists de contenu, médias, messages
 - Templates de mise en page, messages de bienvenue
+- Contrôle Sonos, règles de couleurs, icônes localisation
+- Prévisualisation TV temps réel
 - Logs d'activité
 
 ### Stock & Commandes
@@ -249,6 +266,6 @@ Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès 
 
 ---
 
-**Version :** 4.1
-**Dernière mise à jour :** 9 mars 2026
+**Version :** 4.2
+**Dernière mise à jour :** 11 mars 2026
 © MagScene — Usage interne uniquement

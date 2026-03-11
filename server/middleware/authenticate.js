@@ -1,0 +1,45 @@
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import db from '../database.js';
+import { authCache } from '../cache.js';
+import logger from '../logger.js';
+
+/**
+ * Middleware d'authentification — vérifie JWT + session active en DB
+ * [PERF] Cache LRU/TTL sur la vérification session (30s)
+ */
+export function createAuthenticateToken(JWT_SECRET) {
+  return function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token manquant' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) return res.status(403).json({ error: 'Token invalide' });
+
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
+
+      // [PERF] Vérifier le cache avant de requêter la DB
+      const cachedSession = authCache.get(tokenHash);
+      if (cachedSession !== null) {
+        req.user = user;
+        return next();
+      }
+
+      const session = db.prepare(
+        'SELECT 1 FROM active_sessions WHERE token_hash = ? AND expires_at > datetime(\'now\')'
+      ).get(tokenHash);
+      if (!session) {
+        return res.status(401).json({ error: 'Session expirée ou révoquée' });
+      }
+
+      // Mettre en cache le résultat positif (TTL 30s)
+      authCache.set(tokenHash, true);
+      req.user = user;
+      next();
+    });
+  };
+}

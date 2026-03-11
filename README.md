@@ -53,8 +53,21 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 - **Événements** : Agenda d'entreprise, affichage écran (toggle visibilité)
 - **Notes internes** : Partage d'informations
 - **Mailing** : Templates, envoi groupé, historique
-- **Dashboard Écrans** : Gestion d'écrans d'affichage dynamique (playlists, médias, messages, templates, logs)
-- **Planning des tâches** : Planning jour/semaine, PDF export, édition de tâches individuelles
+- **Planning des tâches** : Planning jour/semaine, tâches récurrentes, PDF export, édition de tâches individuelles avec sélecteur d'affaire
+- **Import BL en lot** : Import multi-fichiers de bons de livraison
+
+### 📺 Dashboard TV (Affichage dynamique)
+- **21 composants** : Gestion complète d'écrans d'affichage dynamique
+- **Écrans & Playlists** : Configuration d'écrans, playlists de contenu, médias, messages, templates
+- **Apparence** : Règles de couleurs dynamiques, icônes de localisation, messages de bienvenue
+- **Sonos** : Contrôle Sonos intégré (now playing)
+- **Alarme SNCF** : Alarme sonore à l'échéance des tâches + bouton test admin
+- **Sneaky** : Affichage furtif de GIFs
+- **Prévisualisation** : Aperçu temps réel des écrans TV, sidebar tâches avec nettoyage automatique des titres
+- **Client TV** : Client web dédié pour écrans d'affichage
+
+### 👤 Mon Espace
+- **Espace personnel** : Tableau de bord personnel de l'utilisateur connecté
 
 ### 📒 Annuaire
 - **Clients** : Gestion complète avec contacts multiples, validation SIRET/TVA, normalisation téléphone
@@ -160,17 +173,33 @@ eM@g/
 ├── vite.config.js          # Configuration Vite (proxy /api → :3003)
 ├── src/
 │   ├── main.jsx            # Point d'entrée React
-│   ├── App.jsx             # Composant racine (~1490 lignes)
-│   ├── components/         # 87 composants React desktop
-│   │   ├── DisplayDashboard/ # 21 composants affichage dynamique
-│   │   └── mobile/         # 16 composants mobile
-│   ├── hooks/              # 7 hooks custom
-│   └── utils/              # 13 utilitaires (API client ~2006 lignes, dates, import, etc.)
+│   ├── App.jsx             # Composant racine (~901 lignes)
+│   ├── contexts/           # AuthContext (auth state, login/logout)
+│   ├── components/         # 131 composants React organisés par domaine
+│   │   ├── vehicles/       # (21) Calendar, VehicleDetailsModal…
+│   │   ├── affaires/       # (8) AffairesPanel, BLImportModal…
+│   │   ├── personnel/      # (9) PersonnelPanel, PersonnelAgenda…
+│   │   ├── planning/       # (9) PlanningPanel, TaskPlanningPanel…
+│   │   ├── management/     # (5) ManagementPanel, DashboardPanel…
+│   │   ├── equipment/      # (5) EquipmentPanel…
+│   │   ├── orders/         # (3) OrdersPanel, CataloguePanel, StockPanel
+│   │   ├── auth/           # (6) LoginForm, ChangePassword…
+│   │   ├── DisplayDashboard/ # (21) Module affichage dynamique
+│   │   ├── mobile/         # (16) Interface mobile complète
+│   │   ├── ui/             # (6) Composants réutilisables
+│   │   └── ...             # messaging, mailing, annuaire, leaves…
+│   ├── hooks/              # 10 hooks custom (useAppData, useGoogleCalendar…)
+│   └── utils/
+│       ├── api/            # Client API modulaire (15 modules, ~375 méthodes)
+│       └── ...             # dates, indexedDB, pdfParser, deepLinking
 ├── server/
-│   ├── server.js           # Express (~3330 lignes)
-│   ├── database.js         # SQLite 86 tables (~3198 lignes)
-│   ├── 12 fichiers routes  # ~13 642 lignes de routes API
-│   ├── emailService.js     # Service d'envoi d'emails (~383 lignes)
+│   ├── server.js           # Point d'entrée Express (~317 lignes)
+│   ├── database.js         # SQLite 92 tables + 15 index perf (~2855 lignes)
+│   ├── config/             # Helmet, CORS, rate limiters
+│   ├── middleware/          # Auth JWT, authorize, sanitize, upload, errorHandler
+│   ├── 18 fichiers routes  # ~19 593 lignes de routes API
+│   ├── cache.js            # Cache LRU/TTL (5 instances)
+│   ├── emailService.js     # Service d'envoi d'emails
 │   └── migrations/         # 17 fichiers SQL
 ├── public/
 │   ├── depot-zones.json    # Plan dépôt 1 (Événementiel)

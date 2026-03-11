@@ -5,9 +5,9 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import QRCodeModal from './QRCodeModal';
-import OverdueInterventionModal from './OverdueInterventionModal';
+import OverdueInterventionModal from './planning/OverdueInterventionModal';
 import UserAvatar from './UserAvatar';
-import ProfileEditModal from './ProfileEditModal';
+import ProfileEditModal from './auth/ProfileEditModal';
 import { useToast } from '../hooks/useToast';
 import './Header.css';
 
@@ -244,7 +244,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                 { id: 'orders', label: 'Commandes', icon: ShoppingCart },
                 { id: 'catalog', label: 'Catalogue', icon: BookOpen },
                 { id: 'stock', label: 'Stock', icon: Boxes },
-                { id: 'communication', label: 'Comm.', icon: Radio },
+                { id: 'planning', label: 'Planning', icon: Radio },
                 { id: 'annuaire', label: 'Annuaire', icon: Building2 },
               ];
               const hiddenTabs = tabPrefs.hiddenTabs || [];

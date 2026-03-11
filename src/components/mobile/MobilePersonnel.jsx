@@ -228,7 +228,7 @@ function MobilePersonnel({ onBack }) {
             return (
               <div key={p.id} className="mpers-card" onClick={() => setSelectedPerson(p)}>
                 {p.photo ? (
-                  <img src={`/avatars/${p.photo}`} alt="" className="mpers-avatar-img" />
+                  <img src={`/avatars/${p.photo}`} alt="" className="mpers-avatar-img" loading="lazy" />
                 ) : (
                   <div className="mpers-avatar" style={{ background: getAvatarColor(fullName) }}>
                     {getInitials(p.firstName, p.lastName)}

@@ -1,72 +1,56 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import Header from './components/Header';
-const GoogleCalendarBanner = lazy(() => import('./components/GoogleCalendarBanner'));
-import { VehicleSlidePanel } from './components/VehicleDetailPanel';
-import LoginForm from './components/LoginForm';
+const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
+import { VehicleSlidePanel } from './components/vehicles/VehicleDetailPanel';
+import LoginForm from './components/auth/LoginForm';
 import ErrorBoundary from './components/ErrorBoundary';
-const PlanningView = lazy(() => import('./components/PlanningView'));
+const PlanningView = lazy(() => import('./components/vehicles/PlanningView'));
 import api from './utils/api';
-import { saveToIndexedDB, STORES } from './utils/indexedDB';
-import { getPeriodTimestamp } from './utils/dateUtils';
-import logger from './utils/logger';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification, setVolume } from './utils/notificationSound';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFeedback } from './hooks/useFeedback';
 import { useTheme } from './hooks/useTheme';
 import { useDraggableModals } from './hooks/useDraggableModals';
 import { ToastProvider } from './hooks/useToast';
 import { NavigationProvider } from './contexts/NavigationContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useAppData } from './hooks/useAppData';
+import { useGoogleCalendar } from './hooks/useGoogleCalendar';
+import { useMessagingPolling } from './hooks/useMessagingPolling';
 import './App.css';
 import './styles/draggable-modals.css';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
 
 // Code splitting - Lazy loading des composants lourds
-const Calendar = lazy(() => import('./components/Calendar'));
-const VehicleDetailsModal = lazy(() => import('./components/VehicleDetailsModal'));
+const Calendar = lazy(() => import('./components/vehicles/Calendar'));
+const VehicleDetailsModal = lazy(() => import('./components/vehicles/VehicleDetailsModal'));
 const MobileApp = lazy(() => import('./components/mobile/MobileApp'));
-const ManagementPanel = lazy(() => import('./components/ManagementPanel'));
-const MaintenanceDialog = lazy(() => import('./components/MaintenanceDialog'));
-const VehicleMaintenanceModal = lazy(() => import('./components/VehicleMaintenanceModal'));
-const PersonnelPanel = lazy(() => import('./components/PersonnelPanel'));
-const AffairesPanel = lazy(() => import('./components/AffairesPanel'));
-const EquipmentPanel = lazy(() => import('./components/EquipmentPanel'));
-const OrdersPanel = lazy(() => import('./components/OrdersPanel'));
-const CataloguePanel = lazy(() => import('./components/CataloguePanel'));
-const StockPanel = lazy(() => import('./components/StockPanel'));
-const CommunicationPanel = lazy(() => import('./components/CommunicationPanel'));
-// const DashboardPanel = lazy(() => import('./components/DashboardPanel'));
-const MessagingPanel = lazy(() => import('./components/MessagingPanel'));
-const MailingPanel = lazy(() => import('./components/MailingPanel'));
-const AnnuairePanel = lazy(() => import('./components/AnnuairePanel'));
-// const ReportsPanel = lazy(() => import('./components/ReportsPanel'));
-const AffaireDetailDialog = lazy(() => import('./components/AffaireDetailPanel').then(m => ({ default: m.AffaireDetailDialog })));
-const UserPreferencesModal = lazy(() => import('./components/UserPreferencesModal'));
+const ManagementPanel = lazy(() => import('./components/management/ManagementPanel'));
+const MaintenanceDialog = lazy(() => import('./components/vehicles/MaintenanceDialog'));
+const VehicleMaintenanceModal = lazy(() => import('./components/vehicles/VehicleMaintenanceModal'));
+const PersonnelPanel = lazy(() => import('./components/personnel/PersonnelPanel'));
+const AffairesPanel = lazy(() => import('./components/affaires/AffairesPanel'));
+const EquipmentPanel = lazy(() => import('./components/equipment/EquipmentPanel'));
+const OrdersPanel = lazy(() => import('./components/orders/OrdersPanel'));
+const CataloguePanel = lazy(() => import('./components/orders/CataloguePanel'));
+const StockPanel = lazy(() => import('./components/orders/StockPanel'));
+const PlanningPanel = lazy(() => import('./components/planning/PlanningPanel'));
+const MessagingPanel = lazy(() => import('./components/messaging/MessagingPanel'));
+const MailingPanel = lazy(() => import('./components/mailing/MailingPanel'));
+const AnnuairePanel = lazy(() => import('./components/annuaire/AnnuairePanel'));
+const AffaireDetailDialog = lazy(() => import('./components/affaires/AffaireDetailPanel').then(m => ({ default: m.AffaireDetailDialog })));
+const UserPreferencesModal = lazy(() => import('./components/auth/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
-
-// Fonction utilitaire pour formater une date en YYYY-MM-DD
-const formatDateToString = (date) => {
-  if (!date) return '';
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 // Détection fiable d'un appareil mobile
 const detectMobile = () => {
-  // 1. Vérifier le hash ou le pathname
   if (window.location.pathname === '/mobile' || window.location.hash.startsWith('#/mobile')) {
     return true;
   }
-  // 2. Vérifier si l'utilisateur a explicitement choisi desktop (stocké en sessionStorage)
   if (sessionStorage.getItem('forceDesktop') === 'true') {
     return false;
   }
-  // 3. Auto-détection : user-agent + écran tactile + largeur d'écran
   const ua = navigator.userAgent || '';
   const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -74,118 +58,104 @@ const detectMobile = () => {
   return isMobileUA && (isTouchDevice || isSmallScreen);
 };
 
-function App() {
-  // Détection mobile réactive (hash, user-agent, taille écran)
-  const [isMobile, setIsMobile] = useState(() => detectMobile());
+function AppContent() {
+  // ═══ Auth (contexte) ═══
+  const {
+    isAuthenticated, currentUser, isAuthLoading,
+    login, logout, updateUser,
+    tabPrefs, userPrefsRef, updatePreferences,
+  } = useAuth();
 
+  // ═══ Feedback & Theme ═══
+  const { toastRef, toast } = useFeedback();
+  const { theme, toggleTheme, isDark, palette, setPalette } = useTheme();
+  useDraggableModals();
+
+  // ═══ Données métier (hook) ═══
+  const data = useAppData({
+    isAuthenticated,
+    isAuthLoading,
+    currentUser,
+    toast,
+    onAuthError: logout,
+  });
+
+  // ═══ Google Calendar (hook) ═══
+  const { googleEvents, allGoogleEvents, handleGoogleEventsChange } = useGoogleCalendar();
+
+  // ═══ UI State ═══
+  const [isMobile, setIsMobile] = useState(() => detectMobile());
+  const [view, setView] = useState('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [activeModule, setActiveModule] = useState('vehicles');
+  const [showManagement, setShowManagement] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showEquipmentManagement, setShowEquipmentManagement] = useState(false);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [showMailing, setShowMailing] = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
+  const [navigateToPersonId, setNavigateToPersonId] = useState(null);
+  const [quickReservationSlot, setQuickReservationSlot] = useState(null);
+  const [quickAssignmentSlot, setQuickAssignmentSlot] = useState(null);
+  const [hoveredEventId, setHoveredEventId] = useState(null);
+  const [reservationToEdit, setReservationToEdit] = useState(null);
+  const [selectedVehicleForMaintenance, setSelectedVehicleForMaintenance] = useState(null);
+  const [maintenanceToEdit, setMaintenanceToEdit] = useState(null);
+  const [maintenanceActionType, setMaintenanceActionType] = useState(null);
+  const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
+  const [vehicleForDialog, setVehicleForDialog] = useState(null);
+  const [selectedVehicleForKilometrageControl, setSelectedVehicleForKilometrageControl] = useState(null);
+  const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
+  const [globalAffaireDialog, setGlobalAffaireDialog] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showPwaInstall, setShowPwaInstall] = useState(false);
+  const openEventDetailsModalRef = useRef(null);
+
+  // ═══ Messaging polling (hook) ═══
+  const showMessagingRef = useRef(false);
+  useEffect(() => { showMessagingRef.current = showMessaging; }, [showMessaging]);
+
+  const { unreadMsgCount } = useMessagingPolling({
+    currentUser, userPrefsRef, showMessagingRef, toast,
+  });
+
+  // ═══ Mobile detection ═══
   useEffect(() => {
     const handleHashChange = () => setIsMobile(detectMobile());
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Si mobile détecté et hash pas encore mis, rediriger
   useEffect(() => {
     if (isMobile && !window.location.hash.startsWith('#/mobile')) {
       window.location.hash = '#/mobile';
     }
   }, [isMobile]);
-  
-  const [view, setView] = useState('week'); // 'day', 'week', 'month', 'year'
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [vehicles, setVehicles] = useState([]);
-  const [reservations, setReservations] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [locations, setLocations] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [persons, setPersons] = useState([]);
-  const [calendarConfig, setCalendarConfig] = useState({ apiKey: '', calendarId: '' });
-  const [showManagement, setShowManagement] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [activeModule, setActiveModule] = useState('vehicles');
-  const [showEquipmentManagement, setShowEquipmentManagement] = useState(false);
-  const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
-  const [navigateToPersonId, setNavigateToPersonId] = useState(null);
-  const [quickReservationSlot, setQuickReservationSlot] = useState(null);
-  const [quickAssignmentSlot, setQuickAssignmentSlot] = useState(null);
-  const [showMessaging, setShowMessaging] = useState(false);
-  const [showMailing, setShowMailing] = useState(false);
-  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
-  const [showPreferences, setShowPreferences] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
-  const [googleEvents, setGoogleEvents] = useState([]);
-  const allGoogleEventsRef = useRef(new Map());
-  const syncedGoogleEventIdsRef = useRef(new Set()); // IDs déjà envoyés pour sync affaires
 
-  // Accumuler les events Google Calendar (dédupliqués par ID) pour avoir un pool complet
-  // + détection automatique des numéros d'affaire pour créer/lier
-  const handleGoogleEventsChange = useCallback((newEvents) => {
-    setGoogleEvents(newEvents);
-    if (newEvents && newEvents.length > 0) {
-      newEvents.forEach(ev => {
-        if (ev.id) allGoogleEventsRef.current.set(ev.id, ev);
-      });
-
-      // Sync automatique : détecter les events avec numéro d'affaire non encore traités
-      const affaireRegex = /\baf\s*\d{3,}\b/i;
-      const eventsToSync = newEvents.filter(ev =>
-        ev.id &&
-        !syncedGoogleEventIdsRef.current.has(ev.id) &&
-        affaireRegex.test(ev.summary || ev.title || '')
-      );
-
-      if (eventsToSync.length > 0) {
-        // Marquer comme traités immédiatement (évite les doublons en cas de re-render rapide)
-        eventsToSync.forEach(ev => syncedGoogleEventIdsRef.current.add(ev.id));
-
-        // Appel asynchrone — fire & forget, pas de blocage
-        api.syncGoogleEventsToAffaires(eventsToSync)
-          .then(result => {
-            if (result && (result.created > 0 || result.linked > 0)) {
-              // Sync result logged silently (see network tab for details)
-            }
-          })
-          .catch(err => {
-            console.warn('⚠️ Sync affaires/Google échouée:', err);
-            // Retirer les IDs pour permettre un retry au prochain fetch
-            eventsToSync.forEach(ev => syncedGoogleEventIdsRef.current.delete(ev.id));
-          });
-      }
-    }
+  // ═══ PWA install prompt ═══
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowPwaInstall(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  const allGoogleEvents = useMemo(() => {
-    // Recalculer quand googleEvents change (trigger)
-    return Array.from(allGoogleEventsRef.current.values());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [googleEvents]);
-  const [hoveredEventId, setHoveredEventId] = useState(null);
-  const [reservationToEdit, setReservationToEdit] = useState(null);
-  const [garages, setGarages] = useState([]);
-  const [maintenances, setMaintenances] = useState([]);
-  const [selectedVehicleForMaintenance, setSelectedVehicleForMaintenance] = useState(null);
-  const [maintenanceToEdit, setMaintenanceToEdit] = useState(null);
-  const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
-  const [vehicleForDialog, setVehicleForDialog] = useState(null);
-  const [selectedVehicleForKilometrageControl, setSelectedVehicleForKilometrageControl] = useState(null);
-  const [maintenanceActionType, setMaintenanceActionType] = useState(null); // 'schedule', 'request', 'breakdown'
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const openEventDetailsModalRef = useRef(null); // Référence à la fonction pour ouvrir EventDetailsModal
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showPwaInstall, setShowPwaInstall] = useState(false);
-  const prevUnreadRef = useRef(0); // Compteur précédent pour détecter les nouveaux messages
-  const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: true }); // Préférences notification
-  const [tabPrefs, setTabPrefs] = useState({ tabOrder: null, hiddenTabs: [] }); // Préférences onglets
-  const showMessagingRef = useRef(false); // Ref pour éviter de re-créer le polling
-  const { toastRef, toast } = useFeedback();
-  const { theme, toggleTheme, isDark, palette, setPalette } = useTheme();
-  useDraggableModals(); // Rend tous les modals/dialogs déplaçables et redimensionnables
+  const handlePwaInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowPwaInstall(false);
+    }
+    setDeferredPrompt(null);
+  };
 
-  // Raccourcis clavier globaux avec détection OS
+  // ═══ Raccourcis clavier ═══
   useKeyboardShortcuts({
     mod_vehicles: () => { setActiveModule('vehicles'); setShowManagement(false); setShowSettings(false); },
     mod_personnel: () => { setActiveModule('personnel'); setShowManagement(false); setShowSettings(false); },
@@ -209,7 +179,6 @@ function App() {
       });
     },
     close_modal: () => {
-      // Fermer dans l'ordre de priorité (le plus récent d'abord)
       if (showHelp) { setShowHelp(false); return; }
       if (showPreferences) { setShowPreferences(false); return; }
       if (showMessaging) { setShowMessaging(false); return; }
@@ -242,530 +211,29 @@ function App() {
     },
   }, isAuthenticated && !isMobile);
 
-  // Calculer les réservations à surligner en fonction de l'événement survolé
+  // ═══ Valeurs calculées ═══
   const highlightedReservationIds = useMemo(() => {
     if (!hoveredEventId) return [];
-    return reservations
+    return data.reservations
       .filter(r => r.googleEventId === hoveredEventId)
       .map(r => r.id);
-  }, [hoveredEventId, reservations]);
+  }, [hoveredEventId, data.reservations]);
 
-  // Vérifier l'authentification au démarrage
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (api.isAuthenticated()) {
-        const user = api.getCurrentUser();
-        setIsAuthenticated(true);
-        setCurrentUser(user);
-      }
-      setIsLoading(false);
-    };
-    checkAuth();
-  }, []);
-
-  // Enregistrement Service Worker + PWA install prompt
-  useEffect(() => {
-    // Service Worker désactivé temporairement (purge en cours via index.html)
-    // Capturer l'événement beforeinstallprompt
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowPwaInstall(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handlePwaInstall = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setShowPwaInstall(false);
-    }
-    setDeferredPrompt(null);
-  };
-
-  // Charger les données depuis l'API après authentification
-  useEffect(() => {
-    if (!isAuthenticated || isLoading) return;
-
-    const loadDataFromAPI = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Charger toutes les données en parallèle
-        const [
-          vehiclesData,
-          reservationsData,
-          clientsData,
-          driversData,
-          locationsData,
-          garagesData,
-          maintenancesData,
-          configData,
-          usersData,
-          personsData
-        ] = await Promise.all([
-          api.getVehicles(),
-          api.getReservations(),
-          api.getClients(),
-          api.getDrivers(),
-          api.getLocations(),
-          api.getGarages(),
-          api.getMaintenances(),
-          api.getConfig('googleCalendar'),
-          api.getUsersNames(),
-          api.getPersons()
-        ]);
-
-        // Trier les véhicules par ordre
-        const sortedVehicles = vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-        setVehicles(sortedVehicles);
-        setReservations(reservationsData);
-        setClients(clientsData);
-        setDrivers(driversData);
-        setLocations(locationsData);
-        setGarages(garagesData);
-        setMaintenances(maintenancesData);
-        setUsers(usersData);
-        setPersons(personsData || []);
-        
-        // Parser la configuration du calendrier
-        if (configData && configData.value) {
-          try {
-            const parsedConfig = JSON.parse(configData.value);
-            setCalendarConfig(parsedConfig);
-          } catch (e) {
-            setCalendarConfig({ apiKey: '', calendarId: '' });
-          }
-        }
-      } catch (error) {
-        console.error('❌ Erreur lors du chargement des données:', error);
-        // Si erreur d'authentification, déconnecter
-        if (error.message.includes('authentification') || error.message.includes('401')) {
-          handleLogout();
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadDataFromAPI();
-  }, [isAuthenticated]);
-
-  // Fonction pour recharger uniquement les maintenances
-  const loadMaintenances = async () => {
-    try {
-      const maintenancesData = await api.getMaintenances();
-      setMaintenances(maintenancesData);
-    } catch (error) {
-      console.error('Erreur lors du rechargement des maintenances:', error);
-    }
-  };
-
-  // Sauvegarder automatiquement (débounce 500ms pour éviter les écritures excessives)
-  useEffect(() => {
-    if (isLoading) return;
-    
-    const timer = setTimeout(() => {
-      saveToIndexedDB(STORES.vehicles, vehicles);
-      saveToIndexedDB(STORES.reservations, reservations);
-      saveToIndexedDB(STORES.clients, clients);
-      saveToIndexedDB(STORES.drivers, drivers);
-      saveToIndexedDB(STORES.locations, locations);
-      if (calendarConfig && (calendarConfig.apiKey || calendarConfig.calendarId)) {
-        saveToIndexedDB(STORES.calendarConfig, calendarConfig);
-      }
-      saveToIndexedDB(STORES.garages, garages);
-      saveToIndexedDB(STORES.maintenances, maintenances);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [vehicles, reservations, clients, drivers, locations, calendarConfig, garages, maintenances, isLoading]);
-
-  // NOTE: Cette sauvegarde IndexedDB est conservée temporairement pour la compatibilité
-  // pendant la migration. Elle sera supprimée une fois la migration terminée.
-
-  // Mettre à jour automatiquement les statuts des interventions selon les dates
-  useEffect(() => {
-    const updateMaintenanceStatuses = () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      setMaintenances(prev => {
-        let hasChanges = false;
-        const updatedMaintenances = prev.map(maintenance => {
-          // Ne pas modifier les interventions signalées ou complétées
-          if (maintenance.status === 'reported' || maintenance.status === 'completed' || !maintenance.startDate) {
-            return maintenance;
-          }
-
-          const startDate = new Date(maintenance.startDate);
-          startDate.setHours(0, 0, 0, 0);
-          
-          const endDate = new Date(maintenance.endDate || maintenance.startDate);
-          endDate.setHours(0, 0, 0, 0);
-
-          let newStatus = maintenance.status;
-
-          // Logique de mise à jour du statut
-          if (today < startDate) {
-            newStatus = 'scheduled';
-          } else if (today >= startDate && today <= endDate) {
-            newStatus = 'in_progress';
-          } else if (today > endDate) {
-            newStatus = 'completed';
-          }
-
-          if (newStatus !== maintenance.status) {
-            hasChanges = true;
-            return { ...maintenance, status: newStatus };
-          }
-
-          return maintenance;
-        });
-
-        return hasChanges ? updatedMaintenances : prev;
-      });
-    };
-
-    // Vérifier au chargement et toutes les heures
-    if (!isLoading) {
-      updateMaintenanceStatuses();
-      const interval = setInterval(updateMaintenanceStatuses, 3600000); // 1 heure
-      return () => clearInterval(interval);
-    }
-  }, [isLoading]);
-
-  const checkOverlap = (vehicleId, startDate, startPeriod, endDate, endPeriod, excludeId = null) => {
-    // Calculer les timestamps de début et fin de la nouvelle réservation
-    const newStart = getPeriodTimestamp(startDate, startPeriod);
-    const newEnd = getPeriodTimestamp(endDate, endPeriod);
-    
-    // Vérifier les chevauchements avec les réservations existantes
-    const conflicts = [];
-    
-    for (const r of reservations) {
-      // Exclure la réservation en cours de modification
-      if (excludeId !== null && String(r.id) === String(excludeId)) continue;
-      
-      // Vérifier uniquement les réservations du même véhicule (avec conversion de type)
-      if (String(r.vehicleId) !== String(vehicleId)) continue;
-      
-      // Calculer les timestamps de la réservation existante
-      const existingStart = getPeriodTimestamp(r.date, r.period);
-      const existingEnd = getPeriodTimestamp(
-        r.endDate || r.date,
-        r.endPeriod || r.period
-      );
-      
-      // Vérifier si les intervalles se chevauchent
-      // Deux intervalles [a,b] et [c,d] se chevauchent si max(a,c) <= min(b,d)
-      if (Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd)) {
-        conflicts.push({
-          date: r.date,
-          period: r.period,
-          reservation: r
-        });
-      }
-    }
-    
-    return conflicts;
-  };
-
-  const addReservation = async (reservationData) => {
-    // Gérer la création multiple (tableau) ou simple (objet)
-    const reservationsToAdd = Array.isArray(reservationData) ? reservationData : [reservationData];
-    
-    const newReservations = [];
-    
-    for (const data of reservationsToAdd) {
-      const { vehicleId, date, period, endDate, endPeriod, ...otherData } = data;
-
-      // Vérifier les chevauchements
-      const conflicts = checkOverlap(vehicleId, date, period, endDate, endPeriod);
-      if (conflicts.length > 0) {
-        const vehicle = vehicles.find(v => v.id === vehicleId);
-        const conflictInfo = conflicts[0];
-        toast.warning(`Chevauchement : "${vehicle?.name}" déjà réservé le ${format(new Date(conflictInfo.date), 'd MMMM yyyy', { locale: fr })} (${conflictInfo.period})`);
-        return false;
-      }
-      
-      // Si l'utilisateur n'est pas admin, créer une demande au lieu d'une réservation
-      if (!currentUser?.isAdmin) {
-        try {
-          await api.createReservationRequest({
-            id: `${Date.now()}.${Math.random()}`,
-            vehicleId,
-            startDate: date,
-            startPeriod: period,
-            endDate,
-            endPeriod,
-            ...otherData
-          });
-          
-          toast.success('Demande de réservation envoyée aux administrateurs pour validation.');
-          return true;
-        } catch (error) {
-          console.error('❌ Erreur création demande:', error);
-          toast.error(`Erreur création demande: ${error.message}`);
-          return false;
-        }
-      }
-      
-      // Créer la réservation via l'API (admin uniquement)
-      try {
-        const createdReservation = await api.createReservation({
-          id: `${Date.now()}.${Math.random()}`,
-          vehicleId,
-          startDate: date,
-          startPeriod: period,
-          endDate,
-          endPeriod,
-          ...otherData
-        });
-        newReservations.push(createdReservation);
-      } catch (error) {
-        console.error('❌ Erreur création réservation:', error);
-        toast.error(`Erreur création réservation: ${error.message}`);
-        return false;
-      }
-    }
-    
-    setReservations([...reservations, ...newReservations]);
-    return true;
-  };
-
-  const updateReservation = async (id, updatedReservation) => {
-    logger.log('📝 updateReservation appelé - ID:', id, 'Objet:', updatedReservation);
-    
-    // Seuls les admins peuvent modifier des réservations
-    if (!currentUser?.isAdmin) {
-      toast.warning('Seuls les administrateurs peuvent modifier des réservations.');
-      return false;
-    }
-    
-    // Vérifier que l'objet a un ID valide
-    if (!id || (!updatedReservation.id && id)) {
-      logger.warn('⚠️ Objet sans ID détecté, ajout de l\'ID:', id);
-      updatedReservation = { ...updatedReservation, id };
-    }
-    
-    // Trouver la réservation à modifier
-    const oldReservation = reservations.find(r => r.id === id);
-    if (!oldReservation) {
-      console.error('❌ Réservation introuvable:', id);
-      return false;
-    }
-
-    // Vérifier les chevauchements (en excluant la réservation en cours de modification)
-    const { vehicleId, date, period, endDate, endPeriod } = updatedReservation;
-    
-    if (!vehicleId) {
-      console.error('❌ vehicleId manquant dans updatedReservation:', updatedReservation);
-      return false;
-    }
-    
-    const conflicts = checkOverlap(vehicleId, date, period, endDate, endPeriod, id);
-    
-    if (conflicts.length > 0) {
-      const vehicle = vehicles.find(v => v.id === vehicleId);
-      const conflictList = conflicts.map(c => 
-        `  • ${c.reservation.clientName || c.reservation.prestationName} - ${format(new Date(c.date), 'd MMM', { locale: fr })} (${c.period})`
-      ).join('\n');
-      
-      toast.warning(`Chevauchement : "${vehicle?.name}" a ${conflicts.length} réservation(s) sur cette période`);
-      return false;
-    }
-
-    // Mettre à jour via l'API
-    try {
-      const finalReservation = { ...updatedReservation, id };
-      logger.log('✅ Envoi API - Objet final:', finalReservation);
-      
-      await api.updateReservation(id, finalReservation);
-      
-      // Mettre à jour localement
-      const updatedReservations = reservations.map(r => 
-        r.id === id ? finalReservation : r
-      );
-
-      setReservations(updatedReservations);
-      return true;
-    } catch (error) {
-      console.error('❌ Erreur mise à jour réservation:', error);
-      toast.error(`Erreur mise à jour: ${error.message}`);
-      return false;
-    }
-  };
-
-  const deleteReservation = async (id) => {
-    logger.log('🗑️ deleteReservation appelé - ID:', id);
-    
-    // Seuls les admins peuvent supprimer des réservations
-    if (!currentUser?.isAdmin) {
-      toast.warning('Seuls les administrateurs peuvent supprimer des réservations.');
-      return false;
-    }
-    
-    try {
-      const result = await api.deleteReservation(id);
-      logger.log('✅ Suppression API réussie:', result);
-      setReservations(reservations.filter(r => r.id !== id));
-      logger.log('✅ État local mis à jour');
-    } catch (error) {
-      console.error('❌ Erreur suppression réservation:', error);
-      toast.error(`Erreur suppression: ${error.message}`);
-    }
-  };
-
-  // Fonction wrapper pour la mise à jour des maintenances depuis le resize
-  const updateMaintenanceFromResize = async (id, updatedData) => {
-    try {
-      // Trouver la maintenance existante pour conserver toutes ses propriétés
-      const existingMaintenance = maintenances.find(m => m.id === id);
-      if (!existingMaintenance) {
-        console.error('❌ Maintenance introuvable:', id);
-        return false;
-      }
-      
-      // Fusionner les données existantes avec les nouvelles
-      // Assurer que startDate met à jour date pour la DB
-      const fullMaintenance = {
-        ...existingMaintenance,
-        ...updatedData,
-        id, // S'assurer que l'id est bien présent
-        date: updatedData.startDate || updatedData.date, // Utiliser startDate pour date (DB)
-        end_date: updatedData.endDate // Mapper endDate vers end_date (DB)
-      };
-      
-      logger.log('🔄 Mise à jour maintenance - Dates:', {
-        avant: { date: existingMaintenance.date, endDate: existingMaintenance.endDate },
-        après: { date: fullMaintenance.date, endDate: fullMaintenance.endDate }
-      });
-      
-      await handleMaintenanceSave(fullMaintenance);
-      return true;
-    } catch (error) {
-      console.error('❌ Erreur mise à jour maintenance:', error);
-      toast.error(`Erreur mise à jour maintenance: ${error.message}`);
-      return false;
-    }
-  };
-
-  const handleMaintenanceSave = async (maintenance) => {
-    try {
-      logger.log('🔧 handleMaintenanceSave appelé avec:', maintenance);
-      
-      if (maintenance._deleted) {
-        // Suppression
-        await api.deleteMaintenance(maintenance.id);
-        setMaintenances(maintenances.filter(m => String(m.id) !== String(maintenance.id)));
-      } else if (maintenances.find(m => String(m.id) === String(maintenance.id))) {
-        // Mise à jour
-        logger.log('✅ Mise à jour de la maintenance existante:', maintenance.id);
-        await api.updateMaintenance(maintenance.id, maintenance);
-        // Rafraîchir depuis le serveur pour avoir les données à jour
-        const maintenancesData = await api.getMaintenances();
-        setMaintenances(maintenancesData);
-      } else {
-        // Ajout
-        logger.log('➕ Création d\'une nouvelle maintenance:', maintenance.id);
-        const created = await api.createMaintenance(maintenance);
-        // Rafraîchir depuis le serveur
-        const maintenancesData = await api.getMaintenances();
-        setMaintenances(maintenancesData);
-      }
-    } catch (error) {
-      console.error('❌ Erreur gestion maintenance:', error);
-      toast.error(`Erreur: ${error.message}`);
-    }
-  };
-
-  const handleUpdateIntervention = async (updatedIntervention) => {
-    try {
-      logger.log('🔧 Mise à jour intervention:', updatedIntervention);
-      await api.updateMaintenance(updatedIntervention.id, updatedIntervention);
-      setMaintenances(maintenances.map(m => 
-        m.id === updatedIntervention.id ? updatedIntervention : m
-      ));
-      // Rafraîchir les maintenances
-      const maintenancesData = await api.getMaintenances();
-      setMaintenances(maintenancesData);
-    } catch (error) {
-      console.error('❌ Erreur mise à jour intervention:', error);
-      toast.error(`Erreur mise à jour intervention: ${error.message}`);
-    }
-  };
-
-  const handleDeleteIntervention = async (interventionId) => {
-    try {
-      logger.log('🗑️ Suppression intervention:', interventionId);
-      await api.deleteMaintenance(interventionId);
-      setMaintenances(maintenances.filter(m => m.id !== interventionId));
-    } catch (error) {
-      console.error('❌ Erreur suppression intervention:', error);
-      toast.error(`Erreur suppression intervention: ${error.message}`);
-    }
-  };
-
-  const handleLogin = async (email, password) => {
-    try {
-      const result = await api.login(email, password);
-      setIsAuthenticated(true);
-      setCurrentUser(result.user);
-      // Appliquer les préférences utilisateur au login
-      try {
-        const prefs = await api.getPreferences();
-        if (prefs.defaultModule && prefs.defaultModule !== 'trucks') setActiveModule(prefs.defaultModule);
-        if (prefs.defaultModule === 'trucks') setActiveModule('vehicles');
-        if (prefs.defaultView) setView(prefs.defaultView);
-        // Stocker les préférences de notification pour le polling
-        userPrefsRef.current = {
-          notificationsEnabled: prefs.notificationsEnabled !== false,
-          soundEnabled: prefs.soundEnabled !== false,
-        };
-        // Appliquer le volume
-        setVolume((prefs.soundVolume ?? 70) / 100);
-        // Migration préférences onglets : nettoyer les modules supprimés, ajouter les nouveaux
-        const VALID_TABS = ['vehicles','personnel','affaires','equipment','orders','catalog','stock','communication'];
-        let tabOrder = (prefs.tabOrder || VALID_TABS).filter(id => VALID_TABS.includes(id));
-        VALID_TABS.forEach(id => { if (!tabOrder.includes(id)) tabOrder.push(id); });
-        const hiddenTabs = (prefs.hiddenTabs || []).filter(id => VALID_TABS.includes(id));
-        setTabPrefs({ tabOrder, hiddenTabs });
-        // Demander la permission navigateur si notifications activées
-        if (prefs.notificationsEnabled !== false) {
-          requestNotificationPermission();
-        }
-      } catch (e) { /* silencieux */ }
-      return result;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const handleLogout = async () => {
-    await api.logout();
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    setVehicles([]);
-    setReservations([]);
-    setClients([]);
-    setDrivers([]);
-    setLocations([]);
-    setGarages([]);
-    setMaintenances([]);
-    // Ne pas effacer calendarConfig pour conserver la configuration Google Calendar
-  };
+  // ═══ Login : appliquer les préférences UI ═══
+  const handleLogin = useCallback(async (email, password) => {
+    const result = await login(email, password);
+    const prefs = result.prefs || {};
+    if (prefs.defaultModule && prefs.defaultModule !== 'trucks' && prefs.defaultModule !== 'communication') setActiveModule(prefs.defaultModule);
+    if (prefs.defaultModule === 'trucks') setActiveModule('vehicles');
+    if (prefs.defaultModule === 'communication') setActiveModule('planning');
+    if (prefs.defaultView) setView(prefs.defaultView);
+    return result;
+  }, [login]);
 
   // ═══ Navigation croisée entre modules ═══
-  const [globalAffaireDialog, setGlobalAffaireDialog] = useState(null);
-
-  const handleNavigateToEntity = useCallback((type, data) => {
+  const handleNavigateToEntity = useCallback((type, entityData) => {
     if (type === 'vehicle') {
-      const v = vehicles.find(v => v.id === data.id);
+      const v = data.vehicles.find(v => v.id === entityData.id);
       if (v) {
         setActiveModule('vehicles');
         setShowManagement(false);
@@ -776,15 +244,14 @@ function App() {
       setActiveModule('personnel');
       setShowManagement(false);
       setShowSettings(false);
-      setNavigateToPersonId(data.id);
+      setNavigateToPersonId(entityData.id);
     } else if (type === 'reservation') {
       setActiveModule('vehicles');
       setShowManagement(false);
       setShowSettings(false);
-      setReservationToEdit(data.id);
+      setReservationToEdit(entityData.id);
     } else if (type === 'affaire') {
-      // Ouvrir le modal de détail sans changer de page
-      const numero = data.numero || data.numeroAffaire;
+      const numero = entityData.numero || entityData.numeroAffaire;
       if (!numero) return;
       api.getAffaires().then(all => {
         const affairesArr = Array.isArray(all) ? all : (all?.affaires || []);
@@ -794,57 +261,40 @@ function App() {
         if (found) setGlobalAffaireDialog(found);
       }).catch(() => {});
     }
-  }, [vehicles]);
+  }, [data.vehicles]);
 
-  // Synchro ref showMessaging
-  useEffect(() => { showMessagingRef.current = showMessaging; }, [showMessaging]);
+  // ═══ Actions maintenance ═══
+  const handleRequestMaintenance = (vehicle) => {
+    setMaintenanceActionType('request');
+    setSelectedVehicleForMaintenance(vehicle);
+  };
 
-  // Polling compteur de messages non lus + notifications
-  useEffect(() => {
-    if (!currentUser) return;
+  const handleReportBreakdown = (vehicle) => {
+    setMaintenanceActionType('breakdown');
+    setSelectedVehicleForMaintenance(vehicle);
+  };
 
-    // Demander la permission notification dès que possible
-    requestNotificationPermission();
+  const handleScheduleMaintenance = (vehicle) => {
+    setMaintenanceActionType('schedule');
+    setSelectedVehicleForMaintenance(vehicle);
+  };
 
-    const fetchUnread = async () => {
-      try {
-        const data = await api.getUnreadCount();
-        const newCount = data.unread || 0;
-        const prevCount = prevUnreadRef.current;
+  // ═══ Synchronisation scroll Calendar ↔ GoogleCalendarBanner ═══
+  const handleBannerScroll = (scrollLeft) => {
+    const calendarScrollArea = document.querySelector('.calendar-scroll-area');
+    if (calendarScrollArea && Math.abs(calendarScrollArea.scrollLeft - scrollLeft) > 1) {
+      calendarScrollArea.scrollLeft = scrollLeft;
+    }
+  };
 
-        // Nouveau message détecté (compteur augmente, et pas le polling initial)
-        if (newCount > prevCount && prevCount !== -1) {
-          const prefs = userPrefsRef.current;
-          const diff = newCount - prevCount;
+  const handleCalendarScroll = (scrollLeft) => {
+    const bannerScrollArea = document.querySelector('.banner-scroll-area');
+    if (bannerScrollArea && Math.abs(bannerScrollArea.scrollLeft - scrollLeft) > 1) {
+      bannerScrollArea.scrollLeft = scrollLeft;
+    }
+  };
 
-          // Toast in-app + son (sauf si panneau messagerie ouvert)
-          if (prefs.notificationsEnabled !== false && !showMessagingRef.current) {
-            toast.info(`💬 ${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`, {
-              sound: prefs.soundEnabled !== false,
-            });
-          } else if (prefs.soundEnabled) {
-            playNotificationSound();
-          }
-
-          // Notification navigateur (si le panneau messagerie n'est pas ouvert)
-          if (prefs.notificationsEnabled && !showMessagingRef.current) {
-            showBrowserNotification(
-              `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
-              { body: 'Cliquez pour ouvrir la messagerie eM@g' }
-            );
-          }
-        }
-
-        prevUnreadRef.current = newCount;
-        setUnreadMsgCount(newCount);
-      } catch (e) { /* silencieux */ }
-    };
-    // Marquer -1 au premier appel pour ne pas notifier au chargement initial
-    prevUnreadRef.current = -1;
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 10000);
-    return () => clearInterval(interval);
-  }, [currentUser]);
+  // ═══ Render ═══
 
   if (isMobile) {
     return (
@@ -860,7 +310,7 @@ function App() {
     );
   }
 
-  if (isLoading) {
+  if (isAuthLoading) {
     return (
       <div className="app loading">
         <div className="loading-container">
@@ -879,42 +329,16 @@ function App() {
     );
   }
 
-  // Fonction pour synchroniser le scroll entre GoogleCalendarBanner et Calendar
-  const handleBannerScroll = (scrollLeft) => {
-    const calendarScrollArea = document.querySelector('.calendar-scroll-area');
-    if (calendarScrollArea && Math.abs(calendarScrollArea.scrollLeft - scrollLeft) > 1) {
-      calendarScrollArea.scrollLeft = scrollLeft;
-    }
-  };
-
-  const handleCalendarScroll = (scrollLeft) => {
-    const bannerScrollArea = document.querySelector('.banner-scroll-area');
-    if (bannerScrollArea && Math.abs(bannerScrollArea.scrollLeft - scrollLeft) > 1) {
-      bannerScrollArea.scrollLeft = scrollLeft;
-    }
-  };
-
-  const handleRequestMaintenance = (vehicle) => {
-    setMaintenanceActionType('request');
-    setSelectedVehicleForMaintenance(vehicle);
-  };
-
-  const handleReportBreakdown = (vehicle) => {
-    setMaintenanceActionType('breakdown');
-    setSelectedVehicleForMaintenance(vehicle);
-  };
-
-  const handleScheduleMaintenance = (vehicle) => {
-    setMaintenanceActionType('schedule');
-    setSelectedVehicleForMaintenance(vehicle);
-  };
-
-  const handleUserUpdate = (updatedUser) => {
-    setCurrentUser(updatedUser);
-    // Mettre à jour le localStorage pour la persistance
-    api.user = updatedUser;
-    localStorage.setItem('auth_user', JSON.stringify(updatedUser));
-  };
+  if (data.isDataLoading) {
+    return (
+      <div className="app loading">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>
@@ -937,23 +361,23 @@ function App() {
         onOpenSettings={() => setShowSettings(true)}
         activeModule={activeModule}
         setActiveModule={setActiveModule}
-        maintenances={maintenances}
-        vehicles={vehicles}
-        reservations={reservations}
+        maintenances={data.maintenances}
+        vehicles={data.vehicles}
+        reservations={data.reservations}
         onOpenVehicleMaintenance={setSelectedVehicleForMaintenance}
         onOpenMaintenance={(vehicle, maintenanceId) => {
           setSelectedVehicleForMaintenance(vehicle);
           setMaintenanceToEdit(maintenanceId);
         }}
         currentUser={currentUser}
-        onLogout={handleLogout}
-        onUserUpdate={handleUserUpdate}
-        onUpdateMaintenance={handleUpdateIntervention}
-        onRefreshMaintenances={loadMaintenances}
+        onLogout={logout}
+        onUserUpdate={updateUser}
+        onUpdateMaintenance={data.handleUpdateIntervention}
+        onRefreshMaintenances={data.loadMaintenances}
         onReservationUpdate={async () => {
           try {
-            const data = await api.getReservations();
-            setReservations(data);
+            const res = await api.getReservations();
+            data.setReservations(res);
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
         }}
         onToggleMessaging={() => setShowMessaging(v => !v)}
@@ -975,9 +399,9 @@ function App() {
         </div>
       )}
       
-      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'stock' && activeModule !== 'communication' && activeModule !== 'annuaire' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'stock' && activeModule !== 'planning' && activeModule !== 'annuaire' && (
       <GoogleCalendarBanner 
-        calendarConfig={calendarConfig} 
+        calendarConfig={data.calendarConfig} 
         view={view}
         activeModule={activeModule}
         currentDate={currentDate}
@@ -985,16 +409,16 @@ function App() {
         onScroll={handleBannerScroll}
         onEventClick={(event) => setGoogleEventForReservation(event)}
         onEventsChange={handleGoogleEventsChange}
-        clients={clients}
-        locations={locations}
-        reservations={reservations}
+        clients={data.clients}
+        locations={data.locations}
+        reservations={data.reservations}
         onEventHover={setHoveredEventId}
         onRequestEditReservation={setReservationToEdit}
         onRequestViewEvent={(fn) => { openEventDetailsModalRef.current = fn; }}
         onReservationsRefresh={async () => {
           try {
-            const data = await api.getReservations();
-            setReservations(data);
+            const res = await api.getReservations();
+            data.setReservations(res);
           } catch (e) { console.error('Erreur rechargement réservations:', e); }
         }}
         onNewReservation={() => {
@@ -1048,20 +472,20 @@ function App() {
         <>
           {view === 'planning' ? (
             <PlanningView
-              vehicles={vehicles}
-              reservations={reservations}
-              maintenances={maintenances}
+              vehicles={data.vehicles}
+              reservations={data.reservations}
+              maintenances={data.maintenances}
               currentDate={currentDate}
               onOpenReservation={(reservation) => {
-                const vehicle = vehicles.find(v => v.id === reservation.vehicleId);
+                const vehicle = data.vehicles.find(v => v.id === reservation.vehicleId);
                 if (vehicle) {
-                  logger.log('Open reservation', reservation);
+                  // Open reservation (legacy handler preserved)
                 }
               }}
               onOpenMaintenance={setSelectedVehicleForMaintenance}
-              clients={clients}
-              drivers={drivers}
-              persons={persons}
+              clients={data.clients}
+              drivers={data.drivers}
+              persons={data.persons}
             />
           ) : (
             <div className="calendar-with-vehicle-panel">
@@ -1072,19 +496,19 @@ function App() {
                 setView={setView}
                 currentDate={currentDate}
                 setCurrentDate={setCurrentDate}
-                vehicles={vehicles}
-                reservations={reservations}
-                maintenances={maintenances}
-                onAddReservation={addReservation}
-                onUpdateReservation={updateReservation}
-                onUpdateMaintenance={updateMaintenanceFromResize}
+                vehicles={data.vehicles}
+                reservations={data.reservations}
+                maintenances={data.maintenances}
+                onAddReservation={data.addReservation}
+                onUpdateReservation={data.updateReservation}
+                onUpdateMaintenance={data.updateMaintenanceFromResize}
                 onScroll={handleCalendarScroll}
-                onDeleteReservation={deleteReservation}
-                clients={clients}
-                drivers={drivers}
-                persons={persons}
-                locations={locations}
-                users={users}
+                onDeleteReservation={data.deleteReservation}
+                clients={data.clients}
+                drivers={data.drivers}
+                persons={data.persons}
+                locations={data.locations}
+                users={data.users}
                 googleEvent={googleEventForReservation}
                 onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
                 googleEvents={googleEvents}
@@ -1106,7 +530,7 @@ function App() {
               </ErrorBoundary>
               <VehicleSlidePanel
                 vehicle={selectedVehicleForDetails}
-                maintenances={maintenances}
+                maintenances={data.maintenances}
                 currentUser={currentUser}
                 onClose={() => setSelectedVehicleForDetails(null)}
                 onOpenDialog={(v) => { setSelectedVehicleForDetails(null); setVehicleForDialog(v); }}
@@ -1159,7 +583,7 @@ function App() {
           </div>
         }>
           <AffairesPanel
-            reservations={reservations}
+            reservations={data.reservations}
             onNavigateToEntity={handleNavigateToEntity}
           />
         </Suspense>
@@ -1228,15 +652,15 @@ function App() {
         </ErrorBoundary>
       )}
 
-      {activeModule === 'communication' && (
-        <ErrorBoundary moduleName="Communication">
+      {activeModule === 'planning' && (
+        <ErrorBoundary moduleName="Planning">
         <Suspense fallback={
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
-            <p>Chargement du module Communication...</p>
+            <p>Chargement du module Planning...</p>
           </div>
         }>
-          <CommunicationPanel
+          <PlanningPanel
             currentUser={currentUser}
             googleEvents={allGoogleEvents}
             onNavigateToEntity={handleNavigateToEntity}
@@ -1268,22 +692,22 @@ function App() {
           </div>
         }>
           <ManagementPanel
-            vehicles={vehicles}
-            setVehicles={setVehicles}
-            reservations={reservations}
-            setReservations={setReservations}
-            clients={clients}
-            setClients={setClients}
-            drivers={drivers}
-            setDrivers={setDrivers}
-            locations={locations}
-            setLocations={setLocations}
-            calendarConfig={calendarConfig}
-            setCalendarConfig={setCalendarConfig}
-            garages={garages}
-            setGarages={setGarages}
-            maintenances={maintenances}
-            setMaintenances={setMaintenances}
+            vehicles={data.vehicles}
+            setVehicles={data.setVehicles}
+            reservations={data.reservations}
+            setReservations={data.setReservations}
+            clients={data.clients}
+            setClients={data.setClients}
+            drivers={data.drivers}
+            setDrivers={data.setDrivers}
+            locations={data.locations}
+            setLocations={data.setLocations}
+            calendarConfig={data.calendarConfig}
+            setCalendarConfig={data.setCalendarConfig}
+            garages={data.garages}
+            setGarages={data.setGarages}
+            maintenances={data.maintenances}
+            setMaintenances={data.setMaintenances}
             currentUser={currentUser}
             activeModule={activeModule}
             panelType="management"
@@ -1305,22 +729,22 @@ function App() {
           </div>
         }>
           <ManagementPanel
-            vehicles={vehicles}
-            setVehicles={setVehicles}
-            reservations={reservations}
-            setReservations={setReservations}
-            clients={clients}
-            setClients={setClients}
-            drivers={drivers}
-            setDrivers={setDrivers}
-            locations={locations}
-            setLocations={setLocations}
-            calendarConfig={calendarConfig}
-            setCalendarConfig={setCalendarConfig}
-            garages={garages}
-            setGarages={setGarages}
-            maintenances={maintenances}
-            setMaintenances={setMaintenances}
+            vehicles={data.vehicles}
+            setVehicles={data.setVehicles}
+            reservations={data.reservations}
+            setReservations={data.setReservations}
+            clients={data.clients}
+            setClients={data.setClients}
+            drivers={data.drivers}
+            setDrivers={data.setDrivers}
+            locations={data.locations}
+            setLocations={data.setLocations}
+            calendarConfig={data.calendarConfig}
+            setCalendarConfig={data.setCalendarConfig}
+            garages={data.garages}
+            setGarages={data.setGarages}
+            maintenances={data.maintenances}
+            setMaintenances={data.setMaintenances}
             currentUser={currentUser}
             panelType="settings"
             onClose={() => setShowSettings(false)}
@@ -1342,13 +766,13 @@ function App() {
         }>
           <MaintenanceDialog
             vehicle={selectedVehicleForMaintenance}
-            maintenances={maintenances}
-            garages={garages}
-            reservations={reservations}
+            maintenances={data.maintenances}
+            garages={data.garages}
+            reservations={data.reservations}
             maintenanceToEdit={maintenanceToEdit}
             actionType={maintenanceActionType}
             currentUser={currentUser}
-            onSave={handleMaintenanceSave}
+            onSave={data.handleMaintenanceSave}
             onClose={() => {
               setSelectedVehicleForMaintenance(null);
               setMaintenanceToEdit(null);
@@ -1361,14 +785,14 @@ function App() {
       {vehicleForDialog && (
         <VehicleDetailsModal
           vehicle={vehicleForDialog}
-          maintenances={maintenances}
+          maintenances={data.maintenances}
           currentUser={currentUser}
           onClose={() => setVehicleForDialog(null)}
           onRequestMaintenance={handleRequestMaintenance}
           onReportBreakdown={handleReportBreakdown}
           onScheduleMaintenance={handleScheduleMaintenance}
-          onUpdateIntervention={handleUpdateIntervention}
-          onDeleteIntervention={handleDeleteIntervention}
+          onUpdateIntervention={data.handleUpdateIntervention}
+          onDeleteIntervention={data.handleDeleteIntervention}
           onOpenMaintenance={(vehicle) => {
             setSelectedVehicleForKilometrageControl(vehicle);
             setVehicleForDialog(null);
@@ -1388,10 +812,9 @@ function App() {
             onSave={async (updatedVehicle) => {
               try {
                 const response = await api.updateVehicle(updatedVehicle.id, updatedVehicle);
-                setVehicles(prevVehicles => 
+                data.setVehicles(prevVehicles => 
                   prevVehicles.map(v => v.id === response.id ? response : v)
                 );
-                // Mettre à jour le véhicule sélectionné avec la réponse pour que le modal affiche les nouvelles données
                 setSelectedVehicleForKilometrageControl(response);
               } catch (error) {
                 console.error('Erreur lors de la mise à jour du véhicule:', error);
@@ -1430,27 +853,7 @@ function App() {
           onPaletteChange={setPalette}
           isDark={isDark}
           onToggleTheme={toggleTheme}
-          onPreferencesChange={(prefs) => {
-            // Mettre à jour les préférences de notification en temps réel
-            userPrefsRef.current = {
-              notificationsEnabled: prefs.notificationsEnabled !== false,
-              soundEnabled: prefs.soundEnabled !== false,
-            };
-            // Volume
-            setVolume((prefs.soundVolume ?? 70) / 100);
-            // Migration préférences onglets
-            const VT = ['vehicles','personnel','affaires','equipment','orders','catalog','stock','communication'];
-            let to = (prefs.tabOrder || VT).filter(id => VT.includes(id));
-            VT.forEach(id => { if (!to.includes(id)) to.push(id); });
-            setTabPrefs({
-              tabOrder: to,
-              hiddenTabs: (prefs.hiddenTabs || []).filter(id => VT.includes(id)),
-            });
-            // Demander la permission si notifications activées
-            if (prefs.notificationsEnabled !== false) {
-              requestNotificationPermission();
-            }
-          }}
+          onPreferencesChange={updatePreferences}
         />
       </Suspense>
 
@@ -1472,7 +875,7 @@ function App() {
         <Suspense fallback={null}>
           <AffaireDetailDialog
             affaire={globalAffaireDialog}
-            reservations={reservations}
+            reservations={data.reservations}
             onClose={() => setGlobalAffaireDialog(null)}
             onDataChanged={(updatedAffaire) => { if (updatedAffaire) setGlobalAffaireDialog(updatedAffaire); }}
             onNavigateToEntity={handleNavigateToEntity}
@@ -1484,6 +887,14 @@ function App() {
     </NavigationProvider>
     </ToastProvider>
     </ErrorBoundary>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

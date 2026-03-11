@@ -1,12 +1,13 @@
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
+import { listCache, cacheMiddleware, invalidateEntity } from './cache.js';
 
 // ============ CLIENTS (DEPRECATED — utiliser /api/annuaire/clients) ============
 // Ces routes legacy redirigent vers les endpoints annuaire pour compatibilité.
 // Elles seront supprimées dans une version future.
 
 export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
-  app.get('/api/clients', authenticateToken, (req, res) => {
+  app.get('/api/clients', authenticateToken, cacheMiddleware(listCache, () => 'clients', 60_000), (req, res) => {
     try {
       const stmt = db.prepare('SELECT * FROM clients WHERE is_active = 1 OR is_active IS NULL');
       const clients = stmt.all();
@@ -78,7 +79,7 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
 // ============ CONDUCTEURS ============
 
 export function setupDriversRoutes(app, authenticateToken, requireAdmin) {
-  app.get('/api/drivers', authenticateToken, (req, res) => {
+  app.get('/api/drivers', authenticateToken, cacheMiddleware(listCache, () => 'drivers', 60_000), (req, res) => {
     try {
       const stmt = db.prepare('SELECT * FROM drivers');
       const drivers = stmt.all();
@@ -146,7 +147,7 @@ export function setupDriversRoutes(app, authenticateToken, requireAdmin) {
 // ============ LIEUX ============
 
 export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
-  app.get('/api/locations', authenticateToken, (req, res) => {
+  app.get('/api/locations', authenticateToken, cacheMiddleware(listCache, () => 'locations', 60_000), (req, res) => {
     try {
       const stmt = db.prepare('SELECT * FROM locations');
       const locations = stmt.all();
@@ -236,7 +237,7 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
 // ============ GARAGES ============
 
 export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
-  app.get('/api/garages', authenticateToken, (req, res) => {
+  app.get('/api/garages', authenticateToken, cacheMiddleware(listCache, () => 'garages', 60_000), (req, res) => {
     try {
       const stmt = db.prepare('SELECT * FROM garages');
       const garages = stmt.all();

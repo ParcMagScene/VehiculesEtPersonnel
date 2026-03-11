@@ -187,6 +187,24 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ## 🔄 Historique des Mises à Jour Sécurité
 
+### 2026-03-11 — Mise à jour fonctionnelle + refactor Phase 3
+- ✅ **Phase 3 backend** : Routes extraites en 18 fichiers, middlewares et configs séparés
+- ✅ **Phase 3 frontend** : Composants réorganisés en 15 sous-dossiers par domaine (131 composants)
+- ✅ **Sélecteur d'affaire** dans TaskEditModal (recherche, lien/suppression)
+- ✅ **Nettoyage titres TV** : `cleanTvTitle()` supprime emojis, sections et n° AF sur les écrans
+- ✅ **Nettoyage titres Dashboard** : `cleanTaskDisplayTitle()` logique 2 étapes (google_event_title vs title)
+- ✅ **Nettoyage titres PDF** : `cleanTaskTitle()` pour l'export PDF planning
+- ✅ **Alarme SNCF** : Alarme sonore à l'échéance des tâches + test admin distant
+- ✅ Backend ~21 323 lignes, Frontend composants ~61 535 lignes
+
+### 2026-03-10 — Mise à jour documentation
+- ✅ Documentation complète mise à jour (ARCHITECTURE, README, SECURITY, GUIDE)
+- ✅ 92 tables DB, ~431 routes API, 131 composants React
+- ✅ Nouveau module Dashboard TV (21 composants, 13 tables display_*, Sonos, Sneaky, apparence, couleurs, bienvenue)
+- ✅ Nouveau module Mon Espace (espace personnel utilisateur)
+- ✅ Nouveaux composants : BLMultiImportModal, DynamicDisplayDialog, EventTaskModal, MonEspacePanel
+- ✅ Backend ~20 814 lignes, Frontend composants ~61 296 lignes
+
 ### 2026-03-09 — Mise à jour documentation
 - ✅ Documentation complète mise à jour (ARCHITECTURE, README, SECURITY, GUIDE)
 - ✅ 86 tables DB, ~428 routes API, 130 composants React
@@ -242,5 +260,5 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ---
 
-**Dernière mise à jour :** 9 mars 2026
+**Dernière mise à jour :** 11 mars 2026
 **Prochaine révision :** Mensuelle

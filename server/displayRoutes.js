@@ -32,7 +32,8 @@ const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}
 const SECTION_LABEL_RE = /^(Pr[eé]paration|Chargement|D[eé]part|Enl[eè]vement|Retour|R[eé]cup[eé]ration|Installation|Livraison|Montage|D[eé]montage|Prioritaires?|Secondaires?|Courses?|Divers)\s*[—–\-:]?\s*/i;
 
 function cleanTvTitle(t) {
-  let title = (t.google_event_title || t.title || '').replace(EMOJI_RE, '').trim();
+  // Priorité : titre édité par l'utilisateur > titre Google
+  let title = (t.title || t.google_event_title || '').replace(EMOJI_RE, '').trim();
   title = title.replace(SECTION_LABEL_RE, '').trim();
   const affNum = t.affaire_num || '';
   if (affNum) {
@@ -44,7 +45,9 @@ function cleanTvTitle(t) {
     }
   }
   title = title.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
-  return title || t.notes || '-';
+  if (!title) title = t.notes || '-';
+  // Auto-majuscule
+  return title.charAt(0).toUpperCase() + title.slice(1);
 }
 
 // ── Multer : upload GIF icônes ────────────────────────────────
@@ -1404,9 +1407,11 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.period,
                 ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
-                dde.type AS event_type, dde.category AS event_category
+                dde.type AS event_type, dde.category AS event_category,
+                aff.type AS affaire_type
          FROM task_assignments ta
          LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
+         LEFT JOIN affaires aff ON ta.affaire_num != '' AND ta.affaire_num = aff.numero_affaire
          WHERE ta.date = ? AND ta.visible = 1
            AND ta.status != 'cancelled'
            AND ta.deleted_at IS NULL
@@ -1437,6 +1442,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         location: t.event_location || '',
         client: t.event_client || '',
         notes: t.notes || '',
+        affaire_num: t.affaire_num || '',
+        affaire_type: t.affaire_type || '',
         description: [t.affaire_num ? `Affaire ${t.affaire_num}` : '', t.notes || ''].filter(Boolean).join(' — ') || '',
         is_recurrent: 0,
       }));
@@ -1578,9 +1585,11 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.period,
                 ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
-                dde.type AS event_type, dde.category AS event_category
+                dde.type AS event_type, dde.category AS event_category,
+                aff.type AS affaire_type
          FROM task_assignments ta
          LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
+         LEFT JOIN affaires aff ON ta.affaire_num != '' AND ta.affaire_num = aff.numero_affaire
          WHERE ta.date = ? AND ta.visible = 1
            AND ta.status != 'cancelled'
            AND ta.deleted_at IS NULL
@@ -1610,6 +1619,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         location: t.event_location || '',
         client: t.event_client || '',
         notes: t.notes || '',
+        affaire_num: t.affaire_num || '',
+        affaire_type: t.affaire_type || '',
         description: [t.affaire_num ? `Affaire ${t.affaire_num}` : '', t.notes || ''].filter(Boolean).join(' — ') || '',
         is_recurrent: t.source_type === 'recurring' ? 1 : 0,
       }));

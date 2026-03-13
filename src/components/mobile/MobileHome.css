@@ -2,29 +2,46 @@
   padding-bottom: 2rem;
 }
 
-/* Greeting */
-.home-greeting {
-  margin-bottom: 1.5rem;
+/* ── Grille d'icônes ── */
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
 
-.home-greeting h2 {
-  margin: 0 0 4px;
-  font-size: 1.5rem;
-  color: var(--theme-bg-dark);
-}
-
-.home-greeting p {
-  margin: 0;
-  color: var(--theme-text-secondary);
-  font-size: 0.9rem;
-}
-
-/* Module cards */
-.home-modules {
+.home-grid-item {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 4px;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
 }
+
+.home-grid-item:active {
+  opacity: 0.6;
+}
+
+.home-grid-item > span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Couleurs icônes */
+.home-grid-item.parc { color: var(--theme-success-dark, #059669); }
+.home-grid-item.personnel { color: var(--theme-info); }
+.home-grid-item.equipment { color: var(--theme-warning-dark, #d97706); }
+.home-grid-item.sav { color: #ef4444; }
+.home-grid-item.orders { color: #db2777; }
+.home-grid-item.leaves { color: var(--theme-success-alt, #10b981); }
+.home-grid-item.location { color: #6366f1; }
 
 .module-card {
   background: var(--theme-bg-card);

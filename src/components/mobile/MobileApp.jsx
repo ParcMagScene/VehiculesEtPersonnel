@@ -228,130 +228,51 @@ function MobileApp({ onSwitchToDesktop }) {
         <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <h1>eM@g</h1>
-        <div className="user-info" style={{ position: 'relative' }}>
+        <img src="/Logos/LogoEmagTransp.png" alt="eM@g" className="mobile-header-logo" />
+        <div className="user-info">
+          <button
+            className="header-msg-btn"
+            onClick={() => { setCurrentScreen('messaging'); currentScreenRef.current = 'messaging'; }}
+          >
+            <MessageSquare size={20} />
+            {unreadMsgCount > 0 && (
+              <span className="header-msg-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>
+            )}
+          </button>
           <button 
             className="user-initial"
             onClick={() => setShowUserMenu(!showUserMenu)}
-            style={{ cursor: 'pointer', border: 'none', background: 'none', padding: 0 }}
           >
             {currentUser?.name?.charAt(0)}
           </button>
-
-          {showUserMenu && (
-            <>
-              <div 
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  zIndex: 999
-                }}
-                onClick={() => setShowUserMenu(false)}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '50px',
-                  right: 0,
-                  background: 'var(--theme-bg-card)',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                  overflow: 'hidden',
-                  minWidth: '200px',
-                  zIndex: 1000
-                }}
-              >
-                <div style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid var(--theme-border)',
-                  background: 'var(--theme-bg-secondary)'
-                }}>
-                  <div style={{ fontWeight: 600, color: 'var(--theme-text-primary)' }}>{currentUser?.name}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--theme-text-gray)', marginTop: '2px' }}>
-                    {currentUser?.email}
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    window.location.reload();
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'var(--theme-bg-card)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    color: 'var(--theme-text-body)',
-                    transition: 'background 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
-                  }}
-                  onTouchStart={(e) => e.currentTarget.style.background = 'var(--theme-bg-secondary)'}
-                  onTouchEnd={(e) => e.currentTarget.style.background = 'var(--theme-bg-card)'}
-                >
-                  <LayoutGrid size={16} />
-                  Changer d'utilisateur
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    handleLogout();
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'var(--theme-bg-card)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    color: '#dc2626',
-                    transition: 'background 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    fontWeight: 500
-                  }}
-                  onTouchStart={(e) => e.currentTarget.style.background = 'var(--theme-danger-bg, #fef2f2)'}
-                  onTouchEnd={(e) => e.currentTarget.style.background = 'var(--theme-bg-card)'}
-                >
-                  <LogOut size={16} />
-                  Se déconnecter
-                </button>
-
-                <button
-                  onClick={() => setShowUserMenu(false)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    borderTop: '1px solid var(--theme-border)',
-                    background: 'var(--theme-bg-secondary)',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    color: 'var(--theme-text-gray)',
-                    transition: 'background 0.2s'
-                  }}
-                  onTouchStart={(e) => e.currentTarget.style.background = 'var(--theme-bg-tertiary)'}
-                  onTouchEnd={(e) => e.currentTarget.style.background = 'var(--theme-bg-secondary)'}
-                >
-                  Annuler
-                </button>
-              </div>
-            </>
-          )}
         </div>
       </header>
+
+      {/* User menu bottom-sheet */}
+      {showUserMenu && (
+        <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowUserMenu(false); }}>
+          <div className="mobile-sheet">
+            <div className="mobile-sheet-handle" />
+            <div className="mobile-sheet-user">
+              <div className="mobile-sheet-avatar">{currentUser?.name?.charAt(0)}</div>
+              <div>
+                <div className="mobile-sheet-name">{currentUser?.name}</div>
+                <div className="mobile-sheet-email">{currentUser?.email}</div>
+              </div>
+            </div>
+            <div className="mobile-sheet-actions">
+              <button onClick={() => { setShowUserMenu(false); window.location.reload(); }}>
+                <LayoutGrid size={18} />
+                Changer d'utilisateur
+              </button>
+              <button className="danger" onClick={() => { setShowUserMenu(false); handleLogout(); }}>
+                <LogOut size={18} />
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Menu latéral */}
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
@@ -601,6 +522,14 @@ function MobileApp({ onSwitchToDesktop }) {
         {currentScreen === 'equipment' && (
           <MobileEquipment
             onBack={() => setCurrentScreen('home')}
+            initialTab="inventory"
+          />
+        )}
+
+        {currentScreen === 'sav' && (
+          <MobileEquipment
+            onBack={() => setCurrentScreen('home')}
+            initialTab="sav"
           />
         )}
 
@@ -632,48 +561,6 @@ function MobileApp({ onSwitchToDesktop }) {
           />
         )}
       </main>
-
-      {/* Bottom Navigation Bar */}
-      <nav className="mobile-bottom-nav">
-        <button
-          className={`bottom-nav-item ${currentScreen === 'home' ? 'active' : ''}`}
-          onClick={() => setCurrentScreen('home')}
-        >
-          <Home size={20} />
-          <span>Accueil</span>
-        </button>
-        <button
-          className={`bottom-nav-item ${currentScreen === 'parc-dashboard' || currentScreen === 'planning' || currentScreen === 'availability' || currentScreen === 'reservations' || currentScreen === 'maintenances' ? 'active' : ''}`}
-          onClick={() => setCurrentScreen('parc-dashboard')}
-        >
-          <Truck size={20} />
-          <span>Parc</span>
-        </button>
-        <button
-          className={`bottom-nav-item ${currentScreen === 'messaging' ? 'active' : ''}`}
-          onClick={() => setCurrentScreen('messaging')}
-        >
-          <div style={{ position: 'relative' }}>
-            <MessageSquare size={20} />
-            {unreadMsgCount > 0 && <span className="bottom-nav-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
-          </div>
-          <span>Messages</span>
-        </button>
-        <button
-          className={`bottom-nav-item ${currentScreen === 'equipment' || currentScreen === 'equipment-qr' ? 'active' : ''}`}
-          onClick={() => setCurrentScreen('equipment')}
-        >
-          <Package size={20} />
-          <span>Matériel</span>
-        </button>
-        <button
-          className="bottom-nav-item"
-          onClick={() => setMenuOpen(true)}
-        >
-          <Menu size={20} />
-          <span>Plus</span>
-        </button>
-      </nav>
 
       {/* Toast notification messages */}
       {msgToast && (

@@ -324,9 +324,14 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     title = stripAfNum(title);
     // 4. Enrichir avec client/titre affaire si titre trop générique
     const linkedAffaire = affNum ? affaireByNum.get(affNum.toUpperCase()) : null;
-    if (linkedAffaire && (!title || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(title))) {
-      title = stripAfNum(linkedAffaire.client || linkedAffaire.titre || linkedAffaire.eventName || title || '-');
+    // 4. Enrichir avec client/titre de l'affaire SEULEMENT si titre vide/générique
+    if (!title || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(title)) {
+      if (linkedAffaire) {
+        title = stripAfNum(linkedAffaire.client || linkedAffaire.titre || linkedAffaire.eventName || title || '-');
+      }
     }
+    // Auto-majuscule
+    if (title) title = title.charAt(0).toUpperCase() + title.slice(1);
     return title || '-';
   };
 

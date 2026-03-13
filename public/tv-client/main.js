@@ -177,6 +177,20 @@ function applyConfig(config) {
   if (config.eventBgColor) root.style.setProperty('--event-bg-color', config.eventBgColor);
   if (config.eventTextColor) root.style.setProperty('--event-text-color', config.eventTextColor);
   if (config.fontFamily) root.style.setProperty('--font-family', config.fontFamily);
+
+  // Overscan TV : ?overscan=XX dans l'URL (en px), ou auto-détection Raspberry Pi
+  const params = new URLSearchParams(window.location.search);
+  let overscan = parseInt(params.get('overscan'), 10);
+  if (isNaN(overscan)) {
+    // Auto-détection : appliquer une marge par défaut sur les navigateurs embarqués (Pi, etc.)
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('raspbian') || ua.includes('raspberry') || ua.includes('chromium') && ua.includes('linux armv')) {
+      overscan = 24;
+    }
+  }
+  if (overscan > 0) {
+    root.style.setProperty('--tv-overscan', overscan + 'px');
+  }
 }
 
 // ===============================================
@@ -234,13 +248,14 @@ function createEventElement(event) {
   const timeDisplay = endTimeStr ? `${timeStr} → ${endTimeStr}` : timeStr;
   const eventTitle = event.title || 'Sans titre';
   const eventLocation = event.location || '';
-  const eventDescription = event.description || '';
+  const affaireNum = event.affaire_num || '';
+  const affaireType = event.affaire_type || '';
 
   // Vérifier si terminé (status 'done' dans la planification OU marqué manuellement sur l'écran)
   const isCompleted = event.status === 'done' || completedEvents.includes(eventId);
 
   // Rechercher icône de lieu (sur titre + sectionLabel + location)
-  const searchTextForIcon = `${eventTitle} ${event.sectionLabel || ''} ${eventLocation}`;
+  const searchTextForIcon = `${eventTitle} ${event.section || ''} ${event.sectionLabel || ''} ${eventLocation}`;
   const locationIcon = getLocationIcon(searchTextForIcon);
 
   // Construire le contenu de la colonne lieu
@@ -253,15 +268,22 @@ function createEventElement(event) {
     locationContent = event.sectionLabel || '';
   }
 
-  // Section badge (label coloré)
-  const sectionBadge = event.sectionLabel ? `<span class="section-badge">${event.sectionLabel}</span>` : '';
+  // Badge affaire (couleur selon le type d'affaire)
+  const AFFAIRE_TYPE_COLORS = {
+    Prestation: '#3b82f6', Location: '#f59e0b', Installation: '#10b981',
+    Vente: '#8b5cf6', 'Tournée': '#ec4899',
+  };
+  const badgeColor = AFFAIRE_TYPE_COLORS[affaireType] || '#3b82f6';
+  const affaireBadge = affaireNum
+    ? `<span class="tv-affaire-badge" style="--badge-color:${badgeColor}">${affaireNum}</span>`
+    : '';
 
   li.innerHTML = `
     <div class="event-columns">
       <div class="col-time">${timeDisplay}</div>
       <div class="col-title">${isCompleted ? '<span class="completed-icon">✅</span>' : ''}${eventTitle}</div>
       <div class="col-location">${locationContent}</div>
-      <div class="col-description">${eventDescription}</div>
+      <div class="col-affaire">${affaireBadge}</div>
     </div>
   `;
 
@@ -273,7 +295,7 @@ function createEventElement(event) {
   li.addEventListener('click', () => toggleEventComplete(eventId, li));
 
   // Application des couleurs personnalisées (mot-clé dans titre + section + location)
-  const searchText = `${eventTitle} ${event.sectionLabel || ''} ${eventLocation}`.toLowerCase();
+  const searchText = `${eventTitle} ${event.section || ''} ${event.sectionLabel || ''} ${eventLocation}`.toLowerCase();
   for (const rule of colorRules) {
     if (searchText.includes(rule.keyword.toLowerCase())) {
       li.style.setProperty('--event-color', rule.color);

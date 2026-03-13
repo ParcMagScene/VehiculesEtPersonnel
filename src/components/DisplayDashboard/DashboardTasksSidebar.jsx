@@ -11,6 +11,7 @@ import {
   Save, Briefcase
 } from 'lucide-react';
 import api from '../../utils/api';
+import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 
 // ─── Sections (mêmes que TaskPlanningPanel, sans rdv/evenements) ───
@@ -52,30 +53,33 @@ function stripAfNum(text, task) {
 }
 
 function cleanTaskDisplayTitle(task) {
-  const rawGev = (task.google_event_title || '').trim();
   const rawTitle = (task.title || '').trim();
+  const rawGev = (task.google_event_title || '').trim();
 
-  // 1. Si google_event_title existe → utiliser (nettoyé)
+  // 1. Priorité : titre édité par l'utilisateur
+  if (rawTitle) {
+    let t = rawTitle.replace(EMOJI_RE, '').trim();
+    t = t.replace(SECTION_LABEL_RE, '').trim();
+    t = stripAfNum(t, task);
+    t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
+    if (t) return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  // 2. Fallback : google_event_title
   if (rawGev) {
     let t = rawGev.replace(EMOJI_RE, '').trim();
     t = t.replace(SECTION_LABEL_RE, '').trim();
     t = stripAfNum(t, task);
     t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
-    if (t) return t;
+    if (t) return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
-  // 2. Sinon, utiliser le titre brut (retirer juste les emojis + AF, garder le label de section)
-  if (rawTitle) {
-    let t = rawTitle.replace(EMOJI_RE, '').trim();
-    t = stripAfNum(t, task);
-    t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
-    if (t) return t;
-  }
-
-  return task.notes || '-';
+  const fallback = task.notes || '-';
+  return fallback.charAt(0).toUpperCase() + fallback.slice(1);
 }
 
 function DashboardTasksSidebar({ refreshKey, style }) {
+  const toast = useToast();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState({});
@@ -148,6 +152,16 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       if (sonosInterval.current) clearInterval(sonosInterval.current);
     };
   }, [loadTasks, loadNowPlaying, loadSidebarConfig, loadAffaires, refreshKey]);
+
+  // ─── Toggle visibilité d'une tâche (afficher/masquer sur l'écran TV) ───
+  const handleToggleVisible = useCallback(async (task) => {
+    try {
+      await api.toggleTaskVisibility(task.id);
+      loadTasks();
+    } catch {
+      toast.error('Erreur toggle visibilité');
+    }
+  }, [loadTasks, toast]);
 
   // ─── Résoudre la couleur d'une tâche ───
   const getTaskColor = useCallback((task) => {
@@ -334,14 +348,22 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                     {items.map(task => {
                       const isDone = task.status === 'done';
                       const isProgress = task.status === 'in_progress';
+                      const isHidden = task.visible === 0;
                       const taskColor = getTaskColor(task);
                       const affBadge = getAffaireBadge(task);
                       return (
                         <div
                           key={task.id}
-                          className={`dash-task-item ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''}`}
+                          className={`dash-task-item ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''} ${isHidden ? 'hidden-task' : ''}`}
                           style={{ borderLeftColor: taskColor }}
                         >
+                          <button
+                            className={`dash-task-visible-btn ${isHidden ? 'off' : ''}`}
+                            onClick={() => handleToggleVisible(task)}
+                            title={isHidden ? 'Afficher sur l\'écran TV' : 'Masquer de l\'écran TV'}
+                          >
+                            {isHidden ? <EyeOff size={11} /> : <Eye size={11} />}
+                          </button>
                           <span className={`dash-task-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}>
                             {isDone ? <Check size={10} /> : isProgress ? <Clock size={10} /> : null}
                           </span>

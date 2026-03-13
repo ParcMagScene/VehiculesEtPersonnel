@@ -20,6 +20,8 @@ const LoginForm = ({ onLogin }) => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetFormEmail, setResetFormEmail] = useState('');
   const [resetFormName, setResetFormName] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [resetStep, setResetStep] = useState('request'); // 'request' or 'confirm'
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetError, setResetError] = useState('');
@@ -40,7 +42,7 @@ const LoginForm = ({ onLogin }) => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const response = await fetch(`${getApiUrl()}/auth/users`);
+        const response = await fetch(`${getApiUrl()}/auth/users-public`);
         if (response.ok) {
           const data = await response.json();
           setUsers(data);
@@ -75,8 +77,12 @@ const LoginForm = ({ onLogin }) => {
       // Vérifier si c'est une demande de réinitialisation de mot de passe
       else if (err.response?.status === 403 && err.response?.data?.error === 'PASSWORD_RESET_REQUIRED') {
         setResetFormEmail(email);
+        setResetStep('request');
+        setResetToken('');
+        setNewPassword('');
+        setNewPasswordConfirm('');
         setShowResetPassword(true);
-        setResetError('Votre compte nécessite une réinitialisation du mot de passe.');
+        setResetError('Votre compte nécessite une réinitialisation du mot de passe. Demandez un code et suivez les instructions.');
         setError('');
       } 
       else {
@@ -122,35 +128,61 @@ const LoginForm = ({ onLogin }) => {
   };
   const handleSelfResetPassword = async (e) => {
     e.preventDefault();
+    setResetError('');
+
+    // Étape 1 : Demander un code de vérification (OTP) par email
+    if (resetStep === 'request') {
+      try {
+        const response = await fetch(`${getApiUrl()}/auth/self-reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: resetFormEmail, name: resetFormName })
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Erreur lors de la demande de code');
+        }
+
+        setResetStep('confirm');
+        setResetError('Un code de vérification a été envoyé à votre email.');
+      } catch (err) {
+        setResetError(err.message);
+      }
+
+      return;
+    }
+
+    // Étape 2 : Confirmer le code OTP et définir le nouveau mot de passe
     if (newPassword !== newPasswordConfirm) {
       setResetError('Les mots de passe ne correspondent pas');
       return;
     }
+
+    if (!resetToken) {
+      setResetError('Veuillez saisir le code de vérification (OTP) reçu par email.');
+      return;
+    }
+
     setLoading(true);
-    setResetError('');
-    
     try {
-      const response = await fetch(`${getApiUrl()}/auth/self-reset-password`, {
+      const response = await fetch(`${getApiUrl()}/auth/set-new-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: resetFormEmail, 
-          name: resetFormName,
-          newPassword: newPassword 
-        })
+        body: JSON.stringify({
+          email: resetFormEmail,
+          resetToken,
+          newPassword,
+        }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
         throw new Error(data.error || 'Erreur lors de la réinitialisation');
       }
 
       const data = await response.json();
-      
-      // Sauvegarder le token via api.setAuth (synchronise le singleton)
       api.setAuth(data.token, data.user);
-      
-      // Fermer le modal et recharger
       setShowResetPassword(false);
       window.location.reload();
     } catch (err) {
@@ -285,8 +317,10 @@ const LoginForm = ({ onLogin }) => {
             className="forgot-password-link"
             onClick={() => {
               setShowResetPassword(true);
+              setResetStep('request');
               setResetFormEmail(email || (selectedUser ? selectedUser.email : ''));
               setResetFormName('');
+              setResetToken('');
               setNewPassword('');
               setNewPasswordConfirm('');
               setResetError('');
@@ -362,14 +396,26 @@ const LoginForm = ({ onLogin }) => {
         )}
 
         {showResetPassword && (
-          <div className="login-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowResetPassword(false)}>
+          <div
+            className="login-overlay"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowResetPassword(false);
+                setResetStep('request');
+                setResetToken('');
+                setResetError('');
+              }
+            }}
+          >
             <div className="login-modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header" style={{ background: 'var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706))' }}>
                 <h3>🔑 Réinitialiser le mot de passe</h3>
               </div>
               <div className="modal-body">
                 <p style={{ marginBottom: '16px', color: 'var(--theme-text-body)' }}>
-                  Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
+                  {resetStep === 'request'
+                    ? 'Entrez votre adresse email et votre nom complet pour recevoir un code de vérification par email.'
+                    : 'Entrez le code de vérification reçu par email et choisissez un nouveau mot de passe.'}
                 </p>
                 
                 <form onSubmit={handleSelfResetPassword}>
@@ -404,6 +450,23 @@ const LoginForm = ({ onLogin }) => {
                     />
                   </div>
 
+                  {resetStep === 'confirm' && (
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label htmlFor="reset-token" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                        Code de vérification (OTP)
+                      </label>
+                      <input
+                        id="reset-token"
+                        type="text"
+                        value={resetToken}
+                        onChange={(e) => setResetToken(e.target.value)}
+                        placeholder="Entrez le code reçu par email"
+                        required
+                        style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
+                      />
+                    </div>
+                  )}
+
                   <div className="form-group" style={{ marginBottom: '12px' }}>
                     <label htmlFor="new-password" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                       Nouveau mot de passe
@@ -436,6 +499,23 @@ const LoginForm = ({ onLogin }) => {
                     />
                   </div>
 
+                  {resetStep === 'confirm' && (
+                    <div style={{ marginBottom: '16px', fontSize: '13px', color: 'var(--theme-text-gray)' }}>
+                      <span>Vous n'avez pas reçu le code ? </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetStep('request');
+                          setResetToken('');
+                          setResetError('');
+                        }}
+                        style={{ color: 'var(--theme-link)', textDecoration: 'underline', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                      >
+                        Réessayer
+                      </button>
+                    </div>
+                  )}
+
                   {resetError && (
                     <div className="error-message" style={{ marginBottom: '16px' }}>
                       {resetError}
@@ -448,6 +528,8 @@ const LoginForm = ({ onLogin }) => {
                       className="btn-secondary"
                       onClick={() => {
                         setShowResetPassword(false);
+                        setResetStep('request');
+                        setResetToken('');
                         setResetError('');
                       }}
                       disabled={loading}
@@ -457,9 +539,18 @@ const LoginForm = ({ onLogin }) => {
                     <button
                       type="submit"
                       className="btn-primary"
-                      disabled={loading || !resetFormEmail || !resetFormName || newPassword.length < 6 || !newPasswordConfirm}
+                      disabled={
+                        loading ||
+                        !resetFormEmail ||
+                        !resetFormName ||
+                        (resetStep === 'confirm' && (!resetToken || newPassword.length < 6 || newPasswordConfirm !== newPassword))
+                      }
                     >
-                      {loading ? 'Réinitialisation...' : 'Réinitialiser'}
+                      {loading
+                        ? 'Réinitialisation...'
+                        : resetStep === 'request'
+                        ? 'Envoyer le code'
+                        : 'Réinitialiser'}
                     </button>
                   </div>
                 </form>

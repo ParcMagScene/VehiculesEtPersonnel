@@ -17,6 +17,9 @@ body {
   font-family: var(--font-family, Arial, sans-serif);
   background: var(--event-bg-color, #000000);
   color: var(--primary-color, #00e1ff);
+  /* Safe area pour TV overscan (Raspberry Pi) — activé via ?overscan=XX ou auto-détection */
+  padding: var(--tv-overscan, 0);
+  max-width: 100vw;
 }
 
 /* ═══════════ NAVIGATION MOBILE (ONGLETS) ═══════════ */
@@ -164,15 +167,14 @@ header {
 #events-list li.all-day-event,
 #regular-events-list li.all-day-event,
 .recurrent-events-list li.all-day-event {
-  border: 1px solid #87CEEB;
   border-radius: 6px;
 }
 
 /* Structure en colonnes */
 .event-columns {
   display: grid;
-  grid-template-columns: 120px 1fr 200px 250px;
-  gap: 2em;
+  grid-template-columns: 140px 1fr 200px 180px;
+  gap: 2.5em;
   align-items: center;
   width: 100%;
 }
@@ -182,7 +184,7 @@ main {
   padding: 2em 3em;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 200px - var(--tv-overscan, 0px) * 2);
   overflow: hidden;
 }
 
@@ -211,8 +213,8 @@ main {
 .col-time {
   font-weight: 600;
   font-size: 1.1em;
-  width: 120px;
-  min-width: 120px;
+  width: 140px;
+  min-width: 140px;
 }
 .col-location {
   font-size: 0.85em;
@@ -224,6 +226,7 @@ main {
   gap: 0.5em;
   width: 200px;
   min-width: 200px;
+  height: 70px;
 }
 .col-location .location-icon {
   width: 64px;
@@ -239,6 +242,7 @@ main {
   box-sizing: border-box;
   overflow: hidden;
   padding: 4px;
+  margin: 0 auto;
 }
 .col-location .location-icon img {
   width: 100%;
@@ -247,7 +251,26 @@ main {
   display: block;
 }
 .col-title { font-weight: 500; flex: 1; }
-.col-description { font-size: 0.8em; opacity: 0.8; text-align: right; }
+.col-affaire {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.tv-affaire-badge {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 0.02em;
+  padding: 0.15em 0.6em;
+  border-radius: 5px;
+  color: var(--badge-color, #3b82f6);
+  background: color-mix(in srgb, var(--badge-color, #3b82f6) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color, #3b82f6) 35%, transparent);
+  white-space: nowrap;
+  line-height: 1.4;
+}
 
 /* Section badge */
 .section-badge {
@@ -270,7 +293,7 @@ main {
 }
 .event-completed .col-title,
 .event-completed .col-location,
-.event-completed .col-description,
+.event-completed .col-affaire,
 .event-completed .col-time {
   color: #666 !important;
 }
@@ -400,12 +423,14 @@ footer {
   #datetime { font-size: clamp(1em, 2.5vw, 1.8em); }
   #date, #heure { font-size: clamp(0.8em, 2vw, 1.2em); }
   .event-columns {
-    grid-template-columns: 80px 1fr 150px 180px;
-    gap: 1em;
+    grid-template-columns: 100px 1fr 150px 140px;
+    gap: 1.5em;
   }
-  .col-time { font-size: clamp(1em, 2vw, 1.3em); }
+  .col-time { font-size: clamp(1em, 2vw, 1.3em); min-width: 100px; width: 100px; }
   .col-title { font-size: clamp(0.9em, 1.8vw, 1.2em); }
-  .col-location, .col-description { font-size: clamp(0.7em, 1.3vw, 0.9em); }
+  .col-location, .col-affaire { font-size: clamp(0.7em, 1.3vw, 0.9em); }
+  .col-location { width: 150px; min-width: 150px; height: 56px; }
+  .col-location .location-icon { width: 50px; min-width: 50px; height: 50px; }
   .events-container, .recurrent-events-container { padding: 0.5em 1em; }
   .event-item {
     padding: 0.8em 1em;
@@ -420,7 +445,10 @@ footer {
   header { padding: 0.3em 1em; }
   #logo { height: 70px; }
   #welcome { font-size: 1.8em; }
-  .event-columns { grid-template-columns: 70px 1fr 120px 150px; gap: 0.8em; }
+  .event-columns { grid-template-columns: 90px 1fr 120px 120px; gap: 1.2em; }
+  .col-time { min-width: 90px; width: 90px; }
+  .col-location { width: 120px; min-width: 120px; height: 48px; }
+  .col-location .location-icon { width: 42px; min-width: 42px; height: 42px; }
   .event-item { padding: 0.5em 0.8em; margin-bottom: 0.3em; }
   .events-section, .recurrent-events-section { margin-top: 0.5em; }
 }

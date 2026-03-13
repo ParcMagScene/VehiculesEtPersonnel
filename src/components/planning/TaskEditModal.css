@@ -18,7 +18,7 @@
 }
 
 .tem-modal {
-  background: var(--theme-bg-primary);
+  background: var(--theme-bg-card);
   border-radius: 12px;
   width: 100%;
   max-width: 480px;
@@ -231,7 +231,7 @@
   right: 0;
   max-height: 180px;
   overflow-y: auto;
-  background: var(--theme-bg-primary);
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-primary);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
@@ -254,7 +254,7 @@
   padding: 0.4rem 0.5rem;
   border: none;
   border-radius: 6px;
-  background: var(--theme-bg-primary);
+  background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.82rem;
   font-family: inherit;

@@ -5,7 +5,7 @@ export const getApiUrl = () => {
   const hostname = window.location.hostname;
   const port = window.location.port;
 
-  if (port === '5174' || port === '4173') {
+  if (port === '5174' || port === '5175' || port === '4173') {
     return '/api';
   }
 
@@ -112,6 +112,12 @@ export class ApiClient {
 
     if (response.status === 403 && !isAuthEndpoint) {
       const data = await response.json().catch(() => ({}));
+      // Token invalide = JWT corrompu ou secret changé → forcer re-login
+      if (data.error === 'Token invalide') {
+        this.clearAuth();
+        window.location.reload();
+        throw new Error('Token invalide — reconnexion requise');
+      }
       const error = new Error(data.error || 'Accès refusé');
       error.response = { status: 403, data };
       throw error;
@@ -121,6 +127,15 @@ export class ApiClient {
     try {
       data = await response.json();
     } catch (parseError) {
+      // Aucune réponse JSON (ex: 500 sans corps) → utile pour débogage en dev
+      console.warn('API: impossible de parser la réponse JSON', {
+        endpoint,
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        parseError
+      });
+
       if (!response.ok) {
         const error = new Error(`Erreur serveur (${response.status})`);
         error.response = { status: response.status, data: null };

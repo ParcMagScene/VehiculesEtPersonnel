@@ -106,6 +106,12 @@ export function registerOrdersMethods(ApiClient) {
     async getAllDepotZones() {
       return this.request('/equipment-all-depot-zones');
     },
+    async saveDepotZones(depot, zones) {
+      return this.request('/equipment-depot-zones', {
+        method: 'PUT',
+        body: JSON.stringify({ depot, zones }),
+      });
+    },
     async getEquipmentLocationStats(depot = null) {
       return this.request(`/equipment-location-stats${depot ? `?depot=${depot}` : ''}`);
     },

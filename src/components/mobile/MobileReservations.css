@@ -288,7 +288,7 @@
 .vehicle-picker-list {
   overflow-y: auto;
   flex: 1;
-  padding: 8px 12px 24px;
+  padding: 8px 12px max(24px, env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
 }
 

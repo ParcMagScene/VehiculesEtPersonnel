@@ -212,6 +212,38 @@ setupAffairesRoutes(app, authenticateToken, requireAdmin);
 setupProfileRoutes(app, authenticateToken, requireAdmin);
 setupAttachmentsRoutes(app, authenticateToken, requireAdmin);
 
+// Debug endpoints
+app.get('/api/debug/route-test', (req, res) => {
+  res.json({ ok: true, isDev, env: process.env.NODE_ENV, args: process.argv });
+});
+
+app.get('/api/debug/routes', (req, res) => {
+  const routes = [];
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      const methods = Object.keys(middleware.route.methods).join(',');
+      routes.push({ path: middleware.route.path, methods });
+    }
+  });
+  res.json({ routes });
+});
+
+if (isDev) {
+  app.get('/api/debug/session', authenticateToken, (req, res) => {
+    try {
+      const sessions = db.prepare('SELECT id, user_id, created_at, expires_at, last_activity FROM active_sessions WHERE user_id = ?')
+        .all(req.user.id);
+      res.json({
+        user: req.user,
+        sessions,
+      });
+    } catch (error) {
+      logger.error('Erreur debug/session:', error.message);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+}
+
 // Middleware centralisé de gestion d'erreurs (doit être APRÈS toutes les routes)
 app.use(errorHandler);
 

@@ -68,14 +68,17 @@ function onDragStart(e) {
   // 1) Chercher un header (drag handle préféré)
   const header = e.target.closest(HEADER_SELECTORS);
   if (header) {
-    // Le header doit être dans un vrai modal (enhanced ou matchant MODAL_SELECTORS)
-    const parentModal = header.closest(MODAL_SELECTORS);
-    if (parentModal) {
-      modal = parentModal;
-    }
-    // Fallback : header.parentElement uniquement s'il a été enhanced
-    if (!modal && header.parentElement && header.parentElement.dataset.draggableEnhanced) {
-      modal = header.parentElement;
+    // Remonter depuis le PARENT du header pour trouver le vrai container modal
+    // (ne pas utiliser header.closest() car le header lui-même peut matcher MODAL_SELECTORS)
+    let candidate = header.parentElement;
+    while (candidate) {
+      if (candidate.dataset?.draggableEnhanced || candidate.matches?.(MODAL_SELECTORS)) {
+        modal = candidate;
+        break;
+      }
+      // Stopper à l'overlay pour ne pas remonter trop haut
+      if (candidate.matches?.(OVERLAY_SELECTORS)) break;
+      candidate = candidate.parentElement;
     }
   }
 
@@ -327,12 +330,19 @@ function onMouseUp(e) {
 function enhanceModal(modal) {
   if (modal.dataset.draggableEnhanced) return;
 
+  // Ne pas enhancer les sous-éléments d'un modal déjà enhancé (header, body, footer, etc.)
+  if (modal.parentElement?.closest('[data-draggable-enhanced]')) return;
+
+  // Ne pas enhancer les éléments qui sont clairement des sous-composants
+  if (modal.matches(HEADER_SELECTORS)) return;
+
   // Vérifier qu'il ne faut pas ignorer
   const classes = modal.className ? modal.className.toLowerCase() : '';
   if (IGNORE_CLASSES.some(c => classes.includes(c))) return;
 
-  // Ne pas traiter les éléments trop petits (menus, tooltips)
-  // On laisse le check se faire plus tard quand l'élément a ses dimensions
+  // Exclure les sous-parties (body, footer, close, actions, title, name)
+  if (/-(body|footer|close|actions|title|name|cat|content)\b/.test(classes)) return;
+
   modal.dataset.draggableEnhanced = '1';
 
   // Ajouter handles de resize
@@ -360,13 +370,19 @@ function enhanceModal(modal) {
 /* ------------------------------------------------------------------ */
 
 function scanAndEnhance(root = document.body) {
-  // Scanner les overlays et chercher les containers modals
+  // Scanner les overlays et chercher les containers modals (enfants directs uniquement)
   const overlays = root.querySelectorAll(OVERLAY_SELECTORS);
   overlays.forEach(overlay => {
-    const modals = overlay.querySelectorAll(MODAL_SELECTORS);
-    modals.forEach(modal => enhanceModal(modal));
-    // Si l'overlay a un enfant direct qui n'est pas un modal connu mais est le container
-    if (modals.length === 0) {
+    // Ne prendre que les enfants directs de l'overlay qui matchent
+    let found = false;
+    Array.from(overlay.children).forEach(child => {
+      if (child.matches(MODAL_SELECTORS)) {
+        enhanceModal(child);
+        found = true;
+      }
+    });
+    // Fallback : si aucun enfant direct ne matche, prendre le premier enfant
+    if (!found) {
       const firstChild = overlay.firstElementChild;
       if (firstChild && firstChild !== overlay) {
         enhanceModal(firstChild);
@@ -398,7 +414,17 @@ function onDblClick(e) {
   const header = e.target.closest(HEADER_SELECTORS);
   if (!header) return;
 
-  const modal = header.closest(MODAL_SELECTORS) || header.parentElement;
+  // Remonter depuis le parent du header pour trouver le vrai modal
+  let modal = null;
+  let candidate = header.parentElement;
+  while (candidate) {
+    if (candidate.dataset?.draggableEnhanced || candidate.matches?.(MODAL_SELECTORS)) {
+      modal = candidate;
+      break;
+    }
+    if (candidate.matches?.(OVERLAY_SELECTORS)) break;
+    candidate = candidate.parentElement;
+  }
   if (!modal || !modal.dataset.dragInitialized) return;
 
   // Reset position et taille

@@ -3,7 +3,7 @@ import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, ChevronDown, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
   CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings,
-  Repeat, SkipForward, Link, RefreshCw, Palette, Truck, CheckCheck
+  Repeat, SkipForward, Link, RefreshCw, Palette, Truck, CheckCheck, Search, Unlink
 } from 'lucide-react';
 import api from '../../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
@@ -143,6 +143,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [newTaskGoogleEvent, setNewTaskGoogleEvent] = useState('');
   const [newTaskReservation, setNewTaskReservation] = useState(''); // reservation ID or '__new__'
   const [newTaskVehicle, setNewTaskVehicle] = useState(''); // vehicle ID (for new reservation)
+  // Affaire autocomplete (inline add)
+  const [affaireInlineSearch, setAffaireInlineSearch] = useState('');
+  const [affaireInlineOpen, setAffaireInlineOpen] = useState(false);
+  const [allAffaires, setAllAffaires] = useState([]);
+  const affaireInlineRef = useRef(null);
   const [showPdfExport, setShowPdfExport] = useState(false);
   const [displayEvents, setDisplayEvents] = useState([]);
   // Véhicules & réservations (pour le picker dans le formulaire courses/chargement)
@@ -241,6 +246,38 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   useEffect(() => { loadTasks(); }, [loadTasks, refreshKey]);
   useEffect(() => { loadPersons(); }, [loadPersons]);
 
+  // Charger toutes les affaires pour l'autocomplete inline
+  useEffect(() => {
+    api.getAffaires().then(data => setAllAffaires(Array.isArray(data) ? data : [])).catch(() => {});
+  }, []);
+
+  // Fermer dropdown affaire inline sur clic extérieur
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (affaireInlineRef.current && !affaireInlineRef.current.contains(e.target)) {
+        setAffaireInlineOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // Filtrer les affaires pour l'autocomplete inline
+  const filteredInlineAffaires = useMemo(() => {
+    if (!affaireInlineSearch.trim()) return allAffaires.slice(0, 30);
+    const q = affaireInlineSearch.toLowerCase();
+    return allAffaires.filter(a =>
+      (a.numeroAffaire || '').toLowerCase().includes(q) ||
+      (a.client || '').toLowerCase().includes(q) ||
+      (a.titre || a.nom || '').toLowerCase().includes(q)
+    ).slice(0, 30);
+  }, [allAffaires, affaireInlineSearch]);
+
+  const selectedInlineAffaire = useMemo(() => {
+    if (!newTaskAffaire) return null;
+    return allAffaires.find(a => a.numeroAffaire === newTaskAffaire) || null;
+  }, [allAffaires, newTaskAffaire]);
+
   // ── Véhicules & réservations (pour picker dans formulaire) ──
   const loadVehiclesAndReservations = useCallback(async () => {
     try {
@@ -259,13 +296,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     } catch { setIcalCalendars([]); }
   }, []);
 
-  // ── iCal : chargement des événements (fenêtre glissante ±1 semaine) ──
+  // ── iCal : chargement des événements (fenêtre glissante couvrant selectedDate ± 2 semaines) ──
   const loadIcalEvents = useCallback(async () => {
     setIcalLoading(true);
     try {
-      const today = todayStr();
-      const from = addDays(today, -7);
-      const to = addDays(today, 7);
+      const from = addDays(selectedDate, -14);
+      const to = addDays(selectedDate, 14);
       const res = await api.getIcalEvents({ dateFrom: from, dateTo: to });
       const events = (res.events || []).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
       setIcalEvents(events);
@@ -274,7 +310,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       }
     } catch { setIcalEvents([]); }
     finally { setIcalLoading(false); }
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => { loadIcalCalendars(); }, [loadIcalCalendars]);
   useEffect(() => { loadIcalEvents(); }, [loadIcalEvents, icalCalendars]);
@@ -670,19 +706,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   [allGoogleEvents]);
 
   // Fusionner Google (non-RDV) + iCal en une seule liste triée chronologiquement
+  // Filtrer les iCal par la date/semaine sélectionnée pour ne montrer que les événements pertinents
   const mergedOtherEvents = useMemo(() => {
     const googleNorm = googleOtherEvents.map(ev => ({
       ...ev,
       _source: 'google',
       _sortKey: ev.start?.dateTime || ev.start?.date || '',
     }));
-    const icalNorm = icalEvents.map(ev => ({
+    const dateSet = viewMode === 'week' ? new Set(weekDays) : new Set([selectedDate]);
+    const filteredIcal = icalEvents.filter(ev => {
+      const evDate = (ev.start || '').slice(0, 10);
+      return dateSet.has(evDate);
+    });
+    const icalNorm = filteredIcal.map(ev => ({
       ...ev,
       _source: 'ical',
       _sortKey: ev.start || '',
     }));
     return [...googleNorm, ...icalNorm].sort((a, b) => a._sortKey.localeCompare(b._sortKey));
-  }, [googleOtherEvents, icalEvents]);
+  }, [googleOtherEvents, icalEvents, viewMode, selectedDate, weekDays]);
 
   // ── Groupement par jour pour la vue semaine ──
   const weekGroupedByDay = useMemo(() => {
@@ -714,8 +756,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       const evDate = (ev.start?.dateTime || ev.start?.date || '').slice(0, 10);
       if (map[evDate]) map[evDate].googleEvents.push(ev);
     });
+    // iCal events groupés par jour
+    icalEvents.forEach(ev => {
+      const evDate = (ev.start || '').slice(0, 10);
+      if (map[evDate]) map[evDate].googleEvents.push({ ...ev, _source: 'ical' });
+    });
     return map;
-  }, [viewMode, weekDays, tasks, unlinkedEvents, enrichedAffaires, filteredWeekGoogleEvents]);
+  }, [viewMode, weekDays, tasks, unlinkedEvents, enrichedAffaires, filteredWeekGoogleEvents, icalEvents]);
 
   // Index des display events par affaire_id (pour affectation personnel sur les lignes affaire)
   const displayEventByAffaire = useMemo(() => {
@@ -894,6 +941,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
       // Construire le titre final
       let finalTitle = newTaskTitle.trim();
+      // Auto-capitaliser la première lettre
+      if (finalTitle) finalTitle = finalTitle.charAt(0).toUpperCase() + finalTitle.slice(1);
       if (section === 'courses' && newTaskType) {
         const typeInfo = EVENT_TYPES[newTaskType];
         if (typeInfo) {
@@ -947,6 +996,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       setNewTaskTitle('');
       setNewTaskPerson('');
       setNewTaskAffaire('');
+      setAffaireInlineSearch('');
+      setAffaireInlineOpen(false);
       setNewTaskType('');
       setNewTaskClient('');
       setNewTaskTime('');
@@ -1091,7 +1142,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     // Nom et Client de l'affaire liée
     const affaireNom = stripAffaireNum(linkedAffaire?.nom || '');
     const affaireClient = linkedAffaire?.client || '';
-    const displayNom = affaireNom || fullTitle;
+    // Priorité : titre édité par l'utilisateur > nom de l'affaire
+    const rawNom = fullTitle || affaireNom || '-';
+    const displayNom = rawNom.charAt(0).toUpperCase() + rawNom.slice(1);
     const displayClient = affaireClient;
 
     return (
@@ -1777,9 +1830,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               || (an && affaireByNum.get(an.toUpperCase())?.event_name)
               || (an && affaireByNum.get(an.toUpperCase())?.titre)
               || '';
+            const wkDisplayTitle = cleaned || eventLabel || item.title || '-';
+            const wkCapTitle = wkDisplayTitle.charAt(0).toUpperCase() + wkDisplayTitle.slice(1);
             return (
               <span className="wk-task-info">
-                <span className={`wk-title ${isDone ? 'done' : ''}`} title={`${an ? an + ' · ' : ''}${item.title}${eventLabel ? ' — ' + eventLabel : ''}`}>{cleaned}</span>
+                <span className={`wk-title ${isDone ? 'done' : ''}`} title={`${an ? an + ' · ' : ''}${item.title}${eventLabel ? ' — ' + eventLabel : ''}`}>{wkCapTitle}</span>
                 {eventLabel && <span className="wk-event-label" title={eventLabel}>{eventLabel.length > 20 ? eventLabel.slice(0, 20) + '…' : eventLabel}</span>}
               </span>
             );
@@ -1854,7 +1909,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     if (type === 'google') {
       const summary = item.summary || 'Événement';
       const isProcessed = processedGoogleIds.has(item.id);
-      const startDT = item.start?.dateTime || item.start?.date || '';
+      const startDT = typeof item.start === 'string' ? item.start : (item.start?.dateTime || item.start?.date || '');
       const timeStr = startDT.includes('T')
         ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
         : '';
@@ -2001,7 +2056,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         {/* Section Événements Google + iCal : liste fusionnée triée */}
         {isEvenements && (() => {
           const now = new Date();
-          const todayDate = todayStr();
+          // Utiliser selectedDate (date affichée) pour classer les événements, pas la date réelle
+          const viewDate = selectedDate;
           // Déterminer si un événement est "du jour" ou "en cours"
           const classifyEvent = (ev) => {
             const start = ev._source === 'ical' ? (ev.start || '') : (ev.start?.dateTime || ev.start?.date || '');
@@ -2009,10 +2065,10 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             const startDate = start.slice(0, 10);
             const evStart = start ? new Date(start.includes('T') ? start : start + 'T00:00:00') : null;
             const evEnd = end ? new Date(end.includes('T') ? end : end + 'T23:59:59') : null;
-            const isToday = startDate === todayDate;
+            const isSelected = startDate === viewDate;
             const isOngoing = evStart && evEnd && evStart <= now && now <= evEnd;
-            if (isToday || isOngoing) return 'today';
-            if (startDate < todayDate) return 'past';
+            if (isSelected || isOngoing) return 'today';
+            if (startDate < viewDate) return 'past';
             return 'future';
           };
           // Classer les événements en 3 groupes
@@ -2066,31 +2122,61 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <div className="task-form-inline task-form-enriched" ref={el => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }}>
             {/* Ligne 1 : Source (Affaire ou Google Event) */}
             <div className="form-row">
-              <select
-                className="form-field-affaire"
-                value={newTaskAffaire}
-                onChange={e => {
-                  const num = e.target.value;
-                  setNewTaskAffaire(num);
-                  setNewTaskGoogleEvent('');
-                  if (num) {
-                    const aff = affaires.find(a => a.numeroAffaire === num);
-                    if (aff) {
-                      setNewTaskClient(aff.client || '');
-                      if (!newTaskTitle) setNewTaskTitle(aff.nom || aff.event_name || '');
-                    }
-                  } else {
-                    setNewTaskClient('');
-                  }
-                }}
-              >
-                <option value="">— Affaire —</option>
-                {affaires.map(a => (
-                  <option key={a.numeroAffaire} value={a.numeroAffaire}>
-                    {a.numeroAffaire} — {a.client || a.nom || ''}
-                  </option>
-                ))}
-              </select>
+              <div className="form-field-affaire affaire-autocomplete" ref={affaireInlineRef}>
+                {newTaskAffaire ? (
+                  <div className="affaire-autocomplete-selected">
+                    <AffaireBadge numero={newTaskAffaire} type={selectedInlineAffaire?.type} />
+                    <span className="affaire-autocomplete-client">{selectedInlineAffaire?.client || ''}</span>
+                    <button
+                      type="button"
+                      className="affaire-autocomplete-clear"
+                      onClick={() => { setNewTaskAffaire(''); setNewTaskClient(''); setAffaireInlineSearch(''); }}
+                      title="Retirer l'affaire"
+                    >
+                      <Unlink size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="affaire-autocomplete-input-wrap">
+                      <Search size={13} className="affaire-autocomplete-icon" />
+                      <input
+                        type="text"
+                        value={affaireInlineSearch}
+                        onChange={e => { setAffaireInlineSearch(e.target.value); setAffaireInlineOpen(true); }}
+                        onFocus={() => setAffaireInlineOpen(true)}
+                        placeholder="N° affaire, client…"
+                        className="affaire-autocomplete-search"
+                      />
+                    </div>
+                    {affaireInlineOpen && (
+                      <div className="affaire-autocomplete-dropdown">
+                        {filteredInlineAffaires.length === 0 ? (
+                          <div className="affaire-autocomplete-empty">Aucune affaire trouvée</div>
+                        ) : filteredInlineAffaires.map(a => (
+                          <button
+                            key={a.numeroAffaire}
+                            type="button"
+                            className="affaire-autocomplete-option"
+                            onClick={() => {
+                              setNewTaskAffaire(a.numeroAffaire);
+                              setNewTaskGoogleEvent('');
+                              setNewTaskClient(a.client || '');
+                              if (!newTaskTitle) setNewTaskTitle(a.nom || a.event_name || '');
+                              setAffaireInlineSearch('');
+                              setAffaireInlineOpen(false);
+                            }}
+                          >
+                            <span className="affaire-opt-num">{a.numeroAffaire}</span>
+                            <span className="affaire-opt-client">{a.client || a.nom || ''}</span>
+                            {a.titre && <span className="affaire-opt-titre">{a.titre}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
               <select
                 className="form-field-google"
                 value={newTaskGoogleEvent}
@@ -2129,7 +2215,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                 placeholder="Titre de la tâche..."
                 value={newTaskTitle}
                 onChange={e => setNewTaskTitle(e.target.value)}
+                onBlur={e => {
+                  const v = e.target.value.trim();
+                  if (v) setNewTaskTitle(v.charAt(0).toUpperCase() + v.slice(1));
+                }}
                 autoFocus
+                spellCheck
+                lang="fr"
+                autoComplete="off"
                 onKeyDown={e => {
                   if (e.key === 'Enter') handleAddTask(sectionKey);
                   if (e.key === 'Escape') setAddingSection(null);
@@ -2244,6 +2337,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             setNewTaskTitle('');
             setNewTaskPerson('');
             setNewTaskAffaire('');
+            setAffaireInlineSearch('');
+            setAffaireInlineOpen(false);
             setNewTaskType('');
             setNewTaskClient('');
             setNewTaskTime('');

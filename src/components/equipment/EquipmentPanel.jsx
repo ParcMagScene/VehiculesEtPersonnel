@@ -14,6 +14,15 @@ import DepotMap from '../vehicles/DepotMap';
 import './EquipmentPanel.css';
 import { useToast } from '../../hooks/useToast';
 
+// Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1", "A3" → "A1")
+const findZone = (zoneList, zid) => {
+  if (!zoneList || !zid) return null;
+  const exact = zoneList.find(z => z.id === zid || z.codes?.includes(zid));
+  if (exact) return exact;
+  const upper = zid.toUpperCase();
+  return zoneList.find(z => z.id.toUpperCase().startsWith(upper) || upper.startsWith(z.id.toUpperCase())) || null;
+};
+
 // ═══ CONSTANTES ═══
 const EQUIPMENT_STATUS = {
   available: { label: 'Disponible', color: '#10b981', icon: '✅' },
@@ -130,22 +139,26 @@ const getCategoryHierarchy = (eq, categories) => {
   return result;
 };
 
-// ═══ FILTRE CATÉGORIES EN CASCADE (hover) ═══
-const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, onChange }) => {
+// ═══ FILTRE CATÉGORIES EN CASCADE (hover desktop / accordion mobile) ═══
+const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, onChange, isMobile }) => {
   const toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
   const [hoveredSub, setHoveredSub] = useState(null);
+  // Mobile: expanded state (accordion)
+  const [expandedFamily, setExpandedFamily] = useState(null);
+  const [expandedSub, setExpandedSub] = useState(null);
   const containerRef = useRef(null);
   const closeTimer = useRef(null);
 
-  const startClose = () => { closeTimer.current = setTimeout(() => { setIsOpen(false); setHoveredFamily(null); setHoveredSub(null); }, 200); };
+  const startClose = () => { if (isMobile) return; closeTimer.current = setTimeout(() => { setIsOpen(false); setHoveredFamily(null); setHoveredSub(null); }, 200); };
   const cancelClose = () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false); setHoveredFamily(null); setHoveredSub(null);
+        setExpandedFamily(null); setExpandedSub(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -165,11 +178,12 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
   const handleSelect = (val) => {
     onChange(val);
     setIsOpen(false); setHoveredFamily(null); setHoveredSub(null);
+    setExpandedFamily(null); setExpandedSub(null);
   };
 
   return (
     <div className="eq-cascade-filter" ref={containerRef} onMouseLeave={startClose} onMouseEnter={cancelClose}>
-      <button className={`eq-cascade-btn ${value ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+      <button className={`eq-cascade-btn ${value ? 'active' : ''}`} onClick={() => { setIsOpen(!isOpen); setExpandedFamily(null); setExpandedSub(null); }}>
         <Filter size={13} />
         <span>{getLabel()}</span>
         <ChevronRight size={12} className={`eq-cascade-arrow ${isOpen ? 'open' : ''}`} />
@@ -181,15 +195,67 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
           </div>
           {families.map(fam => {
             const subs = subfamilies.filter(s => (s.parentId || s.parent_id) === fam.id);
-            const isHovered = hoveredFamily === fam.id;
+            const isHovered = !isMobile && hoveredFamily === fam.id;
+            const isExpanded = isMobile && expandedFamily === fam.id;
+            const showSubs = isHovered || isExpanded;
             return (
-              <div key={fam.id} className={`eq-cascade-item ${isHovered ? 'hovered' : ''} ${value === `family:${fam.id}` ? 'selected' : ''}`}
-                onMouseEnter={() => { setHoveredFamily(fam.id); setHoveredSub(null); cancelClose(); }}
-                onClick={() => handleSelect(`family:${fam.id}`)}>
-                <span className="eq-cascade-icon" style={{ color: fam.color || 'var(--theme-text-gray)' }}>{fam.icon || '📦'}</span>
-                <span className="eq-cascade-label">{fam.name}</span>
-                {subs.length > 0 && <ChevronRight size={12} className="eq-cascade-sub-arrow" />}
-                {isHovered && subs.length > 0 && (
+              <div key={fam.id}>
+                <div className={`eq-cascade-item ${showSubs ? 'hovered' : ''} ${value === `family:${fam.id}` ? 'selected' : ''}`}
+                  onMouseEnter={!isMobile ? () => { setHoveredFamily(fam.id); setHoveredSub(null); cancelClose(); } : undefined}
+                  onClick={() => {
+                    if (isMobile && subs.length > 0) {
+                      // Toggle accordion : tap pour ouvrir/fermer les sous-familles
+                      setExpandedFamily(expandedFamily === fam.id ? null : fam.id);
+                      setExpandedSub(null);
+                    } else {
+                      handleSelect(`family:${fam.id}`);
+                    }
+                  }}>
+                  <span className="eq-cascade-icon" style={{ color: fam.color || 'var(--theme-text-gray)' }}>{fam.icon || '📦'}</span>
+                  <span className="eq-cascade-label">{fam.name}</span>
+                  {subs.length > 0 && <ChevronRight size={12} className={`eq-cascade-sub-arrow${isExpanded ? ' eq-cascade-expanded' : ''}`} />}
+                </div>
+                {isMobile && isExpanded && subs.length > 0 && (
+                  <div className="eq-cascade-menu eq-cascade-l2">
+                    <div className="eq-cascade-item eq-cascade-all" onClick={(e) => { e.stopPropagation(); handleSelect(`family:${fam.id}`); }}>
+                      Toute la famille
+                    </div>
+                    {subs.map(sf => {
+                      const cats = leafCategories.filter(c => (c.parentId || c.parent_id) === sf.id);
+                      const isSubExpanded = expandedSub === sf.id;
+                      return (
+                        <div key={sf.id}>
+                          <div className={`eq-cascade-item ${isSubExpanded ? 'hovered' : ''} ${value === `subfamily:${sf.id}` ? 'selected' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (cats.length > 0) {
+                                setExpandedSub(expandedSub === sf.id ? null : sf.id);
+                              } else {
+                                handleSelect(`subfamily:${sf.id}`);
+                              }
+                            }}>
+                            <span className="eq-cascade-label">{sf.name}</span>
+                            {cats.length > 0 && <ChevronRight size={12} className={`eq-cascade-sub-arrow${isSubExpanded ? ' eq-cascade-expanded' : ''}`} />}
+                          </div>
+                          {isSubExpanded && cats.length > 0 && (
+                            <div className="eq-cascade-menu eq-cascade-l3">
+                              <div className="eq-cascade-item eq-cascade-all" onClick={(e) => { e.stopPropagation(); handleSelect(`subfamily:${sf.id}`); }}>
+                                Toute la sous-famille
+                              </div>
+                              {cats.map(cat => (
+                                <div key={cat.id} className={`eq-cascade-item ${value === `category:${cat.id}` ? 'selected' : ''}`}
+                                  onClick={(e) => { e.stopPropagation(); handleSelect(`category:${cat.id}`); }}>
+                                  <span className="eq-cascade-label">{cat.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {!isMobile && isHovered && subs.length > 0 && (
                   <div className="eq-cascade-menu eq-cascade-l2" onMouseEnter={cancelClose}>
                     {subs.map(sf => {
                       const cats = leafCategories.filter(c => (c.parentId || c.parent_id) === sf.id);
@@ -315,8 +381,8 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
 };
 
 // ═══ COMPOSANT PRINCIPAL ═══
-const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
-  const [subTab, setSubTab] = useState('inventory'); // inventory | sav
+const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initialTab, isMobile }) => {
+  const [subTab, setSubTab] = useState(initialTab || 'inventory'); // inventory | sav
   const [equipment, setEquipment] = useState([]);
   const [categories, setCategories] = useState([]);
   const [savTickets, setSavTickets] = useState([]);
@@ -335,11 +401,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
   const [editingEquipment, setEditingEquipment] = useState(null);
   const [showSavModal, setShowSavModal] = useState(false);
   const [editingSavTicket, setEditingSavTicket] = useState(null);
+  const [savTicketEquipment, setSavTicketEquipment] = useState(null);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [dialogEquipment, setDialogEquipment] = useState(null);
   const clickTimerRef = useRef(null);
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [assignEquipment, setAssignEquipment] = useState(null);
+
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSavImportModal, setShowSavImportModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -371,11 +437,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
     // Chercher dans allDepotZones (contient tous les dépôts)
     if (allDepotZones?.depots) {
       for (const depot of allDepotZones.depots) {
-        if (depot.zones?.find(z => z.id === zoneId || z.codes?.includes(zoneId))) return depot;
+        if (findZone(depot.zones, zoneId)) return depot;
       }
     }
     // Fallback: dépôt 1
-    if (depotZones?.zones?.find(z => z.id === zoneId || z.codes?.includes(zoneId))) return depotZones;
+    if (findZone(depotZones?.zones, zoneId)) return depotZones;
     // Dernier recours: retourner le premier dépôt disponible
     return depotZones || (allDepotZones?.depots?.[0]) || null;
   }, [depotMapModalZone, depotZones, allDepotZones]);
@@ -549,25 +615,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
     }
   };
 
-  const handleAssign = async (data) => {
-    try {
-      await api.createEquipmentAssignment(data);
-      setShowAssignModal(false);
-      setAssignEquipment(null);
-      loadData();
-    } catch (err) {
-      toast.error('Erreur: ' + err.message);
-    }
-  };
 
-  const handleReturn = async (assignmentId) => {
-    try {
-      await api.returnEquipmentAssignment(assignmentId);
-      loadData();
-    } catch (err) {
-      toast.error('Erreur: ' + err.message);
-    }
-  };
 
   const toggleList = async (equipmentId, listType) => {
     try {
@@ -661,6 +709,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 leafCategories={leafCategories}
                 value={filterCatTree}
                 onChange={setFilterCatTree}
+                isMobile={isMobile}
               />
               {depotZones && (
                 <select className="eq-filter eq-zone-filter" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} title="Filtrer par zone dépôt">
@@ -699,7 +748,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 {Object.entries(SAV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
               {canManageEquipmentMaintenance && (
-                <button className="eq-btn-add" onClick={() => { setEditingSavTicket(null); setShowSavModal(true); }}>
+                <button className="eq-btn-add" onClick={() => { setSavTicketEquipment(null); setEditingSavTicket(null); setShowSavModal(true); }}>
                   <Plus size={14} /> Ticket SAV
                 </button>
               )}
@@ -720,6 +769,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 selectedZone={filterZone && filterZone !== '_none' ? filterZone : null}
                 onZoneSelect={(zoneId) => setFilterZone(filterZone === zoneId ? '' : zoneId)}
                 onZoneFilter={(zoneId) => setFilterZone(zoneId || '')}
+                onZonesUpdated={loadData}
               />
             </div>
           )}
@@ -738,20 +788,24 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
               onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
               onSelect={(eq) => {
                 clearTimeout(clickTimerRef.current);
-                clickTimerRef.current = setTimeout(() => {
-                  if (selectedEquipment?.id === eq.id) {
-                    setSelectedEquipment(null);
-                  } else {
-                    // Affichage immédiat avec les données en mémoire
-                    setSelectedEquipment(eq);
-                    // Enrichir en arrière-plan
-                    api.getEquipmentById(eq.id).then(detail => setSelectedEquipment(detail)).catch(() => {});
-                  }
-                }, 200);
+                if (isMobile) {
+                  // Mobile : ouvrir directement la fiche complète
+                  setDialogEquipment(eq);
+                  api.getEquipmentById(eq.id).then(detail => setDialogEquipment(detail)).catch(() => {});
+                } else {
+                  clickTimerRef.current = setTimeout(() => {
+                    if (selectedEquipment?.id === eq.id) {
+                      setSelectedEquipment(null);
+                    } else {
+                      setSelectedEquipment(eq);
+                      api.getEquipmentById(eq.id).then(detail => setSelectedEquipment(detail)).catch(() => {});
+                    }
+                  }, 200);
+                }
               }}
               onDoubleClick={(eq) => {
                 clearTimeout(clickTimerRef.current);
-                // Affichage immédiat, enrichir en arrière-plan
+                setSelectedEquipment(null);
                 setDialogEquipment(eq);
                 api.getEquipmentById(eq.id).then(detail => setDialogEquipment(detail)).catch(() => {});
               }}
@@ -766,12 +820,17 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             selectedId={selectedTicket?.id}
             onSelect={(t) => {
               clearTimeout(ticketClickTimerRef.current);
-              ticketClickTimerRef.current = setTimeout(() => {
-                setSelectedTicket(selectedTicket?.id === t.id ? null : t);
-              }, 200);
+              if (isMobile) {
+                setDialogTicket(t);
+              } else {
+                ticketClickTimerRef.current = setTimeout(() => {
+                  setSelectedTicket(selectedTicket?.id === t.id ? null : t);
+                }, 200);
+              }
             }}
             onDoubleClick={(t) => {
               clearTimeout(ticketClickTimerRef.current);
+              setSelectedTicket(null);
               setDialogTicket(t);
             }}
             onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
@@ -786,7 +845,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         </div>
 
         {/* Volet de détail rapide – Matériel (clic simple) */}
-        {subTab === 'inventory' && (
+        {subTab === 'inventory' && !dialogEquipment && (
           <EquipmentSlidePanel
             equipment={selectedEquipment}
             categories={categories}
@@ -799,8 +858,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
             onClose={() => setSelectedEquipment(null)}
             onOpenDialog={(eq) => { setSelectedEquipment(null); setDialogEquipment(eq); }}
             onEdit={(eq) => { setEditingEquipment(eq); setShowEquipmentModal(true); }}
-            onAssign={(eq) => { setAssignEquipment(eq); setShowAssignModal(true); }}
-            onReturn={handleReturn}
             onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
             onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
             isAdmin={isAdmin}
@@ -809,7 +866,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         )}
 
         {/* Volet de détail rapide – SAV (clic simple) */}
-        {subTab === 'sav' && (
+        {subTab === 'sav' && !dialogTicket && !dialogEquipment && (
           <SavSlidePanel
             ticket={selectedTicket}
             equipment={equipment}
@@ -842,13 +899,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
         onClose={() => setDialogEquipment(null)}
         onEdit={(eq) => { setEditingEquipment(eq); setShowEquipmentModal(true); }}
         onDelete={handleDeleteEquipment}
-        onAssign={(eq) => { setAssignEquipment(eq); setShowAssignModal(true); }}
-        onReturn={handleReturn}
-        onCreateTicket={(eq) => { setEditingSavTicket(null); setShowSavModal(true); }}
+        onCreateTicket={(eq) => { setSavTicketEquipment(eq); setEditingSavTicket(null); setShowSavModal(true); }}
         onRefresh={loadData}
         onOpenTicketDialog={(t) => { setDialogEquipment(null); setDialogTicket(t); }}
-        onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
-        onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
+        onPrintLabel={isMobile ? undefined : (eq) => setLabelPrintEquipment(eq)}
+        onPrintSheet={isMobile ? undefined : (eq) => printEquipmentSheet(eq, photosList, logosList)}
         onSerialize={handleSerializeEquipment}
         onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
       />
@@ -887,18 +942,9 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
           ticket={editingSavTicket}
           equipment={equipment}
           persons={persons}
-          preselectedEquipment={selectedEquipment}
+          preselectedEquipment={savTicketEquipment || selectedEquipment}
           onSave={handleSaveSavTicket}
-          onClose={() => { setShowSavModal(false); setEditingSavTicket(null); }}
-        />
-      )}
-
-      {showAssignModal && assignEquipment && (
-        <AssignModal
-          equipment={assignEquipment}
-          persons={persons}
-          onSave={handleAssign}
-          onClose={() => { setShowAssignModal(false); setAssignEquipment(null); }}
+          onClose={() => { setShowSavModal(false); setEditingSavTicket(null); setSavTicketEquipment(null); }}
         />
       )}
 
@@ -1043,6 +1089,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement }) => {
                 focusEquipmentName={depotMapModalZone.equipmentName}
                 onZoneSelect={(zoneId) => {}}
                 onZoneFilter={() => {}}
+                compact={true}
               />
             </div>
           </div>
@@ -1374,7 +1421,6 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
             <th>Qté</th>
             <th>Zone</th>
             <th>Statut</th>
-            <th>Attribué à</th>
           </tr>
         </thead>
         <tbody>
@@ -1419,12 +1465,12 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                 <td>{(() => {
                   const zoneId = eq.location_zone || eq.locationZone;
                   if (zoneId) {
-                    // Chercher la zone dans tous les dépôts
+                    // Chercher la zone dans tous les dépôts (avec matching flexible)
                     let z = null;
-                    if (depotZones?.zones) z = depotZones.zones.find(zn => zn.id === zoneId || zn.codes?.includes(zoneId));
+                    if (depotZones?.zones) z = findZone(depotZones.zones, zoneId);
                     if (!z && allDepotZones?.depots) {
                       for (const depot of allDepotZones.depots) {
-                        z = depot.zones?.find(zn => zn.id === zoneId || zn.codes?.includes(zoneId));
+                        z = findZone(depot.zones, zoneId);
                         if (z) break;
                       }
                     }
@@ -1450,11 +1496,6 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                     {st.icon} {st.label}
                   </span>
                 </td>
-                <td className="eq-table-assigned">
-                  {eq.currentAssignment
-                    ? `${eq.currentAssignment.firstName || eq.currentAssignment.first_name || ''} ${eq.currentAssignment.lastName || eq.currentAssignment.last_name || ''}`.trim()
-                    : '—'}
-                </td>
               </tr>
             );
           })}
@@ -1465,7 +1506,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
 };
 
 // ═══ CONTENU DÉTAIL PARTAGÉ ═══
-const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign, onReturn, onCreateTicket, onDelete, onSerialize, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, onOpenDepotMap, categories: catList }) => {
+const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreateTicket, onDelete, onSerialize, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, onOpenDepotMap, categories: catList }) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
@@ -1616,16 +1657,16 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
         <div className="eq-dialog-actions">
           <div className="eq-actions-group">
             <button className="eq-btn-primary" onClick={() => onEdit(eq)}><Edit2 size={14} /> Modifier</button>
-            {eq.status === 'available' && onAssign && (
-              <button className="eq-btn-primary" onClick={() => onAssign(eq)}>
-                <User size={14} /> Attribuer
-              </button>
-            )}
           </div>
           <div className="eq-actions-group">
             {onCreateTicket && (
               <button className="eq-btn-secondary" onClick={() => onCreateTicket(eq)}>
                 <Wrench size={14} /> Ticket SAV
+              </button>
+            )}
+            {onOpenDepotMap && (
+              <button className="eq-btn-secondary" onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}>
+                <MapPin size={14} /> Localisation
               </button>
             )}
             {onPrintLabel && (
@@ -1649,32 +1690,6 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
           )}
         </div>
       )}
-
-      {/* Historique des attributions */}
-      <div className="eq-detail-section">
-        <h3><User size={16} /> Attributions</h3>
-        {(!eq.assignments || eq.assignments.length === 0) ? (
-          <p className="eq-detail-empty">Aucune attribution</p>
-        ) : (
-          <div className="eq-detail-list">
-            {eq.assignments.map(a => (
-              <div key={a.id} className={`eq-assign-item ${a.status}`}>
-                <div className="eq-assign-info">
-                  <strong>{a.firstName || a.first_name} {a.lastName || a.last_name}</strong>
-                  <span>{safeDate(a.startDate || a.start_date)} → {(a.endDate || a.end_date) ? safeDate(a.endDate || a.end_date) : 'En cours'}</span>
-                  {a.notes && <em>{a.notes}</em>}
-                </div>
-                {a.status === 'active' && onReturn && (
-                  <button className="eq-btn-sm" onClick={() => onReturn(a.id)}>
-                    <RotateCcw size={12} /> Retour
-                  </button>
-                )}
-                {a.status === 'returned' && <span className="eq-assign-badge returned">Retourné</span>}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Interventions SAV */}
       {(() => {
@@ -1739,7 +1754,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onAssign
 };
 
 // ═══ VOLET LATÉRAL (clic simple) ═══
-const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, onEdit, onAssign, onReturn, onPrintLabel, onPrintSheet, isAdmin, onOpenDepotMap }) => {
+const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, onEdit, onPrintLabel, onPrintSheet, isAdmin, onOpenDepotMap }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -1797,7 +1812,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
         </button>
       </div>
       <div className="eq-slide-body">
-        <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} onReturn={onReturn} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} onOpenDepotMap={onOpenDepotMap} categories={categories} />
+        <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} onOpenDepotMap={onOpenDepotMap} categories={categories} />
       </div>
       <div className="eq-slide-footer">
         {onPrintLabel && (
@@ -1819,7 +1834,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
 };
 
 // ═══ MODAL DÉTAIL COMPLET (double-clic) ═══
-const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onAssign, onReturn, onCreateTicket, onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet, onSerialize, onOpenDepotMap }) => {
+const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onCreateTicket, onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet, onSerialize, onOpenDepotMap }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -1841,16 +1856,16 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
 
   return (
-    <div className={`eq-dialog-overlay ${isClosing ? 'closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-      <div className={`eq-dialog ${isClosing ? 'closing' : ''}`}>
-        <div className="eq-dialog-header">
-          <div className="eq-dialog-title-row">
+    <div className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+      <div className="eq-dialog">
+        <div className="eq-dialog-header" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="eq-dialog-title-row" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, overflow: 'hidden' }}>
             <span className="eq-dialog-cat" style={{ background: (eq.categoryColor || eq.category_color || '#6366f1') }}>
               {eq.categoryIcon || eq.category_icon || '📦'} {eq.categoryName || eq.category_name || ''}
             </span>
             <span className="eq-dialog-name">{cleanName(eq.name)}</span>
           </div>
-          <button className="eq-dialog-close" onClick={handleClose} title="Fermer">
+          <button className="eq-dialog-close" onClick={handleClose} title="Fermer" style={{ flexShrink: 0, marginLeft: '12px' }}>
             <X size={20} />
           </button>
         </div>
@@ -1860,8 +1875,6 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             isAdmin={isAdmin}
             compact={false}
             onEdit={onEdit}
-            onAssign={onAssign}
-            onReturn={onReturn}
             onCreateTicket={onCreateTicket}
             onDelete={onDelete}
             photosList={photosList}
@@ -2154,10 +2167,16 @@ const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, 
           <div className="eq-form-grid">
             <div className="eq-form-field eq-form-full">
               <label>Équipement *</label>
-              <select value={form.equipment_id} onChange={(e) => setForm({ ...form, equipment_id: e.target.value })} required>
-                <option value="">— Sélectionner —</option>
-                {equipment.map(eq => <option key={eq.id} value={eq.id}>{eq.category_icon} {cleanName(eq.name)} {eq.reference ? `(${eq.reference})` : ''}</option>)}
-              </select>
+              {preselectedEquipment && !ticket ? (
+                <div className="eq-form-locked-value">
+                  {preselectedEquipment.category_icon || preselectedEquipment.categoryIcon || '📦'} {cleanName(preselectedEquipment.name)} {preselectedEquipment.reference ? `(${preselectedEquipment.reference})` : ''}
+                </div>
+              ) : (
+                <select value={form.equipment_id} onChange={(e) => setForm({ ...form, equipment_id: e.target.value })} required>
+                  <option value="">— Sélectionner —</option>
+                  {equipment.map(eq => <option key={eq.id} value={eq.id}>{eq.category_icon} {cleanName(eq.name)} {eq.reference ? `(${eq.reference})` : ''}</option>)}
+                </select>
+              )}
             </div>
             <div className="eq-form-field eq-form-full">
               <label>Titre *</label>
@@ -2210,65 +2229,6 @@ const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, 
           <div className="eq-modal-footer">
             <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
             <button type="submit" className="eq-btn-save">{ticket ? 'Enregistrer' : 'Créer'}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// ═══ MODAL ATTRIBUTION ═══
-const AssignModal = ({ equipment: eq, persons, onSave, onClose }) => {
-  const [form, setForm] = useState({
-    equipment_id: eq.id,
-    assigned_to: '',
-    start_date: new Date().toISOString().slice(0, 10),
-    end_date: '',
-    affaire_id: '',
-    notes: '',
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!form.assigned_to) return toast.warning('Veuillez sélectionner une personne');
-    onSave({
-      ...form,
-      assigned_to: parseInt(form.assigned_to),
-    });
-  };
-
-  return (
-    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="eq-modal eq-modal-sm">
-        <div className="eq-modal-header">
-          <h3>👤 Attribuer : {cleanName(eq.name)}</h3>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="eq-modal-body">
-          <div className="eq-form-grid">
-            <div className="eq-form-field eq-form-full">
-              <label>Attribuer à *</label>
-              <select value={form.assigned_to} onChange={(e) => setForm({ ...form, assigned_to: e.target.value })} required autoFocus>
-                <option value="">— Sélectionner —</option>
-                {persons.map(p => <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>)}
-              </select>
-            </div>
-            <div className="eq-form-field">
-              <label>Date de début</label>
-              <input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
-            </div>
-            <div className="eq-form-field">
-              <label>Date de retour prévue</label>
-              <input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
-            </div>
-            <div className="eq-form-field eq-form-full">
-              <label>Notes</label>
-              <input type="text" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ex: Pour chantier Rouen" />
-            </div>
-          </div>
-          <div className="eq-modal-footer">
-            <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
-            <button type="submit" className="eq-btn-save">Attribuer</button>
           </div>
         </form>
       </div>
@@ -2373,8 +2333,8 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
   const tech = t.assignedTo ? persons.find(p => p.id === t.assignedTo) : null;
 
   return (
-    <div className={`eq-dialog-overlay ${isClosing ? 'closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-      <div className={`eq-dialog ${isClosing ? 'closing' : ''}`} style={{ maxWidth: 600 }}>
+    <div className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+      <div className="eq-dialog" style={{ maxWidth: 600 }}>
         <div className="eq-dialog-header">
           <div className="eq-dialog-title-row">
             <span className="eq-dialog-cat" style={{ background: tst.color }}>

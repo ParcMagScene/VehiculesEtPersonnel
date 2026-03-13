@@ -1293,7 +1293,7 @@
   padding: 10px 16px;
   border: 1px dashed var(--theme-border);
   border-radius: 8px;
-  background: var(--theme-bg-primary);
+  background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   font-size: 13px;
   font-weight: 600;

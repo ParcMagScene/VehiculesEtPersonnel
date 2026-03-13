@@ -40,13 +40,16 @@
      on gère les handles via z-index et clip-path override */
 }
 
-/* Les modals qui ont déjà overflow:auto sur le body, on le garde là */
-.modal-draggable-enhanced > [class*="body"],
-.modal-draggable-enhanced > [class*="content"],
+/* Le body scrollable du modal : seul le conteneur direct doit scroller.
+   On utilise [class$="-body"] (finit par "-body") pour ne pas matcher
+   les sous-éléments internes comme .eq-detail-body */
+.modal-draggable-enhanced > [class$="-body"],
+.modal-draggable-enhanced > .modal-body,
 .modal-draggable-enhanced > .pdf-export-body,
 .modal-draggable-enhanced > .etm-body,
 .modal-draggable-enhanced > .tem-body {
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* --- Resize handles ---------------------------------------------- */
@@ -233,10 +236,15 @@
   flex-direction: column;
 }
 
-/* Quand le modal a été déplacé/redimensionné et a height défini */
-.modal-draggable-enhanced[style*="height"] > :last-child:not(.modal-resize-handle) {
+/* Quand le modal a été redimensionné et a height défini,
+   le body (pas les resize handles) doit prendre l'espace restant.
+   On cible les enfants scrollables connus plutôt que :last-child
+   qui pointe toujours sur un resize handle. */
+.modal-draggable-enhanced[style*="height"] > [class$="-body"],
+.modal-draggable-enhanced[style*="height"] > .modal-body {
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
 }
 

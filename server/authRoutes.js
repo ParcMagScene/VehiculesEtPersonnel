@@ -84,6 +84,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           logger.warn('Erreur envoi OTP email:', emailErr.message);
         }
       }
+      if (isDev) {
+        logger.info(`DEV OTP pour ${user.email}: ${otp}`);
+      }
       logger.info('🔑 Mot de passe oublié — OTP généré');
     }
 
@@ -158,6 +161,10 @@ app.post('/api/auth/self-reset-password', async (req, res) => {
       }
     } else {
       logger.warn(`🔑 OTP généré pour user ${user.id} mais email non configuré. OTP (dev): ${isDev ? otp : '[masqué]'}`);
+    }
+
+    if (isDev) {
+      logger.info(`DEV OTP pour ${user.email}: ${otp}`);
     }
 
     res.json({
@@ -322,15 +329,14 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
   }
 });
 
-// Liste des utilisateurs (pour le sélecteur de connexion)
-// [AUDIT FIX CRIT-3] Endpoint protégé par authentification
-app.get('/api/auth/users', authenticateToken, (req, res) => {
+// Liste publique des utilisateurs (pour le sélecteur de connexion)
+// Renvoie uniquement nom + avatar (pas d'email) — sans authentification
+app.get('/api/auth/users-public', (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, email, name, avatar FROM users ORDER BY name');
+    const stmt = db.prepare('SELECT id, name, avatar FROM users ORDER BY name');
     const users = stmt.all();
     res.json(users.map(u => ({
       id: u.id,
-      email: u.email,
       name: u.name,
       avatar: u.avatar || null
     })));

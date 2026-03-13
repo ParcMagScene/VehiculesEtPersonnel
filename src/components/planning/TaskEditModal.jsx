@@ -119,8 +119,11 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Auto-capitaliser la première lettre du titre
+      const capitalizedTitle = form.title.trim();
+      const finalTitle = capitalizedTitle ? capitalizedTitle.charAt(0).toUpperCase() + capitalizedTitle.slice(1) : '';
       await api.updateTask(task.id, {
-        title: form.title,
+        title: finalTitle,
         date: form.date,
         period: form.period || null,
         time: form.time || null,
@@ -172,7 +175,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               type="text"
               value={form.title}
               onChange={e => update('title', e.target.value)}
+              onBlur={e => {
+                const v = e.target.value.trim();
+                if (v) update('title', v.charAt(0).toUpperCase() + v.slice(1));
+              }}
               placeholder="Titre de la tâche..."
+              spellCheck
+              lang="fr"
+              autoComplete="off"
             />
           </div>
 

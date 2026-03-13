@@ -70,10 +70,10 @@
         "B2"
       ],
       "bbox": {
-        "x": 10,
-        "y": 10,
-        "width": 105,
-        "height": 55
+        "x": 135,
+        "y": 170,
+        "width": 50,
+        "height": 70
       }
     },
     {
@@ -87,10 +87,10 @@
         "B3"
       ],
       "bbox": {
-        "x": 120,
-        "y": 10,
-        "width": 105,
-        "height": 55
+        "x": 185,
+        "y": 170,
+        "width": 45,
+        "height": 70
       }
     },
     {
@@ -105,9 +105,9 @@
       ],
       "bbox": {
         "x": 230,
-        "y": 10,
-        "width": 105,
-        "height": 55
+        "y": 170,
+        "width": 95,
+        "height": 70
       }
     },
     {
@@ -121,10 +121,10 @@
         "BUREAUX"
       ],
       "bbox": {
-        "x": 440,
-        "y": 10,
-        "width": 200,
-        "height": 55
+        "x": 325,
+        "y": 170,
+        "width": 95,
+        "height": 130
       }
     },
     {
@@ -138,9 +138,9 @@
         "B1"
       ],
       "bbox": {
-        "x": 10,
-        "y": 72,
-        "width": 155,
+        "x": 135,
+        "y": 245,
+        "width": 95,
         "height": 60
       }
     },
@@ -155,9 +155,9 @@
         "ENTREE"
       ],
       "bbox": {
-        "x": 340,
-        "y": 72,
-        "width": 90,
+        "x": 395,
+        "y": 240,
+        "width": 55,
         "height": 30
       }
     },
@@ -173,10 +173,10 @@
         "C"
       ],
       "bbox": {
-        "x": 10,
-        "y": 142,
+        "x": 135,
+        "y": 310,
         "width": 95,
-        "height": 42
+        "height": 62
       }
     },
     {
@@ -190,10 +190,10 @@
         "C2"
       ],
       "bbox": {
-        "x": 10,
-        "y": 189,
+        "x": 135,
+        "y": 375,
         "width": 95,
-        "height": 42
+        "height": 62
       }
     },
     {
@@ -207,10 +207,10 @@
         "C3"
       ],
       "bbox": {
-        "x": 10,
-        "y": 236,
+        "x": 135,
+        "y": 440,
         "width": 95,
-        "height": 42
+        "height": 62
       }
     },
     {
@@ -224,10 +224,10 @@
         "C4"
       ],
       "bbox": {
-        "x": 10,
-        "y": 283,
+        "x": 135,
+        "y": 505,
         "width": 95,
-        "height": 42
+        "height": 65
       }
     },
     {
@@ -241,10 +241,10 @@
         "C5"
       ],
       "bbox": {
-        "x": 10,
-        "y": 330,
+        "x": 135,
+        "y": 575,
         "width": 95,
-        "height": 42
+        "height": 62
       }
     },
     {
@@ -258,27 +258,27 @@
         "C6"
       ],
       "bbox": {
-        "x": 10,
-        "y": 377,
+        "x": 135,
+        "y": 640,
         "width": 95,
-        "height": 42
+        "height": 40
       }
     },
     {
       "id": "A1",
       "label": "A1",
-      "category": "distribution",
-      "color": "#ff4444",
+      "category": "eclairage",
+      "color": "#fff900",
       "textColor": "#ffffff",
       "floor": "RDC",
       "codes": [
         "A1"
       ],
       "bbox": {
-        "x": 115,
-        "y": 142,
-        "width": 118,
-        "height": 88
+        "x": 315,
+        "y": 345,
+        "width": 50,
+        "height": 105
       }
     },
     {
@@ -292,78 +292,44 @@
         "A2"
       ],
       "bbox": {
-        "x": 238,
-        "y": 142,
-        "width": 118,
-        "height": 88
+        "x": 370,
+        "y": 305,
+        "width": 50,
+        "height": 145
       }
     },
     {
       "id": "A3",
       "label": "A3",
-      "category": "distribution",
-      "color": "#ff4444",
+      "category": "divers",
+      "color": "#94a3b8",
       "textColor": "#ffffff",
       "floor": "RDC",
       "codes": [
         "A3"
       ],
       "bbox": {
-        "x": 115,
-        "y": 235,
-        "width": 79,
-        "height": 65
-      }
-    },
-    {
-      "id": "A4",
-      "label": "A4",
-      "category": "distribution",
-      "color": "#ff4444",
-      "textColor": "#ffffff",
-      "floor": "RDC",
-      "codes": [
-        "A4"
-      ],
-      "bbox": {
-        "x": 199,
-        "y": 235,
-        "width": 79,
-        "height": 65
-      }
-    },
-    {
-      "id": "A5",
-      "label": "A5",
-      "category": "distribution",
-      "color": "#ff4444",
-      "textColor": "#ffffff",
-      "floor": "RDC",
-      "codes": [
-        "A5"
-      ],
-      "bbox": {
-        "x": 283,
-        "y": 235,
-        "width": 73,
-        "height": 65
+        "x": 280,
+        "y": 345,
+        "width": 35,
+        "height": 105
       }
     },
     {
       "id": "D4",
       "label": "D4",
       "category": "eclairage",
-      "color": "#fff900",
+      "color": "#00d4ff",
       "textColor": "#1a1a2e",
       "floor": "RDC",
       "codes": [
         "D4"
       ],
       "bbox": {
-        "x": 300,
-        "y": 575,
-        "width": 135,
-        "height": 58
+        "x": 305,
+        "y": 595,
+        "width": 95,
+        "height": 25
       }
     },
     {
@@ -377,10 +343,10 @@
         "D1"
       ],
       "bbox": {
-        "x": 140,
+        "x": 135,
         "y": 685,
-        "width": 95,
-        "height": 110
+        "width": 90,
+        "height": 115
       }
     },
     {
@@ -394,10 +360,10 @@
         "D2"
       ],
       "bbox": {
-        "x": 250,
-        "y": 750,
-        "width": 140,
-        "height": 42
+        "x": 230,
+        "y": 685,
+        "width": 90,
+        "height": 85
       }
     },
     {
@@ -411,10 +377,10 @@
         "D3"
       ],
       "bbox": {
-        "x": 335,
-        "y": 700,
-        "width": 140,
-        "height": 42
+        "x": 325,
+        "y": 685,
+        "width": 95,
+        "height": 60
       }
     },
     {
@@ -428,10 +394,10 @@
         "QUAI3"
       ],
       "bbox": {
-        "x": 655,
-        "y": 110,
-        "width": 115,
-        "height": 100
+        "x": 400,
+        "y": 450,
+        "width": 55,
+        "height": 55
       }
     },
     {
@@ -445,10 +411,10 @@
         "QUAI2"
       ],
       "bbox": {
-        "x": 655,
-        "y": 225,
-        "width": 115,
-        "height": 100
+        "x": 400,
+        "y": 510,
+        "width": 55,
+        "height": 55
       }
     },
     {
@@ -462,10 +428,10 @@
         "QUAI1"
       ],
       "bbox": {
-        "x": 655,
-        "y": 340,
-        "width": 115,
-        "height": 100
+        "x": 400,
+        "y": 625,
+        "width": 55,
+        "height": 55
       }
     },
     {
@@ -480,10 +446,10 @@
         "I1"
       ],
       "bbox": {
-        "x": 500,
-        "y": 478,
-        "width": 270,
-        "height": 35
+        "x": 80,
+        "y": 170,
+        "width": 50,
+        "height": 685
       }
     },
     {
@@ -498,10 +464,10 @@
         "I2"
       ],
       "bbox": {
-        "x": 495,
-        "y": 550,
-        "width": 310,
-        "height": 35
+        "x": 135,
+        "y": 10,
+        "width": 470,
+        "height": 155
       }
     },
     {
@@ -516,10 +482,10 @@
         "I3"
       ],
       "bbox": {
-        "x": 600,
-        "y": 610,
-        "width": 160,
-        "height": 35
+        "x": 435,
+        "y": 690,
+        "width": 340,
+        "height": 160
       }
     },
     {
@@ -533,10 +499,10 @@
         "CUISINE"
       ],
       "bbox": {
-        "x": 10,
-        "y": 10,
-        "width": 100,
-        "height": 50
+        "x": 475,
+        "y": 170,
+        "width": 75,
+        "height": 65
       }
     },
     {
@@ -551,10 +517,10 @@
         "H"
       ],
       "bbox": {
-        "x": 115,
-        "y": 10,
-        "width": 120,
-        "height": 50
+        "x": 475,
+        "y": 240,
+        "width": 75,
+        "height": 60
       }
     },
     {
@@ -568,9 +534,9 @@
         "H2"
       ],
       "bbox": {
-        "x": 240,
-        "y": 10,
-        "width": 110,
+        "x": 555,
+        "y": 170,
+        "width": 45,
         "height": 50
       }
     },
@@ -585,9 +551,9 @@
         "LOCAL_GELAT"
       ],
       "bbox": {
-        "x": 355,
-        "y": 10,
-        "width": 72,
+        "x": 605,
+        "y": 170,
+        "width": 35,
         "height": 50
       }
     },
@@ -602,9 +568,9 @@
         "CHAMBRE"
       ],
       "bbox": {
-        "x": 432,
-        "y": 10,
-        "width": 85,
+        "x": 665,
+        "y": 170,
+        "width": 55,
         "height": 50
       }
     },
@@ -619,10 +585,10 @@
         "SALLE_REU"
       ],
       "bbox": {
-        "x": 522,
-        "y": 10,
-        "width": 100,
-        "height": 50
+        "x": 725,
+        "y": 170,
+        "width": 35,
+        "height": 60
       }
     },
     {
@@ -636,10 +602,10 @@
         "ARC_INFO"
       ],
       "bbox": {
-        "x": 627,
-        "y": 10,
-        "width": 100,
-        "height": 50
+        "x": 675,
+        "y": 235,
+        "width": 40,
+        "height": 70
       }
     },
     {
@@ -653,10 +619,10 @@
         "H3"
       ],
       "bbox": {
-        "x": 610,
-        "y": 68,
-        "width": 120,
-        "height": 48
+        "x": 720,
+        "y": 235,
+        "width": 45,
+        "height": 70
       }
     },
     {
@@ -671,10 +637,10 @@
         "F"
       ],
       "bbox": {
-        "x": 10,
-        "y": 125,
-        "width": 100,
-        "height": 55
+        "x": 475,
+        "y": 305,
+        "width": 60,
+        "height": 60
       }
     },
     {
@@ -688,10 +654,10 @@
         "F2"
       ],
       "bbox": {
-        "x": 10,
-        "y": 185,
-        "width": 100,
-        "height": 55
+        "x": 475,
+        "y": 370,
+        "width": 60,
+        "height": 65
       }
     },
     {
@@ -705,146 +671,146 @@
         "F3"
       ],
       "bbox": {
-        "x": 10,
-        "y": 245,
-        "width": 100,
-        "height": 55
+        "x": 475,
+        "y": 440,
+        "width": 60,
+        "height": 60
       }
     },
     {
       "id": "F4",
       "label": "F4",
-      "category": "video",
-      "color": "#ff52fe",
+      "category": "eclairage",
+      "color": "#fff900",
       "textColor": "#ffffff",
       "floor": "MEZZ",
       "codes": [
         "F4"
       ],
       "bbox": {
-        "x": 10,
-        "y": 305,
-        "width": 100,
-        "height": 55
+        "x": 475,
+        "y": 505,
+        "width": 60,
+        "height": 65
       }
     },
     {
       "id": "F5",
       "label": "F5",
-      "category": "video",
-      "color": "#ff52fe",
+      "category": "eclairage",
+      "color": "#fff900",
       "textColor": "#ffffff",
       "floor": "MEZZ",
       "codes": [
         "F5"
       ],
       "bbox": {
-        "x": 115,
-        "y": 125,
-        "width": 100,
-        "height": 55
+        "x": 475,
+        "y": 575,
+        "width": 60,
+        "height": 65
       }
     },
     {
       "id": "F6",
       "label": "F6",
-      "category": "video",
-      "color": "#ff52fe",
+      "category": "eclairage",
+      "color": "#fff900",
       "textColor": "#ffffff",
       "floor": "MEZZ",
       "codes": [
         "F6"
       ],
       "bbox": {
-        "x": 115,
-        "y": 185,
-        "width": 100,
-        "height": 55
+        "x": 475,
+        "y": 645,
+        "width": 60,
+        "height": 70
       }
     },
     {
       "id": "F7",
       "label": "F7",
-      "category": "video",
-      "color": "#ff52fe",
+      "category": "eclairage",
+      "color": "#fff900",
       "textColor": "#ffffff",
       "floor": "MEZZ",
       "codes": [
         "F7"
       ],
       "bbox": {
-        "x": 115,
-        "y": 245,
-        "width": 100,
-        "height": 55
+        "x": 475,
+        "y": 720,
+        "width": 60,
+        "height": 70
       }
     },
     {
       "id": "F8",
       "label": "F8",
-      "category": "video",
-      "color": "#ff52fe",
+      "category": "divers",
+      "color": "#94a3b8",
       "textColor": "#ffffff",
       "floor": "MEZZ",
       "codes": [
         "F8"
       ],
       "bbox": {
-        "x": 115,
-        "y": 305,
-        "width": 100,
-        "height": 55
+        "x": 545,
+        "y": 440,
+        "width": 30,
+        "height": 165
       }
     },
     {
       "id": "E1",
       "label": "E1",
-      "category": "scene",
-      "color": "#3fff00",
+      "category": "distribution",
+      "color": "#ff4444",
       "textColor": "#ffffff",
       "floor": "MEZZ",
       "codes": [
         "E1"
       ],
       "bbox": {
-        "x": 270,
-        "y": 125,
-        "width": 135,
-        "height": 85
+        "x": 665,
+        "y": 415,
+        "width": 100,
+        "height": 45
       }
     },
     {
       "id": "E2",
       "label": "E2",
-      "category": "scene",
-      "color": "#3fff00",
+      "category": "distribution",
+      "color": "#ff4444",
       "textColor": "#ffffff",
       "floor": "MEZZ",
       "codes": [
         "E2"
       ],
       "bbox": {
-        "x": 270,
-        "y": 218,
-        "width": 135,
-        "height": 78
+        "x": 665,
+        "y": 310,
+        "width": 45,
+        "height": 100
       }
     },
     {
       "id": "E3",
       "label": "E3",
-      "category": "scene",
-      "color": "#3fff00",
+      "category": "divers",
+      "color": "#94a3b8",
       "textColor": "#ffffff",
       "floor": "MEZZ",
       "codes": [
         "E3"
       ],
       "bbox": {
-        "x": 412,
-        "y": 125,
-        "width": 135,
-        "height": 85
+        "x": 720,
+        "y": 310,
+        "width": 45,
+        "height": 100
       }
     },
     {
@@ -859,10 +825,10 @@
         "G"
       ],
       "bbox": {
-        "x": 270,
-        "y": 340,
-        "width": 130,
-        "height": 55
+        "x": 575,
+        "y": 640,
+        "width": 65,
+        "height": 40
       }
     },
     {
@@ -876,10 +842,10 @@
         "G2"
       ],
       "bbox": {
-        "x": 405,
-        "y": 340,
-        "width": 130,
-        "height": 55
+        "x": 670,
+        "y": 640,
+        "width": 95,
+        "height": 40
       }
     },
     {
@@ -893,10 +859,10 @@
         "G3"
       ],
       "bbox": {
-        "x": 270,
-        "y": 402,
-        "width": 265,
-        "height": 55
+        "x": 575,
+        "y": 700,
+        "width": 190,
+        "height": 70
       }
     }
   ]

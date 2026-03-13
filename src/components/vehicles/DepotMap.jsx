@@ -4,21 +4,36 @@
 // zoom/pan, recherche visuelle et tooltip détaillé
 // ============================================================
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { MapPin, Layers, BarChart3, Search, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { MapPin, Layers, BarChart3, Search, ZoomIn, ZoomOut, Maximize2, Settings2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import { getZonePoints, hasSkew, computeZonesBounds } from './DepotMapEditor';
 import './DepotMap.css';
 
-const DEFAULT_SVG_WIDTH = 770;
-const DEFAULT_SVG_HEIGHT = 510;
+const DepotMapEditor = lazy(() => import('./DepotMapEditor'));
+
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.3;
 
-export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZoneFilter, focusZoneId, focusEquipmentName }) {
-  // Dimensions dynamiques depuis le JSON (chaque dépôt peut avoir ses propres dimensions)
-  const SVG_WIDTH = zones?.svgWidth || DEFAULT_SVG_WIDTH;
-  const SVG_HEIGHT = zones?.svgHeight || DEFAULT_SVG_HEIGHT;
+// Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1")
+function findZoneFlexible(zoneList, zoneId) {
+  if (!zoneList || !zoneId) return null;
+  // 1. Match exact sur id ou codes
+  const exact = zoneList.find(z => z.id === zoneId || z.codes?.includes(zoneId));
+  if (exact) return exact;
+  // 2. Zone DB plus spécifique que le JSON (ex: "A3" → chercher "A" prefix parmi les zones)
+  //    OU zone DB = lettre seule (ex: "G" → chercher zones G1, G2...)
+  const upper = zoneId.toUpperCase();
+  // Trouver par préfixe : le zoneId commence par l'id de la zone ou vice versa
+  const prefix = zoneList.find(z => z.id.toUpperCase().startsWith(upper) || upper.startsWith(z.id.toUpperCase()));
+  return prefix || null;
+}
+
+export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZoneFilter, focusZoneId, focusEquipmentName, compact = false, onZonesUpdated }) {
+  const { currentUser } = useAuth();
+  const [showEditor, setShowEditor] = useState(false);
   const [activeFloor, setActiveFloor] = useState('RDC');
   const [hoveredZone, setHoveredZone] = useState(null);
   
@@ -34,14 +49,14 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
   // Auto-focus on a zone when focusZoneId is set
   useEffect(() => {
     if (focusZoneId && zones?.zones) {
-      const zone = zones.zones.find(z => z.id === focusZoneId || z.codes?.includes(focusZoneId));
+      const zone = findZoneFlexible(zones.zones, focusZoneId);
       if (zone) {
         if (zone.floor) setActiveFloor(zone.floor);
         // Zoom to zone with slight delay for rendering
         setTimeout(() => {
           const { x, y, width, height } = zone.bbox;
-          const centerX = x + width / 2 - SVG_WIDTH / 2;
-          const centerY = y + height / 2 - SVG_HEIGHT / 2;
+          const centerX = x + width / 2 - (bounds.x + bounds.w / 2);
+          const centerY = y + height / 2 - (bounds.y + bounds.h / 2);
           setZoom(2.5);
           setPan({ x: -centerX, y: -centerY });
         }, 100);
@@ -64,6 +79,9 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
     return zones.zones.filter(z => z.floor === activeFloor);
   }, [zones, activeFloor]);
 
+  // Bounding box auto-fit sur les zones de l'étage actif
+  const bounds = useMemo(() => computeZonesBounds(floorZones, 25), [floorZones]);
+
   // Construire une map des stats par zone
   const statsMap = useMemo(() => {
     const map = {};
@@ -84,14 +102,16 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
     { id: 'MEZZ', label: 'Mezzanine' },
   ];
 
-  // Computed viewBox for zoom/pan
+  // Computed viewBox for zoom/pan (basé sur le bounding box des zones)
   const viewBox = useMemo(() => {
-    const w = SVG_WIDTH / zoom;
-    const h = SVG_HEIGHT / zoom;
-    const x = (SVG_WIDTH - w) / 2 - pan.x;
-    const y = (SVG_HEIGHT - h) / 2 - pan.y;
+    const w = bounds.w / zoom;
+    const h = bounds.h / zoom;
+    const cx = bounds.x + bounds.w / 2;
+    const cy = bounds.y + bounds.h / 2;
+    const x = cx - w / 2 - pan.x;
+    const y = cy - h / 2 - pan.y;
     return `${x} ${y} ${w} ${h}`;
-  }, [zoom, pan]);
+  }, [zoom, pan, bounds]);
 
   // Zoom handlers
   const handleZoomIn = () => setZoom(z => Math.min(z + ZOOM_STEP, MAX_ZOOM));
@@ -257,8 +277,8 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
   // Zoom-to-zone on double click
   const handleZoneDblClick = (zone) => {
     const { x, y, width, height } = zone.bbox;
-    const centerX = x + width / 2 - SVG_WIDTH / 2;
-    const centerY = y + height / 2 - SVG_HEIGHT / 2;
+    const centerX = x + width / 2 - (bounds.x + bounds.w / 2);
+    const centerY = y + height / 2 - (bounds.y + bounds.h / 2);
     setZoom(2.5);
     setPan({ x: -centerX, y: -centerY });
   };
@@ -277,6 +297,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
         </div>
         <div className="depot-map-controls">
           {/* Recherche */}
+          {!compact && (
           <div className="depot-search">
             <Search size={14} />
             <input
@@ -291,6 +312,14 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
               </span>
             )}
           </div>
+          )}
+          {/* Éditer le plan (admin uniquement) */}
+          {!compact && currentUser?.isAdmin && (
+            <button className="depot-edit-btn" onClick={() => setShowEditor(true)} title="Éditer le plan">
+              <Settings2 size={14} />
+              Éditer
+            </button>
+          )}
           {/* Zoom */}
           <div className="depot-zoom-controls">
             <button onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM} title="Dézoomer">
@@ -333,15 +362,17 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           onMouseLeave={handleMouseUp}
         >
           {/* Background */}
-          <rect x="0" y="0" width={SVG_WIDTH} height={SVG_HEIGHT} rx="8" fill="#1e1e2e" stroke="#334155" strokeWidth="2" />
+          <rect x={bounds.x} y={bounds.y} width={bounds.w} height={bounds.h} rx="8" fill="#1e1e2e" stroke="#334155" strokeWidth="2" />
 
           {/* Grille deco */}
-          {Array.from({ length: Math.floor(SVG_WIDTH / 77) + 1 }, (_, i) => (
-            <line key={`gv-${i}`} x1={i * 77} y1="0" x2={i * 77} y2={SVG_HEIGHT} stroke="#ffffff08" strokeWidth="0.5" />
-          ))}
-          {Array.from({ length: Math.floor(SVG_HEIGHT / 73) + 1 }, (_, i) => (
-            <line key={`gh-${i}`} x1="0" y1={i * 73} x2={SVG_WIDTH} y2={i * 73} stroke="#ffffff08" strokeWidth="0.5" />
-          ))}
+          {Array.from({ length: Math.floor(bounds.w / 77) + 1 }, (_, i) => {
+            const gx = bounds.x + i * 77;
+            return <line key={`gv-${i}`} x1={gx} y1={bounds.y} x2={gx} y2={bounds.y + bounds.h} stroke="#ffffff08" strokeWidth="0.5" />;
+          })}
+          {Array.from({ length: Math.floor(bounds.h / 73) + 1 }, (_, i) => {
+            const gy = bounds.y + i * 73;
+            return <line key={`gh-${i}`} x1={bounds.x} y1={gy} x2={bounds.x + bounds.w} y2={gy} stroke="#ffffff08" strokeWidth="0.5" />;
+          })}
 
           {/* Zones */}
           {floorZones.map(zone => {
@@ -358,6 +389,15 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
             if (isSearchDimmed) opacity = 0.2;
             if (hasSearchResult && !isHighlighted) opacity = 0.8;
 
+            const isTrapezoid = zone.shape === 'trapezoid' && hasSkew(zone);
+            const zoneShapeProps = {
+              fill: zone.color,
+              fillOpacity: opacity,
+              stroke: isSelected ? '#ffffff' : isHighlighted ? '#fbbf24' : isHovered ? '#e2e8f0' : zone.color,
+              strokeWidth: isSelected ? 3 : isHighlighted ? 2.5 : isHovered ? 2 : 1,
+              className: 'depot-zone-rect',
+            };
+
             return (
               <g
                 key={zone.id}
@@ -373,33 +413,47 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
               >
                 {/* Highlight glow for search results */}
                 {(isHighlighted || hasSearchResult) && (
-                  <rect
-                    x={x - 3}
-                    y={y - 3}
-                    width={width + 6}
-                    height={height + 6}
-                    rx="8"
-                    fill="none"
-                    stroke={isHighlighted ? '#fbbf24' : '#60a5fa'}
-                    strokeWidth={isHighlighted ? 3 : 2}
-                    strokeDasharray={isHighlighted ? '0' : '6 3'}
-                    className="zone-highlight-glow"
-                  />
+                  isTrapezoid ? (
+                    <polygon
+                      points={getZonePoints({ x: x - 3, y: y - 3, width: width + 6, height: height + 6 }, zone.skew).map(p => `${p.x},${p.y}`).join(' ')}
+                      fill="none"
+                      stroke={isHighlighted ? '#fbbf24' : '#60a5fa'}
+                      strokeWidth={isHighlighted ? 3 : 2}
+                      strokeDasharray={isHighlighted ? '0' : '6 3'}
+                      className="zone-highlight-glow"
+                    />
+                  ) : (
+                    <rect
+                      x={x - 3}
+                      y={y - 3}
+                      width={width + 6}
+                      height={height + 6}
+                      rx="8"
+                      fill="none"
+                      stroke={isHighlighted ? '#fbbf24' : '#60a5fa'}
+                      strokeWidth={isHighlighted ? 3 : 2}
+                      strokeDasharray={isHighlighted ? '0' : '6 3'}
+                      className="zone-highlight-glow"
+                    />
+                  )
                 )}
 
-                {/* Zone rect */}
-                <rect
-                  x={x}
-                  y={y}
-                  width={width}
-                  height={height}
-                  rx="6"
-                  fill={zone.color}
-                  fillOpacity={opacity}
-                  stroke={isSelected ? '#ffffff' : isHighlighted ? '#fbbf24' : isHovered ? '#e2e8f0' : zone.color}
-                  strokeWidth={isSelected ? 3 : isHighlighted ? 2.5 : isHovered ? 2 : 1}
-                  className="depot-zone-rect"
-                />
+                {/* Zone shape */}
+                {isTrapezoid ? (
+                  <polygon
+                    points={getZonePoints(zone.bbox, zone.skew).map(p => `${p.x},${p.y}`).join(' ')}
+                    {...zoneShapeProps}
+                  />
+                ) : (
+                  <rect
+                    x={x}
+                    y={y}
+                    width={width}
+                    height={height}
+                    rx="6"
+                    {...zoneShapeProps}
+                  />
+                )}
 
                 {/* Zone label */}
                 <text
@@ -504,7 +558,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
 
           {/* Focus indicator: Google Maps-style pin marker on the focused zone */}
           {focusZoneId && (() => {
-            const fz = floorZones.find(z => z.id === focusZoneId || z.codes?.includes(focusZoneId));
+            const fz = findZoneFlexible(floorZones, focusZoneId);
             if (!fz) return null;
             const { x, y, width, height } = fz.bbox;
             const cx = x + width / 2;
@@ -634,6 +688,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
       </div>
 
       {/* Légende */}
+      {!compact && (
       <div className="depot-map-legend">
         <BarChart3 size={14} />
         <span className="legend-label">Zones :</span>
@@ -655,7 +710,24 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
             }
           </button>
         ))}
-      </div>
+      </div>      )}
+
+      {/* Éditeur de plan */}
+      {showEditor && (
+        <Suspense fallback={null}>
+          <DepotMapEditor
+            zones={zones}
+            depotId={zones?.depotId || 1}
+            onClose={() => {
+              setShowEditor(false);
+              if (onZonesUpdated) onZonesUpdated();
+            }}
+            onSaved={() => {
+              if (onZonesUpdated) onZonesUpdated();
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

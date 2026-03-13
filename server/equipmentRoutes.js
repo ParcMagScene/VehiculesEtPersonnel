@@ -5,7 +5,7 @@
 
 import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
-import { readFileSync, readdirSync, existsSync, unlinkSync, mkdirSync, renameSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, unlinkSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
@@ -1242,11 +1242,18 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     }
   });
 
+  // Résolution du fichier zones — server/data/ (prioritaire, modifiable) puis public/ (initial)
+  const resolveZonesPath = (filename) => {
+    const dataPath = join(__dirname, 'data', filename);
+    if (existsSync(dataPath)) return dataPath;
+    return join(__dirname, '..', 'public', filename);
+  };
+
   // ═══ GET /api/equipment-all-depot-zones — Toutes les zones des deux dépôts ═══
   app.get('/api/equipment-all-depot-zones', authenticateToken, (req, res) => {
     try {
-      const depot1 = JSON.parse(readFileSync(join(__dirname, '..', 'public', 'depot-zones.json'), 'utf-8'));
-      const depot2 = JSON.parse(readFileSync(join(__dirname, '..', 'public', 'depot2-zones.json'), 'utf-8'));
+      const depot1 = JSON.parse(readFileSync(resolveZonesPath('depot-zones.json'), 'utf-8'));
+      const depot2 = JSON.parse(readFileSync(resolveZonesPath('depot2-zones.json'), 'utf-8'));
       res.json({ depots: [ { id: '1', ...depot1 }, { id: '2', ...depot2 } ] });
     } catch (error) {
       logger.error('GET /api/equipment-all-depot-zones error:', error);
@@ -1260,7 +1267,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     try {
       const depotId = parseInt(req.query.depot, 10) || 1;
       const filename = depotId === 2 ? 'depot2-zones.json' : 'depot-zones.json';
-      const zonesPath = join(__dirname, '..', 'public', filename);
+      const zonesPath = resolveZonesPath(filename);
       const data = JSON.parse(readFileSync(zonesPath, 'utf-8'));
       res.json(data);
     } catch (error) {
@@ -1294,6 +1301,37 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     } catch (error) {
       logger.error('GET /api/equipment-location-stats error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ═══ PUT /api/equipment-depot-zones — Sauvegarder les zones modifiées (admin) ═══
+  app.put('/api/equipment-depot-zones', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { depot, zones } = req.body;
+      const depotId = parseInt(depot, 10);
+      if (![1, 2].includes(depotId)) {
+        return res.status(400).json({ error: 'Dépôt invalide (1 ou 2)' });
+      }
+      if (!zones || !Array.isArray(zones.zones) || !zones.version) {
+        return res.status(400).json({ error: 'Format de données invalide' });
+      }
+      const filename = depotId === 2 ? 'depot2-zones.json' : 'depot-zones.json';
+      const dataDir = join(__dirname, 'data');
+      if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
+      const zonesPath = join(dataDir, filename);
+
+      // Backup before overwrite
+      const backupPath = zonesPath + '.backup';
+      if (existsSync(zonesPath)) {
+        writeFileSync(backupPath, readFileSync(zonesPath));
+      }
+
+      writeFileSync(zonesPath, JSON.stringify(zones, null, 2), 'utf-8');
+      logger.info(`Depot ${depotId} zones updated by ${req.user.name} (${zones.zones.length} zones)`);
+      res.json({ success: true, zonesCount: zones.zones.length });
+    } catch (error) {
+      logger.error('PUT /api/equipment-depot-zones error:', error);
+      res.status(500).json({ error: 'Erreur sauvegarde zones' });
     }
   });
 }

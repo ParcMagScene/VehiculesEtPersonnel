@@ -16,7 +16,11 @@
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,css}\"",
     "update-photos": "node scripts/generate-photo-list.js",
-    "watch-photos": "node scripts/watch-photos.js"
+    "watch-photos": "node scripts/watch-photos.js",
+    "smoke-test": "node scripts/smoke-test.js",
+    "test": "node --test tests/unit.test.js",
+    "test:api": "node --test tests/api-integration.test.js",
+    "test:all": "node --test tests/"
   },
   "dependencies": {
     "date-fns": "^3.3.1",

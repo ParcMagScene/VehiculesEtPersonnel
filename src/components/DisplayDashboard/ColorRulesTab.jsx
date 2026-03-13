@@ -122,20 +122,9 @@ function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
                     ))
                   }
                 </select>
-                <input
-                  type="text"
-                  value={rule.description || ''}
-                  onChange={e => handleChange(index, 'description', e.target.value)}
-                  placeholder="Description (optionnel)"
-                  className="dtv-rule-desc"
-                />
                 <button className="btn-icon-sm danger" onClick={() => handleRemove(index)} title="Supprimer">
                   <Trash2 size={14} />
                 </button>
-              </div>
-              {/* Prévisualisation */}
-              <div className="dtv-rule-preview" style={{ borderLeftColor: rule.color }}>
-                <span style={{ color: rule.color }}>■</span> {TASK_SECTIONS.find(s => s.key === rule.keyword)?.label || rule.keyword || 'Type de tâche'} → {rule.description || 'Aucune description'}
               </div>
             </div>
           ))}

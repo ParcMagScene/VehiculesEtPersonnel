@@ -442,7 +442,123 @@
 .task-planning-panel .task-form-enriched .form-field-affaire {
   flex: 1 1 200px;
   min-width: 140px;
+  position: relative;
 }
+
+/* ── Affaire Autocomplete (inline add) ── */
+.task-planning-panel .affaire-autocomplete-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.task-planning-panel .affaire-autocomplete-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--theme-text-tertiary);
+  pointer-events: none;
+}
+.task-planning-panel .affaire-autocomplete-search {
+  width: 100%;
+  padding: 6px 10px 6px 28px !important;
+  border: 1px solid var(--theme-border) !important;
+  border-radius: 6px !important;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  font-size: 0.85rem;
+}
+.task-planning-panel .affaire-autocomplete-search:focus {
+  border-color: var(--theme-primary) !important;
+  outline: none;
+}
+.task-planning-panel .affaire-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  margin-top: 2px;
+}
+.task-planning-panel .affaire-autocomplete-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--theme-text-primary);
+  text-align: left;
+}
+.task-planning-panel .affaire-autocomplete-option:hover {
+  background: var(--theme-primary-alpha, rgba(99,102,241,0.10));
+}
+.task-planning-panel .affaire-opt-num {
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--theme-primary);
+}
+.task-planning-panel .affaire-opt-client {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-planning-panel .affaire-opt-titre {
+  font-size: 0.75rem;
+  color: var(--theme-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+.task-planning-panel .affaire-autocomplete-empty {
+  padding: 10px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--theme-text-tertiary);
+}
+.task-planning-panel .affaire-autocomplete-selected {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  background: var(--theme-bg-card);
+  min-height: 32px;
+}
+.task-planning-panel .affaire-autocomplete-client {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--theme-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-planning-panel .affaire-autocomplete-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--theme-text-tertiary);
+  padding: 2px;
+  border-radius: 4px;
+}
+.task-planning-panel .affaire-autocomplete-clear:hover {
+  color: var(--theme-danger);
+  background: rgba(239,68,68,0.08);
+}
+
 .task-planning-panel .task-form-enriched .form-field-google {
   flex: 1 1 200px;
   min-width: 140px;
@@ -2214,7 +2330,7 @@
   top: 100%;
   right: 0;
   z-index: var(--z-dropdown);
-  background: var(--theme-bg-primary, #fff);
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border, var(--theme-border));
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.15);
@@ -2258,7 +2374,7 @@
   border-bottom: 1px solid var(--theme-border, var(--theme-border));
   font-size: 0.85rem;
   outline: none;
-  background: var(--theme-bg-primary, #fff);
+  background: var(--theme-bg-card);
   color: var(--theme-text-primary, var(--theme-text-primary));
 }
 .task-planning-panel .link-search-input::placeholder {

@@ -176,96 +176,27 @@
   border-color: var(--theme-warning);
 }
 
-/* Modals mobile login */
-.mobile-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--theme-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-overlay);
-  padding: 1rem;
+/* AccessRequestModal → bottom-sheet sur mobile */
+.mobile-login .modal-overlay {
+  align-items: flex-end;
+  padding: 0;
+  animation: sheet-fade-in 0.2s ease;
 }
 
-.mobile-modal-content {
-  background: var(--theme-bg-card);
-  border-radius: 16px;
+.mobile-login .access-request-modal {
   width: 100%;
-  max-width: 400px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 100%;
+  border-radius: 16px 16px 0 0;
+  max-height: 85vh;
+  animation: sheet-slide-up 0.25s ease;
 }
 
-.mobile-modal-header {
-  padding: 16px 20px;
-  color: var(--theme-text-inverse);
+.mobile-login .access-request-header {
+  border-radius: 16px 16px 0 0;
 }
 
-.mobile-modal-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.mobile-modal-body {
-  padding: 20px;
-}
-
-.mobile-modal-body .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.mobile-modal-body .form-group label {
-  font-weight: 600;
-  color: var(--theme-text-body);
-  font-size: 0.875rem;
-}
-
-.mobile-modal-body .form-group input {
-  padding: 12px 14px;
-  border: 2px solid var(--theme-border);
-  border-radius: 12px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-  color: var(--theme-text-primary);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.mobile-modal-body .form-group input:focus {
-  outline: none;
-  border-color: var(--theme-primary);
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-}
-
-.mobile-modal-body .login-button {
-  padding: 14px;
-  background: var(--theme-gradient);
-  color: var(--theme-text-inverse);
-  border: none;
-  border-radius: 14px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  width: 100%;
-}
-
-.mobile-modal-body .login-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.mobile-modal-body .login-error {
-  padding: 12px 16px;
-  background: var(--theme-danger-bg);
-  color: var(--theme-danger-dark);
-  border-radius: 12px;
-  font-size: 0.875rem;
-  text-align: center;
-  border: 1px solid var(--btn-danger-hover-bg);
-  margin-bottom: 12px;
+.mobile-login .access-request-content {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }
 
 .mobile-login .login-footer {

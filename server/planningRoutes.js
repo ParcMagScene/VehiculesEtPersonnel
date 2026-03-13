@@ -1056,6 +1056,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
 
       // Nettoyer le titre d'une tâche pour le PDF (supprimer doublons avec section/affaire)
       const cleanTaskTitle = (task, sectionKey) => {
+        // Priorité : titre édité par l'utilisateur > titre Google
         let title = stripEmoji(task.title || '-');
         const googleTitle = task.google_event_title || '';
         // Extraire le N° d'affaire depuis le champ OU depuis le titre/google_event_title
@@ -1103,9 +1104,14 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         title = stripAfNum(title);
         // 4. Enrichir avec client/titre de l'affaire si titre trop générique
         const linkedAffaire = affNum ? affaireByNum.get(affNum.toUpperCase()) : null;
-        if (linkedAffaire && (!title || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(title))) {
-          title = stripEmoji(stripAfNum(linkedAffaire.client || linkedAffaire.titre || linkedAffaire.event_name || title || '-'));
+        // 4. Enrichir avec client/titre de l'affaire SEULEMENT si titre vide/générique
+        if (!title || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(title)) {
+          if (linkedAffaire) {
+            title = stripEmoji(stripAfNum(linkedAffaire.client || linkedAffaire.titre || linkedAffaire.event_name || title || '-'));
+          }
         }
+        // Auto-majuscule
+        if (title) title = title.charAt(0).toUpperCase() + title.slice(1);
         return title || '-';
       };
 

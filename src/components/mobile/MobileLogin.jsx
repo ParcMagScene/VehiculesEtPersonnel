@@ -179,13 +179,12 @@ function MobileLogin({ onLogin }) {
 
       {/* Modal Réinitialisation directe du mot de passe */}
       {showResetPassword && (
-        <div className="mobile-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowResetPassword(false)}>
-          <div className="mobile-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="mobile-modal-header" style={{ background: 'var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706))' }}>
-              <h3>🔑 Réinitialiser le mot de passe</h3>
-            </div>
-            <div className="mobile-modal-body">
-              <p style={{ marginBottom: '16px', color: 'var(--theme-text-body)', fontSize: '14px' }}>
+        <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowResetPassword(false); }}>
+          <div className="mobile-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-sheet-handle" />
+            <h3 className="mobile-sheet-title">🔑 Réinitialiser le mot de passe</h3>
+            <div className="mobile-sheet-form">
+              <p className="mobile-sheet-desc">
                 Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
               </p>
               
@@ -217,7 +216,7 @@ function MobileLogin({ onLogin }) {
                   setIsLoading(false);
                 }
               }}>
-                <div className="form-group" style={{ marginBottom: '12px' }}>
+                <div className="form-group">
                   <label htmlFor="reset-email">Adresse email</label>
                   <input
                     id="reset-email"
@@ -230,7 +229,7 @@ function MobileLogin({ onLogin }) {
                   />
                 </div>
 
-                <div className="form-group" style={{ marginBottom: '12px' }}>
+                <div className="form-group">
                   <label htmlFor="reset-name">Nom complet</label>
                   <input
                     id="reset-name"
@@ -242,7 +241,7 @@ function MobileLogin({ onLogin }) {
                   />
                 </div>
 
-                <div className="form-group" style={{ marginBottom: '12px' }}>
+                <div className="form-group">
                   <label htmlFor="reset-password">Nouveau mot de passe</label>
                   <input
                     id="reset-password"
@@ -255,7 +254,7 @@ function MobileLogin({ onLogin }) {
                   />
                 </div>
 
-                <div className="form-group" style={{ marginBottom: '16px' }}>
+                <div className="form-group">
                   <label htmlFor="reset-confirm">Confirmer le mot de passe</label>
                   <input
                     id="reset-confirm"
@@ -270,16 +269,12 @@ function MobileLogin({ onLogin }) {
 
                 {resetError && <div className="login-error">{resetError}</div>}
                 
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <div className="mobile-sheet-form-actions">
                   <button
                     type="button"
                     className="toggle-mode-button"
-                    onClick={() => {
-                      setShowResetPassword(false);
-                      setResetError('');
-                    }}
+                    onClick={() => { setShowResetPassword(false); setResetError(''); }}
                     disabled={isLoading}
-                    style={{ flex: 0 }}
                   >
                     Annuler
                   </button>
@@ -287,7 +282,6 @@ function MobileLogin({ onLogin }) {
                     type="submit"
                     className="login-button"
                     disabled={isLoading || !resetFormEmail || !resetFormName || !resetFormPassword || !resetFormConfirm}
-                    style={{ flex: 0 }}
                   >
                     {isLoading ? 'Réinitialisation...' : 'Réinitialiser'}
                   </button>

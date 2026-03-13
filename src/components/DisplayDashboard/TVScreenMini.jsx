@@ -7,11 +7,11 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 
 const SAMPLE_TASKS = [
-  { time: '07:00', period: 'AM', title: 'Prépa sono festival Dupont', section: 'prep_locations', sectionLabel: 'Prépa Location', status: 'pending', description: 'Affaire AF32887' },
-  { time: '08:30', period: 'AM', title: 'Chargement camion 3T', section: 'chargement', sectionLabel: 'Chargement', status: 'pending', description: '' },
-  { time: '09:00', period: 'AM', title: 'Départ livraison Mairie', section: 'depart', sectionLabel: 'Départ', status: 'done', description: 'Affaire AF32899' },
-  { time: '', period: 'PM', title: 'Récup du barnum Legrand', section: 'recuperation', sectionLabel: 'Récupération', status: 'pending', description: '' },
-  { time: '15:30', period: 'PM', title: 'Courses visserie + câbles', section: 'courses', sectionLabel: 'Courses', status: 'pending', description: '' },
+  { time: '07:00', period: 'AM', title: 'Prépa sono festival Dupont', section: 'prep_locations', sectionLabel: 'Prépa Location', status: 'pending', affaireNum: 'AF32887', affaireType: 'Location' },
+  { time: '08:30', period: 'AM', title: 'Chargement camion 3T', section: 'chargement', sectionLabel: 'Chargement', status: 'pending', affaireNum: '' },
+  { time: '09:00', period: 'AM', title: 'Départ livraison Mairie', section: 'depart', sectionLabel: 'Départ', status: 'done', affaireNum: 'AF32899', affaireType: 'Prestation' },
+  { time: '', period: 'PM', title: 'Récup du barnum Legrand', section: 'recuperation', sectionLabel: 'Récupération', status: 'pending', affaireNum: '' },
+  { time: '15:30', period: 'PM', title: 'Courses visserie + câbles', section: 'courses', sectionLabel: 'Courses', status: 'pending', affaireNum: '' },
 ];
 
 function TVScreenMini({ state = {} }) {
@@ -66,7 +66,7 @@ function TVScreenMini({ state = {} }) {
   // Couleur par recherche substring (aligné sur le vrai client TV main.js)
   // Cherche le keyword dans title + sectionLabel + location (pas juste section)
   const getTaskColor = (task) => {
-    const searchText = `${task.title || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
+    const searchText = `${task.title || ''} ${task.section || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
     for (const rule of colorRules) {
       if (rule.keyword && searchText.includes(rule.keyword.toLowerCase())) {
         return rule.color;
@@ -77,13 +77,19 @@ function TVScreenMini({ state = {} }) {
 
   // Icône animée par recherche substring (aligné sur le vrai client TV main.js)
   const getTaskIcon = (task) => {
-    const searchText = `${task.title || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
+    const searchText = `${task.title || ''} ${task.section || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
     for (const rule of iconRules) {
       if (rule.keyword && searchText.includes(rule.keyword.toLowerCase())) {
-        return rule.gif_filename;
+        return rule.gifFilename || rule.gif_filename;
       }
     }
     return null;
+  };
+
+  // Couleurs par type d'affaire (aligné sur AffaireBadge / affaireConstants)
+  const AFFAIRE_TYPE_COLORS = {
+    Prestation: '#3b82f6', Location: '#f59e0b', Installation: '#10b981',
+    Vente: '#8b5cf6', 'Tournée': '#ec4899',
   };
 
   const renderTask = (task, i) => {
@@ -91,6 +97,9 @@ function TVScreenMini({ state = {} }) {
     const iconFile = getTaskIcon(task);
     const isDone = task.status === 'done';
     const timeDisplay = task.time || (task.period === 'AM' ? 'Matin' : task.period === 'PM' ? 'Après-midi' : '');
+    const affNum = task.affaireNum || task.affaire_num || '';
+    const affType = task.affaireType || task.affaire_type || '';
+    const badgeColor = AFFAIRE_TYPE_COLORS[affType] || '#3b82f6';
     return (
       <div
         key={i}
@@ -106,7 +115,9 @@ function TVScreenMini({ state = {} }) {
             task.sectionLabel || ''
           )}
         </span>
-        <span className="tv-mini-evt-desc">{task.description || ''}</span>
+        <span className="tv-mini-evt-affaire">
+          {affNum ? <span className="tv-mini-affaire-badge" style={{ '--badge-color': badgeColor }}>{affNum}</span> : ''}
+        </span>
       </div>
     );
   };

@@ -1325,26 +1325,7 @@
   border-color: var(--theme-border-focus);
 }
 
-.dtv-rule-desc {
-  flex: 2;
-  min-width: 140px;
-  padding: 6px 10px;
-  border: 1px solid var(--theme-border);
-  border-radius: 6px;
-  font-size: 0.82rem;
-  background: var(--theme-bg-card);
-  color: var(--theme-text-dark);
-}
-.dtv-rule-desc:focus {
-  outline: none;
-  border-color: var(--theme-border-focus);
-}
 
-.dtv-rule-preview {
-  height: 6px;
-  border-radius: 3px;
-  margin-top: 8px;
-}
 
 /* ─── GIF gallery (icônes lieu) ─── */
 .dtv-gifs-gallery {
@@ -2064,7 +2045,7 @@
 
 .tv-mini-event {
   display: grid;
-  grid-template-columns: 6cqi 1fr 10cqi 12cqi;
+  grid-template-columns: 8cqi 1fr 8cqi 10cqi;
   gap: 2cqi;
   align-items: center;
   padding: 0.6cqi 0;
@@ -2074,9 +2055,7 @@
 }
 
 .tv-mini-event.all-day {
-  border: 1px solid rgba(135, 206, 235, 0.4);
   border-radius: 0.6cqi;
-  padding: 0.6cqi 1cqi;
 }
 
 /* Tâche effectuée → barrée + opacité réduite */
@@ -2096,7 +2075,7 @@
   font-weight: 600;
   font-size: 2.2cqi;
   font-variant-numeric: tabular-nums;
-  min-width: 6cqi;
+  min-width: 8cqi;
 }
 
 .tv-mini-evt-title {
@@ -2117,25 +2096,41 @@
   align-items: center;
   justify-content: center;
   gap: 0.5cqi;
+  width: 8cqi;
+  height: 4cqi;
 }
 
 .tv-mini-evt-icon {
-  width: 3cqi;
-  height: 3cqi;
+  width: 3.5cqi;
+  height: 3.5cqi;
   object-fit: contain;
   border: 1px solid currentColor;
   border-radius: 0.5cqi;
   background: rgba(0, 0, 0, 0.3);
   padding: 0.2cqi;
+  flex-shrink: 0;
 }
 
-.tv-mini-evt-desc {
-  font-size: 1.6cqi;
-  opacity: 0.7;
-  text-align: right;
+.tv-mini-evt-affaire {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.tv-mini-affaire-badge {
+  display: inline-block;
+  font-size: 1.4cqi;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 0.02em;
+  padding: 0.1cqi 0.6cqi;
+  border-radius: 0.4cqi;
+  color: var(--badge-color, #3b82f6);
+  background: color-mix(in srgb, var(--badge-color, #3b82f6) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color, #3b82f6) 35%, transparent);
   white-space: nowrap;
+  line-height: 1.4;
 }
 
 .tv-mini-no-events {
@@ -2545,6 +2540,41 @@
 
 .dash-task-item.done {
   opacity: 0.5;
+}
+
+.dash-task-item.hidden-task {
+  opacity: 0.4;
+}
+
+.dash-task-item.hidden-task .dash-task-name {
+  font-style: italic;
+}
+
+/* Toggle visible button */
+.dash-task-visible-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px 2px;
+  margin-top: 2px;
+  color: var(--theme-success, #10b981);
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.dash-task-visible-btn:hover {
+  opacity: 1;
+}
+
+.dash-task-visible-btn.off {
+  color: var(--theme-text-tertiary, #999);
+  opacity: 0.4;
+}
+
+.dash-task-visible-btn.off:hover {
+  color: var(--theme-danger, #ef4444);
+  opacity: 0.8;
 }
 
 .dash-task-item.done .dash-task-name {

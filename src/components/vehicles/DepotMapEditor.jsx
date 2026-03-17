@@ -5,7 +5,7 @@
 // ============================================================
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Save, X, Undo2, Image, Move, Maximize2, Plus, Trash2, RotateCcw, Eye, EyeOff, Grid3X3, Copy } from 'lucide-react';
+import { Save, X, Undo2, Redo2, Image, Move, Maximize2, Plus, Trash2, RotateCcw, Eye, EyeOff, Grid3X3, Copy, ZoomIn, ZoomOut, Scissors } from 'lucide-react';
 import api from '../../utils/api';
 import './DepotMapEditor.css';
 
@@ -18,18 +18,28 @@ function snapToGrid(val, grid) {
 }
 
 /**
+ * Normalise une valeur de skew : nombre → {x, y}
+ */
+function skewVal(v) {
+  if (v == null) return { x: 0, y: 0 };
+  if (typeof v === 'number') return { x: v, y: 0 };
+  return { x: v.x || 0, y: v.y || 0 };
+}
+
+/**
  * Calcule les 4 coins d'une zone (rectangle ou trapèze)
- * skew: { tl, tr, bl, br } = décalage horizontal de chaque coin
+ * skew: { tl, tr, bl, br } = décalage {x,y} de chaque coin (ou nombre = x seulement)
  * Retourne les points dans l'ordre: haut-gauche, haut-droit, bas-droit, bas-gauche
  */
 export function getZonePoints(bbox, skew) {
   const { x, y, width, height } = bbox;
-  const s = skew || { tl: 0, tr: 0, bl: 0, br: 0 };
+  const s = skew || {};
+  const tl = skewVal(s.tl), tr = skewVal(s.tr), br = skewVal(s.br), bl = skewVal(s.bl);
   return [
-    { x: x + (s.tl || 0),         y: y },
-    { x: x + width + (s.tr || 0), y: y },
-    { x: x + width + (s.br || 0), y: y + height },
-    { x: x + (s.bl || 0),         y: y + height },
+    { x: x + tl.x,         y: y + tl.y },
+    { x: x + width + tr.x, y: y + tr.y },
+    { x: x + width + br.x, y: y + height + br.y },
+    { x: x + bl.x,         y: y + height + bl.y },
   ];
 }
 
@@ -40,7 +50,138 @@ function pointsToSvg(points) {
 export function hasSkew(zone) {
   const s = zone.skew;
   if (!s) return false;
-  return (s.tl || 0) !== 0 || (s.tr || 0) !== 0 || (s.bl || 0) !== 0 || (s.br || 0) !== 0;
+  const v = (k) => { const sv = skewVal(s[k]); return sv.x !== 0 || sv.y !== 0; };
+  return v('tl') || v('tr') || v('bl') || v('br');
+}
+
+// ── Polygon geometry utilities for boolean operations ──
+
+/** Get polygon points from zone (clipPoints if present, else computed from bbox/skew) */
+export function getZonePoly(zone) {
+  if (zone.clipPoints && zone.clipPoints.length >= 3) return zone.clipPoints;
+  return getZonePoints(zone.bbox, zone.skew);
+}
+
+/** Test if a point is inside a polygon (ray casting) */
+function ptInPoly(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const yi = poly[i].y, yj = poly[j].y;
+    if ((yi > pt.y) !== (yj > pt.y)) {
+      const xi = poly[i].x + (pt.y - yi) / (yj - yi) * (poly[j].x - poly[i].x);
+      if (pt.x < xi) inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** Intersection of two segments [a1,a2] and [b1,b2] */
+function segIntersect(a1, a2, b1, b2) {
+  const dx1 = a2.x - a1.x, dy1 = a2.y - a1.y;
+  const dx2 = b2.x - b1.x, dy2 = b2.y - b1.y;
+  const d = dx1 * dy2 - dy1 * dx2;
+  if (Math.abs(d) < 1e-9) return null;
+  const t = ((b1.x - a1.x) * dy2 - (b1.y - a1.y) * dx2) / d;
+  const u = ((b1.x - a1.x) * dy1 - (b1.y - a1.y) * dx1) / d;
+  const EPS = 1e-6;
+  if (t < -EPS || t > 1 + EPS || u < -EPS || u > 1 + EPS) return null;
+  return { point: { x: a1.x + t * dx1, y: a1.y + t * dy1 }, tA: t, tB: u };
+}
+
+/** Signed polygon area (positive = CCW in math coords / CW on screen) */
+function polyArea(pts) {
+  let a = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length;
+    a += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+  }
+  return a / 2;
+}
+
+/** Ensure polygon has consistent winding (positive area) */
+function ensureCCW(pts) {
+  return polyArea(pts) < 0 ? [...pts].reverse() : pts;
+}
+
+/** Compute bbox from arbitrary points */
+function bboxFromPoints(pts) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of pts) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { x: Math.round(minX), y: Math.round(minY), width: Math.round(maxX - minX), height: Math.round(maxY - minY) };
+}
+
+/**
+ * Boolean subtraction: subject minus clip (convex polygons).
+ * Returns new polygon points, null (empty), or subject (no overlap).
+ */
+function subtractConvexPolygons(subject, clip) {
+  subject = ensureCCW(subject);
+  clip = ensureCCW(clip);
+  const n = subject.length, m = clip.length;
+
+  const sInC = subject.map(p => ptInPoly(p, clip));
+  const cInS = clip.map(p => ptInPoly(p, subject));
+
+  if (sInC.every(v => v)) return null; // subject entirely inside clip
+  if (cInS.every(v => v)) return subject; // clip entirely inside subject — skip (would create hole)
+
+  // Find edge intersections
+  const ixs = [];
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < m; j++) {
+      const ix = segIntersect(subject[i], subject[(i + 1) % n], clip[j], clip[(j + 1) % m]);
+      if (ix) ixs.push({ ...ix, si: i, ci: j });
+    }
+
+  // Deduplicate close points
+  const deduped = [];
+  for (const ix of ixs)
+    if (!deduped.some(d => Math.abs(d.point.x - ix.point.x) < 0.5 && Math.abs(d.point.y - ix.point.y) < 0.5))
+      deduped.push(ix);
+
+  if (deduped.length < 2) {
+    // Check if they overlap at all even without 2 clean crossings
+    if (!sInC.some(v => v) && !cInS.some(v => v)) return subject; // no overlap
+    return subject; // edge case (tangent/collinear), return unchanged
+  }
+
+  deduped.sort((a, b) => a.si !== b.si ? a.si - b.si : a.tA - b.tA);
+  const [p1, p2] = deduped;
+
+  // Determine entry (into clip) vs exit (out of clip)
+  const nextVert = subject[(p1.si + 1) % n];
+  const p1IsEntry = ptInPoly(nextVert, clip);
+  const entry = p1IsEntry ? p1 : p2;
+  const exit_ = p1IsEntry ? p2 : p1;
+
+  const rnd = p => ({ x: Math.round(p.x), y: Math.round(p.y) });
+  const result = [];
+
+  // Start at exit, walk subject outside clip to entry
+  result.push(rnd(exit_.point));
+  let si = (exit_.si + 1) % n;
+  const stopSi = (entry.si + 1) % n;
+  let safety = 0;
+  while (si !== stopSi && safety++ < n + 2) {
+    result.push(rnd(subject[si]));
+    si = (si + 1) % n;
+  }
+
+  // Add entry point, walk clip backward (inside subject) to exit
+  result.push(rnd(entry.point));
+  let ci = entry.ci;
+  safety = 0;
+  while (ci !== exit_.ci && safety++ < m + 2) {
+    if (cInS[ci]) result.push(rnd(clip[ci]));
+    ci = (ci - 1 + m) % m;
+  }
+
+  return result.length >= 3 ? result : subject;
 }
 
 /** Compute bounding box encompassing all zones (accounting for skew) + padding */
@@ -48,7 +189,14 @@ export function computeZonesBounds(zones, padding = 20) {
   if (!zones || zones.length === 0) return { x: 0, y: 0, w: 400, h: 300 };
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const zone of zones) {
-    if (zone.shape === 'trapezoid' && hasSkew(zone)) {
+    if (zone.clipPoints && zone.clipPoints.length >= 3) {
+      for (const p of zone.clipPoints) {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      }
+    } else if (zone.shape === 'trapezoid' && hasSkew(zone)) {
       const pts = getZonePoints(zone.bbox, zone.skew);
       for (const p of pts) {
         if (p.x < minX) minX = p.x;
@@ -77,8 +225,14 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   const [activeFloor, setActiveFloor] = useState('RDC');
   const [selectedZoneId, setSelectedZoneId] = useState(null);
   const [history, setHistory] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+
+  // Boolean subtraction mode
+  const [subtractMode, setSubtractMode] = useState(null); // null | 'pick-target' | 'choose'
+  const [subtractSourceId, setSubtractSourceId] = useState(null);
+  const [subtractTargetId, setSubtractTargetId] = useState(null);
 
   // Overlay image
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -90,8 +244,21 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   const [dragStart, setDragStart] = useState(null);
   const [dragZoneStart, setDragZoneStart] = useState(null);
   const [dragSkewStart, setDragSkewStart] = useState(null);
+  const [dragClipPointsStart, setDragClipPointsStart] = useState(null);
 
   const svgRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // Zoom/Pan state for editor
+  const [editorZoom, setEditorZoom] = useState(1);
+  const [editorPan, setEditorPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [spaceHeld, setSpaceHeld] = useState(false);
+
+  const EDITOR_MIN_ZOOM = 0.3;
+  const EDITOR_MAX_ZOOM = 6;
+  const EDITOR_ZOOM_STEP = 0.15;
 
   const SVG_WIDTH = zonesData.svgWidth || 900;
   const SVG_HEIGHT = zonesData.svgHeight || 520;
@@ -140,16 +307,82 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     return { x: '0%', y: '85%', w: '100%', h: '15%' };
   }, [depotId, activeFloor]);
 
+  // Zoom/Pan handlers for editor canvas
+  const handleEditorWheel = useCallback((e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -EDITOR_ZOOM_STEP : EDITOR_ZOOM_STEP;
+    setEditorZoom(z => Math.max(EDITOR_MIN_ZOOM, Math.min(EDITOR_MAX_ZOOM, z + delta)));
+  }, []);
+
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (el) {
+      el.addEventListener('wheel', handleEditorWheel, { passive: false });
+      return () => el.removeEventListener('wheel', handleEditorWheel);
+    }
+  }, [handleEditorWheel]);
+
+  // Space key for pan mode
+  useEffect(() => {
+    const onKeyDown = (e) => { if (e.code === 'Space' && !e.repeat) { setSpaceHeld(true); } };
+    const onKeyUp = (e) => { if (e.code === 'Space') { setSpaceHeld(false); setIsPanning(false); } };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
+  }, []);
+
+  const handleCanvasMouseDown = useCallback((e) => {
+    // Middle mouse button OR space held = start panning
+    if (e.button === 1 || spaceHeld) {
+      e.preventDefault();
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - editorPan.x, y: e.clientY - editorPan.y });
+    }
+  }, [spaceHeld, editorPan]);
+
+  const handleCanvasMouseMove = useCallback((e) => {
+    if (!isPanning) return;
+    setEditorPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
+  }, [isPanning, panStart]);
+
+  const handleCanvasMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  const handleEditorZoomIn = () => setEditorZoom(z => Math.min(EDITOR_MAX_ZOOM, z + EDITOR_ZOOM_STEP * 2));
+  const handleEditorZoomOut = () => setEditorZoom(z => Math.max(EDITOR_MIN_ZOOM, z - EDITOR_ZOOM_STEP * 2));
+  const handleEditorZoomReset = () => { setEditorZoom(1); setEditorPan({ x: 0, y: 0 }); };
+  const handleEditorZoomFit = () => {
+    const container = canvasRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const scaleX = (rect.width - 32) / bounds.w;
+    const scaleY = (rect.height - 32) / bounds.h;
+    setEditorZoom(Math.max(EDITOR_MIN_ZOOM, Math.min(EDITOR_MAX_ZOOM, Math.min(scaleX, scaleY))));
+    setEditorPan({ x: 0, y: 0 });
+  };
+
   // Save snapshot for undo
   const pushHistory = useCallback(() => {
     setHistory(h => [...h.slice(-30), JSON.stringify(zonesData)]);
+    setRedoStack([]); // Clear redo on new action
   }, [zonesData]);
 
   const handleUndo = () => {
     if (history.length === 0) return;
+    setRedoStack(r => [...r.slice(-30), JSON.stringify(zonesData)]);
     const last = history[history.length - 1];
     setHistory(h => h.slice(0, -1));
     setZonesData(JSON.parse(last));
+    setDirty(true);
+  };
+
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    setHistory(h => [...h.slice(-30), JSON.stringify(zonesData)]);
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack(r => r.slice(0, -1));
+    setZonesData(JSON.parse(next));
     setDirty(true);
   };
 
@@ -158,6 +391,18 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     setZonesData(prev => ({
       ...prev,
       zones: prev.zones.map(z => z.id === zoneId ? { ...z, bbox: { ...z.bbox, ...newBbox } } : z),
+    }));
+    setDirty(true);
+  }, []);
+
+  // Update a zone's skew value
+  const updateZoneSkew = useCallback((zoneId, corner, value) => {
+    setZonesData(prev => ({
+      ...prev,
+      zones: prev.zones.map(z => z.id === zoneId
+        ? { ...z, skew: { ...(z.skew || { tl: {x:0,y:0}, tr: {x:0,y:0}, bl: {x:0,y:0}, br: {x:0,y:0} }), [corner]: value } }
+        : z
+      ),
     }));
     setDirty(true);
   }, []);
@@ -184,6 +429,14 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
 
   // Mouse down on a zone (move)
   const handleZoneMouseDown = useCallback((e, zone) => {
+    if (spaceHeld) return; // Pan mode — don't drag zones
+    // Boolean subtraction: intercept clicks in pick-target mode
+    if (subtractMode === 'pick-target' && zone.id !== subtractSourceId) {
+      e.stopPropagation();
+      e.preventDefault();
+      handleSubtractZoneClick(zone.id);
+      return;
+    }
     e.stopPropagation();
     e.preventDefault();
     pushHistory();
@@ -192,7 +445,9 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     const pt = getSvgPoint(e);
     setDragStart(pt);
     setDragZoneStart({ ...zone.bbox });
-  }, [getSvgPoint, pushHistory]);
+    if (zone.clipPoints) setDragClipPointsStart(zone.clipPoints.map(p => ({ ...p })));
+    else setDragClipPointsStart(null);
+  }, [getSvgPoint, pushHistory, spaceHeld, subtractMode, subtractSourceId]);
 
   // Mouse down on resize handle
   const handleHandleMouseDown = useCallback((e, zone, handle) => {
@@ -207,7 +462,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     // En mode trapèze, les coins (nw/ne/se/sw) déplacent le skew
     const isCorner = ['nw', 'ne', 'se', 'sw'].includes(handle);
     if (zone.shape === 'trapezoid' && isCorner) {
-      setDragSkewStart({ ...(zone.skew || { tl: 0, tr: 0, bl: 0, br: 0 }) });
+      setDragSkewStart({ ...(zone.skew || { tl: {x:0,y:0}, tr: {x:0,y:0}, bl: {x:0,y:0}, br: {x:0,y:0} }) });
       setDragMode(`skew-${handle}`);
     } else {
       setDragMode(`resize-${handle}`);
@@ -222,10 +477,22 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     const dy = pt.y - dragStart.y;
 
     if (dragMode === 'move') {
-      updateZoneBbox(selectedZoneId, {
+      const newBbox = {
         x: snapToGrid(Math.max(0, Math.min(SVG_WIDTH - dragZoneStart.width, dragZoneStart.x + dx)), SNAP_GRID),
         y: snapToGrid(Math.max(0, Math.min(SVG_HEIGHT - dragZoneStart.height, dragZoneStart.y + dy)), SNAP_GRID),
-      });
+      };
+      updateZoneBbox(selectedZoneId, newBbox);
+      // Translate clipPoints too
+      if (dragClipPointsStart) {
+        const tdx = newBbox.x - dragZoneStart.x;
+        const tdy = newBbox.y - dragZoneStart.y;
+        setZonesData(prev => ({
+          ...prev,
+          zones: prev.zones.map(z => z.id === selectedZoneId
+            ? { ...z, clipPoints: dragClipPointsStart.map(p => ({ x: p.x + tdx, y: p.y + tdy })) }
+            : z),
+        }));
+      }
     } else if (dragMode.startsWith('resize-')) {
       const handle = dragMode.replace('resize-', '');
       let { x, y, width, height } = dragZoneStart;
@@ -260,7 +527,11 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
       const cornerMap = { nw: 'tl', ne: 'tr', se: 'br', sw: 'bl' };
       const skewKey = cornerMap[corner];
       if (skewKey) {
-        const newVal = snapToGrid((dragSkewStart[skewKey] || 0) + dx, SNAP_GRID);
+        const prev = skewVal(dragSkewStart[skewKey]);
+        const newVal = {
+          x: snapToGrid(prev.x + dx, SNAP_GRID),
+          y: snapToGrid(prev.y + dy, SNAP_GRID),
+        };
         updateZoneSkew(selectedZoneId, skewKey, newVal);
       }
     }
@@ -271,6 +542,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     setDragStart(null);
     setDragZoneStart(null);
     setDragSkewStart(null);
+    setDragClipPointsStart(null);
   }, []);
 
   // Click on empty space deselects
@@ -284,10 +556,14 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'Escape') {
+        if (subtractMode) { cancelSubtract(); return; }
         if (selectedZoneId) setSelectedZoneId(null);
         else onClose();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        handleRedo();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
         e.preventDefault();
         handleUndo();
       }
@@ -337,7 +613,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     setSaving(true);
     setSaveMsg(null);
     try {
-      const result = await api.saveDepotZones(depotId, zonesData);
+      const result = await api.updateEquipmentDepotZones(zonesData, depotId);
       setDirty(false);
       setSaveMsg({ type: 'success', text: `✅ Sauvegardé (${result?.zonesCount || zonesData.zones?.length} zones)` });
       // Notify parent to reload data (but DON'T close editor)
@@ -387,6 +663,71 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     }));
     setSelectedZoneId(newId);
     setDirty(true);
+  };
+
+  // ── Boolean subtraction ──
+  const startSubtractMode = () => {
+    if (!selectedZoneId) return;
+    setSubtractSourceId(selectedZoneId);
+    setSubtractTargetId(null);
+    setSubtractMode('pick-target');
+  };
+
+  const cancelSubtract = () => {
+    setSubtractMode(null);
+    setSubtractSourceId(null);
+    setSubtractTargetId(null);
+  };
+
+  const handleSubtractZoneClick = (zoneId) => {
+    if (subtractMode !== 'pick-target' || zoneId === subtractSourceId) return;
+    setSubtractTargetId(zoneId);
+    setSubtractMode('choose');
+  };
+
+  const executeSubtract = (keepIn) => {
+    // keepIn = 'source' | 'target'
+    // The zone NOT keeping the overlap gets clipped
+    const srcZone = zonesData.zones.find(z => z.id === subtractSourceId);
+    const tgtZone = zonesData.zones.find(z => z.id === subtractTargetId);
+    if (!srcZone || !tgtZone) { cancelSubtract(); return; }
+
+    const srcPoly = getZonePoly(srcZone);
+    const tgtPoly = getZonePoly(tgtZone);
+
+    // Zone to clip = the one NOT keeping the overlap
+    const clipZoneId = keepIn === 'source' ? subtractTargetId : subtractSourceId;
+    const subjectPoly = keepIn === 'source' ? tgtPoly : srcPoly;
+    const clipperPoly = keepIn === 'source' ? srcPoly : tgtPoly;
+
+    const result = subtractConvexPolygons(subjectPoly, clipperPoly);
+    if (result === null) {
+      alert(`La zone ${clipZoneId} serait entièrement supprimée. Opération annulée.`);
+      cancelSubtract();
+      return;
+    }
+    if (result === subjectPoly) {
+      alert('Les zones ne se chevauchent pas, ou le découpage créerait un trou. Opération annulée.');
+      cancelSubtract();
+      return;
+    }
+
+    pushHistory();
+    setZonesData(prev => ({
+      ...prev,
+      zones: prev.zones.map(z => {
+        if (z.id !== clipZoneId) return z;
+        return {
+          ...z,
+          clipPoints: result,
+          bbox: bboxFromPoints(result),
+          shape: 'polygon',
+          skew: undefined,
+        };
+      }),
+    }));
+    setDirty(true);
+    cancelSubtract();
   };
 
   // Add new zone
@@ -440,18 +781,6 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     }));
     setDirty(true);
   };
-
-  // Update a zone's skew value
-  const updateZoneSkew = useCallback((zoneId, corner, value) => {
-    setZonesData(prev => ({
-      ...prev,
-      zones: prev.zones.map(z => z.id === zoneId
-        ? { ...z, skew: { ...(z.skew || { tl: 0, tr: 0, bl: 0, br: 0 }), [corner]: value } }
-        : z
-      ),
-    }));
-    setDirty(true);
-  }, []);
 
   // Resize handles for a zone
   const renderHandles = (zone) => {
@@ -540,6 +869,9 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
           <div className="depot-editor-actions">
             <button className="dep-ed-btn" onClick={handleUndo} disabled={history.length === 0} title="Annuler (⌘Z)">
               <Undo2 size={16} /> Annuler
+            </button>
+            <button className="dep-ed-btn" onClick={handleRedo} disabled={redoStack.length === 0} title="Rétablir (⌘⇧Z)">
+              <Redo2 size={16} /> Rétablir
             </button>
             <button className="dep-ed-btn dep-ed-btn-save" onClick={handleSave} disabled={saving || !dirty} title="Sauvegarder (⌘S)">
               <Save size={16} /> {saving ? 'Sauvegarde...' : 'Sauvegarder'}
@@ -656,6 +988,13 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                   <button className="dep-ed-btn-sm dep-ed-btn-danger" onClick={handleDeleteZone}>
                     <Trash2 size={14} /> Supprimer
                   </button>
+                  <button
+                    className={`dep-ed-btn-sm ${subtractMode ? 'active' : ''}`}
+                    onClick={subtractMode ? cancelSubtract : startSubtractMode}
+                    title="Soustraction booléenne — Découper le chevauchement entre deux zones"
+                  >
+                    <Scissors size={14} /> {subtractMode ? 'Annuler soustraction' : 'Soustraire'}
+                  </button>
                 </>
               )}
             </div>
@@ -728,51 +1067,71 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                 {/* Forme */}
                 <div className="dep-ed-field">
                   <span>Forme</span>
-                  <select value={selectedZone.shape || 'rect'}
-                    onChange={e => {
-                      pushHistory();
-                      const newShape = e.target.value;
-                      handleZonePropertyChange('shape', newShape);
-                      if (newShape === 'trapezoid' && !selectedZone.skew) {
-                        handleZonePropertyChange('skew', { tl: 0, tr: 0, bl: 0, br: 0 });
-                      }
-                    }}>
-                    <option value="rect">Rectangle</option>
-                    <option value="trapezoid">Trapèze</option>
-                  </select>
+                  {selectedZone.clipPoints ? (
+                    <div className="dep-ed-clip-info">
+                      <span className="dep-ed-clip-badge">Polygone ({selectedZone.clipPoints.length} pts)</span>
+                      <button className="dep-ed-btn-sm" onClick={() => {
+                        pushHistory();
+                        setZonesData(prev => ({
+                          ...prev,
+                          zones: prev.zones.map(z => z.id === selectedZoneId
+                            ? { ...z, clipPoints: undefined, shape: 'rect' }
+                            : z),
+                        }));
+                        setDirty(true);
+                      }}>
+                        <RotateCcw size={12} /> Réinitialiser rect
+                      </button>
+                    </div>
+                  ) : (
+                    <select value={selectedZone.shape || 'rect'}
+                      onChange={e => {
+                        pushHistory();
+                        const newShape = e.target.value;
+                        handleZonePropertyChange('shape', newShape);
+                        if (newShape === 'trapezoid' && !selectedZone.skew) {
+                          handleZonePropertyChange('skew', { tl: {x:0,y:0}, tr: {x:0,y:0}, bl: {x:0,y:0}, br: {x:0,y:0} });
+                        }
+                      }}>
+                      <option value="rect">Rectangle</option>
+                      <option value="trapezoid">Trapèze</option>
+                    </select>
+                  )}
                 </div>
 
                 {/* Contrôles trapèze */}
                 {(selectedZone.shape === 'trapezoid') && (() => {
-                  const sk = selectedZone.skew || { tl: 0, tr: 0, bl: 0, br: 0 };
+                  const sk = selectedZone.skew || {};
+                  const corners = [
+                    { key: 'tl', label: '↖ HG' },
+                    { key: 'tr', label: '↗ HD' },
+                    { key: 'bl', label: '↙ BG' },
+                    { key: 'br', label: '↘ BD' },
+                  ];
                   return (
                     <div className="dep-ed-skew-controls">
                       <label>Décalage coins (px)</label>
                       <div className="dep-ed-skew-grid">
-                        <div className="dep-ed-field">
-                          <span>↖ HG</span>
-                          <input type="number" value={sk.tl || 0} step={5}
-                            onChange={e => { pushHistory(); updateZoneSkew(selectedZone.id, 'tl', parseInt(e.target.value) || 0); }} />
-                        </div>
-                        <div className="dep-ed-field">
-                          <span>↗ HD</span>
-                          <input type="number" value={sk.tr || 0} step={5}
-                            onChange={e => { pushHistory(); updateZoneSkew(selectedZone.id, 'tr', parseInt(e.target.value) || 0); }} />
-                        </div>
-                        <div className="dep-ed-field">
-                          <span>↙ BG</span>
-                          <input type="number" value={sk.bl || 0} step={5}
-                            onChange={e => { pushHistory(); updateZoneSkew(selectedZone.id, 'bl', parseInt(e.target.value) || 0); }} />
-                        </div>
-                        <div className="dep-ed-field">
-                          <span>↘ BD</span>
-                          <input type="number" value={sk.br || 0} step={5}
-                            onChange={e => { pushHistory(); updateZoneSkew(selectedZone.id, 'br', parseInt(e.target.value) || 0); }} />
-                        </div>
+                        {corners.map(c => {
+                          const sv = skewVal(sk[c.key]);
+                          return (
+                            <div className="dep-ed-field dep-ed-skew-corner" key={c.key}>
+                              <span>{c.label}</span>
+                              <div className="dep-ed-skew-xy">
+                                <label>X</label>
+                                <input type="number" value={sv.x} step={5}
+                                  onChange={e => { pushHistory(); updateZoneSkew(selectedZone.id, c.key, { x: parseInt(e.target.value) || 0, y: sv.y }); }} />
+                                <label>Y</label>
+                                <input type="number" value={sv.y} step={5}
+                                  onChange={e => { pushHistory(); updateZoneSkew(selectedZone.id, c.key, { x: sv.x, y: parseInt(e.target.value) || 0 }); }} />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                       <button className="dep-ed-btn-sm" onClick={() => {
                         pushHistory();
-                        handleZonePropertyChange('skew', { tl: 0, tr: 0, bl: 0, br: 0 });
+                        handleZonePropertyChange('skew', { tl: {x:0,y:0}, tr: {x:0,y:0}, bl: {x:0,y:0}, br: {x:0,y:0} });
                       }}>Réinitialiser</button>
                     </div>
                   );
@@ -796,8 +1155,57 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
           </div>
 
           {/* Main canvas */}
-          <div className="depot-editor-canvas">
-            <div className="depot-editor-svg-container">
+          <div className="depot-editor-canvas"
+            ref={canvasRef}
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseUp={handleCanvasMouseUp}
+            onMouseLeave={handleCanvasMouseUp}
+            style={{ cursor: isPanning ? 'grabbing' : spaceHeld ? 'grab' : undefined }}
+          >
+            {/* Zoom controls floating */}
+            <div className="dep-ed-zoom-controls">
+              <button onClick={handleEditorZoomOut} title="Dézoomer" className="dep-ed-btn-sm"><ZoomOut size={14} /></button>
+              <span className="dep-ed-zoom-level">{Math.round(editorZoom * 100)}%</span>
+              <button onClick={handleEditorZoomIn} title="Zoomer" className="dep-ed-btn-sm"><ZoomIn size={14} /></button>
+              <button onClick={handleEditorZoomReset} title="100%" className="dep-ed-btn-sm">1:1</button>
+              <button onClick={handleEditorZoomFit} title="Ajuster" className="dep-ed-btn-sm"><Maximize2 size={14} /></button>
+            </div>
+
+            {/* Subtract mode banner */}
+            {subtractMode === 'pick-target' && (
+              <div className="dep-ed-subtract-banner">
+                <Scissors size={16} />
+                <span>Cliquez sur la zone à soustraire de <strong>{subtractSourceId}</strong></span>
+                <button className="dep-ed-btn-sm" onClick={cancelSubtract}>Annuler</button>
+              </div>
+            )}
+
+            {/* Subtract choice dialog */}
+            {subtractMode === 'choose' && (
+              <div className="dep-ed-subtract-dialog">
+                <div className="dep-ed-subtract-dialog-inner">
+                  <h4>Soustraction booléenne</h4>
+                  <p>Garder le chevauchement dans :</p>
+                  <div className="dep-ed-subtract-choices">
+                    <button className="dep-ed-btn dep-ed-btn-save" onClick={() => executeSubtract('source')}>
+                      {subtractSourceId}
+                    </button>
+                    <span>ou</span>
+                    <button className="dep-ed-btn dep-ed-btn-save" onClick={() => executeSubtract('target')}>
+                      {subtractTargetId}
+                    </button>
+                  </div>
+                  <button className="dep-ed-btn-sm" onClick={cancelSubtract} style={{ marginTop: 8 }}>Annuler</button>
+                </div>
+              </div>
+            )}
+            <div className="depot-editor-svg-container"
+              style={{
+                transform: `scale(${editorZoom}) translate(${editorPan.x / editorZoom}px, ${editorPan.y / editorZoom}px)`,
+                transformOrigin: 'center center',
+              }}
+            >
               <svg
                 ref={svgRef}
                 viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`}
@@ -838,21 +1246,29 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                 {floorZones.map(zone => {
                   const { x, y, width, height } = zone.bbox;
                   const isSelected = zone.id === selectedZoneId;
-                  const isTrapezoid = zone.shape === 'trapezoid' && hasSkew(zone);
+                  const hasClip = zone.clipPoints && zone.clipPoints.length >= 3;
+                  const isTrapezoid = !hasClip && zone.shape === 'trapezoid' && hasSkew(zone);
+                  const isSubtractHighlight = subtractMode === 'pick-target' && zone.id !== subtractSourceId;
                   const shapeProps = {
                     fill: zone.color,
                     fillOpacity: isSelected ? 0.7 : 0.5,
-                    stroke: isSelected ? '#ffffff' : zone.color,
-                    strokeWidth: isSelected ? 2 : 1,
-                    style: { cursor: 'move' },
+                    stroke: isSubtractHighlight ? '#f59e0b' : isSelected ? '#ffffff' : zone.color,
+                    strokeWidth: isSubtractHighlight ? 2.5 : isSelected ? 2 : 1,
+                    strokeDasharray: isSubtractHighlight ? '6 3' : undefined,
+                    style: { cursor: subtractMode === 'pick-target' && zone.id !== subtractSourceId ? 'crosshair' : 'move' },
                     onMouseDown: (e) => handleZoneMouseDown(e, zone),
                     onTouchStart: (e) => handleZoneMouseDown(e, zone),
                   };
 
                   return (
                     <g key={zone.id}>
-                      {/* Zone shape (rect ou trapèze) */}
-                      {isTrapezoid ? (
+                      {/* Zone shape (rect, trapèze ou polygone découpé) */}
+                      {hasClip ? (
+                        <polygon
+                          points={pointsToSvg(zone.clipPoints)}
+                          {...shapeProps}
+                        />
+                      ) : isTrapezoid ? (
                         <polygon
                           points={pointsToSvg(getZonePoints(zone.bbox, zone.skew))}
                           {...shapeProps}
@@ -906,6 +1322,8 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
 
             {/* Info bar */}
             <div className="depot-editor-info">
+              <span>Zoom: {Math.round(editorZoom * 100)}%</span>
+              <span>|</span>
               <span>Vue: {Math.round(bounds.w)}×{Math.round(bounds.h)}</span>
               <span>|</span>
               <span>Zones: {floorZones.length}</span>
@@ -913,13 +1331,18 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                 <>
                   <span>|</span>
                   <span>{selectedZone.id}: ({selectedZone.bbox.x}, {selectedZone.bbox.y}) {selectedZone.bbox.width}×{selectedZone.bbox.height}</span>
-                  {selectedZone.shape === 'trapezoid' && (
-                    <span> skew: ↖{(selectedZone.skew?.tl||0)} ↗{(selectedZone.skew?.tr||0)} ↙{(selectedZone.skew?.bl||0)} ↘{(selectedZone.skew?.br||0)}</span>
+                  {selectedZone.clipPoints && (
+                    <span> polygone: {selectedZone.clipPoints.length} pts</span>
                   )}
+                  {selectedZone.shape === 'trapezoid' && !selectedZone.clipPoints && (() => {
+                    const s = selectedZone.skew || {};
+                    const fmt = k => { const v = skewVal(s[k]); return `${v.x},${v.y}`; };
+                    return <span> skew: ↖{fmt('tl')} ↗{fmt('tr')} ↙{fmt('bl')} ↘{fmt('br')}</span>;
+                  })()}
                 </>
               )}
               <span className="depot-editor-info-hints">
-                Flèches: déplacer · Shift+Flèches: ×10 · ⌘Z: annuler · ⌘S: sauvegarder
+                Molette: zoom · Espace+drag / Clic milieu: déplacer la vue · Flèches: déplacer · ⌘Z: annuler · ⌘S: sauvegarder
               </span>
             </div>
           </div>

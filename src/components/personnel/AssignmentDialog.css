@@ -361,7 +361,7 @@
 
 .asd-affaire-search:focus {
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .asd-affaire-dropdown {
@@ -495,7 +495,7 @@
 .asd-field select:focus,
 .asd-field textarea:focus {
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .asd-field textarea {
@@ -885,7 +885,7 @@
 .asd-position-trigger:focus-within,
 .asd-position-selector.open .asd-position-trigger {
   border-color: var(--theme-info);
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .asd-position-placeholder {

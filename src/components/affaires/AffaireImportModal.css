@@ -318,7 +318,7 @@
 .affaire-import-modal .form-group select:focus {
   outline: none;
   border-color: var(--theme-primary-light);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .affaire-import-modal .form-group textarea {
@@ -548,7 +548,7 @@
 .batch-result-item.selected {
   border-color: var(--btn-primary-bg);
   background: rgba(59, 130, 246, 0.08);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .batch-result-item.error {

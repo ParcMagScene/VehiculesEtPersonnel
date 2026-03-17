@@ -145,7 +145,7 @@
 .tem-field textarea:focus {
   outline: none;
   border-color: var(--theme-info);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .tem-field textarea {
@@ -221,7 +221,7 @@
 .tem-affaire-search:focus {
   outline: none;
   border-color: var(--theme-info);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .tem-affaire-dropdown {

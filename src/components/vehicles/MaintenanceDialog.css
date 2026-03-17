@@ -196,7 +196,7 @@
 .maintenance-dialog .form-group textarea:focus {
   outline: none;
   border-color: var(--theme-primary-light);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .maintenance-dialog .form-group textarea {
@@ -883,7 +883,7 @@
 .status-reason-field textarea:focus {
   outline: none;
   border-color: var(--theme-info);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 /* ===== Carte détails intervention en mode édition ===== */

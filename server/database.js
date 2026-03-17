@@ -101,16 +101,38 @@ function initializeDatabase() {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       type TEXT,
+      category TEXT,
       registration TEXT,
       brand TEXT,
       model TEXT,
+      year INTEGER,
       color TEXT,
+      vin TEXT,
+      status TEXT DEFAULT 'available',
+      notes TEXT,
       owner TEXT,
       comment TEXT,
       display_color TEXT,
       photo TEXT,
       order_index INTEGER DEFAULT 0,
       is_location BOOLEAN DEFAULT 0,
+      kilometrage INTEGER DEFAULT 0,
+      last_maintenance_date TEXT,
+      last_maintenance_km INTEGER,
+      mileage_history TEXT,
+      controle_technique_type TEXT,
+      controle_technique_date TEXT,
+      controle_technique_deadline TEXT,
+      controles_techniques TEXT DEFAULT '[]',
+      assigned_to INTEGER,
+      pupitre TEXT,
+      is_insured BOOLEAN DEFAULT 0,
+      insurance_company TEXT,
+      insurance_number TEXT,
+      insurance_expiry TEXT,
+      latitude REAL,
+      longitude REAL,
+      location_updated_at DATETIME,
       created_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       modified_by INTEGER,
@@ -2301,6 +2323,24 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_bl ON bp_items(bl_import_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_catalog ON bp_items(equipment_catalog_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_equipment ON bp_items(equipment_id)');
+
+    // Migration : ajouter item_type (materiel | article) + supplier_article_id + stock_item_id
+    if (!bpCols.includes('item_type')) {
+      db.exec("ALTER TABLE bp_items ADD COLUMN item_type TEXT NOT NULL DEFAULT 'materiel'");
+      // Reclasser les items existants dont la section est VENTE ou VTE
+      db.exec("UPDATE bp_items SET item_type = 'article' WHERE UPPER(section) IN ('VENTE', 'VTE')");
+      logger.info('  ✅ Migration: bp_items.item_type ajouté');
+    }
+    if (!bpCols.includes('supplier_article_id')) {
+      db.exec('ALTER TABLE bp_items ADD COLUMN supplier_article_id INTEGER REFERENCES supplier_articles(id) ON DELETE SET NULL');
+      logger.info('  ✅ Migration: bp_items.supplier_article_id ajouté');
+    }
+    if (!bpCols.includes('stock_item_id')) {
+      db.exec('ALTER TABLE bp_items ADD COLUMN stock_item_id INTEGER REFERENCES stock_items(id) ON DELETE SET NULL');
+      logger.info('  ✅ Migration: bp_items.stock_item_id ajouté');
+    }
+    db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_item_type ON bp_items(item_type)');
+
     logger.info('  ✅ Table bp_items (liaison BP ↔ matériel)');
   } catch (error) {
     logger.warn('⚠️ Migration bp_items:', error.message);
@@ -2775,6 +2815,65 @@ function initializeDatabase() {
     logger.info('  ✅ Module Annuaire initialisé');
   } catch (error) {
     logger.warn('⚠️ Migration Annuaire:', error.message);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Module Articles Fournisseurs (Catalogues PDF)
+  // ═══════════════════════════════════════════════════════════════
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS supplier_articles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        supplier_id INTEGER,
+        supplier_ref TEXT,
+        brand TEXT,
+        model TEXT,
+        designation TEXT NOT NULL,
+        description TEXT,
+        family TEXT,
+        subfamily TEXT,
+        category TEXT,
+        price_ht REAL,
+        currency TEXT DEFAULT 'EUR',
+        weight REAL,
+        dimensions TEXT,
+        unit TEXT DEFAULT 'u',
+        metadata TEXT,
+        import_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+        FOREIGN KEY (import_id) REFERENCES catalog_imports(id) ON DELETE SET NULL
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS catalog_imports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        supplier_id INTEGER,
+        filename TEXT NOT NULL,
+        file_size INTEGER,
+        page_count INTEGER,
+        items_count INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'completed',
+        notes TEXT,
+        imported_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+        FOREIGN KEY (imported_by) REFERENCES users(id) ON DELETE SET NULL
+      )
+    `);
+
+    db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_supplier ON supplier_articles(supplier_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_brand ON supplier_articles(brand)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_family ON supplier_articles(family)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_ref ON supplier_articles(supplier_ref)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_import ON supplier_articles(import_id)');
+    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_articles_unique ON supplier_articles(supplier_id, supplier_ref) WHERE supplier_ref IS NOT NULL');
+
+    logger.info('  ✅ Module Articles Fournisseurs initialisé');
+  } catch (error) {
+    logger.warn('⚠️ Migration Articles Fournisseurs:', error.message);
   }
 
   // ── Index de performance — Phase 4 ──

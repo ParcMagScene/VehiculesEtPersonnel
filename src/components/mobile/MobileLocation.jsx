@@ -4,6 +4,7 @@ import {
   X, ZoomIn, ZoomOut, RotateCcw, Filter, Eye
 } from 'lucide-react';
 import api from '../../utils/api';
+import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from '../vehicles/DepotMapEditor';
 import './MobileLocation.css';
 
 function MobileLocation({ onBack }) {
@@ -89,6 +90,7 @@ function MobileLocation({ onBack }) {
 
   const floorZones = zones?.zones?.filter(z => z.floor === floor) || [];
   const floors = zones?.floors || [{ id: 'RDC', label: 'RDC' }];
+  const bounds = computeZonesBounds(floorZones, 15);
 
   const handleZoneClick = (zoneId) => {
     setSelectedZone(prev => prev === zoneId ? null : zoneId);
@@ -235,14 +237,15 @@ function MobileLocation({ onBack }) {
 
             <svg
               ref={svgRef}
-              viewBox={`0 0 ${zones?.svgWidth || 770} ${zones?.svgHeight || 560}`}
+              viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`}
               className="mloc-svg"
               style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)` }}
             >
               {/* Fond */}
-              <rect x="0" y="0" width={zones?.svgWidth || 770} height={zones?.svgHeight || 560} fill="var(--theme-bg-secondary)" rx="8" />
+              <rect x={bounds.x} y={bounds.y} width={bounds.w} height={bounds.h} fill="var(--theme-bg-secondary)" rx="8" />
               
               {floorZones.map(zone => {
+                const { x, y, width, height } = zone.bbox;
                 const count = getZoneCount(zone.id);
                 const isSelected = selectedZone === zone.id;
                 const hasSearchResult = searchResults?.byZone?.[zone.id];
@@ -250,28 +253,36 @@ function MobileLocation({ onBack }) {
                   ? (hasSearchResult ? 1 : 0.3) 
                   : (isSelected ? 1 : 0.85);
 
+                const hasClip = zone.clipPoints && zone.clipPoints.length >= 3;
+                const isTrapezoid = !hasClip && zone.shape === 'trapezoid' && hasSkew(zone);
+                const isPolygon = hasClip || isTrapezoid;
+                const polyPoints = isPolygon
+                  ? (hasClip ? zone.clipPoints : getZonePoints(zone.bbox, zone.skew)).map(p => `${p.x},${p.y}`).join(' ')
+                  : null;
+
+                const shapeProps = {
+                  fill: zone.color || '#6b7280',
+                  opacity,
+                  stroke: isSelected ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                  strokeWidth: isSelected ? 3 : 1,
+                };
+
                 return (
                   <g key={zone.id} onClick={() => handleZoneClick(zone.id)} style={{ cursor: 'pointer' }}>
-                    {/* Zone rect */}
-                    <rect
-                      x={zone.bbox.x}
-                      y={zone.bbox.y}
-                      width={zone.bbox.width}
-                      height={zone.bbox.height}
-                      fill={zone.color || '#6b7280'}
-                      opacity={opacity}
-                      rx={4}
-                      stroke={isSelected ? '#ffffff' : 'rgba(255,255,255,0.3)'}
-                      strokeWidth={isSelected ? 3 : 1}
-                    />
+                    {/* Zone shape */}
+                    {isPolygon ? (
+                      <polygon points={polyPoints} {...shapeProps} />
+                    ) : (
+                      <rect x={x} y={y} width={width} height={height} rx={4} {...shapeProps} />
+                    )}
                     {/* Label */}
                     <text
-                      x={zone.bbox.x + zone.bbox.width / 2}
-                      y={zone.bbox.y + zone.bbox.height / 2 - (count > 0 ? 4 : 0)}
+                      x={x + width / 2}
+                      y={y + height / 2 - (count > 0 ? 4 : 0)}
                       textAnchor="middle"
                       dominantBaseline="middle"
                       fill={zone.textColor || '#ffffff'}
-                      fontSize={Math.min(12, zone.bbox.width / 8)}
+                      fontSize={Math.min(12, width / 8)}
                       fontWeight="600"
                     >
                       {zone.label}
@@ -279,8 +290,8 @@ function MobileLocation({ onBack }) {
                     {/* Count */}
                     {count > 0 && (
                       <text
-                        x={zone.bbox.x + zone.bbox.width / 2}
-                        y={zone.bbox.y + zone.bbox.height / 2 + 12}
+                        x={x + width / 2}
+                        y={y + height / 2 + 12}
                         textAnchor="middle"
                         dominantBaseline="middle"
                         fill={zone.textColor || '#ffffff'}
@@ -290,20 +301,29 @@ function MobileLocation({ onBack }) {
                         {count} éq.
                       </text>
                     )}
-                    {/* Badge si sélectionné */}
+                    {/* Selection highlight */}
                     {isSelected && (
-                      <rect
-                        x={zone.bbox.x - 2}
-                        y={zone.bbox.y - 2}
-                        width={zone.bbox.width + 4}
-                        height={zone.bbox.height + 4}
-                        fill="none"
-                        stroke="#ffffff"
-                        strokeWidth={2}
-                        strokeDasharray="6,3"
-                        rx={6}
-                        opacity={0.8}
-                      />
+                      isPolygon ? (
+                        <polygon
+                          points={polyPoints}
+                          fill="none"
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                          strokeDasharray="6,3"
+                          opacity={0.8}
+                        />
+                      ) : (
+                        <rect
+                          x={x - 2} y={y - 2}
+                          width={width + 4} height={height + 4}
+                          fill="none"
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                          strokeDasharray="6,3"
+                          rx={6}
+                          opacity={0.8}
+                        />
+                      )
                     )}
                   </g>
                 );

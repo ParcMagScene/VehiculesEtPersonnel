@@ -166,7 +166,7 @@
 .vehicle-picker-card-desktop.selected {
   border-color: var(--theme-primary);
   background: var(--theme-purple-bg);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  box-shadow: var(--focus-ring);
 }
 
 .vehicle-picker-photo-desktop {
@@ -322,7 +322,7 @@
 .reservation-modal .form-group textarea:focus {
   outline: none;
   border-color: var(--theme-primary-light);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .reservation-modal .form-group input:disabled,

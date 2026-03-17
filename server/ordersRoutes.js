@@ -106,20 +106,23 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
 // ═══════════════════════════════════════════════════════════════
 // Commandes (Bons de commande)
 // ═══════════════════════════════════════════════════════════════
-export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
-  // Générer référence auto (atomique avec retry sur conflit)
-  function generateReference(prefix) {
-    const year = new Date().getFullYear();
-    const last = db.prepare(
-      `SELECT reference FROM orders WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1`
-    ).get(`${prefix}-${year}-%`);
-    let num = 1;
-    if (last) {
-      const parts = last.reference.split('-');
-      num = parseInt(parts[parts.length - 1] || '0', 10) + 1;
-    }
-    return `${prefix}-${year}-${String(num).padStart(3, '0')}`;
+
+// Générer référence auto — défini au scope module pour être accessible
+// depuis setupOrdersRoutes ET setupQuotesRoutes (qui contient generate-from-bl)
+function generateReference(prefix) {
+  const year = new Date().getFullYear();
+  const last = db.prepare(
+    `SELECT reference FROM orders WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1`
+  ).get(`${prefix}-${year}-%`);
+  let num = 1;
+  if (last) {
+    const parts = last.reference.split('-');
+    num = parseInt(parts[parts.length - 1] || '0', 10) + 1;
   }
+  return `${prefix}-${year}-${String(num).padStart(3, '0')}`;
+}
+
+export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
 
   // Liste des commandes avec filtres
   app.get('/api/orders', authenticateToken, (req, res) => {
@@ -127,10 +130,12 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       const { status, affaire_id, supplier_id, search, type } = req.query;
       let query = `
         SELECT o.*, s.name as supplier_name, u.name as created_by_name,
-          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
+          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
+          COALESCE(NULLIF(a.nom, ''), NULLIF(a.titre, ''), NULLIF(a.client, ''), '') as affaire_name
         FROM orders o
         LEFT JOIN suppliers s ON o.supplier_id = s.id
         LEFT JOIN users u ON o.created_by = u.id
+        LEFT JOIN affaires a ON a.numero_affaire = o.affaire_id
         WHERE 1=1
       `;
       const params = [];
@@ -186,10 +191,12 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       const order = db.prepare(`
         SELECT o.*, s.name as supplier_name, s.email as supplier_email,
           s.phone as supplier_phone, s.address as supplier_address,
-          u.name as created_by_name
+          u.name as created_by_name,
+          COALESCE(NULLIF(a.nom, ''), NULLIF(a.titre, ''), NULLIF(a.client, ''), '') as affaire_name
         FROM orders o
         LEFT JOIN suppliers s ON o.supplier_id = s.id
         LEFT JOIN users u ON o.created_by = u.id
+        LEFT JOIN affaires a ON a.numero_affaire = o.affaire_id
         WHERE o.id = ?
       `).get(req.params.id);
       if (!order) return res.status(404).json({ error: 'Commande non trouvée' });
@@ -399,9 +406,11 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       const { status, affaire_id, search } = req.query;
       let query = `
         SELECT q.*, u.name as created_by_name,
-          (SELECT COUNT(*) FROM quote_items WHERE quote_id = q.id) as item_count
+          (SELECT COUNT(*) FROM quote_items WHERE quote_id = q.id) as item_count,
+          COALESCE(NULLIF(a.nom, ''), NULLIF(a.titre, ''), NULLIF(a.client, ''), '') as affaire_name
         FROM quotes q
         LEFT JOIN users u ON q.created_by = u.id
+        LEFT JOIN affaires a ON a.numero_affaire = q.affaire_id
         WHERE 1=1
       `;
       const params = [];
@@ -424,8 +433,11 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/quotes/:id', authenticateToken, (req, res) => {
     try {
       const quote = db.prepare(`
-        SELECT q.*, u.name as created_by_name
-        FROM quotes q LEFT JOIN users u ON q.created_by = u.id WHERE q.id = ?
+        SELECT q.*, u.name as created_by_name,
+          COALESCE(NULLIF(a.nom, ''), NULLIF(a.titre, ''), NULLIF(a.client, ''), '') as affaire_name
+        FROM quotes q LEFT JOIN users u ON q.created_by = u.id
+        LEFT JOIN affaires a ON a.numero_affaire = q.affaire_id
+        WHERE q.id = ?
       `).get(req.params.id);
       if (!quote) return res.status(404).json({ error: 'Devis non trouvé' });
       const items = db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY id ASC').all(req.params.id);
@@ -646,13 +658,128 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ═══════════════════════════════════════════════════════════════
+  // Préparer la génération de commandes depuis une affaire
+  // Retourne les articles groupés par fournisseur + commandes existantes
+  // ═══════════════════════════════════════════════════════════════
+  app.post('/api/orders/prepare-from-affaire', authenticateToken, (req, res) => {
+    try {
+      const { affaire_id } = req.body;
+      if (!affaire_id) return res.status(400).json({ error: 'affaire_id requis' });
+
+      // 1) Récupérer tous les BL de l'affaire
+      const bls = db.prepare('SELECT * FROM bl_imports WHERE affaire_id = ? AND status != ?').all(affaire_id, 'rejected');
+      const allItems = [];
+      const seen = new Set();
+      for (const bl of bls) {
+        let pd = bl.parsed_data;
+        if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { continue; } }
+        if (pd?.items && Array.isArray(pd.items)) {
+          for (const item of pd.items) {
+            // Ne prendre que les articles de la section VENTE/VTE (item_type = 'article')
+            const sectionUpper = (item.section || '').toUpperCase();
+            if (sectionUpper !== 'VENTE' && sectionUpper !== 'VTE') continue;
+
+            const ref = (item.code || item.reference || '').trim();
+            const desc = (item.description || '').trim();
+            const key = `${ref}|${desc}|${item.quantity || ''}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              allItems.push({ ...item, code: ref, blFilename: bl.filename, blId: bl.id });
+            }
+          }
+        }
+      }
+
+      // 2) Enrichir les items sans fournisseur (BP Location/Prestation)
+      //    a) via bp_items → equipment.brand
+      //    b) via extraction marque dans la description (après •)
+      const brandIndex = {};
+      try {
+        db.prepare(`
+          SELECT bp.reference, e.brand FROM bp_items bp
+          JOIN equipment e ON e.id = bp.equipment_id
+          WHERE bp.bl_import_id IN (SELECT id FROM bl_imports WHERE affaire_id = ?)
+            AND e.brand IS NOT NULL AND e.brand != ''
+        `).all(affaire_id).forEach(r => {
+          if (r.reference && r.brand) brandIndex[r.reference.toUpperCase()] = r.brand.toUpperCase();
+        });
+      } catch { /* bp_items may not exist */ }
+
+      for (const item of allItems) {
+        if (item.fournisseur) continue;
+        const ref = (item.code || '').toUpperCase();
+        // a) Match via equipment brand
+        if (ref && brandIndex[ref]) {
+          item.fournisseur = brandIndex[ref];
+          continue;
+        }
+        // b) Extraire marque avant ou après • dans la description
+        const desc = item.description || '';
+        const beforeBullet = desc.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'.\/-]{0,30}?)\s*[•·]/);
+        if (beforeBullet) {
+          item.fournisseur = beforeBullet[1].trim().toUpperCase();
+        } else {
+          const afterBullet = desc.match(/[•·]\s*([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'./-]{1,30})\s*$/);
+          if (afterBullet) {
+            item.fournisseur = afterBullet[1].trim().toUpperCase();
+          }
+        }
+      }
+
+      // 3) Grouper par fournisseur
+      const bySupplier = {};
+      for (const item of allItems) {
+        const fournisseur = (item.fournisseur || '').trim().toUpperCase();
+        if (!fournisseur) continue;
+        if (!bySupplier[fournisseur]) bySupplier[fournisseur] = [];
+        bySupplier[fournisseur].push(item);
+      }
+
+      // 4) Pour chaque fournisseur, chercher commandes existantes sur cette affaire
+      const suppliers = [];
+      for (const [name, items] of Object.entries(bySupplier)) {
+        const supplier = db.prepare('SELECT id, name FROM suppliers WHERE UPPER(name) = ?').get(name);
+        const existingOrders = supplier
+          ? db.prepare(`
+              SELECT o.id, o.reference, o.status, o.order_date, o.total_ht,
+                (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
+              FROM orders o
+              WHERE o.supplier_id = ? AND o.affaire_id = ? AND o.status NOT IN ('cancelled')
+              ORDER BY o.created_at DESC
+            `).all(supplier.id, affaire_id)
+          : [];
+
+        suppliers.push({
+          name,
+          supplier_id: supplier?.id || null,
+          items,
+          existing_orders: existingOrders,
+        });
+      }
+
+      // 5) Articles sans fournisseur
+      const noSupplierItems = allItems.filter(it => !(it.fournisseur || '').trim());
+
+      res.json({
+        affaire_id,
+        suppliers: suppliers.sort((a, b) => a.name.localeCompare(b.name)),
+        no_supplier_items: noSupplierItems,
+        total_items: allItems.length,
+      });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
   // Générer des commandes groupées depuis les articles BL d'une affaire
   // Les articles sont répartis par fournisseur → 1 commande par fournisseur
   // ═══════════════════════════════════════════════════════════════
   app.post('/api/orders/generate-from-bl', authenticateToken, (req, res) => {
     try {
       const { affaire_id, affaire_reference, items = [] } = req.body;
-      if (!affaire_id || items.length === 0) {
+      if (!affaire_id || !items || items.length === 0) {
         return res.status(400).json({ error: 'affaire_id et items sont requis' });
       }
 
@@ -743,8 +870,8 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
         orders,
       });
     } catch (error) {
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      logger.error('generate-from-bl error:', error?.message || error, error?.stack);
+      res.status(500).json({ error: 'Erreur serveur interne', detail: error?.message });
     }
   });
 
@@ -1171,12 +1298,29 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       const orders = db.prepare(`
         SELECT o.*, u.name as created_by_name,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
-          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND received_qty >= quantity) as completed_items
+          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND received_qty >= quantity) as completed_items,
+          COALESCE(NULLIF(a.nom, ''), NULLIF(a.titre, ''), NULLIF(a.client, ''), '') as affaire_name
         FROM orders o
         LEFT JOIN users u ON u.id = o.created_by
+        LEFT JOIN affaires a ON a.numero_affaire = o.affaire_id
         WHERE o.supplier_id = ? ${statusFilter}
         ORDER BY o.created_at DESC
       `).all(req.params.id);
+
+      // Charger les items pour chaque commande
+      const orderIds = orders.map(o => o.id);
+      if (orderIds.length > 0) {
+        const placeholders = orderIds.map(() => '?').join(',');
+        const allItems = db.prepare(`SELECT * FROM order_items WHERE order_id IN (${placeholders}) ORDER BY id ASC`).all(...orderIds);
+        const itemsByOrder = {};
+        for (const item of allItems) {
+          if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+          itemsByOrder[item.order_id].push(item);
+        }
+        for (const order of orders) {
+          order.items = itemsByOrder[order.id] || [];
+        }
+      }
       res.json(orders);
     } catch (error) {
       logger.error(error);
@@ -1193,8 +1337,10 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       const orders = db.prepare(`
         SELECT o.*, u.name as created_by_name,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
-          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND received_qty >= quantity) as completed_items
+          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND received_qty >= quantity) as completed_items,
+          COALESCE(NULLIF(a.nom, ''), NULLIF(a.titre, ''), NULLIF(a.client, ''), '') as affaire_name
         FROM orders o LEFT JOIN users u ON u.id = o.created_by
+        LEFT JOIN affaires a ON a.numero_affaire = o.affaire_id
         WHERE o.supplier_id = ? ORDER BY o.created_at DESC
       `).all(req.params.id);
 

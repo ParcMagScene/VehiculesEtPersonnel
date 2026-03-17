@@ -70,6 +70,20 @@ export const PALETTES = [
     colors: { primary: '#0277bd', secondary: '#455a64', accent: '#00bcd4', bg: '#f0f5f8', card: '#ffffff' },
     darkColors: { primary: '#4fc3f7', secondary: '#78909c', accent: '#4dd0e1', bg: '#0a1929', card: '#132f4c' },
   },
+  {
+    id: 'vscode-dark',
+    name: 'VS Code Dark+',
+    description: 'Thème sombre Visual Studio Code',
+    colors: { primary: '#0078d4', secondary: '#264f78', accent: '#dcdcaa', bg: '#1e1e1e', card: '#252526' },
+    darkColors: { primary: '#0078d4', secondary: '#264f78', accent: '#dcdcaa', bg: '#1e1e1e', card: '#252526' },
+  },
+  {
+    id: 'vscode-light',
+    name: 'VS Code Light+',
+    description: 'Thème clair Visual Studio Code',
+    colors: { primary: '#0078d4', secondary: '#005a9e', accent: '#e8ab53', bg: '#f3f3f3', card: '#ffffff' },
+    darkColors: { primary: '#0078d4', secondary: '#005a9e', accent: '#e8ab53', bg: '#f3f3f3', card: '#ffffff' },
+  },
 ];
 
 export function useTheme() {

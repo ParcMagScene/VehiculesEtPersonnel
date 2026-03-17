@@ -67,7 +67,7 @@
 .catalog-toolbar select:focus {
   outline: none;
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .catalog-toolbar .search-input {
@@ -439,7 +439,7 @@
 .catalog-form-group textarea:focus {
   outline: none;
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .catalog-form-row {
@@ -648,4 +648,147 @@
     width: 95%;
     max-height: 90vh;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Sous-onglets Catalogue (Interne / Fournisseurs)
+   ═══════════════════════════════════════════════════════════ */
+.catalog-subtabs {
+  display: flex;
+  gap: 0;
+  margin: 0 auto 0;
+  max-width: 1400px;
+  padding: 0.75rem 1.5rem 0;
+}
+
+.catalog-subtab {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--theme-border);
+  border-bottom: none;
+  background: var(--theme-bg-secondary, #f5f5f5);
+  color: var(--theme-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.catalog-subtab:hover {
+  background: var(--theme-border-light);
+}
+
+.catalog-subtab.active {
+  background: var(--theme-bg-primary, #fff);
+  color: var(--theme-text-primary);
+  font-weight: 600;
+  border-bottom: 2px solid var(--theme-bg-primary, #fff);
+  margin-bottom: -1px;
+}
+
+/* ═══ Supplier stats cards ═══ */
+.supplier-stat-card {
+  background: var(--theme-bg-primary, #fff);
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.supplier-stat-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: var(--theme-text-secondary);
+}
+
+.supplier-stat-number {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--theme-accent, #3b82f6);
+}
+
+.supplier-stat-label {
+  font-size: 0.85rem;
+  color: var(--theme-text-secondary);
+}
+
+/* ═══ Import modal — éléments spécifiques ═══ */
+.catalog-modal .catalog-import-error {
+  background: var(--theme-error-bg, #fef2f2);
+  color: var(--theme-error-text, #991b1b);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--theme-error-border, #fecaca);
+}
+
+.catalog-import-file-info {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--theme-text-secondary);
+}
+
+.catalog-import-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.catalog-import-loading .loading-spinner {
+  margin: 0 auto;
+}
+
+.catalog-import-loading p {
+  margin-top: 1rem;
+}
+
+.catalog-import-hint {
+  font-size: 0.85rem;
+  color: var(--theme-text-secondary);
+}
+
+.catalog-import-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--theme-bg-secondary, var(--theme-border-light));
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.catalog-import-count {
+  color: var(--theme-accent, #3b82f6);
+  font-weight: 700;
+  font-style: normal;
+}
+
+.catalog-import-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--theme-text-secondary);
+}
+
+.catalog-import-empty svg {
+  opacity: 0.4;
+  margin-bottom: 0.5rem;
+}
+
+.catalog-import-preview {
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.catalog-import-preview .catalog-table {
+  font-size: 0.8rem;
+}
+
+.catalog-import-ref {
+  font-family: monospace;
+  font-size: 0.8rem;
 }

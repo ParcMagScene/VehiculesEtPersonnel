@@ -48,9 +48,9 @@ import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAss
 import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes, setupMaterialRequestsRoutes, setupSupplierDocumentsRoutes } from './ordersRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
-import { setupCatalogRoutes, setupFlightcasesRoutes, setupTruckModelsRoutes, setupReservationEquipmentRoutes } from './catalogRoutes.js';
+import { setupReservationEquipmentRoutes } from './catalogRoutes.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
-import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockStatsRoutes } from './stockRoutes.js';
+import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockImportRoutes, setupStockStatsRoutes } from './stockRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { setupDisplayRoutes } from './displayRoutes.js';
 import { setupAnnuaireClientsRoutes, setupAnnuaireSuppliersRoutes, setupAnnuairePrestatairesRoutes, setupAnnuaireContactsRoutes, setupAnnuaireLookupsRoutes, setupAnnuaireSearchRoutes, setupAnnuaireImportRoutes } from './annuaireRoutes.js';
@@ -60,6 +60,8 @@ import { setupAdminRoutes } from './adminRoutes.js';
 import { setupAffairesRoutes } from './affairesRoutes.js';
 import { setupProfileRoutes } from './profileRoutes.js';
 import { setupAttachmentsRoutes } from './attachmentsRoutes.js';
+import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
+import { setupInventoryRoutes } from './inventoryRoutes.js';
 import { initEmailTransporter } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -100,6 +102,9 @@ const authenticateToken = createAuthenticateToken(JWT_SECRET);
 const attachmentsPath = path.join(__dirname, '..', 'public', 'attachments');
 app.use('/attachments', express.static(attachmentsPath));
 
+// Servir les BL/BP importés
+app.use('/bl-imports', express.static(path.join(__dirname, '..', 'public', 'bl-imports')));
+
 // Servir les avatars
 const avatarsPath = path.join(__dirname, '..', 'public', 'avatars');
 if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
@@ -110,6 +115,7 @@ app.use('/display-gifs', express.static(path.join(__dirname, '..', 'public', 'di
 app.use('/display-logo', express.static(path.join(__dirname, '..', 'public', 'display-logo')));
 app.use('/display-sneaky', express.static(path.join(__dirname, '..', 'public', 'display-sneaky')));
 app.use('/display-media', express.static(path.join(__dirname, '..', 'public', 'display-media')));
+app.use('/Logos', express.static(path.join(__dirname, '..', 'public', 'Logos')));
 app.get('/SNCF.wav', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'SNCF.wav'));
 });
@@ -177,16 +183,17 @@ setupQuotesRoutes(app, authenticateToken, requireAdmin);
 setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin);
 setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmin);
 
-// Routes Catalogue Matériel + Flight-Cases + Modèles Camions + Deep Linking
-setupCatalogRoutes(app, authenticateToken, requireCatalogAccess);
-setupFlightcasesRoutes(app, authenticateToken, requireCatalogAccess);
-setupTruckModelsRoutes(app, authenticateToken, requireTruckAccess);
+// Routes Équipements Réservations (ex-catalogRoutes — catalogue interne supprimé)
 setupReservationEquipmentRoutes(app, authenticateToken);
+
+// Routes Articles Fournisseurs (import catalogues PDF)
+setupSupplierCatalogRoutes(app, authenticateToken, requireCatalogAccess);
 
 // Routes Module Stock & Pièces
 setupStockCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupStockItemsRoutes(app, authenticateToken, requireAdmin);
 setupStockMovementsRoutes(app, authenticateToken, requireAdmin);
+setupStockImportRoutes(app, authenticateToken, requireAdmin);
 setupStockStatsRoutes(app, authenticateToken);
 
 // Routes Module Planning (Affichage dynamique + Planification + Import BL)
@@ -211,6 +218,9 @@ setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_
 setupAffairesRoutes(app, authenticateToken, requireAdmin);
 setupProfileRoutes(app, authenticateToken, requireAdmin);
 setupAttachmentsRoutes(app, authenticateToken, requireAdmin);
+
+// Routes Module Inventaire (emplacements, prix, anomalies, stats, ABC, exports)
+setupInventoryRoutes(app, authenticateToken);
 
 // Debug endpoints
 app.get('/api/debug/route-test', (req, res) => {

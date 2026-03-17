@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette } from 'lucide-react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
@@ -13,6 +13,7 @@ import MobileEquipmentQR from './MobileEquipmentQR';
 import MobileQRLanding from './MobileQRLanding';
 import MobileOrders from './MobileOrders';
 import MobileLeaves from './MobileLeaves';
+import MobileInventory from './MobileInventory';
 import MobileLocation from './MobileLocation';
 import MobileLogin from './MobileLogin';
 import { useTheme, PALETTES } from '../../hooks/useTheme';
@@ -371,6 +372,13 @@ function MobileApp({ onSwitchToDesktop }) {
               <Palmtree size={20} />
               <span>Congés</span>
             </button>
+            <button
+              className={currentScreen === 'inventory' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('inventory'); setMenuOpen(false); }}
+            >
+              <ClipboardCheck size={20} />
+              <span>Inventaire</span>
+            </button>
 
             {/* ── Thème ── */}
             <div className="menu-section-label">Apparence</div>
@@ -551,6 +559,12 @@ function MobileApp({ onSwitchToDesktop }) {
         {currentScreen === 'leaves' && (
           <MobileLeaves
             currentUser={currentUser}
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'inventory' && (
+          <MobileInventory
             onBack={() => setCurrentScreen('home')}
           />
         )}

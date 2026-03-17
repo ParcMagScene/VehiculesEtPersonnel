@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Package, Plus, Trash2, Box, Search, X, Weight, Ruler, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import { formatDimensions, buildChargementUrlForReservation, openInChargement } from '../../utils/deepLinking';
-import '../orders/CataloguePanel.css';
+import './ReservationEquipment.css';
 import { useToast } from '../../hooks/useToast';
 
 export default function ReservationEquipment({ reservationId, currentUser }) {

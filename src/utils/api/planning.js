@@ -77,6 +77,12 @@ export function registerPlanningMethods(ApiClient) {
     async matchBPItem(id, equipmentId) {
       return this.request(`/planning/bp-items/${id}/match`, { method: 'PUT', body: JSON.stringify({ equipment_id: equipmentId }) });
     },
+    async matchBPArticle(id, { supplierArticleId, stockItemId } = {}) {
+      return this.request(`/planning/bp-items/${id}/match-article`, {
+        method: 'PUT',
+        body: JSON.stringify({ supplier_article_id: supplierArticleId || null, stock_item_id: stockItemId || null })
+      });
+    },
 
     // Tâches
     async getTasks(params = {}) {

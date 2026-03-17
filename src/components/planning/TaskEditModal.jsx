@@ -5,6 +5,7 @@ import {
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import { useToast } from '../../hooks/useToast';
+import EntityCombobox from '../ui/EntityCombobox';
 import './TaskEditModal.css';
 
 const SECTIONS = {
@@ -228,14 +229,12 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
           {/* Personnel */}
           <div className="tem-field full">
             <label><User size={13} /> Personnel assigné</label>
-            <select value={form.personId} onChange={e => update('personId', e.target.value)}>
-              <option value="">— Aucun —</option>
-              {persons.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.firstName} {p.lastName}
-                </option>
-              ))}
-            </select>
+            <EntityCombobox
+              value={form.personId}
+              onChange={val => update('personId', val)}
+              options={persons.map(p => ({ id: p.id, name: `${p.firstName} ${p.lastName}` }))}
+              placeholder="— Aucun —"
+            />
           </div>
 
           {/* Affaire liée */}

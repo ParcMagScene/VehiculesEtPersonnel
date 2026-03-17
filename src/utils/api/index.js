@@ -13,6 +13,7 @@ import { registerStockMethods } from './stock.js';
 import { registerPlanningMethods } from './planning.js';
 import { registerAnnuaireMethods } from './annuaire.js';
 import { registerDisplayMethods } from './display.js';
+import { registerInventoryMethods } from './inventory.js';
 
 // Enregistrer toutes les méthodes domaine sur ApiClient.prototype
 registerVehicleMethods(ApiClient);
@@ -28,6 +29,7 @@ registerStockMethods(ApiClient);
 registerPlanningMethods(ApiClient);
 registerAnnuaireMethods(ApiClient);
 registerDisplayMethods(ApiClient);
+registerInventoryMethods(ApiClient);
 
 // Singleton
 export const api = new ApiClient();

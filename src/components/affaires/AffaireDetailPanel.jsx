@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, ChevronRight, ChevronDown, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw, ShoppingCart, Palette } from 'lucide-react';
 import { AFFAIRE_TYPES, getTypeInfo, AFFAIRE_TYPE_SECTIONS } from '../../utils/affaireConstants';
 import api, { getApiUrl } from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
@@ -9,12 +9,15 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { capitalizeText } from '../../utils/dateUtils';
 import './AffaireDetailPanel.css';
+import { useAnnotateBP } from '../../hooks/useAnnotateBP';
 
 const ReservationModal = lazy(() => import('../vehicles/ReservationModal'));
 const EventDetailsModal = lazy(() => import('../planning/EventDetailsModal'));
 const BLImportModal = lazy(() => import('./BLImportModal'));
 const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const DynamicDisplayDialog = lazy(() => import('../DynamicDisplayDialog'));
+const GenerateOrdersModal = lazy(() => import('./GenerateOrdersModal'));
+const BPAnnotationViewer = lazy(() => import('./BPAnnotationViewer'));
 
 const API_BASE_URL = getApiUrl();
 
@@ -89,9 +92,13 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   const [missionTitle, setMissionTitle] = useState('');
   const [actionFeedback, setActionFeedback] = useState(null);
   const [generatingOrders, setGeneratingOrders] = useState(false);
+  const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [planningOpen, setPlanningOpen] = useState(false);
+  const [annotatingBL, setAnnotatingBL] = useState(null); // bl import object en cours d'annotation
   const fileInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
+
+  const { annotate, reset: resetAnnotation, annotationResult, isLoading: annotationLoading } = useAnnotateBP({ toast: { error: (msg) => showFeedback({ type: 'error', message: msg }, 4000) } });
 
   // ═══ Autocomplete Client & Interlocuteur ═══
   const [clientSuggestions, setClientSuggestions] = useState([]);
@@ -588,9 +595,9 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     return false;
   }, [taskSteps, affaireTasks]);
 
-  // ═══ Articles BL (Vente / Installation) ═══
+  // ═══ Articles BL (tous types) ═══
   const [blArticles, setBlArticles] = useState([]);
-  const showArticles = affaire.type === 'Vente' || affaire.type === 'Installation';
+  const showArticles = true;
   useEffect(() => {
     if (!affaire.numeroAffaire || !showArticles) { setBlArticles([]); return; }
     const loadArticles = async () => {
@@ -602,10 +609,21 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { continue; } }
           if (pd?.items && Array.isArray(pd.items)) {
             for (const item of pd.items) {
-              const key = `${item.code || ''}|${item.description || ''}|${item.quantity || ''}`;
+              const ref = item.code || item.reference || '';
+              const key = `${ref}|${item.description || ''}|${item.quantity || ''}`;
               if (!seen.has(key)) {
                 seen.add(key);
-                allItems.push({ ...item, blFilename: bl.filename });
+                // Enrichir le fournisseur depuis la description (marque avant ou après •)
+                let fournisseur = item.fournisseur || null;
+                if (!fournisseur && item.description) {
+                  const before = item.description.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'.\/-]{0,30}?)\s*[•·]/);
+                  if (before) { fournisseur = before[1].trim(); }
+                  else {
+                    const after = item.description.match(/[•·]\s*([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'./-]{1,30})\s*$/);
+                    if (after) fournisseur = after[1].trim();
+                  }
+                }
+                allItems.push({ ...item, code: ref, fournisseur, blFilename: bl.filename });
               }
             }
           }
@@ -677,16 +695,31 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     loadBPItems();
   }, [affaire.numeroAffaire, showBPArticles, linkedBLImports]);
 
-  // Regrouper les articles BP par section
+  // Séparer les items BP en Matériel et Articles (Vente)
+  const bpMaterielItems = useMemo(() => (bpItems.items || []).filter(i => i.item_type !== 'article'), [bpItems.items]);
+  const bpArticleItems = useMemo(() => (bpItems.items || []).filter(i => i.item_type === 'article'), [bpItems.items]);
+
+  // Regrouper le matériel BP par section
   const bpItemsBySection = useMemo(() => {
     const sections = {};
-    for (const item of (bpItems.items || [])) {
+    for (const item of bpMaterielItems) {
       const sec = item.section || 'Autre';
       if (!sections[sec]) sections[sec] = [];
       sections[sec].push(item);
     }
     return sections;
-  }, [bpItems.items]);
+  }, [bpMaterielItems]);
+
+  // Regrouper les articles Vente BP par section
+  const bpArticlesBySection = useMemo(() => {
+    const sections = {};
+    for (const item of bpArticleItems) {
+      const sec = item.section || 'Vente';
+      if (!sections[sec]) sections[sec] = [];
+      sections[sec].push(item);
+    }
+    return sections;
+  }, [bpArticleItems]);
 
   // Pièces jointes locales
   const [attachmentFiles, setAttachmentFiles] = useState([]);
@@ -1368,7 +1401,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         })()}
       </section>
 
-      {/* ═══ Section 5 : Articles (Vente / Installation) ═══ */}
+      {/* ═══ Section 5 : Articles ═══ */}
       {showArticles && (
         <section className="detail-section">
           <h3 className="detail-section-title">
@@ -1376,7 +1409,18 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             <span className="section-count">{blArticles.length}</span>
           </h3>
           {blArticles.length === 0 ? (
-            <p className="detail-empty">Aucun article — importez un BL pour alimenter cette liste</p>
+            <>
+              <p className="detail-empty">Aucun article — importez un BL pour alimenter cette liste</p>
+              {editable && linkedBLImports.length > 0 && (
+                <button
+                  className="generate-orders-btn"
+                  onClick={() => setShowOrdersModal(true)}
+                >
+                  <ShoppingCart size={14} />
+                  Créer / Mettre à jour les commandes
+                </button>
+              )}
+            </>
           ) : (
             <div className="articles-table-wrapper">
               <table className="articles-table">
@@ -1410,15 +1454,14 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                   return <span className="articles-fournisseurs">{fournisseurs.length} fournisseur{fournisseurs.length > 1 ? 's' : ''} : {fournisseurs.join(', ')}</span>;
                 })()}
               </div>
-              {/* Bouton générer commandes (Vente uniquement) */}
-              {affaire.type === 'Vente' && editable && blArticles.some(a => a.fournisseur) && (
+              {/* Bouton générer/mettre à jour commandes */}
+              {editable && linkedBLImports.length > 0 && (
                 <button
                   className="generate-orders-btn"
-                  onClick={handleGenerateOrders}
-                  disabled={generatingOrders}
+                  onClick={() => setShowOrdersModal(true)}
                 >
-                  <Briefcase size={14} />
-                  {generatingOrders ? 'Génération…' : 'Générer les commandes par fournisseur'}
+                  <ShoppingCart size={14} />
+                  Créer / Mettre à jour les commandes
                 </button>
               )}
             </div>
@@ -1426,18 +1469,18 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         </section>
       )}
 
-      {/* ═══ Section 5b : Articles BP (Location / Prestation) ═══ */}
-      {showBPArticles && bpItems.total > 0 && (
+      {/* ═══ Section 5b : Matériel BP (Location / Prestation) ═══ */}
+      {showBPArticles && bpMaterielItems.length > 0 && (
         <section className="detail-section">
           <h3 className="detail-section-title">
             <Package size={15} /> Matériel BP
-            <span className="section-count">{bpItems.total}</span>
+            <span className="section-count">{bpMaterielItems.length}</span>
             <span className="bp-match-badge" style={{
               marginLeft: 8, fontSize: 11, padding: '2px 8px', borderRadius: 10,
-              background: bpItems.unmatched === 0 ? 'var(--theme-success-bg-strong)' : 'var(--btn-warning-bg)',
-              color: bpItems.unmatched === 0 ? 'var(--theme-success-text-alt)' : 'var(--theme-warning-text)'
+              background: bpMaterielItems.every(i => i.matchStatus === 'matched' || i.matchStatus === 'manual') ? 'var(--theme-success-bg-strong)' : 'var(--btn-warning-bg)',
+              color: bpMaterielItems.every(i => i.matchStatus === 'matched' || i.matchStatus === 'manual') ? 'var(--theme-success-text-alt)' : 'var(--theme-warning-text)'
             }}>
-              {bpItems.matched}/{bpItems.total} liés au matériel
+              {bpMaterielItems.filter(i => i.matchStatus === 'matched' || i.matchStatus === 'manual').length}/{bpMaterielItems.length} liés au matériel
             </span>
           </h3>
           <div className="bp-items-wrapper">
@@ -1487,14 +1530,94 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               </div>
             ))}
             <div className="articles-summary">
-              <span>{bpItems.total} article{bpItems.total > 1 ? 's' : ''}</span>
-              <span>{bpItems.matched} lié{bpItems.matched > 1 ? 's' : ''} au matériel</span>
-              {bpItems.unmatched > 0 && (
-                <span style={{ color: '#d97706' }}>
-                  <AlertCircle size={12} style={{ verticalAlign: -1 }} /> {bpItems.unmatched} non lié{bpItems.unmatched > 1 ? 's' : ''}
-                </span>
-              )}
+              <span>{bpMaterielItems.length} matériel{bpMaterielItems.length > 1 ? 's' : ''}</span>
+              <span>{bpMaterielItems.filter(i => i.matchStatus === 'matched' || i.matchStatus === 'manual').length} lié{bpMaterielItems.filter(i => i.matchStatus === 'matched' || i.matchStatus === 'manual').length > 1 ? 's' : ''}</span>
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ Section 5c : Articles Vente BP ═══ */}
+      {showBPArticles && bpArticleItems.length > 0 && (
+        <section className="detail-section">
+          <h3 className="detail-section-title">
+            <ShoppingCart size={15} /> Articles Vente
+            <span className="section-count">{bpArticleItems.length}</span>
+            <span className="bp-match-badge" style={{
+              marginLeft: 8, fontSize: 11, padding: '2px 8px', borderRadius: 10,
+              background: bpArticleItems.every(i => i.supplierArticleId || i.stockItemId) ? 'var(--theme-success-bg-strong)' : 'var(--btn-warning-bg)',
+              color: bpArticleItems.every(i => i.supplierArticleId || i.stockItemId) ? 'var(--theme-success-text-alt)' : 'var(--theme-warning-text)'
+            }}>
+              {bpArticleItems.filter(i => i.supplierArticleId || i.stockItemId).length}/{bpArticleItems.length} liés
+            </span>
+          </h3>
+          <div className="bp-items-wrapper">
+            {Object.entries(bpArticlesBySection).map(([section, items]) => (
+              <div key={section} className="bp-section-group">
+                <div className="bp-section-title" style={{
+                  fontSize: 12, fontWeight: 600, padding: '6px 10px',
+                  background: 'var(--theme-bg-tertiary)', borderRadius: 6, marginBottom: 6,
+                  color: 'var(--theme-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px'
+                }}>
+                  {section} <span style={{ fontWeight: 400, opacity: 0.7 }}>({items.length})</span>
+                </div>
+                <table className="articles-table">
+                  <thead>
+                    <tr>
+                      <th className="art-col-code">Réf.</th>
+                      <th className="art-col-desc">Désignation</th>
+                      <th className="art-col-qty">Qté</th>
+                      <th style={{ width: 130 }}>Liaison</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr key={item.id} className="article-row">
+                        <td className="art-code">
+                          <Hash size={11} />
+                          <span>{item.reference || '—'}</span>
+                        </td>
+                        <td className="art-desc">{item.description || '—'}</td>
+                        <td className="art-qty">{item.quantity ?? '—'}</td>
+                        <td>
+                          {item.supplierArticleId ? (
+                            <span title={item.supplierArticleName} style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 3,
+                              fontSize: 11, color: 'var(--theme-success-text-alt)', fontWeight: 500
+                            }}>
+                              <LinkIcon size={11} /> {item.supplierArticleRef || 'Catalogue'}
+                            </span>
+                          ) : item.stockItemId ? (
+                            <span title={item.stockItemName} style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 3,
+                              fontSize: 11, color: 'var(--theme-success-text-alt)', fontWeight: 500
+                            }}>
+                              <LinkIcon size={11} /> {item.stockItemRef || 'Stock'}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, color: '#d97706' }}>Non lié</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+            <div className="articles-summary">
+              <span>{bpArticleItems.length} article{bpArticleItems.length > 1 ? 's' : ''} vente</span>
+              <span>{bpArticleItems.filter(i => i.supplierArticleId || i.stockItemId).length} lié{bpArticleItems.filter(i => i.supplierArticleId || i.stockItemId).length > 1 ? 's' : ''}</span>
+            </div>
+            {/* Bouton commandes — seulement pour articles vente */}
+            {editable && linkedBLImports.length > 0 && (
+              <button
+                className="generate-orders-btn"
+                onClick={() => setShowOrdersModal(true)}
+              >
+                <ShoppingCart size={14} />
+                Créer / Mettre à jour les commandes
+              </button>
+            )}
           </div>
         </section>
       )}
@@ -1530,6 +1653,19 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                   <div className={`bl-import-status ${bl.status || 'pending'}`}>
                     {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
                   </div>
+                  {bl.file_path && (
+                    <button
+                      className="bl-import-annotate-btn"
+                      onClick={async () => {
+                        setAnnotatingBL(bl);
+                        await annotate(affaire.id, bl.id);
+                      }}
+                      disabled={annotationLoading}
+                      title="Annoter & Imprimer"
+                    >
+                      <Palette size={14} />
+                    </button>
+                  )}
                   {editable && (
                     <button className="bl-import-delete-btn" onClick={() => handleDeleteBL(bl)} title="Supprimer ce BL/BP">
                       <Trash2 size={14} />
@@ -1611,6 +1747,29 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             event={viewedEvent}
             reservations={reservations}
             currentUser={{ isAdmin: true }}
+          />
+        </Suspense>
+      )}
+
+      {/* ═══ Modal commandes (créer/mettre à jour) ═══ */}
+      {showOrdersModal && (
+        <Suspense fallback={<div className="action-loading">Chargement...</div>}>
+          <GenerateOrdersModal
+            affaireId={affaire.numeroAffaire}
+            affaireReference={affaire.reference || affaire.numeroAffaire}
+            onClose={() => setShowOrdersModal(false)}
+            onGenerated={() => { if (onDataChanged) onDataChanged(); }}
+          />
+        </Suspense>
+      )}
+
+      {/* ═══ Modal annotation BP ═══ */}
+      {annotatingBL && annotationResult && (
+        <Suspense fallback={<div className="action-loading">Chargement annotation…</div>}>
+          <BPAnnotationViewer
+            annotationResult={annotationResult}
+            pdfUrl={annotatingBL.file_path ? `/bl-imports/${annotatingBL.file_path}` : null}
+            onClose={() => { setAnnotatingBL(null); resetAnnotation(); }}
           />
         </Suspense>
       )}

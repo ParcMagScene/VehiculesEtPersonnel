@@ -18,6 +18,56 @@ const __dirname = path.dirname(__filename);
 
 
 // ═══════════════════════════════════════════════
+// HELPERS — Enrichissement fournisseur items BL/BP
+// ═══════════════════════════════════════════════
+
+/**
+ * Enrichit les items d'un BL/BP en extrayant le fournisseur depuis la description.
+ * Pattern 1 : "MARQUE • description…" (marque avant bullet)
+ * Pattern 2 : "description…•MARQUE" (marque après bullet)
+ * Modifie les items in-place.
+ */
+function enrichItemsFournisseur(items) {
+  if (!Array.isArray(items)) return;
+  for (const item of items) {
+    if (item.fournisseur) continue;
+    const desc = item.description || '';
+    const before = desc.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'.\/-]{0,30}?)\s*[•·]/);
+    if (before) {
+      item.fournisseur = before[1].trim();
+    } else {
+      const after = desc.match(/[•·]\s*([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'./-]{1,30})\s*$/);
+      if (after) item.fournisseur = after[1].trim();
+    }
+  }
+}
+
+const attachmentsBase = path.join(__dirname, '..', 'public', 'attachments');
+
+/**
+ * Copie un BL/BP importé dans le dossier pièces jointes de l'affaire.
+ * Permet de retrouver le PDF original depuis la fiche affaire.
+ */
+function copyBLToAttachments(file, affaireId) {
+  if (!file || !affaireId) return;
+  try {
+    const safeId = affaireId.replace(/[^a-zA-Z0-9À-ÿ\s\-_().]/g, '');
+    if (!safeId) return;
+    const destDir = path.join(attachmentsBase, safeId);
+    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+    const srcPath = path.join(__dirname, '..', 'public', 'bl-imports', file.filename);
+    const destName = file.originalname;
+    const destPath = path.join(destDir, destName);
+    // Ne pas écraser si le fichier existe déjà (réimport)
+    if (!fs.existsSync(destPath) && fs.existsSync(srcPath)) {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  } catch (err) {
+    logger.error('Erreur copie BL → attachments:', err.message);
+  }
+}
+
+// ═══════════════════════════════════════════════
 // AFFICHAGE DYNAMIQUE — CRUD
 // ═══════════════════════════════════════════════
 
@@ -229,10 +279,10 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           confidenceScore = pd.confidence || null;
           sectionsData = pd.sections && pd.sections.length > 0 ? JSON.stringify(pd.sections) : null;
           fieldConfidence = pd._fieldConfidence ? JSON.stringify(pd._fieldConfidence) : null;
+          // Enrichir les fournisseurs depuis les descriptions
+          if (pd.items) enrichItemsFournisseur(pd.items);
         } catch (_) { /* ignore parse errors */ }
       }
-
-      // ── Auto-création / liaison affaire ──
       // Fallback : utiliser pd.numero si affaire_id non fourni
       let linkedAffaireId = affaire_id || pd?.numero || null;
       let affaireCreated = false;
@@ -319,7 +369,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           file ? file.filename : null,
           file ? file.mimetype : 'text/plain',
           raw_text || null,
-          parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null,
+          pd ? JSON.stringify(pd) : null,
           status || 'validated',
           affaireTypeResolved,
           docType,
@@ -348,7 +398,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           file ? file.filename : null,
           file ? file.mimetype : 'text/plain',
           raw_text || null,
-          parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null,
+          pd ? JSON.stringify(pd) : null,
           status || 'validated',
           affaireTypeResolved,
           docType,
@@ -359,6 +409,9 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         );
       }
 
+      // Copier le PDF en pièce jointe de l'affaire
+      if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
+
       const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(finalId);
 
       // ═══ Auto-persist BP items with equipment matching ═══
@@ -366,8 +419,8 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (pd && Array.isArray(pd.items) && pd.items.length > 0) {
         try {
           const insertItem = db.prepare(`
-            INSERT INTO bp_items (bl_import_id, equipment_id, reference, description, section, quantity, poids, volume, match_status, match_confidence)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO bp_items (bl_import_id, equipment_id, reference, description, section, quantity, poids, volume, match_status, match_confidence, item_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `);
           // Matching contre la table equipment (matériel réel)
           const findExact = db.prepare('SELECT id FROM equipment WHERE reference = ? LIMIT 1');
@@ -420,6 +473,10 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
                 }
               }
 
+              // Déterminer le type : 'article' si section VENTE/VTE, sinon 'materiel'
+              const sectionUpper = (item.section || '').toUpperCase();
+              const itemType = (sectionUpper === 'VENTE' || sectionUpper === 'VTE') ? 'article' : 'materiel';
+
               insertItem.run(
                 finalId,
                 equipmentId,
@@ -430,7 +487,8 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
                 item.poids || null,
                 item.volume || null,
                 matchStatus,
-                matchConf
+                matchConf,
+                itemType
               );
             }
           });
@@ -496,8 +554,8 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       const findNorm = db.prepare("SELECT id FROM equipment WHERE REPLACE(REPLACE(reference, '-', ''), ' ', '') = REPLACE(REPLACE(?, '-', ''), ' ', '') LIMIT 1");
       const findPartial = db.prepare("SELECT id FROM equipment WHERE reference LIKE ? || '%' LIMIT 1");
       const insertBPItem = db.prepare(`
-        INSERT INTO bp_items (bl_import_id, equipment_id, reference, description, section, quantity, poids, volume, match_status, match_confidence)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO bp_items (bl_import_id, equipment_id, reference, description, section, quantity, poids, volume, match_status, match_confidence, item_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       for (let i = 0; i < items.length; i++) {
@@ -520,6 +578,8 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               confidenceScore = pd.confidence || null;
               sectionsData = pd.sections?.length > 0 ? JSON.stringify(pd.sections) : null;
               fieldConfidence = pd._fieldConfidence ? JSON.stringify(pd._fieldConfidence) : null;
+              // Enrichir les fournisseurs depuis les descriptions
+              if (pd.items) enrichItemsFournisseur(pd.items);
             } catch (_) { /* ignore */ }
           }
 
@@ -615,7 +675,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
 
           let finalId;
           let updated = false;
-          const parsedDataStr = parsed_data ? (typeof parsed_data === 'string' ? parsed_data : JSON.stringify(parsed_data)) : null;
+          const enrichedDataStr = pd ? JSON.stringify(pd) : null;
 
           if (existingImport) {
             finalId = existingImport.id;
@@ -628,7 +688,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               WHERE id = ?
             `).run(
               file ? file.filename : null, file ? file.mimetype : 'text/plain',
-              item.raw_text || null, parsedDataStr,
+              item.raw_text || null, enrichedDataStr,
               status || 'validated', affaireTypeResolved, docType, confidenceScore,
               sectionsData, fieldConfidence, req.user.id, finalId
             );
@@ -641,11 +701,14 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
             `).run(
               finalId, linkedAffaireId, existingFilename,
               file ? file.filename : null, file ? file.mimetype : 'text/plain',
-              item.raw_text || null, parsedDataStr,
+              item.raw_text || null, enrichedDataStr,
               status || 'validated', affaireTypeResolved, docType, confidenceScore,
               sectionsData, fieldConfidence, req.user.id
             );
           }
+
+          // Copier le PDF en pièce jointe de l'affaire
+          if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
 
           // Auto-persist BP items with equipment matching
           let bpItemsCount = 0;
@@ -667,7 +730,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
                       }
                     }
                   }
-                  insertBPItem.run(finalId, equipmentId, ref || null, bpItem.description || null, bpItem.section || null, bpItem.quantity || 1, bpItem.poids || null, bpItem.volume || null, matchStatus, matchConf);
+                  insertBPItem.run(finalId, equipmentId, ref || null, bpItem.description || null, bpItem.section || null, bpItem.quantity || 1, bpItem.poids || null, bpItem.volume || null, matchStatus, matchConf, (bpItem.section || '').toUpperCase() === 'VENTE' || (bpItem.section || '').toUpperCase() === 'VTE' ? 'article' : 'materiel');
                 }
               });
               insertMany(pd.items);
@@ -726,9 +789,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         SELECT bp.*, 
                eq.name AS catalog_name, eq.reference AS catalog_reference,
                eq.brand AS catalog_family, eq.location AS catalog_zone,
-               eq.location_depot AS catalog_depot
+               eq.location_depot AS catalog_depot,
+               sa.designation AS supplier_article_name, sa.supplier_ref AS supplier_article_ref,
+               si.name AS stock_item_name, si.reference AS stock_item_ref
         FROM bp_items bp
         LEFT JOIN equipment eq ON bp.equipment_id = eq.id
+        LEFT JOIN supplier_articles sa ON bp.supplier_article_id = sa.id
+        LEFT JOIN stock_items si ON bp.stock_item_id = si.id
         JOIN bl_imports bi ON bp.bl_import_id = bi.id
       `;
       const params = [];
@@ -744,9 +811,16 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       query += ' ORDER BY bp.section, bp.id';
       const items = db.prepare(query).all(...params);
 
-      // Agrégation stats
-      const matched = items.filter(i => i.match_status === 'matched').length;
-      res.json({ items, total: items.length, matched, unmatched: items.length - matched });
+      const matched = items.filter(i => i.match_status === 'matched' || i.match_status === 'manual').length;
+      const materielItems = items.filter(i => i.item_type !== 'article');
+      const articleItems = items.filter(i => i.item_type === 'article');
+      res.json({
+        items, total: items.length, matched, unmatched: items.length - matched,
+        materiel_count: materielItems.length,
+        article_count: articleItems.length,
+        materiel_matched: materielItems.filter(i => i.match_status === 'matched' || i.match_status === 'manual').length,
+        article_matched: articleItems.filter(i => i.supplier_article_id || i.stock_item_id).length,
+      });
     } catch (error) {
       logger.error('GET /api/planning/bp-items error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
@@ -781,6 +855,46 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/bp-items/:id/match error:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── PUT /api/planning/bp-items/:id/match-article ───
+  // Lier manuellement un article BP (type='article') à un supplier_article ou stock_item
+  app.put('/api/planning/bp-items/:id/match-article', authenticateToken, (req, res) => {
+    try {
+      const { supplier_article_id, stock_item_id } = req.body;
+      const item = db.prepare('SELECT * FROM bp_items WHERE id = ?').get(req.params.id);
+      if (!item) return res.status(404).json({ error: 'Article BP non trouvé' });
+
+      if (supplier_article_id) {
+        const sa = db.prepare('SELECT id FROM supplier_articles WHERE id = ?').get(supplier_article_id);
+        if (!sa) return res.status(404).json({ error: 'Article fournisseur introuvable' });
+        db.prepare('UPDATE bp_items SET supplier_article_id = ?, stock_item_id = NULL WHERE id = ?')
+          .run(supplier_article_id, req.params.id);
+      } else if (stock_item_id) {
+        const si = db.prepare('SELECT id FROM stock_items WHERE id = ?').get(stock_item_id);
+        if (!si) return res.status(404).json({ error: 'Article stock introuvable' });
+        db.prepare('UPDATE bp_items SET stock_item_id = ?, supplier_article_id = NULL WHERE id = ?')
+          .run(stock_item_id, req.params.id);
+      } else {
+        // Délier
+        db.prepare('UPDATE bp_items SET supplier_article_id = NULL, stock_item_id = NULL WHERE id = ?')
+          .run(req.params.id);
+      }
+
+      const updated = db.prepare(`
+        SELECT bp.*, sa.designation AS supplier_article_name, sa.supplier_ref AS supplier_article_ref,
+               si.name AS stock_item_name, si.reference AS stock_item_ref
+        FROM bp_items bp
+        LEFT JOIN supplier_articles sa ON bp.supplier_article_id = sa.id
+        LEFT JOIN stock_items si ON bp.stock_item_id = si.id
+        WHERE bp.id = ?
+      `).get(req.params.id);
+
+      res.json(updated);
+    } catch (error) {
+      logger.error('PUT /api/planning/bp-items/:id/match-article error:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
     }
   });
@@ -1309,7 +1423,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               // Retirer le type du titre (redondant avec badge)
               if (courseType) {
                 titleStr = titleStr
-                  .replace(/^(Livraison|R[eé]cup[eé]ration|Enl[eè]vement|Retour)\s*-?\s*/i, '')
+                  .replace(/^(Livraison|R[eé]cup(?:[eé]ration)?|Enl[eè]v(?:ement)?|Retour)\s*[—–\-:]?\s*/i, '')
                   .trim() || stripEmoji(t.google_event_title) || t.notes || '-';
               }
             }
@@ -1328,6 +1442,15 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               : (t.person_first_name || t.person_last_name)
                 ? `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim()
                 : '';
+
+            // Détection doublons client/lieu vs titre (éviter affichage double pour les courses)
+            const titleLower = titleStr.toLowerCase();
+            const clientLower = displayClient ? displayClient.toLowerCase() : '';
+            const locationLower = displayLocation ? displayLocation.toLowerCase() : '';
+            const clientAlreadyInTitle = displayClient && (titleLower.includes(clientLower) || clientLower.includes(titleLower));
+            const locationAlreadyInTitle = displayLocation && (titleLower.includes(locationLower) || locationLower.includes(titleLower));
+            const showClient = displayClient && !clientAlreadyInTitle;
+            const showLocation = !showClient && displayLocation && !locationAlreadyInTitle;
 
             const rowY = doc.y;
             if (i % 2 === 0) {
@@ -1350,7 +1473,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               titleX += badgeW;
             }
             // Titre
-            const rightInfoW = (timeStr ? 42 : 0) + (displayClient ? 65 : displayLocation ? 55 : 0) + (personStr ? 60 : 0) + 8;
+            const rightInfoW = (timeStr ? 42 : 0) + (showClient ? 65 : showLocation ? 55 : 0) + (personStr ? 60 : 0) + 8;
             const titleW = leftX + pageW - titleX - rightInfoW;
             if (t.status === 'done') {
               doc.font('Helvetica-Oblique').fontSize(fs).fillColor('#999999');
@@ -1363,9 +1486,10 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               doc.moveTo(titleX, rowY + rowH / 2).lineTo(titleX + Math.min(tw, titleW), rowY + rowH / 2)
                 .strokeColor('#999999').lineWidth(0.4).stroke();
             }
-            // Notes (en italique après le titre)
+            // Notes (en italique après le titre) — seulement si différent du titre affiché
             const notesText = (t.notes || '').trim();
-            if (notesText) {
+            const notesLower = notesText.toLowerCase();
+            if (notesText && notesLower !== titleLower && !titleLower.includes(notesLower) && !notesLower.includes(titleLower)) {
               const titleUsedW = doc.widthOfString(titleStr);
               const notesX = titleX + Math.min(titleUsedW, titleW) + 4;
               const notesW = leftX + pageW - notesX - rightInfoW;
@@ -1381,11 +1505,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               doc.font('Helvetica').fontSize(fsSmall).fillColor('#555555')
                 .text(personStr, rightX, rowY + 2, { width: 58, lineBreak: false });
             }
-            if (displayClient) {
+            // Client/Lieu — seulement si pas déjà dans le titre (éviter doublons pour les courses)
+            if (showClient) {
               rightX -= 65;
               doc.font('Helvetica-Oblique').fontSize(fsSmall).fillColor('#888888')
                 .text(displayClient.slice(0, 18), rightX, rowY + 2, { width: 63, lineBreak: false });
-            } else if (displayLocation) {
+            } else if (showLocation) {
               rightX -= 55;
               doc.font('Helvetica').fontSize(fsSmall).fillColor('#888888')
                 .text(displayLocation.slice(0, 16), rightX, rowY + 2, { width: 53, lineBreak: false });

@@ -92,25 +92,32 @@ function TVScreenMini({ state = {} }) {
     Vente: '#8b5cf6', 'Tournée': '#ec4899',
   };
 
+  const completed = state.completedEvents || [];
+
   const renderTask = (task, i) => {
     const color = getTaskColor(task);
     const iconFile = getTaskIcon(task);
-    const isDone = task.status === 'done';
-    const timeDisplay = task.time || (task.period === 'AM' ? 'Matin' : task.period === 'PM' ? 'Après-midi' : '');
+    const eventId = String(task.id || i);
+    const isDone = task.status === 'done' || completed.includes(eventId);
+    // Plage horaire : "07:00 → 08:30" comme le vrai TV
+    const endTime = task.end_time || task.endTime || '';
+    const timeDisplay = task.time
+      ? (endTime ? `${task.time} → ${endTime}` : task.time)
+      : (task.period === 'AM' ? 'Matin' : task.period === 'PM' ? 'Après-midi' : '');
     const affNum = task.affaireNum || task.affaire_num || '';
     const affType = task.affaireType || task.affaire_type || '';
     const badgeColor = AFFAIRE_TYPE_COLORS[affType] || '#3b82f6';
     return (
       <div
         key={i}
-        className={`tv-mini-event${isDone ? ' done' : ''}${!task.time ? ' all-day' : ''}`}
-        style={{ color, background: eventBgColor }}
+        className={`tv-mini-event${isDone ? ' done' : ''}${!task.time ? ' all-day' : ''}${task.title && task.title.includes('!') && !isDone ? ' urgent' : ''}`}
+        style={{ color: isDone ? undefined : color, background: eventBgColor }}
       >
         <span className="tv-mini-evt-time">{timeDisplay}</span>
-        <span className="tv-mini-evt-title">{task.title}</span>
+        <span className="tv-mini-evt-title">{isDone ? '✅ ' : ''}{task.title}</span>
         <span className="tv-mini-evt-loc">
           {iconFile ? (
-            <img src={`/display-gifs/${iconFile}`} alt="" className="tv-mini-evt-icon" />
+            <img src={`/api/display/gifs/${iconFile}`} alt="" className="tv-mini-evt-icon" />
           ) : (
             task.sectionLabel || ''
           )}
@@ -121,6 +128,19 @@ function TVScreenMini({ state = {} }) {
       </div>
     );
   };
+
+  // Séparer régulières / récurrentes (comme le vrai TV)
+  const regularTasks = tasks.filter(t => !t.is_recurrent);
+  const recurrentTasks = tasks.filter(t => t.is_recurrent);
+
+  // Sonos : parsing radio "Artiste - Titre" (comme le vrai TV)
+  let sonosTitle = state.sonos?.title || '';
+  let sonosArtist = state.sonos?.artist || '';
+  if (!sonosArtist && sonosTitle.includes(' - ')) {
+    const parts = sonosTitle.split(' - ');
+    sonosArtist = parts[0].trim();
+    sonosTitle = parts.slice(1).join(' - ').trim();
+  }
 
   return (
     <div className="tv-mini-screen" style={{ background: eventBgColor, fontFamily }}>
@@ -159,11 +179,16 @@ function TVScreenMini({ state = {} }) {
       {/* ─── Main (tâches du jour, réplique calendar-dashboard) ─── */}
       <div className="tv-mini-main" ref={eventsRef}>
         <div className="tv-mini-events">
-          {tasks.length > 0
-            ? tasks.map(renderTask)
-            : <div className="tv-mini-no-events">Aucune tâche aujourd'hui</div>
+          {regularTasks.length > 0
+            ? regularTasks.map(renderTask)
+            : <div className="tv-mini-no-events">Aucune tâche planifiée aujourd'hui</div>
           }
         </div>
+        {recurrentTasks.length > 0 && (
+          <div className="tv-mini-events tv-mini-recurrent">
+            {recurrentTasks.map(renderTask)}
+          </div>
+        )}
       </div>
 
       {/* ─── Sneaky photo (slide left-to-right, like calendar-dashboard) ─── */}
@@ -173,15 +198,15 @@ function TVScreenMini({ state = {} }) {
         </div>
       )}
 
-      {/* ─── Sonos widget (floating bottom center, like calendar-dashboard) ─── */}
-      {state.sonos && state.sonos.title && (
-        <div className={`tv-mini-sonos ${state.sonos.playing ? 'playing' : 'idle'}`} style={{ borderColor: primaryColor, color: primaryColor }}>
+      {/* ─── Sonos widget (visible uniquement si en lecture, comme le vrai TV) ─── */}
+      {state.sonos && state.sonos.playing && state.sonos.title && (
+        <div className="tv-mini-sonos playing" style={{ borderColor: primaryColor, color: primaryColor }}>
           {state.sonos.albumArtURI && (
             <img src={state.sonos.albumArtURI} alt="" className="tv-mini-sonos-art" />
           )}
           <div className="tv-mini-sonos-info">
-            <span className="tv-mini-sonos-title">{state.sonos.title}</span>
-            <span className="tv-mini-sonos-artist">{state.sonos.artist}</span>
+            <span className="tv-mini-sonos-title">{sonosTitle}</span>
+            <span className="tv-mini-sonos-artist">{sonosArtist}</span>
           </div>
         </div>
       )}

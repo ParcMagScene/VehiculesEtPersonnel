@@ -52,7 +52,7 @@ function stripAfNum(text, task) {
   return text.replace(new RegExp('\\bAF\\s*' + flexDigits + '\\b', 'gi'), '');
 }
 
-function cleanTaskDisplayTitle(task) {
+function cleanTaskDisplayTitle(task, affaireName) {
   const rawTitle = (task.title || '').trim();
   const rawGev = (task.google_event_title || '').trim();
 
@@ -74,7 +74,8 @@ function cleanTaskDisplayTitle(task) {
     if (t) return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
-  const fallback = task.notes || '-';
+  // 3. Fallback : nom de l'affaire > notes
+  const fallback = affaireName || task.notes || '-';
   return fallback.charAt(0).toUpperCase() + fallback.slice(1);
 }
 
@@ -265,7 +266,8 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     if (!affNum) return null;
     const affaire = affairesMap[affNum];
     const typeInfo = affaire?.type ? AFFAIRE_TYPE_MAP[affaire.type] : null;
-    return { num: affNum, color: typeInfo?.color || '#6366f1', icon: typeInfo?.icon || '📋' };
+    const name = (affaire?.nom || affaire?.titre || affaire?.client || task.eventClient || '').trim();
+    return { num: affNum, name, color: typeInfo?.color || '#6366f1', icon: typeInfo?.icon || '📋' };
   }, [affairesMap]);
 
   return (
@@ -375,14 +377,19 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                                   style={{ background: `${affBadge.color}14`, color: affBadge.color, borderColor: `${affBadge.color}40` }}
                                   title={affBadge.num}
                                 >
-                                  <Briefcase size={8} /> {affBadge.num}
+                                  <Briefcase size={8} /> {affBadge.name || affBadge.num}
                                 </span>
                               )}
-                              <span className="dash-task-name">{cleanTaskDisplayTitle(task)}</span>
+                              <span className="dash-task-name">{cleanTaskDisplayTitle(task, affBadge?.name)}</span>
                             </div>
                             <div className="dash-task-meta">
-                              {task.time && (
-                                <span className="dash-task-time"><Clock size={9} /> {task.time}{task.endTime ? ` → ${task.endTime}` : ''}</span>
+                              {(task.time || task.period) && (
+                                <span className="dash-task-time">
+                                  <Clock size={9} />
+                                  {task.time
+                                    ? `${task.time}${task.endTime ? ` → ${task.endTime}` : ''}`
+                                    : ({ AM: 'Matin', PM: 'Après-midi', JOURNEE: 'Journée' }[task.period] || task.period)}
+                                </span>
                               )}
                               {task.reservation_vehicle_name && (
                                 <span className="dash-task-vehicle"><Truck size={9} /> {task.reservation_vehicle_name}</span>

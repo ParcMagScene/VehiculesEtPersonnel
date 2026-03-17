@@ -8,7 +8,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspens
 import { MapPin, Layers, BarChart3, Search, ZoomIn, ZoomOut, Maximize2, Settings2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
-import { getZonePoints, hasSkew, computeZonesBounds } from './DepotMapEditor';
+import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from './DepotMapEditor';
 import './DepotMap.css';
 
 const DepotMapEditor = lazy(() => import('./DepotMapEditor'));
@@ -389,7 +389,8 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
             if (isSearchDimmed) opacity = 0.2;
             if (hasSearchResult && !isHighlighted) opacity = 0.8;
 
-            const isTrapezoid = zone.shape === 'trapezoid' && hasSkew(zone);
+            const hasClip = zone.clipPoints && zone.clipPoints.length >= 3;
+            const isTrapezoid = !hasClip && zone.shape === 'trapezoid' && hasSkew(zone);
             const zoneShapeProps = {
               fill: zone.color,
               fillOpacity: opacity,
@@ -413,9 +414,9 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
               >
                 {/* Highlight glow for search results */}
                 {(isHighlighted || hasSearchResult) && (
-                  isTrapezoid ? (
+                  (hasClip || isTrapezoid) ? (
                     <polygon
-                      points={getZonePoints({ x: x - 3, y: y - 3, width: width + 6, height: height + 6 }, zone.skew).map(p => `${p.x},${p.y}`).join(' ')}
+                      points={(hasClip ? zone.clipPoints : getZonePoints({ x: x - 3, y: y - 3, width: width + 6, height: height + 6 }, zone.skew)).map(p => `${p.x},${p.y}`).join(' ')}
                       fill="none"
                       stroke={isHighlighted ? '#fbbf24' : '#60a5fa'}
                       strokeWidth={isHighlighted ? 3 : 2}
@@ -439,9 +440,9 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                 )}
 
                 {/* Zone shape */}
-                {isTrapezoid ? (
+                {(hasClip || isTrapezoid) ? (
                   <polygon
-                    points={getZonePoints(zone.bbox, zone.skew).map(p => `${p.x},${p.y}`).join(' ')}
+                    points={(hasClip ? zone.clipPoints : getZonePoints(zone.bbox, zone.skew)).map(p => `${p.x},${p.y}`).join(' ')}
                     {...zoneShapeProps}
                   />
                 ) : (
@@ -550,7 +551,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                   opacity="0.5"
                   style={{ pointerEvents: 'none' }}
                 >
-                  {zone.codes.join(' · ')}
+                  {(zone.codes || []).join(' · ')}
                 </text>
               </g>
             );
@@ -639,7 +640,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           })()}
 
           {/* Floor label */}
-          <text x="12" y={SVG_HEIGHT - 8} fill="#475569" fontSize="11" fontWeight="500">
+          <text x={bounds.x + 12} y={bounds.y + bounds.h - 8} fill="#475569" fontSize="11" fontWeight="500">
             {floors.find(f => f.id === activeFloor)?.label || activeFloor}
           </text>
         </svg>
@@ -660,7 +661,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
               <span className="depot-tooltip-count">{tooltip.count} éq.</span>
             </div>
             <div className="depot-tooltip-codes">
-              {tooltip.zone.codes.map(c => (
+              {(tooltip.zone.codes || []).map(c => (
                 <span key={c} className="depot-tooltip-code">{c}</span>
               ))}
             </div>

@@ -139,7 +139,7 @@
 .mailing-form-group select:focus {
   border-color: var(--theme-primary);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  box-shadow: var(--focus-ring);
 }
 .mailing-toggle-label {
   display: flex !important;

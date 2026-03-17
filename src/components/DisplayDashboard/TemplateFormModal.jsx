@@ -93,7 +93,7 @@ function TemplateFormModal({ template, onSave, onClose }) {
         </div>
         <div className="modal-body">
           <div className="form-row">
-            <div className="form-group" style={{ flex: 2 }}>
+            <div className="form-group form-group-flex2">
               <label>Nom *</label>
               <input
                 type="text"
@@ -103,7 +103,7 @@ function TemplateFormModal({ template, onSave, onClose }) {
                 autoFocus
               />
             </div>
-            <div className="form-group" style={{ flex: 1 }}>
+            <div className="form-group form-group-flex1">
               <label>Catégorie</label>
               <select value={form.category} onChange={e => handleChange('category', e.target.value)}>
                 <option value="general">Général</option>

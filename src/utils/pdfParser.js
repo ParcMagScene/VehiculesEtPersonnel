@@ -254,6 +254,8 @@ export const parseBonLivraison = (text) => {
     fax: null,
     devis: null,
     adresseLivraison: null,
+    items: [],
+    fournisseurs: [],
     fieldsFound: 0,
     fieldsTotal: 10
   };
@@ -557,8 +559,8 @@ export const parseBLVente = (text) => {
 // PARSEUR FORMAT B — "BON DE PRÉPARATION" (BL Affaires Location/Presta)
 // Structure : AF, nom affaire, client, adresse, devis, sections catégorisées
 // ═══════════════════════════════════════════════════════════════
-const SECTION_NAMES = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'REGIE', 'RÉGIE', 'REGIE/PLATEAU', 'RÉGIE/PLATEAU', 'VIDEO', 'VIDÉO', 'STRUCTURE', 'MOBILIER', 'DIVERS', 'ACCROCHE', 'MOTORISATION', 'PRATICABLE', 'PRATICABLES', 'ELECTRICITE', 'ÉLECTRICITÉ', 'CÂBLAGE', 'CABLAGE', 'AUDIOVISUEL', 'DIFFUSION'];
-const SECTION_PATTERN = /^(SONORISATION|LUMIERE|LUMIÈRE|REGIE|RÉGIE|REGIE\/PLATEAU|RÉGIE\/PLATEAU|VIDEO|VIDÉO|STRUCTURE|MOBILIER|DIVERS|ACCROCHE|MOTORISATION|PRATICABLES?|ELECTRICITE|ÉLECTRICITÉ|CÂBLAGE|CABLAGE|AUDIOVISUEL|DIFFUSION)(\s|$)/i;
+const SECTION_NAMES = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'REGIE', 'RÉGIE', 'REGIE/PLATEAU', 'RÉGIE/PLATEAU', 'VIDEO', 'VIDÉO', 'STRUCTURE', 'MOBILIER', 'DIVERS', 'ACCROCHE', 'MOTORISATION', 'PRATICABLE', 'PRATICABLES', 'ELECTRICITE', 'ÉLECTRICITÉ', 'CÂBLAGE', 'CABLAGE', 'AUDIOVISUEL', 'DIFFUSION', 'VENTE', 'VTE'];
+const SECTION_PATTERN = /^(SONORISATION|LUMIERE|LUMIÈRE|REGIE|RÉGIE|REGIE\/PLATEAU|RÉGIE\/PLATEAU|VIDEO|VIDÉO|STRUCTURE|MOBILIER|DIVERS|ACCROCHE|MOTORISATION|PRATICABLES?|ELECTRICITE|ÉLECTRICITÉ|CÂBLAGE|CABLAGE|AUDIOVISUEL|DIFFUSION|VENTE|VTE)(\s|$)/i;
 
 export const parseBonPreparation = (text) => {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l);
@@ -1257,6 +1259,16 @@ export const smartParse = (text) => {
       break;
     case DOC_TYPES.BON_LIVRAISON:
       info = parseBonLivraison(text);
+      // Fallback : si pas d'items, essayer le parseur BL Vente pour les articles
+      if (!info.items || info.items.length === 0) {
+        try {
+          const venteInfo = parseBLVente(text);
+          if (venteInfo.items && venteInfo.items.length > 0) {
+            info.items = venteInfo.items;
+            info.fournisseurs = venteInfo.fournisseurs || [];
+          }
+        } catch (_) { /* ignore */ }
+      }
       break;
     case DOC_TYPES.DEVIS:
       info = parseDevis(text);

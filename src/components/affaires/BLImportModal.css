@@ -1,28 +1,33 @@
 /* ═══ BLImportModal ═══ */
 .bl-import-overlay {
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
-  background: var(--theme-overlay);
-  z-index: var(--z-tooltip);
-  animation: fadeIn 0.15s ease;
+  background: var(--theme-overlay-dark);
+  z-index: var(--z-overlay);
+  backdrop-filter: blur(4px);
+  animation: overlayFadeIn 0.2s ease-out;
 }
 
 .bl-import-modal {
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: 16px;
   width: 94%;
   max-width: 700px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-modal);
+  animation: themeModalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
 }
 
 .bl-import-modal .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--theme-border);
+  padding: 20px 24px;
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
+  border-radius: var(--modal-header-border-radius);
 }
 
 .bl-import-modal .modal-header h3 {
@@ -32,28 +37,32 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--theme-text-primary);
+  color: var(--theme-text-inverse);
 }
 
 .bl-import-modal .modal-header h3 svg {
-  color: var(--theme-primary);
+  color: var(--theme-text-inverse);
 }
 
 .bl-import-modal .modal-close {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--theme-text-secondary);
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  border: 1px solid var(--close-btn-border);
+  border-radius: var(--close-btn-radius);
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
 }
 
 .bl-import-modal .modal-close:hover {
-  background: var(--theme-bg-tertiary);
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
 }
 
 .bl-import-modal .modal-body {
@@ -329,36 +338,52 @@
 }
 
 .bl-import-modal .btn-secondary {
-  padding: 8px 20px;
-  border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  background: var(--theme-bg-card);
-  color: var(--theme-text-secondary);
-  font-weight: 600;
-  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-secondary-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
 }
 
 .bl-import-modal .btn-secondary:hover {
-  background: var(--theme-bg-tertiary);
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border-color);
 }
 
 .bl-import-modal .btn-primary {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 24px;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
   border: none;
-  border-radius: 8px;
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
-  font-weight: 600;
-  font-size: 0.85rem;
+  border-radius: var(--btn-radius);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
+  transition: var(--btn-transition);
+  box-shadow: var(--btn-primary-shadow);
+  height: var(--btn-height);
 }
 
 .bl-import-modal .btn-primary:hover:not(:disabled) {
-  filter: brightness(1.1);
+  box-shadow: var(--btn-primary-hover-shadow);
+  transform: translateY(-1px);
+}
+
+.bl-import-modal .btn-primary:active {
+  transform: translateY(0);
 }
 
 .bl-import-modal .btn-primary:disabled {
@@ -367,21 +392,29 @@
 }
 
 .bl-import-modal .btn-generate {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  background: var(--theme-success);
-  color: var(--theme-text-inverse);
-  font-weight: 600;
-  font-size: 0.85rem;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--btn-padding);
+  border: var(--btn-success-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-success-bg);
+  color: var(--btn-success-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   cursor: pointer;
+  transition: var(--btn-transition);
+  height: var(--btn-height);
 }
 
 .bl-import-modal .btn-generate:hover:not(:disabled) {
-  filter: brightness(1.1);
+  background: var(--btn-success-hover-bg);
+  transform: translateY(-1px);
+}
+
+.bl-import-modal .btn-generate:active {
+  transform: translateY(0);
 }
 
 .bl-import-modal .btn-generate:disabled {

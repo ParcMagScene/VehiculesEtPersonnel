@@ -1,7 +1,7 @@
 // Gestion de la base de données IndexedDB
 
 const DB_NAME = 'ReservationVehicules';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const STORES = {
   vehicles: 'vehicles',
   reservations: 'reservations',
@@ -15,6 +15,10 @@ const STORES = {
   persons: 'persons',
   skills: 'skills',
   missions: 'missions',
+  inventoryLocations: 'inventoryLocations',
+  inventoryAlerts: 'inventoryAlerts',
+  inventoryAnomalies: 'inventoryAnomalies',
+  inventoryPendingCounts: 'inventoryPendingCounts',
 };
 
 // Ouvrir ou créer la base de données

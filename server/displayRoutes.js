@@ -7,10 +7,14 @@ import { dirname, join, extname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import db from './database.js';
 import logger from './logger.js';
 import { randomBytes } from 'node:crypto';
 import { uploadMedia } from './middleware/upload.js';
+
+const execFileAsync = promisify(execFile);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -45,7 +49,8 @@ function cleanTvTitle(t) {
     }
   }
   title = title.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
-  if (!title) title = t.notes || '-';
+  // Fallback : nom de l'affaire > client de l'événement > notes
+  if (!title) title = (t.affaire_nom || '').trim() || (t.affaire_titre || '').trim() || (t.affaire_client || '').trim() || (t.event_client || '').trim() || t.notes || '-';
   // Auto-majuscule
   return title.charAt(0).toUpperCase() + title.slice(1);
 }
@@ -1255,6 +1260,94 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ── Helper: récupérer le favicon d'une radio via les headers ICY ──
+  const radioFaviconCache = new Map(); // streamUrl → iconUrl | null
+
+  // Logos locaux connus (évite la recherche favicon pour ces radios)
+  const KNOWN_RADIO_LOGOS = {
+    'radiomeuh': '/Logos/RadioMeuh.png',
+  };
+
+  async function getRadioFavicon(streamUrl) {
+    if (radioFaviconCache.has(streamUrl)) {
+      logger.info(`[RadioFavicon] Cache hit for ${streamUrl}: ${radioFaviconCache.get(streamUrl)}`);
+      return radioFaviconCache.get(streamUrl);
+    }
+
+    // Vérifier les logos locaux connus
+    const urlLower = streamUrl.toLowerCase();
+    for (const [keyword, logoPath] of Object.entries(KNOWN_RADIO_LOGOS)) {
+      if (urlLower.includes(keyword)) {
+        logger.info(`[RadioFavicon] Known radio "${keyword}" → ${logoPath}`);
+        radioFaviconCache.set(streamUrl, logoPath);
+        return logoPath;
+      }
+    }
+
+    try {
+      logger.info(`[RadioFavicon] Fetching ICY headers for: ${streamUrl}`);
+      // Étape 1 : Lire les headers ICY du flux via curl
+      // On utilise GET (-o /dev/null -D -) car les serveurs Shoutcast/Icecast
+      // ne renvoient les headers ICY qu'en réponse à un GET, pas un HEAD (-I)
+      const { stdout } = await execFileAsync('curl', [
+        '-s', '-o', '/dev/null', '-D', '-',
+        '-H', 'Icy-MetaData: 1', '--max-time', '5', streamUrl
+      ]);
+      logger.info(`[RadioFavicon] Raw headers:\n${stdout.slice(0, 500)}`);
+      const icyHeaders = {};
+      for (const line of stdout.split('\n')) {
+        const m = line.match(/^(icy-\w+):(.+)/i);
+        if (m) icyHeaders[m[1].toLowerCase()] = m[2].trim();
+      }
+      logger.info(`[RadioFavicon] ICY headers found: ${JSON.stringify(icyHeaders)}`);
+
+      let homepage = (icyHeaders['icy-url'] || '').trim();
+      if (!homepage) {
+        logger.info(`[RadioFavicon] No icy-url found, returning null`);
+        radioFaviconCache.set(streamUrl, null);
+        return null;
+      }
+      if (!homepage.startsWith('http')) homepage = 'https://' + homepage;
+      homepage = homepage.replace(/\/+$/, '');
+
+      // Construire les variantes de base (avec et sans www)
+      const bases = [homepage];
+      const parsed = new URL(homepage);
+      if (!parsed.hostname.startsWith('www.')) {
+        bases.push(`${parsed.protocol}//www.${parsed.hostname}`);
+      }
+
+      // Étape 2 : Tester des chemins favicon courants
+      // On utilise GET (-o /dev/null) au lieu de HEAD (-I) car certains serveurs bloquent HEAD
+      const iconPaths = [
+        '/apple-touch-icon.png',
+        '/favicon.ico',
+      ];
+      for (const base of bases) {
+        for (const path of iconPaths) {
+          try {
+            const url = base + path;
+            const { stdout: headOut } = await execFileAsync('curl', [
+              '-s', '-o', '/dev/null', '-w', '%{http_code} %{content_type}',
+              '-L', '--max-time', '4', url
+            ]);
+            const [code, ctype] = headOut.trim().split(' ');
+            if (code === '200' && ctype && ctype.startsWith('image')) {
+              radioFaviconCache.set(streamUrl, url);
+              return url;
+            }
+          } catch { /* suivant */ }
+        }
+      }
+
+      radioFaviconCache.set(streamUrl, null);
+      return null;
+    } catch {
+      radioFaviconCache.set(streamUrl, null);
+      return null;
+    }
+  }
+
   // ── Helper: obtenir les infos Sonos (gère les groupes) ──
   async function getSonosNowPlaying() {
     const row = db.prepare("SELECT value FROM display_config WHERE key = 'sonosIP'").get();
@@ -1297,8 +1390,46 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     if (!track) return { playing: false, state };
 
     // albumArtURL = URL complète, albumArtURI = chemin relatif
-    const artUrl = track.albumArtURL
+    let artUrl = track.albumArtURL
       || (track.albumArtURI ? `http://${coordinatorIP}:1400${track.albumArtURI}` : '');
+
+    // Radio internet : l'artwork Sonos est souvent vide ou inaccessible → chercher le favicon
+    const isRadio = track.uri && (
+      track.uri.startsWith('x-rincon-mp3radio://') ||
+      track.uri.startsWith('x-sonosapi-stream:') ||
+      track.uri.startsWith('x-sonosapi-hls-static:') ||
+      track.uri.startsWith('aac:') ||
+      track.uri.startsWith('x-rincon-stream:')
+    );
+    logger.info(`[Sonos] track.uri=${track.uri}, artUrl=${artUrl}, isRadio=${isRadio}`);
+    // Pour les radios, on tente toujours le favicon (artUrl Sonos souvent non fonctionnel)
+    if (isRadio) {
+      // Extraire l'URL de stream depuis les différents formats Sonos
+      let streamUrl = track.uri;
+      if (streamUrl.startsWith('x-rincon-mp3radio://')) {
+        // x-rincon-mp3radio://https://host/path → https://host/path
+        // x-rincon-mp3radio://host/path         → http://host/path
+        streamUrl = streamUrl.replace('x-rincon-mp3radio://', '');
+        if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
+      } else if (streamUrl.startsWith('aac://')) {
+        streamUrl = streamUrl.replace('aac://', '');
+        if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
+      } else {
+        // x-sonosapi-stream: etc. — pas d'URL directe exploitable
+        streamUrl = '';
+      }
+      logger.info(`[Sonos] Extracted streamUrl=${streamUrl}`);
+      if (streamUrl) {
+        try {
+          const favicon = await getRadioFavicon(streamUrl);
+          logger.info(`[Sonos] Favicon result: ${favicon}`);
+          if (favicon) artUrl = favicon;
+          else artUrl = ''; // Pas de favicon → laisser le frontend utiliser son fallback
+        } catch (e) { logger.error(`[Sonos] Favicon error: ${e.message}`); }
+      } else {
+        artUrl = ''; // Radio sans URL exploitable → fallback frontend
+      }
+    }
 
     return {
       playing: state === 'playing',
@@ -1408,7 +1539,10 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
                 ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
                 dde.type AS event_type, dde.category AS event_category,
-                aff.type AS affaire_type
+                aff.type AS affaire_type,
+                COALESCE(NULLIF(aff.nom, ''), '') AS affaire_nom,
+                COALESCE(NULLIF(aff.titre, ''), '') AS affaire_titre,
+                COALESCE(NULLIF(aff.client, ''), '') AS affaire_client
          FROM task_assignments ta
          LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
          LEFT JOIN affaires aff ON ta.affaire_num != '' AND ta.affaire_num = aff.numero_affaire
@@ -1445,7 +1579,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         affaire_num: t.affaire_num || '',
         affaire_type: t.affaire_type || '',
         description: [t.affaire_num ? `Affaire ${t.affaire_num}` : '', t.notes || ''].filter(Boolean).join(' — ') || '',
-        is_recurrent: 0,
+        is_recurrent: t.source_type === 'recurring' ? 1 : 0,
       }));
 
       // Trier par heure (événements sans heure en fin)
@@ -1455,6 +1589,11 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         if (!b.time) return -1;
         return a.time.localeCompare(b.time);
       });
+
+      // Événements terminés du jour
+      const completedRows = db.prepare(
+        'SELECT event_id FROM display_completed_events WHERE event_date = ?'
+      ).all(todayISO);
 
       // ── Sonos now-playing (réutilise le helper avec gestion de groupe) ──
       let sonos = { playing: false };
@@ -1481,6 +1620,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         sneakyPhoto,
         displayMessages,
         events,
+        completedEvents: completedRows.map(r => r.event_id),
         sonos,
       });
     } catch (error) {
@@ -1586,7 +1726,10 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
                 ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
                 dde.type AS event_type, dde.category AS event_category,
-                aff.type AS affaire_type
+                aff.type AS affaire_type,
+                COALESCE(NULLIF(aff.nom, ''), '') AS affaire_nom,
+                COALESCE(NULLIF(aff.titre, ''), '') AS affaire_titre,
+                COALESCE(NULLIF(aff.client, ''), '') AS affaire_client
          FROM task_assignments ta
          LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
          LEFT JOIN affaires aff ON ta.affaire_num != '' AND ta.affaire_num = aff.numero_affaire

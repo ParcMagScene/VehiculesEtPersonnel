@@ -33,8 +33,8 @@ const PersonnelPanel = lazy(() => import('./components/personnel/PersonnelPanel'
 const AffairesPanel = lazy(() => import('./components/affaires/AffairesPanel'));
 const EquipmentPanel = lazy(() => import('./components/equipment/EquipmentPanel'));
 const OrdersPanel = lazy(() => import('./components/orders/OrdersPanel'));
-const CataloguePanel = lazy(() => import('./components/orders/CataloguePanel'));
 const StockPanel = lazy(() => import('./components/orders/StockPanel'));
+const InventoryPanel = lazy(() => import('./components/inventory/InventoryPanel'));
 const PlanningPanel = lazy(() => import('./components/planning/PlanningPanel'));
 const MessagingPanel = lazy(() => import('./components/messaging/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/mailing/MailingPanel'));
@@ -162,7 +162,7 @@ function AppContent() {
     mod_affaires: () => { setActiveModule('affaires'); setShowManagement(false); setShowSettings(false); },
     mod_equipment: () => { setActiveModule('equipment'); setShowManagement(false); setShowSettings(false); },
     mod_orders: () => { setActiveModule('orders'); setShowManagement(false); setShowSettings(false); },
-    mod_catalog: () => { setActiveModule('catalog'); setShowManagement(false); setShowSettings(false); },
+    mod_catalog: () => { setActiveModule('catalog'); setShowManagement(false); setShowSettings(false); },  // Catalogue Fournisseurs
     open_messaging: () => setShowMessaging(v => !v),
     open_help: () => setShowHelp(v => !v),
     open_preferences: () => setShowPreferences(true),
@@ -622,21 +622,6 @@ function AppContent() {
         </ErrorBoundary>
       )}
 
-      {activeModule === 'catalog' && (
-        <ErrorBoundary moduleName="Catalogue">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du catalogue matériel...</p>
-          </div>
-        }>
-          <CataloguePanel
-            currentUser={currentUser}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
       {activeModule === 'stock' && (
         <ErrorBoundary moduleName="Stock">
         <Suspense fallback={
@@ -648,6 +633,19 @@ function AppContent() {
           <StockPanel
             currentUser={currentUser}
           />
+        </Suspense>
+        </ErrorBoundary>
+      )}
+
+      {activeModule === 'inventory' && (
+        <ErrorBoundary moduleName="Inventaire">
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement de l'inventaire...</p>
+          </div>
+        }>
+          <InventoryPanel currentUser={currentUser} />
         </Suspense>
         </ErrorBoundary>
       )}
@@ -889,6 +887,8 @@ function AppContent() {
     </ErrorBoundary>
   );
 }
+
+
 
 function App() {
   return (

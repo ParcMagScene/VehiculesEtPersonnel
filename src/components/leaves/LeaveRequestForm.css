@@ -157,7 +157,7 @@
 .lrf-input:focus {
   outline: none;
   border-color: var(--theme-info);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .lrf-textarea {
@@ -174,7 +174,7 @@
 .lrf-textarea:focus {
   outline: none;
   border-color: var(--theme-info);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .lrf-person-display {

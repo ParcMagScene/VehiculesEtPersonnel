@@ -132,7 +132,7 @@
 .mobile-maintenances .form-group textarea:focus {
   outline: none;
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .mobile-maintenances .form-actions {

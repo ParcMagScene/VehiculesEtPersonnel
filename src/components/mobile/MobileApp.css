@@ -258,7 +258,7 @@
 .mobile-sheet-form .form-group input:focus {
   outline: none;
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .mobile-sheet-form-actions {

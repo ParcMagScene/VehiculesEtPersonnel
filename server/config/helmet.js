@@ -19,9 +19,9 @@ export const helmetMiddleware = helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
-  hsts: process.env.NODE_ENV === 'production'
-    ? { maxAge: 31536000, includeSubDomains: true }
-    : false,
+  // HSTS désactivé — le serveur est HTTP uniquement, pas de terminaison SSL.
+  // Activer HSTS sans HTTPS force les navigateurs à upgrader en https:// → ERR_SSL_PROTOCOL_ERROR
+  hsts: false,
 });
 
 /**
@@ -37,8 +37,6 @@ export function helmetConditional(req, res, next) {
       || req.path === '/SNCF.wav'
       || (req.path.startsWith('/api/display/tv') && !req.headers.authorization)
       || (req.path.startsWith('/api/') && !req.path.startsWith('/api/display/') && !req.headers.authorization)) {
-    res.removeHeader('Strict-Transport-Security');
-    res.setHeader('Strict-Transport-Security', 'max-age=0');
     return next();
   }
   return helmetMiddleware(req, res, next);

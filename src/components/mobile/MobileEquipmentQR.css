@@ -509,7 +509,7 @@
 .m-eq-qr-form select:focus {
   outline: none;
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .m-eq-qr-form input::placeholder,

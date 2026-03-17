@@ -39,6 +39,12 @@ function playAlarmSound() {
       console.warn('⚠️ Lecture audio bloquée (autoplay) :', err.message);
     });
   }
+  // Afficher brièvement l'icône cloche
+  const btn = document.getElementById('btn-test-sound');
+  if (btn) {
+    btn.classList.add('visible');
+    setTimeout(() => btn.classList.remove('visible'), 5000);
+  }
 }
 
 /** Vérifie toutes les secondes si une tâche arrive à échéance */
@@ -245,7 +251,11 @@ function createEventElement(event) {
 
   const timeStr = event.time || '';
   const endTimeStr = event.end_time || '';
-  const timeDisplay = endTimeStr ? `${timeStr} → ${endTimeStr}` : timeStr;
+  const periodLabels = { AM: 'Matin', PM: 'Après-midi', JOURNEE: 'Journée' };
+  const periodStr = periodLabels[event.period] || event.period || '';
+  const timeDisplay = timeStr
+    ? (endTimeStr ? `${timeStr} → ${endTimeStr}` : timeStr)
+    : (periodStr || '');
   const eventTitle = event.title || 'Sans titre';
   const eventLocation = event.location || '';
   const affaireNum = event.affaire_num || '';
@@ -431,18 +441,33 @@ async function loadSonosNowPlaying() {
 function updateSonosWidget(data) {
   const widget = document.getElementById('sonos-widget');
   const albumArt = document.getElementById('sonos-album-art');
-  const title = document.getElementById('sonos-title');
-  const artist = document.getElementById('sonos-artist');
+  const titleEl = document.getElementById('sonos-title');
+  const artistEl = document.getElementById('sonos-artist');
 
   if (!widget) return;
 
   if (data && data.playing && data.title) {
     widget.style.display = 'flex';
-    if (albumArt) albumArt.src = data.albumArt || '/display-logo/logo.png';
-    if (title) title.textContent = data.title;
-    if (artist) artist.textContent = data.artist || '';
+    if (albumArt) {
+      albumArt.src = data.albumArtURI || data.albumArt || '/display-logo/logo.png';
+      albumArt.onerror = () => { albumArt.onerror = null; albumArt.src = '/display-logo/logo.png'; };
+    }
+
+    // Radio : Sonos met souvent "Artiste - Titre" dans le champ title, avec artist vide
+    let displayTitle = data.title;
+    let displayArtist = data.artist || '';
+    if (!displayArtist && displayTitle.includes(' - ')) {
+      const parts = displayTitle.split(' - ');
+      displayArtist = parts[0].trim();
+      displayTitle = parts.slice(1).join(' - ').trim();
+    }
+
+    if (titleEl) titleEl.textContent = displayTitle;
+    if (artistEl) artistEl.textContent = displayArtist;
   } else {
     widget.style.display = 'none';
+    if (titleEl) titleEl.textContent = '';
+    if (artistEl) artistEl.textContent = '';
   }
 }
 

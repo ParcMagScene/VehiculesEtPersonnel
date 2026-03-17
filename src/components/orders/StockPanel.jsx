@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, Filter,
   TrendingUp, TrendingDown, AlertTriangle, BarChart3, ArrowUpCircle, ArrowDownCircle,
   RotateCcw, Layers, Tag, MapPin, Euro, Hash, X, Check, ChevronDown,
-  Archive, Eye, FolderOpen } from 'lucide-react';
+  Archive, Eye, FolderOpen, Upload, FileText, AlertCircle } from 'lucide-react';
 import api from '../../utils/api';
 import { formatCurrency, formatDateTime as formatDate, formatDateSimple as formatDateShort } from '../../utils/formatUtils';
 import ConfirmDialog from '../ConfirmDialog';
 import './StockPanel.css';
 import { useToast } from '../../hooks/useToast';
+import EntityCombobox from '../ui/EntityCombobox';
+import { extractTextFromPDF } from '../../utils/pdfParser';
 
 // ═══ Constantes ═══
 const MOVEMENT_TYPES = {
@@ -48,6 +50,7 @@ function StockPanel({ currentUser }) {
   const [editingCategory, setEditingCategory] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [showImport, setShowImport] = useState(false);
 
   // ═══ Chargement des données ═══
   const loadData = useCallback(async () => {
@@ -233,6 +236,7 @@ function StockPanel({ currentUser }) {
                 onLowStockChange={setLowStockFilter}
                 onSelect={setSelectedItem}
                 onAdd={() => { setEditingItem(null); setShowItemForm(true); }}
+                onImport={() => setShowImport(true)}
                 isAdmin={isAdmin}
               />
             )}
@@ -296,6 +300,12 @@ function StockPanel({ currentUser }) {
         />
       )}
       {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+      {showImport && (
+        <ImportStockModal
+          onDone={() => { setShowImport(false); loadData(); }}
+          onClose={() => setShowImport(false)}
+        />
+      )}
     </div>
   );
 }
@@ -413,7 +423,7 @@ function DashboardView({ stats, items, onSelectItem }) {
 // ═══════════════════════════════════════════════════════════════
 // Liste des Articles
 // ═══════════════════════════════════════════════════════════════
-function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, onSelect, onAdd, isAdmin }) {
+function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, onSelect, onAdd, onImport, isAdmin }) {
   return (
     <div className="stock-items-view">
       {/* Toolbar */}
@@ -428,12 +438,13 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
           />
         </div>
         <div className="stock-filters">
-          <select value={categoryFilter} onChange={(e) => onCategoryChange(e.target.value)}>
-            <option value="">Toutes catégories</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-            ))}
-          </select>
+          <EntityCombobox
+            value={categoryFilter}
+            onChange={val => onCategoryChange(val)}
+            options={categories.map(c => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
+            placeholder="Toutes catégories"
+            allowClear
+          />
           <button
             className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
             onClick={() => onLowStockChange(!lowStockFilter)}
@@ -443,6 +454,10 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
             Stock bas
           </button>
         </div>
+        <button className="stock-add-btn" onClick={onImport} title="Importer un inventaire CSV">
+          <Upload size={16} />
+          <span>Importer</span>
+        </button>
         <button className="stock-add-btn" onClick={onAdd}>
           <Plus size={16} />
           <span>Nouvel article</span>
@@ -470,6 +485,7 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
                 <th>Unité</th>
                 <th>P.U. Achat</th>
                 <th>P.U. Vente</th>
+                <th>Valeur</th>
                 <th>Emplacement</th>
               </tr>
             </thead>
@@ -490,7 +506,7 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
                     </td>
                     <td>
                       {item.category_name ? (
-                        <span className="stock-cat-badge" style={{ background: item.category_color + '20', color: item.category_color, borderColor: item.category_color }}>
+                        <span className="stock-cat-badge" style={item.category_color ? { background: item.category_color + '20', color: item.category_color, borderColor: item.category_color } : undefined}>
                           {item.category_icon} {item.category_name}
                         </span>
                       ) : '—'}
@@ -503,6 +519,7 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
                     <td>{item.unit}</td>
                     <td>{formatCurrency(item.unit_price)}</td>
                     <td>{formatCurrency(item.sell_price)}</td>
+                    <td className="stock-value">{formatCurrency(item.quantity * (item.unit_price || 0))}</td>
                     <td className="stock-location">{item.location || '—'}</td>
                   </tr>
                 );
@@ -566,7 +583,7 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
               <label><Tag size={14} /> Catégorie</label>
               <span>
                 {item.category_name ? (
-                  <span className="stock-cat-badge" style={{ background: item.category_color + '20', color: item.category_color, borderColor: item.category_color }}>
+                  <span className="stock-cat-badge" style={item.category_color ? { background: item.category_color + '20', color: item.category_color, borderColor: item.category_color } : undefined}>
                     {item.category_icon} {item.category_name}
                   </span>
                 ) : '—'}
@@ -843,10 +860,12 @@ function ItemFormModal({ item, categories, suppliers, onSave, onClose }) {
           <div className="stock-form-row">
             <div className="stock-form-field">
               <label>Catégorie</label>
-              <select value={form.category_id} onChange={(e) => handleChange('category_id', e.target.value)}>
-                <option value="">— Aucune —</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-              </select>
+              <EntityCombobox
+                value={form.category_id}
+                onChange={val => handleChange('category_id', val)}
+                options={categories.map(c => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
+                placeholder="— Aucune —"
+              />
             </div>
             <div className="stock-form-field">
               <label>Unité</label>
@@ -856,10 +875,12 @@ function ItemFormModal({ item, categories, suppliers, onSave, onClose }) {
             </div>
             <div className="stock-form-field">
               <label>Fournisseur</label>
-              <select value={form.supplier_id} onChange={(e) => handleChange('supplier_id', e.target.value)}>
-                <option value="">— Aucun —</option>
-                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <EntityCombobox
+                value={form.supplier_id}
+                onChange={val => handleChange('supplier_id', val)}
+                options={suppliers}
+                placeholder="— Aucun —"
+              />
             </div>
           </div>
           <div className="stock-form-row">
@@ -936,10 +957,12 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
           </div>
           <div className="stock-form-field">
             <label>Parent</label>
-            <select value={form.parent_id} onChange={(e) => setForm(f => ({ ...f, parent_id: e.target.value }))}>
-              <option value="">— Aucun (racine) —</option>
-              {parentOptions.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-            </select>
+            <EntityCombobox
+              value={form.parent_id}
+              onChange={val => setForm(f => ({ ...f, parent_id: val }))}
+              options={parentOptions.map(c => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
+              placeholder="— Aucun (racine) —"
+            />
           </div>
           <div className="stock-form-field">
             <label>Icône</label>
@@ -1095,6 +1118,420 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
             <button type="submit" className="stock-btn-save"><Check size={16} /> Valider</button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Modal Import Stock (CSV / inventaire)
+// ═══════════════════════════════════════════════════════════════
+
+function parseInventoryCSV(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const items = [];
+  // Try to detect separator (tab, semicolon, comma)
+  const firstDataLine = lines.find(l => /\d/.test(l) && !/^(Rapport|Inventaire|Résumé|Synthèse|Catégorie|Emplacement|Fournisseur|TOTAL|Page|Détail|Référence)/i.test(l));
+  const sep = firstDataLine?.includes('\t') ? '\t' : firstDataLine?.includes(';') ? ';' : ',';
+
+  // Find header line
+  let headerIdx = lines.findIndex(l => {
+    const lower = l.toLowerCase();
+    return (lower.includes('référence') || lower.includes('reference') || lower.includes('ref'))
+      && (lower.includes('nom') || lower.includes('désignation') || lower.includes('designation') || lower.includes('article'));
+  });
+
+  if (headerIdx === -1) {
+    // No header found — try raw data parsing (each field separated)
+    // Fallback: treat each line as: reference, name, description, category, location, quantity, unit_price, total
+    for (const line of lines) {
+      const cols = line.split(sep).map(c => c.trim());
+      if (cols.length >= 6) {
+        const qty = parseFloat(cols[cols.length - 3]?.replace(/\s/g, '').replace(',', '.'));
+        const val = parseFloat(cols[cols.length - 2]?.replace(/\s/g, '').replace(',', '.'));
+        if (!isNaN(qty)) {
+          items.push({
+            reference: cols[0] || '',
+            name: cols[1] || '',
+            description: cols[2] || '',
+            category_name: cols[3] || '',
+            location: cols[4] || '',
+            quantity: qty,
+            unit_price: isNaN(val) ? 0 : val,
+          });
+        }
+      }
+    }
+    return items;
+  }
+
+  const headers = lines[headerIdx].split(sep).map(h => h.trim().toLowerCase());
+  const colIdx = {
+    ref: headers.findIndex(h => /^(r[ée]f|reference)/.test(h)),
+    name: headers.findIndex(h => /^(nom|d[ée]signation|article)/.test(h)),
+    desc: headers.findIndex(h => /^desc/.test(h)),
+    cat: headers.findIndex(h => /^cat[ée]gorie/.test(h)),
+    loc: headers.findIndex(h => /^(emplacement|lieu|location)/.test(h)),
+    qty: headers.findIndex(h => /^(quanti|qty|qté|stock)/.test(h)),
+    price: headers.findIndex(h => /^(valeur|prix|p\.?u|unit)/.test(h)),
+    total: headers.findIndex(h => /^total/.test(h)),
+  };
+
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^(Page|TOTAL|Synthèse)/i.test(line)) continue;
+    const cols = line.split(sep).map(c => c.trim());
+    if (cols.length < 3) continue;
+
+    const get = (idx) => idx >= 0 && idx < cols.length ? cols[idx] : '';
+    const getNum = (idx) => {
+      const v = get(idx).replace(/\s/g, '').replace(',', '.');
+      return parseFloat(v) || 0;
+    };
+
+    const name = get(colIdx.name);
+    if (!name) continue;
+
+    items.push({
+      reference: get(colIdx.ref),
+      name,
+      description: get(colIdx.desc),
+      category_name: get(colIdx.cat),
+      location: get(colIdx.loc),
+      quantity: getNum(colIdx.qty),
+      unit_price: getNum(colIdx.price),
+    });
+  }
+
+  return items;
+}
+
+// ═══ Parser PDF — Format "Rapport d'Inventaire" (extractTextFromPDF → lignes) ═══
+function parseInventoryPDF(text) {
+  const lines = text.split(/\r?\n/);
+  const items = [];
+
+  // Catégories connues dans le PDF (avec formes tronquées)
+  const CATEGORIES = [
+    'Batteries', 'Connecteurs', 'Consommables divers', 'Consommables d',
+    'Câbles', 'DICJONTEUR', 'ELEC', 'Filtres',
+    'Gaffer & Adhésifs', 'Gaffer & Adhés',
+    'Lampes', 'Mousse & Protection', 'Mousse & Prote',
+    'Mécanique', 'SON', 'STRUCTURE', 'Sans catégorie', 'Électronique',
+  ];
+  const LOCATIONS = ['Atelier', 'Sans emplacement', 'Stock Pièces', 'Stock Vente'];
+  const SKIP_RE = /^(Rapport|Inventaire|Résumé|Synthèse|Catégorie\s|Référence\s|Détail|Page\s+\d|\d+\s+articles$)/i;
+
+  const restoreCat = (raw) => {
+    const n = raw.replace(/…$/, '').trim();
+    const MAP = { 'Consommables d': 'Consommables divers', 'Gaffer & Adhés': 'Gaffer & Adhésifs', 'Mousse & Prote': 'Mousse & Protection' };
+    return MAP[n] || n;
+  };
+  const parseNum = (s) => parseFloat((s || '').replace(/\s/g, '').replace(',', '.'));
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || SKIP_RE.test(line)) continue;
+
+    // Split sur 2+ espaces = colonnes
+    const cols = line.split(/\s{2,}/).map(c => c.trim()).filter(Boolean);
+    if (cols.length < 4) continue;
+
+    // Les 3 dernières colonnes = total, valeur, quantité
+    const qty = parseNum(cols[cols.length - 3]);
+    const value = parseNum(cols[cols.length - 2]);
+    if (isNaN(qty)) continue;
+
+    let idx = cols.length - 4;
+
+    // Emplacement (optionnel)
+    let location = '';
+    if (idx >= 0 && LOCATIONS.some(l => cols[idx].startsWith(l))) {
+      location = cols[idx];
+      idx--;
+    }
+
+    // Catégorie (optionnelle)
+    let category_name = '';
+    if (idx >= 0) {
+      const cleaned = cols[idx].replace(/…$/, '').trim();
+      if (CATEGORIES.some(c => cleaned === c || cleaned.startsWith(c))) {
+        category_name = restoreCat(cols[idx]);
+        idx--;
+      }
+    }
+
+    // Le reste = référence, nom, description
+    const remaining = cols.slice(0, idx + 1);
+    let reference = '', name = '', description = '';
+    if (remaining.length >= 3) {
+      reference = remaining[0];
+      name = remaining[1];
+      description = remaining.slice(2).join(' ').replace(/…$/, '').trim();
+    } else if (remaining.length === 2) {
+      reference = remaining[0];
+      name = remaining[1];
+    } else if (remaining.length === 1) {
+      name = remaining[0];
+    }
+    if (!name && !reference) continue;
+
+    items.push({
+      reference,
+      name: name || reference,
+      description,
+      category_name,
+      location,
+      quantity: isNaN(qty) ? 0 : qty,
+      unit_price: isNaN(value) ? 0 : value,
+    });
+  }
+  return items;
+}
+
+function ImportStockModal({ onDone, onClose }) {
+  const toast = useToast();
+  const [step, setStep] = useState('select'); // select | preview | importing
+  const [file, setFile] = useState(null);
+  const [pasteText, setPasteText] = useState('');
+  const [parsedItems, setParsedItems] = useState([]);
+  const [error, setError] = useState('');
+  const [importMode, setImportMode] = useState('upsert'); // upsert | insert_only
+  const [result, setResult] = useState(null);
+
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0];
+    if (f) { setFile(f); setPasteText(''); }
+  };
+
+  const isPDF = file?.name?.toLowerCase().endsWith('.pdf');
+
+  const handleParse = async () => {
+    setError('');
+    let items = [];
+
+    if (file && isPDF) {
+      try {
+        const text = await extractTextFromPDF(file);
+        items = parseInventoryPDF(text);
+      } catch (e) {
+        setError('Impossible de lire le PDF: ' + e.message);
+        return;
+      }
+    } else if (file) {
+      try {
+        const text = await file.text();
+        items = parseInventoryCSV(text);
+      } catch (e) {
+        setError('Impossible de lire le fichier: ' + e.message);
+        return;
+      }
+    } else if (pasteText.trim()) {
+      items = parseInventoryCSV(pasteText);
+    } else {
+      setError('Sélectionnez un fichier (PDF ou CSV) ou collez les données');
+      return;
+    }
+
+    if (items.length === 0) {
+      setError('Aucun article détecté. Vérifiez le format du fichier.');
+      return;
+    }
+    setParsedItems(items);
+    setStep('preview');
+  };
+
+  const handleImport = async () => {
+    if (parsedItems.length === 0) return;
+    setStep('importing');
+    try {
+      const res = await api.importStockItems({
+        items: parsedItems,
+        mode: importMode,
+      });
+      setResult(res);
+      toast.success(`Import terminé : ${res.inserted} créés, ${res.updated} mis à jour, ${res.skipped} ignorés`);
+      onDone();
+    } catch (e) {
+      setError('Erreur import: ' + (e.message || 'erreur serveur'));
+      setStep('preview');
+    }
+  };
+
+  // Compteurs par catégorie
+  const catCounts = useMemo(() => {
+    const map = {};
+    for (const item of parsedItems) {
+      const cat = item.category_name || 'Sans catégorie';
+      map[cat] = (map[cat] || 0) + 1;
+    }
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+  }, [parsedItems]);
+
+  const totalQty = useMemo(() => parsedItems.reduce((s, i) => s + (i.quantity || 0), 0), [parsedItems]);
+  const totalValue = useMemo(
+    () => parsedItems.reduce((s, i) => s + (i.quantity || 0) * (i.unit_price || 0), 0),
+    [parsedItems]
+  );
+
+  return (
+    <div className="stock-modal-overlay" onMouseDown={e => e.target === e.currentTarget && step !== 'importing' && onClose()}>
+      <div className="stock-modal stock-modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="stock-modal-header">
+          <h3><Upload size={20} /> Importer un inventaire</h3>
+          {step !== 'importing' && <button onClick={onClose}><X size={20} /></button>}
+        </div>
+
+        <div className="stock-modal-body" style={{ maxHeight: '70vh', overflow: 'auto' }}>
+          {error && (
+            <div className="stock-import-error">
+              <AlertCircle size={16} /> {error}
+            </div>
+          )}
+
+          {/* STEP: SELECT */}
+          {step === 'select' && (
+            <>
+              <p className="stock-import-hint">
+                Importez un <strong>PDF</strong> (Rapport d'Inventaire) ou un <strong>CSV</strong> (colonnes&nbsp;: Référence, Nom, Description, Catégorie, Emplacement, Quantité, Valeur).
+              </p>
+
+              <div className="stock-form-field">
+                <label>Fichier PDF ou CSV</label>
+                <input
+                  type="file"
+                  accept=".pdf,.csv,.tsv,.txt"
+                  onChange={handleFileChange}
+                />
+                {file && <small>{file.name} — {(file.size / 1024).toFixed(1)} Ko</small>}
+              </div>
+
+              {!isPDF && (
+                <div className="stock-form-field">
+                  <label>Ou coller les données (CSV)</label>
+                  <textarea
+                    rows={8}
+                    value={pasteText}
+                    onChange={e => { setPasteText(e.target.value); setFile(null); }}
+                    placeholder={"Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17"}
+                    style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                  />
+                </div>
+              )}
+
+              <div className="stock-form-field">
+                <label>Mode d'import</label>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                    <input type="radio" name="importMode" value="upsert" checked={importMode === 'upsert'} onChange={() => setImportMode('upsert')} />
+                    Créer + mettre à jour
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                    <input type="radio" name="importMode" value="insert_only" checked={importMode === 'insert_only'} onChange={() => setImportMode('insert_only')} />
+                    Créer uniquement (ignorer les existants)
+                  </label>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* STEP: PREVIEW */}
+          {step === 'preview' && parsedItems.length > 0 && (
+            <>
+              <div className="stock-import-stats">
+                <div className="stock-import-stat">
+                  <strong>{parsedItems.length}</strong>
+                  <span>articles</span>
+                </div>
+                <div className="stock-import-stat">
+                  <strong>{totalQty.toLocaleString('fr-FR')}</strong>
+                  <span>quantité totale</span>
+                </div>
+                <div className="stock-import-stat">
+                  <strong>{totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</strong>
+                  <span>valeur estimée</span>
+                </div>
+                <div className="stock-import-stat">
+                  <strong>{catCounts.length}</strong>
+                  <span>catégories</span>
+                </div>
+              </div>
+
+              {/* Catégories détectées */}
+              <div className="stock-import-cats">
+                <h4>Catégories détectées :</h4>
+                <div className="stock-import-cat-list">
+                  {catCounts.map(([cat, count]) => (
+                    <span key={cat} className="stock-import-cat-badge">
+                      {cat} <em>({count})</em>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Aperçu */}
+              <div className="stock-import-preview">
+                <table className="stock-table">
+                  <thead>
+                    <tr>
+                      <th>Réf.</th>
+                      <th>Nom</th>
+                      <th>Catégorie</th>
+                      <th>Emplacement</th>
+                      <th style={{ textAlign: 'right' }}>Qté</th>
+                      <th style={{ textAlign: 'right' }}>Valeur unit.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsedItems.slice(0, 30).map((item, i) => (
+                      <tr key={i}>
+                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{item.reference || '—'}</td>
+                        <td>{item.name}</td>
+                        <td>{item.category_name || '—'}</td>
+                        <td>{item.location || '—'}</td>
+                        <td style={{ textAlign: 'right' }}>{item.quantity}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          {item.unit_price ? item.unit_price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {parsedItems.length > 30 && (
+                  <p className="stock-import-hint" style={{ textAlign: 'center', marginTop: 8 }}>
+                    …et {parsedItems.length - 30} autres articles
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* STEP: IMPORTING */}
+          {step === 'importing' && (
+            <div className="stock-import-loading">
+              <div className="loading-spinner" />
+              <p>Import de {parsedItems.length} articles en cours…</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {step === 'select' && (
+          <div className="stock-modal-actions" style={{ padding: '12px 20px', borderTop: '1px solid var(--theme-border)' }}>
+            <button className="stock-btn-cancel" onClick={onClose}>Annuler</button>
+            <button className="stock-btn-save" onClick={handleParse} disabled={!file && !pasteText.trim()}>
+              <Search size={16} /> Analyser
+            </button>
+          </div>
+        )}
+        {step === 'preview' && (
+          <div className="stock-modal-actions" style={{ padding: '12px 20px', borderTop: '1px solid var(--theme-border)' }}>
+            <button className="stock-btn-cancel" onClick={() => { setStep('select'); setParsedItems([]); }}>← Retour</button>
+            <button className="stock-btn-save" onClick={handleImport}>
+              <Upload size={16} /> Importer {parsedItems.length} articles
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

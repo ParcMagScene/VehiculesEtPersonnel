@@ -67,7 +67,7 @@
 
 .phone-local-input:focus {
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 /* Dropdown */
@@ -168,7 +168,7 @@
 
 [data-theme="dark"] .phone-local-input:focus {
   border-color: var(--primary, #818cf8);
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 [data-theme="dark"] .phone-dropdown {

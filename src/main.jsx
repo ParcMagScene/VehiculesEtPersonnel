@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './theme.css'
 import './theme-palettes.css'
+import './theme-vscode.css'
 import './index.css'
 
 // A11y: Allow keyboard activation (Enter/Space) on elements with role="button"

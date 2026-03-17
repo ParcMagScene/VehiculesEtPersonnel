@@ -32,5 +32,13 @@ export function registerAffairesMethods(ApiClient) {
     async deleteAffaireLink(affaireId, linkId) {
       return this.request(`/affaires/${affaireId}/links/${linkId}`, { method: 'DELETE' });
     },
+
+    // Annotation BP
+    async getAnnotationData(affaireId, blImportId) {
+      return this.request(`/affaires/${affaireId}/bp/annotate`, {
+        method: 'POST',
+        body: JSON.stringify({ blImportId }),
+      });
+    },
   });
 }

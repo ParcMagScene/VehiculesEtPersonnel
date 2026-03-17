@@ -162,7 +162,7 @@
 .vehicle-picker-card-desktop.selected {
   border-color: var(--theme-primary);
   background: var(--theme-purple-bg);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  box-shadow: var(--focus-ring);
 }
 
 .vehicle-picker-card-desktop.readonly {

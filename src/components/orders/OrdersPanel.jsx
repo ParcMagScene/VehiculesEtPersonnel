@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { ShoppingCart, FileText, Search, Plus, Filter, Edit2, Trash2, ArrowLeft, 
   Users as UsersIcon, Package, Send, Check, X, ArrowRight, 
   Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck,
   ClipboardList, Bell, Eye, CheckCircle, Clock, Archive, 
-  FileDown, Receipt, Layers, ChevronRight } from 'lucide-react';
+  FileDown, Receipt, Layers, ChevronRight, Globe, BookOpen } from 'lucide-react';
+
+const SupplierCatalogPanel = lazy(() => import('./SupplierCatalogPanel'));
 import api from '../../utils/api';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
 import ConfirmDialog from '../ConfirmDialog';
@@ -11,6 +13,7 @@ import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
 import './OrdersPanel.css';
 import { useToast } from '../../hooks/useToast';
+import EntityCombobox from '../ui/EntityCombobox';
 
 // ═══ Constantes ═══
 const ORDER_STATUS = {
@@ -71,6 +74,10 @@ function OrdersPanel({ currentUser }) {
   // Détail / formulaires
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedQuote, setSelectedQuote] = useState(null);
+  const [dialogOrder, setDialogOrder] = useState(null);
+  const [dialogQuote, setDialogQuote] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [dialogRequest, setDialogRequest] = useState(null);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [showSupplierForm, setShowSupplierForm] = useState(false);
@@ -78,6 +85,7 @@ function OrdersPanel({ currentUser }) {
   const [editingQuote, setEditingQuote] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const clickTimerRef = useRef(null);
 
   // Demandes de matériel
   const [materialRequests, setMaterialRequests] = useState([]);
@@ -201,6 +209,13 @@ function OrdersPanel({ currentUser }) {
     } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
+  const handleOpenOrderDialog = async (order) => {
+    try {
+      const full = await api.getOrderById(order.id);
+      setDialogOrder(full);
+    } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
   // ═══ Handlers Devis ═══
   const handleSaveQuote = async (data) => {
     try {
@@ -245,6 +260,13 @@ function OrdersPanel({ currentUser }) {
     try {
       const full = await api.getQuoteById(quote.id);
       setSelectedQuote(full);
+    } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
+  const handleOpenQuoteDialog = async (quote) => {
+    try {
+      const full = await api.getQuoteById(quote.id);
+      setDialogQuote(full);
     } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
@@ -355,56 +377,43 @@ function OrdersPanel({ currentUser }) {
     } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
-  // ═══ Rendu du détail commande ═══
-  if (selectedOrder) {
-    return (
-      <div className="orders-panel">
-        <OrderDetail
-          order={selectedOrder}
-          onBack={() => setSelectedOrder(null)}
-          onEdit={() => handleEditOrder(selectedOrder)}
-          onDelete={() => handleDeleteOrder(selectedOrder)}
-          onStatusChange={async (newStatus) => {
-            try {
-              await api.updateOrder(selectedOrder.id, { status: newStatus });
-              const full = await api.getOrderById(selectedOrder.id);
-              setSelectedOrder(full);
-              loadData();
-            } catch (error) { toast.error('Erreur: ' + error.message); }
-          }}
-        />
-        {confirmDialog && <ConfirmDialog {...confirmDialog} />}
-      </div>
-    );
-  }
+  // ═══ Handlers click / double-click par onglet ═══
+  const handleOrderRowClick = (order) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; return; }
+    clickTimerRef.current = setTimeout(() => { clickTimerRef.current = null; selectedOrder?.id === order.id ? setSelectedOrder(null) : handleViewOrder(order); }, 200);
+  };
+  const handleOrderRowDblClick = (order) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
+    handleOpenOrderDialog(order);
+  };
+  const handleQuoteRowClick = (quote) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; return; }
+    clickTimerRef.current = setTimeout(() => { clickTimerRef.current = null; selectedQuote?.id === quote.id ? setSelectedQuote(null) : handleViewQuote(quote); }, 200);
+  };
+  const handleQuoteRowDblClick = (quote) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
+    handleOpenQuoteDialog(quote);
+  };
+  const handleRequestRowClick = (r) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; return; }
+    clickTimerRef.current = setTimeout(() => { clickTimerRef.current = null; setSelectedRequest(prev => prev?.id === r.id ? null : r); }, 200);
+  };
+  const handleRequestRowDblClick = (r) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
+    setDialogRequest(r);
+  };
+  const handleSupplierRowClick = async (supplier) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; return; }
+    clickTimerRef.current = setTimeout(() => { clickTimerRef.current = null; handleSupplierClick(supplier); }, 200);
+  };
+  const handleSupplierRowDblClick = (supplier) => {
+    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
+    handleSupplierDoubleClick(supplier);
+  };
 
-  // ═══ Rendu du détail devis ═══
-  if (selectedQuote) {
-    return (
-      <div className="orders-panel">
-        <QuoteDetail
-          quote={selectedQuote}
-          onBack={() => setSelectedQuote(null)}
-          onEdit={() => handleEditQuote(selectedQuote)}
-          onDelete={() => handleDeleteQuote(selectedQuote)}
-          onConvert={() => handleConvertQuote(selectedQuote)}
-          onStatusChange={async (newStatus) => {
-            try {
-              await api.updateQuote(selectedQuote.id, { status: newStatus });
-              const full = await api.getQuoteById(selectedQuote.id);
-              setSelectedQuote(full);
-              loadData();
-            } catch (error) { toast.error('Erreur: ' + error.message); }
-          }}
-        />
-        {confirmDialog && <ConfirmDialog {...confirmDialog} />}
-      </div>
-    );
-  }
-
+  // ═══ Rendu principal — toujours le layout complet ═══
   return (
-    <div className="orders-panel">
-      {/* Completion Alerts Banner */}
+    <div className="orders-panel">{/* Completion Alerts Banner */}
       {completionAlerts.length > 0 && (
         <div className="completion-alerts-banner">
           <Bell size={16} />
@@ -436,6 +445,9 @@ function OrdersPanel({ currentUser }) {
         <button className={`orders-tab ${activeTab === 'suppliers' ? 'active' : ''}`} onClick={() => { setActiveTab('suppliers'); setStatusFilter(''); }}>
           <Building2 size={16} /> Fournisseurs
         </button>
+        <button className={`orders-tab ${activeTab === 'catalog' ? 'active' : ''}`} onClick={() => { setActiveTab('catalog'); setStatusFilter(''); }}>
+          <BookOpen size={16} /> Catalogue
+        </button>
         {stats && (
           <div className="orders-header-stats">
             <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
@@ -448,8 +460,14 @@ function OrdersPanel({ currentUser }) {
         )}
       </div>
 
+      {activeTab === 'catalog' && (
+        <Suspense fallback={<div className="orders-loading">Chargement du catalogue...</div>}>
+          <SupplierCatalogPanel currentUser={currentUser} embedded />
+        </Suspense>
+      )}
+
       {/* Toolbar */}
-      <div className="orders-toolbar">
+      {activeTab !== 'catalog' && <div className="orders-toolbar">
         <div className="orders-search">
           <Search size={16} />
           <input
@@ -494,37 +512,145 @@ function OrdersPanel({ currentUser }) {
           <Plus size={16} />
           {activeTab === 'orders' ? 'Nouvelle commande' : activeTab === 'quotes' ? 'Nouveau devis' : activeTab === 'requests' ? 'Nouvelle demande' : 'Nouveau fournisseur'}
         </button>
-      </div>
+      </div>}
 
-      {/* Content */}
-      {loading ? (
-        <div className="orders-loading">Chargement...</div>
-      ) : (
-        <>
-          {activeTab === 'orders' && (
-            <OrdersList orders={orders} onView={handleViewOrder} onEdit={handleEditOrder} onDelete={handleDeleteOrder} />
+      {/* Body: table + slide panel côte à côte */}
+      {activeTab !== 'catalog' && <div className="orders-body">
+        <div className="orders-list">
+          {loading ? (
+            <div className="orders-loading">Chargement...</div>
+          ) : (
+            <>
+              {activeTab === 'orders' && (
+                <OrdersList orders={orders}
+                  onView={handleOrderRowClick}
+                  onDoubleClick={handleOrderRowDblClick}
+                  onEdit={handleEditOrder} onDelete={handleDeleteOrder}
+                  selectedId={selectedOrder?.id}
+                />
+              )}
+              {activeTab === 'quotes' && (
+                <QuotesList quotes={quotes}
+                  onView={handleQuoteRowClick}
+                  onDoubleClick={handleQuoteRowDblClick}
+                  onEdit={handleEditQuote} onDelete={handleDeleteQuote} onConvert={handleConvertQuote}
+                  selectedId={selectedQuote?.id}
+                />
+              )}
+              {activeTab === 'requests' && (
+                <MaterialRequestsList 
+                  requests={materialRequests} 
+                  isAdmin={currentUser?.isAdmin}
+                  onValidate={handleValidateRequest} 
+                  onDelete={handleDeleteRequest}
+                  onClick={handleRequestRowClick}
+                  onDoubleClick={handleRequestRowDblClick}
+                  selectedId={selectedRequest?.id}
+                />
+              )}
+              {activeTab === 'suppliers' && (
+                <EnhancedSuppliersList 
+                  suppliers={activeTab === 'suppliers' ? suppliersWithOrders : suppliers}
+                  onEdit={(s) => { setEditingSupplier(s); setShowSupplierForm(true); }} 
+                  onDelete={handleDeleteSupplier}
+                  onClick={handleSupplierRowClick}
+                  onDoubleClick={handleSupplierRowDblClick}
+                  selectedId={selectedSupplierPanel?.id}
+                />
+              )}
+            </>
           )}
-          {activeTab === 'quotes' && (
-            <QuotesList quotes={quotes} onView={handleViewQuote} onEdit={handleEditQuote} onDelete={handleDeleteQuote} onConvert={handleConvertQuote} />
-          )}
-          {activeTab === 'requests' && (
-            <MaterialRequestsList 
-              requests={materialRequests} 
-              isAdmin={currentUser?.isAdmin}
-              onValidate={handleValidateRequest} 
-              onDelete={handleDeleteRequest} 
-            />
-          )}
-          {activeTab === 'suppliers' && (
-            <EnhancedSuppliersList 
-              suppliers={activeTab === 'suppliers' ? suppliersWithOrders : suppliers}
-              onEdit={(s) => { setEditingSupplier(s); setShowSupplierForm(true); }} 
-              onDelete={handleDeleteSupplier}
-              onClick={handleSupplierClick}
-              onDoubleClick={handleSupplierDoubleClick}
-            />
-          )}
-        </>
+        </div>
+
+        {/* Slide panels — un seul visible à la fois */}
+        {activeTab === 'orders' && (
+          <OrderSlidePanel
+            order={selectedOrder}
+            onClose={() => setSelectedOrder(null)}
+            onOpenDialog={(o) => { setSelectedOrder(null); handleOpenOrderDialog(o); }}
+            onEdit={() => handleEditOrder(selectedOrder)}
+            onDelete={() => handleDeleteOrder(selectedOrder)}
+            onStatusChange={async (newStatus) => {
+              try {
+                await api.updateOrder(selectedOrder.id, { status: newStatus });
+                const full = await api.getOrderById(selectedOrder.id);
+                setSelectedOrder(full);
+                loadData();
+              } catch (error) { toast.error('Erreur: ' + error.message); }
+            }}
+          />
+        )}
+        {activeTab === 'quotes' && (
+          <QuoteSlidePanel
+            quote={selectedQuote}
+            onClose={() => setSelectedQuote(null)}
+            onOpenDialog={(q) => { setSelectedQuote(null); handleOpenQuoteDialog(q); }}
+            onEdit={() => handleEditQuote(selectedQuote)}
+            onDelete={() => handleDeleteQuote(selectedQuote)}
+            onConvert={() => handleConvertQuote(selectedQuote)}
+          />
+        )}
+        {activeTab === 'requests' && (
+          <RequestSlidePanel
+            request={selectedRequest}
+            onClose={() => setSelectedRequest(null)}
+            onOpenDialog={(r) => { setSelectedRequest(null); setDialogRequest(r); }}
+            isAdmin={currentUser?.isAdmin}
+            onValidate={handleValidateRequest}
+          />
+        )}
+        {activeTab === 'suppliers' && selectedSupplierPanel && (
+          <SupplierSlidePanel 
+            supplier={selectedSupplierPanel}
+            onClose={() => setSelectedSupplierPanel(null)}
+            onViewDetail={handleSupplierDoubleClick}
+            onViewOrder={(o) => { setActiveTab('orders'); handleOpenOrderDialog(o); }}
+          />
+        )}
+      </div>}
+
+      {/* Dialog modals (double-clic) — overlay au-dessus */}
+      {dialogOrder && (
+        <OrderDetailDialog
+          order={dialogOrder}
+          onClose={() => setDialogOrder(null)}
+          onEdit={() => { setDialogOrder(null); handleEditOrder(dialogOrder); }}
+          onDelete={() => { setDialogOrder(null); handleDeleteOrder(dialogOrder); }}
+          onStatusChange={async (newStatus) => {
+            try {
+              await api.updateOrder(dialogOrder.id, { status: newStatus });
+              const full = await api.getOrderById(dialogOrder.id);
+              setDialogOrder(full);
+              loadData();
+            } catch (error) { toast.error('Erreur: ' + error.message); }
+          }}
+        />
+      )}
+      {dialogQuote && (
+        <QuoteDetailDialog
+          quote={dialogQuote}
+          onClose={() => setDialogQuote(null)}
+          onEdit={() => { setDialogQuote(null); handleEditQuote(dialogQuote); }}
+          onDelete={() => { setDialogQuote(null); handleDeleteQuote(dialogQuote); }}
+          onConvert={() => { setDialogQuote(null); handleConvertQuote(dialogQuote); }}
+          onStatusChange={async (newStatus) => {
+            try {
+              await api.updateQuote(dialogQuote.id, { status: newStatus });
+              const full = await api.getQuoteById(dialogQuote.id);
+              setDialogQuote(full);
+              loadData();
+            } catch (error) { toast.error('Erreur: ' + error.message); }
+          }}
+        />
+      )}
+      {dialogRequest && (
+        <RequestDetailDialog
+          request={dialogRequest}
+          onClose={() => setDialogRequest(null)}
+          isAdmin={currentUser?.isAdmin}
+          onValidate={handleValidateRequest}
+          onDelete={handleDeleteRequest}
+        />
       )}
 
       {/* Modals */}
@@ -558,14 +684,6 @@ function OrdersPanel({ currentUser }) {
           onClose={() => setShowRequestModal(false)}
         />
       )}
-      {selectedSupplierPanel && (
-        <SupplierPanel 
-          supplier={selectedSupplierPanel}
-          onClose={() => setSelectedSupplierPanel(null)}
-          onViewDetail={handleSupplierDoubleClick}
-          onViewOrder={handleViewOrder}
-        />
-      )}
       {supplierDetailData && (
         <SupplierDetailModal 
           data={supplierDetailData}
@@ -584,7 +702,7 @@ function OrdersPanel({ currentUser }) {
 }
 
 // ═══ Liste des commandes ═══
-const OrdersList = React.memo(({ orders, onView, onEdit, onDelete }) => {
+const OrdersList = React.memo(({ orders, onView, onDoubleClick, onEdit, onDelete, selectedId }) => {
   if (!orders.length) return <div className="orders-empty">Aucune commande</div>;
   return (
     <div className="orders-table-wrapper">
@@ -593,6 +711,7 @@ const OrdersList = React.memo(({ orders, onView, onEdit, onDelete }) => {
           <tr>
             <th>Référence</th>
             <th>Fournisseur</th>
+            <th>Affaire</th>
             <th>Date</th>
             <th>Statut</th>
             <th>Articles</th>
@@ -604,9 +723,11 @@ const OrdersList = React.memo(({ orders, onView, onEdit, onDelete }) => {
           {orders.map(order => {
             const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
             return (
-              <tr key={order.id} onClick={() => onView(order)} className="clickable-row">
+              <tr key={order.id} onClick={() => onView(order)} onDoubleClick={() => onDoubleClick?.(order)}
+                className={`clickable-row${selectedId === order.id ? ' selected' : ''}`}>
                 <td className="ref-cell"><Hash size={14} /> {order.reference}</td>
                 <td>{order.supplier_name || '—'}</td>
+                <td className="affaire-cell">{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</td>
                 <td>{formatDate(order.order_date)}</td>
                 <td>
                   <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
@@ -629,7 +750,7 @@ const OrdersList = React.memo(({ orders, onView, onEdit, onDelete }) => {
 });
 
 // ═══ Liste des devis ═══
-const QuotesList = React.memo(({ quotes, onView, onEdit, onDelete, onConvert }) => {
+const QuotesList = React.memo(({ quotes, onView, onDoubleClick, onEdit, onDelete, onConvert, selectedId }) => {
   if (!quotes.length) return <div className="orders-empty">Aucun devis</div>;
   return (
     <div className="orders-table-wrapper">
@@ -649,7 +770,8 @@ const QuotesList = React.memo(({ quotes, onView, onEdit, onDelete, onConvert }) 
           {quotes.map(quote => {
             const status = QUOTE_STATUS[quote.status] || QUOTE_STATUS.draft;
             return (
-              <tr key={quote.id} onClick={() => onView(quote)} className="clickable-row">
+              <tr key={quote.id} onClick={() => onView(quote)} onDoubleClick={() => onDoubleClick?.(quote)}
+                className={`clickable-row${selectedId === quote.id ? ' selected' : ''}`}>
                 <td className="ref-cell"><Hash size={14} /> {quote.reference}</td>
                 <td>{quote.client_name || '—'}</td>
                 <td>{formatDate(quote.quote_date)}</td>
@@ -762,7 +884,7 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
             <div className="detail-field"><span className="field-label">Fournisseur</span><span>{order.supplier_name || '—'}</span></div>
             <div className="detail-field"><span className="field-label">Date commande</span><span>{formatDate(order.order_date)}</span></div>
             <div className="detail-field"><span className="field-label">Date prévue</span><span>{formatDate(order.expected_date)}</span></div>
-            <div className="detail-field"><span className="field-label">Affaire</span><span>{order.affaire_id || '—'}</span></div>
+            <div className="detail-field"><span className="field-label">Affaire</span><span>{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</span></div>
             <div className="detail-field"><span className="field-label">Créé par</span><span>{order.created_by_name || '—'}</span></div>
           </div>
         </div>
@@ -880,7 +1002,7 @@ const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, on
           <div className="detail-fields">
             <div className="detail-field"><span className="field-label">Date devis</span><span>{formatDate(quote.quote_date)}</span></div>
             <div className="detail-field"><span className="field-label">Validité</span><span>{formatDate(quote.validity_date)}</span></div>
-            <div className="detail-field"><span className="field-label">Affaire</span><span>{quote.affaire_id || '—'}</span></div>
+            <div className="detail-field"><span className="field-label">Affaire</span><span>{quote.affaire_name ? `${quote.affaire_id} — ${quote.affaire_name}` : (quote.affaire_id || '—')}</span></div>
             <div className="detail-field total"><span className="field-label">Total HT</span><span className="amount-large">{formatCurrency(quote.total_ht)}</span></div>
             <div className="detail-field"><span className="field-label">Total TTC</span><span className="amount-large">{formatCurrency(quote.total_ttc)}</span></div>
           </div>
@@ -958,10 +1080,12 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
           <div className="form-grid">
             <div className="form-field">
               <label>Fournisseur</label>
-              <select value={form.supplier_id} onChange={(e) => setForm(f => ({ ...f, supplier_id: e.target.value }))}>
-                <option value="">— Sélectionner —</option>
-                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <EntityCombobox
+                value={form.supplier_id}
+                onChange={val => setForm(f => ({ ...f, supplier_id: val }))}
+                options={suppliers}
+                placeholder="— Sélectionner —"
+              />
             </div>
             <div className="form-field">
               <label>Code affaire</label>
@@ -1216,7 +1340,7 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
 });
 
 // ═══ Liste des demandes de matériel ═══
-const MaterialRequestsList = React.memo(({ requests, isAdmin, onValidate, onDelete }) => {
+const MaterialRequestsList = React.memo(({ requests, isAdmin, onValidate, onDelete, onClick, onDoubleClick, selectedId }) => {
   const [rejectingId, setRejectingId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
@@ -1242,7 +1366,8 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, onValidate, onDele
             const priority = REQUEST_PRIORITY[req.priority] || REQUEST_PRIORITY.normal;
             return (
               <React.Fragment key={req.id}>
-                <tr className={req.priority === 'urgent' ? 'urgent-row' : ''}>
+                <tr className={`${req.priority === 'urgent' ? 'urgent-row' : ''}${onClick ? ' clickable-row' : ''}${selectedId === req.id ? ' selected' : ''}`}
+                  onClick={() => onClick?.(req)} onDoubleClick={() => onDoubleClick?.(req)}>
                   <td className="article-cell">
                     <strong>{req.article}</strong>
                     {req.ref_code && <span className="ref-small">Réf: {req.ref_code}</span>}
@@ -1373,10 +1498,12 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
             </div>
             <div className="form-field">
               <label>Fournisseur (optionnel)</label>
-              <select value={form.supplier_id} onChange={e => handleSupplierChange(e.target.value)}>
-                <option value="">— Non spécifié —</option>
-                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <EntityCombobox
+                value={form.supplier_id}
+                onChange={val => handleSupplierChange(val)}
+                options={suppliers}
+                placeholder="— Non spécifié —"
+              />
             </div>
             <div className="form-field">
               <label>Priorité</label>
@@ -1417,59 +1544,50 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
   );
 });
 
-// ═══ Liste fournisseurs enrichie (avec commandes) ═══
-const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick, onDoubleClick }) => {
-  const clickTimerRef = useRef(null);
-
-  const handleClick = (supplier) => {
-    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; return; }
-    clickTimerRef.current = setTimeout(() => {
-      clickTimerRef.current = null;
-      onClick(supplier);
-    }, 250);
-  };
-
-  const handleDoubleClick = (supplier) => {
-    if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
-    onDoubleClick(supplier);
-  };
-
+// ═══ Liste fournisseurs enrichie (tableau) ═══
+const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick, onDoubleClick, selectedId }) => {
   if (!suppliers.length) return <div className="orders-empty"><Building2 size={24} /><p>Aucun fournisseur avec commandes en cours</p></div>;
   return (
-    <div className="orders-suppliers-grid enhanced">
-      {suppliers.map(supplier => (
-        <div key={supplier.id} className="supplier-card enhanced" onClick={() => handleClick(supplier)} onDoubleClick={() => handleDoubleClick(supplier)}>
-          <div className="supplier-card-header">
-            <Building2 size={18} />
-            <h3>{supplier.name}</h3>
-            <div className="supplier-actions" onClick={e => e.stopPropagation()}>
-              <button className="icon-btn" onClick={() => onEdit(supplier)} title="Modifier"><Edit2 size={14} /></button>
-              <button className="icon-btn danger" onClick={() => onDelete(supplier)} title="Supprimer"><Trash2 size={14} /></button>
-            </div>
-          </div>
-          <div className="supplier-card-body">
-            <div className="supplier-order-info">
-              <span className="order-count-badge"><ShoppingCart size={14} /> {supplier.active_order_count || 0} commande(s)</span>
-              {supplier.total_ht > 0 && <span className="supplier-total">{formatCurrency(supplier.total_ht)} HT</span>}
-            </div>
-            {supplier.order_statuses && (
-              <div className="supplier-statuses">
-                {supplier.order_statuses.split(',').map(s => {
+    <div className="orders-table-wrapper">
+      <table className="orders-table suppliers-table">
+        <thead>
+          <tr>
+            <th>Fournisseur</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th>Commandes</th>
+            <th>Total HT</th>
+            <th>Statuts</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {suppliers.map(supplier => (
+            <tr key={supplier.id}
+              onClick={() => onClick?.(supplier)}
+              onDoubleClick={() => onDoubleClick?.(supplier)}
+              className={`clickable-row${selectedId === supplier.id ? ' selected' : ''}`}>
+              <td className="ref-cell"><Building2 size={14} /> {supplier.name}</td>
+              <td>{supplier.contact_name || '—'}</td>
+              <td>{supplier.email || '—'}</td>
+              <td>{supplier.phone ? formatPhoneDisplay(supplier.phone) : '—'}</td>
+              <td className="center">{supplier.active_order_count || 0}</td>
+              <td className="amount">{supplier.total_ht > 0 ? formatCurrency(supplier.total_ht) : '—'}</td>
+              <td>
+                {supplier.order_statuses ? supplier.order_statuses.split(',').map(s => {
                   const st = ORDER_STATUS[s.trim()];
-                  return st ? <span key={s} className="mini-status" style={{ color: st.color }}>{st.icon}</span> : null;
-                })}
-              </div>
-            )}
-            {supplier.contact_name && <div className="supplier-field"><UsersIcon size={13} /> {supplier.contact_name}</div>}
-            {supplier.email && <div className="supplier-field"><Mail size={13} /> {supplier.email}</div>}
-            {supplier.phone && <div className="supplier-field"><Phone size={13} /> {formatPhoneDisplay(supplier.phone)}</div>}
-          </div>
-          <div className="supplier-card-footer enhanced">
-            <span className="click-hint">Clic: commandes — Double clic: détail complet</span>
-            <ChevronRight size={16} />
-          </div>
-        </div>
-      ))}
+                  return st ? <span key={s} className="mini-status" style={{ color: st.color }} title={st.label}>{st.icon}</span> : null;
+                }) : '—'}
+              </td>
+              <td className="actions-cell" onClick={e => e.stopPropagation()}>
+                <button className="icon-btn" onClick={() => onEdit(supplier)} title="Modifier"><Edit2 size={14} /></button>
+                <button className="icon-btn danger" onClick={() => onDelete(supplier)} title="Supprimer"><Trash2 size={14} /></button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 });
@@ -1507,6 +1625,23 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
                     <span>{order.item_count} article(s)</span>
                     <span>{formatCurrency(order.total_ht)} HT</span>
                   </div>
+                  {order.affaire_id && (
+                    <div className="order-card-affaire">📋 {order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : order.affaire_id}</div>
+                  )}
+                  {order.items?.length > 0 && (
+                    <table className="items-table compact">
+                      <thead><tr><th>Désignation</th><th>Qté</th><th>Reçu</th></tr></thead>
+                      <tbody>
+                        {order.items.map(item => (
+                          <tr key={item.id} className={item.received_qty >= item.quantity ? 'received-row' : ''}>
+                            <td>{item.designation}</td>
+                            <td className="center">{item.quantity}</td>
+                            <td className="center">{item.received_qty || 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                   <div className="order-progress">
                     <div className="progress-bar"><div className="progress-fill" style={{ width: `${completion}%` }} /></div>
                     <span className="progress-text">{completion}% réceptionné</span>
@@ -1635,6 +1770,9 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                       <span>{formatDate(order.order_date)}</span>
                       <span className="amount">{formatCurrency(order.total_ht)} HT</span>
                     </div>
+                    {order.affaire_id && (
+                      <div className="order-card-affaire">📋 {order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : order.affaire_id}</div>
+                    )}
                     {order.items?.length > 0 && (
                       <table className="items-table compact">
                         <thead><tr><th>Désignation</th><th>Qté</th><th>Reçu</th><th>Source</th></tr></thead>
@@ -1683,6 +1821,398 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+});
+
+// ═══ Volet latéral Commande (clic simple) ═══
+const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDelete, onStatusChange }) => {
+  if (!order) return <div className="orders-slide-panel" />;
+  const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
+  const items = order.items || [];
+  return (
+    <div className="orders-slide-panel open">
+      <div className="slide-panel-header">
+        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <h3>{order.reference}</h3>
+        <button className="action-btn small" onClick={() => onOpenDialog(order)} title="Ouvrir en détail"><Eye size={14} /></button>
+      </div>
+      <div className="slide-panel-body">
+        <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+          {status.icon} {status.label}
+        </span>
+        <div className="slide-fields">
+          <div className="slide-field"><span>Fournisseur</span><strong>{order.supplier_name || '—'}</strong></div>
+          <div className="slide-field"><span>Date</span><strong>{formatDate(order.order_date)}</strong></div>
+          <div className="slide-field"><span>Date prévue</span><strong>{formatDate(order.expected_date)}</strong></div>
+          <div className="slide-field"><span>Affaire</span><strong>{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</strong></div>
+          <div className="slide-field"><span>Total HT</span><strong className="amount">{formatCurrency(order.total_ht)}</strong></div>
+          <div className="slide-field"><span>Total TTC</span><strong className="amount">{formatCurrency(order.total_ttc)}</strong></div>
+        </div>
+        {items.length > 0 && (
+          <>
+            <h4>Articles ({items.length})</h4>
+            <table className="items-table compact">
+              <thead><tr><th>Désignation</th><th>Qté</th><th>Reçu</th></tr></thead>
+              <tbody>
+                {items.map(item => (
+                  <tr key={item.id} className={item.received_qty >= item.quantity ? 'received-row' : ''}>
+                    <td>{item.designation}</td>
+                    <td className="center">{item.quantity}</td>
+                    <td className="center">{item.received_qty || 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+        {order.notes && <div className="slide-notes"><h4>Notes</h4><p>{order.notes}</p></div>}
+        <div className="slide-actions">
+          {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
+          {order.status === 'sent' && <button className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</button>}
+          {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
+          <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
+          <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ═══ Volet latéral Devis (clic simple) ═══
+const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDelete, onConvert }) => {
+  if (!quote) return <div className="orders-slide-panel" />;
+  const status = QUOTE_STATUS[quote.status] || QUOTE_STATUS.draft;
+  const items = quote.items || [];
+  return (
+    <div className="orders-slide-panel open">
+      <div className="slide-panel-header">
+        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <h3>{quote.reference}</h3>
+        <button className="action-btn small" onClick={() => onOpenDialog(quote)} title="Ouvrir en détail"><Eye size={14} /></button>
+      </div>
+      <div className="slide-panel-body">
+        <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+          {status.icon} {status.label}
+        </span>
+        {quote.converted_to_order_id && <span className="converted-badge"><FileCheck size={14} /> Converti</span>}
+        <div className="slide-fields">
+          <div className="slide-field"><span>Client</span><strong>{quote.client_name || '—'}</strong></div>
+          <div className="slide-field"><span>Date</span><strong>{formatDate(quote.quote_date)}</strong></div>
+          <div className="slide-field"><span>Validité</span><strong>{formatDate(quote.validity_date)}</strong></div>
+          <div className="slide-field"><span>Affaire</span><strong>{quote.affaire_name ? `${quote.affaire_id} — ${quote.affaire_name}` : (quote.affaire_id || '—')}</strong></div>
+          <div className="slide-field"><span>Total HT</span><strong className="amount">{formatCurrency(quote.total_ht)}</strong></div>
+          <div className="slide-field"><span>Total TTC</span><strong className="amount">{formatCurrency(quote.total_ttc)}</strong></div>
+        </div>
+        {items.length > 0 && (
+          <>
+            <h4>Lignes ({items.length})</h4>
+            <table className="items-table compact">
+              <thead><tr><th>Désignation</th><th>Qté</th><th>P.U. HT</th></tr></thead>
+              <tbody>
+                {items.map(item => (
+                  <tr key={item.id}>
+                    <td>{item.designation}</td>
+                    <td className="center">{item.quantity}</td>
+                    <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+        {quote.notes && <div className="slide-notes"><h4>Notes</h4><p>{quote.notes}</p></div>}
+        <div className="slide-actions">
+          {quote.status === 'accepted' && !quote.converted_to_order_id && (
+            <button className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir</button>
+          )}
+          <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
+          <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ═══ Volet latéral Demande (clic simple) ═══
+const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin, onValidate }) => {
+  if (!request) return <div className="orders-slide-panel" />;
+  const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
+  const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
+  return (
+    <div className="orders-slide-panel open">
+      <div className="slide-panel-header">
+        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <h3>{request.article}</h3>
+        <button className="action-btn small" onClick={() => onOpenDialog(request)} title="Ouvrir en détail"><Eye size={14} /></button>
+      </div>
+      <div className="slide-panel-body">
+        <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+          {status.icon} {status.label}
+        </span>
+        <span className="priority-badge" style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
+        <div className="slide-fields">
+          <div className="slide-field"><span>Quantité</span><strong>{request.quantity}</strong></div>
+          <div className="slide-field"><span>Réf.</span><strong>{request.ref_code || '—'}</strong></div>
+          <div className="slide-field"><span>Destination</span><strong>{request.destination === 'Autre' ? request.destination_other || 'Autre' : request.destination}</strong></div>
+          <div className="slide-field"><span>Fournisseur</span><strong>{request.supplier_name || '—'}</strong></div>
+          <div className="slide-field"><span>Demandeur</span><strong>{request.requested_by_name || request.requested_by_name_db || '—'}</strong></div>
+          <div className="slide-field"><span>Affaire</span><strong>{request.affaire_id || '—'}</strong></div>
+          {request.order_id && <div className="slide-field"><span>Commande</span><strong>#{request.order_id}</strong></div>}
+        </div>
+        {request.notes && <div className="slide-notes"><h4>Notes</h4><p>{request.notes}</p></div>}
+        {isAdmin && request.status === 'pending' && (
+          <div className="slide-actions">
+            <button className="action-btn success" onClick={() => onValidate(request, 'approve')}><Check size={14} /> Approuver</button>
+            <button className="action-btn danger" onClick={() => onValidate(request, 'reject')}><X size={14} /> Refuser</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+// ═══ Volet latéral Fournisseur (clic simple) ═══
+const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder }) => {
+  if (!supplier) return <div className="orders-slide-panel" />;
+  return (
+    <div className="orders-slide-panel open">
+      <div className="slide-panel-header">
+        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <h3><Building2 size={16} /> {supplier.name}</h3>
+        <button className="action-btn small" onClick={() => { onClose(); onViewDetail(supplier); }} title="Détail complet"><Eye size={14} /></button>
+      </div>
+      <div className="slide-panel-body">
+        <div className="slide-fields">
+          {supplier.contact_name && <div className="slide-field"><span>Contact</span><strong>{supplier.contact_name}</strong></div>}
+          {supplier.email && <div className="slide-field"><span>Email</span><strong>{supplier.email}</strong></div>}
+          {supplier.phone && <div className="slide-field"><span>Tél.</span><strong>{formatPhoneDisplay(supplier.phone)}</strong></div>}
+        </div>
+        <h4>Commandes en cours ({supplier.orders?.length || 0})</h4>
+        {!supplier.orders?.length ? (
+          <p className="no-items">Aucune commande en cours</p>
+        ) : (
+          <div className="supplier-orders-list">
+            {supplier.orders.map(order => {
+              const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
+              const completion = order.item_count > 0 ? Math.round((order.completed_items / order.item_count) * 100) : 0;
+              return (
+                <div key={order.id} className="supplier-order-card" onClick={() => onViewOrder(order)}>
+                  <div className="order-card-top">
+                    <span className="order-ref"><Hash size={14} /> {order.reference}</span>
+                    <span className="status-badge small" style={{ backgroundColor: status.color + '20', color: status.color }}>
+                      {status.icon} {status.label}
+                    </span>
+                  </div>
+                  <div className="order-card-meta">
+                    <span>{formatDate(order.order_date)}</span>
+                    <span>{order.item_count} article(s)</span>
+                    <span>{formatCurrency(order.total_ht)} HT</span>
+                  </div>
+                  <div className="order-progress">
+                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${completion}%` }} /></div>
+                    <span className="progress-text">{completion}% réceptionné</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+// ═══ Dialog Commande (double-clic) ═══
+const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStatusChange }) => {
+  const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
+  const items = order.items || [];
+  return (
+    <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="order-detail-dialog" onClick={e => e.stopPropagation()}>
+        <div className="order-detail-header">
+          <div className="order-detail-title">
+            <h2>{order.reference}</h2>
+            <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+              {status.icon} {status.label}
+            </span>
+          </div>
+          <div className="order-detail-actions">
+            {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
+            {order.status === 'sent' && <button className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</button>}
+            {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
+            <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
+            <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+            <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          </div>
+        </div>
+        <div className="order-detail-grid">
+          <div className="detail-section">
+            <h3>Informations</h3>
+            <div className="detail-fields">
+              <div className="detail-field"><span className="field-label">Fournisseur</span><span>{order.supplier_name || '—'}</span></div>
+              <div className="detail-field"><span className="field-label">Date commande</span><span>{formatDate(order.order_date)}</span></div>
+              <div className="detail-field"><span className="field-label">Date prévue</span><span>{formatDate(order.expected_date)}</span></div>
+              <div className="detail-field"><span className="field-label">Affaire</span><span>{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</span></div>
+              <div className="detail-field"><span className="field-label">Créé par</span><span>{order.created_by_name || '—'}</span></div>
+            </div>
+          </div>
+          <div className="detail-section">
+            <h3>Montants</h3>
+            <div className="detail-fields">
+              <div className="detail-field"><span className="field-label">Total HT</span><span className="amount-large">{formatCurrency(order.total_ht)}</span></div>
+              <div className="detail-field"><span className="field-label">TVA ({order.tva_rate}%)</span><span>{formatCurrency(order.total_ttc - order.total_ht)}</span></div>
+              <div className="detail-field total"><span className="field-label">Total TTC</span><span className="amount-large">{formatCurrency(order.total_ttc)}</span></div>
+            </div>
+          </div>
+        </div>
+        {order.notes && <div className="detail-notes"><h3>Notes</h3><p>{order.notes}</p></div>}
+        <div className="detail-section">
+          <h3>Lignes de commande ({items.length})</h3>
+          {items.length > 0 ? (
+            <table className="items-table">
+              <thead><tr><th>Réf</th><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr></thead>
+              <tbody>
+                {items.map(item => (
+                  <tr key={item.id}>
+                    <td className="ref-code">{item.ref_code || '—'}</td>
+                    <td>{item.designation}</td>
+                    <td className="center">{item.quantity}</td>
+                    <td className="center">{item.unit}</td>
+                    <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
+                    <td className="amount">{formatCurrency(item.total_ht)}</td>
+                    <td className="center">{item.received_qty || 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <p className="no-items">Aucune ligne</p>}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ═══ Dialog Devis (double-clic) ═══
+const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConvert, onStatusChange }) => {
+  const status = QUOTE_STATUS[quote.status] || QUOTE_STATUS.draft;
+  const items = quote.items || [];
+  return (
+    <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="order-detail-dialog" onClick={e => e.stopPropagation()}>
+        <div className="order-detail-header">
+          <div className="order-detail-title">
+            <h2>{quote.reference}</h2>
+            <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+              {status.icon} {status.label}
+            </span>
+            {quote.converted_to_order_id && <span className="converted-badge"><FileCheck size={14} /> Converti en commande</span>}
+          </div>
+          <div className="order-detail-actions">
+            {quote.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
+            {quote.status === 'sent' && (
+              <>
+                <button className="action-btn success" onClick={() => onStatusChange('accepted')}><Check size={14} /> Accepter</button>
+                <button className="action-btn danger" onClick={() => onStatusChange('refused')}><X size={14} /> Refuser</button>
+              </>
+            )}
+            {quote.status === 'accepted' && !quote.converted_to_order_id && (
+              <button className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir</button>
+            )}
+            <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
+            <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+            <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          </div>
+        </div>
+        <div className="order-detail-grid">
+          <div className="detail-section">
+            <h3>Client</h3>
+            <div className="detail-fields">
+              <div className="detail-field"><span className="field-label">Nom</span><span>{quote.client_name || '—'}</span></div>
+              <div className="detail-field"><span className="field-label">Email</span><span>{quote.client_email || '—'}</span></div>
+              <div className="detail-field"><span className="field-label">Adresse</span><span>{quote.client_address || '—'}</span></div>
+            </div>
+          </div>
+          <div className="detail-section">
+            <h3>Informations</h3>
+            <div className="detail-fields">
+              <div className="detail-field"><span className="field-label">Date devis</span><span>{formatDate(quote.quote_date)}</span></div>
+              <div className="detail-field"><span className="field-label">Validité</span><span>{formatDate(quote.validity_date)}</span></div>
+              <div className="detail-field"><span className="field-label">Affaire</span><span>{quote.affaire_name ? `${quote.affaire_id} — ${quote.affaire_name}` : (quote.affaire_id || '—')}</span></div>
+              <div className="detail-field total"><span className="field-label">Total HT</span><span className="amount-large">{formatCurrency(quote.total_ht)}</span></div>
+              <div className="detail-field"><span className="field-label">Total TTC</span><span className="amount-large">{formatCurrency(quote.total_ttc)}</span></div>
+            </div>
+          </div>
+        </div>
+        {quote.notes && <div className="detail-notes"><h3>Notes</h3><p>{quote.notes}</p></div>}
+        <div className="detail-section">
+          <h3>Lignes du devis ({items.length})</h3>
+          {items.length > 0 ? (
+            <table className="items-table">
+              <thead><tr><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead>
+              <tbody>
+                {items.map(item => (
+                  <tr key={item.id}>
+                    <td>{item.designation}</td>
+                    <td className="center">{item.quantity}</td>
+                    <td className="center">{item.unit}</td>
+                    <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
+                    <td className="amount">{formatCurrency(item.total_ht)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <p className="no-items">Aucune ligne</p>}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ═══ Dialog Demande (double-clic) ═══
+const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate, onDelete }) => {
+  const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
+  const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
+  return (
+    <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="order-detail-dialog request-detail-dialog" onClick={e => e.stopPropagation()}>
+        <div className="order-detail-header">
+          <div className="order-detail-title">
+            <h2><ClipboardList size={20} /> {request.article}</h2>
+            <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+              {status.icon} {status.label}
+            </span>
+            <span className="priority-badge" style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
+          </div>
+          <div className="order-detail-actions">
+            {isAdmin && request.status === 'pending' && (
+              <>
+                <button className="action-btn success" onClick={() => { onValidate(request, 'approve'); onClose(); }}><Check size={14} /> Approuver</button>
+                <button className="action-btn danger" onClick={() => { onValidate(request, 'reject'); onClose(); }}><X size={14} /> Refuser</button>
+              </>
+            )}
+            <button className="action-btn danger" onClick={() => { onDelete(request); onClose(); }}><Trash2 size={14} /> Supprimer</button>
+            <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          </div>
+        </div>
+        <div className="order-detail-grid">
+          <div className="detail-section">
+            <h3>Détails</h3>
+            <div className="detail-fields">
+              <div className="detail-field"><span className="field-label">Article</span><span>{request.article}</span></div>
+              <div className="detail-field"><span className="field-label">Réf.</span><span>{request.ref_code || '—'}</span></div>
+              <div className="detail-field"><span className="field-label">Quantité</span><span>{request.quantity}</span></div>
+              <div className="detail-field"><span className="field-label">Destination</span><span>{request.destination === 'Autre' ? request.destination_other || 'Autre' : request.destination}</span></div>
+              <div className="detail-field"><span className="field-label">Fournisseur</span><span>{request.supplier_name || '—'}</span></div>
+              <div className="detail-field"><span className="field-label">Demandeur</span><span>{request.requested_by_name || request.requested_by_name_db || '—'}</span></div>
+              <div className="detail-field"><span className="field-label">Affaire</span><span>{request.affaire_id || '—'}</span></div>
+              {request.order_id && <div className="detail-field"><span className="field-label">Commande</span><span>#{request.order_id}</span></div>}
+            </div>
+          </div>
+        </div>
+        {request.notes && <div className="detail-notes"><h3>Notes</h3><p>{request.notes}</p></div>}
+        {request.rejection_reason && <div className="detail-notes rejection"><h3>Raison du refus</h3><p>{request.rejection_reason}</p></div>}
       </div>
     </div>
   );

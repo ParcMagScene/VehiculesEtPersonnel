@@ -5,6 +5,13 @@
 // ═══════════════════════════════════════════════════════════════
 
 import logger from './logger.js';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { runInventoryMigrations } from './migrations/inventory-v1.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function runPostInitMigrations(db) {
 
@@ -454,5 +461,178 @@ try {
 } catch (e) {
   logger.warn('⚠️ Migration google_affaires_type_location:', e.message);
 }
+
+// ═══ Migration : colonnes manquantes dans vehicles (attendues par vehicleRoutes) ═══
+try {
+  const vCols = db.pragma('table_info(vehicles)').map(c => c.name);
+  const missingCols = [
+    { name: 'category', def: 'TEXT' },
+    { name: 'vin', def: 'TEXT' },
+    { name: 'status', def: "TEXT DEFAULT 'available'" },
+    { name: 'notes', def: 'TEXT' },
+    { name: 'year', def: 'INTEGER' },
+    { name: 'last_maintenance_date', def: 'TEXT' },
+    { name: 'last_maintenance_km', def: 'INTEGER' },
+    { name: 'mileage_history', def: 'TEXT' },
+    { name: 'assigned_to', def: 'INTEGER' },
+    { name: 'pupitre', def: 'TEXT' },
+    { name: 'is_insured', def: 'BOOLEAN DEFAULT 0' },
+    { name: 'insurance_company', def: 'TEXT' },
+    { name: 'insurance_number', def: 'TEXT' },
+    { name: 'insurance_expiry', def: 'TEXT' },
+    { name: 'latitude', def: 'REAL' },
+    { name: 'longitude', def: 'REAL' },
+    { name: 'location_updated_at', def: 'DATETIME' },
+  ];
+  for (const col of missingCols) {
+    if (!vCols.includes(col.name)) {
+      db.exec(`ALTER TABLE vehicles ADD COLUMN ${col.name} ${col.def}`);
+      logger.info(`  ✅ Migration: vehicles.${col.name} ajouté`);
+    }
+  }
+} catch (e) {
+  logger.warn('⚠️ Migration vehicles colonnes manquantes:', e.message);
+}
+
+// ═══ Migration : enrichir fournisseurs dans bl_imports.parsed_data existants + copier BL en pièces jointes ═══
+try {
+  // Vérifier si la migration a déjà été exécutée
+  const migDone = db.prepare("SELECT 1 FROM _migrations_log WHERE key = 'enrich_bl_fournisseurs_v1'").get();
+  if (!migDone) {
+    const blRows = db.prepare('SELECT id, affaire_id, filename, file_path, parsed_data FROM bl_imports WHERE parsed_data IS NOT NULL').all();
+    let enriched = 0;
+    const attachBase = path.join(__dirname, '..', 'public', 'attachments');
+    const blBase = path.join(__dirname, '..', 'public', 'bl-imports');
+
+    for (const row of blRows) {
+      try {
+        const pd = JSON.parse(row.parsed_data);
+        if (!pd.items || !Array.isArray(pd.items)) continue;
+        let changed = false;
+        for (const item of pd.items) {
+          if (item.fournisseur) continue;
+          const desc = item.description || '';
+          const before = desc.match(/^([A-Z\u00c0-\u0178][A-Z\u00c0-\u01780-9\s&'.\/-]{0,30}?)\s*[\u2022\u00b7]/);
+          if (before) { item.fournisseur = before[1].trim(); changed = true; }
+          else {
+            const after = desc.match(/[\u2022\u00b7]\s*([A-Z\u00c0-\u0178][A-Z\u00c0-\u01780-9\s&'./-]{1,30})\s*$/);
+            if (after) { item.fournisseur = after[1].trim(); changed = true; }
+          }
+        }
+        if (changed) {
+          db.prepare('UPDATE bl_imports SET parsed_data = ? WHERE id = ?').run(JSON.stringify(pd), row.id);
+          enriched++;
+        }
+      } catch { /* skip invalid JSON */ }
+
+      // Copier le fichier BL en pièce jointe de l'affaire
+      if (row.file_path && row.affaire_id) {
+        try {
+          const safeId = row.affaire_id.replace(/[^a-zA-Z0-9\u00c0-\u00ff\s\-_().]/g, '');
+          if (safeId) {
+            const destDir = path.join(attachBase, safeId);
+            if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+            const srcPath = path.join(blBase, row.file_path);
+            const destPath = path.join(destDir, row.filename);
+            if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
+              fs.copyFileSync(srcPath, destPath);
+            }
+          }
+        } catch { /* skip copy errors */ }
+      }
+    }
+
+    db.prepare("INSERT INTO _migrations_log (key, applied_at) VALUES ('enrich_bl_fournisseurs_v1', datetime('now'))").run();
+    if (enriched > 0) logger.info(`  ✅ Migration: ${enriched} bl_imports enrichis avec fournisseur`);
+    if (blRows.length > 0) logger.info(`  ✅ Migration: BL copiés en pièces jointes affaires`);
+  }
+} catch (e) {
+  logger.warn('⚠️ Migration enrich_bl_fournisseurs:', e.message);
+}
+
+// ── Seed stock_categories (taxonomie unifiée) ──
+try {
+  const migDone = db.prepare("SELECT 1 FROM _migrations_log WHERE key = 'seed_stock_categories_v1'").get();
+  if (!migDone) {
+    const existing = db.prepare('SELECT COUNT(*) as cnt FROM stock_categories').get();
+    if (existing.cnt === 0) {
+      const ins = db.prepare('INSERT INTO stock_categories (name, description, parent_id, color, icon) VALUES (?, ?, ?, ?, ?)');
+      const rootCats = [
+        ['Sonorisation',            'Pièces et consommables son',              null, '#6366f1', '🔊'],
+        ['Éclairage',               'Lampes, filtres, accessoires éclairage',  null, '#f59e0b', '💡'],
+        ['Structure',               'Pièces structure, visserie',              null, '#64748b', '🏗️'],
+        ['Distribution Électrique', 'Disjoncteurs, fiches, câbles secteur',    null, '#ef4444', '⚡'],
+        ['Audiovisuel',             'Connecteurs et accessoires vidéo',        null, '#8b5cf6', '🎥'],
+        ['Câbles & Connectique',    'Câbles, connecteurs, adaptateurs',        null, '#3b82f6', '🔌'],
+        ['Consommables',            'Gaffer, adhésifs, piles, mousses',        null, '#10b981', '📦'],
+        ['Mécanique & Outillage',   'Pièces mécaniques, outillage',            null, '#f97316', '🔧'],
+        ['Électronique',            'Composants, alimentations, pièces détachées', null, '#ec4899', '⚡'],
+        ['Backline',                'Cordes, peaux, accessoires backline',     null, '#14b8a6', '🎸'],
+        ['Divers',                  'Sans catégorie',                          null, '#94a3b8', '📋'],
+      ];
+      const parentIds = {};
+      for (const [name, desc, , color, icon] of rootCats) {
+        const res = ins.run(name, desc, null, color, icon);
+        parentIds[name] = res.lastInsertRowid;
+      }
+      const subCats = [
+        // Sonorisation
+        ['Micros',              parentIds['Sonorisation']],
+        ['Enceintes',           parentIds['Sonorisation']],
+        ['Amplificateurs',      parentIds['Sonorisation']],
+        ['Consoles son',        parentIds['Sonorisation']],
+        ['Périphériques son',   parentIds['Sonorisation']],
+        ['Accessoires son',     parentIds['Sonorisation']],
+        // Éclairage
+        ['Lampes',              parentIds['Éclairage']],
+        ['Filtres & Gélatines', parentIds['Éclairage']],
+        ['Accessoires éclairage', parentIds['Éclairage']],
+        // Structure
+        ['Pièces structure',    parentIds['Structure']],
+        ['Visserie & Boulonnerie', parentIds['Structure']],
+        // Distribution Électrique
+        ['Disjoncteurs',        parentIds['Distribution Électrique']],
+        ['Fiches & Prises',     parentIds['Distribution Électrique']],
+        ['Câbles secteur',      parentIds['Distribution Électrique']],
+        // Audiovisuel
+        ['Connecteurs vidéo',   parentIds['Audiovisuel']],
+        ['Accessoires vidéo',   parentIds['Audiovisuel']],
+        // Câbles & Connectique
+        ['Câbles audio',        parentIds['Câbles & Connectique']],
+        ['Câbles réseau',       parentIds['Câbles & Connectique']],
+        ['Connecteurs',         parentIds['Câbles & Connectique']],
+        ['Adaptateurs',         parentIds['Câbles & Connectique']],
+        // Consommables
+        ['Gaffer & Adhésifs',   parentIds['Consommables']],
+        ['Piles & Batteries',   parentIds['Consommables']],
+        ['Mousse & Protection', parentIds['Consommables']],
+        ['Consommables divers', parentIds['Consommables']],
+        // Mécanique & Outillage
+        ['Pièces mécaniques',   parentIds['Mécanique & Outillage']],
+        ['Outillage',           parentIds['Mécanique & Outillage']],
+        ['Quincaillerie',       parentIds['Mécanique & Outillage']],
+        // Électronique
+        ['Composants',          parentIds['Électronique']],
+        ['Alimentations',       parentIds['Électronique']],
+        ['Pièces détachées',    parentIds['Électronique']],
+        // Backline
+        ['Cordes & Peaux',      parentIds['Backline']],
+        ['Accessoires backline', parentIds['Backline']],
+        // Divers
+        ['Sans catégorie',      parentIds['Divers']],
+      ];
+      for (const [name, pid] of subCats) {
+        ins.run(name, null, pid, null, null);
+      }
+      db.prepare("INSERT INTO _migrations_log (key, applied_at) VALUES ('seed_stock_categories_v1', datetime('now'))").run();
+      logger.info(`  ✅ Migration: ${rootCats.length} familles + ${subCats.length} sous-catégories stock créées`);
+    }
+  }
+} catch (e) {
+  logger.warn('⚠️ Migration seed_stock_categories:', e.message);
+}
+
+// ═══ Module Inventaire Unifié ═══
+runInventoryMigrations(db);
 
 } // fin runPostInitMigrations

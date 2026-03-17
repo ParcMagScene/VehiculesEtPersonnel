@@ -133,5 +133,20 @@ export function registerEquipmentMethods(ApiClient) {
     async renameEquipmentPhoto(oldName, newName) {
       return this.request('/equipment-photos/rename', { method: 'PUT', body: JSON.stringify({ oldName, newName }) });
     },
+
+    // Zones de dépôt
+    async getEquipmentDepotZones(depotId) {
+      const qs = depotId ? `?depot=${depotId}` : '';
+      return this.request(`/equipment-depot-zones${qs}`);
+    },
+    async updateEquipmentDepotZones(zones, depotId) {
+      return this.request('/equipment-depot-zones', { method: 'PUT', body: JSON.stringify({ zones, depot: depotId }) });
+    },
+    async getAllDepotZones() {
+      return this.request('/equipment-all-depot-zones');
+    },
+    async getEquipmentLocationStats() {
+      return this.request('/equipment-location-stats');
+    },
   });
 }

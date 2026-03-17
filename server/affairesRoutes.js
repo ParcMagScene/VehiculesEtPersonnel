@@ -33,6 +33,22 @@ app.get('/api/affaires', authenticateToken, cacheMiddleware(listCache, () => 'af
       ) GROUP BY aff
     `).all().forEach(r => { persCounts[r.aff] = r.pers_count; });
 
+    // Comptage BL/BP importés par affaire
+    const blCounts = {};
+    db.prepare(`
+      SELECT affaire_id, COUNT(*) as bl_count
+      FROM bl_imports WHERE status != 'rejected'
+      GROUP BY affaire_id
+    `).all().forEach(r => { blCounts[r.affaire_id] = r.bl_count; });
+
+    // Comptage commandes par affaire
+    const orderCounts = {};
+    db.prepare(`
+      SELECT affaire_id, COUNT(*) as order_count
+      FROM orders WHERE affaire_id IS NOT NULL AND affaire_id != ''
+      GROUP BY affaire_id
+    `).all().forEach(r => { orderCounts[r.affaire_id] = r.order_count; });
+
     const enriched = dbAffaires.map(a => {
       const rc = resCounts[a.numero_affaire];
       return {
@@ -55,6 +71,8 @@ app.get('/api/affaires', authenticateToken, cacheMiddleware(listCache, () => 'af
         reservationCount: rc?.res_count || 0,
         vehicleCount: rc?.veh_count || 0,
         personnelCount: persCounts[a.numero_affaire?.toUpperCase()] || 0,
+        blImportCount: blCounts[a.numero_affaire] || 0,
+        orderCount: orderCounts[a.numero_affaire] || 0,
         createdBy: a.created_by,
         createdAt: a.created_at,
         modifiedBy: a.modified_by,
@@ -106,6 +124,8 @@ app.get('/api/affaires', authenticateToken, cacheMiddleware(listCache, () => 'af
         reservationCount: ra.reservation_count,
         vehicleCount: ra.vehicle_count,
         personnelCount: persCounts[ra.affaire?.toUpperCase()] || 0,
+        blImportCount: blCounts[ra.affaire] || 0,
+        orderCount: orderCounts[ra.affaire] || 0,
         createdBy: null,
         createdAt: null,
         modifiedBy: null,
@@ -404,6 +424,95 @@ app.post('/api/affaires/sync-google-events', authenticateToken, (req, res) => {
   } catch (error) {
     logger.error('Erreur POST /api/affaires/sync-google-events:', error);
     res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// POST /api/affaires/:id/bp/annotate — Données pour annotation BP
+// Agrège : BP items, réservations, personnel, tâches, notes
+// ═══════════════════════════════════════════════════════════════
+app.post('/api/affaires/:id/bp/annotate', authenticateToken, (req, res) => {
+  try {
+    const affaireId = req.params.id;
+    const { blImportId } = req.body;
+
+    // 1. Affaire
+    const affaire = db.prepare(`
+      SELECT numero_affaire, nom, type, client, date_debut, date_fin, status, address
+      FROM affaires WHERE numero_affaire = ?
+    `).get(affaireId);
+    if (!affaire) return res.status(404).json({ error: 'Affaire introuvable' });
+
+    // 2. BP Items (groupés par section)
+    let bpQuery = `
+      SELECT bp.*, ec.name as catalog_name, ec.reference as catalog_reference
+      FROM bp_items bp
+      LEFT JOIN equipment_catalog ec ON bp.equipment_catalog_id = ec.id
+      WHERE bp.bl_import_id IN (
+        SELECT id FROM bl_imports WHERE affaire_id = ?
+      )
+    `;
+    const bpParams = [affaireId];
+    if (blImportId) {
+      bpQuery = `
+        SELECT bp.*, ec.name as catalog_name, ec.reference as catalog_reference
+        FROM bp_items bp
+        LEFT JOIN equipment_catalog ec ON bp.equipment_catalog_id = ec.id
+        WHERE bp.bl_import_id = ?
+      `;
+      bpParams[0] = blImportId;
+    }
+    const bpItems = db.prepare(bpQuery + ' ORDER BY bp.id').all(...bpParams);
+
+    // 3. Réservations liées
+    const reservations = db.prepare(`
+      SELECT r.id, r.date, r.end_date, r.period, r.end_period, r.status,
+             v.name as vehicle_name, v.type as vehicle_type
+      FROM reservations r
+      LEFT JOIN vehicles v ON r.vehicle_id = v.id
+      WHERE r.affaire_id = ?
+      ORDER BY r.date
+    `).all(affaireId);
+
+    // 4. Personnel affecté
+    const personnel = db.prepare(`
+      SELECT a.id, a.role, a.start_date, a.end_date,
+             p.nom, p.prenom, p.poste
+      FROM assignments a
+      LEFT JOIN personnel p ON a.personnel_id = p.id
+      WHERE a.affaire_id = ?
+      ORDER BY a.start_date
+    `).all(affaireId);
+
+    // 5. Tâches programmées
+    const tasks = db.prepare(`
+      SELECT t.id, t.title, t.description, t.status, t.priority,
+             t.due_date, t.due_time, t.category
+      FROM tasks t
+      WHERE t.affaire_id = ?
+      ORDER BY t.due_date
+    `).all(affaireId);
+
+    // 6. BL Import metadata
+    let blImport = null;
+    if (blImportId) {
+      blImport = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(blImportId);
+      if (blImport?.parsed_data) {
+        try { blImport.parsed_data = JSON.parse(blImport.parsed_data); } catch {}
+      }
+    }
+
+    res.json({
+      affaire,
+      bpItems,
+      reservations,
+      personnel,
+      tasks,
+      blImport,
+    });
+  } catch (error) {
+    logger.error('Erreur POST /api/affaires/:id/bp/annotate:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

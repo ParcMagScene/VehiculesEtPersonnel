@@ -120,7 +120,7 @@
 
 .affaires-tb-search:focus-within {
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .affaires-tb-search svg {
@@ -680,6 +680,8 @@
 .ath-client { flex: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-titre { flex: 1.5; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-lieu { flex: 1; min-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-bl { width: 26px; flex-shrink: 0; text-align: center; }
+.ath-orders { width: 30px; flex-shrink: 0; text-align: center; }
 .ath-icons { width: 50px; flex-shrink: 0; }
 .ath-tasks { width: 90px; flex-shrink: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ath-resa,
@@ -870,6 +872,38 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Colonne témoin BL */
+.ar-bl {
+  width: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ar-bl-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-success, #10b981);
+  opacity: 0.85;
+}
+
+/* Colonne commandes */
+.ar-orders {
+  width: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ar-orders-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-primary, #6366f1);
+  opacity: 0.85;
 }
 
 /* Colonne icônes (pièces jointes / liens) */

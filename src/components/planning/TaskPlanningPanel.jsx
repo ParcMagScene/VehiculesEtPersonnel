@@ -2014,9 +2014,6 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const affaireCount = isRdv ? sectionAffaires.length : 0;
     const totalCount = sectionTasks.length + affaireCount + googleRdvCount + mergedCount;
 
-    // Masquer les sections vides SAUF rdv (toujours visible)
-    if (totalCount === 0 && !isRdv) return null;
-
     const isCollapsible = isEvenements;
     const isCollapsed = isCollapsible && collapsedSections[sectionKey];
 
@@ -2116,6 +2113,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
         {/* Sections opérationnelles : uniquement des tâches */}
         {!isRdv && !isEvenements && sectionTasks.map(renderTaskRow)}
+        {!isRdv && !isEvenements && sectionTasks.length === 0 && (
+          <div className="section-empty-msg">Aucune tâche</div>
+        )}
 
         {/* Bouton Ajouter une tâche */}
         {(addingSection === sectionKey ? (

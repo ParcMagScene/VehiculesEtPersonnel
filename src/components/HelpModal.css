@@ -141,7 +141,7 @@
 
 .help-search:focus-within {
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .help-search svg { color: var(--theme-text-muted); flex-shrink: 0; }

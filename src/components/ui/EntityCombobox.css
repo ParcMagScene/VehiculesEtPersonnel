@@ -1,0 +1,150 @@
+/* ═══════════════════════════════════════════════════════
+   EntityCombobox — Combobox DB autocomplete
+   ═══════════════════════════════════════════════════════ */
+
+.entity-combobox {
+  position: relative;
+  width: 100%;
+}
+
+/* ── Contrôle principal ── */
+.ecb-control {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--theme-bg-card, #fff);
+  border: 1px solid var(--theme-border, #d1d5db);
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 36px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.entity-combobox.open .ecb-control {
+  border-color: var(--theme-primary, #3b82f6);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, #3b82f6) 20%, transparent);
+}
+
+.entity-combobox.disabled .ecb-control {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--theme-bg-secondary, #f5f5f5);
+}
+
+/* ── Input & display ── */
+.ecb-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: var(--theme-text-primary, #1f2937);
+  min-width: 0;
+  padding: 0;
+}
+
+.ecb-input::placeholder {
+  color: var(--theme-text-secondary, #9ca3af);
+}
+
+.ecb-display {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--theme-text-primary, #1f2937);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ecb-placeholder {
+  color: var(--theme-text-secondary, #9ca3af);
+}
+
+/* ── Icônes ── */
+.ecb-icons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.ecb-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 2px;
+  border-radius: 4px;
+  color: var(--theme-text-secondary, #9ca3af);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.ecb-clear:hover {
+  color: var(--theme-danger, #dc2626);
+  background: color-mix(in srgb, var(--theme-danger, #dc2626) 10%, transparent);
+}
+
+.ecb-chevron {
+  color: var(--theme-text-secondary, #9ca3af);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.ecb-chevron-up {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown ── */
+.ecb-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--theme-bg-card, #fff);
+  border: 1px solid var(--theme-border, #d1d5db);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+/* ── Options ── */
+.ecb-option {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--theme-text-primary, #1f2937);
+  cursor: pointer;
+  transition: background 0.1s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ecb-option.ecb-highlighted {
+  background: color-mix(in srgb, var(--theme-primary, #3b82f6) 10%, transparent);
+}
+
+.ecb-option.ecb-selected {
+  font-weight: 600;
+  color: var(--theme-primary, #3b82f6);
+}
+
+.ecb-option.ecb-highlighted.ecb-selected {
+  background: color-mix(in srgb, var(--theme-primary, #3b82f6) 15%, transparent);
+}
+
+.ecb-no-result {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--theme-text-secondary, #9ca3af);
+  text-align: center;
+  font-style: italic;
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare, PackagePlus } from 'lucide-react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare, PackagePlus, DollarSign } from 'lucide-react';
 import api from '../../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -983,6 +983,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
               <span className="ath-lieu sortable" onClick={() => toggleSort('lieu')}>
                 Lieu {sortBy === 'lieu' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
+              <span className="ath-bl">BL</span>
+              <span className="ath-orders">Cmd</span>
               <span className="ath-icons"></span>
               <span className="ath-tasks sortable" onClick={() => toggleSort('tasks')}>
                 Tâches {sortBy === 'tasks' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
@@ -1039,6 +1041,20 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
                     {capitalizeText(affaire.eventName || affaire.titre) || '—'}
                   </span>
                   <span className="ar-lieu" title={affaire.adresseLivraison || ''}>{capitalizeText(affaire.adresseLivraison) || '—'}</span>
+                  <span className="ar-bl">
+                    {affaire.blImportCount > 0 && (
+                      <span className="ar-bl-dot" title={`${affaire.blImportCount} BL/BP importé(s)`}>
+                        <FileText size={12} />
+                      </span>
+                    )}
+                  </span>
+                  <span className="ar-orders">
+                    {affaire.orderCount > 0 && (
+                      <span className="ar-orders-dot" title={`${affaire.orderCount} commande(s)`}>
+                        <DollarSign size={12} />
+                      </span>
+                    )}
+                  </span>
                   <span className="ar-icons">
                     {affaire.localAttachmentCount > 0 && (
                       <span className="ar-icon-badge file-badge" title={`${affaire.localAttachmentCount} fichier(s)`}>

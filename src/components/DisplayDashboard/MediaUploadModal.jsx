@@ -123,7 +123,7 @@ function MediaUploadModal({ onSave, onClose }) {
           </div>
 
           {/* Tags */}
-          <div className="form-group" style={{ marginTop: '1rem' }}>
+          <div className="form-group media-upload-tags">
             <label>Tags (séparés par des virgules)</label>
             <input
               type="text"

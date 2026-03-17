@@ -173,8 +173,8 @@ header {
 /* Structure en colonnes */
 .event-columns {
   display: grid;
-  grid-template-columns: 140px 1fr 200px 180px;
-  gap: 2.5em;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.8em;
   align-items: center;
   width: 100%;
 }
@@ -213,8 +213,7 @@ main {
 .col-time {
   font-weight: 600;
   font-size: 1.1em;
-  width: 140px;
-  min-width: 140px;
+  white-space: nowrap;
 }
 .col-location {
   font-size: 0.85em;
@@ -224,8 +223,6 @@ main {
   align-items: center;
   justify-content: center;
   gap: 0.5em;
-  width: 200px;
-  min-width: 200px;
   height: 70px;
 }
 .col-location .location-icon {
@@ -250,7 +247,13 @@ main {
   object-fit: contain;
   display: block;
 }
-.col-title { font-weight: 500; flex: 1; }
+.col-title {
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .col-affaire {
   display: flex;
   align-items: center;
@@ -349,7 +352,8 @@ footer {
   width: 80px;
   height: 80px;
   border-radius: 10px;
-  object-fit: cover;
+  object-fit: contain;
+  flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 #sonos-info { flex: 1; color: #ffffff; }
@@ -423,13 +427,13 @@ footer {
   #datetime { font-size: clamp(1em, 2.5vw, 1.8em); }
   #date, #heure { font-size: clamp(0.8em, 2vw, 1.2em); }
   .event-columns {
-    grid-template-columns: 100px 1fr 150px 140px;
-    gap: 1.5em;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 0.6em;
   }
-  .col-time { font-size: clamp(1em, 2vw, 1.3em); min-width: 100px; width: 100px; }
+  .col-time { font-size: clamp(1em, 2vw, 1.3em); }
   .col-title { font-size: clamp(0.9em, 1.8vw, 1.2em); }
   .col-location, .col-affaire { font-size: clamp(0.7em, 1.3vw, 0.9em); }
-  .col-location { width: 150px; min-width: 150px; height: 56px; }
+  .col-location { height: 56px; }
   .col-location .location-icon { width: 50px; min-width: 50px; height: 50px; }
   .events-container, .recurrent-events-container { padding: 0.5em 1em; }
   .event-item {
@@ -445,9 +449,9 @@ footer {
   header { padding: 0.3em 1em; }
   #logo { height: 70px; }
   #welcome { font-size: 1.8em; }
-  .event-columns { grid-template-columns: 90px 1fr 120px 120px; gap: 1.2em; }
-  .col-time { min-width: 90px; width: 90px; }
-  .col-location { width: 120px; min-width: 120px; height: 48px; }
+  .event-columns { grid-template-columns: auto 1fr auto auto; gap: 0.5em; }
+  .col-time { white-space: nowrap; }
+  .col-location { height: 48px; }
   .col-location .location-icon { width: 42px; min-width: 42px; height: 42px; }
   .event-item { padding: 0.5em 0.8em; margin-bottom: 0.3em; }
   .events-section, .recurrent-events-section { margin-top: 0.5em; }
@@ -509,8 +513,14 @@ footer {
   padding: 0.3em 0.5em;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.4s ease;
   flex-shrink: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+#btn-test-sound.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 #btn-test-sound:hover {
   background: rgba(0, 225, 255, 0.3);

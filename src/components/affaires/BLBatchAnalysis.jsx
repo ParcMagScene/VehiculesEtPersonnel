@@ -95,10 +95,11 @@ export default function BLBatchAnalysis({ onClose }) {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="modal-header" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px', borderBottom: '1px solid var(--theme-border)' }}>
-          <BarChart2 size={20} style={{ color: 'var(--theme-primary)' }} />
-          <h3 style={{ flex: 1, margin: 0, fontSize: '1.1rem' }}>Analyse batch des BL</h3>
-          <button onClick={onClose} className="modal-close-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+        <div className="theme-modal-header">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, margin: 0, fontSize: '1.1rem', color: 'var(--theme-text-inverse)' }}>
+            <BarChart2 size={20} /> Analyse batch des BL
+          </h3>
+          <button onClick={onClose} className="theme-close-btn">
             <X size={18} />
           </button>
         </div>

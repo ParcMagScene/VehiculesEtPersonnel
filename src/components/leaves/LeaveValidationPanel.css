@@ -437,7 +437,7 @@
 .lvp-decision-field input:focus {
   outline: none;
   border-color: var(--theme-purple-accent);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .lvp-decision-dates {

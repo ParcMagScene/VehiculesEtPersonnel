@@ -88,7 +88,7 @@
 .mobile-reservations .form-group textarea:focus {
   outline: none;
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .mobile-reservations .form-row {
@@ -168,7 +168,7 @@
 
 .vehicle-picker-btn:active {
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 .vehicle-picker-btn.selected {

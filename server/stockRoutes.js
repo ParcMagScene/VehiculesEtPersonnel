@@ -90,10 +90,13 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       const { search, category_id, low_stock, active_only, supplier_id } = req.query;
       let query = `
         SELECT si.*, 
-          sc.name as category_name, sc.color as category_color, sc.icon as category_icon,
+          COALESCE(sc.name, pc.name) as category_name,
+          COALESCE(sc.color, pc.color) as category_color,
+          COALESCE(sc.icon, pc.icon) as category_icon,
           s.name as supplier_name
         FROM stock_items si
         LEFT JOIN stock_categories sc ON si.category_id = sc.id
+        LEFT JOIN stock_categories pc ON sc.parent_id = pc.id
         LEFT JOIN suppliers s ON si.supplier_id = s.id
         WHERE 1=1
       `;
@@ -132,10 +135,11 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
     try {
       const item = db.prepare(`
         SELECT si.*, 
-          sc.name as category_name, sc.color as category_color,
+          COALESCE(sc.name, pc.name) as category_name, COALESCE(sc.color, pc.color) as category_color,
           s.name as supplier_name
         FROM stock_items si
         LEFT JOIN stock_categories sc ON si.category_id = sc.id
+        LEFT JOIN stock_categories pc ON sc.parent_id = pc.id
         LEFT JOIN suppliers s ON si.supplier_id = s.id
         WHERE si.id = ?
       `).get(req.params.id);
@@ -182,9 +186,10 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       addToHistory('stock_item', result.lastInsertRowid, 'create', { name, reference: ref, quantity }, req.user.id, req.user.name);
 
       const item = db.prepare(`
-        SELECT si.*, sc.name as category_name, sc.color as category_color, s.name as supplier_name
+        SELECT si.*, COALESCE(sc.name, pc.name) as category_name, COALESCE(sc.color, pc.color) as category_color, s.name as supplier_name
         FROM stock_items si
         LEFT JOIN stock_categories sc ON si.category_id = sc.id
+        LEFT JOIN stock_categories pc ON sc.parent_id = pc.id
         LEFT JOIN suppliers s ON si.supplier_id = s.id
         WHERE si.id = ?
       `).get(result.lastInsertRowid);
@@ -243,9 +248,10 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       addToHistory('stock_item', req.params.id, 'update', { name, quantity: newQty }, req.user.id, req.user.name);
 
       const item = db.prepare(`
-        SELECT si.*, sc.name as category_name, sc.color as category_color, s.name as supplier_name
+        SELECT si.*, COALESCE(sc.name, pc.name) as category_name, COALESCE(sc.color, pc.color) as category_color, s.name as supplier_name
         FROM stock_items si
         LEFT JOIN stock_categories sc ON si.category_id = sc.id
+        LEFT JOIN stock_categories pc ON sc.parent_id = pc.id
         LEFT JOIN suppliers s ON si.supplier_id = s.id
         WHERE si.id = ?
       `).get(req.params.id);
@@ -372,6 +378,213 @@ export function setupStockMovementsRoutes(app, authenticateToken, requireAdmin) 
     } catch (error) {
       logger.error('Erreur historique mouvements stock:', error);
       res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Import Stock (CSV / inventaire)
+// ═══════════════════════════════════════════════════════════════
+
+// Mapping des catégories inventaire PDF → stock_categories (nom exact ou partiel)
+const INVENTORY_CATEGORY_MAP = {
+  'son':                  'Sonorisation',
+  'sonorisation':         'Sonorisation',
+  'câbles':               'Câbles & Connectique',
+  'cables':               'Câbles & Connectique',
+  'connecteurs':          'Câbles & Connectique',
+  'dicjonteur':           'Distribution Électrique',
+  'disjoncteur':          'Distribution Électrique',
+  'elec':                 'Distribution Électrique',
+  'electrique':           'Distribution Électrique',
+  'lampes':               'Éclairage',
+  'éclairage':            'Éclairage',
+  'eclairage':            'Éclairage',
+  'filtres':              'Éclairage',
+  'structure':            'Structure',
+  'gaffer':               'Consommables',
+  'gaffer & adhésifs':    'Consommables',
+  'adhésifs':             'Consommables',
+  'mousse':               'Consommables',
+  'mousse & protection':  'Consommables',
+  'batteries':            'Consommables',
+  'piles':                'Consommables',
+  'consommables divers':  'Consommables',
+  'consommables':         'Consommables',
+  'électronique':         'Électronique',
+  'electronique':         'Électronique',
+  'mécanique':            'Mécanique & Outillage',
+  'mecanique':            'Mécanique & Outillage',
+  'outillage':            'Mécanique & Outillage',
+  'audiovisuel':          'Audiovisuel',
+  'vidéo':                'Audiovisuel',
+  'backline':             'Backline',
+  'sans catégorie':       'Divers',
+  'sans categorie':       'Divers',
+  'divers':               'Divers',
+};
+
+// Sub-category mapping (more precise)
+const INVENTORY_SUBCATEGORY_MAP = {
+  'son':                  'Accessoires son',
+  'câbles':               'Câbles audio',
+  'cables':               'Câbles audio',
+  'connecteurs':          'Connecteurs',
+  'dicjonteur':           'Disjoncteurs',
+  'disjoncteur':          'Disjoncteurs',
+  'elec':                 'Fiches & Prises',
+  'lampes':               'Lampes',
+  'filtres':              'Filtres & Gélatines',
+  'structure':            'Pièces structure',
+  'gaffer & adhésifs':    'Gaffer & Adhésifs',
+  'gaffer':               'Gaffer & Adhésifs',
+  'mousse & protection':  'Mousse & Protection',
+  'mousse':               'Mousse & Protection',
+  'batteries':            'Piles & Batteries',
+  'piles':                'Piles & Batteries',
+  'consommables divers':  'Consommables divers',
+  'consommables':         'Consommables divers',
+  'électronique':         'Pièces détachées',
+  'electronique':         'Pièces détachées',
+  'mécanique':            'Pièces mécaniques',
+  'mecanique':            'Pièces mécaniques',
+  'sans catégorie':       'Sans catégorie',
+  'sans categorie':       'Sans catégorie',
+};
+
+export function setupStockImportRoutes(app, authenticateToken, requireAdmin) {
+  // Mapping categories endpoint
+  app.get('/api/stock/import/category-map', authenticateToken, (req, res) => {
+    try {
+      const categories = db.prepare(`
+        SELECT sc.id, sc.name, sc.parent_id, pc.name as parent_name
+        FROM stock_categories sc
+        LEFT JOIN stock_categories pc ON sc.parent_id = pc.id
+        ORDER BY sc.parent_id NULLS FIRST, sc.name ASC
+      `).all();
+      res.json({ categories, inventoryMap: INVENTORY_CATEGORY_MAP });
+    } catch (error) {
+      logger.error('Erreur category-map:', error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // Import en masse
+  app.post('/api/stock/import', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { items, mode = 'upsert' } = req.body;
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Aucun article à importer' });
+      }
+      if (items.length > 5000) {
+        return res.status(400).json({ error: 'Maximum 5000 articles par import' });
+      }
+
+      // Build category lookup: name (lowercase) → id
+      const allCats = db.prepare('SELECT id, name, parent_id FROM stock_categories').all();
+      const catByName = {};
+      for (const c of allCats) {
+        catByName[c.name.toLowerCase()] = c.id;
+      }
+
+      // Resolve category for an item
+      function resolveCategoryId(catName) {
+        if (!catName) return null;
+        const lower = catName.toLowerCase().trim();
+        // Direct match by name
+        if (catByName[lower]) return catByName[lower];
+        // Subcategory map
+        const subName = INVENTORY_SUBCATEGORY_MAP[lower];
+        if (subName && catByName[subName.toLowerCase()]) return catByName[subName.toLowerCase()];
+        // Root category map → try a subcategory, fallback to root
+        const rootName = INVENTORY_CATEGORY_MAP[lower];
+        if (rootName && catByName[rootName.toLowerCase()]) return catByName[rootName.toLowerCase()];
+        return null;
+      }
+
+      // Get next ref number
+      const lastRef = db.prepare("SELECT reference FROM stock_items WHERE reference LIKE 'STK-%' ORDER BY reference DESC LIMIT 1").get();
+      let nextNum = lastRef ? parseInt(lastRef.reference.replace('STK-', ''), 10) + 1 : 1;
+
+      const insertStmt = db.prepare(`
+        INSERT INTO stock_items (reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      const updateStmt = db.prepare(`
+        UPDATE stock_items SET name = ?, description = ?, category_id = COALESCE(?, category_id),
+          unit_price = CASE WHEN ? > 0 THEN ? ELSE unit_price END,
+          sell_price = CASE WHEN ? > 0 THEN ? ELSE sell_price END,
+          quantity = ?, location = COALESCE(?, location),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `);
+      const movementStmt = db.prepare(`
+        INSERT INTO stock_movements (stock_item_id, type, quantity, previous_quantity, new_quantity, reason, user_id, user_name)
+        VALUES (?, 'in', ?, 0, ?, 'Import inventaire', ?, ?)
+      `);
+      const movementUpdateStmt = db.prepare(`
+        INSERT INTO stock_movements (stock_item_id, type, quantity, previous_quantity, new_quantity, reason, user_id, user_name)
+        VALUES (?, 'adjustment', ?, ?, ?, 'Mise à jour inventaire', ?, ?)
+      `);
+
+      let inserted = 0, updated = 0, skipped = 0, errors = [];
+
+      const run = db.transaction(() => {
+        for (const item of items) {
+          try {
+            const name = (item.name || '').trim();
+            if (!name) { skipped++; continue; }
+
+            const ref = (item.reference || '').trim();
+            const desc = (item.description || '').trim() || null;
+            const catId = item.category_id || resolveCategoryId(item.category_name || item.category);
+            const qty = Math.max(0, Math.round(Number(item.quantity) || 0));
+            const unitPrice = Math.max(0, Number(item.unit_price || item.value || 0));
+            const sellPrice = Math.max(0, Number(item.sell_price || 0));
+            const location = (item.location || item.emplacement || '').trim() || null;
+
+            // Try to find existing by reference
+            let existing = null;
+            if (ref) {
+              existing = db.prepare('SELECT id, quantity FROM stock_items WHERE reference = ?').get(ref);
+            }
+            if (!existing && name) {
+              existing = db.prepare('SELECT id, quantity FROM stock_items WHERE LOWER(name) = LOWER(?)').get(name);
+            }
+
+            if (existing && mode === 'upsert') {
+              updateStmt.run(name, desc, catId, unitPrice, unitPrice, sellPrice, sellPrice, qty, location, existing.id);
+              if (qty !== existing.quantity) {
+                movementUpdateStmt.run(existing.id, Math.abs(qty - existing.quantity), existing.quantity, qty, req.user.id, req.user.name);
+              }
+              updated++;
+            } else if (!existing) {
+              const finalRef = ref || `STK-${String(nextNum++).padStart(5, '0')}`;
+              insertStmt.run(finalRef, name, desc, catId, 'u', unitPrice, sellPrice, qty, 0, location, null);
+              const newId = db.prepare('SELECT last_insert_rowid() as id').get().id;
+              if (qty > 0) {
+                movementStmt.run(newId, qty, qty, req.user.id, req.user.name);
+              }
+              inserted++;
+            } else {
+              skipped++;
+            }
+          } catch (e) {
+            errors.push(`${item.reference || item.name}: ${e.message}`);
+            skipped++;
+          }
+        }
+      });
+
+      run();
+
+      addToHistory('stock_import', null, 'import', { inserted, updated, skipped, total: items.length }, req.user.id, req.user.name);
+      logger.info(`Import stock: ${inserted} insérés, ${updated} mis à jour, ${skipped} ignorés (total: ${items.length})`);
+
+      res.json({ inserted, updated, skipped, errors: errors.slice(0, 20), total: items.length });
+    } catch (error) {
+      logger.error('Erreur import stock:', error);
+      res.status(500).json({ error: 'Erreur import: ' + error.message });
     }
   });
 }

@@ -1,0 +1,727 @@
+/* ============================================================
+   SupplierCatalogPanel — Styles Articles Fournisseurs
+   ============================================================ */
+
+/* ─── Layout ─── */
+.supplier-articles-panel {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.supplier-articles-panel .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.supplier-articles-panel .panel-header h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.supplier-articles-panel .panel-header h2 svg {
+  color: var(--theme-primary);
+}
+
+/* ─── Toolbar filtres ─── */
+.catalog-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--theme-border-light);
+  border-radius: 10px;
+}
+
+.catalog-toolbar input[type="text"],
+.catalog-toolbar select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  min-width: 160px;
+}
+
+.catalog-toolbar .entity-combobox {
+  min-width: 160px;
+  max-width: 260px;
+}
+
+.catalog-toolbar input[type="text"]:focus,
+.catalog-toolbar select:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* ─── Boutons ─── */
+.catalog-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.catalog-btn-primary {
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+}
+.catalog-btn-primary:hover {
+  background: var(--theme-primary-dark);
+  transform: translateY(-1px);
+}
+
+.catalog-btn-secondary {
+  background: var(--theme-border-light);
+  color: var(--theme-text-primary);
+  border: 1px solid var(--theme-border);
+}
+.catalog-btn-secondary:hover {
+  background: var(--theme-border);
+}
+
+.catalog-btn-danger {
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-dark);
+}
+.catalog-btn-danger:hover {
+  background: var(--theme-danger-bg);
+}
+
+/* ─── Table ─── */
+.catalog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.catalog-table th {
+  background: var(--theme-border-light);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--theme-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.catalog-table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--theme-border-light);
+  color: var(--theme-text-primary);
+  vertical-align: middle;
+}
+
+.catalog-table tr:hover {
+  background: var(--bg-hover, rgba(99, 102, 241, 0.04));
+}
+
+/* ─── Badge ─── */
+.catalog-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--theme-purple-bg);
+  color: var(--theme-purple-accent);
+}
+
+/* ─── Modal import PDF ─── */
+.catalog-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--theme-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-overlay);
+  animation: catalogFadeIn 0.2s ease;
+}
+
+@keyframes catalogFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.catalog-modal {
+  background: var(--theme-bg-card);
+  border-radius: 14px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: catalogSlideUp 0.25s ease;
+}
+
+@keyframes catalogSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.catalog-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.catalog-modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.catalog-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.catalog-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--theme-border);
+}
+
+/* ─── Formulaire import ─── */
+.catalog-form-group {
+  margin-bottom: 1rem;
+}
+
+.catalog-form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  margin-bottom: 0.3rem;
+}
+
+.catalog-form-group input,
+.catalog-form-group select,
+.catalog-form-group textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  box-sizing: border-box;
+}
+
+.catalog-form-group input:focus,
+.catalog-form-group select:focus,
+.catalog-form-group textarea:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.catalog-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ─── Import: états & feedback ─── */
+.catalog-import-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-dark);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.catalog-import-file-info {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--theme-text-secondary);
+}
+
+/* ─── Liste de fichiers multi-import ─── */
+.catalog-import-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.catalog-import-file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  background: var(--theme-border-light);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.catalog-import-file-item span:first-of-type {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog-import-file-size {
+  color: var(--theme-text-muted);
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+.catalog-btn-icon {
+  background: none;
+  border: none;
+  color: var(--theme-text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.catalog-btn-icon:hover {
+  color: var(--theme-danger);
+  background: var(--theme-danger-bg);
+}
+
+/* ─── Section par fichier dans le preview ─── */
+.catalog-import-file-section {
+  margin-bottom: 1.25rem;
+}
+
+.catalog-import-file-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid var(--theme-primary);
+  font-size: 0.9rem;
+}
+
+.catalog-import-file-header .catalog-import-hint {
+  margin-left: auto;
+}
+
+.catalog-import-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--theme-text-secondary);
+}
+
+.catalog-import-loading p {
+  margin: 0.5rem 0;
+}
+
+.catalog-import-hint {
+  font-size: 0.8rem;
+  color: var(--theme-text-muted);
+}
+
+.catalog-import-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  padding: 0.75rem 1rem;
+  background: var(--theme-border-light);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.catalog-import-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--theme-primary);
+}
+
+.catalog-import-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--theme-text-secondary);
+}
+
+.catalog-import-empty svg {
+  opacity: 0.3;
+  margin-bottom: 0.75rem;
+}
+
+.catalog-import-preview {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--theme-border);
+  border-radius: 10px;
+}
+
+.catalog-import-ref {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: var(--theme-primary);
+  font-weight: 600;
+}
+
+/* ─── Stats cards ─── */
+.supplier-stat-card {
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.supplier-stat-card h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.supplier-stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--theme-primary);
+}
+
+.supplier-stat-label {
+  font-size: 0.85rem;
+  color: var(--theme-text-secondary);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .supplier-articles-panel {
+    padding: 1rem;
+  }
+
+  .catalog-toolbar {
+    flex-direction: column;
+  }
+
+  .catalog-toolbar input[type="text"],
+  .catalog-toolbar select {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .catalog-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .parser-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================
+   CatalogSettingsPanel — Apprentissage & Taxonomie
+   ============================================================ */
+
+.catalog-settings {
+  padding: 0;
+}
+
+.catalog-settings-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--theme-border-light);
+}
+
+.catalog-settings-section {
+  animation: fadeIn 0.2s ease;
+}
+
+.catalog-settings-section h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.catalog-settings-desc {
+  font-size: 0.9rem;
+  color: var(--theme-text-secondary);
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+/* ─── Parser metrics grid ─── */
+.parser-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.parser-metric-card {
+  background: var(--theme-border-light);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.parser-metric-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--theme-text-primary);
+}
+
+.parser-metric-label {
+  font-size: 0.75rem;
+  color: var(--theme-text-secondary);
+  margin-top: 2px;
+}
+
+/* ─── Parser report ─── */
+.parser-report {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: var(--theme-border-light);
+  border-radius: 12px;
+}
+
+.parser-report h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: var(--theme-text-primary);
+}
+
+.parser-section {
+  margin-top: 1rem;
+}
+
+.parser-section h5 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--theme-text-secondary);
+}
+
+.parser-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.parser-skipped-lines {
+  margin-top: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 0.78rem;
+  font-family: monospace;
+  background: var(--theme-bg-secondary, #f8f8f8);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.parser-skipped-line {
+  padding: 3px 0;
+  border-bottom: 1px solid var(--theme-border-light);
+  word-break: break-all;
+}
+
+/* ─── Parser comparison ─── */
+.parser-comparison {
+  margin-top: 1.5rem;
+}
+
+.parser-comparison h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.parser-best-row {
+  background: color-mix(in srgb, var(--theme-success) 8%, transparent) !important;
+}
+
+.parser-quality-bar {
+  width: 80px;
+  height: 8px;
+  background: var(--theme-border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.parser-quality-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* ─── Taxonomy ─── */
+.taxonomy-suggestions h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-text-primary);
+}
+
+.taxonomy-group {
+  background: var(--theme-border-light);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.taxonomy-group-header {
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.15s;
+}
+
+.taxonomy-group-header:hover {
+  background: color-mix(in srgb, var(--theme-primary) 5%, transparent);
+}
+
+.taxonomy-group-members {
+  padding: 0 1rem 0.75rem;
+}
+
+.taxonomy-member {
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border) 40%, transparent);
+  font-size: 0.88rem;
+}
+
+.taxonomy-member:last-child {
+  border-bottom: none;
+}
+
+.taxonomy-member-canonical {
+  opacity: 0.8;
+}
+
+.taxonomy-member-name {
+  color: var(--theme-text-primary);
+}
+
+.taxonomy-member-target {
+  color: var(--theme-success);
+  font-weight: 600;
+}
+
+.taxonomy-full-list {
+  margin-top: 1.5rem;
+}
+
+.taxonomy-full-list summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+  padding: 0.5rem 0;
+}
+
+.taxonomy-apply-bar {
+  position: sticky;
+  bottom: 0;
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--theme-bg-primary, #fff);
+  border-top: 2px solid var(--theme-primary);
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+  z-index: 10;
+}
+
+.taxonomy-apply-bar span {
+  font-weight: 600;
+  color: var(--theme-text-primary);
+}
+
+/* ─── Badge warning ─── */
+.catalog-badge-warning {
+  background: color-mix(in srgb, var(--theme-warning) 15%, transparent) !important;
+  color: var(--theme-warning) !important;
+}
+
+/* ─── Spin animation ─── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

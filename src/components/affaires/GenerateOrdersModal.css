@@ -1,0 +1,278 @@
+/* ━━━ GenerateOrdersModal.css ━━━ */
+
+/* Overlay — utilise shared-overlay du theme */
+.gen-orders-overlay {
+  z-index: var(--z-overlay, 1000);
+}
+
+.gen-orders-modal {
+  background: var(--bg-primary, #fff);
+  border-radius: 16px;
+  width: min(92vw, 680px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-modal, 0 24px 48px rgba(0,0,0,.2));
+  animation: genOrdersFade .2s ease;
+}
+
+@keyframes genOrdersFade {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Body ── */
+.gen-orders-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.gen-orders-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: var(--text-secondary, #888);
+}
+
+.gen-orders-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-danger, #dc3545) 10%, transparent);
+  color: var(--theme-danger, #dc3545);
+  font-weight: 500;
+}
+
+.gen-orders-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary, #888);
+}
+.gen-orders-empty svg {
+  margin-bottom: 12px;
+  opacity: .4;
+}
+.gen-orders-empty p {
+  margin: 6px 0;
+  font-size: .95rem;
+}
+.gen-orders-empty-hint {
+  font-size: .85rem;
+  opacity: .7;
+}
+
+/* ── Résumé en-tête ── */
+.gen-orders-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: .88rem;
+  color: var(--text-secondary, #888);
+}
+.gen-orders-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--bg-tertiary, #f3f3f3);
+}
+.gen-orders-warn {
+  color: var(--theme-warning, #e67e22);
+  background: color-mix(in srgb, var(--theme-warning, #e67e22) 10%, transparent) !important;
+}
+
+/* ── Liste fournisseurs ── */
+.gen-orders-suppliers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.supplier-block {
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.supplier-block:hover {
+  border-color: var(--theme-color, #007bff);
+}
+
+.supplier-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--bg-secondary, #f9f9f9);
+  transition: background .15s;
+}
+.supplier-header:hover {
+  background: var(--bg-tertiary, #f3f3f3);
+}
+
+.supplier-expand {
+  color: var(--text-secondary, #888);
+  flex-shrink: 0;
+}
+
+.supplier-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.supplier-name {
+  font-weight: 600;
+  font-size: .92rem;
+  color: var(--text-primary, #333);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.supplier-count {
+  font-size: .8rem;
+  color: var(--text-muted, #999);
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--bg-primary, #fff);
+  white-space: nowrap;
+}
+
+/* ── Select action ── */
+.supplier-action-select select {
+  padding: 6px 28px 6px 10px;
+  border-radius: var(--btn-radius, 8px);
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #333);
+  font-size: .82rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+.supplier-action-select select:focus {
+  outline: none;
+  border-color: var(--theme-color, #007bff);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-color, #007bff) 20%, transparent);
+}
+
+.supplier-new-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--theme-color, #007bff);
+  background: color-mix(in srgb, var(--theme-color, #007bff) 10%, transparent);
+}
+
+/* ── Tableau articles ── */
+.supplier-items {
+  padding: 0 14px 12px;
+  overflow-x: auto;
+}
+.supplier-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+}
+.supplier-items-table thead th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--text-secondary, #888);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  white-space: nowrap;
+}
+.supplier-items-table tbody td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border-light, #f0f0f0);
+  color: var(--text-primary, #333);
+}
+.si-ref {
+  font-family: monospace;
+  font-size: .8rem;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.si-desc {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.si-qty, .si-price {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ── Résultats ── */
+.gen-orders-results {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--bg-secondary, #f9f9f9);
+}
+.gen-orders-results h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: .92rem;
+  color: var(--theme-success, #28a745);
+}
+.result-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: .85rem;
+}
+.result-row.success { color: var(--theme-success, #28a745); }
+.result-row.error   { color: var(--theme-danger, #dc3545); }
+
+/* ── Footer ── */
+.gen-orders-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  background: var(--bg-secondary, #f9f9f9);
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .gen-orders-modal {
+    width: 98vw;
+    max-height: 92vh;
+    border-radius: 12px;
+  }
+  .supplier-header {
+    flex-wrap: wrap;
+  }
+  .supplier-action-select {
+    width: 100%;
+    margin-top: 6px;
+  }
+  .supplier-action-select select {
+    width: 100%;
+  }
+}

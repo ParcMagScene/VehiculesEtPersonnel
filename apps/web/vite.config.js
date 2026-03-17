@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  // Le dossier public est à la racine du monorepo
+  publicDir: '../../public',
   build: {
     // Supprimer console.log et debugger en production
     minify: 'esbuild',

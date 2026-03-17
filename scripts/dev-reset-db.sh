@@ -9,7 +9,7 @@
 
 set -e
 
-SERVER_DIR="/Users/reunion/eM@g/server"
+SERVER_DIR="$(cd "$(dirname "$0")/.." && pwd)/apps/api"
 DEV_DB="$SERVER_DIR/vehicules-dev.db"
 PROD_DB="$SERVER_DIR/vehicules.db"
 

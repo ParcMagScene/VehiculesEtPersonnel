@@ -893,7 +893,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // Créer le dossier de justificatifs
-      const justificationsDir = path.join(__dirname, '..', 'public', 'leave-justifications');
+      const justificationsDir = path.join(__dirname, '..', '..', 'public', 'leave-justifications');
       if (!fs.existsSync(justificationsDir)) {
         fs.mkdirSync(justificationsDir, { recursive: true });
       }

@@ -13,7 +13,7 @@ export function setupProfileRoutes(app, authenticateToken, requireAdmin) {
 // Multer pour upload d'avatars
 const avatarStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dir = path.join(__dirname, '..', 'public', 'avatars');
+    const dir = path.join(__dirname, '..', '..', 'public', 'avatars');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
@@ -75,7 +75,7 @@ app.delete('/api/users/me/avatar', authenticateToken, (req, res) => {
   try {
     const user = db.prepare('SELECT avatar FROM users WHERE id = ?').get(req.user.id);
     if (user?.avatar) {
-      const filePath = path.join(__dirname, '..', 'public', user.avatar);
+      const filePath = path.join(__dirname, '..', '..', 'public', user.avatar);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
     db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(req.user.id);
@@ -163,7 +163,7 @@ app.delete('/api/users/:id/avatar', authenticateToken, requireAdmin, (req, res) 
     if (!target) return res.status(404).json({ error: 'Utilisateur non trouvé' });
 
     if (target.avatar) {
-      const filePath = path.join(__dirname, '..', 'public', target.avatar);
+      const filePath = path.join(__dirname, '..', '..', 'public', target.avatar);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
     db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(id);

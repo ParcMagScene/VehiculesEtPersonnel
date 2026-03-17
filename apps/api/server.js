@@ -99,27 +99,27 @@ app.use('/api/auth/self-reset-password', authLimiter);
 const authenticateToken = createAuthenticateToken(JWT_SECRET);
 
 // Servir les fichiers statiques depuis le dossier public/attachments
-const attachmentsPath = path.join(__dirname, '..', 'public', 'attachments');
+const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments');
 app.use('/attachments', express.static(attachmentsPath));
 
 // Servir les BL/BP importés
-app.use('/bl-imports', express.static(path.join(__dirname, '..', 'public', 'bl-imports')));
+app.use('/bl-imports', express.static(path.join(__dirname, '..', '..', 'public', 'bl-imports')));
 
 // Servir les avatars
-const avatarsPath = path.join(__dirname, '..', 'public', 'avatars');
+const avatarsPath = path.join(__dirname, '..', '..', 'public', 'avatars');
 if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
 app.use('/avatars', express.static(avatarsPath));
 
 // ── Client TV standalone (fusion calendar-dashboard) ──
-app.use('/display-gifs', express.static(path.join(__dirname, '..', 'public', 'display-gifs')));
-app.use('/display-logo', express.static(path.join(__dirname, '..', 'public', 'display-logo')));
-app.use('/display-sneaky', express.static(path.join(__dirname, '..', 'public', 'display-sneaky')));
-app.use('/display-media', express.static(path.join(__dirname, '..', 'public', 'display-media')));
-app.use('/Logos', express.static(path.join(__dirname, '..', 'public', 'Logos')));
+app.use('/display-gifs', express.static(path.join(__dirname, '..', '..', 'public', 'display-gifs')));
+app.use('/display-logo', express.static(path.join(__dirname, '..', '..', 'public', 'display-logo')));
+app.use('/display-sneaky', express.static(path.join(__dirname, '..', '..', 'public', 'display-sneaky')));
+app.use('/display-media', express.static(path.join(__dirname, '..', '..', 'public', 'display-media')));
+app.use('/Logos', express.static(path.join(__dirname, '..', '..', 'public', 'Logos')));
 app.get('/SNCF.wav', (_req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'SNCF.wav'));
+  res.sendFile(path.join(__dirname, '..', '..', 'public', 'SNCF.wav'));
 });
-const tvClientDir = path.join(__dirname, '..', 'public', 'tv-client');
+const tvClientDir = path.join(__dirname, '..', 'tv-client');
 app.use('/tv-client', (req, res, next) => {
   if (req.path.endsWith('.html') || req.path === '/') {
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -306,7 +306,7 @@ function cleanExpiredSessions() {
  * Nettoyage des fichiers temporaires > 24h dans /attachments/TEMP/
  */
 function cleanTempFiles() {
-  const tempDir = path.join(__dirname, '..', 'public', 'attachments', 'TEMP');
+  const tempDir = path.join(__dirname, '..', '..', 'public', 'attachments', 'TEMP');
   try {
     if (!fs.existsSync(tempDir)) return;
     const files = fs.readdirSync(tempDir);

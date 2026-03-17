@@ -3,7 +3,7 @@ export default {
     {
       name: "vehicules-backend",
       script: "server.js",
-      cwd: "/Users/reunion/eM@g/server",
+      cwd: "/Users/reunion/eM@g/apps/api",
       instances: 1,
       autorestart: true,
       watch: false,
@@ -15,8 +15,8 @@ export default {
         NODE_ENV: "production"
       },
       // Logs structurés
-      error_file: "/Users/reunion/eM@g/server/logs/backend-error.log",
-      out_file: "/Users/reunion/eM@g/server/logs/backend-out.log",
+      error_file: "/Users/reunion/eM@g/apps/api/logs/backend-error.log",
+      out_file: "/Users/reunion/eM@g/apps/api/logs/backend-out.log",
       merge_logs: true,
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
       // Sauvegarde automatique toutes les 6 heures
@@ -30,7 +30,7 @@ export default {
       name: "vehicules",
       script: "npx",
       args: "vite preview",
-      cwd: "/Users/reunion/eM@g",
+      cwd: "/Users/reunion/eM@g/apps/web",
       instances: 1,
       autorestart: true,
       watch: false,

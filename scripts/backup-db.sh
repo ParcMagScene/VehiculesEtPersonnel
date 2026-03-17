@@ -19,7 +19,7 @@ set -euo pipefail
 # ─── Configuration ───
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-SERVER_DIR="$PROJECT_DIR/server"
+SERVER_DIR="$PROJECT_DIR/apps/api"
 
 DB_FILENAME="${1:-${DB_PATH:-vehicules.db}}"
 DB_FILE="$SERVER_DIR/$DB_FILENAME"

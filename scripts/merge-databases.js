@@ -18,9 +18,9 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const serverDir = join(__dirname, '..', 'server');
+const serverDir = join(__dirname, '..', 'apps', 'api');
 
-// Resolve better-sqlite3 from server/node_modules
+// Resolve better-sqlite3 from apps/api/node_modules
 const require = createRequire(join(serverDir, 'package.json'));
 const Database = require('better-sqlite3');
 

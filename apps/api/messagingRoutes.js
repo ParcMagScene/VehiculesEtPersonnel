@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Dossier pour les fichiers de messagerie
-const UPLOADS_DIR = join(__dirname, '..', 'public', 'messaging-uploads');
+const UPLOADS_DIR = join(__dirname, '..', '..', 'public', 'messaging-uploads');
 if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true });
 
 export function setupMessagingRoutes(app, authenticateToken) {

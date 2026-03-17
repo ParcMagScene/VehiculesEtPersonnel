@@ -726,7 +726,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
   // POST /api/annuaire/import/clients-csv — Import Clients Locmat
   app.post('/api/annuaire/import/clients-csv', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const csvPath = path.join(__dirname, '..', 'public', 'imports', 'Clients Locmat.csv');
+      const csvPath = path.join(__dirname, '..', '..', 'public', 'imports', 'Clients Locmat.csv');
       if (!fs.existsSync(csvPath)) return res.status(404).json({ error: 'Fichier CSV introuvable' });
 
       const raw = fs.readFileSync(csvPath, 'utf-8');
@@ -778,7 +778,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
   // POST /api/annuaire/import/suppliers-csv — Import Fournisseurs Locmat (format cassé)
   app.post('/api/annuaire/import/suppliers-csv', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const csvPath = path.join(__dirname, '..', 'public', 'imports', 'Fournisseurs Locmat.csv');
+      const csvPath = path.join(__dirname, '..', '..', 'public', 'imports', 'Fournisseurs Locmat.csv');
       if (!fs.existsSync(csvPath)) return res.status(404).json({ error: 'Fichier CSV introuvable' });
 
       const raw = fs.readFileSync(csvPath, 'utf-8');

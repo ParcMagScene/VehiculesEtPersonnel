@@ -7,7 +7,7 @@ import logger from './logger.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const attachmentsPath = path.join(__dirname, '..', 'public', 'attachments');
+const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments');
 
 // ── Helpers sécurité ──
 function sanitizePath(basePath, relativePath) {
@@ -23,7 +23,7 @@ function isValidAffaireId(id) {
 // ── Multer configs ──
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '..', 'public', 'attachments', 'TEMP');
+    const uploadDir = path.join(__dirname, '..', '..', 'public', 'attachments', 'TEMP');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -203,7 +203,7 @@ app.get('/api/attachments/:affaireId', authenticateToken, (req, res) => {
 // Lister les affaires ayant des pièces jointes (sécurisé)
 app.get('/api/attachments-index', authenticateToken, (req, res) => {
   try {
-    const attachDir = path.join(__dirname, '..', 'public', 'attachments');
+    const attachDir = path.join(__dirname, '..', '..', 'public', 'attachments');
     if (!fs.existsSync(attachDir)) {
       return res.json({ affaires: [], counts: {} });
     }

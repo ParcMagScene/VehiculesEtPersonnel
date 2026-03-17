@@ -42,7 +42,7 @@ function enrichItemsFournisseur(items) {
   }
 }
 
-const attachmentsBase = path.join(__dirname, '..', 'public', 'attachments');
+const attachmentsBase = path.join(__dirname, '..', '..', 'public', 'attachments');
 
 /**
  * Copie un BL/BP importé dans le dossier pièces jointes de l'affaire.
@@ -55,7 +55,7 @@ function copyBLToAttachments(file, affaireId) {
     if (!safeId) return;
     const destDir = path.join(attachmentsBase, safeId);
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-    const srcPath = path.join(__dirname, '..', 'public', 'bl-imports', file.filename);
+    const srcPath = path.join(__dirname, '..', '..', 'public', 'bl-imports', file.filename);
     const destName = file.originalname;
     const destPath = path.join(destDir, destName);
     // Ne pas écraser si le fichier existe déjà (réimport)
@@ -515,7 +515,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
 
       // Supprimer le fichier physique s'il existe
       if (existing.file_path) {
-        const filePath = path.join(__dirname, '..', 'public', 'bl-imports', existing.file_path);
+        const filePath = path.join(__dirname, '..', '..', 'public', 'bl-imports', existing.file_path);
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
         }

@@ -1129,8 +1129,8 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   // GET /api/equipment-photos — Liste des photos/logos disponibles
   app.get('/api/equipment-photos', authenticateToken, (req, res) => {
     try {
-      const photosDir = join(__dirname, '..', 'public', 'Photos', 'Matériel');
-      const logosDir = join(__dirname, '..', 'public', 'Logos');
+      const photosDir = join(__dirname, '..', '..', 'public', 'Photos', 'Matériel');
+      const logosDir = join(__dirname, '..', '..', 'public', 'Logos');
       
       let photos = [];
       let logos = [];
@@ -1151,7 +1151,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   });
 
   // ═══ UPLOAD PHOTO MATÉRIEL ═══
-  const photosDir = join(__dirname, '..', 'public', 'Photos', 'Matériel');
+  const photosDir = join(__dirname, '..', '..', 'public', 'Photos', 'Matériel');
   if (!existsSync(photosDir)) mkdirSync(photosDir, { recursive: true });
   
   const photoStorage = multer.diskStorage({
@@ -1246,7 +1246,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   const resolveZonesPath = (filename) => {
     const dataPath = join(__dirname, 'data', filename);
     if (existsSync(dataPath)) return dataPath;
-    return join(__dirname, '..', 'public', filename);
+    return join(__dirname, '..', '..', 'public', filename);
   };
 
   // ═══ GET /api/equipment-all-depot-zones — Toutes les zones des deux dépôts ═══

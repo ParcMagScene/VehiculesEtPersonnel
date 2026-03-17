@@ -14,8 +14,9 @@
 
 set -e
 
-PROJ_DIR="/Users/reunion/eM@g"
-SERVER_DIR="$PROJ_DIR/server"
+PROJ_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SERVER_DIR="$PROJ_DIR/apps/api"
+WEB_DIR="$PROJ_DIR/apps/web"
 DEV_DB="$SERVER_DIR/vehicules-dev.db"
 PROD_DB="$SERVER_DIR/vehicules.db"
 
@@ -94,7 +95,7 @@ echo "   Proxy /api → http://localhost:3003"
 echo ""
 
 # 6. Lancer le frontend dev (en premier plan)
-cd "$PROJ_DIR"
+cd "$WEB_DIR"
 npx vite
 
 # Quand vite est arrêté (Ctrl+C), arrêter aussi le backend dev

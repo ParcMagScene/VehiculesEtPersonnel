@@ -6,8 +6,9 @@
 
 set -e
 
-PROJ_DIR="/Users/reunion/eM@g"
-DIST_DIR="$PROJ_DIR/dist"
+PROJ_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+WEB_DIR="$PROJ_DIR/apps/web"
+DIST_DIR="$WEB_DIR/dist"
 BACKUP_DIR="$PROJ_DIR/dist-backup"
 
 echo "🔒 Déploiement sécurisé en cours..."
@@ -29,7 +30,7 @@ echo "🔨 Build en cours..."
 cd "$PROJ_DIR"
 
 # Build normal (écrase dist/)
-if npm run build; then
+if (cd "$WEB_DIR" && npx vite build); then
   echo "   ✅ Build réussi"
 else
   echo "   ❌ Build échoué !"

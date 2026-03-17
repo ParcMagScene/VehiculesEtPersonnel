@@ -3,7 +3,7 @@
  * Tests d'intégration API — eM@g backend
  *
  * Pré-requis : le serveur de dev doit tourner sur localhost:3003
- *   NODE_ENV=development node server/server.js --dev
+ *   NODE_ENV=development node apps/api/server.js --dev
  *
  * Usage :
  *   node --test tests/api-integration.test.js

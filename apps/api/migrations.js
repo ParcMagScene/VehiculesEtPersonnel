@@ -501,8 +501,8 @@ try {
   if (!migDone) {
     const blRows = db.prepare('SELECT id, affaire_id, filename, file_path, parsed_data FROM bl_imports WHERE parsed_data IS NOT NULL').all();
     let enriched = 0;
-    const attachBase = path.join(__dirname, '..', 'public', 'attachments');
-    const blBase = path.join(__dirname, '..', 'public', 'bl-imports');
+    const attachBase = path.join(__dirname, '..', '..', 'public', 'attachments');
+    const blBase = path.join(__dirname, '..', '..', 'public', 'bl-imports');
 
     for (const row of blRows) {
       try {

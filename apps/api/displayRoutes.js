@@ -24,9 +24,9 @@ let alarmTestTimestamp = 0;
 
 // ── Répertoires Dashboard TV ──────────────────────────────────
 const displayDataDir = join(__dirname, 'display-data');
-const gifsDir = join(__dirname, '..', 'public', 'display-gifs');
-const logoDir = join(__dirname, '..', 'public', 'display-logo');
-const sneakyDir = join(__dirname, '..', 'public', 'display-sneaky');
+const gifsDir = join(__dirname, '..', '..', 'public', 'display-gifs');
+const logoDir = join(__dirname, '..', '..', 'public', 'display-logo');
+const sneakyDir = join(__dirname, '..', '..', 'public', 'display-sneaky');
 [displayDataDir, gifsDir, logoDir, sneakyDir].forEach(d => {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
@@ -529,7 +529,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       if (!media) return res.status(404).json({ error: 'Média introuvable' });
 
       // Supprimer le fichier physique
-      const fullPath = join(__dirname, '..', 'public', media.file_path);
+      const fullPath = join(__dirname, '..', '..', 'public', media.file_path);
       if (fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);
       }

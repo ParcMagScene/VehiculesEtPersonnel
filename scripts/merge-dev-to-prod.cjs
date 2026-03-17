@@ -98,7 +98,7 @@ async function main() {
     console.log('\nTables enrichies:');
     enriched.forEach(r => console.log('  ' + r.name + ': ' + r.before + ' -> ' + r.after + ' (+' + r.added + ')'));
   }
-  console.log('\nBase fusionnee prete: server/vehicules-merged.db');
+  console.log('\nBase fusionnee prete: apps/api/vehicules-merged.db');
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

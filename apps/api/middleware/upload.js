@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 function createStorage(subDir, prefix) {
   return multer.diskStorage({
     destination: (_req, _file, cb) => {
-      const dir = path.join(__dirname, '..', '..', 'public', subDir);
+      const dir = path.join(__dirname, '..', '..', '..', 'public', subDir);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       cb(null, dir);
     },
@@ -45,7 +45,7 @@ export const uploadBL = multer({
 /**
  * Upload média — pour le dashboard d'affichage (images, vidéos)
  */
-const mediaDir = path.join(__dirname, '..', '..', 'public', 'display-media');
+const mediaDir = path.join(__dirname, '..', '..', '..', 'public', 'display-media');
 if (!fs.existsSync(mediaDir)) fs.mkdirSync(mediaDir, { recursive: true });
 
 export const uploadMedia = multer({

@@ -1201,7 +1201,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
 // ═══════════════════════════════════════════════════════════════
 export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmin) {
   // Upload dir
-  const uploadDir = path.join(__dirname, '..', 'public', 'supplier-docs');
+  const uploadDir = path.join(__dirname, '..', '..', 'public', 'supplier-docs');
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
   // Liste des documents fournisseur

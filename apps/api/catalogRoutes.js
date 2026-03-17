@@ -125,7 +125,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   // GET /api/catalog/equipment/zones — Données des zones de dépôt depuis depot-zones.json
   app.get('/api/catalog/equipment/zones', authenticateToken, (req, res) => {
     try {
-      const zonesPath = join(__dirname, '..', 'public', 'depot-zones.json');
+      const zonesPath = join(__dirname, '..', '..', 'public', 'depot-zones.json');
       const data = JSON.parse(readFileSync(zonesPath, 'utf-8'));
       res.json(data);
     } catch (error) {

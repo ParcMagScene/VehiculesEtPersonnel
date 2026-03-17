@@ -1,20 +1,25 @@
 {
   "name": "emag",
   "version": "2.0.0",
-  "description": "eM@g - Gestion du parc Mag Scène",
+  "private": true,
+  "description": "eM@g - Gestion du parc Mag Scène (monorepo)",
   "type": "module",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
   "scripts": {
-    "dev": "vite",
-    "dev:backend": "cd server && NODE_ENV=development node server.js --dev",
+    "dev": "npm run dev --workspace=apps/web",
+    "dev:backend": "cd apps/api && NODE_ENV=development node server.js --dev",
     "dev:start": "bash scripts/dev-start.sh",
     "dev:reset-db": "bash scripts/dev-reset-db.sh",
-    "build": "vite build",
-    "preview": "vite preview",
+    "build": "npm run build --workspace=apps/web",
+    "preview": "npm run preview --workspace=apps/web",
     "deploy": "bash scripts/safe-deploy.sh",
-    "lint": "eslint . --ext js,jsx",
-    "lint:fix": "eslint . --ext js,jsx --fix",
-    "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
-    "format:check": "prettier --check \"src/**/*.{js,jsx,css}\"",
+    "lint": "npm run lint --workspace=apps/web",
+    "lint:fix": "npm run lint:fix --workspace=apps/web",
+    "format": "npm run format --workspace=apps/web",
+    "format:check": "npm run format:check --workspace=apps/web",
     "update-photos": "node scripts/generate-photo-list.js",
     "watch-photos": "node scripts/watch-photos.js",
     "smoke-test": "node scripts/smoke-test.js",
@@ -22,29 +27,7 @@
     "test:api": "node --test tests/api-integration.test.js",
     "test:all": "node --test tests/"
   },
-  "dependencies": {
-    "date-fns": "^3.3.1",
-    "dompurify": "^3.3.1",
-    "helmet": "^8.1.0",
-    "lucide-react": "^0.344.0",
-    "pdfjs-dist": "^5.4.530",
-    "qrcode.react": "^4.2.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "sonos": "^1.14.3",
-    "xlsx": "^0.18.5",
-    "xss": "^1.0.15"
-  },
   "devDependencies": {
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react": "^7.34.0",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "md-to-pdf": "^5.2.5",
-    "prettier": "^3.8.1",
-    "vite": "^5.2.0"
+    "md-to-pdf": "^5.2.5"
   }
 }

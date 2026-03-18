@@ -10,6 +10,7 @@ import api from './utils/api';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useFeedback } from './hooks/useFeedback';
 import { useTheme } from './hooks/useTheme';
+import { useVSCodeTheme } from './hooks/useVSCodeTheme';
 import { useDraggableModals } from './hooks/useDraggableModals';
 import { ToastProvider } from './hooks/useToast';
 import { NavigationProvider } from './contexts/NavigationContext';
@@ -39,6 +40,7 @@ const PlanningPanel = lazy(() => import('./components/planning/PlanningPanel'));
 const MessagingPanel = lazy(() => import('./components/messaging/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/mailing/MailingPanel'));
 const AnnuairePanel = lazy(() => import('./components/annuaire/AnnuairePanel'));
+const VideoPanel = lazy(() => import('./components/video/VideoPanel'));
 const AffaireDetailDialog = lazy(() => import('./components/affaires/AffaireDetailPanel').then(m => ({ default: m.AffaireDetailDialog })));
 const UserPreferencesModal = lazy(() => import('./components/auth/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
@@ -69,6 +71,7 @@ function AppContent() {
   // ═══ Feedback & Theme ═══
   const { toastRef, toast } = useFeedback();
   const { theme, toggleTheme, isDark, palette, setPalette } = useTheme();
+  const { isVSCode } = useVSCodeTheme();
   useDraggableModals();
 
   // ═══ Données métier (hook) ═══
@@ -399,7 +402,7 @@ function AppContent() {
         </div>
       )}
       
-      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'stock' && activeModule !== 'planning' && activeModule !== 'annuaire' && (
+      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'stock' && activeModule !== 'planning' && activeModule !== 'annuaire' && activeModule !== 'inventory' && activeModule !== 'video' && (
       <GoogleCalendarBanner 
         calendarConfig={data.calendarConfig} 
         view={view}
@@ -680,6 +683,19 @@ function AppContent() {
         </ErrorBoundary>
       )}
 
+      {activeModule === 'video' && (
+        <ErrorBoundary moduleName="Vidéo">
+        <Suspense fallback={
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Chargement de la surveillance vidéo...</p>
+          </div>
+        }>
+          <VideoPanel currentUser={currentUser} />
+        </Suspense>
+        </ErrorBoundary>
+      )}
+
 
 
       {showManagement && (
@@ -881,6 +897,14 @@ function AppContent() {
         </Suspense>
       )}
       </main>
+
+      {/* Status bar VS Code */}
+      {isVSCode && (
+        <div className="vsc-statusbar">
+          <span>{activeModule === 'vehicles' ? '📋' : activeModule === 'personnel' ? '👥' : activeModule === 'affaires' ? '📁' : activeModule === 'equipment' ? '🔧' : activeModule === 'orders' ? '📦' : '📊'} {activeModule}</span>
+          <span style={{ marginLeft: 'auto', opacity: 0.7 }}>eM@g v2.0</span>
+        </div>
+      )}
     </div>
     </NavigationProvider>
     </ToastProvider>

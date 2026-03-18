@@ -62,6 +62,7 @@ import { setupProfileRoutes } from './profileRoutes.js';
 import { setupAttachmentsRoutes } from './attachmentsRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupInventoryRoutes } from './inventoryRoutes.js';
+import { setupVideoRoutes } from './videoRoutes.js';
 import { initEmailTransporter } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -221,6 +222,9 @@ setupAttachmentsRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Module Inventaire (emplacements, prix, anomalies, stats, ABC, exports)
 setupInventoryRoutes(app, authenticateToken);
+
+// Routes Module Surveillance Vidéo (caméras CRUD, WebRTC, PTZ, snapshots, logs)
+setupVideoRoutes(app, authenticateToken, requireAdmin);
 
 // Debug endpoints
 app.get('/api/debug/route-test', (req, res) => {

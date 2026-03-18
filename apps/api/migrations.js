@@ -9,6 +9,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
+import { runVideoMigrations } from './migrations/video-v1.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -634,5 +635,8 @@ try {
 
 // ═══ Module Inventaire Unifié ═══
 runInventoryMigrations(db);
+
+// ═══ Module Surveillance Vidéo ═══
+runVideoMigrations(db);
 
 } // fin runPostInitMigrations

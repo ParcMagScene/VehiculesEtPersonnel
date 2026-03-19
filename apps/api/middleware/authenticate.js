@@ -10,8 +10,9 @@ import logger from '../logger.js';
  */
 export function createAuthenticateToken(JWT_SECRET) {
   return function authenticateToken(req, res, next) {
+    // [AUDIT Phase 3] Lire le token depuis le header Authorization OU le cookie httpOnly
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.auth_token;
 
     if (!token) {
       return res.status(401).json({ error: 'Token manquant' });

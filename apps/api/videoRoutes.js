@@ -8,7 +8,7 @@ import logger from './logger.js';
 import {
   encryptPassword, decryptPassword,
   buildRtspUrl, registerStreamInProxy,
-  getWebRTCOffer, sendWebRTCAnswer,
+  whepExchange, whepDelete,
   fetchSnapshot, sendPTZCommand,
   generateSessionToken, storeSession, getSession, removeSession,
   getProxyStatus,
@@ -48,7 +48,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // ════════════════════════════════════════
 
   // GET /api/video/cameras — Liste toutes les caméras
-  app.get('/api/video/cameras', authenticateToken, (_req, res) => {
+  app.get('/api/video/cameras', authenticateToken, requireAdmin, (_req, res) => {
     try {
       const cameras = db.prepare(`
         SELECT id, name, brand, model, ip, rtsp_port, http_port, ptz_supported,
@@ -206,13 +206,16 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // WEBRTC SESSIONS (WHEP proxy)
   // ════════════════════════════════════════
 
-  // POST /api/video/cameras/:id/webrtc-offer — Obtenir une offre WebRTC
-  app.post('/api/video/cameras/:id/webrtc-offer', authenticateToken, (req, res) => {
+  // POST /api/video/cameras/:id/whep — Négociation WHEP complète (offre client → réponse serveur)
+  app.post('/api/video/cameras/:id/whep', authenticateToken, (req, res) => {
     (async () => {
       try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
         if (!checkStreamRate(req.user.id)) return res.status(429).json({ error: 'Trop de requêtes vidéo' });
+
+        const { sdp: clientOffer } = req.body;
+        if (!clientOffer) return res.status(400).json({ error: 'SDP offer requis' });
 
         const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
         if (!camera) return res.status(404).json({ error: 'Caméra introuvable ou désactivée' });
@@ -222,13 +225,13 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         const rtspUrl = buildRtspUrl(camera, pwd);
         await registerStreamInProxy(id, rtspUrl);
 
-        // Obtenir l'offre WHEP
-        const offer = await getWebRTCOffer(id);
-        if (!offer) return res.status(502).json({ error: 'Proxy vidéo indisponible — MediaMTX non démarré ?' });
+        // Négociation WHEP : envoyer l'offre client, recevoir la réponse
+        const result = await whepExchange(id, clientOffer);
+        if (!result) return res.status(502).json({ error: 'Proxy vidéo indisponible — MediaMTX non démarré ?' });
 
         // Créer la session
         const token = generateSessionToken();
-        storeSession(token, { cameraId: id, userId: req.user.id, location: offer.location });
+        storeSession(token, { cameraId: id, userId: req.user.id, location: result.location });
 
         db.prepare(`INSERT INTO video_sessions (camera_id, user_id, session_token, status)
           VALUES (?, ?, ?, 'active')`).run(id, req.user.id, token);
@@ -238,31 +241,9 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
 
         logVideoAccess(req.user.id, req.user.name, id, camera.name, 'start_stream', req.ip);
 
-        res.json({ sdp: offer.sdp, sessionToken: token, streamName: offer.streamName });
+        res.json({ answerSdp: result.answerSdp, sessionToken: token });
       } catch (error) {
-        logger.error('POST webrtc-offer:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
-      }
-    })();
-  });
-
-  // POST /api/video/cameras/:id/webrtc-answer — Poster la réponse SDP
-  app.post('/api/video/cameras/:id/webrtc-answer', authenticateToken, (req, res) => {
-    (async () => {
-      try {
-        const id = parseInt(req.params.id, 10);
-        const { sdp, sessionToken } = req.body;
-        if (!sdp || !sessionToken) return res.status(400).json({ error: 'sdp et sessionToken requis' });
-
-        const session = getSession(sessionToken);
-        if (!session || session.cameraId !== id) return res.status(403).json({ error: 'Session invalide' });
-
-        const ok = await sendWebRTCAnswer(id, sdp, session.location);
-        if (!ok) return res.status(502).json({ error: 'Échec envoi réponse WebRTC' });
-
-        res.json({ success: true });
-      } catch (error) {
-        logger.error('POST webrtc-answer:', error);
+        logger.error('POST whep:', error);
         res.status(500).json({ error: 'Erreur serveur' });
       }
     })();
@@ -476,38 +457,25 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // POST /api/video/tv/cameras/:id/webrtc-offer — WHEP offer public
-  app.post('/api/video/tv/cameras/:id/webrtc-offer', (req, res) => {
+  // POST /api/video/tv/cameras/:id/whep — WHEP public (TV)
+  app.post('/api/video/tv/cameras/:id/whep', (req, res) => {
     const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(req.params.id);
     if (!camera) return res.status(404).json({ error: 'Caméra introuvable' });
 
     (async () => {
       try {
+        const { sdp: clientOffer } = req.body;
+        if (!clientOffer) return res.status(400).json({ error: 'SDP offer requis' });
+
         const password = decryptPassword(camera.password_encrypted) || '';
         const rtspUrl = buildRtspUrl(camera, password);
-        const streamId = `cam_${camera.id}`;
-        await registerStreamInProxy(streamId, rtspUrl);
-        const offer = await getWebRTCOffer(streamId);
-        logVideoAccess(0, 'TV-Client', camera.id, camera.name, 'tv_stream', req.ip);
-        res.json({ offer, streamId });
+        await registerStreamInProxy(camera.id, rtspUrl);
+        const result = await whepExchange(camera.id, clientOffer);
+        if (!result) return res.status(502).json({ error: 'Proxy vidéo indisponible' });
+        logVideoAccess(0, 'TV-Client', camera.id, camera.name, 'start_stream', req.ip);
+        res.json({ answerSdp: result.answerSdp });
       } catch (error) {
-        logger.error('TV webrtc-offer:', error);
-        res.status(500).json({ error: 'Erreur WebRTC' });
-      }
-    })();
-  });
-
-  // POST /api/video/tv/cameras/:id/webrtc-answer — WHEP answer public
-  app.post('/api/video/tv/cameras/:id/webrtc-answer', (req, res) => {
-    const { streamId, answer } = req.body;
-    if (!streamId || !answer) return res.status(400).json({ error: 'streamId et answer requis' });
-
-    (async () => {
-      try {
-        await sendWebRTCAnswer(streamId, answer);
-        res.json({ ok: true });
-      } catch (error) {
-        logger.error('TV webrtc-answer:', error);
+        logger.error('TV whep:', error);
         res.status(500).json({ error: 'Erreur WebRTC' });
       }
     })();

@@ -1,4 +1,4 @@
-// Hook — Flux WebRTC pour une caméra
+// Hook — Flux WebRTC pour une caméra (WHEP : client envoie l'offre, serveur répond)
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../utils/api';
 
@@ -16,20 +16,15 @@ export function useWebRTCStream(camera) {
     setError(null);
 
     try {
-      // 1. Obtenir l'offre SDP du serveur (via MediaMTX proxy)
-      const offer = await api.getWebRTCOffer(camera.id);
-      if (!offer?.sdp) {
-        throw new Error('Proxy vidéo indisponible');
-      }
-      sessionTokenRef.current = offer.sessionToken;
-
-      // 2. Créer la connexion WebRTC
+      // 1. Créer la connexion WebRTC et générer l'offre SDP
       const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-        ],
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       });
       pcRef.current = pc;
+
+      // Transceivers en réception seulement
+      pc.addTransceiver('video', { direction: 'recvonly' });
+      pc.addTransceiver('audio', { direction: 'recvonly' });
 
       // Track distant → élément vidéo
       pc.ontrack = (event) => {
@@ -46,15 +41,9 @@ export function useWebRTCStream(camera) {
         }
       };
 
-      // 3. Négociation SDP WHEP (WebRTC HTTP Egress Protocol)
-      await pc.setRemoteDescription({ type: 'offer', sdp: offer.sdp });
-
-      // Ajouter un transceiver en réception
-      pc.addTransceiver('video', { direction: 'recvonly' });
-      pc.addTransceiver('audio', { direction: 'recvonly' });
-
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
+      // Créer l'offre SDP
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
 
       // Attendre fin ICE gathering
       await new Promise((resolve) => {
@@ -66,12 +55,18 @@ export function useWebRTCStream(camera) {
           }
         };
         pc.addEventListener('icegatheringstatechange', check);
-        // Timeout fallback
         setTimeout(resolve, 3000);
       });
 
-      // 4. Envoyer la réponse SDP
-      await api.sendWebRTCAnswer(camera.id, pc.localDescription.sdp, offer.sessionToken);
+      // 2. Envoyer l'offre au backend, qui la transmet à MediaMTX WHEP
+      const result = await api.whepNegotiate(camera.id, pc.localDescription.sdp);
+      if (!result?.answerSdp) {
+        throw new Error('Proxy vidéo indisponible');
+      }
+      sessionTokenRef.current = result.sessionToken;
+
+      // 3. Appliquer la réponse SDP
+      await pc.setRemoteDescription({ type: 'answer', sdp: result.answerSdp });
     } catch (e) {
       setStatus('error');
       setError(e.message || 'Erreur de connexion WebRTC');

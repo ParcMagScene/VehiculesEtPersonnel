@@ -8,7 +8,7 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
 app.get('/api/affaires', authenticateToken, cacheMiddleware(listCache, () => 'affaires', 30_000), (req, res) => {
   try {
     // 1. Affaires explicitement enregistrées en DB
-    const dbAffaires = db.prepare('SELECT * FROM affaires ORDER BY date_debut DESC').all();
+    const dbAffaires = db.prepare('SELECT * FROM affaires ORDER BY date_debut DESC LIMIT 5000').all();
 
     // [PERF Phase 4] Compteurs en batch — 3 requêtes au lieu de 3×N
     const resCounts = {};
@@ -433,12 +433,12 @@ app.post('/api/affaires/sync-google-events', authenticateToken, (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/affaires/:id/bp/annotate', authenticateToken, (req, res) => {
   try {
-    const affaireId = req.params.id;
+    const affaireId = req.params.id; // numero_affaire (ex: "AF32361")
     const { blImportId } = req.body;
 
     // 1. Affaire
     const affaire = db.prepare(`
-      SELECT numero_affaire, nom, type, client, date_debut, date_fin, status, address
+      SELECT numero_affaire, nom, type, client, date_debut, date_fin, adresse_livraison
       FROM affaires WHERE numero_affaire = ?
     `).get(affaireId);
     if (!affaire) return res.status(404).json({ error: 'Affaire introuvable' });
@@ -466,31 +466,39 @@ app.post('/api/affaires/:id/bp/annotate', authenticateToken, (req, res) => {
 
     // 3. Réservations liées
     const reservations = db.prepare(`
-      SELECT r.id, r.date, r.end_date, r.period, r.end_period, r.status,
+      SELECT r.id, r.start_date, r.end_date, r.start_period, r.end_period,
              v.name as vehicle_name, v.type as vehicle_type
       FROM reservations r
       LEFT JOIN vehicles v ON r.vehicle_id = v.id
-      WHERE r.affaire_id = ?
-      ORDER BY r.date
+      WHERE r.affaire = ?
+      ORDER BY r.start_date
     `).all(affaireId);
 
-    // 4. Personnel affecté
-    const personnel = db.prepare(`
-      SELECT a.id, a.role, a.start_date, a.end_date,
-             p.nom, p.prenom, p.poste
-      FROM assignments a
-      LEFT JOIN personnel p ON a.personnel_id = p.id
-      WHERE a.affaire_id = ?
-      ORDER BY a.start_date
+    // 4. Personnel affecté (via planning_assignments + missions)
+    const personnelDirect = db.prepare(`
+      SELECT pa.id, p.last_name, p.first_name, p.type as poste
+      FROM planning_assignments pa
+      JOIN persons p ON pa.person_id = p.id
+      WHERE pa.entity_type = 'affaire' AND pa.entity_id = ?
     `).all(affaireId);
+    const personnelMissions = db.prepare(`
+      SELECT DISTINCT p.id, p.last_name, p.first_name, p.type as poste,
+             m.title as mission_title, m.start_date, m.end_date
+      FROM missions m
+      JOIN mission_assignments ma ON ma.mission_id = m.id
+      JOIN persons p ON ma.person_id = p.id
+      WHERE m.affaire = ?
+    `).all(affaireId);
+    // Dédupliquer par person id
+    const seenIds = new Set(personnelDirect.map(p => p.id));
+    const personnel = [...personnelDirect, ...personnelMissions.filter(p => !seenIds.has(p.id))];
 
-    // 5. Tâches programmées
+    // 5. Missions programmées
     const tasks = db.prepare(`
-      SELECT t.id, t.title, t.description, t.status, t.priority,
-             t.due_date, t.due_time, t.category
-      FROM tasks t
-      WHERE t.affaire_id = ?
-      ORDER BY t.due_date
+      SELECT m.id, m.title, m.status, m.start_date, m.end_date, m.notes
+      FROM missions m
+      WHERE m.affaire = ?
+      ORDER BY m.start_date
     `).all(affaireId);
 
     // 6. BL Import metadata

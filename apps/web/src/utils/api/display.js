@@ -50,11 +50,9 @@ export function registerDisplayMethods(ApiClient) {
       return this.request(`/display/media${query}`);
     },
     async uploadDisplayMedia(formData) {
-      const headers = {};
-      if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
       const response = await fetch(`${API_URL}/display/media`, {
         method: 'POST',
-        headers,
+        credentials: 'include',
         body: formData,
       });
       if (!response.ok) {
@@ -145,9 +143,7 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/location-gifs');
     },
     async uploadDisplayLocationGif(formData) {
-      const headers = {};
-      if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
-      const response = await fetch(`${API_URL}/display/location-gifs`, { method: 'POST', headers, body: formData });
+      const response = await fetch(`${API_URL}/display/location-gifs`, { method: 'POST', credentials: 'include', body: formData });
       if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
       return response.json();
     },
@@ -166,18 +162,14 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/logo');
     },
     async uploadDisplayLogo(formData) {
-      const headers = {};
-      if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
-      const response = await fetch(`${API_URL}/display/logo`, { method: 'POST', headers, body: formData });
+      const response = await fetch(`${API_URL}/display/logo`, { method: 'POST', credentials: 'include', body: formData });
       if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
       return response.json();
     },
 
     // Photo furtive
     async uploadDisplaySneakyPhoto(formData) {
-      const headers = {};
-      if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
-      const response = await fetch(`${API_URL}/display/sneaky-photo`, { method: 'POST', headers, body: formData });
+      const response = await fetch(`${API_URL}/display/sneaky-photo`, { method: 'POST', credentials: 'include', body: formData });
       if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
       return response.json();
     },

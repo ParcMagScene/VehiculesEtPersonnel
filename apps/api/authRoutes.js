@@ -8,6 +8,15 @@ import { authCache } from './cache.js';
 
 export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev }) {
 
+// Options cookie httpOnly pour les tokens JWT
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production' && !process.env.ALLOW_HTTP,
+  path: '/',
+  maxAge: JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+};
+
 // Inscription
 app.post('/api/auth/register', async (req, res) => {
   try {
@@ -243,7 +252,9 @@ app.post('/api/auth/login', async (req, res) => {
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
     
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms } });
+    // [AUDIT Phase 3] Token envoyé en cookie httpOnly (plus sûr que localStorage)
+    res.cookie('auth_token', token, cookieOptions);
+    res.json({ user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms } });
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
@@ -297,8 +308,9 @@ app.post('/api/auth/force-login', async (req, res) => {
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
     
+    // [AUDIT Phase 3] Token envoyé en cookie httpOnly
+    res.cookie('auth_token', token, cookieOptions);
     res.json({ 
-      token, 
       user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: forcePerms },
       message: 'Toutes les autres sessions ont été fermées'
     });
@@ -322,6 +334,8 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
     
     logger.info(`🚪 Déconnexion: ${result.changes} session(s) fermée(s)`);
     
+    // [AUDIT Phase 3] Effacer le cookie httpOnly
+    res.clearCookie('auth_token', { path: '/' });
     res.json({ message: 'Déconnexion réussie', sessionsClosed: result.changes });
   } catch (error) {
     logger.error('Erreur logout:', error);
@@ -330,7 +344,7 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 });
 
 // Liste publique des utilisateurs (pour le sélecteur de connexion)
-// Renvoie uniquement nom + avatar (pas d'email) — sans authentification
+// Renvoie nom, email et avatar — sans authentification (réseau interne uniquement)
 app.get('/api/auth/users-public', (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, name, email, avatar FROM users ORDER BY name');

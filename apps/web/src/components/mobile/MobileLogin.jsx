@@ -200,6 +200,7 @@ function MobileLogin({ onLogin }) {
                   const response = await fetch(`${getApiUrl()}/auth/self-reset-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ email: resetFormEmail, name: resetFormName, newPassword: resetFormPassword })
                   });
                   if (!response.ok) {
@@ -207,7 +208,7 @@ function MobileLogin({ onLogin }) {
                     throw new Error(data.error || 'Erreur lors de la réinitialisation');
                   }
                   const data = await response.json();
-                  api.setAuth(data.token, data.user);
+                  api.setAuth(data.user);
                   setShowResetPassword(false);
                   onLogin(data.user);
                 } catch (err) {

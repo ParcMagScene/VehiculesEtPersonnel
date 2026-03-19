@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, format, addMonths, subMonths,
@@ -37,6 +37,11 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   const [rdvCategory, setRdvCategory] = useState('pro'); // 'pro' | 'perso'
   const [syncGoogle, setSyncGoogle] = useState(true);
   const [googleSynced, setGoogleSynced] = useState(false);
+  const [hasGoogleToken, setHasGoogleToken] = useState(true);
+
+  useEffect(() => {
+    if (isRdv) api.getGoogleTokenStatus().then(s => setHasGoogleToken(!!s?.hasToken)).catch(() => setHasGoogleToken(false));
+  }, [isRdv]);
 
   const periodInfo = PERIOD_MENU_ITEMS.find(p => p.type === periodType) || PERIOD_MENU_ITEMS[0];
 
@@ -121,29 +126,8 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   // ═══ Google Calendar sync for RDV ═══
   const createGoogleCalendarEvent = async (dateStr, endDateStr) => {
     try {
-      const token = localStorage.getItem('google_access_token');
-      if (!token) return null;
-
-      // Retrieve calendarConfig from IndexedDB
-      let calendarId = 'primary';
-      try {
-        const dbRequest = indexedDB.open('vehicules_personnel_db', 1);
-        calendarId = await new Promise((resolve) => {
-          dbRequest.onsuccess = (e) => {
-            const idb = e.target.result;
-            if (!idb.objectStoreNames.contains('calendarConfig')) return resolve('primary');
-            const tx = idb.transaction('calendarConfig', 'readonly');
-            const store = tx.objectStore('calendarConfig');
-            const getReq = store.get('calendarConfig');
-            getReq.onsuccess = () => {
-              const cfg = getReq.result;
-              resolve(cfg?.calendarId || 'primary');
-            };
-            getReq.onerror = () => resolve('primary');
-          };
-          dbRequest.onerror = () => resolve('primary');
-        });
-      } catch { /* fallback to primary */ }
+      const tokenStatus = await api.getGoogleTokenStatus();
+      if (!tokenStatus?.hasToken) return null;
 
       const categoryLabel = rdvCategory === 'pro' ? '🏢 Pro' : '🏠 Perso';
       const summary = `${categoryLabel} — RDV ${person.firstName} ${person.lastName || ''}`.trim();
@@ -157,24 +141,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
         colorId: rdvCategory === 'pro' ? '9' : '2', // Blueberry / Sage
       };
 
-      const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(eventData),
-        }
-      );
-
-      if (!response.ok) {
-        console.warn('Google Calendar sync failed:', response.status);
-        return null;
-      }
-
-      const created = await response.json();
+      const created = await api.createGoogleEvent(eventData);
       return created.id; // google_event_id
     } catch (err) {
       console.warn('Google Calendar sync error:', err);
@@ -376,7 +343,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                       <CalendarPlus size={14} />
                       <span>Synchroniser Google Agenda</span>
                     </label>
-                    {!localStorage.getItem('google_access_token') && syncGoogle && (
+                    {!hasGoogleToken && syncGoogle && (
                       <span className="pcm-google-warn">⚠ Non connecté à Google</span>
                     )}
                   </div>

@@ -1,11 +1,13 @@
 #!/bin/bash
+set -euo pipefail
 
 # Script de sauvegarde automatique lors de l'arrêt du serveur
 # Ce script est appelé par PM2 avant l'arrêt
 
 # Configuration
-DB_FILE="/Users/reunion/eM@g/server/vehicules.db"
-BACKUP_DIR="/Users/reunion/eM@g/server/backups"
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+DB_FILE="$SCRIPT_DIR/vehicules.db"
+BACKUP_DIR="$SCRIPT_DIR/backups"
 DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 BACKUP_FILE="$BACKUP_DIR/vehicules_backup_stop_$DATE.db"
 

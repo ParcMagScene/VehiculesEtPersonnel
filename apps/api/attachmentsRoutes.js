@@ -11,8 +11,9 @@ const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments'
 
 // ── Helpers sécurité ──
 function sanitizePath(basePath, relativePath) {
+  const normalizedBase = path.resolve(basePath);
   const resolved = path.resolve(basePath, relativePath);
-  if (!resolved.startsWith(basePath)) return null;
+  if (!resolved.startsWith(normalizedBase + path.sep) && resolved !== normalizedBase) return null;
   return resolved;
 }
 

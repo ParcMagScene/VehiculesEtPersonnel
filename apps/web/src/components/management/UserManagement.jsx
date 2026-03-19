@@ -125,20 +125,11 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3002/api/users/${userId}/reset-password`, {
+      const response = await api.request(`/users/${userId}/reset-password`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        }
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la réinitialisation');
-      }
-
-      const data = await response.json();
+      const data = response;
       toast.success(`Réinitialisation demandée L'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`);
       loadData();
     } catch (error) {

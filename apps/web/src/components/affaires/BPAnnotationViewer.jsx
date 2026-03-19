@@ -1,12 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
-// BPAnnotationViewer — Visualiseur PDF annoté (canvas overlay)
-// Surlignage familles, encadrement kits, bloc infos affaire
+// BPAnnotationViewer — Visualiseur PDF avec annotations famille
+// Surlignage automatique par famille métier (Sono, Lumière, etc.)
 // ═══════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import {
   X, Download, Printer, ZoomIn, ZoomOut,
-  ChevronLeft, ChevronRight, Palette, Info, Layers,
+  ChevronLeft, ChevronRight, Layers, Info
 } from 'lucide-react';
 import { FAMILY_COLORS } from '../../utils/bpAnnotationEngine';
 import './BPAnnotationViewer.css';
@@ -15,29 +15,342 @@ if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 }
 
-const SCALE_DEFAULT = 1.5;
 const SCALE_MIN = 0.5;
 const SCALE_MAX = 3.0;
 const SCALE_STEP = 0.25;
 
+// ─── Regrouper les items texte en lignes par proximité Y ───
+function groupTextIntoLines(textItems, viewport) {
+  // Identifier la police principale (la plus fréquente = régulière)
+  // Toute autre police est considérée comme italique/variante
+  const fontCounts = {};
+  for (const item of textItems) {
+    const fn = item.fontName || '';
+    fontCounts[fn] = (fontCounts[fn] || 0) + 1;
+  }
+  const mainFont = Object.entries(fontCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+
+  const positioned = textItems.map(item => {
+    const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+    const isMainFont = (item.fontName || '') === mainFont;
+    const rawT = item.transform;
+    const hasShear = Math.abs(rawT[1]) > 0.01 || Math.abs(rawT[2]) > 0.01;
+    return {
+      text: item.str.trim(),
+      x: tx[4],
+      y: tx[5],
+      width: item.width * viewport.scale,
+      height: Math.abs(tx[3] - tx[1]) || item.height * viewport.scale || 12,
+      italic: !isMainFont || hasShear,
+    };
+  }).filter(p => p.text.length > 0);
+
+  const tolerance = 4;
+  const lines = [];
+  const sorted = [...positioned].sort((a, b) => a.y - b.y);
+
+  for (const item of sorted) {
+    const existing = lines.find(l => Math.abs(l.y - item.y) < tolerance);
+    if (existing) {
+      existing.items.push(item);
+      existing.text += ' ' + item.text;
+      existing.minX = Math.min(existing.minX, item.x);
+      existing.maxX = Math.max(existing.maxX, item.x + item.width);
+      existing.height = Math.max(existing.height, item.height);
+      // Pondérer l'italic par la longueur du texte (ignore les colonnes numériques "1", "0")
+      existing.italicChars = (existing.italicChars || 0) + (item.italic ? item.text.length : 0);
+      existing.totalChars = (existing.totalChars || 0) + item.text.length;
+    } else {
+      lines.push({
+        y: item.y,
+        height: item.height,
+        minX: item.x,
+        maxX: item.x + item.width,
+        text: item.text,
+        items: [item],
+        italicChars: item.italic ? item.text.length : 0,
+        totalChars: item.text.length,
+      });
+    }
+  }
+
+  // Marquer les lignes comme italic si la majorité du TEXTE (en caractères) est en police italique
+  for (const line of lines) {
+    line.italic = (line.italicChars || 0) > (line.totalChars || 1) / 2;
+  }
+
+  return lines;
+}
+
+// ─── Dessiner les annotations sur l'overlay ───
+function drawAnnotations(ctx, lines, viewport, annotationData) {
+  const { sections = [], annotatedItems = [], kits = [] } = annotationData;
+  if (lines.length === 0) return;
+
+  // Index section -> couleur
+  const sectionFamilyMap = {};
+  for (const s of sections) {
+    if (s.color) sectionFamilyMap[s.name.toUpperCase()] = s.color;
+  }
+
+  // Index d'items par référence et description (normalisés)
+  const itemsByRef = new Map();
+  const itemsByDesc = new Map();
+  for (const item of annotatedItems) {
+    if (item.reference) {
+      const key = item.reference.toUpperCase().trim();
+      if (!itemsByRef.has(key)) itemsByRef.set(key, item);
+    }
+    if (item.description && item.description.length > 5) {
+      const key = item.description.toUpperCase().trim();
+      if (!itemsByDesc.has(key)) itemsByDesc.set(key, item);
+    }
+  }
+
+  const margin = 10;
+
+  // Fonction : la ligne est-elle un header de kit ?
+  function isKitHeader(text) {
+    return /\bCOMPRENANT\s*:/i.test(text) || /\bliaison\s+UHF\b/i.test(text);
+  }
+
+  // Fonction : la ligne est-elle un en-tête de section ?
+  function isSectionLine(text) {
+    const upper = text.toUpperCase().trim();
+    for (const secName of Object.keys(sectionFamilyMap)) {
+      if (upper.includes(secName) || secName.includes(upper)) {
+        return sectionFamilyMap[secName];
+      }
+    }
+    return null;
+  }
+
+  // Fonction : trouver la couleur d'un article annoté qui matche une ligne
+  function findItemColor(text) {
+    const upper = text.toUpperCase().trim();
+    // Par référence
+    for (const [ref, item] of itemsByRef) {
+      if (upper.includes(ref) && item._color) return item._color;
+    }
+    // Par description
+    for (const [desc, item] of itemsByDesc) {
+      const words = desc.split(/\s+/).filter(w => w.length > 2);
+      if (words.length === 0) continue;
+      const matchCount = words.filter(w => upper.includes(w)).length;
+      if (matchCount / words.length >= 0.6 && item._color) return item._color;
+    }
+    return null;
+  }
+
+  // ─── Pré-passe : assigner la couleur de section courante à chaque ligne ───
+  let currentSectionColor = null;
+  for (const line of lines) {
+    const secColor = isSectionLine(line.text);
+    if (secColor) currentSectionColor = secColor;
+    line._sectionColor = currentSectionColor;
+  }
+
+  // ─── Passe 1 : détecter les blocs kit ───
+  // Un kit = ligne précédente + ligne COMPRENANT: + lignes italiques suivantes
+  const kitBlocks = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!isKitHeader(lines[i].text)) continue;
+
+    // Couleur du kit : d'abord essayer via l'article de la ligne précédente,
+    // puis via la section courante, puis fallback divers
+    let kitColor = null;
+    if (i > 0) kitColor = findItemColor(lines[i - 1].text);
+    if (!kitColor) kitColor = lines[i]._sectionColor;
+    if (!kitColor) kitColor = FAMILY_COLORS.divers;
+
+    // Inclure la ligne précédente seulement pour COMPRENANT (titre de l'article kit)
+    const isComprenant = /\bCOMPRENANT\s*:/i.test(lines[i].text);
+    const startIdx = (isComprenant && i > 0) ? i - 1 : i;
+
+    // Collecter les lignes italiques qui suivent (= sous-items du kit)
+    let endIdx = i;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j].italic) {
+        endIdx = j;
+      } else {
+        break;
+      }
+    }
+
+    kitBlocks.push({ startIdx, endIdx, color: kitColor });
+  }
+
+  // Set des lignes appartenant à un kit pour ne pas les surligner individuellement
+  const kitLineIndices = new Set();
+  for (const kb of kitBlocks) {
+    for (let k = kb.startIdx; k <= kb.endIdx; k++) kitLineIndices.add(k);
+  }
+
+  // ─── Passe 2 : surlignage individuel des lignes (hors kits) ───
+  for (let i = 0; i < lines.length; i++) {
+    if (kitLineIndices.has(i)) continue;
+
+    const line = lines[i];
+    let color = null;
+    let isSection = false;
+
+    // 1. Matcher en-tête de section
+    const secColor = isSectionLine(line.text);
+    if (secColor) {
+      color = secColor;
+      isSection = true;
+    }
+
+    // 2. Matcher article — priorité à la couleur de section courante
+    if (!color) {
+      const itemColor = findItemColor(line.text);
+      if (itemColor) {
+        // Utiliser la couleur de la section courante si disponible,
+        // sinon celle de l'item (par mots-clés)
+        color = line._sectionColor || itemColor;
+      }
+    }
+
+    if (!color) continue;
+
+    // Dessiner le surlignage
+    ctx.save();
+    ctx.globalAlpha = isSection ? 0.40 : 0.25;
+    ctx.fillStyle = color.bg || color;
+
+    const rectH = isSection ? line.height + 8 : line.height + 4;
+    const rectY = line.y - rectH + 2 + 6;
+    const rectX = margin;
+    const rectW = viewport.width - 2 * margin - 20;
+
+    ctx.fillRect(rectX, rectY, rectW, rectH);
+
+    // Bordure gauche colorée pour les sections
+    if (isSection) {
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = color.border || color.bg;
+      ctx.fillRect(rectX, rectY, 4, rectH);
+    }
+
+    ctx.restore();
+  }
+
+  // ─── Passe 3 : encadrer les blocs kit ───
+  for (const kb of kitBlocks) {
+    const firstLine = lines[kb.startIdx];
+    const lastLine = lines[kb.endIdx];
+    const color = kb.color;
+
+    const rectX = margin;
+    const rectW = viewport.width - 2 * margin - 20;
+    const topY = firstLine.y - firstLine.height - 2 + 6;
+    const bottomY = lastLine.y + 6 + 6;
+    const rectH = bottomY - topY;
+
+    // Fond léger
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = color.bg || color;
+    ctx.fillRect(rectX, topY, rectW, rectH);
+
+    // Encadrement
+    ctx.globalAlpha = 0.7;
+    ctx.strokeStyle = color.border || color.bg;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 3]);
+    ctx.strokeRect(rectX, topY, rectW, rectH);
+    ctx.setLineDash([]);
+
+    // Bordure gauche pleine
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = color.border || color.bg;
+    ctx.fillRect(rectX, topY, 4, rectH);
+
+    ctx.restore();
+  }
+}
+
+// ─── Bloc infos affaire (coin supérieur droit) ───
+function drawInfoBlock(ctx, canvasWidth, lines, affaireData) {
+  const blockW = 260;
+  const padding = 12;
+  const lineH = 16;
+  const x = canvasWidth - blockW - 20;
+  const y = 20;
+  const totalH = padding * 2 + lines.length * lineH + 8;
+
+  // Fond
+  ctx.beginPath();
+  roundRect(ctx, x, y, blockW, totalH, 8);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.fill();
+  ctx.strokeStyle = '#6366f1';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Titre
+  ctx.font = 'bold 11px sans-serif';
+  ctx.fillStyle = '#1e293b';
+  ctx.fillText(`📋 ${affaireData?.nom || 'Affaire'}`, x + padding, y + padding + 10);
+
+  // Lignes d'info
+  let cy = y + padding + 28;
+  for (const line of lines) {
+    if (line.type === 'header') {
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillStyle = '#4338ca';
+    } else if (line.type === 'more') {
+      ctx.font = 'italic 9px sans-serif';
+      ctx.fillStyle = '#94a3b8';
+    } else {
+      ctx.font = '9px sans-serif';
+      ctx.fillStyle = '#334155';
+    }
+    ctx.fillText(line.text, x + padding + 4, cy);
+    cy += lineH;
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Composant principal
+// ═══════════════════════════════════════════════════════════════
 export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }) {
   const canvasRef = useRef(null);
   const overlayCanvasRef = useRef(null);
   const containerRef = useRef(null);
+  const renderTaskRef = useRef(null);
+
   const [pdfDoc, setPdfDoc] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
-  const [scale, setScale] = useState(SCALE_DEFAULT);
+  const [scale, setScale] = useState(null); // null = auto-fit
   const [showLegend, setShowLegend] = useState(true);
   const [showInfo, setShowInfo] = useState(true);
-  const [rendering, setRendering] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const { annotatedItems = [], kits = [], sections = [], stats = {}, infoLines = [], affaire, blImport } = annotationResult || {};
+  const data = annotationResult || {};
+  const { sections = [], stats = {}, infoLines = [], affaire, blImport, kits = [] } = data;
 
   // ─── Charger le PDF ───
   useEffect(() => {
     if (!pdfUrl) return;
     let cancelled = false;
+    setLoading(true);
     (async () => {
       try {
         const resp = await fetch(pdfUrl);
@@ -50,241 +363,161 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
         }
       } catch (err) {
         console.error('Erreur chargement PDF:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
   }, [pdfUrl]);
 
-  // ─── Rendre la page + annotations ───
-  const renderPage = useCallback(async () => {
-    if (!pdfDoc || !canvasRef.current || !overlayCanvasRef.current) return;
-    setRendering(true);
+  // ─── Calculer l'échelle auto-fit ───
+  const computeAutoScale = useCallback(async () => {
+    if (!pdfDoc || !containerRef.current) return 1.5;
     try {
       const page = await pdfDoc.getPage(currentPage);
-      const viewport = page.getViewport({ scale });
+      const vp = page.getViewport({ scale: 1, rotation: page.rotate || 0 });
+      const container = containerRef.current;
+      const legendW = showLegend ? 200 : 0;
+      const cw = container.clientWidth - legendW - 40;
+      const ch = container.clientHeight - 40;
+      return Math.max(0.8, Math.min(cw / vp.width, ch / vp.height, SCALE_MAX));
+    } catch { return 1.5; }
+  }, [pdfDoc, currentPage, showLegend]);
 
-      // Canvas PDF
-      const canvas = canvasRef.current;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext('2d');
-      await page.render({ canvasContext: ctx, viewport }).promise;
+  // ─── Pipeline de rendu unique ───
+  useEffect(() => {
+    if (!pdfDoc || !canvasRef.current || !overlayCanvasRef.current) return;
+    let cancelled = false;
 
-      // Canvas overlay (annotations)
-      const overlay = overlayCanvasRef.current;
-      overlay.width = viewport.width;
-      overlay.height = viewport.height;
-      const octx = overlay.getContext('2d');
-      octx.clearRect(0, 0, overlay.width, overlay.height);
+    (async () => {
+      const effectiveScale = scale ?? await computeAutoScale();
+      if (cancelled) return;
 
-      // Extraire les items texte pour matcher les positions
-      const textContent = await page.getTextContent();
-      const textItems = textContent.items.filter(i => i.str.trim());
-
-      // Annoter les lignes détectées
-      drawAnnotations(octx, textItems, viewport);
-
-      // Bloc info affaire (coin sup. droit)
-      if (showInfo && infoLines.length > 0) {
-        drawInfoBlock(octx, viewport.width, infoLines);
+      // Annuler le rendu précédent
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
       }
-    } catch (err) {
-      console.error('Erreur rendu page:', err);
-    }
-    setRendering(false);
-  }, [pdfDoc, currentPage, scale, showInfo, annotatedItems, kits, sections, infoLines]);
 
-  useEffect(() => { renderPage(); }, [renderPage]);
+      try {
+        const page = await pdfDoc.getPage(currentPage);
+        const rotation = page.rotate || 0;
+        const viewport = page.getViewport({ scale: effectiveScale, rotation });
 
-  // ─── Dessiner les annotations sur le canvas overlay ───
-  function drawAnnotations(ctx, textItems, viewport) {
-    // Construire un index de correspondance: description/référence → famille
-    const itemMap = new Map();
-    for (const item of annotatedItems) {
-      if (item.description) itemMap.set(item.description.trim().toLowerCase(), item);
-      if (item.reference) itemMap.set(item.reference.trim().toLowerCase(), item);
-    }
+        // 1. Rendre le PDF sur le canvas principal
+        const canvas = canvasRef.current;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
 
-    // Construire un index de sections
-    const sectionMap = new Map();
-    for (const sec of sections) {
-      sectionMap.set(sec.name.toUpperCase(), sec);
-    }
+        const renderTask = page.render({ canvasContext: ctx, viewport });
+        renderTaskRef.current = renderTask;
+        await renderTask.promise;
+        renderTaskRef.current = null;
 
-    // Parcourir les items texte du PDF
-    for (const ti of textItems) {
-      const text = ti.str.trim();
-      if (!text) continue;
+        if (cancelled) return;
 
-      const tx = pdfjsLib.Util.transform(viewport.transform, ti.transform);
-      const x = tx[4];
-      const y = tx[5] - ti.height;
-      const w = ti.width;
-      const h = ti.height + 4;
+        // 2. Configurer l'overlay
+        const overlay = overlayCanvasRef.current;
+        overlay.width = viewport.width;
+        overlay.height = viewport.height;
+        const octx = overlay.getContext('2d');
+        octx.clearRect(0, 0, overlay.width, overlay.height);
 
-      // Match par titre de section (surlignage fort)
-      const upText = text.toUpperCase();
-      if (sectionMap.has(upText)) {
-        const sec = sectionMap.get(upText);
-        if (sec.color) {
-          ctx.fillStyle = sec.color.bg.replace(/[\d.]+\)$/, '0.45)');
-          ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
-          ctx.strokeStyle = sec.color.border;
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+        // 3. Extraire le texte et regrouper en lignes
+        const textContent = await page.getTextContent();
+        const textItems = textContent.items.filter(i => i.str.trim());
+        const lines = groupTextIntoLines(textItems, viewport);
+
+        // 4. Dessiner les annotations
+        drawAnnotations(octx, lines, viewport, data);
+
+        // 5. Bloc info affaire
+        if (showInfo && infoLines.length > 0) {
+          drawInfoBlock(octx, viewport.width, infoLines, affaire);
         }
-        continue;
-      }
-
-      // Match par description/référence d'article
-      const lower = text.toLowerCase();
-      const matched = itemMap.get(lower);
-      if (matched?._color) {
-        ctx.fillStyle = matched._color.bg;
-        ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
-      }
-    }
-
-    // Encadrement des kits
-    drawKitFrames(ctx, textItems, viewport);
-  }
-
-  // ─── Encadrer les kits ───
-  function drawKitFrames(ctx, textItems, viewport) {
-    for (const kit of kits) {
-      if (!kit.color || kit.items.length < 2) continue;
-
-      // Trouver les bornes Y du kit dans le PDF
-      const kitTexts = new Set();
-      for (const item of kit.items) {
-        if (item.description) kitTexts.add(item.description.trim().toLowerCase());
-        if (item.reference) kitTexts.add(item.reference.trim().toLowerCase());
-      }
-
-      let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
-      let found = 0;
-      for (const ti of textItems) {
-        if (kitTexts.has(ti.str.trim().toLowerCase())) {
-          const tx = pdfjsLib.Util.transform(viewport.transform, ti.transform);
-          const x = tx[4];
-          const y = tx[5] - ti.height;
-          minX = Math.min(minX, x);
-          minY = Math.min(minY, y);
-          maxX = Math.max(maxX, x + ti.width);
-          maxY = Math.max(maxY, y + ti.height);
-          found++;
+      } catch (err) {
+        if (err.name !== 'RenderingCancelledException') {
+          console.error('Erreur rendu page:', err);
         }
       }
+    })();
 
-      if (found >= 2) {
-        const pad = 6;
-        ctx.setLineDash([6, 3]);
-        ctx.strokeStyle = kit.color.border;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(minX - pad, minY - pad, (maxX - minX) + pad * 2, (maxY - minY) + pad * 2);
-        ctx.setLineDash([]);
-
-        // Label du kit
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillStyle = kit.color.border;
-        ctx.fillText(`📦 ${kit.title}`, minX - pad, minY - pad - 4);
+    return () => {
+      cancelled = true;
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
       }
+    };
+  }, [pdfDoc, currentPage, scale, showInfo, showLegend, data, computeAutoScale, infoLines, affaire]);
+
+  // ─── Rendre une page donnée avec annotations sur un canvas temporaire ───
+  const renderPageToCanvas = useCallback(async (pageNum, targetScale) => {
+    if (!pdfDoc) return null;
+    const page = await pdfDoc.getPage(pageNum);
+    const rotation = page.rotate || 0;
+    const viewport = page.getViewport({ scale: targetScale, rotation });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+
+    // Rendre le PDF
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    // Dessiner les annotations
+    const textContent = await page.getTextContent();
+    const textItems = textContent.items.filter(i => i.str.trim());
+    const lines = groupTextIntoLines(textItems, viewport);
+    drawAnnotations(ctx, lines, viewport, data);
+
+    // Bloc info sur la première page
+    if (pageNum === 1 && showInfo && infoLines.length > 0) {
+      drawInfoBlock(ctx, viewport.width, infoLines, affaire);
     }
-  }
 
-  // ─── Bloc infos affaire (coin supérieur droit) ───
-  function drawInfoBlock(ctx, canvasWidth, lines) {
-    const blockW = 260;
-    const padding = 12;
-    const lineH = 16;
-    const x = canvasWidth - blockW - 20;
-    const y = 20;
-    const totalH = padding * 2 + lines.length * lineH + 8;
+    return canvas;
+  }, [pdfDoc, data, showInfo, infoLines, affaire]);
 
-    // Fond
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-    ctx.strokeStyle = '#6366f1';
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, x, y, blockW, totalH, 8);
-    ctx.fill();
-    ctx.stroke();
+  // ─── Impression multi-pages ───
+  const handlePrint = useCallback(async () => {
+    if (!pdfDoc) return;
+    const printScale = scale ?? await computeAutoScale();
+    const images = [];
 
-    // Titre
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillStyle = '#1e293b';
-    ctx.fillText(`📋 ${affaire?.nom || 'Affaire'}`, x + padding, y + padding + 10);
-
-    // Lignes
-    let cy = y + padding + 28;
-    for (const line of lines) {
-      if (line.type === 'header') {
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillStyle = '#4338ca';
-      } else if (line.type === 'more') {
-        ctx.font = 'italic 9px sans-serif';
-        ctx.fillStyle = '#94a3b8';
-      } else {
-        ctx.font = '9px sans-serif';
-        ctx.fillStyle = '#334155';
-      }
-      ctx.fillText(line.text, x + padding + 4, cy);
-      cy += lineH;
+    for (let p = 1; p <= numPages; p++) {
+      const canvas = await renderPageToCanvas(p, printScale);
+      if (canvas) images.push(canvas.toDataURL('image/png'));
     }
-  }
 
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-  }
+    if (images.length === 0) return;
 
-  // ─── Actions ───
-  const handlePrint = () => {
-    const canvas = canvasRef.current;
-    const overlay = overlayCanvasRef.current;
-    if (!canvas || !overlay) return;
-
-    // Fusionner les deux canvas
-    const merged = document.createElement('canvas');
-    merged.width = canvas.width;
-    merged.height = canvas.height;
-    const mctx = merged.getContext('2d');
-    mctx.drawImage(canvas, 0, 0);
-    mctx.drawImage(overlay, 0, 0);
-
-    const dataUrl = merged.toDataURL('image/png');
     const win = window.open('', '_blank');
     if (win) {
-      win.document.write(`
-        <html><head><title>BP Annoté — ${affaire?.nom || ''}</title>
-        <style>@media print { body { margin: 0; } img { width: 100%; height: auto; } }</style>
-        </head><body><img src="${dataUrl}" onload="window.print();window.close()"/></body></html>
-      `);
+      const imgsHtml = images.map((src, i) =>
+        '<img src="' + src + '" style="width:100%;height:auto;display:block;' +
+        (i < images.length - 1 ? 'page-break-after:always;' : '') + '" />'
+      ).join('');
+
+      win.document.write(
+        '<html><head><title>BP Annoté</title>' +
+        '<style>@media print { body { margin: 0; } } body { margin: 0; }</style>' +
+        '</head><body>' + imgsHtml + '<script>window.onload=function(){window.print();window.close();}<\/script></body></html>'
+      );
       win.document.close();
     }
-  };
+  }, [pdfDoc, numPages, scale, computeAutoScale, renderPageToCanvas]);
 
-  const handleDownload = () => {
-    const canvas = canvasRef.current;
-    const overlay = overlayCanvasRef.current;
-    if (!canvas || !overlay) return;
+  // ─── Téléchargement (page courante avec annotations) ───
+  const handleDownload = useCallback(async () => {
+    if (!pdfDoc) return;
+    const dlScale = scale ?? await computeAutoScale();
+    const canvas = await renderPageToCanvas(currentPage, dlScale);
+    if (!canvas) return;
 
-    const merged = document.createElement('canvas');
-    merged.width = canvas.width;
-    merged.height = canvas.height;
-    const mctx = merged.getContext('2d');
-    mctx.drawImage(canvas, 0, 0);
-    mctx.drawImage(overlay, 0, 0);
-
-    merged.toBlob((blob) => {
+    canvas.toBlob(blob => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -293,7 +526,27 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
       a.click();
       URL.revokeObjectURL(url);
     }, 'image/png');
-  };
+  }, [pdfDoc, affaire, currentPage, scale, computeAutoScale, renderPageToCanvas]);
+
+  // ─── Zoom ───
+  const zoomIn = () => setScale(s => Math.min(SCALE_MAX, (s ?? 1.5) + SCALE_STEP));
+  const zoomOut = () => setScale(s => Math.max(SCALE_MIN, (s ?? 1.5) - SCALE_STEP));
+  const zoomFit = () => setScale(null);
+
+  // ─── Raccourcis clavier ───
+  useEffect(() => {
+    const handle = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') setCurrentPage(p => Math.max(1, p - 1));
+      if (e.key === 'ArrowRight') setCurrentPage(p => Math.min(numPages, p + 1));
+      if (e.key === '+' || e.key === '=') zoomIn();
+      if (e.key === '-') zoomOut();
+    };
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [numPages, onClose]);
+
+  const displayScale = scale ?? 1.5;
 
   // ─── Rendu ───
   return (
@@ -302,21 +555,29 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
         {/* Header */}
         <div className="bp-annotation-header">
           <div className="bp-annotation-title">
-            <Palette size={18} />
             <span>BP Annoté — {affaire?.nom || 'Affaire'}</span>
             {blImport?.filename && <span className="bp-filename">{blImport.filename}</span>}
           </div>
           <div className="bp-annotation-toolbar">
-            <button onClick={() => setScale(s => Math.max(SCALE_MIN, s - SCALE_STEP))} title="Zoom -"><ZoomOut size={16} /></button>
-            <span className="bp-zoom-label">{Math.round(scale * 100)}%</span>
-            <button onClick={() => setScale(s => Math.min(SCALE_MAX, s + SCALE_STEP))} title="Zoom +"><ZoomIn size={16} /></button>
+            <button onClick={zoomOut} title="Zoom -"><ZoomOut size={16} /></button>
+            <span className="bp-zoom-label">{Math.round(displayScale * 100)}%</span>
+            <button onClick={zoomIn} title="Zoom +"><ZoomIn size={16} /></button>
+            <button onClick={zoomFit} title="Ajuster">🔍</button>
             <div className="bp-toolbar-sep" />
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}><ChevronLeft size={16} /></button>
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+              <ChevronLeft size={16} />
+            </button>
             <span className="bp-page-label">{currentPage} / {numPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} disabled={currentPage >= numPages}><ChevronRight size={16} /></button>
+            <button onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} disabled={currentPage >= numPages}>
+              <ChevronRight size={16} />
+            </button>
             <div className="bp-toolbar-sep" />
-            <button className={showLegend ? 'active' : ''} onClick={() => setShowLegend(v => !v)} title="Légende"><Layers size={16} /></button>
-            <button className={showInfo ? 'active' : ''} onClick={() => setShowInfo(v => !v)} title="Infos affaire"><Info size={16} /></button>
+            <button className={showLegend ? 'active' : ''} onClick={() => setShowLegend(v => !v)} title="Légende">
+              <Layers size={16} />
+            </button>
+            <button className={showInfo ? 'active' : ''} onClick={() => setShowInfo(v => !v)} title="Infos affaire">
+              <Info size={16} />
+            </button>
             <div className="bp-toolbar-sep" />
             <button onClick={handlePrint} title="Imprimer"><Printer size={16} /></button>
             <button onClick={handleDownload} title="Télécharger"><Download size={16} /></button>
@@ -330,32 +591,37 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
           {showLegend && (
             <div className="bp-legend">
               <div className="bp-legend-title">Familles</div>
-              {sections.filter(s => s.color).map(sec => (
+              {sections.filter(s => s.color && s.items.length > 0).map(sec => (
                 <div key={sec.name} className="bp-legend-item">
-                  <span className="bp-legend-swatch" style={{ background: sec.color.bg, borderColor: sec.color.border }} />
-                  <span>{sec.color.label || sec.name}</span>
+                  <span
+                    className="bp-legend-swatch"
+                    style={{ background: sec.color.bg, borderColor: sec.color.border }}
+                  />
+                  <span>{sec.color.emoji} {sec.color.label || sec.name}</span>
                   <span className="bp-legend-count">{sec.items.length}</span>
                 </div>
               ))}
               {stats.kitsCount > 0 && (
                 <div className="bp-legend-item">
                   <span className="bp-legend-swatch bp-legend-kit" />
-                  <span>Kits détectés</span>
+                  <span>📦 Kits</span>
                   <span className="bp-legend-count">{stats.kitsCount}</span>
                 </div>
               )}
             </div>
           )}
 
-          {/* Canvas layers */}
-          <div className="bp-canvas-container">
-            {rendering && <div className="bp-rendering-indicator">Rendu en cours…</div>}
-            <canvas ref={canvasRef} className="bp-canvas-pdf" />
-            <canvas ref={overlayCanvasRef} className="bp-canvas-overlay" />
+          {/* Canvas */}
+          <div className="bp-canvas-scroll">
+            {loading && <div className="bp-rendering-indicator">Chargement du PDF...</div>}
+            <div className="bp-canvas-wrapper">
+              <canvas ref={canvasRef} className="bp-canvas-pdf" />
+              <canvas ref={overlayCanvasRef} className="bp-canvas-overlay" />
+            </div>
           </div>
         </div>
 
-        {/* Footer stats */}
+        {/* Footer */}
         <div className="bp-annotation-footer">
           <span>{stats.total || 0} articles</span>
           <span>{stats.matched || 0} matchés</span>

@@ -805,7 +805,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       };
 
       // Préparer les index de lookup
-      const allEquipment = db.prepare('SELECT id, reference, name, serial_number FROM equipment').all();
+      const allEquipment = db.prepare('SELECT id, reference, name, serial_number FROM equipment LIMIT 10000').all();
       
       // Index exact par reference
       const equipByRef = {};
@@ -1136,11 +1136,11 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
       let logos = [];
       
       try {
-        photos = readdirSync(photosDir).filter(f => /\.(jpg|jpeg|png|gif|webp|avif|svg)$/i.test(f));
+        photos = readdirSync(photosDir).filter(f => /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(f)).slice(0, 500);
       } catch (e) { /* dossier inexistant */ }
       
       try {
-        logos = readdirSync(logosDir).filter(f => /\.(jpg|jpeg|png|gif|webp|avif|svg)$/i.test(f));
+        logos = readdirSync(logosDir).filter(f => /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(f)).slice(0, 500);
       } catch (e) { /* dossier inexistant */ }
       
       res.json({ photos, logos });
@@ -1175,10 +1175,10 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     storage: photoStorage,
     limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
     fileFilter: (req, file, cb) => {
-      if (/\.(jpg|jpeg|png|gif|webp|avif|svg)$/i.test(file.originalname)) {
+      if (/\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.originalname)) {
         cb(null, true);
       } else {
-        cb(new Error('Format non supporté. Formats acceptés : jpg, png, gif, webp, avif, svg'));
+        cb(new Error('Format non supporté. Formats acceptés : jpg, png, gif, webp, avif'));
       }
     },
   });
@@ -1206,10 +1206,12 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
         return res.status(400).json({ error: 'Nom de fichier invalide' });
       }
       const filePath = join(photosDir, filename);
-      if (!existsSync(filePath)) {
-        return res.status(404).json({ error: 'Photo introuvable' });
+      try {
+        unlinkSync(filePath);
+      } catch (err) {
+        if (err.code === 'ENOENT') return res.status(404).json({ error: 'Photo introuvable' });
+        throw err;
       }
-      unlinkSync(filePath);
       // Nettoyer le champ photo en DB si un équipement pointait vers ce fichier
       db.prepare("UPDATE equipment SET photo = NULL WHERE photo LIKE ?").run(`%${filename}%`);
       res.json({ success: true, deleted: filename });

@@ -59,22 +59,22 @@ export function toSnakeCase(obj) {
 
 export class ApiClient {
   constructor() {
-    this.token = localStorage.getItem('auth_token');
+    // [AUDIT Phase 3] Le token JWT est désormais dans un cookie httpOnly (inaccessible au JS)
+    // On ne stocke que les infos utilisateur pour l'affichage
     this.user = JSON.parse(localStorage.getItem('auth_user') || 'null');
+    // Migration: nettoyer l'ancien token si présent
+    localStorage.removeItem('auth_token');
   }
 
-  setAuth(token, user) {
-    this.token = token;
+  setAuth(user) {
     this.user = user;
-    localStorage.setItem('auth_token', token);
     localStorage.setItem('auth_user', JSON.stringify(user));
   }
 
   clearAuth() {
-    this.token = null;
     this.user = null;
-    localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_token'); // nettoyage migration
   }
 
   async request(endpoint, options = {}) {
@@ -86,15 +86,12 @@ export class ApiClient {
       ...options.headers,
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-
     let response;
     try {
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers,
+        credentials: 'include', // [AUDIT Phase 3] Envoie le cookie httpOnly automatiquement
       });
     } catch (networkError) {
       const error = new Error('Erreur réseau — vérifiez votre connexion');
@@ -166,30 +163,28 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    this.setAuth(data.token, data.user);
+    // [AUDIT Phase 3] Le token est dans le cookie httpOnly, on stocke juste le user
+    this.setAuth(data.user);
     return data;
   }
 
   async logout() {
-    if (this.token) {
-      try {
-        await fetch(`${API_URL}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      } catch (err) {
-        console.error('❌ Erreur lors de la déconnexion côté serveur:', err);
-      }
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include', // [AUDIT Phase 3] Cookie httpOnly envoyé automatiquement
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (err) {
+      console.error('❌ Erreur lors de la déconnexion côté serveur:', err);
     }
 
     this.clearAuth();
   }
 
   isAuthenticated() {
-    return !!this.token;
+    // [AUDIT Phase 3] On vérifie la présence de l'info user (le token est dans le cookie httpOnly)
+    return !!this.user;
   }
 
   getCurrentUser() {

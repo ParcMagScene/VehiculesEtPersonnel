@@ -25,6 +25,7 @@ if (isDev) {
 
 import http from 'http';
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import fs from 'fs';
 import path from 'path';
@@ -63,12 +64,14 @@ import { setupAttachmentsRoutes } from './attachmentsRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupInventoryRoutes } from './inventoryRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
+import { setupGoogleCalendarRoutes } from './googleCalendarRoutes.js';
 import { initEmailTransporter } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1); // [AUDIT] Nécessaire pour rate limiter derrière reverse proxy
 const PORT = process.env.PORT || 3002;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
@@ -85,6 +88,7 @@ if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHA
 app.use(compression({ threshold: 1024 }));
 app.use(helmetConditional);
 app.use(corsMiddleware);
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(xssSanitize);
 
@@ -226,21 +230,26 @@ setupInventoryRoutes(app, authenticateToken);
 // Routes Module Surveillance Vidéo (caméras CRUD, WebRTC, PTZ, snapshots, logs)
 setupVideoRoutes(app, authenticateToken, requireAdmin);
 
-// Debug endpoints
-app.get('/api/debug/route-test', (req, res) => {
-  res.json({ ok: true, isDev, env: process.env.NODE_ENV, args: process.argv });
-});
+// Routes Google Calendar Proxy (CRIT-11: tokens Google côté serveur)
+setupGoogleCalendarRoutes(app, authenticateToken);
 
-app.get('/api/debug/routes', (req, res) => {
-  const routes = [];
-  app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-      const methods = Object.keys(middleware.route.methods).join(',');
-      routes.push({ path: middleware.route.path, methods });
-    }
+// Debug endpoints
+if (isDev) {
+  app.get('/api/debug/route-test', (req, res) => {
+    res.json({ ok: true, isDev, env: process.env.NODE_ENV, args: process.argv });
   });
-  res.json({ routes });
-});
+
+  app.get('/api/debug/routes', (req, res) => {
+    const routes = [];
+    app._router.stack.forEach((middleware) => {
+      if (middleware.route) {
+        const methods = Object.keys(middleware.route.methods).join(',');
+        routes.push({ path: middleware.route.path, methods });
+      }
+    });
+    res.json({ routes });
+  });
+}
 
 if (isDev) {
   app.get('/api/debug/session', authenticateToken, (req, res) => {

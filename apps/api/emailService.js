@@ -5,6 +5,23 @@
 import nodemailer from 'nodemailer';
 import logger from './logger.js';
 
+/** Échappe les caractères HTML pour prévenir XSS dans les emails */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Sanitize un header email pour prévenir l'injection SMTP */
+function sanitizeEmailHeader(str) {
+  if (!str) return '';
+  return String(str).replace(/[\r\n]/g, '');
+}
+
 let transporter = null;
 let emailConfig = null;
 
@@ -62,7 +79,7 @@ async function sendEmail({ to, subject, html, text }) {
 
   try {
     const info = await transporter.sendMail({
-      from: `"${emailConfig.from_name || 'eM@g'}" <${emailConfig.smtp_user}>`,
+      from: `"${sanitizeEmailHeader(emailConfig.from_name || 'eM@g')}" <${emailConfig.smtp_user}>`,
       to,
       subject: `[eM@g] ${subject}`,
       html,
@@ -123,9 +140,9 @@ export async function alertAccessRequest(db, requestData) {
           <h2 style="color: white; margin: 0;">🔑 Nouvelle demande d'accès</h2>
         </div>
         <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
-          <p><strong>Nom :</strong> ${requestData.name || 'Non renseigné'}</p>
-          <p><strong>Email :</strong> ${requestData.email || 'Non renseigné'}</p>
-          <p><strong>Identifiant demandé :</strong> ${requestData.username || 'Non renseigné'}</p>
+          <p><strong>Nom :</strong> ${escapeHtml(requestData.name) || 'Non renseigné'}</p>
+          <p><strong>Email :</strong> ${escapeHtml(requestData.email) || 'Non renseigné'}</p>
+          <p><strong>Identifiant demandé :</strong> ${escapeHtml(requestData.username) || 'Non renseigné'}</p>
           <p style="color: #64748b; font-size: 12px; margin-top: 16px;">
             Connectez-vous à eM@g pour approuver ou refuser cette demande.
           </p>
@@ -151,11 +168,11 @@ export async function alertReservationCreated(db, reservation, creatorName) {
           <h2 style="color: white; margin: 0;">📅 Nouvelle réservation</h2>
         </div>
         <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
-          <p><strong>Véhicule :</strong> ${reservation.vehicleName || 'N/A'}</p>
-          <p><strong>Du :</strong> ${reservation.startDate || ''} (${reservation.startPeriod || ''})</p>
-          <p><strong>Au :</strong> ${reservation.endDate || ''} (${reservation.endPeriod || ''})</p>
-          <p><strong>Client :</strong> ${reservation.clientName || 'Non spécifié'}</p>
-          <p><strong>Créée par :</strong> ${creatorName || 'Inconnu'}</p>
+          <p><strong>Véhicule :</strong> ${escapeHtml(reservation.vehicleName) || 'N/A'}</p>
+          <p><strong>Du :</strong> ${escapeHtml(reservation.startDate) || ''} (${escapeHtml(reservation.startPeriod) || ''})</p>
+          <p><strong>Au :</strong> ${escapeHtml(reservation.endDate) || ''} (${escapeHtml(reservation.endPeriod) || ''})</p>
+          <p><strong>Client :</strong> ${escapeHtml(reservation.clientName) || 'Non spécifié'}</p>
+          <p><strong>Créée par :</strong> ${escapeHtml(creatorName) || 'Inconnu'}</p>
         </div>
       </div>
     `,
@@ -178,11 +195,11 @@ export async function alertAssignmentCreated(db, assignment, creatorName) {
           <h2 style="color: white; margin: 0;">👤 Nouvelle affectation</h2>
         </div>
         <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
-          <p><strong>Personnel :</strong> ${assignment.personName || 'N/A'}</p>
-          <p><strong>Date :</strong> ${assignment.day || ''}</p>
-          <p><strong>Période :</strong> ${assignment.period || ''}</p>
-          <p><strong>Affaire :</strong> ${assignment.affaireName || 'Non spécifiée'}</p>
-          <p><strong>Par :</strong> ${creatorName || 'Inconnu'}</p>
+          <p><strong>Personnel :</strong> ${escapeHtml(assignment.personName) || 'N/A'}</p>
+          <p><strong>Date :</strong> ${escapeHtml(assignment.day) || ''}</p>
+          <p><strong>Période :</strong> ${escapeHtml(assignment.period) || ''}</p>
+          <p><strong>Affaire :</strong> ${escapeHtml(assignment.affaireName) || 'Non spécifiée'}</p>
+          <p><strong>Par :</strong> ${escapeHtml(creatorName) || 'Inconnu'}</p>
         </div>
       </div>
     `,
@@ -205,10 +222,10 @@ export async function alertOverdueIntervention(db, intervention, vehicleName) {
           <h2 style="color: white; margin: 0;">⚠️ Intervention en retard</h2>
         </div>
         <div style="background: #fef2f2; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #fecaca;">
-          <p><strong>Véhicule :</strong> ${vehicleName}</p>
-          <p><strong>Description :</strong> ${intervention.description || 'N/A'}</p>
-          <p><strong>Prévu du :</strong> ${intervention.startDate || ''} au ${intervention.endDate || ''}</p>
-          <p><strong>Statut :</strong> ${intervention.status || 'En cours'}</p>
+          <p><strong>Véhicule :</strong> ${escapeHtml(vehicleName)}</p>
+          <p><strong>Description :</strong> ${escapeHtml(intervention.description) || 'N/A'}</p>
+          <p><strong>Prévu du :</strong> ${escapeHtml(intervention.startDate) || ''} au ${escapeHtml(intervention.endDate) || ''}</p>
+          <p><strong>Statut :</strong> ${escapeHtml(intervention.status) || 'En cours'}</p>
         </div>
       </div>
     `,
@@ -238,12 +255,12 @@ export async function alertLeaveCreated(db, leave, personName) {
           <h2 style="color: white; margin: 0;">🏖️ Nouvelle demande de congé</h2>
         </div>
         <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
-          <p><strong>Employé :</strong> ${personName}</p>
-          <p><strong>Type :</strong> ${typeLabel}</p>
-          <p><strong>Du :</strong> ${leave.start_date || leave.startDate || ''}</p>
-          <p><strong>Au :</strong> ${leave.end_date || leave.endDate || ''}</p>
-          <p><strong>Jours ouvrés :</strong> ${leave.working_days || leave.workingDays || '—'}</p>
-          ${leave.employee_comment ? `<p><strong>Commentaire :</strong> ${leave.employee_comment}</p>` : ''}
+          <p><strong>Employé :</strong> ${escapeHtml(personName)}</p>
+          <p><strong>Type :</strong> ${escapeHtml(typeLabel)}</p>
+          <p><strong>Du :</strong> ${escapeHtml(leave.start_date || leave.startDate) || ''}</p>
+          <p><strong>Au :</strong> ${escapeHtml(leave.end_date || leave.endDate) || ''}</p>
+          <p><strong>Jours ouvrés :</strong> ${escapeHtml(leave.working_days || leave.workingDays) || '—'}</p>
+          ${leave.employee_comment ? `<p><strong>Commentaire :</strong> ${escapeHtml(leave.employee_comment)}</p>` : ''}
           <p style="color: #64748b; font-size: 12px; margin-top: 16px;">
             Connectez-vous à eM@g pour valider ou refuser cette demande.
           </p>
@@ -279,11 +296,11 @@ export async function alertLeaveDecision(db, leave, decisionBy) {
           <h2 style="color: white; margin: 0;">${statusLabel}</h2>
         </div>
         <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
-          <p><strong>Demande :</strong> ${leave.leave_type || ''}</p>
-          <p><strong>Du :</strong> ${leave.start_date || ''} au ${leave.end_date || ''}</p>
-          <p><strong>Décision par :</strong> ${decisionBy}</p>
-          ${leave.admin_comment ? `<p><strong>Commentaire :</strong> ${leave.admin_comment}</p>` : ''}
-          ${leave.status === 'modified' ? `<p><strong>Nouvelles dates :</strong> ${leave.modified_start_date || ''} au ${leave.modified_end_date || ''}</p>` : ''}
+          <p><strong>Demande :</strong> ${escapeHtml(leave.leave_type) || ''}</p>
+          <p><strong>Du :</strong> ${escapeHtml(leave.start_date) || ''} au ${escapeHtml(leave.end_date) || ''}</p>
+          <p><strong>Décision par :</strong> ${escapeHtml(decisionBy)}</p>
+          ${leave.admin_comment ? `<p><strong>Commentaire :</strong> ${escapeHtml(leave.admin_comment)}</p>` : ''}
+          ${leave.status === 'modified' ? `<p><strong>Nouvelles dates :</strong> ${escapeHtml(leave.modified_start_date) || ''} au ${escapeHtml(leave.modified_end_date) || ''}</p>` : ''}
         </div>
       </div>
     `,
@@ -316,12 +333,12 @@ export async function alertSavTicketCreated(db, ticket, creatorName) {
           <h2 style="color: white; margin: 0;">🔧 Nouveau ticket SAV</h2>
         </div>
         <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
-          <p><strong>Équipement :</strong> ${eqName}${eq?.serial_number ? ` (S/N: ${eq.serial_number})` : ''}</p>
-          <p><strong>Titre :</strong> ${ticket.title || 'N/A'}</p>
-          <p><strong>Type :</strong> ${ticket.type || 'panne'}</p>
-          <p><strong>Priorité :</strong> ${ticket.priority || 'medium'}</p>
-          ${ticket.description ? `<p><strong>Description :</strong> ${ticket.description}</p>` : ''}
-          <p><strong>Créé par :</strong> ${creatorName || 'Inconnu'}</p>
+          <p><strong>Équipement :</strong> ${escapeHtml(eqName)}${eq?.serial_number ? ` (S/N: ${escapeHtml(eq.serial_number)})` : ''}</p>
+          <p><strong>Titre :</strong> ${escapeHtml(ticket.title) || 'N/A'}</p>
+          <p><strong>Type :</strong> ${escapeHtml(ticket.type) || 'panne'}</p>
+          <p><strong>Priorité :</strong> ${escapeHtml(ticket.priority) || 'medium'}</p>
+          ${ticket.description ? `<p><strong>Description :</strong> ${escapeHtml(ticket.description)}</p>` : ''}
+          <p><strong>Créé par :</strong> ${escapeHtml(creatorName) || 'Inconnu'}</p>
           <p style="color: #64748b; font-size: 12px; margin-top: 16px;">
             Connectez-vous à eM@g pour traiter ce ticket.
           </p>
@@ -357,12 +374,12 @@ export async function alertMaintenanceCreated(db, maintenance, vehicleName, crea
           <h2 style="color: white; margin: 0;">${icon} ${title}</h2>
         </div>
         <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
-          <p><strong>Véhicule :</strong> ${vehicleName}</p>
-          <p><strong>Type :</strong> ${maintenance.type || 'N/A'}${isCT ? ` (${maintenance.technical_control_type})` : ''}</p>
-          <p><strong>Du :</strong> ${maintenance.start_date || ''} au ${maintenance.end_date || ''}</p>
-          ${maintenance.description ? `<p><strong>Description :</strong> ${maintenance.description}</p>` : ''}
-          ${maintenance.garage ? `<p><strong>Garage :</strong> ${maintenance.garage}</p>` : ''}
-          <p><strong>Créé par :</strong> ${creatorName || 'Inconnu'}</p>
+          <p><strong>Véhicule :</strong> ${escapeHtml(vehicleName)}</p>
+          <p><strong>Type :</strong> ${escapeHtml(maintenance.type) || 'N/A'}${isCT ? ` (${escapeHtml(maintenance.technical_control_type)})` : ''}</p>
+          <p><strong>Du :</strong> ${escapeHtml(maintenance.start_date) || ''} au ${escapeHtml(maintenance.end_date) || ''}</p>
+          ${maintenance.description ? `<p><strong>Description :</strong> ${escapeHtml(maintenance.description)}</p>` : ''}
+          ${maintenance.garage ? `<p><strong>Garage :</strong> ${escapeHtml(maintenance.garage)}</p>` : ''}
+          <p><strong>Créé par :</strong> ${escapeHtml(creatorName) || 'Inconnu'}</p>
         </div>
       </div>
     `,

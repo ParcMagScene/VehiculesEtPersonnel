@@ -599,7 +599,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-      if (!currentUser?.is_admin && request.owner_user_id !== req.user.id) {
+      if (currentUser?.is_admin !== 1 && request.owner_user_id !== req.user.id) {
         return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
       }
       delete request.owner_user_id;
@@ -771,7 +771,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       if (role === 'employee' && existing.owner_user_id !== req.user.id) {
         return res.status(403).json({ error: 'Vous ne pouvez signer que vos propres demandes' });
       }
-      if (role === 'admin' && !currentUser?.is_admin) {
+      if (role === 'admin' && currentUser?.is_admin !== 1) {
         return res.status(403).json({ error: 'Accès admin requis' });
       }
 
@@ -819,7 +819,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-      if (!currentUser?.is_admin && existing.owner_user_id !== req.user.id) {
+      if (currentUser?.is_admin !== 1 && existing.owner_user_id !== req.user.id) {
         return res.status(403).json({ error: 'Vous ne pouvez annuler que vos propres demandes' });
       }
 
@@ -882,7 +882,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-      if (!currentUser?.is_admin && existing.owner_user_id !== req.user.id) {
+      if (currentUser?.is_admin !== 1 && existing.owner_user_id !== req.user.id) {
         return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres demandes' });
       }
 
@@ -995,7 +995,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-      if (!currentUser?.is_admin && request.owner_user_id !== req.user.id) {
+      if (currentUser?.is_admin !== 1 && request.owner_user_id !== req.user.id) {
         return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
       }
       delete request.owner_user_id;
@@ -1104,7 +1104,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const leaveReq = db.prepare('SELECT lr.person_id, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
       if (!leaveReq) return res.status(404).json({ error: 'Demande non trouvée' });
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-      if (!currentUser?.is_admin && leaveReq.owner_user_id !== req.user.id) {
+      if (currentUser?.is_admin !== 1 && leaveReq.owner_user_id !== req.user.id) {
         return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
       }
 

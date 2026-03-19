@@ -9,9 +9,19 @@ import db from './database.js';
 /**
  * Substitue les variables {{var}} dans un texte
  */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function substituteVariables(text, vars = {}) {
   return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-    return vars[key] !== undefined ? vars[key] : match;
+    return vars[key] !== undefined ? escapeHtml(vars[key]) : match;
   });
 }
 
@@ -269,24 +279,24 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       const contacts = [];
 
       // Utilisateurs
-      const users = db.prepare("SELECT id, name, email FROM users WHERE email IS NOT NULL AND email != ''").all();
+      const users = db.prepare("SELECT id, name, email FROM users WHERE email IS NOT NULL AND email != '' LIMIT 2000").all();
       users.forEach(u => contacts.push({ type: 'user', id: u.id, name: u.name, email: u.email }));
 
       // Personnel
       try {
-        const persons = db.prepare("SELECT id, first_name || ' ' || last_name as name, email FROM persons WHERE email IS NOT NULL AND email != ''").all();
+        const persons = db.prepare("SELECT id, first_name || ' ' || last_name as name, email FROM persons WHERE email IS NOT NULL AND email != '' LIMIT 2000").all();
         persons.forEach(p => contacts.push({ type: 'person', id: p.id, name: p.name, email: p.email }));
       } catch { /* table pas encore créée */ }
 
       // Clients
       try {
-        const clients = db.prepare("SELECT id, name, email FROM clients WHERE email IS NOT NULL AND email != ''").all();
+        const clients = db.prepare("SELECT id, name, email FROM clients WHERE email IS NOT NULL AND email != '' LIMIT 2000").all();
         clients.forEach(c => contacts.push({ type: 'client', id: c.id, name: c.name, email: c.email }));
       } catch { /* table pas encore créée */ }
 
       // Fournisseurs
       try {
-        const suppliers = db.prepare("SELECT id, name, email FROM suppliers WHERE email IS NOT NULL AND email != ''").all();
+        const suppliers = db.prepare("SELECT id, name, email FROM suppliers WHERE email IS NOT NULL AND email != '' LIMIT 2000").all();
         suppliers.forEach(s => contacts.push({ type: 'supplier', id: s.id, name: s.name, email: s.email }));
       } catch { /* table pas encore créée */ }
 

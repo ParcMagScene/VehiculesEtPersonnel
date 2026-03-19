@@ -114,11 +114,9 @@ export function registerEquipmentMethods(ApiClient) {
       for (const file of files) {
         formData.append('photos', file);
       }
-      const headers = {};
-      if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
       const res = await fetch(`${API_URL}/equipment-photos/upload`, {
         method: 'POST',
-        headers,
+        credentials: 'include',
         body: formData,
       });
       if (!res.ok) {

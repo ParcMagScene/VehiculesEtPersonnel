@@ -57,6 +57,43 @@ export function registerAdminMethods(ApiClient) {
       return this.request('/config/google/maps-api-key', { method: 'POST', body: JSON.stringify({ value }) });
     },
 
+    // Google Calendar Proxy
+    async storeGoogleToken(accessToken, expiresAt) {
+      return this.request('/google-calendar/token', { method: 'POST', body: JSON.stringify({ accessToken, expiresAt }) });
+    },
+    async getGoogleTokenStatus() {
+      return this.request('/google-calendar/token-status');
+    },
+    async deleteGoogleToken() {
+      return this.request('/google-calendar/token', { method: 'DELETE' });
+    },
+    async getGoogleCalendars() {
+      return this.request('/google-calendar/calendars');
+    },
+    async addGoogleCalendar(body) {
+      return this.request('/google-calendar/calendars', { method: 'POST', body: JSON.stringify(body) });
+    },
+    async getGoogleEvents(params = {}) {
+      const qs = new URLSearchParams(params).toString();
+      return this.request(`/google-calendar/events${qs ? '?' + qs : ''}`);
+    },
+    async getGoogleEvent(eventId, calendarId) {
+      const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
+      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`);
+    },
+    async createGoogleEvent(eventData, calendarId) {
+      const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
+      return this.request(`/google-calendar/events${qs}`, { method: 'POST', body: JSON.stringify(eventData) });
+    },
+    async updateGoogleEvent(eventId, eventData, calendarId) {
+      const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
+      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`, { method: 'PATCH', body: JSON.stringify(eventData) });
+    },
+    async deleteGoogleEvent(eventId, calendarId) {
+      const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
+      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`, { method: 'DELETE' });
+    },
+
     // Demandes d'accès
     async getAccessRequests() {
       return this.request('/access-requests');

@@ -37,14 +37,10 @@ export function registerVideoMethods(ApiClient) {
 
   // ── WebRTC ──
 
-  ApiClient.prototype.getWebRTCOffer = async function (cameraId) {
-    return this.request(`/video/cameras/${cameraId}/webrtc-offer`, { method: 'POST' });
-  };
-
-  ApiClient.prototype.sendWebRTCAnswer = async function (cameraId, sdp, sessionToken) {
-    return this.request(`/video/cameras/${cameraId}/webrtc-answer`, {
+  ApiClient.prototype.whepNegotiate = async function (cameraId, offerSdp) {
+    return this.request(`/video/cameras/${cameraId}/whep`, {
       method: 'POST',
-      body: JSON.stringify({ sdp, sessionToken }),
+      body: JSON.stringify({ sdp: offerSdp }),
     });
   };
 
@@ -69,7 +65,7 @@ export function registerVideoMethods(ApiClient) {
 
   ApiClient.prototype.getSnapshot = async function (cameraId) {
     const response = await fetch(`${API_URL}/video/cameras/${cameraId}/snapshot`, {
-      headers: { 'Authorization': `Bearer ${this.token}` },
+      credentials: 'include',
     });
     if (!response.ok) throw new Error('Snapshot indisponible');
     const blob = await response.blob();

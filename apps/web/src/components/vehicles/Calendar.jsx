@@ -133,12 +133,12 @@ const ReservationTooltip = ({ block, currentUser, users = [] }) => {
 // Helper pour délier un trajet depuis le calendrier
 const unlinkTripDirectly = async (reservationId, eventId, btn, onLinked) => {
   try {
-    const token = localStorage.getItem('auth_token');
-    if (!token || !reservationId) return;
+    if (!reservationId) return;
     if (btn) btn.classList.add('linking');
     const response = await fetch('/api/trip-details/unlink', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ reservationId, eventId })
     });
     if (response.ok) {
@@ -156,12 +156,12 @@ const unlinkTripDirectly = async (reservationId, eventId, btn, onLinked) => {
 
 const linkTripsDirectly = async (reservationId, eventId1, eventId2, btn, onLinked) => {
   try {
-    const token = localStorage.getItem('auth_token');
-    if (!token || !reservationId) return;
+    if (!reservationId) return;
     if (btn) btn.classList.add('linking');
     const response = await fetch('/api/trip-details/link', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ reservationId, eventId1, eventId2 })
     });
     if (response.ok) {
@@ -691,10 +691,8 @@ const Calendar = ({
   const fetchTripData = useCallback(async (reservationId) => {
     if (calendarTripCache[reservationId]) return calendarTripCache[reservationId];
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return [];
       const response = await fetch(`/api/trip-details/${reservationId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (response.ok) {
         const data = await response.json();
@@ -765,11 +763,10 @@ const Calendar = ({
   const handleSaveTripFromCalendar = useCallback(async (tripFormData) => {
     if (!calendarTripModal) return null;
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return null;
       const response = await fetch('/api/trip-details', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           reservationId: calendarTripModal.reservation.id,
           eventId: calendarTripModal.event.id,
@@ -802,10 +799,8 @@ const Calendar = ({
       return u;
     });
     // Re-fetcher immédiatement
-    const token = localStorage.getItem('auth_token');
-    if (!token) return;
     fetch(`/api/trip-details/${reservationId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      credentials: 'include'
     }).then(r => r.ok ? r.json() : []).then(data => {
       const trips = Array.isArray(data) ? data : (data.tripDetails || []);
       setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
@@ -822,10 +817,7 @@ const Calendar = ({
   // Pré-charger les trip data pour les réservations tournée visibles
   useEffect(() => {
     if (!reservations || !Array.isArray(reservations)) return;
-    const token = localStorage.getItem('auth_token');
-    if (!token) return;
     const controller = new AbortController();
-    const headers = { 'Authorization': `Bearer ${token}` };
     const tourneeIds = reservations
       .filter(r => (r.isTournee || r.is_tournee) && r.id && !calendarTripCache[r.id])
       .map(r => r.id);
@@ -841,7 +833,7 @@ const Calendar = ({
         if (controller.signal.aborted) return;
         const batch = ids.slice(i, i + BATCH_SIZE);
         await Promise.allSettled(batch.map(id =>
-          fetch(`/api/trip-details/${id}`, { headers, signal: controller.signal })
+          fetch(`/api/trip-details/${id}`, { credentials: 'include', signal: controller.signal })
             .then(r => r.ok ? r.json() : [])
             .then(data => {
               if (controller.signal.aborted) return;

@@ -35,7 +35,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5174,
     open: true,
-    allowedHosts: true,
+    allowedHosts: ['localhost', '192.168.205.75', 'magsav.duckdns.org'],
     proxy: {
       '/api': {
         target: 'http://localhost:3003',
@@ -47,11 +47,23 @@ export default defineConfig({
     // MODE PROD — proxy vers le backend PROD sur port 3002
     host: '0.0.0.0',
     port: 4173,
-    allowedHosts: ['magsav.duckdns.org', '.duckdns.org'],
+    allowedHosts: ['localhost', '192.168.205.75', 'magsav.duckdns.org'],
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
-      'Expires': '0'
+      'Expires': '0',
+      'Content-Security-Policy': [
+        "default-src 'self'",
+        "script-src 'self' https://accounts.google.com https://maps.googleapis.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
+        "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com",
+        "connect-src 'self' https://*.googleapis.com https://accounts.google.com",
+        "frame-src https://accounts.google.com",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ].join('; '),
     },
     proxy: {
       '/api': {

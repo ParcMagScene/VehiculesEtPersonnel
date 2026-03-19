@@ -752,7 +752,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         params.push(screenId);
       }
       query += ' ORDER BY l.created_at DESC LIMIT ? OFFSET ?';
-      params.push(parseInt(limit), parseInt(offset));
+      params.push(Math.max(1, Math.min(parseInt(limit, 10) || 100, 1000)), Math.max(0, parseInt(offset, 10) || 0));
 
       const logs = db.prepare(query).all(...params);
       const total = db.prepare(

@@ -1,11 +1,13 @@
 #!/bin/bash
+set -euo pipefail
 
 # Script de sauvegarde automatique de la base de données
 # Usage: ./backup-database.sh
 
 # Configuration
-DB_FILE="/Users/reunion/eM@g/server/vehicules.db"
-BACKUP_DIR="/Users/reunion/eM@g/server/backups"
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+DB_FILE="$SCRIPT_DIR/vehicules.db"
+BACKUP_DIR="$SCRIPT_DIR/backups"
 DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 BACKUP_FILE="$BACKUP_DIR/vehicules_backup_$DATE.db"
 
@@ -32,7 +34,7 @@ if [ $? -eq 0 ]; then
     # Garder seulement les 30 dernières sauvegardes
     echo "🧹 Nettoyage des anciennes sauvegardes..."
     cd "$BACKUP_DIR"
-    ls -t vehicules_backup_*.db | tail -n +31 | xargs -r rm
+    find "$BACKUP_DIR" -name 'vehicules_backup_*.db' -type f | sort -r | tail -n +31 | xargs rm -f 2>/dev/null || true
     
     # Compter les sauvegardes restantes
     COUNT=$(ls -1 vehicules_backup_*.db 2>/dev/null | wc -l)

@@ -101,6 +101,7 @@ const LoginForm = ({ onLogin }) => {
       const response = await fetch(`${getApiUrl()}/auth/force-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ 
           email: conflictUser.email, 
           password: conflictUser.password 
@@ -114,8 +115,8 @@ const LoginForm = ({ onLogin }) => {
 
       const data = await response.json();
       
-      // Sauvegarder le token via api.setAuth (synchronise le singleton)
-      api.setAuth(data.token, data.user);
+      // [AUDIT Phase 3] Le token est dans le cookie httpOnly
+      api.setAuth(data.user);
       
       // Fermer le modal et informer le parent
       setShowSessionConflict(false);
@@ -169,6 +170,7 @@ const LoginForm = ({ onLogin }) => {
       const response = await fetch(`${getApiUrl()}/auth/set-new-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           email: resetFormEmail,
           resetToken,
@@ -182,7 +184,7 @@ const LoginForm = ({ onLogin }) => {
       }
 
       const data = await response.json();
-      api.setAuth(data.token, data.user);
+      api.setAuth(data.user);
       setShowResetPassword(false);
       window.location.reload();
     } catch (err) {

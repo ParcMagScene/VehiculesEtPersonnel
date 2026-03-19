@@ -6,8 +6,18 @@
 import crypto from 'crypto';
 import logger from './logger.js';
 
+// ── Protection SSRF — bloquer les IPs internes sauf le LAN local ──
+const BLOCKED_RANGES = [/^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^169\.254\./, /^0\./, /^255\./];
+function isBlockedIP(ip) {
+  if (!ip || !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return true;
+  return BLOCKED_RANGES.some(r => r.test(ip));
+}
+
 // ── Chiffrement / déchiffrement des mots de passe caméras ──
 const CIPHER_ALGO = 'aes-256-gcm';
+if (!process.env.VIDEO_CIPHER_KEY) {
+  logger.warn('⚠️  VIDEO_CIPHER_KEY non défini — les mots de passe caméra seront perdus au redémarrage');
+}
 const CIPHER_KEY = process.env.VIDEO_CIPHER_KEY || crypto.randomBytes(32).toString('hex');
 const keyBuffer = Buffer.from(CIPHER_KEY.padEnd(64, '0').slice(0, 64), 'hex');
 
@@ -65,7 +75,11 @@ export function removeSession(token) {
 
 // ── Construire l'URL RTSP ──
 export function buildRtspUrl(camera, password) {
-  if (camera.rtsp_url) return camera.rtsp_url;
+  if (camera.rtsp_url) {
+    if (!/^rtsp[s]?:\/\//.test(camera.rtsp_url)) throw new Error('rtsp_url doit commencer par rtsp:// ou rtsps://');
+    return camera.rtsp_url;
+  }
+  if (isBlockedIP(camera.ip)) throw new Error('Adresse IP bloquée (SSRF)');
   const port = camera.rtsp_port || 554;
   const user = camera.username || 'admin';
   const pass = password || '';
@@ -129,39 +143,35 @@ export async function registerStreamInProxy(cameraId, rtspUrl) {
   }
 }
 
-// ── Obtenir l'offre WebRTC depuis MediaMTX ──
-export async function getWebRTCOffer(cameraId) {
+// ── Négociation WHEP : envoyer l'offre SDP du client, recevoir la réponse ──
+export async function whepExchange(cameraId, clientOfferSdp) {
   const streamName = `cam-${cameraId}`;
   try {
     const res = await fetch(`${MEDIAMTX_WEBRTC}/${streamName}/whep`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/sdp' },
-      body: '', // Empty body triggers offer generation
+      body: clientOfferSdp,
     });
-    if (!res.ok) return null;
-    const sdp = await res.text();
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      logger.warn(`WHEP ${streamName} HTTP ${res.status}: ${errBody}`);
+      return null;
+    }
+    const answerSdp = await res.text();
     const location = res.headers.get('location');
-    return { sdp, location, streamName };
+    return { answerSdp, location, streamName };
   } catch (e) {
-    logger.warn(`WebRTC offer failed for cam-${cameraId}: ${e.message}`);
+    logger.warn(`WHEP exchange failed for ${streamName}: ${e.message}`);
     return null;
   }
 }
 
-// ── Envoyer la réponse WebRTC (WHEP answer) ──
-export async function sendWebRTCAnswer(cameraId, answerSdp, sessionLocation) {
+// ── Fermer une session WHEP ──
+export async function whepDelete(sessionLocation) {
+  if (!sessionLocation) return;
   try {
-    const url = sessionLocation || `${MEDIAMTX_WEBRTC}/cam-${cameraId}/whep`;
-    const res = await fetch(url, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/sdp' },
-      body: answerSdp,
-    });
-    return res.ok;
-  } catch (e) {
-    logger.warn(`WebRTC answer failed for cam-${cameraId}: ${e.message}`);
-    return false;
-  }
+    await fetch(sessionLocation, { method: 'DELETE' });
+  } catch { /* ignore */ }
 }
 
 // ── Snapshot via HTTP ──

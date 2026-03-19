@@ -1,6 +1,20 @@
-/* ═══════════════════════════════════════════════════════════
-   BPAnnotationViewer — Visualiseur PDF annoté
-   ═══════════════════════════════════════════════════════════ */
+.bp-annotation-footer span:first-child {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.bp-annotation-footer span:nth-child(2) {
+  color: #3b82f6;
+}
+
+.bp-annotation-footer span:nth-child(3) {
+  color: #f59e0b;
+}
+
+.bp-annotation-footer span:last-child {
+  color: #6b7280;
+  font-size: 11px;
+}
 
 .bp-annotation-overlay {
   position: fixed;
@@ -27,13 +41,26 @@
   background: var(--theme-bg-card, #1e293b);
   border-radius: 14px;
   width: 95vw;
-  max-width: 1200px;
   height: 92dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto; /* Changer à auto pour permettre scroll si nécessaire */
   box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
   animation: bpSlideUp 0.25s ease;
+  resize: both;
+  min-width: 600px;
+  min-height: 400px;
+  max-width: 95vw;
+  max-height: 95dvh;
+}
+
+.bp-annotation-modal.fullscreen {
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100dvh !important;
+  border-radius: 0;
+  resize: none; /* Désactiver resize en fullscreen */
 }
 
 /* ─── Header ─── */
@@ -211,7 +238,7 @@
 }
 
 /* ─── Canvas zone ─── */
-.bp-canvas-container {
+.bp-canvas-scroll {
   flex: 1;
   overflow: auto;
   display: flex;
@@ -220,13 +247,20 @@
   position: relative;
 }
 
+.bp-canvas-wrapper {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 .bp-canvas-pdf {
   display: block;
 }
 
 .bp-canvas-overlay {
   position: absolute;
-  top: 1rem;
+  top: 0;
+  left: 0;
   pointer-events: none;
 }
 

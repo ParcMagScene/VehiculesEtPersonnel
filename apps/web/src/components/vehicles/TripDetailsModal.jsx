@@ -184,18 +184,13 @@ const TripDetailsModal = ({
         // Utiliser companyAddress si fourni, sinon charger depuis l'API
         let address = companyAddress;
         if (!address) {
-          const token = localStorage.getItem('auth_token');
-          if (token) {
-            const response = await fetch('/api/config/calendarConfig', {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              address = data?.companyAddress || '';
-            }
+          const response = await fetch('/api/config/calendarConfig', {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            address = data?.companyAddress || '';
           }
         }
         

@@ -37,11 +37,9 @@ export function registerPlanningMethods(ApiClient) {
       return this.request(`/planning/bl-imports/${id}`);
     },
     async uploadBLImport(formData) {
-      const headers = {};
-      if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
       const response = await fetch(`${API_URL}/planning/bl-imports`, {
         method: 'POST',
-        headers,
+        credentials: 'include',
         body: formData,
       });
       if (!response.ok) {
@@ -55,11 +53,9 @@ export function registerPlanningMethods(ApiClient) {
       return this.request(`/planning/bl-imports/${id}`, { method: 'DELETE' });
     },
     async uploadBLImportBatch(formData) {
-      const headers = {};
-      if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
       const response = await fetch(`${API_URL}/planning/bl-imports/batch`, {
         method: 'POST',
-        headers,
+        credentials: 'include',
         body: formData,
       });
       if (!response.ok) {
@@ -126,7 +122,6 @@ export function registerPlanningMethods(ApiClient) {
 
     // Export PDF tâches
     async exportTasksPdf(date, taskIds, affaireIds, eventIds, gcalEvents) {
-      const token = this.token;
       let url = `${API_URL}/planning/tasks/export-pdf?date=${date}`;
       if (taskIds && taskIds.length > 0) url += `&taskIds=${taskIds.join(',')}`;
       if (affaireIds && affaireIds.length > 0) url += `&affaireIds=${affaireIds.join(',')}`;
@@ -134,10 +129,8 @@ export function registerPlanningMethods(ApiClient) {
       const body = (gcalEvents && gcalEvents.length > 0) ? JSON.stringify({ gcalEvents }) : undefined;
       const resp = await fetch(url, {
         method: body ? 'POST' : 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          ...(body ? { 'Content-Type': 'application/json' } : {}),
-        },
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+        credentials: 'include',
         ...(body ? { body } : {}),
       });
       if (!resp.ok) throw new Error('Erreur export PDF');

@@ -156,23 +156,15 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     if (!googleEventIds || googleEventIds.length === 0) { setGoogleEvents([]); return; }
     const fetchEvents = async () => {
       setIsLoadingEvents(true);
-      const token = localStorage.getItem('google_access_token');
-      const tokenExpiry = localStorage.getItem('google_token_expiry');
-      if (!token || !tokenExpiry || Date.now() > parseInt(tokenExpiry, 10)) { setGoogleEvents([]); setIsLoadingEvents(false); return; }
       try {
-        let calendarId = 'primary';
-        try { const c = await api.getGoogleCalendarId(); calendarId = c?.value || 'primary'; } catch {}
+        const tokenStatus = await api.getGoogleTokenStatus();
+        if (!tokenStatus?.hasToken) { setGoogleEvents([]); setIsLoadingEvents(false); return; }
         const events = [];
         for (const eventId of googleEventIds) {
           try {
-            const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`, {
-              headers: { 'Authorization': `Bearer ${token}` },
-            });
-            if (resp.ok) {
-              const ev = await resp.json();
-              ev.affaire = affaire.numeroAffaire;
-              events.push(ev);
-            }
+            const ev = await api.getGoogleEvent(eventId);
+            ev.affaire = affaire.numeroAffaire;
+            events.push(ev);
           } catch {}
         }
         setGoogleEvents(events);
@@ -239,7 +231,6 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   const handleFileUpload = useCallback(async (files) => {
     if (!files || files.length === 0 || !affaire.numeroAffaire) return;
     setUploadProgress('upload');
-    const token = localStorage.getItem('auth_token');
     let successCount = 0;
     for (const file of files) {
       try {
@@ -248,7 +239,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         fd.append('affaireId', affaire.numeroAffaire);
         const resp = await fetch(`${API_BASE_URL}/upload-attachment`, {
           method: 'POST',
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+          credentials: 'include',
           body: fd,
         });
         if (resp.ok) successCount++;
@@ -595,7 +586,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     return false;
   }, [taskSteps, affaireTasks]);
 
-  // ═══ Articles BL (tous types) ═══
+  // ═══ Articles BL (Vente uniquement : tous items des BL Vente + section VENTE/VTE des BP Location/Prestation) ═══
   const [blArticles, setBlArticles] = useState([]);
   const showArticles = true;
   useEffect(() => {
@@ -605,10 +596,18 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         const allItems = [];
         const seen = new Set();
         for (const bl of linkedBLImports) {
+          const dt = bl.doc_type || bl.docType || '';
+          const at = bl.affaire_type || bl.affaireType || '';
+          const isVenteBL = dt === 'bl_vente' || at === 'Vente';
           let pd = bl.parsedData || bl.parsed_data;
           if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { continue; } }
           if (pd?.items && Array.isArray(pd.items)) {
             for (const item of pd.items) {
+              // Pour les BP Location/Prestation, ne garder que les items de section VENTE/VTE
+              if (!isVenteBL) {
+                const sec = (item.section || '').toUpperCase();
+                if (sec !== 'VENTE' && sec !== 'VTE') continue;
+              }
               const ref = item.code || item.reference || '';
               const key = `${ref}|${item.description || ''}|${item.quantity || ''}`;
               if (!seen.has(key)) {
@@ -727,9 +726,8 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     if (!affaire.numeroAffaire) { setAttachmentFiles([]); return; }
     const loadAttachments = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
         const resp = await fetch(`${API_BASE_URL}/attachments/${encodeURIComponent(affaire.numeroAffaire)}`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          credentials: 'include'
         });
         if (resp.ok) {
           const data = await resp.json();
@@ -1298,7 +1296,59 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         )}
       </section>
 
-      {/* ═══ Section 4 : Pièces et liens joints ═══ */}
+      {/* ═══ Section : BL / BP importés ═══ */}
+      {linkedBLImports.length > 0 && (
+        <section className="detail-section">
+          <h3 className="detail-section-title">
+            <FileText size={15} /> BL / BP importés
+            <span className="section-count">{linkedBLImports.length}</span>
+          </h3>
+          <div className="bl-imports-list">
+            {linkedBLImports.map(bl => {
+              let pd = bl.parsedData || bl.parsed_data;
+              if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = null; } }
+              const sectionsCount = pd?.sections?.length || 0;
+              const itemsCount = pd?.items?.length || 0;
+              const docLabel = pd?.docTypeLabel || (bl.affaireType === 'Vente' ? 'BL Vente' : 'Bon de Préparation');
+              return (
+                <div
+                  key={bl.id}
+                  className="bl-import-card"
+                  style={{ cursor: bl.filePath ? 'pointer' : 'default' }}
+                  onClick={bl.filePath ? async () => {
+                    setAnnotatingBL(bl);
+                    await annotate(affaire.numeroAffaire, bl.id);
+                  } : undefined}
+                  title={bl.filePath ? 'Cliquer pour voir le PDF annoté' : undefined}
+                >
+                  <div className="bl-import-icon">
+                    <FileText size={16} />
+                  </div>
+                  <div className="bl-import-info">
+                    <div className="bl-import-filename">{bl.filename || 'Import'}</div>
+                    <div className="bl-import-meta">
+                      <span className="bl-import-type-badge">{docLabel}</span>
+                      {sectionsCount > 0 && <span>{sectionsCount} section{sectionsCount > 1 ? 's' : ''}</span>}
+                      {itemsCount > 0 && <span>{itemsCount} article{itemsCount > 1 ? 's' : ''}</span>}
+                      {bl.createdAt && <span><Clock size={11} /> {new Date(bl.createdAt).toLocaleDateString('fr-FR')}</span>}
+                    </div>
+                  </div>
+                  <div className={`bl-import-status ${bl.status || 'pending'}`}>
+                    {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
+                  </div>
+                  {editable && (
+                    <button className="bl-import-delete-btn" onClick={e => { e.stopPropagation(); handleDeleteBL(bl); }} title="Supprimer ce BL/BP">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ Section : Pièces et liens joints ═══ */}
       <section className="detail-section">
         <h3 className="detail-section-title">
           <Paperclip size={15} /> Pièces et liens joints
@@ -1622,62 +1672,6 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         </section>
       )}
 
-      {/* ═══ Section 6 : BL / BP importés ═══ */}
-      {linkedBLImports.length > 0 && (
-        <section className="detail-section">
-          <h3 className="detail-section-title">
-            <FileText size={15} /> BL / BP importés
-            <span className="section-count">{linkedBLImports.length}</span>
-          </h3>
-          <div className="bl-imports-list">
-            {linkedBLImports.map(bl => {
-              let pd = bl.parsedData || bl.parsed_data;
-              if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = null; } }
-              const sectionsCount = pd?.sections?.length || 0;
-              const itemsCount = pd?.items?.length || 0;
-              const docLabel = pd?.docTypeLabel || (bl.affaireType === 'Vente' ? 'BL Vente' : 'Bon de Préparation');
-              return (
-                <div key={bl.id} className="bl-import-card">
-                  <div className="bl-import-icon">
-                    <FileText size={16} />
-                  </div>
-                  <div className="bl-import-info">
-                    <div className="bl-import-filename">{bl.filename || 'Import'}</div>
-                    <div className="bl-import-meta">
-                      <span className="bl-import-type-badge">{docLabel}</span>
-                      {sectionsCount > 0 && <span>{sectionsCount} section{sectionsCount > 1 ? 's' : ''}</span>}
-                      {itemsCount > 0 && <span>{itemsCount} article{itemsCount > 1 ? 's' : ''}</span>}
-                      {bl.createdAt && <span><Clock size={11} /> {new Date(bl.createdAt).toLocaleDateString('fr-FR')}</span>}
-                    </div>
-                  </div>
-                  <div className={`bl-import-status ${bl.status || 'pending'}`}>
-                    {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
-                  </div>
-                  {bl.file_path && (
-                    <button
-                      className="bl-import-annotate-btn"
-                      onClick={async () => {
-                        setAnnotatingBL(bl);
-                        await annotate(affaire.id, bl.id);
-                      }}
-                      disabled={annotationLoading}
-                      title="Annoter & Imprimer"
-                    >
-                      <Palette size={14} />
-                    </button>
-                  )}
-                  {editable && (
-                    <button className="bl-import-delete-btn" onClick={() => handleDeleteBL(bl)} title="Supprimer ce BL/BP">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       {/* ═══ Modal de réservation (création) ═══ */}
       {showReservationModal && (
         <Suspense fallback={<div className="action-loading">Chargement...</div>}>
@@ -1768,7 +1762,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         <Suspense fallback={<div className="action-loading">Chargement annotation…</div>}>
           <BPAnnotationViewer
             annotationResult={annotationResult}
-            pdfUrl={annotatingBL.file_path ? `/bl-imports/${annotatingBL.file_path}` : null}
+            pdfUrl={annotatingBL.filePath ? `/bl-imports/${annotatingBL.filePath}` : null}
             onClose={() => { setAnnotatingBL(null); resetAnnotation(); }}
           />
         </Suspense>

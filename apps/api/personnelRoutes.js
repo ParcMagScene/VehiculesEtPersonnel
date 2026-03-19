@@ -14,7 +14,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/persons — Liste tout le personnel (avec compétences)
   app.get('/api/persons', authenticateToken, (req, res) => {
     try {
-      const persons = db.prepare('SELECT * FROM persons ORDER BY last_name, first_name').all();
+      const persons = db.prepare('SELECT * FROM persons ORDER BY last_name, first_name LIMIT 5000').all();
 
       // Charger toutes les compétences en une seule requête (évite N+1)
       const allSkills = db.prepare(`

@@ -63,7 +63,7 @@ export const uploadMedia = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
   fileFilter: (_req, file, cb) => {
     const allowedMimes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
       'video/mp4', 'video/webm', 'video/ogg',
     ];
     if (allowedMimes.includes(file.mimetype)) {
@@ -96,6 +96,14 @@ export const uploadAttachment = multer({
 export const uploadMessaging = multer({
   storage: createStorage('messaging-uploads', 'msg'),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = /\.(pdf|jpg|jpeg|png|gif|webp|doc|docx|xls|xlsx|csv|txt|mp4|mp3|zip)$/i;
+    if (allowed.test(path.extname(file.originalname))) {
+      cb(null, true);
+    } else {
+      cb(new Error('Type de fichier non supporté pour la messagerie'));
+    }
+  }
 });
 
 export { createStorage };

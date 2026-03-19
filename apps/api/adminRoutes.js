@@ -8,6 +8,15 @@ import { getAllCacheStats, ALL_CACHES } from './cache.js';
 
 export function setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS }) {
 
+// Options cookie httpOnly pour les tokens JWT
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production' && !process.env.ALLOW_HTTP,
+  path: '/',
+  maxAge: JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+};
+
 // Réinitialiser le mot de passe d'un utilisateur
 app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -529,9 +538,10 @@ app.post('/api/auth/set-new-password', async (req, res) => {
     
     logger.info('✅ Nouveau mot de passe défini');
     
+    // [AUDIT Phase 3] Token envoyé en cookie httpOnly
+    res.cookie('auth_token', token, cookieOptions);
     res.json({ 
       success: true,
-      token,
       user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null },
       message: 'Mot de passe défini avec succès'
     });

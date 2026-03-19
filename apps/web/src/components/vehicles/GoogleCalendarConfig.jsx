@@ -65,15 +65,19 @@ const GoogleCalendarConfig = () => {
     }
   };
 
-  const handleRevokeOAuth = () => {
+  const handleRevokeOAuth = async () => {
     if (!confirm('⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nVous devrez autoriser à nouveau l\'accès après cette action.')) {
       return;
     }
 
-    // Supprimer les données du localStorage
-    localStorage.removeItem('google_access_token');
-    localStorage.removeItem('google_token_expiry');
-    localStorage.removeItem('google_token_client');
+    // Supprimer le token du backend
+    try {
+      await api.deleteGoogleToken();
+    } catch (err) {
+      console.warn('Erreur suppression token:', err.message);
+    }
+    // Supprimer les marqueurs UI locaux
+    localStorage.removeItem('google_auto_signin');
     
     // Révoquer l'accès sur le compte Google
     toast.success('Déconnexion effectuée Veuillez : 1. Recharger la page (F5)\n2. Aller sur https://myaccount.google.com/permissions\n3. Révoquer l\'accès à cette application\n4. Revenir et vous reconnecter avec le nouveau Client ID');

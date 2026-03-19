@@ -293,13 +293,8 @@ const ReservationModal = ({
     const loadTripDetails = async () => {
       if (isEdit && reservation?.id) {
         try {
-          const token = localStorage.getItem('auth_token');
-          if (!token) return;
-          
           const response = await fetch(`/api/trip-details/${reservation.id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include'
           });
           
           if (response.ok) {
@@ -479,24 +474,17 @@ const ReservationModal = ({
 
   const handleSaveTripDetails = async (tripData) => {
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      if (!token) {
-        toast.warning('Vous devez être connecté pour enregistrer les détails du trajet');
-        return null;
-      }
-      
       if (!reservation?.id) {
-        toast.warning('Vous devez d\'abord enregistrer la réservation avant d\'ajouter des détails de trajet');
+        toast.warning('Vous devez d\'abord enregistrer la réservation avant d\'ajouter des détails du trajet');
         return null;
       }
       
       const response = await fetch('/api/trip-details', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           reservationId: reservation?.id,
           eventId: selectedEventForTrip.event.id,
@@ -589,15 +577,12 @@ const ReservationModal = ({
     }
     
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-      
       const response = await fetch('/api/trip-details/link', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           reservationId: reservation.id,
           eventId1,
@@ -626,15 +611,12 @@ const ReservationModal = ({
     if (!reservation?.id) return;
     
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-      
       const response = await fetch('/api/trip-details/unlink', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           reservationId: reservation.id,
           eventId

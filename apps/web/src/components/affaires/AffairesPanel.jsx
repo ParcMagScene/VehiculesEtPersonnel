@@ -112,25 +112,11 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     setIsLoadingGoogle(true);
     setGoogleError(null);
     try {
-      // Récupérer le token Google depuis localStorage
-      const token = localStorage.getItem('google_access_token');
-      const tokenExpiry = localStorage.getItem('google_token_expiry');
-      
-      if (!token || !tokenExpiry || Date.now() > parseInt(tokenExpiry, 10)) {
+      // Vérifier si un token Google est disponible côté serveur
+      const tokenStatus = await api.getGoogleTokenStatus();
+      if (!tokenStatus?.hasToken) {
         setGoogleAffaires([]);
         return;
-      }
-
-      // Récupérer le calendar ID depuis la config
-      let calendarId = googleCalendarIdRef.current;
-      if (!calendarId) {
-        try {
-          const calData = await api.getGoogleCalendarId();
-          calendarId = calData?.value || 'primary';
-          googleCalendarIdRef.current = calendarId;
-        } catch {
-          calendarId = 'primary';
-        }
       }
 
       // Plage large : 6 mois en arrière, 6 mois en avant
@@ -138,26 +124,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       const timeMin = startOfMonth(subMonths(now, 6));
       const timeMax = endOfMonth(addMonths(now, 6));
 
-      const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?` +
-        `timeMin=${timeMin.toISOString()}&timeMax=${timeMax.toISOString()}&` +
-        `singleEvents=true&maxResults=2500&orderBy=startTime`;
-
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` },
+      const data = await api.getGoogleEvents({
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        singleEvents: true,
+        maxResults: 2500,
+        orderBy: 'startTime',
       });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          setGoogleError('Token Google expiré — reconnectez-vous depuis le bandeau calendrier');
-        } else {
-          console.error('📅 AffairesPanel: Erreur Google API', response.status);
-          setGoogleError(`Erreur Google Calendar (${response.status})`);
-        }
-        setGoogleAffaires([]);
-        return;
-      }
-
-      const data = await response.json();
       const events = data.items || [];
 
       // Extraire les affaires des événements

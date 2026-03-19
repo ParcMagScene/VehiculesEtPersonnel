@@ -75,7 +75,7 @@ export function registerInventoryMethods(ApiClient) {
     // ── Exports ──
     async exportInventoryCSV() {
       const resp = await fetch(`${this.baseUrl}/inventory/export/csv`, {
-        headers: { Authorization: `Bearer ${this.token}` },
+        credentials: 'include',
       });
       if (!resp.ok) throw new Error('Export CSV échoué');
       return resp.blob();

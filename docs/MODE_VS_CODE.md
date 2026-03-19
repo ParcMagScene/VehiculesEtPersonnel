@@ -226,5 +226,3 @@ Le plan de migration
 La checklist de validation
 
 Le tout fidèle à l’apparence réelle de VS Code, pas un simple thème de couleurs.
-
-🏁 Fin du prompt

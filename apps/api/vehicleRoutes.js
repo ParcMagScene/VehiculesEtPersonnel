@@ -21,7 +21,7 @@ export function setupVehicleRoutes(app, authenticateToken, requireAdmin, require
 
 app.get('/api/vehicles', authenticateToken, cacheMiddleware(listCache, () => 'vehicles', 30_000), (req, res) => {
   try {
-    const stmt = db.prepare('SELECT * FROM vehicles');
+    const stmt = db.prepare('SELECT * FROM vehicles LIMIT 5000');
     const vehicles = stmt.all();
     
     // Mapper snake_case vers camelCase pour le frontend

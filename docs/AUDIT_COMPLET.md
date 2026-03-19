@@ -1185,3 +1185,947 @@ setInterval(() => {
 ---
 
 *Fin de l'audit technique eM@g v2.0.0 — Juillet 2025*
+
+---
+
+# ANNEXE E — Audit Backend Détaillé (Juin 2025)
+
+> *Contenu fusionné depuis BACKEND_AUDIT_REPORT.md*
+
+# Rapport d'Audit Backend — eM@g
+
+**Date :** Juin 2025  
+**Périmètre :** `/server/` — ~18 000 lignes, 15 fichiers JS  
+**Méthodologie :** Lecture intégrale du code, vérification croisée schéma ↔ requêtes  
+**Règle :** Bugs réels et failles de sécurité uniquement, pas de préférences de style.
+
+---
+
+## Résumé exécutif
+
+| Sévérité | Nombre |
+|----------|--------|
+| CRITIQUE | 4 |
+| HAUTE    | 9 |
+| MOYENNE  | 11 |
+| BASSE    | 5 |
+| **Total** | **29** |
+
+---
+
+## 1. Fichier principal — server.js (2 912 lignes)
+
+### [CRITIQUE] SEC-01 — JWT_SECRET par défaut en clair
+
+- **Fichier :** `server/server.js` ligne 57
+- **Code :** `const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';`
+- **Problème :** Si la variable d'environnement `JWT_SECRET` n'est pas définie, tous les tokens JWT sont signés avec un secret publiquement connu. N'importe qui peut forger un token valide et usurper n'importe quel compte, y compris administrateur. La ligne 60 émet un `logger.warn` mais n'empêche PAS le démarrage du serveur.
+- **Correction suggérée :** Refuser de démarrer si `JWT_SECRET` n'est pas défini en variable d'environnement. Remplacer le fallback par un `process.exit(1)`.
+
+---
+
+### [CRITIQUE] SEC-02 — Réinitialisation mot de passe sans vérification cryptographique (self-reset)
+
+- **Fichier :** `server/server.js` lignes 327-380
+- **Route :** `POST /api/auth/self-reset-password` (non authentifiée)
+- **Problème :** La seule vérification est email + nom (comparaison case-insensitive). Il n'y a aucun token à usage unique, aucun OTP, aucun e-mail de confirmation. Un attaquant connaissant l'email et le nom d'un utilisateur (informations souvent publiques) peut réinitialiser son mot de passe et obtenir un JWT valide dans la réponse.
+- **Correction suggérée :** Implémenter un flux standard : (1) envoi d'un token signé par email, (2) vérification du token avant autorisation de changement de mot de passe. Supprimer le renvoi du JWT dans la réponse de réinitialisation.
+
+---
+
+### [CRITIQUE] SEC-03 — Flux admin reset : check-reset fuit des données, set-new-password sans token
+
+- **Fichier :** `server/server.js` lignes 1871-1940
+- **Routes :** `POST /api/auth/check-reset` et `POST /api/auth/set-new-password` (non authentifiées)
+- **Problème (check-reset, ligne 1871) :** Renvoie `{ id, email, name }` de l'utilisateur à partir d'un simple email — fuite d'information utilisable pour de l'énumération de comptes.
+- **Problème (set-new-password, ligne 1893) :** La seule protection est le flag `password_reset_required = 1` dans la base. Un attaquant qui connaît l'email d'un utilisateur dont l'admin a demandé la réinitialisation peut intercepter le flux et définir le mot de passe avant l'utilisateur légitime. Aucun token à usage unique n'est vérifié.
+- **Correction suggérée :** (1) `check-reset` ne doit renvoyer que `{ resetRequired: boolean }`, pas les données utilisateur. (2) `set-new-password` doit exiger un token de réinitialisation signé, envoyé par email ou généré lors de l'étape admin.
+
+---
+
+### [HAUTE] PERF-01 — PRAGMA table_info exécuté sur chaque requête
+
+- **Fichier :** `server/server.js` lignes 260 (register) et 1620 (access-request PATCH)
+- **Problème :** `db.prepare("PRAGMA table_info(authorized_emails)").all()` est exécuté à chaque appel `POST /api/auth/register` et `PATCH /api/admin/access-requests/:id` pour vérifier si la colonne `is_admin` existe. C'est une opération de migration qui devrait s'exécuter une fois au démarrage, pas à chaque requête.
+- **Correction suggérée :** Déplacer cette migration dans `database.js` à l'initialisation, ou la mettre en cache dans une variable au premier appel.
+
+---
+
+### [HAUTE] DATA-01 — Suppression utilisateur ne réassigne qu'un sous-ensemble de tables
+
+- **Fichier :** `server/server.js` lignes ~2040-2060
+- **Problème :** La transaction de suppression d'un utilisateur réassigne les données vers un autre utilisateur, mais uniquement pour les tables : `vehicles`, `reservations`, `clients`, `drivers`, `locations`, `garages`, `maintenances`, `config`, `reservation_requests`. Cela ignore de nombreuses tables où `created_by` ou `user_id` référencent l'utilisateur supprimé : `orders`, `equipment_assignments`, `sav_tickets`, `leave_requests`, `display_messages`, `stock_movements`, `conversations`, `messages`, etc.
+- **Correction suggérée :** Auditer toutes les colonnes FK vers `users(id)` et les inclure dans la transaction de réassignement, ou utiliser `ON DELETE SET NULL` / `ON DELETE CASCADE` (selon le cas fonctionnel).
+
+---
+
+### [HAUTE] SEC-04 — set-new-password renvoie un JWT — contournement du flux de login
+
+- **Fichier :** `server/server.js` lignes 1917-1935
+- **Problème :** `set-new-password` crée et renvoie un JWT complet dans la réponse HTTP, connectant automatiquement l'utilisateur. Combiné avec SEC-03 (pas de token de vérification), cela signifie qu'un attaquant obtient directement un accès authentifié.
+- **Correction suggérée :** Ne pas renvoyer de token. Rediriger l'utilisateur vers la page de login après réinitialisation.
+
+---
+
+### [MOYENNE] AUTH-01 — Mot de passe minimum 6 caractères
+
+- **Fichier :** `server/server.js` lignes 337, 1900
+- **Problème :** Aucune exigence de complexité (majuscule, chiffre, caractère spécial). Six caractères sont insuffisants face à une attaque par dictionnaire, même avec bcrypt.
+- **Correction suggérée :** Exiger au minimum 8 caractères avec critères de complexité, ou intégrer une vérification de force type zxcvbn.
+
+---
+
+## 2. Cohérence des routes
+
+### [HAUTE] BUG-01 — Colonnes inexistantes : `p.prenom` / `p.nom` dans communicationRoutes
+
+- **Fichier :** `server/communicationRoutes.js` ligne 1509
+- **Requête :** `SELECT de.*, p.prenom as assigned_person_first_name, p.nom as assigned_person_last_name FROM dynamic_display_events de LEFT JOIN persons p ON …`
+- **Problème :** La table `persons` utilise les colonnes `first_name` et `last_name` (confirmé dans personnelRoutes.js et database.js). `p.prenom` et `p.nom` n'existent pas. SQLite ne lève pas d'erreur sur un LEFT JOIN avec des colonnes inexistantes dans certains cas, mais retourne systématiquement `NULL`. Le nom de la personne assignée ne sera **jamais** affiché.
+- **Correction suggérée :** Remplacer `p.prenom` par `p.first_name` et `p.nom` par `p.last_name`.
+
+---
+
+### [HAUTE] BUG-02 — Requête display_messages : 2 colonnes inexistantes
+
+- **Fichier :** `server/displayRoutes.js` ligne 1346
+- **Requête :** `SELECT content, priority FROM display_messages WHERE status = 'active' ORDER BY priority DESC LIMIT 8`
+- **Problème :** La table `display_messages` (database.js ligne 2239) n'a ni colonne `content` (→ `body` ou `title`) ni colonne `status` (→ `is_active INTEGER`). Cette requête **crashera à l'exécution** avec `SqliteError: no such column: content`.
+- **Correction suggérée :** Remplacer par `SELECT title, body, priority FROM display_messages WHERE is_active = 1 AND (date_start IS NULL OR date_start <= datetime('now')) AND (date_end IS NULL OR date_end >= datetime('now')) ORDER BY priority DESC LIMIT 8`.
+
+---
+
+### [HAUTE] BUG-03 — crypto.getRandomValues sans import
+
+- **Fichier :** `server/communicationRoutes.js` lignes 114, 237, 1112, 1176
+- **Problème :** Le fichier n'importe pas `crypto` (confirmé — seuls `db`, `multer`, `path`, `fs`, `PDFDocument`, `logger` sont importés). Le code utilise `crypto.getRandomValues(new Uint8Array(16))` qui repose sur `globalThis.crypto` — API Web Crypto disponible uniquement depuis Node.js 19+. Si le serveur tourne sur Node 18 LTS (fin de vie avril 2025, mais encore largement déployé), ces 4 appels plantent avec `ReferenceError: crypto is not defined`.
+- **Correction suggérée :** Ajouter `import crypto from 'crypto';` et utiliser `crypto.randomBytes(16)` (API Node.js stable), ou `import { randomUUID } from 'crypto';`.
+
+---
+
+### [HAUTE] RACE-01 — Génération de référence hors transaction (ordersRoutes)
+
+- **Fichier :** `server/ordersRoutes.js` ~ligne 100 (fonction `generateReference`)
+- **Problème :** La fonction lit la dernière référence (ex: `BC-2025-042`), incrémente le compteur et insère. Mais la lecture et l'insertion ne sont pas dans la même transaction. Sous charge concurrente, deux requêtes simultanées peuvent lire le même compteur et produire un doublon. Le UNIQUE constraint provoquera alors un crash 500.
+- **Correction suggérée :** Englober lecture + insertion dans `db.transaction()`, ou utiliser un `INSERT … SELECT MAX(…) + 1` atomique.
+
+---
+
+### [HAUTE] PERM-01 — Garages : POST/PUT sans requireAdmin mais DELETE avec
+
+- **Fichier :** `server/routes.js` (routes garages)
+- **Problème :** N'importe quel utilisateur authentifié peut créer ou modifier un garage, mais seul un admin peut le supprimer. Incohérence du modèle de permissions.
+- **Correction suggérée :** Appliquer `requireAdmin` sur les 3 opérations d'écriture (POST, PUT, DELETE).
+
+---
+
+### [MOYENNE] MSG-01 — messagingRoutes vérifie isAdmin depuis le JWT et non la base
+
+- **Fichier :** `server/messagingRoutes.js` ~ligne 310
+- **Problème :** La suppression de message vérifie `req.user.isAdmin` (valeur du JWT). Si un admin est rétrogradé pendant la durée de vie du token (jusqu'à 30 jours), il conserve le privilège admin dans la messagerie jusqu'à expiration du token.
+- **Correction suggérée :** Interroger `users.is_admin` dans la base pour les opérations sensibles, ou réduire la durée de vie des tokens.
+
+---
+
+### [MOYENNE] DUPLIC-01 — ordersRoutes batch-validate duplique la logique de single-validate
+
+- **Fichier :** `server/ordersRoutes.js` ~ligne 1200
+- **Problème :** L'endpoint de validation en lot duplique entièrement la logique de distribution vers les commandes fournisseur, au lieu d'appeler une fonction partagée. Tout correctif appliqué à l'un devra être appliqué manuellement à l'autre.
+- **Correction suggérée :** Extraire la logique de distribution dans une fonction réutilisable appelée par les deux endpoints.
+
+---
+
+### [MOYENNE] SORT-01 — Interpolation directe de colonne de tri (annuaireRoutes)
+
+- **Fichier :** `server/annuaireRoutes.js` lignes 56, 179, 297
+- **Code :** `` ORDER BY ${sortCol} ${sortOrder} ``
+- **Problème :** Bien que `sortCol` soit validé contre un tableau `allowedSorts`, le pattern d'interpolation directe dans le SQL est fragile. Si `allowedSorts` est étendu par erreur avec une valeur contrôlée par l'utilisateur, cela devient une injection SQL. `sortOrder` est aussi interpolé (devrait être limité à `ASC`/`DESC`).
+- **Correction suggérée :** Utiliser un mapping explicite (objet/Map) plutôt qu'un tableau, et valider `sortOrder` contre `['ASC', 'DESC']` strictement.
+
+---
+
+## 3. Schéma de base de données — database.js (2 819 lignes)
+
+### [MOYENNE] MIGR-01 — Rebuild de table task_assignments avec transactions manuelles
+
+- **Fichier :** `server/database.js` lignes ~1830-2090 (4 migrations séquentielles)
+- **Problème :** Quatre migrations recréent la table `task_assignments` via le pattern CREATE temp → INSERT SELECT → DROP → RENAME, en utilisant `db.exec('BEGIN')` / `db.exec('COMMIT')` manuels au lieu de `db.transaction()`. En cas d'erreur dans le `catch`, le `ROLLBACK` peut échouer si la transaction est déjà dans un état incohérent (ex : RENAME partiel). Better-sqlite3 recommande fortement `db.transaction()` pour garantir le rollback automatique.
+- **Correction suggérée :** Remplacer par `db.transaction(() => { … })()`.
+
+---
+
+### [MOYENNE] MIGR-02 — Migrations silencieuses avec try/catch et logger.warn
+
+- **Fichier :** `server/database.js` (tout le fichier — pattern récurrent)
+- **Problème :** Chaque migration est dans un `try { … } catch(e) { logger.warn(…) }`. Si une migration échoue partiellement (ex : ALTER TABLE réussit mais CREATE INDEX échoue), le schéma reste dans un état intermédiaire non détecté. Le serveur continue de fonctionner avec un schéma corrompu.
+- **Correction suggérée :** Distinguer les migrations idempotentes (ALTER TABLE IF NOT EXISTS) des migrations destructives (table rebuild). Pour ces dernières, propager l'erreur.
+
+---
+
+### [MOYENNE] SCHEMA-01 — Colonnes INSERT fragiles (personnelRoutes vs migration)
+
+- **Fichier :** `server/personnelRoutes.js` ligne 82
+- **Problème :** L'INSERT INTO persons référence des colonnes ajoutées par migrations (`contract_type`, `default_positions`, `code_libre`, `postal_code`, `city`). Si une migration n'a pas été appliquée (ex : base restaurée depuis une vieille sauvegarde), l'INSERT échoue.
+- **Correction suggérée :** Vérifier la présence des colonnes au démarrage, ou n'insérer que dans les colonnes du schéma de base et faire les updates optionnelles ensuite.
+
+---
+
+### [BASSE] SCHEMA-02 — Pas de ON DELETE CASCADE sur equipment_assignments / sav_tickets
+
+- **Fichier :** `server/equipmentRoutes.js` (endpoint DELETE equipment)
+- **Problème :** La suppression d'un équipement fait un DELETE manuel sur les tables liées (assignments, tickets) avant de supprimer l'équipement lui-même, au lieu de compter sur ON DELETE CASCADE. Si un développeur ajoute une nouvelle table référençant `equipment(id)`, il devra se souvenir de mettre à jour manuellement ce code.
+- **Correction suggérée :** Ajouter ON DELETE CASCADE sur les foreign keys (nécessite un rebuild de table en SQLite).
+
+---
+
+## 4. Service email — emailService.js (383 lignes)
+
+### [MOYENNE] MAIL-01 — Fallback de transport fragile (mailingRoutes)
+
+- **Fichier :** `server/mailingRoutes.js` lignes ~120-135
+- **Problème :** Le code fait `getTransporter()` → si null → `initTransporter()` → `getTransporter()` à nouveau. Si `initTransporter()` échoue silencieusement (ex : config SMTP invalide en base), le second `getTransporter()` retourne encore `null` et le endpoint renvoie une erreur 500 générique sans indication.
+- **Correction suggérée :** Propager l'erreur d'initialisation. Retourner un message d'erreur explicite : "Configuration SMTP invalide ou manquante".
+
+---
+
+### [MOYENNE] MAIL-02 — emailService ne valide pas l'intégrité de la configuration
+
+- **Fichier :** `server/emailService.js` (~ligne 30, `initTransporter`)
+- **Problème :** La configuration SMTP est lue depuis la base (`email_config`). Si les champs obligatoires (`host`, `port`, `user`, `pass`) sont vides ou corrompus, `nodemailer.createTransport` créera un transport invalide qui ne sera détecté qu'au premier envoi.
+- **Correction suggérée :** Valider les champs obligatoires avant de créer le transport. Appeler `transporter.verify()` après création.
+
+---
+
+## 5. Problèmes transverses (cross-file)
+
+### [CRITIQUE] XF-01 — Pas de validation d'entrée centralisée
+
+- **Fichiers :** Tous les fichiers routes
+- **Problème :** Il n'y a aucune couche de validation d'entrée (pas de Joi, Zod, express-validator, ou équivalent). Chaque route fait ses propres vérifications manuelles ad-hoc, souvent incomplètes :
+  - Certaines routes vérifient les champs requis, d'autres non
+  - Aucune validation de type (un number pourrait recevoir "abc")
+  - Aucune limite de longueur sur les champs texte (DoS par payload géant)
+  - Les paramètres d'URL (`:id`) ne sont jamais validés comme integers
+- **Correction suggérée :** Implémenter une couche de validation avec Zod ou Joi. Créer un middleware `validate(schema)` réutilisable.
+
+---
+
+### [HAUTE] XF-02 — Réponses d'erreur incohérentes
+
+- **Fichiers :** Tous les fichiers routes
+- **Problème :** Au moins 4 formats de réponse d'erreur différents coexistent :
+  - `{ error: 'message' }` (le plus fréquent)
+  - `{ error: 'titre', message: 'détail' }`
+  - `{ success: false, error: 'message' }`
+  - `{ message: 'message' }` (sans champ error)
+  - Codes HTTP incohérents : certaines erreurs métier retournent 400, d'autres 500 pour des cas similaires
+- **Correction suggérée :** Créer un helper `sendError(res, statusCode, message)` et l'utiliser partout. Définir un format standard.
+
+---
+
+### [MOYENNE] XF-03 — Aucun rate limiting sur les endpoints d'upload
+
+- **Fichier :** `server/server.js` lignes 2650-2800 (attachment uploads)
+- **Problème :** Le rate limiter est appliqué sur `/api/auth/*` (20/15min) et globalement (600/min), mais les endpoints d'upload de fichiers (attachments jusqu'à 50MB, BL imports, photos, médias display) n'ont pas de rate limiting spécifique. Un attaquant authentifié pourrait saturer le disque.
+- **Correction suggérée :** Ajouter un rate limiter dédié aux endpoints d'upload (ex : 10 uploads/minute) et une vérification d'espace disque restant.
+
+---
+
+### [MOYENNE] XF-04 — Gestion de la concurrence inexistante (au-delà de RACE-01)
+
+- **Fichiers :** Multiples routes CRUD
+- **Problème :** Aucun mécanisme d'optimistic locking ou de vérification de version. Par exemple, si deux administrateurs modifient le même utilisateur simultanément, le dernier à sauvegarder écrase silencieusement les modifications de l'autre.
+- **Correction suggérée :** Ajouter une colonne `version` ou `updated_at` et vérifier dans les UPDATE que la valeur n'a pas changé depuis la lecture.
+
+---
+
+### [MOYENNE] XF-05 — Balance de congés clippée silencieusement
+
+- **Fichier :** `server/leaveRoutes.js` (restauration après annulation)
+- **Code :** `MAX(0, days_taken - ?)`
+- **Problème :** Si `days_taken` est inférieur au nombre de jours à restaurer (incohérence de données), le résultat est clippé à 0 au lieu de signaler l'anomalie. Cela masque des erreurs de calcul de solde de congés.
+- **Correction suggérée :** Logger un avertissement si `days_taken < amount` et investiguer la cause.
+
+---
+
+### [BASSE] XF-06 — Nommage incohérent des paramètres de requête
+
+- **Fichiers :** `server/displayRoutes.js` (ligne ~1160 : `_req`), divers fichiers (mélange `snake_case` / `camelCase`)
+- **Problème :** Certains handlers utilisent `_req` au lieu de `req` sans raison apparente. Les réponses JSON mélangent `camelCase` et `snake_case` selon les fichiers.
+- **Correction :** Adopter une convention unique et l'appliquer.
+
+---
+
+### [BASSE] XF-07 — Aucun test automatisé
+
+- **Fichiers :** Aucun fichier `*.test.js` ou `*.spec.js` dans `server/`
+- **Problème :** Aucun test unitaire ou d'intégration pour 18 000 lignes de code backend. Les bugs identifiés dans ce rapport (BUG-01, BUG-02, RACE-01) auraient été détectés par des tests basiques.
+- **Correction suggérée :** Prioriser les tests sur les flux critiques : authentification, réinitialisation mot de passe, calcul de solde congés, génération de références.
+
+---
+
+### [BASSE] XF-08 — Checkpoint WAL toutes les 5 minutes sans condition
+
+- **Fichier :** `server/database.js` (fin de fichier) et `server/server.js` (fin)
+- **Problème :** Un `PRAGMA wal_checkpoint(TRUNCATE)` est exécuté toutes les 5 minutes inconditionnellement. En l'absence d'écriture, c'est une opération inutile. Sous forte charge, cela peut bloquer momentanément les écritures.
+- **Correction suggérée :** Vérifier avec `PRAGMA wal_checkpoint` (sans argument) si le WAL a des pages à checkpointer avant de forcer un TRUNCATE.
+
+---
+
+### [BASSE] XF-09 — server.js monolithique (2 912 lignes)
+
+- **Fichier :** `server/server.js`
+- **Problème :** Le fichier contient l'authentification, les routes véhicules, les routes réservations, les routes maintenances, les routes affaires, la gestion d'accès, l'upload de fichiers, la configuration email, les avatars, les profils, les préférences, et le lifecycle serveur. Cela rend le code difficile à maintenir et à auditer.
+- **Correction suggérée :** Extraire les modules logiques dans des fichiers de routes dédiés (comme déjà fait pour les 11 autres modules).
+
+---
+
+## Matrice des risques
+
+| ID | Sévérité | Impact immédiat |
+|----|----------|----------------|
+| SEC-01 | CRITIQUE | Forge de token → accès admin |
+| SEC-02 | CRITIQUE | Prise de contrôle de compte |
+| SEC-03 | CRITIQUE | Prise de contrôle de compte + fuite données |
+| XF-01  | CRITIQUE | Surface d'attaque non contrôlée |
+| BUG-01 | HAUTE | Noms jamais affichés (NULL) |
+| BUG-02 | HAUTE | Crash runtime (SqliteError) |
+| BUG-03 | HAUTE | Crash sur Node < 19 |
+| RACE-01 | HAUTE | Doublons de référence BC/DEV |
+| SEC-04 | HAUTE | Token dans réponse non sécurisée |
+| PERF-01 | HAUTE | PRAGMA exécuté sur chaque requête |
+| DATA-01 | HAUTE | Données orphelines FK après suppression |
+| PERM-01 | HAUTE | Création de garage sans autorisation admin |
+| XF-02  | HAUTE | Parsing d'erreur imprévisible côté client |
+
+---
+
+## Recommandations prioritaires
+
+1. **Immédiat** — Corriger SEC-01, SEC-02, SEC-03 : sécuriser le flux de réinitialisation de mot de passe et forcer JWT_SECRET en env
+2. **Court terme** — Corriger BUG-01, BUG-02, BUG-03, RACE-01 : bugs fonctionnels qui crashent ou produisent des données incorrectes
+3. **Moyen terme** — Implémenter XF-01 (validation), XF-02 (erreurs standardisées), XF-07 (tests)
+4. **Long terme** — Refactorer server.js (XF-09), ajouter optimistic locking (XF-04)
+
+---
+
+# ANNEXE F — Audit Schéma DB & Modules (Janvier 2025)
+
+> *Contenu fusionné depuis SCHEMA_MODULE_AUDIT.md*
+
+# Audit Complet — Schéma de Base de Données & Complétude des Modules
+
+**Projet** : eM@g  
+**Date** : 2025-01-XX  
+**Périmètre** : `server/database.js` (2819 lignes, 82 tables), 12 fichiers de routes (~11 625 lignes)  
+**Type** : Recherche uniquement — aucune modification de code
+
+---
+
+## Table des matières
+
+1. [Partie 1 — Schéma de Base de Données](#partie-1--schéma-de-base-de-données)
+2. [Partie 2 — Module Annuaire](#partie-2--module-annuaire)
+3. [Partie 3 — Module Communication](#partie-3--module-communication)
+4. [Partie 4 — Module Display Dashboard / TV](#partie-4--module-display-dashboard--tv)
+5. [Partie 5 — Modules Stock & Commandes](#partie-5--modules-stock--commandes)
+6. [Annexe — Modules complémentaires](#annexe--modules-complémentaires)
+
+---
+
+## Niveaux de sévérité
+
+| Icône | Niveau | Description |
+|-------|--------|-------------|
+| 🔴 | **CRITIQUE** | Bug en production ou perte de données potentielle |
+| 🟠 | **MAJEUR** | Comportement incorrect / incohérence fonctionnelle |
+| 🟡 | **MODÉRÉ** | Dette technique, maintenabilité dégradée |
+| 🔵 | **MINEUR** | Amélioration recommandée, bonnes pratiques |
+| ⚪ | **INFO** | Observation, pas d'action requise |
+
+---
+
+## Partie 1 — Schéma de Base de Données
+
+### 1.1 Vue d'ensemble
+
+- **82 CREATE TABLE** dans `database.js`
+- **17 fichiers de migration SQL** dans `server/migrations/`
+- **SQLite** via `better-sqlite3`, mode WAL, synchronous FULL, foreign_keys ON
+- **Seed data** : 18 compétences, ~80 postes, 23 structures juridiques, 23 types de service, 16 secteurs d'activité, 12 catégories de contacts, 8 catégories d'équipement, jours fériés 2025-2027
+
+### 1.2 Findings
+
+#### 🔴 CRITIQUE — Reconstruction de `task_assignments` (4 fois)
+
+**Fichier** : `database.js` lignes 1818-1926
+
+La table `task_assignments` est créée puis recréée par une migration qui DROP + RENAME pour corriger une contrainte CHECK sur `section`. Ce pattern :
+
+- Peut perdre des données en cas d'erreur intermédiaire (bien que wrappé dans une transaction implicite)
+- Recrée les index à chaque démarrage du serveur (5 CREATE INDEX IF NOT EXISTS)
+- Le schéma originel et le schéma migré coexistent dans le même fichier de manière confuse
+
+**Sections CHECK originale** : `'rdv','prep_locations','prep_prestations','prep_ventes','prep_installations','chargement','depart','enlevement','retour','recuperation','installation','evenements','taches_prioritaires','taches_secondaires','courses'`
+
+**Sections CHECK migrée** : ajoute `'manual'`
+
+**Risque** : Si une nouvelle section est ajoutée, il faut encore une migration destructive.
+
+---
+
+#### 🟠 MAJEUR — Système de clients dupliqué
+
+**Tables impliquées** :
+- `clients` (ligne 138) — champs basiques : `name, email, phone, address` → utilisé par `routes.js`
+- `prestataires` (via annuaire, ligne ~2400+) — champs enrichis : `code_libre, siret, legal_structure_id, service_type_id`, etc. → utilisé par `annuaireRoutes.js`
+- `suppliers` (ligne ~1600) — `name, email, phone, address, contact_name, notes` → utilisé par `ordersRoutes.js`
+
+**Impact** :
+- Un même client/fournisseur peut exister dans 2-3 tables non liées
+- Pas de FK entre `clients` et `prestataires` ni entre `suppliers` et `prestataires`
+- Les données annuaire ne bénéficient pas aux modules commandes/réservations
+
+---
+
+#### 🟠 MAJEUR — Colonnes manquantes dans des requêtes (display_messages)
+
+**Schema** (`database.js:2239`) :
+```sql
+CREATE TABLE display_messages (
+  ...
+  body TEXT,          -- ← colonne existante
+  is_active INTEGER,  -- ← colonne existante
+  ...
+)
+```
+
+**Requête** (`displayRoutes.js:1346`) :
+```sql
+SELECT content, priority FROM display_messages WHERE status = 'active'
+```
+
+→ Référence `content` (n'existe pas, devrait être `body`) et `status` (n'existe pas, devrait être `is_active = 1`).  
+→ **Provoque une erreur SQL à l'exécution** du endpoint `/api/display/tv-state`.
+
+---
+
+#### 🟠 MAJEUR — Modifications de schéma au runtime
+
+**Fichier** : `communicationRoutes.js` (endpoint `PUT /display-events/:id/assign`)
+
+```javascript
+try {
+  db.exec('ALTER TABLE display_events ADD COLUMN assigned_person_id INTEGER');
+} catch { /* column already exists */ }
+```
+
+Cela signifie que chaque appel à cet endpoint tente un ALTER TABLE avec un `try/catch` silencieux. Ce pattern :
+- Masque les vraies erreurs SQL
+- N'est pas idempotent de manière déclarative
+- Devrait être dans `database.js` avec les autres migrations
+
+---
+
+#### 🟡 MODÉRÉ — Foreign keys sans index
+
+De nombreuses colonnes FK n'ont pas d'index dédié. Les JOINs et DELETE CASCADE seront lents sur les tables volumineuses :
+
+| Table | Colonne FK | Index manquant |
+|-------|-----------|----------------|
+| `equipment` | `category_id` | ❌ |
+| `equipment_assignments` | `equipment_id` | ❌ |
+| `equipment_assignments` | `assigned_to` | ❌ |
+| `sav_tickets` | `equipment_id` | ❌ |
+| `sav_tickets` | `reported_by` | ❌ |
+| `sav_tickets` | `assigned_to` | ❌ |
+| `orders` | `supplier_id` | ❌ |
+| `order_items` | `order_id` | ❌ |
+| `quotes` | `supplier_id` | ❌ |
+| `quote_items` | `quote_id` | ❌ |
+| `material_requests` | `requested_by` | ❌ |
+| `message_attachments` | `message_id` | ❌ |
+| `conversations` | `created_by` | ❌ |
+| `display_messages` | `template_id` | ❌ |
+| `display_playlist_items` | `playlist_id` | ❌ |
+
+**Note** : Les tables bien indexées incluent `task_assignments`, `missions`, `mission_assignments`, `leave_requests`, `availabilities`, `stock_movements`, `display_events`.
+
+---
+
+#### 🟡 MODÉRÉ — Pas de contrainte NOT NULL sur des champs critiques
+
+| Table | Colonne | Valeur possible NULL |
+|-------|---------|---------------------|
+| `equipment` | `name` | NULL autorisé (devrait être NOT NULL) |
+| `orders` | `supplier_id` | NULL autorisé (commande sans fournisseur) |
+| `sav_tickets` | `equipment_id` | NULL autorisé (par design pour tickets CSV non liés) |
+| `persons` | `last_name` | NULL autorisé (seul `first_name` est NOT NULL implicitement dans INSERT) |
+| `missions` | `title` | NOT NULL validé côté route mais pas en schema |
+
+---
+
+#### 🟡 MODÉRÉ — Migrations inline non versionnées
+
+Les ALTER TABLE sont dispersés dans `database.js` avec des `try/catch` :
+```javascript
+try { db.exec('ALTER TABLE xxx ADD COLUMN yyy ...'); } catch { /* already exists */ }
+```
+
+Au moins **25+** de ces blocs existent dans database.js. Ils :
+- Ne sont pas traçables dans `migrations_log`
+- Ne permettent pas de rollback
+- S'exécutent à chaque démarrage du serveur
+
+Le système `migrations_log` + fichiers `.sql` dans `server/migrations/` existe mais n'est pas utilisé pour ces modifications inline.
+
+---
+
+#### 🔵 MINEUR — Nommage incohérent
+
+| Incohérence | Exemples |
+|-------------|----------|
+| Statut boolean | `is_active` (display_messages) vs `status` (persons, equipment, missions) |
+| Timestamps | `created_at TEXT DEFAULT (datetime('now'))` vs `created_at TEXT DEFAULT CURRENT_TIMESTAMP` |
+| Clés étrangères | `created_by` (→ users.id) vs `reported_by` (→ users.id) vs `sent_by` (→ users.id) |
+| Identifiants | `person_id` vs `assigned_to` (même sémantique = personne) |
+| Pluriel/singulier | `drivers` (pluriel) vs `email_config` (singulier) |
+
+---
+
+#### 🔵 MINEUR — Tables potentiellement inutilisées
+
+| Table | Observation |
+|-------|-------------|
+| `drivers` | Basique (name, license, phone). Aucune FK vers d'autres tables. Semble être un vestige d'un module transport antérieur. |
+| `garages` | Basique (name, address, phone, email). Aucune FK. |
+| `vehicles` | Référencé par `reservations.vehicle_id` et `missions.vehicle_id`, mais pas par le module équipement. |
+| `reservations` | Module complet mais les routes ne sont plus dans routes.js. Possiblement migré vers missions. |
+| `reservation_requests` | Doublon fonctionnel avec reservations. |
+
+---
+
+### 1.3 Points positifs
+
+- ⚪ Mode WAL activé avec checkpoint auto (1000 pages) — bonnes performances en lecture concurrent
+- ⚪ `foreign_keys = ON` activé — intégrité référentielle active
+- ⚪ Indexes composites sur les tables les plus requêtées (leave_requests, missions, stock_movements)
+- ⚪ Seed data complet pour les référentiels métier (positions, compétences, jours fériés)
+
+---
+
+## Partie 2 — Module Annuaire
+
+**Fichiers** : `annuaireRoutes.js` (834 lignes), `routes.js` (672 lignes, partie clients)
+
+### 2.1 Couverture fonctionnelle
+
+| Fonctionnalité | Statut | Endpoint |
+|----------------|--------|----------|
+| CRUD Clients enrichis | ✅ | `/api/annuaire/clients` |
+| CRUD Fournisseurs enrichis | ✅ | `/api/annuaire/suppliers` |
+| CRUD Prestataires | ✅ | `/api/annuaire/prestataires` |
+| CRUD Contacts | ✅ | `/api/annuaire/contacts` |
+| Référentiels (4 tables lookup) | ✅ | `/api/annuaire/ref/*` |
+| Recherche unifiée | ✅ | `/api/annuaire/search` |
+| Statistiques | ✅ | `/api/annuaire/stats` |
+| Import CSV clients | ✅ | `/api/annuaire/import/clients-csv` |
+| Import CSV fournisseurs | ✅ | `/api/annuaire/import/suppliers-csv` |
+| Export | ❌ | Non implémenté |
+| Fusion de doublons | ❌ | Non implémenté |
+
+### 2.2 Findings
+
+#### 🟠 MAJEUR — Système client dupliqué (cf. §1.2)
+
+`routes.js` expose un CRUD complet sur la table `clients` basique (GET/POST/PUT/DELETE `/api/clients`). `annuaireRoutes.js` expose un CRUD enrichi sur les tables annuaire. Rien ne les lie.
+
+**Scénario de bug** : Un utilisateur crée un client via le formulaire de réservation (table `clients`), un autre le crée via l'annuaire (table enrichie). Deux entrées pour la même entité.
+
+---
+
+#### 🟡 MODÉRÉ — Normalisation téléphone incomplète
+
+La normalisation de numéro de téléphone (retrait caractères non-numériques, padding à 10 chiffres) n'est appliquée que dans l'import CSV :
+
+```javascript
+// annuaireRoutes.js — import CSV seulement
+const normalizePhone = (phone) => {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, '');
+  return digits.length < 10 ? digits.padStart(10, '0') : digits;
+};
+```
+
+**Non appliquée** dans : POST/PUT des endpoints CRUD normaux. Un numéro peut donc être stocké sous forme `"06 12 34 56 78"`, `"0612345678"`, ou `"+33612345678"` selon le canal d'entrée.
+
+---
+
+#### 🟡 MODÉRÉ — Déduplication limitée au `code_libre`
+
+L'import CSV utilise `ON CONFLICT(code_libre) DO UPDATE`, mais :
+- Le `code_libre` n'est pas obligatoire dans le CRUD manuel
+- Deux entrées avec le même SIRET mais des `code_libre` différents coexistent
+- Pas de déduplication par nom+adresse, email, ou téléphone
+
+---
+
+#### 🔵 MINEUR — Soft-delete incomplet
+
+Quand un client annuaire a des contacts liés, la suppression est refusée. Mais il n'y a pas de soft-delete (`is_deleted` ou `deleted_at`). L'utilisateur doit supprimer manuellement les contacts d'abord.
+
+---
+
+## Partie 3 — Module Communication
+
+**Fichiers** : `communicationRoutes.js` (1523 lignes), `messagingRoutes.js` (368 lignes), `mailingRoutes.js` (299 lignes)
+
+### 3.1 Couverture fonctionnelle
+
+| Fonctionnalité | Statut | Fichier / Endpoint |
+|----------------|--------|-------------------|
+| Display events CRUD | ✅ | communicationRoutes — `/api/communication/display-events` |
+| BL imports & BP items | ✅ | communicationRoutes — `/api/communication/bl-imports`, `/api/communication/bp-items` |
+| Tasks CRUD + batch | ✅ | communicationRoutes — `/api/communication/tasks` |
+| Export PDF feuille de route | ✅ | communicationRoutes — `/api/communication/export-pdf` |
+| Planning affaires | ✅ | communicationRoutes — `/api/communication/planning-affaires` |
+| Messagerie interne | ✅ | messagingRoutes — `/api/messaging/*` |
+| Templates email | ✅ | mailingRoutes — `/api/mail-templates` |
+| Envoi email SMTP | ✅ | mailingRoutes — `/api/mailing/send` |
+| Historique mailing | ✅ | mailingRoutes — `/api/mailing/history` |
+| Notifications temps réel | ❌ | Pas de WebSocket/SSE — polling uniquement |
+| Recherche dans messages | ❌ | Non implémenté |
+
+### 3.2 Findings
+
+#### 🟠 MAJEUR — ALTER TABLE au runtime (cf. §1.2)
+
+L'endpoint `PUT /api/communication/display-events/:id/assign` ajoute dynamiquement `assigned_person_id` via un try/catch silencieux. La colonne `visible` des display_events est ajoutée de la même manière.
+
+---
+
+#### 🟡 MODÉRÉ — Export PDF fragile
+
+Le générateur PDF dans `communicationRoutes.js` (endpoint `/api/communication/export-pdf`) :
+
+- Contient **16 sections hardcodées** avec des couleurs et ordres fixes
+- Utilise un algorithme de dimensionnement dynamique pour tout faire tenir sur une page A4 (minFontSize = 5pt)
+- Le stripping d'émojis est fait par regex partielle : `text.replace(/[\u{1F600}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')`
+- Ne gère pas les caractères Unicode composés (emoji ZWJ sequences, drapeaux)
+- Le layout est calculé en pixels empiriques sans tenir compte du rendu réel de PDFKit
+
+---
+
+#### 🟡 MODÉRÉ — Messagerie sans nettoyage des fichiers
+
+Les fichiers uploadés via la messagerie (`messaging-uploads/`) ne sont jamais nettoyés :
+- Pas de suppression quand un message est supprimé (le `DELETE /api/messaging/messages/:id` supprime l'entrée DB `message_attachments` mais pas le fichier sur disque)
+- Pas de limite de stockage global
+- Les noms de fichiers contiennent un timestamp + random, mais pas de vérification de chemin traversal au-delà du préfixe
+
+---
+
+#### 🔵 MINEUR — Mailing contacts incomplet
+
+L'endpoint `/api/mailing/contacts` agrège des contacts de 4 tables (`users`, `persons`, `clients`, `suppliers`) mais :
+- N'inclut pas les contacts de l'annuaire enrichi (`annuaire_contacts`)
+- N'inclut pas les prestataires
+- Utilise des `try/catch` vides pour chaque table (`/* table pas encore créée */`)
+
+---
+
+#### 🔵 MINEUR — Messagerie sans pagination des conversations
+
+`GET /api/messaging/conversations` retourne TOUTES les conversations de l'utilisateur sans pagination. Pour un utilisateur avec beaucoup de conversations, cela peut dégrader les performances (sous-requêtes corrélées × nombre de conversations).
+
+---
+
+## Partie 4 — Module Display Dashboard / TV
+
+**Fichier** : `displayRoutes.js` (1384 lignes)
+
+### 4.1 Couverture fonctionnelle
+
+| Fonctionnalité | Statut | Endpoint |
+|----------------|--------|----------|
+| Écrans CRUD + heartbeat | ✅ | `/api/display/screens` |
+| Playlists CRUD + items | ✅ | `/api/display/playlists` |
+| Upload/gestion médias | ✅ | `/api/display/media` |
+| Messages/annonces CRUD | ✅ | `/api/display/messages` |
+| Templates CRUD | ✅ | `/api/display/templates` |
+| Logs + stats | ✅ | `/api/display/logs`, `/api/display/stats` |
+| Config apparence TV | ✅ | `/api/display/appearance` |
+| Messages d'accueil par jour/créneau | ✅ | `/api/display/welcome-messages` |
+| Règles de couleur (mot-clé→couleur) | ✅ | `/api/display/color-rules` |
+| Icônes de lieu + GIFs | ✅ | `/api/display/gifs`, `/api/display/location-icon-rules` |
+| Logo upload | ✅ | `/api/display/logo` |
+| Sneaky photo (overlay temporisé) | ✅ | `/api/display/sneaky-photo` |
+| Sneaky message (message prioritaire temporisé) | ✅ | `/api/display/sneaky-message` |
+| Météo (proxy OpenWeatherMap) | ✅ | `/api/display/weather` |
+| Intégration Sonos | ✅ | `/api/display/sonos` |
+| TV state (agrégation complète) | ⚠️ | `/api/display/tv-state` — **BUG SQL** |
+| Multi-écrans / zones | ❌ | Un seul jeu de config global |
+
+### 4.2 Findings
+
+#### 🔴 CRITIQUE — Requête SQL invalide dans tv-state
+
+**Fichier** : `displayRoutes.js:1346`
+
+```javascript
+const displayMessages = db.prepare(
+  "SELECT content, priority FROM display_messages WHERE status = 'active' ORDER BY priority DESC LIMIT 8"
+).all();
+```
+
+**Problèmes** :
+1. La colonne `content` **n'existe pas** → devrait être `body`
+2. La colonne `status` **n'existe pas** → devrait être `is_active = 1`
+3. Le tri `ORDER BY priority DESC` trie alphabétiquement (`urgent > normal > low > high`) au lieu de par importance réelle
+
+**Requête corrigée** :
+```sql
+SELECT body, priority FROM display_messages
+WHERE is_active = 1 AND (date_end IS NULL OR date_end >= date('now'))
+ORDER BY CASE priority WHEN 'urgent' THEN 4 WHEN 'high' THEN 3 WHEN 'normal' THEN 2 WHEN 'low' THEN 1 END DESC
+LIMIT 8
+```
+
+---
+
+#### 🟠 MAJEUR — Sneaky features stockées hors DB
+
+Les fonctionnalités "sneaky photo" et "sneaky message" stockent leur état dans des fichiers JSON sur le filesystem (`sneaky-photo.json`, `sneaky-message.json`) au lieu de la base de données :
+
+```javascript
+const sneakyPath = join(__dirname, '..', 'public', 'display-sneaky', 'sneaky-photo.json');
+writeFileSync(sneakyPath, JSON.stringify(data));
+```
+
+**Conséquences** :
+- Pas de transaction atomique avec les autres opérations DB
+- Pas de sauvegarde avec la DB (les backups SQLite ne les incluent pas)
+- Pas d'historique/audit trail
+- Race condition possible si deux admins modifient en même temps
+
+---
+
+#### 🟡 MODÉRÉ — Authentification écrans par token mais sans expiration
+
+Les écrans TV utilisent un `auth_token` pour s'authentifier via `authenticateScreenToken`, mais :
+- Le token n'a pas de date d'expiration
+- Le token est stocké en clair dans la DB
+- Pas de rotation automatique du token
+- Un token compromis donne un accès permanent
+
+---
+
+#### 🟡 MODÉRÉ — Médias sans limite de nombre
+
+L'upload média (`50 MB max` par fichier) n'a pas de :
+- Limite sur le nombre total de fichiers
+- Limite sur l'espace disque total utilisé
+- Vérification du type MIME réel (seule l'extension est vérifiée)
+
+---
+
+#### 🔵 MINEUR — Config météo/Sonos en dur dans display_config
+
+La clé API OpenWeatherMap et la config Sonos sont stockées dans la table `display_config` en tant que JSON. Pas de chiffrement des clés API.
+
+---
+
+## Partie 5 — Modules Stock & Commandes
+
+**Fichiers** : `stockRoutes.js` (434 lignes), `ordersRoutes.js` (1368 lignes), `equipmentRoutes.js` (1300 lignes), `catalogRoutes.js` (775 lignes)
+
+### 5.1 Couverture fonctionnelle — Stock
+
+| Fonctionnalité | Statut | Endpoint |
+|----------------|--------|----------|
+| Catégories stock CRUD | ✅ | `/api/stock/categories` |
+| Articles stock CRUD + recherche | ✅ | `/api/stock/items` |
+| Mouvements (in/out/adjustment/return) | ✅ | `/api/stock/movements` |
+| Stats (rupture, bas stock, top mouvements) | ✅ | `/api/stock/stats` |
+| Alertes de stock bas | ❌ | Pas de notifications automatiques |
+| Inventaire physique | ❌ | Non implémenté |
+
+### 5.2 Couverture fonctionnelle — Commandes
+
+| Fonctionnalité | Statut | Endpoint |
+|----------------|--------|----------|
+| Fournisseurs CRUD | ✅ | `/api/suppliers` |
+| Commandes CRUD + workflow statut | ✅ | `/api/orders` |
+| Devis CRUD + conversion en commande | ✅ | `/api/quotes` |
+| Demandes matériel + validation admin | ✅ | `/api/material-requests` |
+| Documents fournisseur | ✅ | `/api/supplier-documents` |
+| Alertes de complétion | ✅ | `/api/completion-alerts` |
+| Génération depuis BL | ✅ | `/api/orders/generate-from-bl` |
+| Export PDF commande | ❌ | Non implémenté |
+
+### 5.3 Couverture fonctionnelle — Équipement
+
+| Fonctionnalité | Statut | Endpoint |
+|----------------|--------|----------|
+| Catégories hiérarchiques (famille/sous-famille/catégorie) | ✅ | `/api/equipment-categories` |
+| Équipement CRUD + UID auto (EMAG-XXXXX) | ✅ | `/api/equipment` |
+| Sérialisation (split quantité→entités individuelles) | ✅ | `/api/equipment/:id/serialize` |
+| Import CSV Locmat | ✅ | `/api/equipment/import-csv` |
+| Affectations (assign/return) | ✅ | `/api/equipment-assignments` |
+| Tickets SAV CRUD + import CSV | ✅ | `/api/sav-tickets` |
+| Rapport maintenance | ✅ | `/api/sav-tickets/report` |
+| Listes favoris/surveillance | ✅ | `/api/equipment-lists` |
+| Lookup par UID (QR code) | ✅ | `/api/equipment/by-uid/:uid` |
+| Gestion photos matériel | ✅ | `/api/equipment-photos` |
+| Zones de dépôt (2 dépôts) | ✅ | `/api/equipment-depot-zones` |
+| Catalogue + flightcases + camions | ✅ | `/api/catalog/*` |
+| Export 3D (Chargement 3D) | ✅ | `/api/reservations/:id/chargement-export` |
+| Génération QR code | ❌ | Non implémenté côté serveur |
+
+### 5.4 Findings
+
+#### 🟠 MAJEUR — Transitions de statut commande non validées
+
+L'endpoint `PUT /api/orders/:id` accepte n'importe quelle valeur de `status` sans vérifier la transition :
+
+```javascript
+// ordersRoutes.js — PUT /api/orders/:id
+db.prepare('UPDATE orders SET ... status = ? ... WHERE id = ?').run(status, ...);
+```
+
+Un utilisateur pourrait passer directement de `received` à `draft`, ou de `cancelled` à `confirmed`. Il n'y a pas de machine à états.
+
+**Transitions attendues** : `draft → sent → confirmed → partial → received` (avec `cancelled` comme état terminal).
+
+---
+
+#### 🟠 MAJEUR — Suppression de doublons SAV destructive
+
+`DELETE /api/sav-tickets/duplicates` supprime physiquement les tickets considérés comme doublons (même `title` en lowercase). Le critère est fragile :
+
+```sql
+SELECT id FROM sav_tickets WHERE id NOT IN (
+  SELECT MIN(id) FROM sav_tickets GROUP BY LOWER(TRIM(title))
+)
+```
+
+- Deux interventions légitimes avec le même titre seraient considérées comme doublons
+- La suppression est irréversible
+- L'endpoint est admin-only mais sans confirmation/preview
+
+---
+
+#### 🟡 MODÉRÉ — Stock : pas de réversion de mouvement
+
+Un mouvement de stock (`POST /api/stock/movements`) avec `type = 'out'` décrémente la quantité. Mais :
+- Pas de mécanisme d'annulation d'un mouvement erroné
+- Pas de mouvement inverse automatique
+- L'adjustment peut compenser, mais sans traçabilité du lien avec le mouvement original
+
+---
+
+#### 🟡 MODÉRÉ — Equipment photo : LIKE pattern trop large
+
+Lors de la suppression/renommage de photos, la mise à jour DB utilise `LIKE '%filename%'` :
+```javascript
+db.prepare("UPDATE equipment SET photo = NULL WHERE photo LIKE ?").run(`%${filename}%`);
+```
+
+Si un fichier `cam.jpg` est supprimé, cela affectera aussi les équipements pointant vers `webcam.jpg` ou `cam.jpg.bak`.
+
+---
+
+#### 🟡 MODÉRÉ — Auto-validation à la réception de BL
+
+`autoValidateReceivedItems()` dans ordersRoutes.js marque automatiquement les items comme reçus quand un document de type `delivery_note` est uploadé. Mais :
+- Pas de vérification des quantités (le BL peut être partiel)
+- Pas de workflow de vérification physique
+- La validation déclanche `checkOrderCompletion` qui peut cascader vers `checkAffaireCompletion`
+
+---
+
+#### 🔵 MINEUR — Catalogue : matching de référence fragile
+
+Le matching dans `/api/catalog/equipment/match-references` normalise les références :
+```javascript
+const normalizeRef = (ref) => ref.trim().toLowerCase().replace(/[\s\-_.,;:/\\]+/g, '');
+```
+
+Mais la normalisation ne gère pas les préfixes/suffixes fournisseur courants, ni les zéros initiaux.
+
+---
+
+#### 🔵 MINEUR — Equipment CSV import sans rollback utilisateur
+
+L'import CSV crée automatiquement la hiérarchie de catégories avec des icônes et couleurs par défaut. Si l'import est incorrect, l'utilisateur doit nettoyer manuellement les catégories créées.
+
+---
+
+## Annexe — Modules complémentaires
+
+### A.1 Module Personnel (`personnelRoutes.js` — 1338 lignes)
+
+**Couverture** : Complet — Persons CRUD, compétences, postes, disponibilités avec approbation, missions CRUD, affectations avec détection de conflits, planning global.
+
+| Finding | Sévérité | Description |
+|---------|----------|-------------|
+| Approbation congés dupliquée | 🟡 MODÉRÉ | `personnelRoutes.js` a ses propres endpoints `approve`/`reject` sur les availabilities, tandis que `leaveRoutes.js` gère le workflow complet via `leave_requests`. Les deux systèmes modifient le même `leave_balances`. |
+| Calcul jours pris naïf | 🟡 MODÉRÉ | Dans `approve` (personnelRoutes), le calcul des jours pris utilise `Math.round((end - start) / 86400000) + 1` — ne tient pas compte des week-ends ni jours fériés, contrairement à `leaveRoutes.js` qui utilise `calcWorkingDays()`. |
+| Planning JSON parsing fragile | 🔵 MINEUR | Le parsing des assignments dans `/api/personnel/planning` utilise `GROUP_CONCAT` de `json_object()` puis split par `,{` — ne gère pas les virgules dans les valeurs JSON. |
+| Email alerte affectation | ⚪ INFO | L'alerte email à la création d'affectation (`alertAssignmentCreated`) est fire-and-forget avec `.catch()`. Un échec est silencieux. |
+
+### A.2 Module Congés (`leaveRoutes.js` — 1338 lignes)
+
+**Couverture** : Très complet — Conformité IDCC 3252, congés exceptionnels (Art. L3142-1), signatures, justificatifs, arbitrage conflits, PDF, statistiques.
+
+| Finding | Sévérité | Description |
+|---------|----------|-------------|
+| Report de congés simplifié | 🟡 MODÉRÉ | `getOrCreateBalance()` autorise le report jusqu'au 31 décembre de l'année suivante, mais la convention IDCC 3252 prévoit un report jusqu'au 31 mai de la période suivante (période de référence juin-mai). |
+| Congé par défaut 25j vs 30j | 🟡 MODÉRÉ | Dans `personnelRoutes.js`→approve, le solde par défaut est 25 jours (`conge_paye ? 25 : 10`), tandis que dans `leaveRoutes.js` c'est `DAYS_PER_YEAR = 30`. Incohérence entre les deux systèmes. |
+| Justificatifs en base64 | 🔵 MINEUR | Le upload de justificatif se fait via JSON body avec le fichier en base64. Pas de limite de taille côté route (limitée uniquement par les settings Express JSON globaux). |
+| PDF côté client | ⚪ INFO | L'endpoint `/api/leaves/:id/pdf` retourne du HTML, pas un vrai PDF. Le commentaire dit "le client le convertira en PDF via window.print/jsPDF". |
+
+### A.3 Module Messagerie (`messagingRoutes.js` — 368 lignes)
+
+**Couverture** : Conversations directes et de groupe, messages texte/fichier/image/vidéo, read tracking, edit/delete.
+
+| Finding | Sévérité | Description |
+|---------|----------|-------------|
+| Fichiers non nettoyés | 🟡 MODÉRÉ | cf. §3.2 — Le DELETE message supprime la ligne `message_attachments` mais pas le fichier `messaging-uploads/`. |
+| Admin check inconsistent | 🔵 MINEUR | Le DELETE message vérifie `req.user.isAdmin` (camelCase) tandis que d'autres routes utilisent `requireAdmin` middleware ou `req.user.is_admin`. |
+| Pas de WebSocket | ⚪ INFO | La messagerie est entièrement basée sur du polling HTTP. Pas de push en temps réel. |
+
+### A.4 Module Mailing (`mailingRoutes.js` — 299 lignes)
+
+**Couverture** : Templates CRUD, envoi SMTP avec variables, preview, historique, contacts agrégés.
+
+| Finding | Sévérité | Description |
+|---------|----------|-------------|
+| Contacts annuaire manquants | 🔵 MINEUR | cf. §3.2 — `/api/mailing/contacts` n'inclut pas les contacts de l'annuaire enrichi. |
+| Erreur d'envoi silencieuse | ⚪ INFO | Les erreurs d'envoi sont loggées en DB (`mail_history.status = 'error'`) mais aucune notification proactive à l'admin. |
+
+---
+
+## Résumé des findings par sévérité
+
+| Sévérité | Nombre | Modules impactés |
+|----------|--------|-----------------|
+| 🔴 CRITIQUE | 2 | Schema (task_assignments reconstruction), Display (tv-state SQL invalide) |
+| 🟠 MAJEUR | 7 | Schema (dual clients, ALTER runtime), Display (sneaky hors DB), Orders (transitions), SAV (doublons), Communication (display_messages mismatch) |
+| 🟡 MODÉRÉ | 12 | Schema (FK indexes, NOT NULL, migrations inline, nommage), Annuaire (phone, dedup), Communication (PDF, fichiers), Display (tokens, médias), Stock (réversion), Equipment (LIKE pattern, auto-validation), Personnel (approbation dupliquée, calcul jours), Congés (report, 25j vs 30j) |
+| 🔵 MINEUR | 9 | Schema (tables inutilisées), Annuaire (soft-delete), Communication (contacts mailing, pagination), Display (API keys), Stock (matching, CSV rollback), Personnel (JSON parsing), Messagerie (isAdmin), Mailing (contacts) |
+| ⚪ INFO | 5 | Schema (WAL, FK, indexes), Personnel (email fire-and-forget), Congés (PDF HTML), Messagerie (WebSocket), Mailing (erreur silencieuse) |
+
+**Total : 35 findings** dont 2 critiques nécessitant une correction immédiate.
+
+---
+
+## Recommandations prioritaires
+
+1. **Corriger la requête tv-state** (`displayRoutes.js:1346`) — remplacer `content`→`body` et `status='active'`→`is_active=1`
+2. **Déplacer les ALTER TABLE runtime** dans `database.js` avec les autres migrations
+3. **Unifier le système clients** — FK de `clients` → annuaire ou migration des données
+4. **Ajouter les index FK manquants** — script de migration one-time
+5. **Implémenter une machine à états** pour les transitions de commandes
+6. **Nettoyer les fichiers messaging** — ajouter `unlinkSync` dans DELETE message
+7. **Harmoniser le calcul de jours de congés** entre personnelRoutes et leaveRoutes

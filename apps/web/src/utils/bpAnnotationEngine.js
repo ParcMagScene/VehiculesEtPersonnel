@@ -5,17 +5,17 @@
 
 // ─── Couleurs par famille métier ───
 export const FAMILY_COLORS = {
-  sonorisation:    { bg: 'rgba(59, 130, 246, 0.25)',  border: '#3b82f6', label: 'Sonorisation',    emoji: '🔊' },
-  lumiere:         { bg: 'rgba(234, 179, 8, 0.25)',   border: '#eab308', label: 'Lumière',         emoji: '💡' },
-  video:           { bg: 'rgba(236, 72, 153, 0.25)',  border: '#ec4899', label: 'Vidéo',           emoji: '🎥' },
-  structure:       { bg: 'rgba(34, 197, 94, 0.25)',   border: '#22c55e', label: 'Structure',       emoji: '🏗️' },
-  electricite:     { bg: 'rgba(239, 68, 68, 0.25)',   border: '#ef4444', label: 'Distribution Élec.', emoji: '⚡' },
-  regie:           { bg: 'rgba(168, 85, 247, 0.25)',  border: '#a855f7', label: 'Régie',           emoji: '🎛️' },
-  accroche:        { bg: 'rgba(20, 184, 166, 0.25)',  border: '#14b8a6', label: 'Accroche',        emoji: '🔗' },
-  motorisation:    { bg: 'rgba(249, 115, 22, 0.25)',  border: '#f97316', label: 'Motorisation',    emoji: '⚙️' },
-  mobilier:        { bg: 'rgba(107, 114, 128, 0.25)', border: '#6b7280', label: 'Mobilier',        emoji: '🪑' },
-  divers:          { bg: 'rgba(156, 163, 175, 0.20)', border: '#9ca3af', label: 'Divers',          emoji: '📦' },
-  vente:           { bg: 'rgba(251, 191, 36, 0.20)',  border: '#fbbf24', label: 'Vente',           emoji: '🛒' },
+  sonorisation:    { bg: 'rgba(59, 130, 246, 0.7)',  border: '#3b82f6', label: 'Sonorisation',    emoji: '🔊' },
+  lumiere:         { bg: 'rgba(234, 179, 8, 0.7)',   border: '#eab308', label: 'Lumière',         emoji: '💡' },
+  video:           { bg: 'rgba(236, 72, 153, 0.7)',  border: '#ec4899', label: 'Vidéo',           emoji: '🎥' },
+  structure:       { bg: 'rgba(34, 197, 94, 0.7)',   border: '#22c55e', label: 'Structure',       emoji: '🏗️' },
+  electricite:     { bg: 'rgba(239, 68, 68, 0.7)',   border: '#ef4444', label: 'Distribution Élec.', emoji: '⚡' },
+  regie:           { bg: 'rgba(168, 85, 247, 0.7)',  border: '#a855f7', label: 'Régie',           emoji: '🎛️' },
+  accroche:        { bg: 'rgba(20, 184, 166, 0.7)',  border: '#14b8a6', label: 'Accroche',        emoji: '🔗' },
+  motorisation:    { bg: 'rgba(249, 115, 22, 0.7)',  border: '#f97316', label: 'Motorisation',    emoji: '⚙️' },
+  mobilier:        { bg: 'rgba(107, 114, 128, 0.7)', border: '#6b7280', label: 'Mobilier',        emoji: '🪑' },
+  divers:          { bg: 'rgba(156, 163, 175, 0.6)', border: '#9ca3af', label: 'Divers',          emoji: '📦' },
+  vente:           { bg: 'rgba(251, 191, 36, 0.6)',  border: '#fbbf24', label: 'Vente',           emoji: '🛒' },
 };
 
 // ─── Mapping section BP → famille ───
@@ -58,6 +58,23 @@ const FAMILY_KEYWORDS = {
   accroche:     [/\bélingue/i, /\bmanille/i, /\bpalan/i, /\bchain\s*hoist/i, /\bcrochet/i, /\bpince/i, /\bcoupler/i],
   motorisation: [/\bmoteur/i, /\bpalan/i, /\btreuil/i, /\bchain.*motor/i, /\bverlinde/i],
 };
+
+/**
+ * Génère une couleur unique et distincte pour une section sans famille connue
+ */
+function generateSectionColor(sectionName) {
+  let hash = 0;
+  for (let i = 0; i < sectionName.length; i++) {
+    hash = sectionName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return {
+    bg: `hsla(${h}, 55%, 50%, 0.7)`,
+    border: `hsl(${h}, 55%, 40%)`,
+    label: sectionName,
+    emoji: '📋',
+  };
+}
 
 /**
  * Détecte la famille d'un article BP
@@ -175,6 +192,11 @@ export function annotateBPItems(bpItems) {
 
   // Regrouper par section
   const sectionsMap = {};
+  // Ajouter les sections connues même sans item
+  const knownSections = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'VIDEO', 'VIDÉO', 'STRUCTURE', 'ÉLECTRICITÉ', 'RÉGIE', 'ACCROCHE', 'MOTORISATION', 'MOBILIER', 'VENTE'];
+  for (const secName of knownSections) {
+    sectionsMap[secName] = { name: secName, family: null, color: null, items: [] };
+  }
   for (const item of annotatedItems) {
     const sec = item.section || 'Autre';
     if (!sectionsMap[sec]) sectionsMap[sec] = { name: sec, family: null, color: null, items: [] };
@@ -185,6 +207,35 @@ export function annotateBPItems(bpItems) {
     }
   }
   const sections = Object.values(sectionsMap);
+
+  // Assigner couleur basée sur le nom de la section (priorité sur les items)
+  for (const sec of sections) {
+    const name = sec.name.toLowerCase();
+    if (name.includes('sonorisation') || name.includes('diffusion')) sec.color = FAMILY_COLORS.sonorisation;
+    else if (name.includes('lumière') || name.includes('lumiere') || name.includes('eclairage') || name.includes('éclairage')) sec.color = FAMILY_COLORS.lumiere;
+    else if (name.includes('vidéo') || name.includes('video') || name.includes('audiovisuel')) sec.color = FAMILY_COLORS.video;
+    else if (name.includes('structure') || name.includes('praticable') || name.includes('podium') || name.includes('scène') || name.includes('scene')) sec.color = FAMILY_COLORS.structure;
+    else if (name.includes('élec') || name.includes('elec') || name.includes('câbl') || name.includes('cabl') || name.includes('distribution') || name.includes('puissance')) sec.color = FAMILY_COLORS.electricite;
+    else if (name.includes('régi') || name.includes('regi') || name.includes('plateau')) sec.color = FAMILY_COLORS.regie;
+    else if (name.includes('accroche') || name.includes('rigging') || name.includes('élingue') || name.includes('elingue')) sec.color = FAMILY_COLORS.accroche;
+    else if (name.includes('motorisation') || name.includes('moteur') || name.includes('levage')) sec.color = FAMILY_COLORS.motorisation;
+    else if (name.includes('mobilier') || name.includes('meuble') || name.includes('décor') || name.includes('decor')) sec.color = FAMILY_COLORS.mobilier;
+    else if (name.includes('vente') || name.includes('vte')) sec.color = FAMILY_COLORS.vente;
+    else if (!sec.color) {
+      // Générer une couleur unique et distincte par section inconnue
+      sec.color = generateSectionColor(sec.name);
+    }
+  }
+
+  // Propager la couleur de section aux items qui n'ont pas de couleur propre
+  for (const sec of sections) {
+    if (!sec.color) continue;
+    for (const item of sec.items) {
+      if (!item._color) {
+        item._color = sec.color;
+      }
+    }
+  }
 
   // Stats
   const stats = {
@@ -212,7 +263,7 @@ export function formatAffaireInfoBlock(data) {
   if (reservations.length > 0) {
     lines.push({ type: 'header', text: `🚛 Réservations (${reservations.length})` });
     for (const r of reservations.slice(0, 5)) {
-      const date = r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '?';
+      const date = (r.start_date || r.date) ? new Date(r.start_date || r.date).toLocaleDateString('fr-FR') : '?';
       lines.push({ type: 'item', text: `${r.vehicle_name || 'Véhicule'} — ${date}` });
     }
     if (reservations.length > 5) lines.push({ type: 'more', text: `+${reservations.length - 5} autres` });
@@ -222,8 +273,8 @@ export function formatAffaireInfoBlock(data) {
   if (personnel.length > 0) {
     lines.push({ type: 'header', text: `👤 Personnel (${personnel.length})` });
     for (const p of personnel.slice(0, 5)) {
-      const name = [p.prenom, p.nom].filter(Boolean).join(' ') || 'Agent';
-      lines.push({ type: 'item', text: `${name} — ${p.role || p.poste || ''}` });
+      const name = [p.first_name || p.prenom, p.last_name || p.nom].filter(Boolean).join(' ') || 'Agent';
+      lines.push({ type: 'item', text: `${name} — ${p.poste || p.role || ''}` });
     }
     if (personnel.length > 5) lines.push({ type: 'more', text: `+${personnel.length - 5} autres` });
   }

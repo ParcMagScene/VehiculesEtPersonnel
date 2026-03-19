@@ -44,6 +44,9 @@ public/avatars/*.jpg
 public/avatars/*.png
 public/avatars/*.webp
 
+# Catalogues fournisseurs (fichiers volumineux, runtime)
+public/catalogues/
+
 # Fichiers temporaires de développement
 check_localstorage.html
 test_*.js

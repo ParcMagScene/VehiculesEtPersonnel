@@ -288,8 +288,8 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   }, [zonesData]);
 
   const overlayImage = depotId === '2' || depotId === 2
-    ? '/ZonesDepôt2.png'
-    : '/ZonesDepôt1.png';
+    ? '/images/ZonesDepôt2.png'
+    : '/images/ZonesDepôt1.png';
   
   // Which part of the image to show for the current floor
   // Depot 1: image is landscape with RDC left, MEZZ right

@@ -2,10 +2,10 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" sizes="48x48" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" href="/icons/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1e3a5f" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -13,24 +13,16 @@
     <meta name="apple-mobile-web-app-title" content="eM@g" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>eM@g</title>
+    <!-- VS Code Mode: Cascadia Code + Codicon icons -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.36/dist/codicon.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Google Maps sera chargé dynamiquement avec la clé API depuis le localStorage -->
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // Nuke: désenregistrer tous les SW et vider tous les caches
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(regs) {
-          regs.forEach(function(r) { r.unregister(); });
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          names.forEach(function(n) { caches.delete(n); });
-        });
-      }
-    </script>
+    <script src="/sw-cleanup.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

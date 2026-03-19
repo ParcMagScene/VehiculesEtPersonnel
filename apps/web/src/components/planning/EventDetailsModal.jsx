@@ -105,15 +105,10 @@ function EventDetailsModal({
     }
   }, [event]);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('auth_token');
-    return token ? { 'Authorization': `Bearer ${token}` } : {};
-  };
-
   const scanAttachmentFolder = async (affaire) => {
     try {
       const response = await fetch(`${API_BASE_URL}/attachments/${affaire}`, {
-        headers: getAuthHeaders()
+        credentials: 'include'
       });
       if (response.ok) {
         const data = await response.json();
@@ -150,7 +145,7 @@ function EventDetailsModal({
 
         const response = await fetch(`${API_BASE_URL}/upload-attachment`, {
           method: 'POST',
-          headers: getAuthHeaders(),
+          credentials: 'include',
           body: formData
         });
 
@@ -178,7 +173,7 @@ function EventDetailsModal({
     try {
       const response = await fetch(`${API_BASE_URL}/attachments/${encodeURIComponent(event.affaire)}/${encodeURIComponent(file.name)}`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -276,9 +271,9 @@ function EventDetailsModal({
       const response = await fetch(`${API_BASE_URL}/reservations/${reservationId}`, {
         method: 'PATCH',
         headers: {
-          ...getAuthHeaders(),
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ google_drive_links: currentLinks })
       });
       if (response.ok) {
@@ -312,9 +307,9 @@ function EventDetailsModal({
       const response = await fetch(`${API_BASE_URL}/reservations/${reservationId}`, {
         method: 'PATCH',
         headers: {
-          ...getAuthHeaders(),
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ google_drive_links: currentLinks })
       });
       if (response.ok) {

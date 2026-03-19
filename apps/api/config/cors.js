@@ -6,7 +6,9 @@ let defaults = [
   'https://magsav.duckdns.org',
   'http://magsav.duckdns.org:4173',
   'http://magsav.duckdns.org',
-  'http://192.168.205.75:4173'
+  'http://192.168.205.75:4173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173'
 ];
 if (process.env.NODE_ENV === 'development') {
   // autoriser tous les localhost courants (ports Vite 5174/5175)
@@ -23,7 +25,8 @@ logger.info('🌐 Origines CORS autorisées:', allowedOrigins);
  */
 export const corsMiddleware = cors({
   origin: function(origin, callback) {
-    // Permettre les requêtes sans origin (curl, mobile, etc.)
+    // Requêtes sans origin = same-origin (navigateur), curl, mobile, server-to-server
+    // Les navigateurs modernes envoient TOUJOURS Origin pour les requêtes cross-origin avec credentials
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);

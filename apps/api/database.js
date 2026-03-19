@@ -2908,6 +2908,14 @@ function initializeDatabase() {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_sessions_user ON active_sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_expires ON active_sessions(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_sessions_token ON active_sessions(token_hash);
+  `);
+
+  // Index critiques auth & lookup
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token_hash);
+    CREATE INDEX IF NOT EXISTS idx_persons_email ON persons(email);
   `);
 
   logger.info('✅ Base de données initialisée');

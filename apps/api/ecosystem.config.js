@@ -29,7 +29,7 @@ export default {
     {
       name: "vehicules",
       script: "npx",
-      args: "vite preview",
+      args: ["vite", "preview", "--host", "0.0.0.0"],
       cwd: "/Users/reunion/eM@g/apps/web",
       instances: 1,
       autorestart: true,

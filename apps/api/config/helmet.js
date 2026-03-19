@@ -7,9 +7,9 @@ export const helmetMiddleware = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'data:'],
       imgSrc: ["'self'", 'data:', 'blob:'],
       connectSrc: ["'self'"],
       frameSrc: ["'none'"],
@@ -35,8 +35,7 @@ export function helmetConditional(req, res, next) {
       || req.path.startsWith('/display-')
       || req.path === '/tv'
       || req.path === '/SNCF.wav'
-      || (req.path.startsWith('/api/display/tv') && !req.headers.authorization)
-      || (req.path.startsWith('/api/') && !req.path.startsWith('/api/display/') && !req.headers.authorization)) {
+      || (req.path.startsWith('/api/display/tv') && !req.headers.authorization)) {
     return next();
   }
   return helmetMiddleware(req, res, next);

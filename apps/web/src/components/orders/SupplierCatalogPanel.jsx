@@ -280,7 +280,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
               {canWrite && <p style={{ fontSize: '0.85rem' }}>Importez un catalogue PDF pour commencer</p>}
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="catalog-table-wrapper">
               <table className="catalog-table">
                 <thead>
                   <tr>

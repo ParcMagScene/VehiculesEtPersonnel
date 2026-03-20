@@ -1584,10 +1584,8 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
         </div>
       )}
 
-      {/* ── Informations ── */}
-      <div className="eq-detail-card">
-        <h3 className="eq-card-title"><Tag size={15} /> Informations</h3>
-        <div className="eq-detail-grid">
+      {/* ── Informations (fusionné dans la fiche) ── */}
+      <div className="eq-detail-grid eq-detail-info-grid">
           {eq.reference && (
             <div className="eq-detail-field">
               <span className="eq-field-label"><Tag size={14} /> Référence</span>
@@ -1643,7 +1641,6 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
               <span className="eq-field-value">jusqu'au {safeDate(eq.warrantyEnd || eq.warranty_end)}</span>
             </div>
           )}
-        </div>
       </div>
 
       {/* ── Notes ── */}
@@ -1651,45 +1648,6 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
         <div className="eq-detail-notes">
           <h4>📝 Notes</h4>
           <p>{eq.notes}</p>
-        </div>
-      )}
-
-      {/* ── Actions (mode dialog) ── */}
-      {!compact && onEdit && (
-        <div className="eq-dialog-actions">
-          <div className="eq-actions-group">
-            <button className="eq-btn-primary" onClick={() => onEdit(eq)}><Edit2 size={14} /> Modifier</button>
-          </div>
-          <div className="eq-actions-group">
-            {onCreateTicket && (
-              <button className="eq-btn-secondary" onClick={() => onCreateTicket(eq)}>
-                <Wrench size={14} /> Ticket SAV
-              </button>
-            )}
-            {onOpenDepotMap && (
-              <button className="eq-btn-secondary" onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}>
-                <MapPin size={14} /> Localisation
-              </button>
-            )}
-            {onPrintLabel && (
-              <button className="eq-btn-secondary" onClick={() => onPrintLabel(eq)}>
-                <Printer size={14} /> Étiquette
-              </button>
-            )}
-            {onPrintSheet && (
-              <button className="eq-btn-secondary" onClick={() => onPrintSheet(eq)}>
-                <FileText size={14} /> Fiche
-              </button>
-            )}
-            {isAdmin && onSerialize && (eq.stockQuantity || eq.stock_quantity || 1) > 1 && (
-              <button className="eq-btn-secondary" onClick={() => onSerialize(eq)} title={`Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`}>
-                <Package size={14} /> Sérialiser ({eq.stockQuantity || eq.stock_quantity})
-              </button>
-            )}
-          </div>
-          {isAdmin && onDelete && (
-            <button className="eq-btn-danger" onClick={() => onDelete(eq.id)}><Trash2 size={14} /> Supprimer</button>
-          )}
         </div>
       )}
 
@@ -1876,9 +1834,6 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             eq={eq}
             isAdmin={isAdmin}
             compact={false}
-            onEdit={onEdit}
-            onCreateTicket={onCreateTicket}
-            onDelete={onDelete}
             photosList={photosList}
             logosList={logosList}
             favoriteIds={favoriteIds}
@@ -1886,11 +1841,45 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             onToggleList={onToggleList}
             onOpenTicketDialog={onOpenTicketDialog}
             onOpenDepotMap={onOpenDepotMap}
-            onPrintLabel={onPrintLabel}
-            onPrintSheet={onPrintSheet}
-            onSerialize={onSerialize}
             categories={categories}
           />
+        </div>
+        <div className="eq-dialog-footer">
+          <div className="eq-dialog-actions">
+            <div className="eq-actions-group">
+              <button className="eq-btn-primary" onClick={() => onEdit(eq)}><Edit2 size={14} /> Modifier</button>
+            </div>
+            <div className="eq-actions-group">
+              {onCreateTicket && (
+                <button className="eq-btn-secondary" onClick={() => onCreateTicket(eq)}>
+                  <Wrench size={14} /> Ticket SAV
+                </button>
+              )}
+              {onOpenDepotMap && (
+                <button className="eq-btn-secondary" onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}>
+                  <MapPin size={14} /> Localisation
+                </button>
+              )}
+              {onPrintLabel && (
+                <button className="eq-btn-secondary" onClick={() => onPrintLabel(eq)}>
+                  <Printer size={14} /> Étiquette
+                </button>
+              )}
+              {onPrintSheet && (
+                <button className="eq-btn-secondary" onClick={() => onPrintSheet(eq)}>
+                  <FileText size={14} /> Fiche
+                </button>
+              )}
+              {isAdmin && onSerialize && (eq.stockQuantity || eq.stock_quantity || 1) > 1 && (
+                <button className="eq-btn-secondary" onClick={() => onSerialize(eq)} title={`Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`}>
+                  <Package size={14} /> Sérialiser ({eq.stockQuantity || eq.stock_quantity})
+                </button>
+              )}
+            </div>
+            {isAdmin && onDelete && (
+              <button className="eq-btn-danger" onClick={() => onDelete(eq.id)}><Trash2 size={14} /> Supprimer</button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1958,6 +1947,8 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
 
 // ═══ MODAL FORMULAIRE ÉQUIPEMENT ═══
 const EquipmentFormModal = ({ equipment: eq, categories, depotZones, allDepotZones, onSave, onClose }) => {
+  const [showMap, setShowMap] = useState(false);
+  const [mapDepotIdx, setMapDepotIdx] = useState(0); // index du dépôt affiché sur le plan
   // Hiérarchie des catégories
   const families = useMemo(() => categories.filter(c => c.level === 'family'), [categories]);
   const subfamilies = useMemo(() => categories.filter(c => c.level === 'subfamily'), [categories]);
@@ -2081,10 +2072,6 @@ const EquipmentFormModal = ({ equipment: eq, categories, depotZones, allDepotZon
                 {Object.entries(EQUIPMENT_STATUS).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
               </select>
             </div>
-            <div className="eq-form-field">
-              <label>Localisation / Zone</label>
-              <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ex: Dépôt A, Étagère 3" />
-            </div>
             {(depotZones || allDepotZones) && (
               <div className="eq-form-field eq-form-full">
                 <LocationSelector
@@ -2104,6 +2091,50 @@ const EquipmentFormModal = ({ equipment: eq, categories, depotZones, allDepotZon
                     location_floor: loc.location_floor || '',
                   }))}
                 />
+                <button type="button" className="eq-form-map-toggle" onClick={() => setShowMap(!showMap)}>
+                  <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
+                </button>
+                {showMap && (() => {
+                  const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
+                  const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
+                  if (!currentDepotData) return null;
+                  return (
+                    <div className="eq-form-map-container">
+                      {depotsList.length > 1 && (
+                        <div className="eq-form-map-tabs">
+                          {depotsList.map((d, i) => (
+                            <button key={d.id || i} type="button" className={`eq-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
+                              {d.name || `Dépôt ${d.id || i + 1}`}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <DepotMap
+                        zones={currentDepotData}
+                        selectedZone={form.location_zone}
+                        onZoneSelect={(zoneId) => {
+                          if (!zoneId) return;
+                          const zoneObj = currentDepotData.zones?.find(z => z.id === zoneId);
+                          setForm(f => ({
+                            ...f,
+                            location_depot: currentDepotData.id || currentDepotData.depotId || '',
+                            location_zone: zoneId,
+                            location_code: '',
+                            location_floor: zoneObj?.floor || '',
+                          }));
+                        }}
+                        onZoneFilter={() => {}}
+                        compact={true}
+                      />
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+            {!depotZones && !allDepotZones && (
+              <div className="eq-form-field">
+                <label>Localisation / Zone</label>
+                <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ex: Dépôt A, Étagère 3" />
               </div>
             )}
             <div className="eq-form-field">

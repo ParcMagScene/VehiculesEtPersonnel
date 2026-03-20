@@ -10,6 +10,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .supplier-articles-panel .panel-header {
@@ -19,6 +21,7 @@
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .supplier-articles-panel .panel-header h2 {
@@ -45,6 +48,7 @@
   padding: 0.75rem 1rem;
   background: var(--theme-border-light);
   border-radius: 10px;
+  flex-shrink: 0;
 }
 
 .catalog-toolbar input[type="text"],
@@ -111,6 +115,12 @@
 }
 
 /* ─── Table ─── */
+.catalog-table-wrapper {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
 .catalog-table {
   width: 100%;
   border-collapse: collapse;

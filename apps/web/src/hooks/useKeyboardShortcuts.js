@@ -46,7 +46,7 @@ export const SHORTCUT_CATEGORIES = {
  */
 export function useKeyboardShortcuts(handlers, enabled = true) {
   const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
+  useEffect(() => { handlersRef.current = handlers; });
 
   const handleKeyDown = useCallback((e) => {
     if (!enabled) return;

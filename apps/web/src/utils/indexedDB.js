@@ -1,7 +1,7 @@
 // Gestion de la base de données IndexedDB
 
 const DB_NAME = 'ReservationVehicules';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 const STORES = {
   vehicles: 'vehicles',
   reservations: 'reservations',
@@ -19,6 +19,7 @@ const STORES = {
   inventoryAlerts: 'inventoryAlerts',
   inventoryAnomalies: 'inventoryAnomalies',
   inventoryPendingCounts: 'inventoryPendingCounts',
+  auth: 'auth',
 };
 
 // Ouvrir ou créer la base de données
@@ -106,7 +107,7 @@ export const loadFromIndexedDB = async (storeName, defaultValue = []) => {
         
         // Si c'est un objet unique (comme calendarConfig), retourner le premier élément
         if (storeName === STORES.calendarConfig && result && result.length > 0) {
-          const { id, ...config } = result[0];
+          const { id: _id, ...config } = result[0];
           resolve(config);
           return;
         }
@@ -173,3 +174,41 @@ export const updateInIndexedDB = async (storeName, item) => {
 };
 
 export { STORES };
+
+// ── Auth persistence (fallback si localStorage vidé) ──
+
+export const saveAuthToIDB = async (user) => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORES.auth, 'readwrite');
+    tx.objectStore(STORES.auth).put({ id: 1, user, updatedAt: Date.now() });
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    });
+  } catch { /* silencieux — fallback non critique */ }
+};
+
+export const loadAuthFromIDB = async () => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORES.auth, 'readonly');
+    const request = tx.objectStore(STORES.auth).get(1);
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => { db.close(); resolve(request.result?.user || null); };
+      request.onerror = () => { db.close(); reject(request.error); };
+    });
+  } catch { return null; }
+};
+
+export const clearAuthFromIDB = async () => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORES.auth, 'readwrite');
+    tx.objectStore(STORES.auth).clear();
+    return new Promise((resolve) => {
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); resolve(); };
+    });
+  } catch { /* silencieux */ }
+};

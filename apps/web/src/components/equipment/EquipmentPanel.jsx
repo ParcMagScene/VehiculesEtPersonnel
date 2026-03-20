@@ -652,42 +652,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
               {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
             </button>
           </div>
-          <div className="eq-stats-row">
-            <button className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }} title="Tous">
-              <Package size={13} />
-              <span className="eq-stat-value">{stats.total}</span>
-            </button>
-            <button className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`} onClick={() => { setFilterStatus('available'); setListFilter(''); setSubTab('inventory'); }} title="Disponibles">
-              <CheckCircle size={13} />
-              <span className="eq-stat-value">{stats.available}</span>
-            </button>
-            <button className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_use'); setListFilter(''); setSubTab('inventory'); }} title="En service">
-              <Clock size={13} />
-              <span className="eq-stat-value">{stats.in_use}</span>
-            </button>
-            <button className={`eq-stat-btn eq-stat-maint ${filterStatus === 'maintenance' ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }} title="Maintenance">
-              <Wrench size={13} />
-              <span className="eq-stat-value">{stats.maintenance}</span>
-            </button>
-            {stats.openTickets > 0 && (
-              <button className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`} onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }} title="Tickets SAV">
-                <AlertTriangle size={13} />
-                <span className="eq-stat-value">{stats.openTickets}</span>
-              </button>
-            )}
-            {favoriteIds.size > 0 && (
-              <button className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }} title="Favoris">
-                <Star size={13} />
-                <span className="eq-stat-value">{favoriteIds.size}</span>
-              </button>
-            )}
-            {watchIds.size > 0 && (
-              <button className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }} title="Surveillance">
-                <Eye size={13} />
-                <span className="eq-stat-value">{watchIds.size}</span>
-              </button>
-            )}
-          </div>
         </div>
 
         <div className="eq-toolbar-actions">
@@ -753,6 +717,44 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                 </button>
               )}
             </>
+          )}
+        </div>
+
+        {/* Stats */}
+        <div className="eq-stats-row">
+          <button className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }} title="Tous">
+            <Package size={13} />
+            <span className="eq-stat-value">{stats.total}</span>
+          </button>
+          <button className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`} onClick={() => { setFilterStatus('available'); setListFilter(''); setSubTab('inventory'); }} title="Disponibles">
+            <CheckCircle size={13} />
+            <span className="eq-stat-value">{stats.available}</span>
+          </button>
+          <button className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_use'); setListFilter(''); setSubTab('inventory'); }} title="En service">
+            <Clock size={13} />
+            <span className="eq-stat-value">{stats.in_use}</span>
+          </button>
+          <button className={`eq-stat-btn eq-stat-maint ${filterStatus === 'maintenance' ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }} title="Maintenance">
+            <Wrench size={13} />
+            <span className="eq-stat-value">{stats.maintenance}</span>
+          </button>
+          {stats.openTickets > 0 && (
+            <button className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`} onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }} title="Tickets SAV">
+              <AlertTriangle size={13} />
+              <span className="eq-stat-value">{stats.openTickets}</span>
+            </button>
+          )}
+          {favoriteIds.size > 0 && (
+            <button className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }} title="Favoris">
+              <Star size={13} />
+              <span className="eq-stat-value">{favoriteIds.size}</span>
+            </button>
+          )}
+          {watchIds.size > 0 && (
+            <button className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }} title="Surveillance">
+              <Eye size={13} />
+              <span className="eq-stat-value">{watchIds.size}</span>
+            </button>
           )}
         </div>
       </div>

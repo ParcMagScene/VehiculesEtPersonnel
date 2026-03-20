@@ -56,3 +56,12 @@
 - [ ] Tester le login d'au moins 2 utilisateurs
 - [ ] Vérifier que les zones dépôt en `server/data/` persistent correctement après redémarrage
 - [ ] Monitorer les logs pendant 30 min pour détecter des erreurs silencieuses
+
+---
+
+## Voir aussi
+
+- [Architecture & déploiement](../01-Architecture/ARCHITECTURE.md#14-déploiement--infrastructure)
+- [Plan de maintenance](PLAN_MAINTENANCE.md)
+- [Sécurité](../02-Securite/SECURITY.md)
+- [Guide développeur](../03-Guides/GUIDE_DEVELOPPEUR.md)

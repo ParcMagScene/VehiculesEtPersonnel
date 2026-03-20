@@ -3,7 +3,7 @@
 // (Affichage dynamique : écrans, playlists, médias, messages, templates, logs)
 // ═══════════════════════════════════════════════════════════════
 
-import { dirname, join, extname } from 'path';
+import { dirname, join, extname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
@@ -13,6 +13,21 @@ import db from './database.js';
 import logger from './logger.js';
 import { randomBytes } from 'node:crypto';
 import { uploadMedia } from './middleware/upload.js';
+import rateLimit from 'express-rate-limit';
+
+// Rate limiter dédié pour les endpoints TV publics (écriture)
+const tvWriteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de requêtes TV, réessayez dans un instant' }
+});
+
+// Validation stricte d'eventId (alphanumérique + tirets/underscores, max 200 chars)
+function isValidEventId(id) {
+  return typeof id === 'string' && id.length > 0 && id.length <= 200 && /^[a-zA-Z0-9_\-:.]+$/.test(id);
+}
 
 const execFileAsync = promisify(execFile);
 
@@ -1019,7 +1034,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // [AUDIT FIX CRIT-2] Protection path traversal
   app.delete('/api/display/location-gifs/:filename', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const sanitized = req.params.filename.replace(/\.\.[\/\\]/g, '').replace(/[\/\\]/g, '');
+      const sanitized = basename(req.params.filename);
       const filePath = join(gifsDir, sanitized);
       if (!filePath.startsWith(gifsDir)) return res.status(403).json({ error: 'Accès interdit' });
       if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Fichier introuvable' });
@@ -1632,7 +1647,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ── Servir les GIFs statiques (accès public pour l'écran TV) ──
   // [AUDIT FIX CRIT-2] Protection path traversal
   app.get('/api/display/gifs/:filename', (req, res) => {
-    const sanitized = req.params.filename.replace(/\.\.[\/\\]/g, '').replace(/[\/\\]/g, '');
+    const sanitized = basename(req.params.filename);
     const filePath = join(gifsDir, sanitized);
     // Vérifier que le chemin résolu reste dans gifsDir
     if (!filePath.startsWith(gifsDir)) {
@@ -1838,10 +1853,10 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/tv/complete-event — Marquer une tâche comme terminée
-  app.post('/api/display/tv/complete-event', (req, res) => {
+  app.post('/api/display/tv/complete-event', tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
-      if (!eventId) return res.status(400).json({ error: 'eventId requis' });
+      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
       const today = new Date();
       const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       db.prepare('INSERT OR IGNORE INTO display_completed_events (event_id, event_date) VALUES (?, ?)').run(String(eventId), dateStr);
@@ -1853,10 +1868,10 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/tv/uncomplete-event — Démarquer une tâche
-  app.post('/api/display/tv/uncomplete-event', (req, res) => {
+  app.post('/api/display/tv/uncomplete-event', tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
-      if (!eventId) return res.status(400).json({ error: 'eventId requis' });
+      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
       const today = new Date();
       const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       db.prepare('DELETE FROM display_completed_events WHERE event_id = ? AND event_date = ?').run(String(eventId), dateStr);
@@ -1985,10 +2000,10 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/complete-event → marquer terminé
-  app.post('/api/complete-event', (req, res) => {
+  app.post('/api/complete-event', tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
-      if (!eventId) return res.status(400).json({ error: 'eventId requis' });
+      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
       const today = new Date().toISOString().split('T')[0];
       db.prepare('INSERT OR IGNORE INTO display_completed_events (event_id, event_date) VALUES (?, ?)').run(String(eventId), today);
       res.json({ success: true, eventId });
@@ -1999,10 +2014,10 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/uncomplete-event → démarquer
-  app.post('/api/uncomplete-event', (req, res) => {
+  app.post('/api/uncomplete-event', tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
-      if (!eventId) return res.status(400).json({ error: 'eventId requis' });
+      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
       const today = new Date().toISOString().split('T')[0];
       db.prepare('DELETE FROM display_completed_events WHERE event_id = ? AND event_date = ?').run(String(eventId), today);
       res.json({ success: true, eventId });

@@ -14,7 +14,7 @@ export function usePTZ(camera) {
     } catch (e) {
       console.error('PTZ error:', e);
     }
-  }, [camera?.id, camera?.ptzSupported]);
+  }, [camera]);
 
   // Envoyer la commande pendant le press, stopper au release
   const startMove = useCallback((command, speed = 1) => {

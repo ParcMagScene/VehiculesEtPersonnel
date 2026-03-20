@@ -475,8 +475,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       return { ...a, isArchived };
     });
 
-    // Filtrer les archivées sauf si showArchived
-    if (!showArchived) {
+    // Filtrer les archivées sauf si showArchived ou filtre type actif
+    if (!showArchived && !filterType) {
       result = result.filter(a => !a.isArchived);
     }
     // Filtre recherche texte
@@ -499,7 +499,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     // Filtre par période (personnalisé)
     // Les affaires sans dates sont toujours incluses (elles ne doivent pas disparaître)
     // Les affaires créées récemment sont toujours incluses (même si dates passées) pour rester visibles après import BL
-    if (filterDateStart) {
+    // Quand un filtre de type est actif, on désactive le filtre de dates pour tout afficher
+    if (filterDateStart && !filterType) {
       result = result.filter(a => {
         const d = a.dateFin || a.dateDebut;
         if (!d) return true;
@@ -509,7 +510,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         return created >= filterDateStart;
       });
     }
-    if (filterDateEnd) {
+    if (filterDateEnd && !filterType) {
       result = result.filter(a => {
         const d = a.dateDebut;
         if (!d) return true;
@@ -661,8 +662,21 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     if (highlightedIds.size === 0 || !listRef.current) return;
     const firstId = [...highlightedIds][0];
     const row = listRef.current.querySelector(`[data-affaire-id="${CSS.escape(String(firstId))}"]`);
-    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [highlightedIds, cursorDate]);
+
+  // Scroll initial vers la première affaire active (aujourd'hui) au chargement
+  const hasScrolledInitRef = useRef(false);
+  useEffect(() => {
+    if (hasScrolledInitRef.current || isLoading || filteredAffaires.length === 0 || !listRef.current) return;
+    hasScrolledInitRef.current = true;
+    const firstActive = filteredAffaires.find(a => getAffaireStatus(a, today) === 'active')
+      || filteredAffaires.find(a => getAffaireStatus(a, today) === 'upcoming');
+    if (!firstActive) return;
+    const key = firstActive.id || firstActive.numeroAffaire;
+    const row = listRef.current.querySelector(`[data-affaire-id="${CSS.escape(String(key))}"]`);
+    if (row) requestAnimationFrame(() => row.scrollIntoView({ behavior: 'auto', block: 'center' }));
+  }, [isLoading, filteredAffaires, today]);
 
   // Drag handlers pour la frise
   const handleTimelineMouseDown = useCallback((e) => {
@@ -739,45 +753,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         </div>
       )}
 
-      {/* Compteur + Bouton nouvelle affaire + Frise chronologique */}
+      {/* Frise chronologique (navigation visuelle) */}
       <div className="affaires-info-bar">
-        <div className="affaires-count-box">
-          <span className="affaires-count-number">{filteredAffaires.length}</span>
-          <span className="affaires-count-label">affaire{filteredAffaires.length !== 1 ? 's' : ''}</span>
-        </div>
-
-        <button
-          className="affaires-new-btn"
-          onClick={async () => {
-            try {
-              const newAffaire = {
-                numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
-                nom: '',
-                client: '',
-                interlocuteur: '',
-                tel: '',
-                type: 'Prestation',
-                dateDebut: format(new Date(), 'yyyy-MM-dd'),
-                dateFin: '',
-                adresseLivraison: '',
-                description: '',
-                devis: '',
-                source: 'db',
-              };
-              const created = await api.createOrUpdateAffaire(newAffaire);
-              await loadDbAffaires();
-              setDialogAffaire({ ...newAffaire, id: created.id, ...created });
-            } catch (err) {
-              console.error('Erreur création affaire:', err);
-            }
-          }}
-          title="Nouvelle affaire"
-        >
-          <Plus size={14} />
-          <span>Nouvelle affaire</span>
-        </button>
-
-        {/* Frise chronologique */}
         <div className="affaires-timeline" ref={timelineRef} onMouseDown={handleTimelineMouseDown}>
           <div className="timeline-track">
             {timelineMarkers.map((m, i) => (
@@ -890,6 +867,37 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           <div className="affaires-tb-divider" />
 
+          {/* Boutons d'actions */}
+          <button
+            className="affaires-new-btn"
+            onClick={async () => {
+              try {
+                const newAffaire = {
+                  numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+                  nom: '',
+                  client: '',
+                  interlocuteur: '',
+                  tel: '',
+                  type: 'Prestation',
+                  dateDebut: format(new Date(), 'yyyy-MM-dd'),
+                  dateFin: '',
+                  adresseLivraison: '',
+                  description: '',
+                  devis: '',
+                  source: 'db',
+                };
+                const created = await api.createOrUpdateAffaire(newAffaire);
+                await loadDbAffaires();
+                setDialogAffaire({ ...newAffaire, id: created.id, ...created });
+              } catch (err) {
+                console.error('Erreur création affaire:', err);
+              }
+            }}
+            title="Nouvelle affaire"
+          >
+            <Plus size={14} />
+            <span>Nouvelle affaire</span>
+          </button>
           {/* Import BL/BP unifié */}
           <button
             className="affaires-tb-bl-import-btn multi-import"
@@ -910,7 +918,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           <div className="affaires-tb-divider" />
 
-          {/* Refresh + compteur */}
+          {/* Stats */}
           <button
             className="affaires-tb-nav-btn"
             onClick={handleRefresh}
@@ -919,6 +927,10 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           >
             <RefreshCw size={14} />
           </button>
+          <div className="affaires-count-box">
+            <span className="affaires-count-number">{filteredAffaires.length}</span>
+            <span className="affaires-count-label">affaire{filteredAffaires.length !== 1 ? 's' : ''}</span>
+          </div>
           <span className="affaires-tb-count" title={`${filteredAffaires.length} affaire(s) affichée(s) sur ${enrichedAffaires.length} total`}>
             {filteredAffaires.length}/{enrichedAffaires.length}
           </span>
@@ -1188,6 +1200,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           <BLMultiImportModal
             onClose={() => setShowMultiImport(false)}
             onImported={() => { setShowMultiImport(false); handleRefresh(); }}
+            defaultAffaireType={filterType}
           />
         </Suspense>
       )}

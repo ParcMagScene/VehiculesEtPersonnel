@@ -1175,7 +1175,8 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     storage: photoStorage,
     limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
     fileFilter: (req, file, cb) => {
-      if (/\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.originalname)) {
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+      if (/\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.originalname) && allowedMimes.includes(file.mimetype)) {
         cb(null, true);
       } else {
         cb(new Error('Format non supporté. Formats acceptés : jpg, png, gif, webp, avif'));
@@ -1244,10 +1245,12 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     }
   });
 
-  // Résolution du fichier zones — server/data/ (prioritaire, modifiable) puis public/ (initial)
+  // Résolution du fichier zones — server/data/ (prioritaire), puis racine/data/, puis public/ (initial)
   const resolveZonesPath = (filename) => {
     const dataPath = join(__dirname, 'data', filename);
     if (existsSync(dataPath)) return dataPath;
+    const rootDataPath = join(__dirname, '..', '..', 'data', filename);
+    if (existsSync(rootDataPath)) return rootDataPath;
     return join(__dirname, '..', '..', 'public', filename);
   };
 

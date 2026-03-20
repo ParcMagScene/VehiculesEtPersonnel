@@ -613,9 +613,9 @@ export const parseBonPreparation = (text) => {
         info.fieldsFound++;
         // Détecter type depuis le nom
         if (/prestation/i.test(info.nomAffaire)) info.type = 'Prestation';
-        else if (/location/i.test(info.nomAffaire)) info.type = 'Location';
+        else if (/\bloc(ation)?\b/i.test(info.nomAffaire)) info.type = 'Location';
         else if (/installation/i.test(info.nomAffaire)) info.type = 'Installation';
-        else if (/vente|vte/i.test(info.nomAffaire)) info.type = 'Vente';
+        else if (/vente|vte\b/i.test(info.nomAffaire)) info.type = 'Vente';
       }
 
       // Trouver "Devis" keyword — soit ligne isolée, soit fusionnée "1001 Devis 05/02/2026"

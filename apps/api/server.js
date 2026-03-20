@@ -1,15 +1,10 @@
-// Charger le fichier .env approprié selon le mode
-import dotenv from 'dotenv';
+// Charger le fichier .env AVANT tous les autres imports (ESM hoisting)
+import { isDev, envFile } from './env.js';
 import { fileURLToPath as _fileURLToPath } from 'url';
 import { dirname as _dirname, join as _join } from 'path';
 
 const __serverFile = _fileURLToPath(import.meta.url);
 const __serverDir = _dirname(__serverFile);
-
-// Si NODE_ENV=development OU --dev flag, charger .env.development
-const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
-const envFile = isDev ? '.env.development' : '.env';
-dotenv.config({ path: _join(__serverDir, envFile) });
 
 if (isDev) {
   logger.info('');
@@ -99,28 +94,30 @@ app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/set-new-password', authLimiter);
 app.use('/api/auth/self-reset-password', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
 
 // Créer le middleware d'authentification avec le secret JWT
 const authenticateToken = createAuthenticateToken(JWT_SECRET);
 
 // Servir les fichiers statiques depuis le dossier public/attachments
 const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments');
-app.use('/attachments', express.static(attachmentsPath));
+app.use('/attachments', express.static(attachmentsPath, { maxAge: '1h' }));
 
 // Servir les BL/BP importés
-app.use('/bl-imports', express.static(path.join(__dirname, '..', '..', 'public', 'bl-imports')));
+app.use('/bl-imports', express.static(path.join(__dirname, '..', '..', 'public', 'bl-imports'), { maxAge: '1h' }));
 
 // Servir les avatars
 const avatarsPath = path.join(__dirname, '..', '..', 'public', 'avatars');
 if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
-app.use('/avatars', express.static(avatarsPath));
+app.use('/avatars', express.static(avatarsPath, { maxAge: '1d' }));
 
 // ── Client TV standalone (fusion calendar-dashboard) ──
-app.use('/display-gifs', express.static(path.join(__dirname, '..', '..', 'public', 'display-gifs')));
-app.use('/display-logo', express.static(path.join(__dirname, '..', '..', 'public', 'display-logo')));
-app.use('/display-sneaky', express.static(path.join(__dirname, '..', '..', 'public', 'display-sneaky')));
-app.use('/display-media', express.static(path.join(__dirname, '..', '..', 'public', 'display-media')));
-app.use('/Logos', express.static(path.join(__dirname, '..', '..', 'public', 'Logos')));
+const staticCacheOpts = { maxAge: '7d' };
+app.use('/display-gifs', express.static(path.join(__dirname, '..', '..', 'public', 'display-gifs'), staticCacheOpts));
+app.use('/display-logo', express.static(path.join(__dirname, '..', '..', 'public', 'display-logo'), staticCacheOpts));
+app.use('/display-sneaky', express.static(path.join(__dirname, '..', '..', 'public', 'display-sneaky'), staticCacheOpts));
+app.use('/display-media', express.static(path.join(__dirname, '..', '..', 'public', 'display-media'), staticCacheOpts));
+app.use('/Logos', express.static(path.join(__dirname, '..', '..', 'public', 'Logos'), staticCacheOpts));
 app.get('/SNCF.wav', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'public', 'SNCF.wav'));
 });

@@ -225,9 +225,12 @@ eM@g/
 
 ## 📖 Documentation
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — Architecture technique complète (DB, API, composants, catalogue, deep linking, dépôts)
-- [SECURITY.md](SECURITY.md) — Politique de sécurité et vulnérabilités connues
-- [GUIDE_DEMARRAGE_RAPIDE.md](GUIDE_DEMARRAGE_RAPIDE.md) — Guide utilisateur
+- [📚 Index docs/](docs/README.md) — Index complet de la documentation
+- [Architecture](docs/01-Architecture/ARCHITECTURE.md) — Architecture technique complète
+- [Sécurité](docs/02-Securite/SECURITY.md) — Politique de sécurité et vulnérabilités connues
+- [Guide utilisateur](docs/03-Guides/GUIDE_UTILISATEUR.md) — Guide de démarrage rapide
+- [Guide développeur](docs/03-Guides/GUIDE_DEVELOPPEUR.md) — Installation, configuration, déploiement
+- [Audit technique](docs/02-Securite/AUDIT.md) — Audit unifié (Juillet 2025 + Mars 2026)
 
 ---
 

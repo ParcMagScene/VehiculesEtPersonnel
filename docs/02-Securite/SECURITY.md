@@ -255,7 +255,8 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 ## 📞 Support
 
 - 📧 Email : admin@magsav.com
-- 📖 Documentation : `ARCHITECTURE.md` (section sécurité)
+- 📖 Documentation : [ARCHITECTURE.md](../01-Architecture/ARCHITECTURE.md) (section sécurité)
+- 🔍 Audit complet : [AUDIT.md](AUDIT.md)
 - 🔧 Issues : GitHub (questions non-sensibles uniquement)
 
 ---

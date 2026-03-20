@@ -17,6 +17,15 @@ function sanitizePath(basePath, relativePath) {
   return resolved;
 }
 
+function sanitizeFilename(name) {
+  // Supprimer les séquences de path traversal et les caractères dangereux
+  return name
+    .replace(/\.\.[/\\]/g, '')
+    .replace(/[/\\]/g, '')
+    .replace(/[<>:"|?*\x00-\x1f]/g, '_')
+    .substring(0, 255);
+}
+
 function isValidAffaireId(id) {
   return /^[a-zA-Z0-9À-ÿ\s\-_().]+$/.test(id);
 }
@@ -110,7 +119,11 @@ app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), (req, res) =
     if (!fs.existsSync(affaireDir)) {
       fs.mkdirSync(affaireDir, { recursive: true });
     }
-    const originalName = req.file.originalname.replace(/^\d+-/, '');
+    const originalName = sanitizeFilename(req.file.originalname.replace(/^\d+-/, ''));
+    if (!originalName) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Nom de fichier invalide' });
+    }
     const finalPath = path.join(affaireDir, originalName);
     fs.renameSync(req.file.path, finalPath);
     const relativePath = path.join('attachments', req.body.affaireId, originalName);
@@ -144,7 +157,11 @@ app.post('/api/upload-attachment', authenticateToken, (req, res) => {
       if (!fs.existsSync(affaireDir)) {
         fs.mkdirSync(affaireDir, { recursive: true });
       }
-      const originalName = req.file.originalname.replace(/^\d+-/, '');
+      const originalName = sanitizeFilename(req.file.originalname.replace(/^\d+-/, ''));
+      if (!originalName) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: 'Nom de fichier invalide' });
+      }
       const finalPath = path.join(affaireDir, originalName);
       fs.renameSync(req.file.path, finalPath);
       const relativePath = path.join('attachments', req.body.affaireId, originalName);

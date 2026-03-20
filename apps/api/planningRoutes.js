@@ -276,6 +276,9 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           pd = typeof parsed_data === 'string' ? JSON.parse(parsed_data) : parsed_data;
           if (!affaireTypeResolved) affaireTypeResolved = pd.type || null;
           docType = pd.docType || null;
+          // Fallback type depuis docType si non résolu
+          if (!affaireTypeResolved && docType === 'bl_vente') affaireTypeResolved = 'Vente';
+          if (!affaireTypeResolved && docType === 'bon_preparation') affaireTypeResolved = 'Prestation';
           confidenceScore = pd.confidence || null;
           sectionsData = pd.sections && pd.sections.length > 0 ? JSON.stringify(pd.sections) : null;
           fieldConfidence = pd._fieldConfidence ? JSON.stringify(pd._fieldConfidence) : null;

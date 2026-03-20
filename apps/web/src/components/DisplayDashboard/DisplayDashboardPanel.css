@@ -2031,13 +2031,33 @@
 /* ─── Conteneur groupes d'onglets ─── */
 .display-tabs-container {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 24px;
   padding: 6px 16px 0;
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
   flex-shrink: 0;
   overflow-x: auto;
+}
+
+/* Lien Dashboard TV */
+.display-tv-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  color: var(--theme-accent, #3b82f6);
+  text-decoration: none;
+  background: var(--theme-bg-hover, rgba(59, 130, 246, 0.08));
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.display-tv-link:hover {
+  background: var(--theme-accent, #3b82f6);
+  color: #fff;
 }
 
 .display-tabs-group {

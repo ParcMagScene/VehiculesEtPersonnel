@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 /**
  * Hook pour gérer l'autocomplétion basée sur l'historique
@@ -6,19 +6,12 @@ import { useState, useEffect } from 'react';
  * @param {number} maxSuggestions - Nombre max de suggestions à garder
  */
 export const useAutocomplete = (key, maxSuggestions = 20) => {
-  const [suggestions, setSuggestions] = useState([]);
-
-  useEffect(() => {
-    // Charger les suggestions depuis localStorage
-    const stored = localStorage.getItem(`autocomplete_${key}`);
-    if (stored) {
-      try {
-        setSuggestions(JSON.parse(stored));
-      } catch (e) {
-        console.error('Erreur chargement suggestions:', e);
-      }
-    }
-  }, [key]);
+  const [suggestions, setSuggestions] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`autocomplete_${key}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
 
   const addToHistory = (value) => {
     if (!value || !value.trim()) return;

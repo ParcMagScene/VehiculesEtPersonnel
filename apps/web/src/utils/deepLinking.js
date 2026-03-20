@@ -3,7 +3,6 @@
 // ============================================================
 
 const CHARGEMENT_BASE_URL = 'chargement://load';
-const EMAG_BASE_URL = 'https://magsav.duckdns.org';
 
 /**
  * Génère un lien pour ouvrir Chargement 3D avec une réservation

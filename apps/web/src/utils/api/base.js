@@ -1,6 +1,8 @@
 // API Client — Base class + auth methods
 // Détection automatique de l'URL du backend
 
+import { saveAuthToIDB, loadAuthFromIDB, clearAuthFromIDB } from '../indexedDB.js';
+
 export const getApiUrl = () => {
   const hostname = window.location.hostname;
   const port = window.location.port;
@@ -64,17 +66,33 @@ export class ApiClient {
     this.user = JSON.parse(localStorage.getItem('auth_user') || 'null');
     // Migration: nettoyer l'ancien token si présent
     localStorage.removeItem('auth_token');
+    // Récupération async depuis IndexedDB si localStorage vidé
+    if (!this.user) {
+      this._recoverFromIDB();
+    }
+  }
+
+  async _recoverFromIDB() {
+    try {
+      const user = await loadAuthFromIDB();
+      if (user && !this.user) {
+        this.user = user;
+        localStorage.setItem('auth_user', JSON.stringify(user));
+      }
+    } catch { /* silencieux */ }
   }
 
   setAuth(user) {
     this.user = user;
     localStorage.setItem('auth_user', JSON.stringify(user));
+    saveAuthToIDB(user).catch(() => {});
   }
 
   clearAuth() {
     this.user = null;
     localStorage.removeItem('auth_user');
     localStorage.removeItem('auth_token'); // nettoyage migration
+    clearAuthFromIDB().catch(() => {});
   }
 
   async request(endpoint, options = {}) {

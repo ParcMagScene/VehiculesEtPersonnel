@@ -36,7 +36,9 @@
 /* ═══ TOOLBAR ═══ */
 .eq-toolbar {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   padding: 8px 16px;
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
@@ -96,13 +98,6 @@
 .eq-stat-btn.eq-stat-fav.active { background: var(--theme-warning-bg); border-color: var(--theme-warning); }
 .eq-stat-btn.eq-stat-watch.active { background: var(--theme-info-bg); border-color: var(--theme-info); }
 
-.eq-toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
 .eq-tabs {
   display: flex;
   gap: 2px;
@@ -157,6 +152,7 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  flex: 1;
 }
 
 .eq-search {

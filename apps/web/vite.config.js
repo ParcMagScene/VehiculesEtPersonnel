@@ -9,6 +9,7 @@ export default defineConfig({
     // Supprimer console.log et debugger en production
     minify: 'esbuild',
     target: 'es2020',
+    chunkSizeWarningLimit: 600,
     // Source maps pour le debugging production
     sourcemap: false, // [AUDIT FIX] Désactivé en production pour ne pas exposer le code source
     rollupOptions: {
@@ -17,7 +18,6 @@ export default defineConfig({
           // Isoler les grosses librairies dans des chunks séparés
           'vendor-react': ['react', 'react-dom'],
           'vendor-pdf': ['pdfjs-dist'],
-          'vendor-xlsx': ['xlsx'],
           'vendor-dates': ['date-fns'],
           'vendor-icons': ['lucide-react'],
           'vendor-qr': ['qrcode.react'],

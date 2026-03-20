@@ -53,7 +53,7 @@ const SECTION_COLORS = {
 };
 const getSecColor = (name) => SECTION_COLORS[name] || SECTION_COLORS.DIVERS;
 
-export default function BLMultiImportModal({ onClose, onImported }) {
+export default function BLMultiImportModal({ onClose, onImported, defaultAffaireType }) {
   const toast = useToast();
   const fileInputRef = useRef(null);
 
@@ -65,7 +65,7 @@ export default function BLMultiImportModal({ onClose, onImported }) {
   const [importResults, setImportResults] = useState(null);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   // Global type applied to all items (when multi-import)
-  const [globalType, setGlobalType] = useState('');
+  const [globalType, setGlobalType] = useState(defaultAffaireType || '');
 
   // Drag & Drop handlers
   const handleDragOver = useCallback((e) => { e.preventDefault(); setDragOver(true); }, []);

@@ -1349,9 +1349,28 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
 
       const availabilities = db.prepare(availSql).all(...aParams);
 
+      // Récupérer les tâches assignées dans la plage (task_assignments liées aux affaires ou manuelles)
+      let tasksSql = `
+        SELECT ta.*, p.first_name, p.last_name
+        FROM task_assignments ta
+        JOIN persons p ON p.id = ta.person_id
+        WHERE ta.date >= ? AND ta.date <= ?
+          AND (ta.deleted_at IS NULL)
+      `;
+      const tParams = [start_date, end_date];
+
+      if (person_id) {
+        tasksSql += ' AND ta.person_id = ?';
+        tParams.push(person_id);
+      }
+      tasksSql += ' ORDER BY ta.date, ta.period';
+
+      const taskAssignments = db.prepare(tasksSql).all(...tParams);
+
       res.json({
         missions: parsedMissions,
         availabilities,
+        taskAssignments,
       });
     } catch (error) {
       logger.error(error);

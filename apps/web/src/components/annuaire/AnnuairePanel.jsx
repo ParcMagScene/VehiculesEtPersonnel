@@ -304,14 +304,6 @@ function AnnuairePanel({ currentUser }) {
             );
           })}
         </div>
-        {stats && (
-          <div className="annuaire-header-stats">
-            <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
-            <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
-            <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
-            <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
-          </div>
-        )}
       </div>
 
       {/* Toolbar */}
@@ -375,6 +367,16 @@ function AnnuairePanel({ currentUser }) {
             <option value="">Tous les secteurs</option>
             {(lookups.activity_sectors || []).map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
           </select>
+        </div>
+      )}
+
+      {/* Stats */}
+      {stats && (
+        <div className="annuaire-header-stats">
+          <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
+          <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
+          <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
+          <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
         </div>
       )}
 

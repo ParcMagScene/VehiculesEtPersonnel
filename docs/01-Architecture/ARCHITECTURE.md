@@ -346,7 +346,7 @@ Client HTTP
 | `cors.js` | — | Configuration CORS (corsMiddleware) |
 | `rateLimiter.js` | — | Rate limiters (authLimiter, generalLimiter) |
 
-### Variables d'environnement (`server/.env`)
+### Variables d'environnement (`apps/api/.env`)
 
 ```
 JWT_SECRET=<clé secrète>
@@ -1098,7 +1098,7 @@ node scripts/sync_inventory_to_catalog.js chemin/vers/inventaire.xlsx
 | **Domaine** | `magsav.duckdns.org` (DynDNS) |
 | **Frontend** | `vite preview` sur port **4173** (PM2 : `vehicules`) |
 | **Backend** | `node server.js` sur port **3002** (PM2 : `vehicules-backend`) |
-| **Base de données** | `/Users/reunion/eM@g/server/vehicules.db` |
+| **Base de données** | `/Users/reunion/eM@g/apps/api/db.sqlite3` |
 
 ### PM2 — Process Manager
 

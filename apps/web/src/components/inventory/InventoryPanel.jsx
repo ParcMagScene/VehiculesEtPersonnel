@@ -489,9 +489,9 @@ export default function InventoryPanel({ currentUser }) {
   
   // Fabrication d'un toast minimaliste si pas injecté
   const toast = useMemo(() => ({
-    success: (msg) => console.log('✅', msg),
-    error: (msg) => console.error('❌', msg),
-    info: (msg) => console.log('ℹ️', msg),
+    success: () => {},
+    error: () => {},
+    info: () => {},
   }), []);
 
   const inv = useInventory({ isAuthenticated: true, toast });

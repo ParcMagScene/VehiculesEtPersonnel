@@ -194,6 +194,21 @@
   flex-shrink: 0;
 }
 
+.mpers-task-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+
+.mpers-task-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--task-color, #f59e0b);
+  flex-shrink: 0;
+}
+
 .mpers-mission-title {
   color: var(--theme-text-body);
   font-weight: 500;
@@ -490,6 +505,7 @@
 }
 
 .mpers-legend-dot.busy { background: #3b82f6; }
+.mpers-legend-dot.task { background: #f59e0b; border-radius: 2px; }
 .mpers-legend-dot.unavail { background: #ef4444; }
 .mpers-legend-dot.free { background: var(--theme-bg-tertiary); border: 1px solid var(--theme-border-muted); }
 

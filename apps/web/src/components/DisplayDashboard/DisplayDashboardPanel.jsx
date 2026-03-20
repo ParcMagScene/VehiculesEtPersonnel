@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
-import { Palette, MessageCircle, Tag, Film, Camera, Music } from 'lucide-react';
+import { Palette, MessageCircle, Tag, Film, Camera, Music, ExternalLink } from 'lucide-react';
 import './DisplayDashboardPanel.css';
 
 // Lazy sub-tabs
@@ -16,6 +16,12 @@ const SneakyTab = lazy(() => import('./SneakyTab'));
 const SonosTab = lazy(() => import('./SonosTab'));
 const TVPreviewPanel = lazy(() => import('./TVPreviewPanel'));
 const DashboardTasksSidebar = lazy(() => import('./DashboardTasksSidebar'));
+
+function getTvUrl() {
+  const { hostname, port } = window.location;
+  if (['5174', '5175', '4173'].includes(port)) return `http://${hostname}:3003/tv`;
+  return `http://${hostname}:${port}/tv`;
+}
 
 const CONFIG_TABS = [
   { id: 'appearance', label: 'Apparence', icon: Palette },
@@ -114,6 +120,16 @@ function DisplayDashboardPanel({ currentUser }) {
             );
           })}
         </div>
+        <a
+          href={getTvUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="display-tv-link"
+          title="Ouvrir le Dashboard TV dans un nouvel onglet"
+        >
+          <ExternalLink size={14} />
+          <span>{getTvUrl()}</span>
+        </a>
       </div>
 
       {/* Corps — split layout : tâches | config | divider | aperçu TV */}

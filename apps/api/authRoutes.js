@@ -361,4 +361,66 @@ app.get('/api/auth/users-public', (req, res) => {
   }
 });
 
+// ── Renouvellement silencieux du token JWT ──
+// Le client appelle ce endpoint périodiquement pour obtenir un nouveau token
+// sans déconnecter l'utilisateur. La session DB reste la même.
+app.post('/api/auth/refresh', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Récupérer les infos fraîches depuis la DB (permissions, nom, avatar peuvent avoir changé)
+    const user = db.prepare('SELECT id, email, name, is_admin, avatar, permissions FROM users WHERE id = ?').get(userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Utilisateur introuvable' });
+    }
+
+    // Récupérer le hash du token actuel pour mettre à jour la session
+    const authHeader = req.headers['authorization'];
+    const currentToken = (authHeader && authHeader.split(' ')[1]) || req.cookies?.auth_token;
+    const oldTokenHash = crypto.createHash('sha256').update(currentToken).digest('hex').substring(0, 64);
+
+    // Parser les permissions
+    let perms = {};
+    try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
+
+    // Générer un nouveau token avec les infos à jour
+    const newToken = jwt.sign(
+      { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, permissions: perms },
+      JWT_SECRET,
+      { algorithm: 'HS256', expiresIn: `${JWT_EXPIRY_DAYS}d` }
+    );
+
+    // Mettre à jour la session : nouveau hash + nouvelle expiration + last_activity
+    const newTokenHash = crypto.createHash('sha256').update(newToken).digest('hex').substring(0, 64);
+    const newExpiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+    const updated = db.prepare(
+      'UPDATE active_sessions SET token_hash = ?, expires_at = ?, last_activity = CURRENT_TIMESTAMP WHERE token_hash = ?'
+    ).run(newTokenHash, newExpiresAt, oldTokenHash);
+
+    if (updated.changes === 0) {
+      return res.status(401).json({ error: 'Session introuvable' });
+    }
+
+    // Invalider le cache pour l'ancien token hash
+    authCache.invalidate(oldTokenHash);
+
+    // Envoyer le nouveau cookie
+    res.cookie('auth_token', newToken, cookieOptions);
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        isAdmin: user.is_admin === 1,
+        avatar: user.avatar || null,
+        permissions: perms
+      }
+    });
+  } catch (error) {
+    logger.error('Erreur refresh token:', error);
+    res.status(500).json({ error: 'Erreur serveur interne' });
+  }
+});
+
 } // end setupAuthRoutes

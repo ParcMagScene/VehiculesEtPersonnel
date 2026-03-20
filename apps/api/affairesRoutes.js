@@ -436,9 +436,9 @@ app.post('/api/affaires/:id/bp/annotate', authenticateToken, (req, res) => {
     const affaireId = req.params.id; // numero_affaire (ex: "AF32361")
     const { blImportId } = req.body;
 
-    // 1. Affaire
+    // 1. Affaire (+ google_event_id pour lien réservations)
     const affaire = db.prepare(`
-      SELECT numero_affaire, nom, type, client, date_debut, date_fin, adresse_livraison
+      SELECT numero_affaire, nom, type, client, date_debut, date_fin, adresse_livraison, google_event_id
       FROM affaires WHERE numero_affaire = ?
     `).get(affaireId);
     if (!affaire) return res.status(404).json({ error: 'Affaire introuvable' });
@@ -464,42 +464,117 @@ app.post('/api/affaires/:id/bp/annotate', authenticateToken, (req, res) => {
     }
     const bpItems = db.prepare(bpQuery + ' ORDER BY bp.id').all(...bpParams);
 
-    // 3. Réservations liées
+    // 3. Réservations liées (par champ affaire OU par google_event_id)
+    const googleEventId = affaire.google_event_id || null;
     const reservations = db.prepare(`
       SELECT r.id, r.start_date, r.end_date, r.start_period, r.end_period,
+             r.client_name, r.location_name, r.driver_name,
              v.name as vehicle_name, v.type as vehicle_type
       FROM reservations r
       LEFT JOIN vehicles v ON r.vehicle_id = v.id
       WHERE r.affaire = ?
+         OR (? IS NOT NULL AND (r.google_event_id = ? OR r.linked_event_ids LIKE '%' || ? || '%'))
       ORDER BY r.start_date
+    `).all(affaireId, googleEventId, googleEventId, googleEventId);
+    logger.info(`[BP] Réservations pour ${affaireId}: googleEventId=${googleEventId}, trouvées=${reservations.length}`);
+
+    // Collecter les IDs de réservations liées
+    const resaIds = reservations.map(r => String(r.id));
+
+    // 4. Tâches (task_assignments — le vrai modèle du module planification)
+    let tasks = db.prepare(`
+      SELECT ta.id, ta.title, ta.status, ta.date as start_date, ta.period, ta.section, ta.notes,
+             p.first_name as person_first_name, p.last_name as person_last_name
+      FROM task_assignments ta
+      LEFT JOIN persons p ON ta.person_id = p.id
+      WHERE ta.affaire_num = ? AND ta.deleted_at IS NULL
+      ORDER BY ta.date ASC
     `).all(affaireId);
 
-    // 4. Personnel affecté (via planning_assignments + missions)
+    // Ajouter les tâches liées via reservation_id
+    if (resaIds.length > 0) {
+      const placeholders = resaIds.map(() => '?').join(',');
+      const tasksByResa = db.prepare(`
+        SELECT ta.id, ta.title, ta.status, ta.date as start_date, ta.period, ta.section, ta.notes,
+               p.first_name as person_first_name, p.last_name as person_last_name
+        FROM task_assignments ta
+        LEFT JOIN persons p ON ta.person_id = p.id
+        WHERE ta.reservation_id IN (${placeholders}) AND ta.deleted_at IS NULL
+        ORDER BY ta.date ASC
+      `).all(...resaIds);
+      const existingIds = new Set(tasks.map(t => t.id));
+      tasks = [...tasks, ...tasksByResa.filter(t => !existingIds.has(t.id))];
+    }
+
+    // Ajouter les display events comme tâches (événements planifiés pour cette affaire)
+    const displayEvents = db.prepare(`
+      SELECT id, type as title, category, date as start_date, period, comment as notes,
+             status, assigned_person_id
+      FROM dynamic_display_events
+      WHERE affaire_id = ? AND status != 'done'
+      ORDER BY date ASC
+    `).all(affaireId);
+    for (const ev of displayEvents) {
+      if (!tasks.some(t => t.id === ev.id)) {
+        const label = `${ev.title}${ev.category ? ' (' + ev.category + ')' : ''}`;
+        tasks.push({ ...ev, title: label });
+      }
+    }
+
+    // 5. Personnel affecté (planning_assignments + personnes des tâches + chauffeurs réservations)
     const personnelDirect = db.prepare(`
-      SELECT pa.id, p.last_name, p.first_name, p.type as poste
+      SELECT p.id, p.last_name, p.first_name, p.type as poste
       FROM planning_assignments pa
       JOIN persons p ON pa.person_id = p.id
-      WHERE pa.entity_type = 'affaire' AND pa.entity_id = ?
+      WHERE (pa.entity_type = 'affaire' AND pa.entity_id = ?)
     `).all(affaireId);
-    const personnelMissions = db.prepare(`
-      SELECT DISTINCT p.id, p.last_name, p.first_name, p.type as poste,
-             m.title as mission_title, m.start_date, m.end_date
-      FROM missions m
-      JOIN mission_assignments ma ON ma.mission_id = m.id
-      JOIN persons p ON ma.person_id = p.id
-      WHERE m.affaire = ?
-    `).all(affaireId);
-    // Dédupliquer par person id
-    const seenIds = new Set(personnelDirect.map(p => p.id));
-    const personnel = [...personnelDirect, ...personnelMissions.filter(p => !seenIds.has(p.id))];
 
-    // 5. Missions programmées
-    const tasks = db.prepare(`
-      SELECT m.id, m.title, m.status, m.start_date, m.end_date, m.notes
-      FROM missions m
-      WHERE m.affaire = ?
-      ORDER BY m.start_date
-    `).all(affaireId);
+    // Personnel des display events (assigned_person_id)
+    const eventPersonIds = displayEvents.map(e => e.assigned_person_id).filter(Boolean);
+    let personnelEvents = [];
+    if (eventPersonIds.length > 0) {
+      const placeholders = eventPersonIds.map(() => '?').join(',');
+      personnelEvents = db.prepare(`
+        SELECT DISTINCT p.id, p.last_name, p.first_name, p.type as poste
+        FROM persons p WHERE p.id IN (${placeholders})
+      `).all(...eventPersonIds);
+    }
+
+    // Personnel des task_assignments (person_id)
+    const taskPersonIds = tasks.map(t => t.person_id).filter(Boolean);
+    let personnelTasks = [];
+    if (taskPersonIds.length > 0) {
+      const placeholders = [...new Set(taskPersonIds)].map(() => '?').join(',');
+      personnelTasks = db.prepare(`
+        SELECT DISTINCT p.id, p.last_name, p.first_name, p.type as poste
+        FROM persons p WHERE p.id IN (${placeholders})
+      `).all(...new Set(taskPersonIds));
+    }
+
+    // Chauffeurs des réservations (driver_name → chercher dans persons)
+    const driverNames = [...new Set(reservations.map(r => r.driver_name).filter(Boolean))];
+    let personnelDrivers = [];
+    if (driverNames.length > 0) {
+      const placeholders = driverNames.map(() => '?').join(',');
+      personnelDrivers = db.prepare(`
+        SELECT DISTINCT p.id, p.last_name, p.first_name, p.type as poste
+        FROM persons p
+        WHERE (p.first_name || ' ' || p.last_name) IN (${placeholders})
+           OR (p.last_name || ' ' || p.first_name) IN (${placeholders})
+      `).all(...driverNames, ...driverNames);
+    }
+
+    // Dédupliquer par person id
+    const seenIds = new Set();
+    const personnel = [];
+    for (const list of [personnelDirect, personnelEvents, personnelTasks, personnelDrivers]) {
+      for (const p of list) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          personnel.push(p);
+        }
+      }
+    }
 
     // 6. BL Import metadata
     let blImport = null;
@@ -518,6 +593,7 @@ app.post('/api/affaires/:id/bp/annotate', authenticateToken, (req, res) => {
       tasks,
       blImport,
     });
+    logger.info(`BP annotate ${affaireId}: ${reservations.length} resa, ${tasks.length} tasks, ${personnel.length} perso, googleEventId=${googleEventId}`);
   } catch (error) {
     logger.error('Erreur POST /api/affaires/:id/bp/annotate:', error);
     res.status(500).json({ error: 'Erreur serveur' });

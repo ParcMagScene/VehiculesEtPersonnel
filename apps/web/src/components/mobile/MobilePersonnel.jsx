@@ -34,9 +34,16 @@ const MISSION_COLORS = {
   cancelled: '#ef4444',
 };
 
+const TASK_SOURCE_COLORS = {
+  affaire: '#3b82f6',
+  manual: '#f59e0b',
+  display_event: '#8b5cf6',
+  google_event: '#06b6d4',
+};
+
 function MobilePersonnel({ onBack }) {
   const [persons, setPersons] = useState([]);
-  const [planning, setPlanning] = useState({ missions: [], availabilities: [] });
+  const [planning, setPlanning] = useState({ missions: [], availabilities: [], taskAssignments: [] });
   const [loading, setLoading] = useState(true);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [viewMode, setViewMode] = useState('day'); // 'day' | 'week'
@@ -115,6 +122,15 @@ function MobilePersonnel({ onBack }) {
       } catch { return false; }
     });
   }, [planning.availabilities]);
+
+  // Tâches assignées d'une personne pour un jour
+  const getTasksForPersonDay = useCallback((personId, day) => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    return (planning.taskAssignments || []).filter(ta => {
+      if ((ta.person_id || ta.personId) !== personId) return false;
+      return ta.date === dayStr;
+    });
+  }, [planning.taskAssignments]);
 
   const navigate = (dir) => {
     const delta = viewMode === 'day' ? 1 : 7;
@@ -263,6 +279,7 @@ function MobilePersonnel({ onBack }) {
             const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
             const missions = getMissionsForPersonDay(p.id, currentDate);
             const unavail = getUnavailForPersonDay(p.id, currentDate);
+            const tasks = getTasksForPersonDay(p.id, currentDate);
             const isUnavailable = unavail.length > 0;
             return (
               <div key={p.id} className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`} onClick={() => setSelectedPerson(p)}>
@@ -277,7 +294,7 @@ function MobilePersonnel({ onBack }) {
                   <div className="mpers-day-name">{fullName}</div>
                   {isUnavailable ? (
                     <span className="mpers-unavail-tag">{unavail[0].reason || 'Indisponible'}</span>
-                  ) : missions.length > 0 ? (
+                  ) : (missions.length > 0 || tasks.length > 0) ? (
                     <div className="mpers-day-missions">
                       {missions.map(m => (
                         <div key={m.id} className="mpers-mission-chip" style={{ '--mission-color': MISSION_COLORS[m.status] || '#3b82f6' }}>
@@ -286,6 +303,13 @@ function MobilePersonnel({ onBack }) {
                           {(m.startTime || m.start_time) && (
                             <span className="mpers-mission-time">{m.startTime || m.start_time}</span>
                           )}
+                        </div>
+                      ))}
+                      {tasks.map(ta => (
+                        <div key={ta.id} className="mpers-task-chip" style={{ '--task-color': TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                          <span className="mpers-task-dot" />
+                          <span className="mpers-mission-title">{ta.title || ta.affaire_num || 'Tâche'}</span>
+                          {ta.period && <span className="mpers-mission-time">{ta.period}</span>}
                         </div>
                       ))}
                     </div>
@@ -346,7 +370,9 @@ function MobilePersonnel({ onBack }) {
                     {weekDays.map(d => {
                       const missions = getMissionsForPersonDay(p.id, d);
                       const unavail = getUnavailForPersonDay(p.id, d);
+                      const tasks = getTasksForPersonDay(p.id, d);
                       const isUnavailable = unavail.length > 0;
+                      const hasContent = missions.length > 0 || tasks.length > 0;
                       return (
                         <div
                           key={d.toISOString()}
@@ -356,15 +382,22 @@ function MobilePersonnel({ onBack }) {
                             <div className="mpers-cell-unavail">
                               <span>{unavail[0].reason || 'Absent'}</span>
                             </div>
-                          ) : missions.length > 0 ? (
-                            missions.map(m => (
-                              <div key={m.id} className="mpers-cell-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
-                                <span className="mpers-cell-mission-title">{m.title || m.affaire || 'Mission'}</span>
-                                {(m.clientName || m.client_name) && (
-                                  <span className="mpers-cell-mission-client">{m.clientName || m.client_name}</span>
-                                )}
-                              </div>
-                            ))
+                          ) : hasContent ? (
+                            <>
+                              {missions.map(m => (
+                                <div key={m.id} className="mpers-cell-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
+                                  <span className="mpers-cell-mission-title">{m.title || m.affaire || 'Mission'}</span>
+                                  {(m.clientName || m.client_name) && (
+                                    <span className="mpers-cell-mission-client">{m.clientName || m.client_name}</span>
+                                  )}
+                                </div>
+                              ))}
+                              {tasks.map(ta => (
+                                <div key={ta.id} className="mpers-cell-mission" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                                  <span className="mpers-cell-mission-title">{ta.title || ta.affaire_num || 'Tâche'}</span>
+                                </div>
+                              ))}
+                            </>
                           ) : (
                             <div className="mpers-cell-free">
                               <span className="mpers-cell-free-dot" />
@@ -382,6 +415,7 @@ function MobilePersonnel({ onBack }) {
           {/* Légende */}
           <div className="mpers-week-legend">
             <span><span className="mpers-legend-dot busy" /> Mission</span>
+            <span><span className="mpers-legend-dot task" /> Tâche</span>
             <span><span className="mpers-legend-dot unavail" /> Indisponible</span>
             <span><span className="mpers-legend-dot free" /> Disponible</span>
           </div>

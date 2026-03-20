@@ -1636,16 +1636,10 @@
   transform: none;
 }
 
-/* ── Crosshair highlight colonne + ligne ── */
-.pp-col-hovered {
-  background: rgba(102, 126, 234, 0.08) !important;
+/* ── Highlight cellule survolée (une seule cellule, pas la colonne) ── */
+.pp-cell-hovered {
+  background: rgba(102, 126, 234, 0.10) !important;
   background-clip: padding-box !important;
-}
-
-.pp-header-cell.pp-col-hovered {
-  background: rgba(102, 126, 234, 0.15) !important;
-  background-clip: padding-box !important;
-  box-shadow: inset 0 -2px 0 var(--theme-primary);
 }
 
 /* Border transparent sur le premier header pour éviter le bleed */
@@ -1683,6 +1677,45 @@
   pointer-events: none;
   z-index: 1;
   text-shadow: 0 0 3px rgba(255,255,255,0.6);
+}
+
+/* ═══ Tâches assignées dans le planning ═══ */
+.pp-task-chips {
+  position: absolute;
+  inset: 1px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.pp-task-chip {
+  display: flex;
+  align-items: center;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.18);
+  border-left: 2px solid #f59e0b;
+  min-height: 14px;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.pp-task-chip.affaire {
+  background: rgba(59, 130, 246, 0.15);
+  border-left-color: #3b82f6;
+}
+
+.pp-task-chip-title {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--theme-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .pp-assignment-block {

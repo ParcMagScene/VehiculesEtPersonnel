@@ -16,6 +16,7 @@ import { ToastProvider } from './hooks/useToast';
 import { NavigationProvider } from './contexts/NavigationContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useAppData } from './hooks/useAppData';
+import { useSilentRefresh } from './hooks/useSilentRefresh';
 import { useGoogleCalendar } from './hooks/useGoogleCalendar';
 import { useMessagingPolling } from './hooks/useMessagingPolling';
 import './App.css';
@@ -68,6 +69,9 @@ function AppContent() {
     tabPrefs, userPrefsRef, updatePreferences,
   } = useAuth();
 
+  // ═══ Silent Refresh (renouvellement automatique du token JWT) ═══
+  useSilentRefresh(isAuthenticated, updateUser);
+
   // ═══ Feedback & Theme ═══
   const { toastRef, toast } = useFeedback();
   const { theme, toggleTheme, isDark, palette, setPalette } = useTheme();
@@ -98,6 +102,7 @@ function AppContent() {
   const [showMailing, setShowMailing] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [stockSubTab, setStockSubTab] = useState('stock');
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
   const [navigateToPersonId, setNavigateToPersonId] = useState(null);
   const [quickReservationSlot, setQuickReservationSlot] = useState(null);
@@ -161,7 +166,7 @@ function AppContent() {
   // ═══ Raccourcis clavier ═══
   useKeyboardShortcuts({
     mod_vehicles: () => { setActiveModule('vehicles'); setShowManagement(false); setShowSettings(false); },
-    mod_personnel: () => { setActiveModule('personnel'); setShowManagement(false); setShowSettings(false); },
+    mod_personnel: () => { setActiveModule('planning'); setShowManagement(false); setShowSettings(false); },
     mod_affaires: () => { setActiveModule('affaires'); setShowManagement(false); setShowSettings(false); },
     mod_equipment: () => { setActiveModule('equipment'); setShowManagement(false); setShowSettings(false); },
     mod_orders: () => { setActiveModule('orders'); setShowManagement(false); setShowSettings(false); },
@@ -226,9 +231,10 @@ function AppContent() {
   const handleLogin = useCallback(async (email, password) => {
     const result = await login(email, password);
     const prefs = result.prefs || {};
-    if (prefs.defaultModule && prefs.defaultModule !== 'trucks' && prefs.defaultModule !== 'communication') setActiveModule(prefs.defaultModule);
     if (prefs.defaultModule === 'trucks') setActiveModule('vehicles');
-    if (prefs.defaultModule === 'communication') setActiveModule('planning');
+    else if (prefs.defaultModule === 'communication' || prefs.defaultModule === 'personnel') setActiveModule('planning');
+    else if (prefs.defaultModule === 'inventory') setActiveModule('stock');
+    else if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
     if (prefs.defaultView) setView(prefs.defaultView);
     return result;
   }, [login]);
@@ -244,7 +250,7 @@ function AppContent() {
         setSelectedVehicleForDetails(v);
       }
     } else if (type === 'person') {
-      setActiveModule('personnel');
+      setActiveModule('planning');
       setShowManagement(false);
       setShowSettings(false);
       setNavigateToPersonId(entityData.id);
@@ -402,7 +408,7 @@ function AppContent() {
         </div>
       )}
       
-      {activeModule !== 'affaires' && activeModule !== 'equipment' && activeModule !== 'orders' && activeModule !== 'catalog' && activeModule !== 'stock' && activeModule !== 'planning' && activeModule !== 'annuaire' && activeModule !== 'inventory' && activeModule !== 'video' && (
+      {activeModule === 'vehicles' && (
       <GoogleCalendarBanner 
         calendarConfig={data.calendarConfig} 
         view={view}
@@ -437,7 +443,7 @@ function AppContent() {
           });
         }}
         onNewAssignment={() => {
-          setActiveModule('personnel');
+          setActiveModule('planning');
           setShowManagement(false);
           setShowSettings(false);
           setQuickAssignmentSlot({
@@ -551,32 +557,6 @@ function AppContent() {
         </>
       )}
 
-      {activeModule === 'personnel' && (
-        <ErrorBoundary moduleName="Personnel">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du module personnel...</p>
-          </div>
-        }>
-          <PersonnelPanel
-            key={personnelRefreshKey}
-            currentUser={currentUser}
-            mode="planning"
-            view={view}
-            setView={setView}
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-            googleEvents={allGoogleEvents}
-            navigateToPersonId={navigateToPersonId}
-            onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
-            quickAssignmentSlot={quickAssignmentSlot}
-            onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
       {activeModule === 'affaires' && (
         <ErrorBoundary moduleName="Affaires">
         <Suspense fallback={
@@ -626,30 +606,37 @@ function AppContent() {
       )}
 
       {activeModule === 'stock' && (
-        <ErrorBoundary moduleName="Stock">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du stock...</p>
+        <ErrorBoundary moduleName="Stocks">
+          <div className="stocks-container">
+            <div className="sub-tabs">
+              <button className={`sub-tab ${stockSubTab === 'stock' ? 'active' : ''}`} onClick={() => setStockSubTab('stock')}>
+                📦 Stock
+              </button>
+              <button className={`sub-tab ${stockSubTab === 'inventory' ? 'active' : ''}`} onClick={() => setStockSubTab('inventory')}>
+                📋 Inventaire
+              </button>
+            </div>
+            {stockSubTab === 'stock' && (
+              <Suspense fallback={
+                <div className="loading-overlay">
+                  <div className="loading-spinner"></div>
+                  <p>Chargement du stock...</p>
+                </div>
+              }>
+                <StockPanel currentUser={currentUser} />
+              </Suspense>
+            )}
+            {stockSubTab === 'inventory' && (
+              <Suspense fallback={
+                <div className="loading-overlay">
+                  <div className="loading-spinner"></div>
+                  <p>Chargement de l'inventaire...</p>
+                </div>
+              }>
+                <InventoryPanel currentUser={currentUser} />
+              </Suspense>
+            )}
           </div>
-        }>
-          <StockPanel
-            currentUser={currentUser}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'inventory' && (
-        <ErrorBoundary moduleName="Inventaire">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement de l'inventaire...</p>
-          </div>
-        }>
-          <InventoryPanel currentUser={currentUser} />
-        </Suspense>
         </ErrorBoundary>
       )}
 
@@ -665,6 +652,15 @@ function AppContent() {
             currentUser={currentUser}
             googleEvents={allGoogleEvents}
             onNavigateToEntity={handleNavigateToEntity}
+            personnelRefreshKey={personnelRefreshKey}
+            view={view}
+            setView={setView}
+            currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
+            navigateToPersonId={navigateToPersonId}
+            onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
+            quickAssignmentSlot={quickAssignmentSlot}
+            onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
           />
         </Suspense>
         </ErrorBoundary>
@@ -727,7 +723,7 @@ function AppContent() {
             panelType="management"
             onClose={() => {
               setShowManagement(false);
-              if (activeModule === 'personnel') {
+              if (activeModule === 'planning') {
                 setPersonnelRefreshKey(k => k + 1);
               }
             }}
@@ -764,8 +760,7 @@ function AppContent() {
             onClose={() => setShowSettings(false)}
             onNavigateToPersonnel={(person) => {
               setShowSettings(false);
-              setActiveModule('personnel');
-              setShowManagement(true);
+              setActiveModule('planning');
             }}
           />
         </Suspense>
@@ -901,7 +896,7 @@ function AppContent() {
       {/* Status bar VS Code */}
       {isVSCode && (
         <div className="vsc-statusbar">
-          <span>{activeModule === 'vehicles' ? '📋' : activeModule === 'personnel' ? '👥' : activeModule === 'affaires' ? '📁' : activeModule === 'equipment' ? '🔧' : activeModule === 'orders' ? '📦' : '📊'} {activeModule}</span>
+          <span>{activeModule === 'vehicles' ? '📋' : activeModule === 'planning' ? '👥' : activeModule === 'affaires' ? '📁' : activeModule === 'equipment' ? '🔧' : activeModule === 'orders' ? '📦' : '📊'} {activeModule}</span>
           <span style={{ marginLeft: 'auto', opacity: 0.7 }}>eM@g v2.0</span>
         </div>
       )}

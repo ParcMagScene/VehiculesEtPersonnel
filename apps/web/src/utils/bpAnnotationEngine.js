@@ -49,7 +49,7 @@ const SECTION_TO_FAMILY = {
 
 // ─── Mots-clés fallback par famille ───
 const FAMILY_KEYWORDS = {
-  sonorisation: [/\benceinte\b/i, /\bhp\b/i, /\bsub\b/i, /\bbass\b/i, /\bconsole\s*(son|audio|mix)/i, /\bmicro/i, /\bampli/i, /\bhaut.?parleur/i, /\bdi\s*box/i, /\bspl/i, /\bd[&b]b/i, /\bl[\-\s]?acoustics/i, /\bsennheiser/i, /\bshure/i, /\byamaha.*cl|tf|pm/i, /\bnexo/i],
+  sonorisation: [/\benceinte\b/i, /\bhp\b/i, /\bsub\b/i, /\bbass\b/i, /\bconsole\s*(son|audio|mix)/i, /\bmicro/i, /\bampli/i, /\bhaut.?parleur/i, /\bdi\s*box/i, /\bspl/i, /\bd[&b]b/i, /\bl[-\s]?acoustics/i, /\bsennheiser/i, /\bshure/i, /\byamaha.*cl|tf|pm/i, /\bnexo/i],
   lumiere:      [/\bprojecteur/i, /\bspot/i, /\bwash/i, /\bbeam/i, /\bled\b/i, /\blyre/i, /\bpar\s*\d/i, /\bfresnel/i, /\bdécoupe/i, /\bstrobo/i, /\bgobo/i, /\bdimmer/i, /\bgradateur/i, /\bclay\s*paky/i, /\brobe/i, /\bmartin/i, /\bayrton/i, /\bconsole\s*(lumi|éclai|dmx)/i, /\bma\s*lighting/i, /\bgrand\s*ma/i],
   video:        [/\bvid[eé]o/i, /\bécran/i, /\bprojecteur\s*vid/i, /\bbarco/i, /\bpanasonic/i, /\bcaméra/i, /\bswitch.*vid/i, /\bmatrice.*vid/i, /\bled\s*wall/i, /\brégie\s*vid/i],
   structure:    [/\bpoutre/i, /\btruss/i, /\bpont/i, /\btotems?\b/i, /\bpied/i, /\bpraticable/i, /\bpodium/i, /\bscène\b/i, /\bbase.*roulante/i, /\bembas/i, /\bsleeve/i, /\bprolyte/i],
@@ -256,38 +256,61 @@ export function annotateBPItems(bpItems) {
  * Formate le bloc d'informations affaire pour l'annotation PDF
  */
 export function formatAffaireInfoBlock(data) {
-  const { affaire, reservations = [], personnel = [], tasks = [] } = data;
+  // NB: les données arrivent en camelCase (via toCamelCase du client API)
+  const { reservations = [], personnel = [], tasks = [] } = data;
   const lines = [];
 
   // Réservations
+  lines.push({ type: 'header', text: `🚛 Réservations (${reservations.length})` });
   if (reservations.length > 0) {
-    lines.push({ type: 'header', text: `🚛 Réservations (${reservations.length})` });
     for (const r of reservations.slice(0, 5)) {
-      const date = (r.start_date || r.date) ? new Date(r.start_date || r.date).toLocaleDateString('fr-FR') : '?';
-      lines.push({ type: 'item', text: `${r.vehicle_name || 'Véhicule'} — ${date}` });
+      const startDate = (r.startDate || r.start_date || r.date) ? new Date(r.startDate || r.start_date || r.date).toLocaleDateString('fr-FR') : '?';
+      const endDate = (r.endDate || r.end_date) ? ` → ${new Date(r.endDate || r.end_date).toLocaleDateString('fr-FR')}` : '';
+      const vehicle = r.vehicleName || r.vehicle_name || 'Véhicule';
+      const driverName = r.driverName || r.driver_name;
+      const driver = driverName ? ` (${driverName})` : '';
+      lines.push({ type: 'item', text: `${vehicle}${driver} — ${startDate}${endDate}` });
+      const locName = r.locationName || r.location_name;
+      if (locName) {
+        lines.push({ type: 'item', text: `  📍 ${locName}` });
+      }
     }
     if (reservations.length > 5) lines.push({ type: 'more', text: `+${reservations.length - 5} autres` });
+  } else {
+    lines.push({ type: 'item', text: 'Aucune réservation' });
   }
 
-  // Personnel
-  if (personnel.length > 0) {
-    lines.push({ type: 'header', text: `👤 Personnel (${personnel.length})` });
-    for (const p of personnel.slice(0, 5)) {
-      const name = [p.first_name || p.prenom, p.last_name || p.nom].filter(Boolean).join(' ') || 'Agent';
-      lines.push({ type: 'item', text: `${name} — ${p.poste || p.role || ''}` });
-    }
-    if (personnel.length > 5) lines.push({ type: 'more', text: `+${personnel.length - 5} autres` });
-  }
-
-  // Tâches
+  // Tâches / Missions
+  const pending = tasks.filter(t => t.status !== 'done' && t.status !== 'completed' && t.status !== 'cancelled');
+  lines.push({ type: 'header', text: `📋 Tâches (${pending.length}/${tasks.length})` });
   if (tasks.length > 0) {
-    const pending = tasks.filter(t => t.status !== 'done' && t.status !== 'completed');
-    lines.push({ type: 'header', text: `📋 Tâches (${pending.length}/${tasks.length})` });
     for (const t of pending.slice(0, 4)) {
-      const prio = t.priority === 'urgent' ? '🔴' : t.priority === 'high' ? '🟠' : '';
-      lines.push({ type: 'item', text: `${prio} ${t.title}`.trim() });
+      const title = t.title || t.section || 'Tâche';
+      const date = (t.startDate || t.start_date) ? new Date(t.startDate || t.start_date).toLocaleDateString('fr-FR') : '';
+      const period = t.period === 'AM' ? 'matin' : t.period === 'PM' ? 'après-midi' : '';
+      const when = date ? ` (${date}${period ? ' ' + period : ''})` : '';
+      const person = [t.personFirstName || t.person_first_name, t.personLastName || t.person_last_name].filter(Boolean).join(' ');
+      lines.push({ type: 'item', text: `${title}${when}${person ? ' — ' + person : ''}`.trim() });
     }
     if (pending.length > 4) lines.push({ type: 'more', text: `+${pending.length - 4} autres` });
+  } else {
+    lines.push({ type: 'item', text: 'Aucune tâche' });
+  }
+
+  // Personnel affecté
+  lines.push({ type: 'header', text: `👤 Personnel (${personnel.length})` });
+  if (personnel.length > 0) {
+    for (const p of personnel.slice(0, 5)) {
+      const firstName = p.firstName || p.first_name || p.prenom || '';
+      const lastName = p.lastName || p.last_name || p.nom || '';
+      const name = [firstName, lastName].filter(Boolean).join(' ') || 'Agent';
+      const initials = (firstName[0] || '').toUpperCase() + (lastName[0] || '').toUpperCase() || '?';
+      const role = p.poste || p.role || '';
+      lines.push({ type: 'person', text: role ? `${name} — ${role}` : name, initials });
+    }
+    if (personnel.length > 5) lines.push({ type: 'more', text: `+${personnel.length - 5} autres` });
+  } else {
+    lines.push({ type: 'item', text: 'Aucune affectation' });
   }
 
   return lines;

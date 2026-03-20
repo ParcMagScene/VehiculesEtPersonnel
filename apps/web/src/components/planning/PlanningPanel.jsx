@@ -1,24 +1,39 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { ClipboardList, Calendar, Tv2 } from 'lucide-react';
+import { ClipboardList, Calendar, Tv2, Users } from 'lucide-react';
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
 import './PlanningPanel.css';
 
+const PersonnelPanel = lazy(() => import('../personnel/PersonnelPanel'));
 const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
 const DisplayDashboardPanel = lazy(() => import('../DisplayDashboard/DisplayDashboardPanel'));
 
 // ═══ Composant Principal ═══
-function PlanningPanel({ currentUser, googleEvents = [], onNavigateToEntity }) {
+function PlanningPanel({
+  currentUser, googleEvents = [], onNavigateToEntity,
+  // Props Personnel (passées au sous-onglet Personnel)
+  personnelRefreshKey, view, setView, currentDate, setCurrentDate,
+  navigateToPersonId, onNavigateToPersonHandled,
+  quickAssignmentSlot, onQuickAssignmentHandled,
+}) {
   const toast = useToast();
-  const [activeSubTab, setActiveSubTab] = useState('tasks');
+  const [activeSubTab, setActiveSubTab] = useState('personnel');
   const [stats, setStats] = useState(null);
   const [displayRefreshKey, setDisplayRefreshKey] = useState(0);
+
+  // Auto-switch vers l'onglet Personnel quand navigation demandée
+  useEffect(() => {
+    if (navigateToPersonId || quickAssignmentSlot) {
+      setActiveSubTab('personnel');
+    }
+  }, [navigateToPersonId, quickAssignmentSlot]);
 
   useEffect(() => {
     api.getPlanningStats().then(setStats).catch(() => null);
   }, [activeSubTab]);
 
   const subTabs = [
+    { id: 'personnel', label: 'Personnel', icon: Users },
     { id: 'tasks', label: 'Planification', icon: ClipboardList, count: stats?.tasksPending || 0 },
     { id: 'dashboard', label: 'Dashboard Écrans', icon: Tv2 },
   ];
@@ -41,7 +56,7 @@ function PlanningPanel({ currentUser, googleEvents = [], onNavigateToEntity }) {
             </button>
           );
         })}
-        {stats && (
+        {stats && activeSubTab !== 'personnel' && (
           <div className="header-stats">
             <span className="stat-badge highlight">
               <Calendar size={14} /> {stats.displayEventsToday} aujourd'hui
@@ -55,6 +70,24 @@ function PlanningPanel({ currentUser, googleEvents = [], onNavigateToEntity }) {
 
       {/* Content */}
       <div className="panel-content">
+        {activeSubTab === 'personnel' && (
+          <Suspense fallback={null}>
+            <PersonnelPanel
+              key={personnelRefreshKey}
+              currentUser={currentUser}
+              mode="planning"
+              view={view}
+              setView={setView}
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              googleEvents={googleEvents}
+              navigateToPersonId={navigateToPersonId}
+              onNavigateToPersonHandled={onNavigateToPersonHandled}
+              quickAssignmentSlot={quickAssignmentSlot}
+              onQuickAssignmentHandled={onQuickAssignmentHandled}
+            />
+          </Suspense>
+        )}
         {activeSubTab === 'tasks' && (
           <Suspense fallback={null}>
             <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} googleEvents={googleEvents} onNavigateToEntity={onNavigateToEntity} />

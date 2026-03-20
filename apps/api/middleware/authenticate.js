@@ -18,7 +18,7 @@ export function createAuthenticateToken(JWT_SECRET) {
       return res.status(401).json({ error: 'Token manquant' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
       if (err) return res.status(403).json({ error: 'Token invalide' });
 
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
@@ -39,6 +39,12 @@ export function createAuthenticateToken(JWT_SECRET) {
 
       // Mettre en cache le résultat positif (TTL 30s)
       authCache.set(tokenHash, true);
+
+      // Mise à jour silencieuse de last_activity (fire-and-forget, ne bloque pas la requête)
+      try {
+        db.prepare('UPDATE active_sessions SET last_activity = CURRENT_TIMESTAMP WHERE token_hash = ?').run(tokenHash);
+      } catch { /* silencieux */ }
+
       req.user = user;
       next();
     });

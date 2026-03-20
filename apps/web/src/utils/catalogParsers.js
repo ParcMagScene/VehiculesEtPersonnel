@@ -50,7 +50,7 @@ export function parseAlgam(text) {
   const lines = text.split('\n');
 
   // Pattern: code(5-6 digits) [spaces] brand_prefix(3 lettres) model [spaces] designation [spaces] prix ,XX HT
-  const lineRx = /^(\d{5,6})\s+(\d\s+)?([A-Z]{2,4})\s+([\w\-.\/]+(?:\s+[\w\-.\/]+)?)\s+(.+?)\s+([\d\s]+,\d{2})\s+HT\s*$/;
+  const lineRx = /^(\d{5,6})\s+(\d\s+)?([A-Z]{2,4})\s+([\w./-]+(?:\s+[\w./-]+)?)\s+(.+?)\s+([\d\s]+,\d{2})\s+HT\s*$/;
   // Also try a more relaxed pattern for price-only-end lines
   const relaxedRx = /^(\d{5,6})\s+(.+?)\s+([\d\s]+,\d{2})\s+HT\s*$/;
 
@@ -75,7 +75,7 @@ export function parseAlgam(text) {
     if (match) {
       // Essayer d'extraire le brand prefix (3 lettres majuscules au début de la description)
       const desc = match[2];
-      const brandMatch = desc.match(/^([A-Z]{2,4})\s+([\w\-.\/]+(?:\s+[\w\-.\/]+)?)\s+(.+)$/);
+      const brandMatch = desc.match(/^([A-Z]{2,4})\s+([\w./-]+(?:\s+[\w./-]+)?)\s+(.+)$/);
       if (brandMatch) {
         const code = brandMatch[1];
         items.push({
@@ -112,7 +112,7 @@ export function parseESL(text) {
   const lines = text.split('\n');
 
   // Pattern: [optional line number] code designation prix € [HT] [category]
-  const lineRx = /^(?:\d{1,4}\s+)?([A-Z0-9][\w\-.\/]{1,25})\s+(.+?)\s+([\d\s,.]+)\s*€\s*(?:HT)?\s*(\d{2})?\s*$/;
+  const lineRx = /^(?:\d{1,4}\s+)?([A-Z0-9][\w./-]{1,25})\s+(.+?)\s+([\d\s,.]+)\s*€\s*(?:HT)?\s*(\d{2})?\s*$/;
 
   for (const raw of lines) {
     // Strip U+FFFD replacement chars (from PDF leader dots) and checkmarks
@@ -182,11 +182,11 @@ export function parseLABS(text) {
     const priceMatch = line.match(/(\d+(?:\s+\d{3})*,\d{2})\s*€/);
     if (!priceMatch) {
       // No price on this line — check if it starts with a product code (for stack)
-      const potentialCode = line.match(/^([\w\-\/.]{2,30})/);
+      const potentialCode = line.match(/^([\w./-]{2,30})/);
       if (potentialCode) {
         const code = potentialCode[1];
         // Only treat as product code if it contains digits, '/' or '-' (not pure descriptive words)
-        if (/[\d\/\-]/.test(code) && !/^\d{1,4}$/.test(code) && !/^\d+[,.]\d+$/.test(code)) {
+        if (/[\d/-]/.test(code) && !/^\d{1,4}$/.test(code) && !/^\d+[,.]\d+$/.test(code)) {
           pendingCodes.push({
             code,
             designation: clean(line.substring(code.length)) || currentFamily || code,
@@ -216,7 +216,7 @@ export function parseLABS(text) {
     }
 
     // Extract code from beginning
-    const codeMatch = beforePrice.match(/^([\w\-\/.]{2,30})/);
+    const codeMatch = beforePrice.match(/^([\w./-]{2,30})/);
     if (!codeMatch) continue;
 
     const code = codeMatch[1];
@@ -344,7 +344,7 @@ export function parseGeneric(text) {
 
   // Pattern: quelque chose qui ressemble à REF DESIGNATION PRIX
   // Ref: alphanumérique 2-20 chars, Designation: texte, Prix: nombre avec , ou .
-  const lineRx = /^([\w\-\/\.]{2,20})\s+(.{5,120}?)\s+([\d\s,.]+)\s*€?\s*(HT)?\s*$/;
+  const lineRx = /^([\w./-]{2,20})\s+(.{5,120}?)\s+([\d\s,.]+)\s*€?\s*(HT)?\s*$/;
 
   for (const raw of lines) {
     const line = raw.trim();

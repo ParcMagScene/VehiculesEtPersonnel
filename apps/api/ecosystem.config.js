@@ -29,15 +29,29 @@ export default {
     {
       name: "vehicules",
       script: "npx",
-      args: ["vite", "preview", "--host", "0.0.0.0"],
+      args: ["vite", "preview", "--host", "0.0.0.0", "--port", "4173", "--strictPort"],
       cwd: "/Users/reunion/eM@g/apps/web",
       instances: 1,
       autorestart: true,
       watch: false,
       max_memory_restart: "500M",
+      kill_timeout: 5000,
+      restart_delay: 3000,
       env: {
         NODE_ENV: "production"
       }
+    },
+    {
+      name: "mediamtx",
+      script: "/opt/homebrew/bin/mediamtx",
+      args: ["/Users/reunion/eM@g/mediamtx.yml"],
+      cwd: "/Users/reunion/eM@g",
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "500M",
+      kill_timeout: 3000,
+      restart_delay: 2000,
     }
   ]
 };

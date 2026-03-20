@@ -1853,3 +1853,47 @@
   border-right-color: var(--theme-border);
   color: var(--theme-text-primary);
 }
+
+/* ═══ Stocks container (sub-tabs Stock / Inventaire) ═══ */
+.stocks-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.stocks-container > .sub-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--theme-border);
+  background: var(--theme-bg-secondary);
+  flex-shrink: 0;
+}
+
+.stocks-container .sub-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.stocks-container .sub-tab:hover {
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-primary);
+}
+
+.stocks-container .sub-tab.active {
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  font-weight: 600;
+}

@@ -16,6 +16,14 @@ export function useWebRTCStream(camera) {
     setError(null);
 
     try {
+      // 0. Vérifier que le proxy vidéo (MediaMTX) est en ligne avant toute négociation
+      const proxyStatus = await api.getVideoProxyStatus().catch(() => null);
+      if (!proxyStatus?.running) {
+        setStatus('error');
+        setError('Proxy vidéo (MediaMTX) hors-ligne');
+        return;
+      }
+
       // 1. Créer la connexion WebRTC et générer l'offre SDP
       const pc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],

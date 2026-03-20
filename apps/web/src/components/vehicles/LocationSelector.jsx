@@ -77,11 +77,24 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
 
   const handleZoneChange = (newZoneId) => {
     const zoneObj = selectedDepot?.zones?.find(z => z.id === newZoneId);
+    // Si pas de dépôt sélectionné, chercher dans tous les dépôts
+    let foundDepotId = depot;
+    let foundZone = zoneObj;
+    if (!zoneObj && !depot) {
+      for (const d of depotList) {
+        const z = d.zones?.find(z => z.id === newZoneId);
+        if (z) {
+          foundDepotId = d.id;
+          foundZone = z;
+          break;
+        }
+      }
+    }
     onChange({
-      location_depot: depot || null,
+      location_depot: foundDepotId || null,
       location_zone: newZoneId || null,
       location_code: null,
-      location_floor: zoneObj?.floor || floor || null,
+      location_floor: foundZone?.floor || floor || null,
     });
   };
 
@@ -138,18 +151,24 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
           <select
             value={zone}
             onChange={(e) => handleZoneChange(e.target.value)}
-            disabled={hasMultipleDepots && !depot}
           >
             <option value="">— Aucune —</option>
-            {floor && zonesByFloor[floor]?.map(z => (
+            {depot && floor && zonesByFloor[floor]?.map(z => (
               <option key={z.id} value={z.id}>
                 {z.label}
               </option>
             ))}
-            {!floor && selectedDepot?.zones?.map(z => (
+            {depot && !floor && selectedDepot?.zones?.map(z => (
               <option key={z.id} value={z.id}>
                 [{z.floor}] {z.label}
               </option>
+            ))}
+            {!depot && depotList.map(d => (
+              d.zones?.map(z => (
+                <option key={`${d.id}_${z.id}`} value={z.id}>
+                  {hasMultipleDepots ? `${d.name || 'Dépôt ' + d.id} — ` : ''}[{z.floor}] {z.label}
+                </option>
+              ))
             ))}
           </select>
         </div>

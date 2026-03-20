@@ -448,16 +448,6 @@ function OrdersPanel({ currentUser }) {
         <button className={`orders-tab ${activeTab === 'catalog' ? 'active' : ''}`} onClick={() => { setActiveTab('catalog'); setStatusFilter(''); }}>
           <BookOpen size={16} /> Catalogue
         </button>
-        {stats && (
-          <div className="orders-header-stats">
-            <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
-            <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
-            <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
-            {completionAlerts.length > 0 && (
-              <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
-            )}
-          </div>
-        )}
       </div>
 
       {activeTab === 'catalog' && (
@@ -513,6 +503,18 @@ function OrdersPanel({ currentUser }) {
           {activeTab === 'orders' ? 'Nouvelle commande' : activeTab === 'quotes' ? 'Nouveau devis' : activeTab === 'requests' ? 'Nouvelle demande' : 'Nouveau fournisseur'}
         </button>
       </div>}
+
+      {/* Stats */}
+      {activeTab !== 'catalog' && stats && (
+        <div className="orders-header-stats">
+          <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
+          <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
+          <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
+          {completionAlerts.length > 0 && (
+            <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
+          )}
+        </div>
+      )}
 
       {/* Body: table + slide panel côte à côte */}
       {activeTab !== 'catalog' && <div className="orders-body">

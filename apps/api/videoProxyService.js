@@ -4,7 +4,12 @@
 // ═══════════════════════════════════════════════════════════════
 
 import crypto from 'crypto';
+import fs from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import logger from './logger.js';
+
+const __dir = dirname(fileURLToPath(import.meta.url));
 
 // ── Protection SSRF — bloquer les IPs internes sauf le LAN local ──
 const BLOCKED_RANGES = [/^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^169\.254\./, /^0\./, /^255\./];
@@ -15,16 +20,36 @@ function isBlockedIP(ip) {
 
 // ── Chiffrement / déchiffrement des mots de passe caméras ──
 const CIPHER_ALGO = 'aes-256-gcm';
-if (!process.env.VIDEO_CIPHER_KEY) {
-  logger.warn('⚠️  VIDEO_CIPHER_KEY non défini — les mots de passe caméra seront perdus au redémarrage');
+let _keyBuffer = null;
+
+function getKeyBuffer() {
+  if (_keyBuffer) return _keyBuffer;
+  // Fallback : lire la clé directement depuis le fichier .env si dotenv n'a pas chargé
+  if (!process.env.VIDEO_CIPHER_KEY) {
+    for (const envName of ['.env.development', '.env']) {
+      try {
+        const content = fs.readFileSync(join(__dir, envName), 'utf8');
+        const match = content.match(/^VIDEO_CIPHER_KEY=(.+)$/m);
+        if (match) {
+          process.env.VIDEO_CIPHER_KEY = match[1].trim();
+          break;
+        }
+      } catch {}
+    }
+  }
+  if (!process.env.VIDEO_CIPHER_KEY) {
+    logger.warn('⚠️  VIDEO_CIPHER_KEY non défini — les mots de passe caméra seront perdus au redémarrage');
+  }
+  const key = process.env.VIDEO_CIPHER_KEY || crypto.randomBytes(32).toString('hex');
+  logger.info(`🔑 Cipher key initialisée (source: ${process.env.VIDEO_CIPHER_KEY ? 'env' : 'random'})`);
+  _keyBuffer = Buffer.from(key.padEnd(64, '0').slice(0, 64), 'hex');
+  return _keyBuffer;
 }
-const CIPHER_KEY = process.env.VIDEO_CIPHER_KEY || crypto.randomBytes(32).toString('hex');
-const keyBuffer = Buffer.from(CIPHER_KEY.padEnd(64, '0').slice(0, 64), 'hex');
 
 export function encryptPassword(plaintext) {
   if (!plaintext) return null;
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(CIPHER_ALGO, keyBuffer, iv);
+  const cipher = crypto.createCipheriv(CIPHER_ALGO, getKeyBuffer(), iv);
   let encrypted = cipher.update(plaintext, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   const tag = cipher.getAuthTag().toString('hex');
@@ -34,10 +59,12 @@ export function encryptPassword(plaintext) {
 export function decryptPassword(encryptedStr) {
   if (!encryptedStr) return null;
   try {
-    const [ivHex, tagHex, encrypted] = encryptedStr.split(':');
+    const parts = encryptedStr.split(':');
+    if (parts.length !== 3) return null;
+    const [ivHex, tagHex, encrypted] = parts;
     const iv = Buffer.from(ivHex, 'hex');
     const tag = Buffer.from(tagHex, 'hex');
-    const decipher = crypto.createDecipheriv(CIPHER_ALGO, keyBuffer, iv);
+    const decipher = crypto.createDecipheriv(CIPHER_ALGO, getKeyBuffer(), iv);
     decipher.setAuthTag(tag);
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');

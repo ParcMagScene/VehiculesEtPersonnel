@@ -7,7 +7,7 @@ import { useWebRTCStream } from '../../hooks/useWebRTCStream';
 import { Maximize, Minimize, Camera, RefreshCw, WifiOff, Loader } from 'lucide-react';
 import api from '../../utils/api';
 
-const CameraPlayerWebRTC = ({ camera, autoConnect = true, onFullscreen, isFullscreen = false }) => {
+const CameraPlayerWebRTC = ({ camera, autoConnect = true, onFullscreen, isFullscreen = false, onSelect, isSelected = false }) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
   const [snapshotUrl, setSnapshotUrl] = useState(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
@@ -65,7 +65,10 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, onFullscreen, isFullsc
   }[status];
 
   return (
-    <div className={`camera-player ${isFullscreen ? 'camera-player--fullscreen' : ''}`}>
+    <div
+      className={`camera-player ${isFullscreen ? 'camera-player--fullscreen' : ''} ${isSelected ? 'camera-player--selected' : ''}`}
+      onClick={() => onSelect?.(camera)}
+    >
       <div className="camera-player__header">
         <div className="camera-player__status">
           <span className="camera-player__dot" style={{ backgroundColor: statusColor }} />
@@ -104,7 +107,8 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, onFullscreen, isFullsc
         )}
         {status === 'idle' && !autoConnect && (
           <div className="camera-player__overlay">
-            <button onClick={connect} className="camera-player__play-btn">▶ Démarrer le flux</button>
+            <WifiOff size={24} style={{ opacity: 0.4 }} />
+            <span style={{ opacity: 0.6, fontSize: '0.85em' }}>Proxy vidéo hors-ligne</span>
           </div>
         )}
         <video

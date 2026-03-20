@@ -379,8 +379,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // GET /api/video/proxy-status — Statut de MediaMTX
-  app.get('/api/video/proxy-status', authenticateToken, requireAdmin, (_req, res) => {
+  // GET /api/video/proxy-status — Statut de MediaMTX (accessible à tous les utilisateurs authentifiés)
+  app.get('/api/video/proxy-status', authenticateToken, (_req, res) => {
     (async () => {
       try {
         const status = await getProxyStatus();

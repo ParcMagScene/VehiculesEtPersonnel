@@ -238,12 +238,10 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             {(() => {
               const allTabs = [
                 { id: 'vehicles', label: 'Parc', icon: Truck },
-                { id: 'personnel', label: 'Personnel', icon: Users },
-                { id: 'affaires', label: 'Affaires', icon: Briefcase },
                 { id: 'equipment', label: 'Matériel', icon: Package },
+                { id: 'affaires', label: 'Affaires', icon: Briefcase },
                 { id: 'orders', label: 'Commandes', icon: ShoppingCart },
-                { id: 'stock', label: 'Stock', icon: Boxes },
-                { id: 'inventory', label: 'Inventaire', icon: ClipboardCheck },
+                { id: 'stock', label: 'Stocks', icon: Boxes },
                 { id: 'planning', label: 'Planning', icon: Radio },
                 { id: 'annuaire', label: 'Annuaire', icon: Building2 },
                 { id: 'video', label: 'Vidéo', icon: Video },
@@ -968,14 +966,14 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <QrCode size={20} />
             </button>
 
-            {(activeModule === 'vehicles' || activeModule === 'personnel' || activeModule === 'equipment') && (
+            {(activeModule === 'vehicles' || activeModule === 'equipment') && (
             <button 
               className="management-button" 
               onClick={onOpenManagement} 
               aria-label="Ouvrir le panneau de gestion"
               style={{ position: 'relative' }}
             >
-              {activeModule === 'vehicles' ? <Truck size={18} /> : activeModule === 'personnel' ? <Users size={18} /> : <Package size={18} />}
+              {activeModule === 'vehicles' ? <Truck size={18} /> : <Package size={18} />}
               Gestion
             </button>
             )}

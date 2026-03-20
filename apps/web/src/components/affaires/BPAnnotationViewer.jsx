@@ -272,42 +272,56 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
 }
 
 // ─── Bloc infos affaire (coin supérieur droit) ───
-function drawInfoBlock(ctx, canvasWidth, lines, affaireData) {
-  const blockW = 260;
-  const padding = 12;
-  const lineH = 16;
-  const x = canvasWidth - blockW - 20;
-  const y = 20;
-  const totalH = padding * 2 + lines.length * lineH + 8;
+function drawInfoBlock(ctx, canvasWidth, lines, affaireData, scale) {
+  // On écrit directement dans le cadre vide existant du BP (coin supérieur droit)
+  // Coordonnées en points PDF, mises à l'échelle
+  const s = scale || 1.5;
+  const padding = 8 * s;
+  const lineH = 13 * s;
+  // Position du cadre dans le BP (approx. top-right)
+  const x = canvasWidth - (356 * s);
+  const y = 125 * s;
 
-  // Fond
-  ctx.beginPath();
-  roundRect(ctx, x, y, blockW, totalH, 8);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-  ctx.fill();
-  ctx.strokeStyle = '#6366f1';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+  // Couleurs pour les avatars personnel (rotation)
+  const avatarColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+  let avatarIdx = 0;
 
-  // Titre
-  ctx.font = 'bold 11px sans-serif';
-  ctx.fillStyle = '#1e293b';
-  ctx.fillText(`📋 ${affaireData?.nom || 'Affaire'}`, x + padding, y + padding + 10);
-
-  // Lignes d'info
-  let cy = y + padding + 28;
+  let cy = y;
   for (const line of lines) {
     if (line.type === 'header') {
-      ctx.font = 'bold 10px sans-serif';
+      cy += 5 * s; // espacement avant chaque section
+      ctx.font = `bold ${Math.round(9 * s)}px sans-serif`;
       ctx.fillStyle = '#4338ca';
+      ctx.fillText(line.text, x + padding, cy);
     } else if (line.type === 'more') {
-      ctx.font = 'italic 9px sans-serif';
+      ctx.font = `italic ${Math.round(7.5 * s)}px sans-serif`;
       ctx.fillStyle = '#94a3b8';
-    } else {
-      ctx.font = '9px sans-serif';
+      ctx.fillText(line.text, x + padding, cy);
+    } else if (line.type === 'person') {
+      // Mini avatar : cercle coloré + initiales
+      const r = 5 * s;
+      const cx = x + padding + r;
+      const color = avatarColors[avatarIdx % avatarColors.length];
+      avatarIdx++;
+      ctx.beginPath();
+      ctx.arc(cx, cy - r * 0.4, r, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      // Initiales dans le cercle
+      ctx.font = `bold ${Math.round(5 * s)}px sans-serif`;
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText(line.initials, cx, cy - r * 0.4 + 2 * s);
+      ctx.textAlign = 'start';
+      // Nom à droite du cercle
+      ctx.font = `${Math.round(8 * s)}px sans-serif`;
       ctx.fillStyle = '#334155';
+      ctx.fillText(line.text, x + padding + r * 2 + 4 * s, cy);
+    } else {
+      ctx.font = `${Math.round(8 * s)}px sans-serif`;
+      ctx.fillStyle = '#334155';
+      ctx.fillText(line.text, x + padding, cy);
     }
-    ctx.fillText(line.text, x + padding + 4, cy);
     cy += lineH;
   }
 }
@@ -432,9 +446,9 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
         // 4. Dessiner les annotations
         drawAnnotations(octx, lines, viewport, data);
 
-        // 5. Bloc info affaire
+        // 5. Bloc info affaire (dans le cadre existant du BP)
         if (showInfo && infoLines.length > 0) {
-          drawInfoBlock(octx, viewport.width, infoLines, affaire);
+          drawInfoBlock(octx, viewport.width, infoLines, affaire, effectiveScale);
         }
       } catch (err) {
         if (err.name !== 'RenderingCancelledException') {
@@ -475,7 +489,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
 
     // Bloc info sur la première page
     if (pageNum === 1 && showInfo && infoLines.length > 0) {
-      drawInfoBlock(ctx, viewport.width, infoLines, affaire);
+      drawInfoBlock(ctx, viewport.width, infoLines, affaire, targetScale);
     }
 
     return canvas;

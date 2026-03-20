@@ -260,9 +260,10 @@ Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès 
 
 | Fichier | Contenu |
 |---------|---------|
-| `ARCHITECTURE.md` | Architecture technique complète, API, schéma DB, modules |
-| `SECURITY.md` | Politique de sécurité, vulnérabilités, audit |
-| `README.md` | Vue d'ensemble, installation, stack |
+| [Architecture](../01-Architecture/ARCHITECTURE.md) | Architecture technique complète, API, schéma DB, modules |
+| [Sécurité](../02-Securite/SECURITY.md) | Politique de sécurité, vulnérabilités, audit |
+| [Guide développeur](GUIDE_DEVELOPPEUR.md) | Installation, configuration, déploiement |
+| [README](../../README.md) | Vue d'ensemble, installation, stack |
 
 ---
 

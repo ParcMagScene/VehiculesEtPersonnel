@@ -762,6 +762,18 @@ function checkAutoNightMode() {
 }
 
 // ===============================================
+//  SILENT TOKEN REFRESH (toutes les 6h)
+// ===============================================
+async function refreshTokenSilently() {
+  try {
+    await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+  } catch { /* silencieux */ }
+}
+
+// ===============================================
 //  INITIALISATION
 // ===============================================
 async function init() {
@@ -785,6 +797,7 @@ async function init() {
   loadTVCameras();
   setInterval(loadTVCameras, 60000);            // Refresh caméras : toutes les 60s
   setInterval(checkAutoNightMode, 60000);       // Check mode nuit : toutes les 60s
+  setInterval(refreshTokenSilently, 6 * 60 * 60 * 1000); // Token refresh : toutes les 6h
   startVideoRotation(30000);                    // Rotation pages : toutes les 30s
 
   // Bouton de test sonore

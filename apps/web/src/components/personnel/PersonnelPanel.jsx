@@ -532,6 +532,36 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
 
   return (
     <div className="personnel-tab-content">
+      {/* Toolbar */}
+      <div className="eq-toolbar pp-toolbar">
+        <div className="eq-toolbar-actions">
+          <div className="eq-search">
+            <Search size={14} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Rechercher..."
+            />
+            {searchTerm && <button className="eq-search-clear" onClick={() => setSearchTerm('')}><X size={12} /></button>}
+          </div>
+          <select className="eq-filter" value={filterType} onChange={e => setFilterType(e.target.value)}>
+            <option value="">Tous les types</option>
+            {PERSON_TYPES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          {currentUser?.isAdmin && (
+            <button className="eq-btn-secondary" onClick={() => setShowImportModal(true)} title="Importer depuis un CSV">
+              <Upload size={14} /> Import CSV
+            </button>
+          )}
+          <button className="eq-btn-add" onClick={openCreate}>
+            <Plus size={14} /> Personnel
+          </button>
+        </div>
+      </div>
+
       {/* Stats row */}
       <div className="eq-header pp-header">
         <div className="eq-stats-row">
@@ -562,36 +592,6 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
               <span className="eq-stat-label">Inactifs</span>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      <div className="eq-toolbar pp-toolbar">
-        <div className="eq-toolbar-actions">
-          <div className="eq-search">
-            <Search size={14} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Rechercher..."
-            />
-            {searchTerm && <button className="eq-search-clear" onClick={() => setSearchTerm('')}><X size={12} /></button>}
-          </div>
-          <select className="eq-filter" value={filterType} onChange={e => setFilterType(e.target.value)}>
-            <option value="">Tous les types</option>
-            {PERSON_TYPES.map(t => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-          {currentUser?.isAdmin && (
-            <button className="eq-btn-secondary" onClick={() => setShowImportModal(true)} title="Importer depuis un CSV">
-              <Upload size={14} /> Import CSV
-            </button>
-          )}
-          <button className="eq-btn-add" onClick={openCreate}>
-            <Plus size={14} /> Personnel
-          </button>
         </div>
       </div>
 
@@ -1018,7 +1018,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   }, [quickAssignmentSlot, persons, onQuickAssignmentHandled]);
 
   // Planning data state
-  const [planningData, setPlanningData] = useState({ missions: [], availabilities: [] });
+  const [planningData, setPlanningData] = useState({ missions: [], availabilities: [], taskAssignments: [] });
   const [assignmentDialog, setAssignmentDialog] = useState(null); // { person, day, period, endDay? }
   const [deleteMission, setDeleteMission] = useState(null); // { mission, person }
   const [hoveredSlot, setHoveredSlot] = useState(null); // { personId, slotIndex }
@@ -1080,7 +1080,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       const startStr = format(days[0], 'yyyy-MM-dd');
       const endStr = format(days[days.length - 1], 'yyyy-MM-dd');
       const data = await api.getPersonnelPlanning({ startDate: startStr, endDate: endStr });
-      setPlanningData(data || { missions: [], availabilities: [] });
+      setPlanningData(data || { missions: [], availabilities: [], taskAssignments: [] });
     } catch (err) {
       console.error('Erreur chargement planning:', err);
     }
@@ -1243,6 +1243,35 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
     });
     return map;
   }, [planningData.availabilities, days, view]);
+
+  // Index des tâches assignées (task_assignments) par personne + jour
+  // Map : `${personId}_${slotIndex}` → [{ id, title, period, section, affaire_num, source_type, status }]
+  const taskSlots = useMemo(() => {
+    const map = {};
+    if (view === 'year' || days.length === 0) return map;
+
+    (planningData.taskAssignments || []).forEach(ta => {
+      try {
+        const personId = ta.person_id || ta.personId;
+        const taskDate = parseISO(ta.date);
+        const slotIdx = days.findIndex(d => isSameDay(d, taskDate));
+        if (slotIdx === -1) return;
+
+        const key = `${personId}_${slotIdx}`;
+        if (!map[key]) map[key] = [];
+        map[key].push({
+          id: ta.id,
+          title: ta.title,
+          period: ta.period,
+          section: ta.section,
+          affaireNum: ta.affaire_num,
+          sourceType: ta.source_type,
+          status: ta.status,
+        });
+      } catch { /* ignore */ }
+    });
+    return map;
+  }, [planningData.taskAssignments, days, view]);
 
   // Set des slots couverts par une mission (pour styling et empêcher clic)
   const coveredSlotsForPerson = useCallback((personId) => {
@@ -1549,7 +1578,6 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           const missionTitle = spanHere?.mission?.title || '';
           const assignStatus = spanHere?.assignment?.status || '';
           const isHovered = hoveredSlot?.personId === person.id && hoveredSlot?.slotIndex === slotIndex;
-          const isColHovered = hoveredSlot?.slotIndex === slotIndex;
           const dayLabel = view === 'year'
             ? format(slot.day, 'MMMM yyyy', { locale: fr })
             : format(slot.day, 'EEEE d MMM', { locale: fr });
@@ -1566,10 +1594,13 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
             ? `${absenceLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === 'pending' ? ' (en attente)' : ''}`
             : '';
 
+          // Tâches assignées sur ce slot ?
+          const tasksHere = taskSlots[absenceKey] || [];
+
           return (
             <div
               key={slotIndex}
-              className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isColHovered ? ' pp-col-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}${hasAbsence ? ' pp-slot-absence' : ''}`}
+              className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isHovered ? ' pp-cell-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}${hasAbsence ? ' pp-slot-absence' : ''}`}
               onMouseDown={(e) => !isCovered && !hasAbsence && handleSlotMouseDown(person, slotIndex, e)}
               onMouseEnter={() => {
                 handleSlotMouseEnter(person, slotIndex);
@@ -1596,6 +1627,20 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                 <span className="pp-absence-label" style={{ color: absenceColor }}>
                   {absenceLabel}
                 </span>
+              )}
+              {/* Tâches assignées (affichées sous les missions ou seules) */}
+              {tasksHere.length > 0 && !isCovered && (
+                <div className="pp-task-chips">
+                  {tasksHere.map(task => (
+                    <div
+                      key={task.id}
+                      className={`pp-task-chip${task.sourceType === 'affaire' ? ' affaire' : ''}`}
+                      title={`${task.title}${task.affaireNum ? ` (${task.affaireNum})` : ''}${task.period ? ` — ${task.period}` : ''}`}
+                    >
+                      <span className="pp-task-chip-title">{task.title || task.affaireNum || 'Tâche'}</span>
+                    </div>
+                  ))}
+                </div>
               )}
               {/* Bloc original (masqué si en cours de move/resize) */}
               {spanHere && !isOriginalBeingMoved && !isOriginalBeingResized && renderAssignmentBlock(spanHere, person, slotIndex, false)}
@@ -1833,7 +1878,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                     {days.map((monthDate, i) => (
                       <div
                         key={i}
-                        className={`pp-header-cell month-header${isSameDay(startOfMonth(new Date()), startOfMonth(monthDate)) ? ' today' : ''}${hoveredSlot?.slotIndex === i ? ' pp-col-hovered' : ''}`}
+                        className={`pp-header-cell month-header${isSameDay(startOfMonth(new Date()), startOfMonth(monthDate)) ? ' today' : ''}`}
                       >
                         <div className="pp-month-name">{format(monthDate, 'MMMM', { locale: fr })}</div>
                       </div>
@@ -1844,7 +1889,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                     {days.map((day, i) => (
                       <div
                         key={i}
-                        className={`pp-header-cell day-header${isWeekendFn(day) ? ' weekend' : ''}${isToday(day) ? ' today' : ''}${hoveredSlot?.slotIndex === i ? ' pp-col-hovered' : ''}`}
+                        className={`pp-header-cell day-header${isWeekendFn(day) ? ' weekend' : ''}${isToday(day) ? ' today' : ''}`}
                       >
                         <div className="pp-day-name">{format(day, 'EEE', { locale: fr })}</div>
                         <div className="pp-day-number">{format(day, 'd MMM', { locale: fr })}</div>

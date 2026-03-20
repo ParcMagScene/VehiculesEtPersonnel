@@ -45,6 +45,42 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
   const svgRef = useRef(null);
   const lastTouchRef = useRef(null);
   const lastPinchRef = useRef(null);
+  const animFrameRef = useRef(null);
+
+  // Animated zoom-to-zone: progressive zoom from current state to target
+  const animateToZone = useCallback((targetZoom, targetPan, duration = 900) => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    // Capture start values via refs to avoid stale closures
+    const startZoom = 1;
+    const startPan = { x: 0, y: 0 };
+    // Reset to wide view first
+    setZoom(startZoom);
+    setPan(startPan);
+    const startTime = performance.now();
+    const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // easeInOutCubic
+    const step = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const t = ease(progress);
+      setZoom(startZoom + (targetZoom - startZoom) * t);
+      setPan({
+        x: startPan.x + (targetPan.x - startPan.x) * t,
+        y: startPan.y + (targetPan.y - startPan.y) * t,
+      });
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(step);
+      } else {
+        animFrameRef.current = null;
+      }
+    };
+    // Small delay so the wide view renders first
+    setTimeout(() => { animFrameRef.current = requestAnimationFrame(step); }, 80);
+  }, []);
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
+  }, []);
 
   // Auto-focus on a zone when focusZoneId is set
   useEffect(() => {
@@ -52,14 +88,13 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
       const zone = findZoneFlexible(zones.zones, focusZoneId);
       if (zone) {
         if (zone.floor) setActiveFloor(zone.floor);
-        // Zoom to zone with slight delay for rendering
+        // Animated zoom to zone with delay for rendering
         setTimeout(() => {
           const { x, y, width, height } = zone.bbox;
           const centerX = x + width / 2 - (bounds.x + bounds.w / 2);
           const centerY = y + height / 2 - (bounds.y + bounds.h / 2);
-          setZoom(2.5);
-          setPan({ x: -centerX, y: -centerY });
-        }, 100);
+          animateToZone(2.5, { x: -centerX, y: -centerY });
+        }, 150);
       }
     }
   }, [focusZoneId, zones]);
@@ -279,8 +314,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
     const { x, y, width, height } = zone.bbox;
     const centerX = x + width / 2 - (bounds.x + bounds.w / 2);
     const centerY = y + height / 2 - (bounds.y + bounds.h / 2);
-    setZoom(2.5);
-    setPan({ x: -centerX, y: -centerY });
+    animateToZone(2.5, { x: -centerX, y: -centerY });
   };
 
   return (

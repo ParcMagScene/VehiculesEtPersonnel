@@ -45,6 +45,75 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Séparateur vertical entre groupes */
+.video-panel__separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color, #e2e8f0);
+  flex-shrink: 0;
+}
+
+/* Boutons de layout grille (remontés de CameraGrid) */
+.video-panel__layout-btns {
+  display: flex;
+  gap: 3px;
+}
+.video-panel__layout-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-secondary, #fff);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+  color: var(--text-secondary, #64748b);
+}
+.video-panel__layout-btn.active {
+  background: var(--color-primary, #667eea);
+  color: white;
+  border-color: var(--color-primary, #667eea);
+}
+
+/* Pagination */
+.video-panel__page-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.video-panel__page-controls button {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 4px;
+  background: var(--bg-secondary, #fff);
+  cursor: pointer;
+  color: var(--text-secondary, #64748b);
+}
+.video-panel__page-controls button:disabled { opacity: 0.3; cursor: default; }
+.video-panel__page-info { font-size: 0.75rem; opacity: 0.7; }
+
+/* Indicateur PTZ clavier */
+.video-panel__ptz-indicator {
+  padding: 4px 16px;
+  background: var(--bg-accent, #eef2ff);
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  font-size: 0.8rem;
+  color: var(--color-primary, #667eea);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.video-panel__ptz-moving {
+  color: #22c55e;
+  animation: pulse 0.8s ease-in-out infinite alternate;
 }
 
 .video-panel__view-toggle {
@@ -262,12 +331,21 @@
   background: #000;
   border-radius: var(--radius-md, 6px);
   overflow: hidden;
-  border: 1px solid var(--border-color, #333);
+  border: 2px solid var(--border-color, #333);
   min-height: 0;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .camera-player--empty {
   background: var(--bg-accent, #1e293b);
   opacity: 0.3;
+}
+.camera-player--selected {
+  border-color: var(--color-primary, #667eea);
+  box-shadow: 0 0 0 2px var(--color-primary, #667eea);
+}
+.camera-player--selected .camera-player__header {
+  background: rgba(102, 126, 234, 0.9);
 }
 .camera-player--fullscreen {
   border-radius: 0;

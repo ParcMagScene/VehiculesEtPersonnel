@@ -3,7 +3,7 @@
 // Utilisées par LeaveRequestForm, LeaveRequestsPanel, LeaveValidationPanel
 // ═══════════════════════════════════════════════════════════════
 
-import { Clock, CheckCircle, XCircle, AlertTriangle, X, Trash2 } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertTriangle, Trash2 } from 'lucide-react';
 
 export const STATUS_CONFIG = {
   pending:   { label: 'En attente', icon: Clock,          color: '#f59e0b', bg: '#fef3c7' },

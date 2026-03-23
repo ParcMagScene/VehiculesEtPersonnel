@@ -21,7 +21,7 @@ const parsePrice = (s) => {
 // Brand prefixes: SAH (Allen&Heath), SMA (Mackie), RAZ, HKA, ADJ, ADA, ...
 // ═══════════════════════════════════════════════════════════
 
-// Mapping codes internes Algam → noms de marques réels
+// Mapping codes internes Algam → noms de marques canoniques (sync brands table)
 export const ALGAM_BRAND_MAP = {
   SAH: 'Allen & Heath', SMA: 'Mackie', SMK: 'Mackie',
   SQS: 'QSC', SQC: 'QSC',
@@ -30,7 +30,7 @@ export const ALGAM_BRAND_MAP = {
   SRA: 'Radial', SDE: 'Denon', SDA: 'Audinate', SFC: 'SoundTube',
   SLT: 'Alto', SSL: 'SSL',
   IPA: 'Panasonic', IPB: 'Panasonic',
-  IBM: 'Blackmagic', IDK: 'IDK', IBA: 'Barco',
+  IBM: 'Blackmagic Design', IDK: 'IDK', IBA: 'Barco',
   IMU: 'MuxLab', IAV: 'AVer', ING: 'Extron',
   LCL: 'Clay Paky', LSU: 'Luminex', LMA: 'Luminex', LMP: 'Luminex',
   LUN: 'Unilumin', LMR: 'Martin', LSF: 'Look Solutions',
@@ -432,15 +432,38 @@ const BRAND_RX = new RegExp(
   'i'
 );
 
+// Mapping normalisation marques détectées → noms canoniques (sync brands table)
+const BRAND_CANONICAL = {};
+for (const b of KNOWN_BRANDS) {
+  BRAND_CANONICAL[b.toUpperCase()] = b;
+}
+// Ajout entrées supplémentaires pour cohérence avec la table brands
+Object.assign(BRAND_CANONICAL, {
+  'ALLEN&HEATH': 'Allen & Heath', 'ALLEN & HEATH': 'Allen & Heath',
+  'ELECTRO-VOICE': 'Electro-Voice', 'EV': 'Electro-Voice',
+  'AMERICAN DJ': 'ADJ', 'ADJ': 'ADJ',
+  'JB-SYSTEMS': 'JB Systems', 'JB SYSTEMS': 'JB Systems',
+  'BRITE-Q': 'Briteq', 'BRITEQ': 'Briteq',
+  'BLACKMAGIC': 'Blackmagic Design',
+  'HK AUDIO': 'HK Audio', 'DAP AUDIO': 'DAP Audio', 'DAP': 'DAP Audio',
+  'DEFINITIVE AUDIO': 'Definitive Audio',
+});
+
 /**
- * Post-traitement : détecte la marque dans la désignation si elle n'est pas renseignée
+ * Post-traitement : détecte la marque dans la désignation si elle n'est pas renseignée,
+ * et normalise les marques existantes vers leur forme canonique.
  */
 function inferBrands(items) {
   for (const item of items) {
-    if (item.brand) continue;
+    if (item.brand) {
+      // Normaliser marque existante vers forme canonique
+      const canon = BRAND_CANONICAL[item.brand.toUpperCase()];
+      if (canon) item.brand = canon;
+      continue;
+    }
     const match = item.designation?.match(BRAND_RX);
     if (match) {
-      item.brand = match[1].toUpperCase();
+      item.brand = BRAND_CANONICAL[match[1].toUpperCase()] || match[1];
     }
   }
 }

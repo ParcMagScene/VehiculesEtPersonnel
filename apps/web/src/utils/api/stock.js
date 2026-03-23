@@ -43,8 +43,9 @@ export function registerStockMethods(ApiClient) {
       const qs = new URLSearchParams(params).toString();
       return this.request(`/stock/movements${qs ? '?' + qs : ''}`, { skipCamelCase: true });
     },
-    async getStockStats() {
-      return this.request('/stock/stats', { skipCamelCase: true });
+    async getStockStats(params = {}) {
+      const qs = new URLSearchParams(params).toString();
+      return this.request(`/stock/stats${qs ? '?' + qs : ''}`, { skipCamelCase: true });
     },
 
     // Import stock

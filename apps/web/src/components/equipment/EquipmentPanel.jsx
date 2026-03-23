@@ -387,6 +387,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [categories, setCategories] = useState([]);
   const [savTickets, setSavTickets] = useState([]);
   const [persons, setPersons] = useState([]);
+  const [brandsList, setBrandsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -453,7 +454,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [eqData, catData, ticketData, persData, photosData, listsData, zonesData, locStatsData, allZonesData] = await Promise.all([
+      const [eqData, catData, ticketData, persData, photosData, listsData, zonesData, locStatsData, allZonesData, brandsData] = await Promise.all([
         api.getEquipment(),
         api.getEquipmentCategories(),
         api.getSavTickets(),
@@ -463,6 +464,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
         api.getEquipmentDepotZones().catch(() => null),
         api.getEquipmentLocationStats().catch(() => null),
         api.getAllDepotZones().catch(() => null),
+        api.getBrands().catch(() => []),
       ]);
       setEquipment(eqData);
       setCategories(catData);
@@ -474,6 +476,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
       setDepotZones(zonesData);
       setLocationStats(locStatsData);
       setAllDepotZones(allZonesData);
+      setBrandsList(brandsData || []);
       setError(null);
     } catch (err) {
       console.error('Erreur chargement matériel:', err);
@@ -932,6 +935,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
         <EquipmentFormModal
           equipment={editingEquipment}
           categories={categories}
+          brandsList={brandsList}
           depotZones={depotZones}
           allDepotZones={allDepotZones}
           onSave={handleSaveEquipment}
@@ -1461,7 +1465,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                     {eq.categoryIcon || '📦'} {eq.categoryName || '—'}
                   </span>
                 </td>
-                <td>{eq.brand || '—'}</td>
+                <td>{eq.brand_canonical || eq.brand || '—'}</td>
                 <td className="eq-table-serial">{eq.serialNumber || '—'}</td>
                 <td className="eq-table-qty">{eq.stockQuantity || 1}</td>
                 <td>{(() => {
@@ -1512,7 +1516,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
-  const logo = matchLogoToBrand(logosList || [], eq.brand);
+  const logo = matchLogoToBrand(logosList || [], eq.brand_canonical || eq.brand);
   const qrUrl = eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : null;
   const isFav = favoriteIds?.has(eq.id);
   const isWatch = watchIds?.has(eq.id);
@@ -1531,7 +1535,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
           <h2 className="eq-detail-name">{eq.categoryIcon || eq.category_icon || '📦'} {cleanName(eq.name)}</h2>
           <div className="eq-detail-meta-row">
             <span className="eq-detail-status" style={{ background: st.color }}>{st.icon} {st.label}</span>
-            {logo && <img className="eq-detail-brand-img" src={logo} alt={eq.brand} title={eq.brand} />}
+            {logo && <img className="eq-detail-brand-img" src={logo} alt={eq.brand_canonical || eq.brand} title={eq.brand_canonical || eq.brand} />}
           </div>
           {eq.uid && (
             <div className="eq-detail-uid-row">
@@ -1601,7 +1605,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
           {eq.brand && (
             <div className="eq-detail-field">
               <span className="eq-field-label">🏭 Marque</span>
-              <span className="eq-field-value">{eq.brand}</span>
+              <span className="eq-field-value">{eq.brand_canonical || eq.brand}</span>
             </div>
           )}
           {(eq.stockQuantity || eq.stock_quantity) > 1 && (
@@ -1946,7 +1950,7 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
 };
 
 // ═══ MODAL FORMULAIRE ÉQUIPEMENT ═══
-const EquipmentFormModal = ({ equipment: eq, categories, depotZones, allDepotZones, onSave, onClose }) => {
+const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZones, allDepotZones, onSave, onClose }) => {
   const [showMap, setShowMap] = useState(false);
   const [mapDepotIdx, setMapDepotIdx] = useState(0); // index du dépôt affiché sur le plan
   // Hiérarchie des catégories
@@ -2039,7 +2043,10 @@ const EquipmentFormModal = ({ equipment: eq, categories, depotZones, allDepotZon
             </div>
             <div className="eq-form-field">
               <label>Marque</label>
-              <input type="text" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="Ex: L-ACOUSTICS" />
+              <input type="text" list="eq-brands-list" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="Ex: L-Acoustics" />
+              <datalist id="eq-brands-list">
+                {brandsList.map(b => <option key={b.id} value={b.name} />)}
+              </datalist>
             </div>
             <div className="eq-form-field">
               <label>Quantité / Stock</label>

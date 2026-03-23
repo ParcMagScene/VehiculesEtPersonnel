@@ -791,12 +791,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       let query = `
         SELECT bp.*, 
                eq.name AS catalog_name, eq.reference AS catalog_reference,
-               eq.brand AS catalog_family, eq.location AS catalog_zone,
+               COALESCE(b.name, eq.brand) AS catalog_family, eq.location AS catalog_zone,
                eq.location_depot AS catalog_depot,
                sa.designation AS supplier_article_name, sa.supplier_ref AS supplier_article_ref,
                si.name AS stock_item_name, si.reference AS stock_item_ref
         FROM bp_items bp
         LEFT JOIN equipment eq ON bp.equipment_id = eq.id
+        LEFT JOIN brands b ON eq.brand_id = b.id
         LEFT JOIN supplier_articles sa ON bp.supplier_article_id = sa.id
         LEFT JOIN stock_items si ON bp.stock_item_id = si.id
         JOIN bl_imports bi ON bp.bl_import_id = bi.id

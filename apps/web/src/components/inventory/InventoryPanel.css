@@ -519,3 +519,41 @@
 .inv-count-diff .diff { font-weight: 700; margin-left: auto; }
 .inv-count-diff.positive .diff { color: #2e7d32; }
 .inv-count-diff.negative .diff { color: #dc3545; }
+
+/* ═══ Mouvements View ═══ */
+.inv-movements { display: flex; flex-direction: column; gap: 16px; }
+.inv-select {
+  padding: 6px 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text);
+  font-size: 0.85rem;
+}
+.inv-movement-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.inv-movement-item { display: flex; flex-direction: column; }
+.inv-movement-item small { color: var(--theme-text-secondary); font-size: 0.78rem; }
+.inv-movement-qty { font-weight: 600; }
+.inv-movement-qty.positive { color: #10b981; }
+.inv-movement-qty.negative { color: #ef4444; }
+.inv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--theme-text-secondary);
+}
+.inv-table-container {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}

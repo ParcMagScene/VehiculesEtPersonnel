@@ -8,7 +8,7 @@ import {
   BarChart3, MapPin, DollarSign, AlertTriangle, Package, Search, Plus,
   RefreshCw, Download, Upload, CheckCircle2, XCircle, Eye, Edit, Trash2,
   ChevronDown, ChevronUp, Filter, ArrowUpDown, TrendingUp, TrendingDown,
-  Boxes, ClipboardCheck, FileSpreadsheet, Info, Star
+  Boxes, ClipboardCheck, FileSpreadsheet, Info, Star, ArrowDownCircle, ArrowUpCircle, RotateCcw
 } from 'lucide-react';
 import api from '../../utils/api';
 import { useInventory } from '../../hooks/useInventory';
@@ -471,6 +471,104 @@ function CountView({ onSubmitCount }) {
   );
 }
 
+// ── Mouvements View (données issues du stock) ──
+const MOVEMENT_TYPES = {
+  in: { label: 'Entrée', color: '#10b981', icon: '📥' },
+  out: { label: 'Sortie', color: '#ef4444', icon: '📤' },
+  adjustment: { label: 'Ajustement', color: '#f59e0b', icon: '🔧' },
+  return: { label: 'Retour', color: '#3b82f6', icon: '↩️' },
+};
+
+function MovementsView() {
+  const [movements, setMovements] = useState([]);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await api.getStockMovements({});
+        setMovements(data.movements || []);
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!typeFilter) return movements;
+    return movements.filter(m => m.type === typeFilter);
+  }, [movements, typeFilter]);
+
+  const formatDate = (d) => {
+    if (!d) return '—';
+    const dt = new Date(d);
+    return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  if (loading) return <div className="inv-loading"><div className="loading-spinner" /><p>Chargement des mouvements…</p></div>;
+
+  return (
+    <div className="inv-movements">
+      <div className="inv-toolbar">
+        <h3><TrendingUp size={18} /> Mouvements ({filtered.length})</h3>
+        <select className="inv-select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="">Tous types</option>
+          {Object.entries(MOVEMENT_TYPES).map(([k, v]) => (
+            <option key={k} value={k}>{v.icon} {v.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="inv-empty"><TrendingUp size={48} /><p>Aucun mouvement enregistré</p></div>
+      ) : (
+        <div className="inv-table-container">
+          <table className="inv-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Article</th>
+                <th>Quantité</th>
+                <th>Avant → Après</th>
+                <th>Motif</th>
+                <th>Utilisateur</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(m => {
+                const mt = MOVEMENT_TYPES[m.type] || {};
+                return (
+                  <tr key={m.id}>
+                    <td>{formatDate(m.created_at)}</td>
+                    <td>
+                      <span className="inv-movement-badge" style={{ background: (mt.color || '#888') + '20', color: mt.color }}>
+                        {mt.icon} {mt.label || m.type}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="inv-movement-item">
+                        <span>{m.item_name}</span>
+                        <small>{m.item_reference}</small>
+                      </div>
+                    </td>
+                    <td className={`inv-movement-qty ${m.type === 'out' ? 'negative' : 'positive'}`}>
+                      {m.type === 'out' ? '-' : '+'}{m.quantity} {m.item_unit}
+                    </td>
+                    <td>{m.previous_quantity} → {m.new_quantity}</td>
+                    <td>{m.reason || '—'}</td>
+                    <td>{m.user_name || '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 // COMPOSANT PRINCIPAL — InventoryPanel
@@ -478,6 +576,7 @@ function CountView({ onSubmitCount }) {
 
 const TABS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: BarChart3 },
+  { id: 'movements', label: 'Mouvements', icon: TrendingUp },
   { id: 'locations', label: 'Emplacements', icon: MapPin },
   { id: 'prices',    label: 'Prix',          icon: DollarSign },
   { id: 'anomalies', label: 'Anomalies',     icon: AlertTriangle },
@@ -549,6 +648,7 @@ export default function InventoryPanel({ currentUser }) {
                 onRunAbc={inv.runAbcClassification}
               />
             )}
+            {activeTab === 'movements' && <MovementsView />}
             {activeTab === 'locations' && (
               <LocationsView
                 locations={inv.locations}

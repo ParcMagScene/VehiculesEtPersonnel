@@ -1419,6 +1419,173 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, onValidate, onDele
   );
 });
 
+// ═══ Modal sélection article depuis catalogues fournisseurs ═══
+const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
+  const [articles, setArticles] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [brandFilter, setBrandFilter] = useState('');
+  const [familyFilter, setFamilyFilter] = useState('');
+  const [filterOptions, setFilterOptions] = useState({ suppliers: [], brands: [], families: [] });
+  const [page, setPage] = useState(0);
+  const searchTimer = useRef(null);
+  const LIMIT = 30;
+
+  // Load filter options on mount
+  useEffect(() => {
+    api.getSupplierArticleFilters({}).then(data => {
+      setFilterOptions({
+        suppliers: data.suppliers || [],
+        brands: (data.brands || []).filter(Boolean),
+        families: (data.families || []).filter(Boolean),
+      });
+    }).catch(() => {});
+  }, []);
+
+  // Load articles whenever filters or page change
+  const loadArticles = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { limit: LIMIT, offset: page * LIMIT };
+      if (search) params.search = search;
+      if (supplierFilter) params.supplier_id = supplierFilter;
+      if (brandFilter) params.brand_id = brandFilter;
+      if (familyFilter) params.family = familyFilter;
+      const data = await api.getSupplierArticles(params);
+      setArticles(data.articles || []);
+      setTotal(data.total || 0);
+    } catch (e) {
+      console.error('Erreur chargement catalogue:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, supplierFilter, brandFilter, familyFilter, page]);
+
+  useEffect(() => { loadArticles(); }, [loadArticles]);
+
+  // Debounced search
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    setPage(0);
+  };
+
+  const handleSearchInput = (val) => {
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => handleSearchChange(val), 300);
+  };
+
+  const totalPages = Math.ceil(total / LIMIT);
+
+  return (
+    <div className="catalog-picker-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="catalog-picker-modal" onClick={e => e.stopPropagation()}>
+        <div className="catalog-picker-header">
+          <h2><BookOpen size={20} /> Sélection depuis les catalogues</h2>
+          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+        </div>
+
+        <div className="catalog-picker-filters">
+          <div className="catalog-picker-search">
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Rechercher par désignation, référence, marque, fournisseur…"
+              defaultValue={search}
+              onChange={e => handleSearchInput(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="catalog-picker-filter-row">
+            <select value={supplierFilter} onChange={e => { setSupplierFilter(e.target.value); setPage(0); }}>
+              <option value="">Tous fournisseurs</option>
+              {filterOptions.suppliers.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            <select value={brandFilter} onChange={e => { setBrandFilter(e.target.value); setPage(0); }}>
+              <option value="">Toutes marques</option>
+              {filterOptions.brands.map(b => (
+                <option key={b.id || b} value={b.id || b}>{b.name || b}</option>
+              ))}
+            </select>
+            <select value={familyFilter} onChange={e => { setFamilyFilter(e.target.value); setPage(0); }}>
+              <option value="">Toutes familles</option>
+              {filterOptions.families.map(f => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="catalog-picker-body">
+          {loading ? (
+            <div className="catalog-picker-loading"><div className="loading-spinner" /><p>Recherche en cours…</p></div>
+          ) : articles.length === 0 ? (
+            <div className="catalog-picker-empty">
+              <Package size={40} />
+              <p>{search || supplierFilter || brandFilter || familyFilter ? 'Aucun article trouvé pour ces critères' : 'Aucun article dans les catalogues'}</p>
+            </div>
+          ) : (
+            <table className="catalog-picker-table">
+              <thead>
+                <tr>
+                  <th>Désignation</th>
+                  <th>Réf.</th>
+                  <th>Marque</th>
+                  <th>Famille</th>
+                  <th>Prix HT</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  const grouped = [];
+                  let lastSupplier = null;
+                  for (const art of articles) {
+                    const sn = art.supplier_name || 'Sans fournisseur';
+                    if (sn !== lastSupplier) {
+                      grouped.push(<tr key={`grp-${art.supplier_id || sn}`} className="catalog-picker-group-header"><td colSpan={6}><Building2 size={14} /> {sn}</td></tr>);
+                      lastSupplier = sn;
+                    }
+                    grouped.push(
+                      <tr key={art.id} className="catalog-picker-row" onDoubleClick={() => onSelect(art)}>
+                        <td className="catalog-picker-designation">
+                          <span>{art.designation}</span>
+                          {art.model && <small>{art.model}</small>}
+                        </td>
+                        <td className="catalog-picker-ref">{art.supplier_ref || '—'}</td>
+                        <td>{art.brand_canonical || art.brand || '—'}</td>
+                        <td>{art.family || '—'}</td>
+                        <td className="catalog-picker-price">{art.price_ht ? `${Number(art.price_ht).toFixed(2)} €` : '—'}</td>
+                        <td>
+                          <button className="catalog-picker-select-btn" onClick={() => onSelect(art)} title="Sélectionner cet article">
+                            <Check size={14} /> Choisir
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return grouped;
+                })()}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="catalog-picker-pagination">
+            <button disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Précédent</button>
+            <span>Page {page + 1} / {totalPages} ({total} résultat{total > 1 ? 's' : ''})</span>
+            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Suivant →</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 // ═══ Modal demande de matériel ═══
 const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
   const [form, setForm] = useState({
@@ -1426,27 +1593,17 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
     priority: 'normal', affaire_id: '', destination: 'Stock Mag Scène',
     destination_other: '', notes: '', ref_code: '',
   });
-  const [catalogSearch, setCatalogSearch] = useState('');
-  const [catalogResults, setCatalogResults] = useState([]);
-  const [showCatalog, setShowCatalog] = useState(false);
-
-  const searchCatalog = useCallback(async (term) => {
-    if (term.length < 2) { setCatalogResults([]); return; }
-    try {
-      const results = await api.getCatalogEquipment({ search: term, limit: 10 });
-      setCatalogResults(Array.isArray(results) ? results : results?.data || []);
-    } catch { setCatalogResults([]); }
-  }, []);
+  const [showCatalogPicker, setShowCatalogPicker] = useState(false);
 
   const handleCatalogSelect = (item) => {
     setForm(f => ({
       ...f,
-      article: item.name || item.designation || item.label || '',
-      ref_code: item.reference || item.ref_code || '',
+      article: item.designation || item.name || '',
+      ref_code: item.supplier_ref || item.reference || '',
       supplier_name: item.supplier_name || item.brand || f.supplier_name,
+      supplier_id: item.supplier_id ? String(item.supplier_id) : f.supplier_id,
     }));
-    setShowCatalog(false);
-    setCatalogSearch('');
+    setShowCatalogPicker(false);
   };
 
   const handleSupplierChange = (supplierId) => {
@@ -1468,27 +1625,10 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
               <div className="article-input-group">
                 <input type="text" value={form.article} onChange={e => setForm(f => ({ ...f, article: e.target.value }))} 
                   placeholder="Nom de l'article" />
-                <button type="button" className="catalog-search-btn" onClick={() => setShowCatalog(!showCatalog)} title="Chercher dans catalogue">
+                <button type="button" className="catalog-search-btn" onClick={() => setShowCatalogPicker(true)} title="Chercher dans les catalogues fournisseurs">
                   <Layers size={14} /> Catalogue
                 </button>
               </div>
-              {showCatalog && (
-                <div className="catalog-search-panel">
-                  <input type="text" placeholder="Rechercher dans le catalogue..." value={catalogSearch}
-                    onChange={e => { setCatalogSearch(e.target.value); searchCatalog(e.target.value); }} autoFocus />
-                  {catalogResults.length > 0 && (
-                    <div className="catalog-results">
-                      {catalogResults.map((item, i) => (
-                        <div key={item.id || i} className="catalog-result-item" onClick={() => handleCatalogSelect(item)}>
-                          <strong>{item.name || item.designation}</strong>
-                          {item.reference && <span className="ref-small">Réf: {item.reference}</span>}
-                          {(item.supplier_name || item.brand) && <span className="supplier-small">{item.supplier_name || item.brand}</span>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
             <div className="form-field">
               <label>Réf. article</label>
@@ -1542,6 +1682,13 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
           </button>
         </div>
       </div>
+
+      {showCatalogPicker && (
+        <CatalogPickerModal
+          onSelect={handleCatalogSelect}
+          onClose={() => setShowCatalogPicker(false)}
+        />
+      )}
     </div>
   );
 });

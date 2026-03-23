@@ -87,7 +87,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
   // Liste des articles avec filtres
   app.get('/api/stock/items', authenticateToken, (req, res) => {
     try {
-      const { search, category_id, low_stock, active_only, supplier_id } = req.query;
+      const { search, category_id, low_stock, active_only, supplier_id, stock_type } = req.query;
       let query = `
         SELECT si.*, 
           COALESCE(sc.name, pc.name) as category_name,
@@ -102,6 +102,10 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       `;
       const params = [];
 
+      if (stock_type) {
+        query += ' AND si.stock_type = ?';
+        params.push(stock_type);
+      }
       if (search) {
         query += ' AND (si.name LIKE ? OR si.reference LIKE ? OR si.description LIKE ?)';
         params.push(`%${search}%`, `%${search}%`, `%${search}%`);
@@ -154,25 +158,27 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
   // Créer un article
   app.post('/api/stock/items', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const { reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo } = req.body;
+      const { reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo, stock_type, location_depot, location_zone, location_floor } = req.body;
       if (!name) return res.status(400).json({ error: 'Le nom est requis' });
 
       // Auto-generate reference if not provided
+      const prefix = stock_type === 'sav' ? 'SAV' : 'STK';
       let ref = reference;
       if (!ref) {
-        const last = db.prepare("SELECT reference FROM stock_items WHERE reference LIKE 'STK-%' ORDER BY reference DESC LIMIT 1").get();
-        const num = last ? parseInt(last.reference.replace('STK-', ''), 10) + 1 : 1;
-        ref = `STK-${String(num).padStart(5, '0')}`;
+        const last = db.prepare(`SELECT reference FROM stock_items WHERE reference LIKE '${prefix}-%' ORDER BY reference DESC LIMIT 1`).get();
+        const num = last ? parseInt(last.reference.replace(`${prefix}-`, ''), 10) + 1 : 1;
+        ref = `${prefix}-${String(num).padStart(5, '0')}`;
       }
 
       const result = db.prepare(`
-        INSERT INTO stock_items (reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO stock_items (reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo, stock_type, location_depot, location_zone, location_floor)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         ref, name, description || null, category_id || null,
         unit || 'u', unit_price || 0, sell_price || 0,
         quantity || 0, min_quantity || 0, location || null,
-        supplier_id || null, notes || null, photo || null
+        supplier_id || null, notes || null, photo || null,
+        stock_type || 'vente', location_depot || '', location_zone || '', location_floor || ''
       );
 
       // Log initial movement if quantity > 0
@@ -207,7 +213,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
   // Modifier un article
   app.put('/api/stock/items/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const { reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo, is_active } = req.body;
+      const { reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo, is_active, stock_type, location_depot, location_zone, location_floor } = req.body;
       if (!name) return res.status(400).json({ error: 'Le nom est requis' });
 
       const existing = db.prepare('SELECT * FROM stock_items WHERE id = ?').get(req.params.id);
@@ -234,7 +240,9 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       db.prepare(`
         UPDATE stock_items SET reference = ?, name = ?, description = ?, category_id = ?, unit = ?, 
           unit_price = ?, sell_price = ?, quantity = ?, min_quantity = ?, location = ?, 
-          supplier_id = ?, notes = ?, photo = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
+          supplier_id = ?, notes = ?, photo = ?, is_active = ?, 
+          stock_type = ?, location_depot = ?, location_zone = ?, location_floor = ?,
+          updated_at = CURRENT_TIMESTAMP 
         WHERE id = ?
       `).run(
         reference || existing.reference, name, description || null, category_id || null,
@@ -242,6 +250,10 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
         newQty, min_quantity ?? existing.min_quantity, location || null,
         supplier_id || null, notes || null, photo || existing.photo,
         is_active !== undefined ? is_active : 1,
+        stock_type || existing.stock_type || 'vente',
+        location_depot !== undefined ? (location_depot || '') : (existing.location_depot || ''),
+        location_zone !== undefined ? (location_zone || '') : (existing.location_zone || ''),
+        location_floor !== undefined ? (location_floor || '') : (existing.location_floor || ''),
         req.params.id
       );
 
@@ -413,12 +425,23 @@ const INVENTORY_CATEGORY_MAP = {
   'consommables':         'Consommables',
   'électronique':         'Électronique',
   'electronique':         'Électronique',
-  'mécanique':            'Mécanique & Outillage',
-  'mecanique':            'Mécanique & Outillage',
-  'outillage':            'Mécanique & Outillage',
+  'mécanique':            'Outillage & EPI',
+  'mecanique':            'Outillage & EPI',
+  'outillage':            'Outillage & EPI',
+  'epi':                  'Outillage & EPI',
   'audiovisuel':          'Audiovisuel',
   'vidéo':                'Audiovisuel',
   'backline':             'Backline',
+  'rideau':               'Rideau-Machinerie',
+  'machinerie':           'Rideau-Machinerie',
+  'rideaux':              'Rideau-Machinerie',
+  'informatique':         'Informatique',
+  'accroche':             'Accroche',
+  'élingues':             'Accroche',
+  'elingues':             'Accroche',
+  'motorisation':         'Motorisation',
+  'moteurs':              'Motorisation',
+  'mobilier':             'Mobilier',
   'sans catégorie':       'Divers',
   'sans categorie':       'Divers',
   'divers':               'Divers',
@@ -448,6 +471,17 @@ const INVENTORY_SUBCATEGORY_MAP = {
   'electronique':         'Pièces détachées',
   'mécanique':            'Pièces mécaniques',
   'mecanique':            'Pièces mécaniques',
+  'epi':                  'Équipements de protection',
+  'rideau':               'Rideaux',
+  'machinerie':           'Machinerie',
+  'rideaux':              'Rideaux',
+  'accroche':             'Élingues & Accessoires',
+  'élingues':             'Élingues',
+  'elingues':             'Élingues',
+  'motorisation':         'Moteurs',
+  'moteurs':              'Moteurs',
+  'mobilier':             'Mobilier scénique',
+  'informatique':         'Informatique',
   'sans catégorie':       'Sans catégorie',
   'sans categorie':       'Sans catégorie',
 };
@@ -595,28 +629,35 @@ export function setupStockImportRoutes(app, authenticateToken, requireAdmin) {
 export function setupStockStatsRoutes(app, authenticateToken) {
   app.get('/api/stock/stats', authenticateToken, (req, res) => {
     try {
-      const totalItems = db.prepare('SELECT COUNT(*) as count FROM stock_items WHERE is_active = 1').get().count;
-      const totalValue = db.prepare('SELECT COALESCE(SUM(quantity * unit_price), 0) as value FROM stock_items WHERE is_active = 1').get().value;
-      const lowStockCount = db.prepare('SELECT COUNT(*) as count FROM stock_items WHERE is_active = 1 AND quantity <= min_quantity AND min_quantity > 0').get().count;
-      const outOfStockCount = db.prepare('SELECT COUNT(*) as count FROM stock_items WHERE is_active = 1 AND quantity = 0').get().count;
+      const { stock_type } = req.query;
+      const typeFilter = stock_type ? ' AND stock_type = ?' : '';
+      const typeParams = stock_type ? [stock_type] : [];
+
+      const totalItems = db.prepare(`SELECT COUNT(*) as count FROM stock_items WHERE is_active = 1${typeFilter}`).get(...typeParams).count;
+      const totalValue = db.prepare(`SELECT COALESCE(SUM(quantity * unit_price), 0) as value FROM stock_items WHERE is_active = 1${typeFilter}`).get(...typeParams).value;
+      const lowStockCount = db.prepare(`SELECT COUNT(*) as count FROM stock_items WHERE is_active = 1 AND quantity <= min_quantity AND min_quantity > 0${typeFilter}`).get(...typeParams).count;
+      const outOfStockCount = db.prepare(`SELECT COUNT(*) as count FROM stock_items WHERE is_active = 1 AND quantity = 0${typeFilter}`).get(...typeParams).count;
       const categoryCount = db.prepare('SELECT COUNT(*) as count FROM stock_categories').get().count;
 
       const recentMovements = db.prepare(`
         SELECT sm.type, COUNT(*) as count, SUM(sm.quantity) as total_qty
         FROM stock_movements sm
+        ${stock_type ? 'JOIN stock_items si2 ON sm.stock_item_id = si2.id' : ''}
         WHERE sm.created_at >= date('now', '-30 days')
+        ${stock_type ? 'AND si2.stock_type = ?' : ''}
         GROUP BY sm.type
-      `).all();
+      `).all(...typeParams);
 
       const topMovedItems = db.prepare(`
         SELECT si.id, si.name, si.reference, COUNT(sm.id) as movement_count
         FROM stock_movements sm
         JOIN stock_items si ON sm.stock_item_id = si.id
         WHERE sm.created_at >= date('now', '-30 days')
+        ${stock_type ? 'AND si.stock_type = ?' : ''}
         GROUP BY si.id
         ORDER BY movement_count DESC
         LIMIT 5
-      `).all();
+      `).all(...typeParams);
 
       const lowStockItems = db.prepare(`
         SELECT si.id, si.name, si.reference, si.quantity, si.min_quantity, si.unit,
@@ -624,9 +665,10 @@ export function setupStockStatsRoutes(app, authenticateToken) {
         FROM stock_items si
         LEFT JOIN stock_categories sc ON si.category_id = sc.id
         WHERE si.is_active = 1 AND si.quantity <= si.min_quantity AND si.min_quantity > 0
+        ${stock_type ? 'AND si.stock_type = ?' : ''}
         ORDER BY (si.quantity * 1.0 / si.min_quantity) ASC
         LIMIT 10
-      `).all();
+      `).all(...typeParams);
 
       res.json({
         totalItems,

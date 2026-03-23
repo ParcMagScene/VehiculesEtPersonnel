@@ -161,5 +161,25 @@ export function registerOrdersMethods(ApiClient) {
         skipCamelCase: true,
       });
     },
+
+    // ── Marques (brands) ──
+    async getBrands() {
+      return this.request('/brands', { skipCamelCase: true });
+    },
+    async getBrandById(id) {
+      return this.request(`/brands/${id}`, { skipCamelCase: true });
+    },
+    async resolveBrand(text) {
+      return this.request('/brands/resolve', { method: 'POST', body: JSON.stringify({ text }), skipCamelCase: true });
+    },
+    async addBrandAlias(brandId, alias) {
+      return this.request(`/brands/${brandId}/aliases`, { method: 'POST', body: JSON.stringify({ alias }), skipCamelCase: true });
+    },
+    async linkBrandIds() {
+      return this.request('/supplier-articles/link-brand-ids', { method: 'POST', skipCamelCase: true });
+    },
+    async applyUnifiedFamily() {
+      return this.request('/supplier-articles/apply-unified-family', { method: 'POST', skipCamelCase: true });
+    },
   });
 }

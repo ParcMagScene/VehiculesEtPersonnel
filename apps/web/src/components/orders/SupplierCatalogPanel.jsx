@@ -63,7 +63,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
       const params = { limit: PAGE_SIZE, offset: page * PAGE_SIZE };
       if (search) params.search = search;
       if (supplierFilter) params.supplier_id = supplierFilter;
-      if (brandFilter) params.brand = brandFilter;
+      if (brandFilter) params.brand_id = brandFilter;
       if (familyFilter) params.family = familyFilter;
       if (categoryFilter) params.category = categoryFilter;
       const data = await api.getSupplierArticles(params);
@@ -146,8 +146,14 @@ export default function SupplierCatalogPanel({ currentUser }) {
     setRefreshingBrands(true);
     try {
       const result = await api.refreshSupplierArticleBrands();
-      toast.success(`Marques mises à jour : ${result.updated} / ${result.scanned} articles`);
+      toast.success(`Marques mises à jour : ${result.brandDetected || result.updated} détectées, ${result.familyMapped || 0} familles mappées (${result.scanned} articles scannés)`);
       loadArticles();
+      // Recharger les filtres pour avoir les nouvelles marques
+      const params = {};
+      if (supplierFilter) params.supplier_id = supplierFilter;
+      api.getSupplierArticleFilters(params).then(f => {
+        setFilterOptions(f || { brands: [], families: [], categories: [] });
+      }).catch(() => {});
     } catch {
       toast.error('Erreur lors de la mise à jour des marques');
     } finally {
@@ -245,7 +251,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
             <EntityCombobox
               value={brandFilter}
               onChange={val => { setBrandFilter(val); resetPage(); }}
-              options={filterOptions.brands.map(b => ({ id: b, name: b }))}
+              options={filterOptions.brands}
               placeholder="Toutes marques"
               allowClear
             />
@@ -299,7 +305,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
                     <tr key={a.id}>
                       <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{a.supplier_ref || '—'}</td>
                       <td>{a.designation}</td>
-                      <td>{a.brand && <span className="catalog-badge">{a.brand}</span>}</td>
+                      <td>{(a.brand_canonical || a.brand) && <span className="catalog-badge">{a.brand_canonical || a.brand}</span>}</td>
                       <td style={{ fontSize: '0.85rem' }}>{a.model || ''}</td>
                       <td style={{ fontSize: '0.85rem' }}>{a.family || ''}</td>
                       <td style={{ textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmtPrice(a.price_ht)}</td>

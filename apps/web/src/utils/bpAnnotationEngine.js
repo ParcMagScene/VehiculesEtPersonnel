@@ -3,34 +3,46 @@
 // Détection familles, kits, couleurs, bloc infos affaire
 // ═══════════════════════════════════════════════════════════════
 
-// ─── Couleurs par famille métier ───
+// ─── Couleurs par famille métier (taxonomie unifiée) ───
 export const FAMILY_COLORS = {
-  sonorisation:    { bg: 'rgba(59, 130, 246, 0.7)',  border: '#3b82f6', label: 'Sonorisation',    emoji: '🔊' },
-  lumiere:         { bg: 'rgba(234, 179, 8, 0.7)',   border: '#eab308', label: 'Lumière',         emoji: '💡' },
-  video:           { bg: 'rgba(236, 72, 153, 0.7)',  border: '#ec4899', label: 'Vidéo',           emoji: '🎥' },
-  structure:       { bg: 'rgba(34, 197, 94, 0.7)',   border: '#22c55e', label: 'Structure',       emoji: '🏗️' },
-  electricite:     { bg: 'rgba(239, 68, 68, 0.7)',   border: '#ef4444', label: 'Distribution Élec.', emoji: '⚡' },
-  regie:           { bg: 'rgba(168, 85, 247, 0.7)',  border: '#a855f7', label: 'Régie',           emoji: '🎛️' },
-  accroche:        { bg: 'rgba(20, 184, 166, 0.7)',  border: '#14b8a6', label: 'Accroche',        emoji: '🔗' },
-  motorisation:    { bg: 'rgba(249, 115, 22, 0.7)',  border: '#f97316', label: 'Motorisation',    emoji: '⚙️' },
-  mobilier:        { bg: 'rgba(107, 114, 128, 0.7)', border: '#6b7280', label: 'Mobilier',        emoji: '🪑' },
-  divers:          { bg: 'rgba(156, 163, 175, 0.6)', border: '#9ca3af', label: 'Divers',          emoji: '📦' },
-  vente:           { bg: 'rgba(251, 191, 36, 0.6)',  border: '#fbbf24', label: 'Vente',           emoji: '🛒' },
+  sonorisation:       { bg: 'rgba(59, 130, 246, 0.7)',  border: '#3b82f6', label: 'Sonorisation',           emoji: '🔊' },
+  eclairage:          { bg: 'rgba(234, 179, 8, 0.7)',   border: '#eab308', label: 'Éclairage',              emoji: '💡' },
+  audiovisuel:        { bg: 'rgba(236, 72, 153, 0.7)',  border: '#ec4899', label: 'Audiovisuel',            emoji: '🎥' },
+  structure:          { bg: 'rgba(34, 197, 94, 0.7)',   border: '#22c55e', label: 'Structure',              emoji: '🏗️' },
+  distribution_elec:  { bg: 'rgba(239, 68, 68, 0.7)',   border: '#ef4444', label: 'Distribution Élec.',     emoji: '⚡' },
+  backline:           { bg: 'rgba(16, 185, 129, 0.7)',  border: '#10b981', label: 'Backline',               emoji: '🎸' },
+  rideau_machinerie:  { bg: 'rgba(236, 72, 153, 0.6)',  border: '#ec4899', label: 'Rideau-Machinerie',      emoji: '🎭' },
+  informatique:       { bg: 'rgba(6, 182, 212, 0.7)',   border: '#06b6d4', label: 'Informatique',           emoji: '💻' },
+  regie:              { bg: 'rgba(168, 85, 247, 0.7)',  border: '#a855f7', label: 'Régie',                  emoji: '🎛️' },
+  accroche:           { bg: 'rgba(20, 184, 166, 0.7)',  border: '#14b8a6', label: 'Accroche',               emoji: '🔗' },
+  motorisation:       { bg: 'rgba(249, 115, 22, 0.7)',  border: '#f97316', label: 'Motorisation',           emoji: '⚙️' },
+  mobilier:           { bg: 'rgba(107, 114, 128, 0.7)', border: '#6b7280', label: 'Mobilier',               emoji: '🪑' },
+  outillage:          { bg: 'rgba(245, 158, 11, 0.7)',  border: '#f59e0b', label: 'Outillage & EPI',        emoji: '🔧' },
+  divers:             { bg: 'rgba(156, 163, 175, 0.6)', border: '#9ca3af', label: 'Divers',                 emoji: '📦' },
+  vente:              { bg: 'rgba(251, 191, 36, 0.6)',  border: '#fbbf24', label: 'Vente',                  emoji: '🛒' },
 };
 
-// ─── Mapping section BP → famille ───
+// ─── Mapping section BP → famille (taxonomie unifiée) ───
 const SECTION_TO_FAMILY = {
   'SONORISATION':    'sonorisation',
-  'LUMIERE':         'lumiere',
-  'LUMIÈRE':         'lumiere',
-  'VIDEO':           'video',
-  'VIDÉO':           'video',
+  'LUMIERE':         'eclairage',
+  'LUMIÈRE':         'eclairage',
+  'ÉCLAIRAGE':       'eclairage',
+  'ECLAIRAGE':       'eclairage',
+  'VIDEO':           'audiovisuel',
+  'VIDÉO':           'audiovisuel',
+  'AUDIOVISUEL':     'audiovisuel',
   'STRUCTURE':       'structure',
-  'ELECTRICITE':     'electricite',
-  'ÉLECTRICITÉ':     'electricite',
-  'CÂBLAGE':         'electricite',
-  'CABLAGE':         'electricite',
-  'DISTRIBUTION':    'electricite',
+  'ELECTRICITE':     'distribution_elec',
+  'ÉLECTRICITÉ':     'distribution_elec',
+  'CÂBLAGE':         'distribution_elec',
+  'CABLAGE':         'distribution_elec',
+  'DISTRIBUTION':    'distribution_elec',
+  'BACKLINE':        'backline',
+  'RIDEAU':          'rideau_machinerie',
+  'RIDEAU-MACHINERIE': 'rideau_machinerie',
+  'MACHINERIE':      'rideau_machinerie',
+  'INFORMATIQUE':    'informatique',
   'REGIE':           'regie',
   'RÉGIE':           'regie',
   'REGIE/PLATEAU':   'regie',
@@ -40,8 +52,8 @@ const SECTION_TO_FAMILY = {
   'MOBILIER':        'mobilier',
   'PRATICABLE':      'structure',
   'PRATICABLES':     'structure',
+  'OUTILLAGE':       'outillage',
   'DIVERS':          'divers',
-  'AUDIOVISUEL':     'video',
   'DIFFUSION':       'sonorisation',
   'VENTE':           'vente',
   'VTE':             'vente',
@@ -49,14 +61,15 @@ const SECTION_TO_FAMILY = {
 
 // ─── Mots-clés fallback par famille ───
 const FAMILY_KEYWORDS = {
-  sonorisation: [/\benceinte\b/i, /\bhp\b/i, /\bsub\b/i, /\bbass\b/i, /\bconsole\s*(son|audio|mix)/i, /\bmicro/i, /\bampli/i, /\bhaut.?parleur/i, /\bdi\s*box/i, /\bspl/i, /\bd[&b]b/i, /\bl[-\s]?acoustics/i, /\bsennheiser/i, /\bshure/i, /\byamaha.*cl|tf|pm/i, /\bnexo/i],
-  lumiere:      [/\bprojecteur/i, /\bspot/i, /\bwash/i, /\bbeam/i, /\bled\b/i, /\blyre/i, /\bpar\s*\d/i, /\bfresnel/i, /\bdécoupe/i, /\bstrobo/i, /\bgobo/i, /\bdimmer/i, /\bgradateur/i, /\bclay\s*paky/i, /\brobe/i, /\bmartin/i, /\bayrton/i, /\bconsole\s*(lumi|éclai|dmx)/i, /\bma\s*lighting/i, /\bgrand\s*ma/i],
-  video:        [/\bvid[eé]o/i, /\bécran/i, /\bprojecteur\s*vid/i, /\bbarco/i, /\bpanasonic/i, /\bcaméra/i, /\bswitch.*vid/i, /\bmatrice.*vid/i, /\bled\s*wall/i, /\brégie\s*vid/i],
-  structure:    [/\bpoutre/i, /\btruss/i, /\bpont/i, /\btotems?\b/i, /\bpied/i, /\bpraticable/i, /\bpodium/i, /\bscène\b/i, /\bbase.*roulante/i, /\bembas/i, /\bsleeve/i, /\bprolyte/i],
-  electricite:  [/\bcoffret/i, /\btableau\s*(elec|dist)/i, /\bcâble\s*(force|alim|elec)/i, /\brallong/i, /\bmultipr/i, /\bpower/i, /\bsocapex/i, /\bpowercon/i, /\bcontacteur/i, /\bdisjoncteur/i],
-  regie:        [/\brégie/i, /\btable\s*(régie|mixage)/i, /\bflight\s*case\s*régie/i],
-  accroche:     [/\bélingue/i, /\bmanille/i, /\bpalan/i, /\bchain\s*hoist/i, /\bcrochet/i, /\bpince/i, /\bcoupler/i],
-  motorisation: [/\bmoteur/i, /\bpalan/i, /\btreuil/i, /\bchain.*motor/i, /\bverlinde/i],
+  sonorisation:      [/\benceinte\b/i, /\bhp\b/i, /\bsub\b/i, /\bbass\b/i, /\bconsole\s*(son|audio|mix)/i, /\bmicro/i, /\bampli/i, /\bhaut.?parleur/i, /\bdi\s*box/i, /\bspl/i, /\bd[&b]b/i, /\bl[-\s]?acoustics/i, /\bsennheiser/i, /\bshure/i, /\byamaha.*cl|tf|pm/i, /\bnexo/i],
+  eclairage:         [/\bprojecteur/i, /\bspot/i, /\bwash/i, /\bbeam/i, /\bled\b/i, /\blyre/i, /\bpar\s*\d/i, /\bfresnel/i, /\bdécoupe/i, /\bstrobo/i, /\bgobo/i, /\bdimmer/i, /\bgradateur/i, /\bclay\s*paky/i, /\brobe/i, /\bmartin/i, /\bayrton/i, /\bconsole\s*(lumi|éclai|dmx)/i, /\bma\s*lighting/i, /\bgrand\s*ma/i],
+  audiovisuel:       [/\bvid[eé]o/i, /\bécran/i, /\bprojecteur\s*vid/i, /\bbarco/i, /\bpanasonic/i, /\bcaméra/i, /\bswitch.*vid/i, /\bmatrice.*vid/i, /\bled\s*wall/i, /\brégie\s*vid/i],
+  structure:         [/\bpoutre/i, /\btruss/i, /\bpont/i, /\btotems?\b/i, /\bpied/i, /\bpraticable/i, /\bpodium/i, /\bscène\b/i, /\bbase.*roulante/i, /\bembas/i, /\bsleeve/i, /\bprolyte/i],
+  distribution_elec: [/\bcoffret/i, /\btableau\s*(elec|dist)/i, /\bcâble\s*(force|alim|elec)/i, /\brallong/i, /\bmultipr/i, /\bpower/i, /\bsocapex/i, /\bpowercon/i, /\bcontacteur/i, /\bdisjoncteur/i],
+  backline:          [/\bguitare/i, /\bbasse\b/i, /\bbatterie\b/i, /\bclavier/i, /\bpiano/i, /\bpupitre/i, /\bstandard\s*back/i],
+  regie:             [/\brégie/i, /\btable\s*(régie|mixage)/i, /\bflight\s*case\s*régie/i],
+  accroche:          [/\bélingue/i, /\bmanille/i, /\bpalan/i, /\bchain\s*hoist/i, /\bcrochet/i, /\bpince/i, /\bcoupler/i],
+  motorisation:      [/\bmoteur/i, /\bpalan/i, /\btreuil/i, /\bchain.*motor/i, /\bverlinde/i],
 };
 
 /**
@@ -193,7 +206,7 @@ export function annotateBPItems(bpItems) {
   // Regrouper par section
   const sectionsMap = {};
   // Ajouter les sections connues même sans item
-  const knownSections = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'VIDEO', 'VIDÉO', 'STRUCTURE', 'ÉLECTRICITÉ', 'RÉGIE', 'ACCROCHE', 'MOTORISATION', 'MOBILIER', 'VENTE'];
+  const knownSections = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'ÉCLAIRAGE', 'VIDEO', 'VIDÉO', 'AUDIOVISUEL', 'STRUCTURE', 'ÉLECTRICITÉ', 'ELECTRICITE', 'BACKLINE', 'RIDEAU-MACHINERIE', 'INFORMATIQUE', 'RÉGIE', 'ACCROCHE', 'MOTORISATION', 'MOBILIER', 'OUTILLAGE', 'DIVERS', 'VENTE'];
   for (const secName of knownSections) {
     sectionsMap[secName] = { name: secName, family: null, color: null, items: [] };
   }
@@ -212,14 +225,18 @@ export function annotateBPItems(bpItems) {
   for (const sec of sections) {
     const name = sec.name.toLowerCase();
     if (name.includes('sonorisation') || name.includes('diffusion')) sec.color = FAMILY_COLORS.sonorisation;
-    else if (name.includes('lumière') || name.includes('lumiere') || name.includes('eclairage') || name.includes('éclairage')) sec.color = FAMILY_COLORS.lumiere;
-    else if (name.includes('vidéo') || name.includes('video') || name.includes('audiovisuel')) sec.color = FAMILY_COLORS.video;
+    else if (name.includes('lumière') || name.includes('lumiere') || name.includes('eclairage') || name.includes('éclairage')) sec.color = FAMILY_COLORS.eclairage;
+    else if (name.includes('vidéo') || name.includes('video') || name.includes('audiovisuel')) sec.color = FAMILY_COLORS.audiovisuel;
     else if (name.includes('structure') || name.includes('praticable') || name.includes('podium') || name.includes('scène') || name.includes('scene')) sec.color = FAMILY_COLORS.structure;
-    else if (name.includes('élec') || name.includes('elec') || name.includes('câbl') || name.includes('cabl') || name.includes('distribution') || name.includes('puissance')) sec.color = FAMILY_COLORS.electricite;
+    else if (name.includes('élec') || name.includes('elec') || name.includes('câbl') || name.includes('cabl') || name.includes('distribution') || name.includes('puissance')) sec.color = FAMILY_COLORS.distribution_elec;
+    else if (name.includes('backline') || name.includes('guitare') || name.includes('batterie')) sec.color = FAMILY_COLORS.backline;
+    else if (name.includes('rideau') || name.includes('machinerie')) sec.color = FAMILY_COLORS.rideau_machinerie;
+    else if (name.includes('informatique') || name.includes('ordinateur')) sec.color = FAMILY_COLORS.informatique;
     else if (name.includes('régi') || name.includes('regi') || name.includes('plateau')) sec.color = FAMILY_COLORS.regie;
     else if (name.includes('accroche') || name.includes('rigging') || name.includes('élingue') || name.includes('elingue')) sec.color = FAMILY_COLORS.accroche;
     else if (name.includes('motorisation') || name.includes('moteur') || name.includes('levage')) sec.color = FAMILY_COLORS.motorisation;
     else if (name.includes('mobilier') || name.includes('meuble') || name.includes('décor') || name.includes('decor')) sec.color = FAMILY_COLORS.mobilier;
+    else if (name.includes('outillage') || name.includes('epi')) sec.color = FAMILY_COLORS.outillage;
     else if (name.includes('vente') || name.includes('vte')) sec.color = FAMILY_COLORS.vente;
     else if (!sec.color) {
       // Générer une couleur unique et distincte par section inconnue

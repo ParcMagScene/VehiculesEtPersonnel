@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, Filter,
   TrendingUp, TrendingDown, AlertTriangle, BarChart3, ArrowUpCircle, ArrowDownCircle,
   RotateCcw, Layers, Tag, MapPin, Euro, Hash, X, Check, ChevronDown,
-  Archive, Eye, FolderOpen, Upload, FileText, AlertCircle } from 'lucide-react';
+  Archive, Eye, FolderOpen, Upload, FileText, AlertCircle, ExternalLink, Map } from 'lucide-react';
 import api from '../../utils/api';
 import { formatCurrency, formatDateTime as formatDate, formatDateSimple as formatDateShort } from '../../utils/formatUtils';
 import ConfirmDialog from '../ConfirmDialog';
@@ -10,6 +10,8 @@ import './StockPanel.css';
 import { useToast } from '../../hooks/useToast';
 import EntityCombobox from '../ui/EntityCombobox';
 import { extractTextFromPDF } from '../../utils/pdfParser';
+import LocationSelector from '../vehicles/LocationSelector';
+import DepotMap from '../vehicles/DepotMap';
 
 // ═══ Constantes ═══
 const MOVEMENT_TYPES = {
@@ -29,54 +31,61 @@ const CATEGORY_COLORS = [
 const CATEGORY_ICONS = ['📦', '🔧', '⚡', '🔩', '🛠️', '📐', '🧰', '💡', '🔌', '🧲', '🪛', '⛓️'];
 
 // ═══ Composant Principal ═══
-function StockPanel({ currentUser }) {
+function StockPanel({ currentUser, stockType = 'vente', showManagement = false, onCloseManagement }) {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState(null);
-  const [movements, setMovements] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [movements, setMovements] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [lowStockFilter, setLowStockFilter] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // Formulaires
   const [showItemForm, setShowItemForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showMovementForm, setShowMovementForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [dialogItem, setDialogItem] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showImport, setShowImport] = useState(false);
+  const [depotZones, setDepotZones] = useState(null);
+  const [allDepotZones, setAllDepotZones] = useState(null);
+
+  const isAdmin = currentUser?.isAdmin === true;
+  const clickTimerRef = useRef(null);
 
   // ═══ Chargement des données ═══
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { stock_type: stockType };
       if (searchTerm) params.search = searchTerm;
       if (categoryFilter) params.category_id = categoryFilter;
       if (lowStockFilter) params.low_stock = 'true';
 
-      const [itemsData, catsData, statsData, suppData] = await Promise.all([
+      const [itemsData, catsData, statsData, suppData, zonesData, allZonesData] = await Promise.all([
         api.getStockItems(params),
         api.getStockCategories(),
-        api.getStockStats(),
-        api.getSuppliers({}).catch(() => [])
+        api.getStockStats({ stock_type: stockType }),
+        api.getSuppliers({}).catch(() => []),
+        api.getEquipmentDepotZones().catch(() => null),
+        api.getAllDepotZones().catch(() => null),
       ]);
       setItems(itemsData);
       setCategories(catsData);
       setStats(statsData);
       setSuppliers(suppData);
+      setDepotZones(zonesData);
+      setAllDepotZones(allZonesData);
     } catch (error) {
       console.error('Erreur chargement stock:', error);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, categoryFilter, lowStockFilter]);
+  }, [stockType, searchTerm, categoryFilter, lowStockFilter]);
 
   const loadMovements = useCallback(async (itemId) => {
     try {
@@ -90,19 +99,21 @@ function StockPanel({ currentUser }) {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => {
-    if (activeTab === 'movements') loadMovements();
-  }, [activeTab, loadMovements]);
-
-  const isAdmin = currentUser?.role === 'admin';
 
   // ═══ Handlers Articles ═══
   const handleSaveItem = async (data) => {
     try {
+      const payload = { ...data, stock_type: stockType };
       if (editingItem) {
-        await api.updateStockItem(editingItem.id, data);
+        const updated = await api.updateStockItem(editingItem.id, payload);
+        setShowItemForm(false);
+        setEditingItem(null);
+        if (selectedItem?.id === updated.id) setSelectedItem(updated);
+        if (dialogItem?.id === updated.id) setDialogItem(updated);
       } else {
-        await api.createStockItem(data);
+        await api.createStockItem(payload);
+        setShowItemForm(false);
+        setEditingItem(null);
       }
       setShowItemForm(false);
       setEditingItem(null);
@@ -165,44 +176,29 @@ function StockPanel({ currentUser }) {
       await api.createStockMovement(data);
       setShowMovementForm(false);
       loadData();
-      if (activeTab === 'movements') loadMovements();
       if (selectedItem) {
         const updated = await api.getStockItem(selectedItem.id);
         setSelectedItem(updated);
         loadMovements(selectedItem.id);
+      }
+      if (dialogItem) {
+        const updated = await api.getStockItem(dialogItem.id);
+        setDialogItem(updated);
+        loadMovements(dialogItem.id);
       }
     } catch (error) {
       toast.error('Erreur: ' + error.message);
     }
   };
 
-  // ═══ Onglets ═══
-  const tabs = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: BarChart3 },
-    { id: 'items', label: 'Articles', icon: Package },
-    { id: 'movements', label: 'Mouvements', icon: TrendingUp },
-    { id: 'categories', label: 'Catégories', icon: Layers },
-  ];
-
   // ═══ Rendu ═══
   return (
     <div className="stock-panel">
-      {/* Header — unified tabs + stats */}
+      {/* Header — stats uniquement (plus de tabs) */}
       <div className="stock-header">
-        <div className="stock-tabs">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                className={`stock-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => { setActiveTab(tab.id); setSelectedItem(null); }}
-              >
-                <Icon size={16} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        <div className="stock-header-title">
+          <Package size={18} />
+          <span>{stockType === 'sav' ? 'Stock SAV (pièces)' : 'Stock Vente'}</span>
         </div>
         {stats && (
           <div className="stock-header-stats">
@@ -212,19 +208,29 @@ function StockPanel({ currentUser }) {
         )}
       </div>
 
-      {/* Content */}
-      <div className="stock-content">
-        {loading && !items.length ? (
-          <div className="stock-loading">
-            <div className="loading-spinner" />
-            <p>Chargement du stock...</p>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'dashboard' && (
-              <DashboardView stats={stats} items={items} onSelectItem={(item) => { setSelectedItem(item); setActiveTab('items'); }} />
-            )}
-            {activeTab === 'items' && !selectedItem && (
+      {/* Content wrapper — table + slide panel côte à côte */}
+      <div className="stock-content-wrapper">
+        <div className="stock-content-inner">
+          <div className="stock-content">
+            {loading && !items.length ? (
+              <div className="stock-loading">
+                <div className="loading-spinner" />
+                <p>Chargement du stock...</p>
+              </div>
+            ) : dialogItem ? (
+              <ItemDetailView
+                item={dialogItem}
+                movements={movements}
+                onBack={() => setDialogItem(null)}
+                onEdit={() => { setEditingItem(dialogItem); setShowItemForm(true); }}
+                onDelete={() => handleDeleteItem(dialogItem)}
+                onMovement={() => setShowMovementForm(true)}
+                loadMovements={loadMovements}
+                isAdmin={isAdmin}
+                depotZones={depotZones}
+                allDepotZones={allDepotZones}
+              />
+            ) : (
               <ItemsListView
                 items={items}
                 categories={categories}
@@ -234,42 +240,43 @@ function StockPanel({ currentUser }) {
                 onCategoryChange={setCategoryFilter}
                 lowStockFilter={lowStockFilter}
                 onLowStockChange={setLowStockFilter}
-                onSelect={setSelectedItem}
+                selectedItemId={selectedItem?.id}
+                onSelect={(item) => {
+                  clearTimeout(clickTimerRef.current);
+                  clickTimerRef.current = setTimeout(() => {
+                    if (selectedItem?.id === item.id) {
+                      setSelectedItem(null);
+                    } else {
+                      setSelectedItem(item);
+                      api.getStockItem(item.id).then(detail => setSelectedItem(detail)).catch(() => {});
+                    }
+                  }, 200);
+                }}
+                onDoubleClick={(item) => {
+                  clearTimeout(clickTimerRef.current);
+                  setDialogItem(item);
+                  api.getStockItem(item.id).then(detail => setDialogItem(detail)).catch(() => {});
+                }}
                 onAdd={() => { setEditingItem(null); setShowItemForm(true); }}
                 onImport={() => setShowImport(true)}
                 isAdmin={isAdmin}
               />
             )}
-            {activeTab === 'items' && selectedItem && (
-              <ItemDetailView
-                item={selectedItem}
-                movements={movements}
-                onBack={() => setSelectedItem(null)}
-                onEdit={() => { setEditingItem(selectedItem); setShowItemForm(true); }}
-                onDelete={() => handleDeleteItem(selectedItem)}
-                onMovement={() => setShowMovementForm(true)}
-                loadMovements={loadMovements}
-                isAdmin={isAdmin}
-              />
-            )}
-            {activeTab === 'movements' && (
-              <MovementsView
-                movements={movements}
-                items={items}
-                onAddMovement={() => setShowMovementForm(true)}
-                onRefresh={() => loadMovements()}
-              />
-            )}
-            {activeTab === 'categories' && (
-              <CategoriesView
-                categories={categories}
-                onAdd={() => { setEditingCategory(null); setShowCategoryForm(true); }}
-                onEdit={(cat) => { setEditingCategory(cat); setShowCategoryForm(true); }}
-                onDelete={handleDeleteCategory}
-                isAdmin={isAdmin}
-              />
-            )}
-          </>
+          </div>
+        </div>
+
+        {/* Volet de détail rapide (clic simple) */}
+        {!dialogItem && (
+          <StockSlidePanel
+            item={selectedItem}
+            onClose={() => setSelectedItem(null)}
+            onOpenDialog={(item) => { setSelectedItem(null); setDialogItem(item); }}
+            onEdit={(item) => { setEditingItem(item); setShowItemForm(true); }}
+            onMovement={() => setShowMovementForm(true)}
+            isAdmin={isAdmin}
+            depotZones={depotZones}
+            allDepotZones={allDepotZones}
+          />
         )}
       </div>
 
@@ -279,6 +286,8 @@ function StockPanel({ currentUser }) {
           item={editingItem}
           categories={categories}
           suppliers={suppliers}
+          depotZones={depotZones}
+          allDepotZones={allDepotZones}
           onSave={handleSaveItem}
           onClose={() => { setShowItemForm(false); setEditingItem(null); }}
         />
@@ -294,7 +303,7 @@ function StockPanel({ currentUser }) {
       {showMovementForm && (
         <MovementFormModal
           items={items}
-          preselectedItem={selectedItem}
+          preselectedItem={selectedItem || dialogItem}
           onSave={handleCreateMovement}
           onClose={() => setShowMovementForm(false)}
         />
@@ -306,12 +315,139 @@ function StockPanel({ currentUser }) {
           onClose={() => setShowImport(false)}
         />
       )}
+
+      {/* Panneau Gestion Catégories (via bouton Gestion du header) */}
+      {showManagement && (
+        <div className="stock-management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement?.()}>
+          <div className="stock-management-panel" onClick={e => e.stopPropagation()}>
+            <div className="stock-management-header">
+              <h2><Layers size={20} /> Gestion des catégories</h2>
+              <button onClick={onCloseManagement}><X size={20} /></button>
+            </div>
+            <CategoriesView
+              categories={categories}
+              onAdd={() => { setEditingCategory(null); setShowCategoryForm(true); }}
+              onEdit={(cat) => { setEditingCategory(cat); setShowCategoryForm(true); }}
+              onDelete={handleDeleteCategory}
+              isAdmin={isAdmin}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Dashboard
+// Volet latéral (Slide Panel)
+// ═══════════════════════════════════════════════════════════════
+const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAdmin, depotZones, allDepotZones }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (item) {
+      setIsVisible(true);
+      setIsClosing(false);
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsOpen(true));
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      setIsOpen(false);
+      setIsClosing(true);
+      const timer = setTimeout(() => { setIsVisible(false); setIsClosing(false); }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [item]);
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    setIsClosing(true);
+    setTimeout(() => onClose(), 350);
+  }, [onClose]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        const row = e.target.closest('.stock-row');
+        if (!row) handleClose();
+      }
+    };
+    if (item && isVisible) {
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }
+  }, [item, isVisible, handleClose]);
+
+  if (!isVisible && !item) return null;
+
+  const current = item || {};
+  const isLow = current.min_quantity > 0 && current.quantity <= current.min_quantity;
+  const isOut = current.quantity === 0;
+  const locationLabel = current.location_zone
+    ? `${current.location_depot ? `D${current.location_depot} — ` : ''}${current.location_zone}${current.location_floor ? ` (${current.location_floor})` : ''}`
+    : current.location || null;
+
+  return (
+    <div className={`stock-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
+      <div className="stock-slide-header">
+        <div className="stock-slide-title-row">
+          <span className="stock-slide-name">{current.name}</span>
+          <span className="stock-slide-ref">{current.reference}</span>
+        </div>
+        <button className="stock-slide-close" onClick={handleClose} title="Fermer"><X size={18} /></button>
+      </div>
+      <div className="stock-slide-body">
+        {current.category_name && (
+          <span className="stock-cat-badge" style={current.category_color ? { background: current.category_color + '20', color: current.category_color, borderColor: current.category_color } : undefined}>
+            {current.category_icon} {current.category_name}
+          </span>
+        )}
+        <div className="stock-slide-qty">
+          <span className={`stock-qty-big ${isOut ? 'rupture' : isLow ? 'low' : 'ok'}`}>
+            {current.quantity} {current.unit}
+          </span>
+          {isLow && !isOut && <span className="qty-badge warning">Stock bas</span>}
+          {isOut && <span className="qty-badge danger">Rupture</span>}
+          {current.min_quantity > 0 && <small className="stock-slide-min">Seuil : {current.min_quantity} {current.unit}</small>}
+        </div>
+        <div className="stock-slide-prices">
+          <div><small>P.U. Achat</small><span>{formatCurrency(current.unit_price)}</span></div>
+          <div><small>P.U. Vente</small><span>{formatCurrency(current.sell_price)}</span></div>
+          <div><small>Valeur stock</small><span>{formatCurrency(current.quantity * (current.unit_price || 0))}</span></div>
+        </div>
+        {locationLabel && (
+          <div className="stock-slide-location">
+            <MapPin size={14} /> {locationLabel}
+          </div>
+        )}
+        {current.supplier_name && (
+          <div className="stock-slide-supplier"><Hash size={14} /> {current.supplier_name}</div>
+        )}
+        {current.notes && <p className="stock-slide-notes">{current.notes}</p>}
+      </div>
+      <div className="stock-slide-footer">
+        <button className="stock-btn-secondary" onClick={() => onMovement()} title="Mouvement">
+          <TrendingUp size={14} /> Mouvement
+        </button>
+        {isAdmin && (
+          <button className="stock-btn-secondary" onClick={() => onEdit(current)} title="Modifier">
+            <Edit2 size={14} />
+          </button>
+        )}
+        <button className="stock-slide-open-btn" onClick={() => onOpenDialog(current)}>
+          <ExternalLink size={14} /> Ouvrir la fiche
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// Dashboard (exporté pour InventoryPanel)
 // ═══════════════════════════════════════════════════════════════
 function DashboardView({ stats, items, onSelectItem }) {
   if (!stats) return <div className="stock-empty">Chargement des statistiques...</div>;
@@ -423,7 +559,7 @@ function DashboardView({ stats, items, onSelectItem }) {
 // ═══════════════════════════════════════════════════════════════
 // Liste des Articles
 // ═══════════════════════════════════════════════════════════════
-function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, onSelect, onAdd, onImport, isAdmin }) {
+function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, selectedItemId, onSelect, onDoubleClick, onAdd, onImport, isAdmin }) {
   return (
     <div className="stock-items-view">
       {/* Toolbar */}
@@ -493,11 +629,13 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
               {items.map(item => {
                 const isLow = item.min_quantity > 0 && item.quantity <= item.min_quantity;
                 const isOut = item.quantity === 0;
+                const isSelected = selectedItemId === item.id;
                 return (
                   <tr
                     key={item.id}
-                    className={`stock-row ${isOut ? 'out-of-stock' : isLow ? 'low-stock' : ''}`}
+                    className={`stock-row ${isOut ? 'out-of-stock' : isLow ? 'low-stock' : ''} ${isSelected ? 'selected' : ''}`}
                     onClick={() => onSelect(item)}
+                    onDoubleClick={() => onDoubleClick?.(item)}
                   >
                     <td className="stock-ref">{item.reference}</td>
                     <td className="stock-name">
@@ -520,7 +658,11 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
                     <td>{formatCurrency(item.unit_price)}</td>
                     <td>{formatCurrency(item.sell_price)}</td>
                     <td className="stock-value">{formatCurrency(item.quantity * (item.unit_price || 0))}</td>
-                    <td className="stock-location">{item.location || '—'}</td>
+                    <td className="stock-location">
+                      {item.location_zone
+                        ? `${item.location_depot ? `D${item.location_depot}–` : ''}${item.location_zone}`
+                        : item.location || '—'}
+                    </td>
                   </tr>
                 );
               })}
@@ -539,7 +681,8 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
 // ═══════════════════════════════════════════════════════════════
 // Détail d'un article
 // ═══════════════════════════════════════════════════════════════
-function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement, loadMovements, isAdmin }) {
+function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement, loadMovements, isAdmin, depotZones, allDepotZones }) {
+  const [showMap, setShowMap] = useState(false);
   useEffect(() => {
     loadMovements(item.id);
   }, [item.id, loadMovements]);
@@ -615,13 +758,35 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
             </div>
             <div className="stock-detail-field">
               <label><MapPin size={14} /> Emplacement</label>
-              <span>{item.location || '—'}</span>
+              <span>
+                {(item.location_zone)
+                  ? <>
+                      {item.location_depot ? `D${item.location_depot} — ` : ''}{item.location_zone}{item.location_floor ? ` (${item.location_floor})` : ''}
+                      {(depotZones || allDepotZones) && (
+                        <button className="stock-zone-map-btn" onClick={() => setShowMap(!showMap)} title="Voir sur le plan">
+                          <Map size={13} /> Plan
+                        </button>
+                      )}
+                    </>
+                  : item.location || '—'}
+              </span>
             </div>
             <div className="stock-detail-field">
               <label><Hash size={14} /> Fournisseur</label>
               <span>{item.supplier_name || '—'}</span>
             </div>
           </div>
+
+          {showMap && item.location_zone && (() => {
+            const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
+            const depotData = depotsList.find(d => String(d.id || d.depotId) === String(item.location_depot)) || depotsList[0];
+            if (!depotData) return null;
+            return (
+              <div className="stock-detail-map">
+                <DepotMap zones={depotData} selectedZone={item.location_zone} onZoneSelect={() => {}} onZoneFilter={() => {}} compact />
+              </div>
+            );
+          })()}
 
           {item.notes && (
             <div className="stock-detail-notes">
@@ -803,7 +968,9 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
 // ═══════════════════════════════════════════════════════════════
 // Modal Formulaire Article
 // ═══════════════════════════════════════════════════════════════
-function ItemFormModal({ item, categories, suppliers, onSave, onClose }) {
+function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones, onSave, onClose }) {
+  const [showMap, setShowMap] = useState(false);
+  const [mapDepotIdx, setMapDepotIdx] = useState(0);
   const [form, setForm] = useState({
     reference: item?.reference || '',
     name: item?.name || '',
@@ -815,6 +982,9 @@ function ItemFormModal({ item, categories, suppliers, onSave, onClose }) {
     quantity: item?.quantity || 0,
     min_quantity: item?.min_quantity || 0,
     location: item?.location || '',
+    location_depot: item?.location_depot || '',
+    location_zone: item?.location_zone || '',
+    location_floor: item?.location_floor || '',
     supplier_id: item?.supplier_id || '',
     notes: item?.notes || '',
   });
@@ -901,10 +1071,67 @@ function ItemFormModal({ item, categories, suppliers, onSave, onClose }) {
               <input type="number" step="0.01" min="0" value={form.min_quantity} onChange={(e) => handleChange('min_quantity', e.target.value)} />
             </div>
           </div>
-          <div className="stock-form-field">
-            <label>Emplacement</label>
-            <input type="text" value={form.location} onChange={(e) => handleChange('location', e.target.value)} placeholder="ex: Étagère A3, Atelier B..." />
-          </div>
+          {(depotZones || allDepotZones) ? (
+            <div className="stock-form-field stock-form-full">
+              <LocationSelector
+                zones={depotZones}
+                depots={allDepotZones}
+                value={{
+                  location_depot: form.location_depot,
+                  location_zone: form.location_zone,
+                  location_floor: form.location_floor,
+                }}
+                onChange={(loc) => setForm(f => ({
+                  ...f,
+                  location_depot: loc.location_depot || '',
+                  location_zone: loc.location_zone || '',
+                  location_floor: loc.location_floor || '',
+                }))}
+              />
+              <button type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)}>
+                <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
+              </button>
+              {showMap && (() => {
+                const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
+                const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
+                if (!currentDepotData) return null;
+                return (
+                  <div className="stock-form-map-container">
+                    {depotsList.length > 1 && (
+                      <div className="stock-form-map-tabs">
+                        {depotsList.map((d, i) => (
+                          <button key={d.id || i} type="button" className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
+                            {d.name || `Dépôt ${d.id || i + 1}`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <DepotMap
+                      zones={currentDepotData}
+                      selectedZone={form.location_zone}
+                      onZoneSelect={(zoneId) => {
+                        if (!zoneId) return;
+                        const zoneObj = currentDepotData.zones?.find(z => z.id === zoneId);
+                        setForm(f => ({
+                          ...f,
+                          location_depot: currentDepotData.id || currentDepotData.depotId || '',
+                          location_zone: zoneId,
+                          location_floor: zoneObj?.floor || '',
+                        }));
+                      }}
+                      onZoneFilter={() => {}}
+                      compact
+                    />
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
+            <div className="stock-form-field">
+              <label>Emplacement</label>
+              <input type="text" value={form.location} onChange={(e) => handleChange('location', e.target.value)} placeholder="ex: Étagère A3, Atelier B..." />
+            </div>
+          )}
           <div className="stock-form-field">
             <label>Notes</label>
             <textarea value={form.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} />
@@ -1217,7 +1444,7 @@ function parseInventoryPDF(text) {
     'Câbles', 'DICJONTEUR', 'ELEC', 'Filtres',
     'Gaffer & Adhésifs', 'Gaffer & Adhés',
     'Lampes', 'Mousse & Protection', 'Mousse & Prote',
-    'Mécanique', 'SON', 'STRUCTURE', 'Sans catégorie', 'Électronique',
+    'Outillage', 'EPI', 'SON', 'STRUCTURE', 'Sans catégorie', 'Électronique',
   ];
   const LOCATIONS = ['Atelier', 'Sans emplacement', 'Stock Pièces', 'Stock Vente'];
   const SKIP_RE = /^(Rapport|Inventaire|Résumé|Synthèse|Catégorie\s|Référence\s|Détail|Page\s+\d|\d+\s+articles$)/i;

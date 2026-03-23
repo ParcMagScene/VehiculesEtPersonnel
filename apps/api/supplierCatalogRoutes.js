@@ -6,6 +6,7 @@
 
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
+import { normalizeBrand, enrichArticle, resolveUnifiedFamily, linkBrandIds, applyUnifiedFamilyBatch, invalidateBrandCache, listBrandsWithStats } from './brandHelpers.js';
 
 // ============ ARTICLES FOURNISSEURS ============
 
@@ -15,22 +16,31 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   app.get('/api/supplier-articles', authenticateToken, (req, res) => {
     try {
       const { supplier_id, brand, family, subfamily, category, search, import_id, limit, offset } = req.query;
-      let query = `SELECT sa.*, s.name as supplier_name
+      let query = `SELECT sa.*, s.name as supplier_name,
+          b.name as brand_canonical, b.slug as brand_slug
         FROM supplier_articles sa
         LEFT JOIN suppliers s ON sa.supplier_id = s.id
+        LEFT JOIN brands b ON sa.brand_id = b.id
         WHERE 1=1`;
       const params = [];
 
       if (supplier_id) { query += ' AND sa.supplier_id = ?'; params.push(supplier_id); }
-      if (brand) { query += ' AND sa.brand = ?'; params.push(brand); }
+      if (brand) {
+        // Supporte brand_id (numérique) ou nom texte
+        if (/^\d+$/.test(brand)) {
+          query += ' AND sa.brand_id = ?'; params.push(parseInt(brand));
+        } else {
+          query += ' AND (sa.brand = ? OR b.name = ?)'; params.push(brand, brand);
+        }
+      }
       if (family) { query += ' AND sa.family = ?'; params.push(family); }
       if (subfamily) { query += ' AND sa.subfamily = ?'; params.push(subfamily); }
       if (category) { query += ' AND sa.category = ?'; params.push(category); }
       if (import_id) { query += ' AND sa.import_id = ?'; params.push(import_id); }
       if (search) {
-        query += ' AND (sa.designation LIKE ? OR sa.supplier_ref LIKE ? OR sa.brand LIKE ? OR sa.model LIKE ?)';
+        query += ' AND (sa.designation LIKE ? OR sa.supplier_ref LIKE ? OR sa.brand LIKE ? OR sa.model LIKE ? OR s.name LIKE ?)';
         const s = `%${search}%`;
-        params.push(s, s, s, s);
+        params.push(s, s, s, s, s);
       }
 
       // Count total
@@ -65,8 +75,14 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
         JOIN suppliers s ON sa.supplier_id = s.id
         ORDER BY s.name
       `).all();
-      const brands = db.prepare(`SELECT DISTINCT brand FROM supplier_articles${cond}${and} brand IS NOT NULL ORDER BY brand`)
-        .all(...params).map(r => r.brand);
+      const brands = db.prepare(`
+        SELECT DISTINCT COALESCE(b.name, sa.brand) as brand, sa.brand_id
+        FROM supplier_articles sa
+        LEFT JOIN brands b ON sa.brand_id = b.id
+        ${cond ? 'WHERE sa.supplier_id = ?' : 'WHERE 1=1'}
+        AND sa.brand IS NOT NULL
+        ORDER BY brand
+      `).all(...params).map(r => ({ name: r.brand, id: r.brand_id }));
       const families = db.prepare(`SELECT DISTINCT family FROM supplier_articles${cond}${and} family IS NOT NULL ORDER BY family`)
         .all(...params).map(r => r.family);
       const categories = db.prepare(`SELECT DISTINCT category FROM supplier_articles${cond}${and} category IS NOT NULL ORDER BY category`)
@@ -91,9 +107,11 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
         GROUP BY sa.supplier_id ORDER BY count DESC
       `).all();
       const byBrand = db.prepare(`
-        SELECT brand, COUNT(*) as count
-        FROM supplier_articles WHERE brand IS NOT NULL
-        GROUP BY brand ORDER BY count DESC LIMIT 20
+        SELECT COALESCE(b.name, sa.brand) as brand, sa.brand_id, COUNT(*) as count
+        FROM supplier_articles sa
+        LEFT JOIN brands b ON sa.brand_id = b.id
+        WHERE sa.brand IS NOT NULL
+        GROUP BY COALESCE(b.name, sa.brand) ORDER BY count DESC LIMIT 20
       `).all();
       res.json({ totalArticles, totalImports, bySupplier, byBrand });
     } catch (error) {
@@ -103,7 +121,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   });
 
   // POST /api/supplier-articles/refresh-brands — Détection auto des marques dans les désignations
-  // + conversion codes Algam → vrais noms de marques
+  // + conversion codes Algam → vrais noms de marques + liaison brand_id via brands table
   // NOTE: doit être AVANT /:id sinon Express capture "refresh-brands" comme un id
   app.post('/api/supplier-articles/refresh-brands', authenticateToken, requireWriteAccess, (req, res) => {
     try {
@@ -130,42 +148,23 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
         EAU: 'IsoAcoustics', ECL: 'Procab', ENE: 'Neutrik', EPC: 'APG',
         SAF: 'Fohhn',
       };
-      // Codes Algam = 2-3 lettres majuscules exactement
       const algamCodeRx = /^[A-Z]{2,3}$/;
 
-      // ── Marques connues pour détection dans les désignations ──
-      const KNOWN_BRANDS = [
-        'JB SYSTEMS', 'JB-SYSTEMS', 'POWER LIGHTING', 'BRITEQ', 'BRITE-Q',
-        'AUDIOPHONY', 'DEFINITIVE AUDIO', 'CONTEST', 'SHOWTEC', 'DAP AUDIO',
-        'DAP', 'ELATION', 'CHAUVET', 'AMERICAN DJ', 'ADJ', 'BEAMZ',
-        'CAMEO', 'STAIRVILLE', 'EUROLITE', 'INVOLIGHT', 'IBIZA',
-        'GHOST', 'NICOLS', 'RONDSON', 'SYNQ', 'JB', 'BST',
-        'ALLEN & HEATH', 'ALLEN&HEATH', 'SOUNDCRAFT', 'MACKIE', 'YAMAHA',
-        'QSC', 'DYNACORD', 'ELECTRO-VOICE', 'EV', 'SENNHEISER', 'SHURE',
-        'HARMAN', 'JBL', 'BOSE', 'NEXO', 'RCF', 'HK AUDIO', 'DAS',
-        'PIONEER', 'DENON', 'RANE', 'MIDAS', 'BEHRINGER', 'TASCAM',
-        'ALTO', 'LD SYSTEMS', 'AMATE', 'FBT', 'PROEL', 'WHARFEDALE',
-        'DOUGHTY', 'PROLYTE', 'MOBILTECHLIFTS', 'MANFROTTO', 'AVENGER',
-        'KUPO', 'GLOBAL TRUSS', 'MILOS', 'WORK', 'FENIX', 'LITEC',
-        'PROLYFT', 'CHAINMASTER', 'CM', 'VERLINDE',
-        'ASD',
-        'NEUTRIK', 'CORDIAL', 'SOMMER', 'KLOTZ', 'CANARE', 'HICON',
-        'ADAM HALL', 'SWIT',
-        'PANASONIC', 'SONY', 'EPSON', 'BARCO', 'CHRISTIE', 'NEC', 'OPTOMA',
-        'BENQ', 'SAMSUNG', 'LG', 'BLACKMAGIC',
-        'ABSEN', 'UNILUMIN', 'ROE', 'BROMPTON',
-      ];
-      const brandRx = new RegExp(
-        '\\b(' + KNOWN_BRANDS.map(b => b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'i'
-      );
+      // ── Construire la regex dynamique depuis la table brands + aliases ──
+      const allBrandNames = [];
+      try {
+        db.prepare('SELECT name FROM brands WHERE is_active = 1').all().forEach(b => allBrandNames.push(b.name));
+        db.prepare('SELECT alias FROM brand_aliases').all().forEach(a => allBrandNames.push(a.alias));
+      } catch { /* brands table may not exist yet */ }
+      // Sort longest first to avoid partial matches
+      allBrandNames.sort((a, b) => b.length - a.length);
+      const brandRx = allBrandNames.length > 0
+        ? new RegExp('\\b(' + allBrandNames.map(b => b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'i')
+        : null;
 
-      // Récupérer TOUS les articles (pour convertir les codes Algam + détecter dans désignations)
-      const articles = db.prepare(
-        'SELECT id, brand, designation FROM supplier_articles'
-      ).all();
-
-      const updateStmt = db.prepare('UPDATE supplier_articles SET brand = ? WHERE id = ?');
-      let updated = 0;
+      const articles = db.prepare('SELECT id, brand, designation FROM supplier_articles').all();
+      const updateStmt = db.prepare('UPDATE supplier_articles SET brand = ?, brand_id = ? WHERE id = ?');
+      let brandDetected = 0;
 
       const run = db.transaction(() => {
         for (const art of articles) {
@@ -173,32 +172,55 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
 
           // 1) Code Algam → nom réel
           if (currentBrand && algamCodeRx.test(currentBrand) && ALGAM_BRAND_MAP[currentBrand]) {
-            updateStmt.run(ALGAM_BRAND_MAP[currentBrand], art.id);
-            updated++;
+            const resolved = normalizeBrand(ALGAM_BRAND_MAP[currentBrand]);
+            updateStmt.run(resolved.brand, resolved.brand_id, art.id);
+            brandDetected++;
             continue;
           }
 
-          // 2) Pas de marque → détecter code Algam dans la désignation
+          // 2) Marque existante → normaliser casse + lier brand_id
+          if (currentBrand && !algamCodeRx.test(currentBrand)) {
+            const resolved = normalizeBrand(currentBrand);
+            if (resolved.brand_id && resolved.brand !== currentBrand) {
+              updateStmt.run(resolved.brand, resolved.brand_id, art.id);
+              brandDetected++;
+            } else if (resolved.brand_id) {
+              // Just link brand_id if brand text already correct
+              db.prepare('UPDATE supplier_articles SET brand_id = ? WHERE id = ? AND brand_id IS NULL')
+                .run(resolved.brand_id, art.id);
+            }
+            continue;
+          }
+
+          // 3) Pas de marque → détecter code Algam dans la désignation
           if (!currentBrand) {
             const codeMatch = art.designation?.match(/(?:^\d+\s+)?([A-Z]{2,3})\s/);
             if (codeMatch && ALGAM_BRAND_MAP[codeMatch[1]]) {
-              updateStmt.run(ALGAM_BRAND_MAP[codeMatch[1]], art.id);
-              updated++;
+              const resolved = normalizeBrand(ALGAM_BRAND_MAP[codeMatch[1]]);
+              updateStmt.run(resolved.brand, resolved.brand_id, art.id);
+              brandDetected++;
               continue;
             }
-            // 3) Détecter un nom de marque connu dans la désignation
-            const match = art.designation?.match(brandRx);
-            if (match) {
-              updateStmt.run(match[1].toUpperCase(), art.id);
-              updated++;
+            // 4) Détecter un nom de marque connu dans la désignation
+            if (brandRx) {
+              const match = art.designation?.match(brandRx);
+              if (match) {
+                const resolved = normalizeBrand(match[1]);
+                updateStmt.run(resolved.brand, resolved.brand_id, art.id);
+                brandDetected++;
+              }
             }
           }
         }
       });
       run();
 
-      logger.info(`🏷️ Refresh marques: ${updated}/${articles.length} articles mis à jour`);
-      res.json({ success: true, scanned: articles.length, updated });
+      // Also apply unified_family on newly detected brands
+      const { mapped } = applyUnifiedFamilyBatch();
+
+      invalidateBrandCache();
+      logger.info(`🏷️ Refresh marques: ${brandDetected}/${articles.length} articles mis à jour, ${mapped} unified_family mappés`);
+      res.json({ success: true, scanned: articles.length, brandDetected, familyMapped: mapped });
     } catch (error) {
       logger.error('Erreur POST refresh-brands:', error.message);
       res.status(500).json({ error: 'Erreur serveur' });
@@ -278,15 +300,15 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
 
       // Insert articles en transaction
       const insertStmt = db.prepare(`
-        INSERT INTO supplier_articles (supplier_id, supplier_ref, brand, model, designation, description, family, subfamily, category, price_ht, currency, weight, dimensions, unit, metadata, import_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO supplier_articles (supplier_id, supplier_ref, brand, brand_id, model, designation, description, family, subfamily, category, price_ht, currency, weight, dimensions, unit, metadata, import_id, unified_family)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const upsertStmt = db.prepare(`
         UPDATE supplier_articles SET
-          brand = ?, model = ?, designation = ?, description = ?, family = ?, subfamily = ?,
+          brand = ?, brand_id = ?, model = ?, designation = ?, description = ?, family = ?, subfamily = ?,
           category = ?, price_ht = ?, currency = ?, weight = ?, dimensions = ?, unit = ?,
-          metadata = ?, import_id = ?, updated_at = CURRENT_TIMESTAMP
+          metadata = ?, import_id = ?, unified_family = COALESCE(?, unified_family), updated_at = CURRENT_TIMESTAMP
         WHERE supplier_id = ? AND supplier_ref = ?
       `);
 
@@ -302,8 +324,11 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       };
 
       const runImport = db.transaction(() => {
-        for (const art of articles) {
-          if (!art.designation) { skipped++; continue; }
+        for (const rawArt of articles) {
+          if (!rawArt.designation) { skipped++; continue; }
+
+          // Auto-enrichir : normaliser marque + résoudre unified_family
+          const art = enrichArticle(rawArt);
 
           // Si supplier_ref existe, tenter un upsert
           if (art.supplier_ref) {
@@ -313,12 +338,12 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
 
             if (existing) {
               upsertStmt.run(
-                s(art.brand), s(art.model), art.designation,
+                s(art.brand), art.brand_id || null, s(art.model), art.designation,
                 s(art.description), s(art.family), s(art.subfamily),
                 s(art.category), n(art.price_ht), s(art.currency) || 'EUR',
                 s(art.weight), j(art.dimensions),
                 s(art.unit) || 'u', j(art.metadata),
-                importId, supplier_id, art.supplier_ref
+                importId, art.unified_family || null, supplier_id, art.supplier_ref
               );
               updated++;
               continue;
@@ -326,13 +351,13 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
           }
 
           insertStmt.run(
-            supplier_id, s(art.supplier_ref), s(art.brand),
+            supplier_id, s(art.supplier_ref), s(art.brand), art.brand_id || null,
             s(art.model), art.designation, s(art.description),
             s(art.family), s(art.subfamily), s(art.category),
             n(art.price_ht), s(art.currency) || 'EUR',
             s(art.weight), j(art.dimensions),
             s(art.unit) || 'u', j(art.metadata),
-            importId
+            importId, art.unified_family || null
           );
           inserted++;
         }
@@ -578,6 +603,102 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ success: true, totalChanged, rulesApplied: rules.length });
     } catch (error) {
       logger.error('Erreur POST taxonomy/apply:', error.message);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // ============ BRANDS API ============
+
+  // GET /api/brands — Liste des marques avec stats
+  app.get('/api/brands', authenticateToken, (req, res) => {
+    try {
+      const brands = listBrandsWithStats();
+      res.json(brands);
+    } catch (error) {
+      logger.error('Erreur GET brands:', error.message);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/brands/resolve — Résoudre une marque texte → brand_id + nom canonique
+  // NOTE: doit être AVANT /api/brands/:id sinon Express capture "resolve" comme un id
+  app.post('/api/brands/resolve', authenticateToken, (req, res) => {
+    try {
+      const { brand: brandText } = req.body;
+      const result = normalizeBrand(brandText);
+      res.json(result);
+    } catch (error) {
+      logger.error('Erreur POST brands/resolve:', error.message);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // GET /api/brands/:id — Détail d'une marque + aliases + famille
+  app.get('/api/brands/:id', authenticateToken, (req, res) => {
+    try {
+      const brand = db.prepare('SELECT * FROM brands WHERE id = ?').get(req.params.id);
+      if (!brand) return res.status(404).json({ error: 'Marque non trouvée' });
+
+      brand.aliases = db.prepare('SELECT * FROM brand_aliases WHERE brand_id = ?').all(req.params.id);
+      brand.families = db.prepare(`
+        SELECT bfm.*, ec.name as family_name, ec.icon, ec.color
+        FROM brand_family_mapping bfm
+        JOIN equipment_categories ec ON bfm.family_id = ec.id
+        WHERE bfm.brand_id = ?
+      `).all(req.params.id);
+
+      res.json(brand);
+    } catch (error) {
+      logger.error('Erreur GET brands/:id:', error.message);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/brands/:id/aliases — Ajouter un alias à une marque
+  app.post('/api/brands/:id/aliases', authenticateToken, requireWriteAccess, (req, res) => {
+    try {
+      const { alias } = req.body;
+      if (!alias?.trim()) return res.status(400).json({ error: 'alias requis' });
+
+      const brand = db.prepare('SELECT id FROM brands WHERE id = ?').get(req.params.id);
+      if (!brand) return res.status(404).json({ error: 'Marque non trouvée' });
+
+      const slug = alias.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const existing = db.prepare('SELECT id FROM brand_aliases WHERE alias_slug = ?').get(slug);
+      if (existing) return res.status(409).json({ error: 'Alias déjà existant' });
+
+      db.prepare('INSERT INTO brand_aliases (brand_id, alias, alias_slug, source) VALUES (?, ?, ?, ?)')
+        .run(req.params.id, alias.trim(), slug, 'manual');
+
+      invalidateBrandCache();
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('Erreur POST brands/:id/aliases:', error.message);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/supplier-articles/link-brand-ids — Lier brand_id en batch
+  app.post('/api/supplier-articles/link-brand-ids', authenticateToken, requireWriteAccess, (req, res) => {
+    try {
+      const sa = linkBrandIds('supplier_articles');
+      const eq = linkBrandIds('equipment');
+      logger.info(`🔗 Link brand_ids: ${sa.linked} articles, ${eq.linked} equipment liés`);
+      res.json({ success: true, supplier_articles: sa, equipment: eq });
+    } catch (error) {
+      logger.error('Erreur POST link-brand-ids:', error.message);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/supplier-articles/apply-unified-family — Appliquer unified_family en batch
+  app.post('/api/supplier-articles/apply-unified-family', authenticateToken, requireWriteAccess, (req, res) => {
+    try {
+      const result = applyUnifiedFamilyBatch();
+      logger.info(`📋 Apply unified_family: ${result.mapped}/${result.total} articles mappés`);
+      res.json({ success: true, ...result });
+    } catch (error) {
+      logger.error('Erreur POST apply-unified-family:', error.message);
       res.status(500).json({ error: 'Erreur serveur' });
     }
   });

@@ -10,6 +10,7 @@ import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import logger from './logger.js';
+import { normalizeBrand } from './brandHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -109,10 +110,12 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       const { status, category_id, search, location_zone, location_depot, limit } = req.query;
       let sql = `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color,
-               u.name as created_by_name
+               u.name as created_by_name,
+               b.name as brand_canonical, b.slug as brand_slug
         FROM equipment e
         LEFT JOIN equipment_categories ec ON e.category_id = ec.id
         LEFT JOIN users u ON e.created_by = u.id
+        LEFT JOIN brands b ON e.brand_id = b.id
         WHERE 1=1
       `;
       const params = [];
@@ -160,9 +163,11 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/equipment/:id', authenticateToken, (req, res) => {
     try {
       const eq = db.prepare(`
-        SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
+        SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color,
+               b.name as brand_canonical, b.slug as brand_slug
         FROM equipment e
         LEFT JOIN equipment_categories ec ON e.category_id = ec.id
+        LEFT JOIN brands b ON e.brand_id = b.id
         WHERE e.id = ?
       `).get(req.params.id);
       
@@ -201,10 +206,13 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       const { name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
       if (!name) return res.status(400).json({ error: 'Nom requis' });
       
+      // Normaliser la marque → brand_id
+      const resolved = normalizeBrand(brand);
+      
       const result = db.prepare(`
-        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(name, reference, serial_number, category_id, status || 'available', location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity || 1, req.user.id);
+        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, brand_id, stock_quantity, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(name, reference, serial_number, category_id, status || 'available', location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, resolved.brand, resolved.brand_id, stock_quantity || 1, req.user.id);
       
       // Générer l'UID unique basé sur l'ID
       const uid = 'EMAG-' + String(result.lastInsertRowid).padStart(5, '0');
@@ -225,10 +233,13 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
       
+      // Normaliser la marque → brand_id
+      const resolved = normalizeBrand(brand);
+      
       db.prepare(`
-        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, stock_quantity = ?, updated_at = CURRENT_TIMESTAMP
+        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, brand_id = ?, stock_quantity = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(name, reference, serial_number, category_id, status, location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity, req.params.id);
+      `).run(name, reference, serial_number, category_id, status, location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, resolved.brand, resolved.brand_id, stock_quantity, req.params.id);
       
       addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
       
@@ -347,7 +358,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       
       for (const row of data) {
         if (row.famille && row.famille.trim()) {
-          familiesSet.set(row.famille.trim().toUpperCase(), row.famille.trim());
+          const normalizedFamily = row.famille.trim();
+          familiesSet.set(normalizedFamily.toUpperCase(), normalizedFamily);
         }
         if (row.sous_famille && row.sous_famille.trim()) {
           const key = `${(row.famille || '').trim().toUpperCase()}||${row.sous_famille.trim()}`;
@@ -359,16 +371,18 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         }
       }
 
-      // Icons par famille
+      // Icons par famille (taxonomie uniformisée)
       const FAMILY_ICONS = {
-        'SONORISATION': '🔊', 'ECLAIRAGE': '💡', 'STRUCTURE': '🏗️', 'AUDIOVISUEL': '🎥',
-        'DISTRIBUTION ELECTRIQUE': '⚡', 'BACKLINE': '🎸', 'INFORMATIQUE': '💻',
-        'RIDEAU-MACHINERIE': '🎭',
+        'Sonorisation': '🔊', 'Éclairage': '💡', 'Structure': '🏗️', 'Audiovisuel': '🎥',
+        'Distribution Électrique': '⚡', 'Backline': '🎸', 'Informatique': '💻',
+        'Rideau-Machinerie': '🎭', 'Accroche': '🔗', 'Motorisation': '⚙️',
+        'Mobilier': '🪑', 'Outillage & EPI': '🔧', 'Divers': '📋',
       };
       const FAMILY_COLORS = {
-        'SONORISATION': '#3b82f6', 'ECLAIRAGE': '#f59e0b', 'STRUCTURE': '#ef4444', 'AUDIOVISUEL': '#8b5cf6',
-        'DISTRIBUTION ELECTRIQUE': '#f97316', 'BACKLINE': '#10b981', 'INFORMATIQUE': '#06b6d4',
-        'RIDEAU-MACHINERIE': '#ec4899',
+        'Sonorisation': '#3b82f6', 'Éclairage': '#f59e0b', 'Structure': '#ef4444', 'Audiovisuel': '#8b5cf6',
+        'Distribution Électrique': '#f97316', 'Backline': '#10b981', 'Informatique': '#06b6d4',
+        'Rideau-Machinerie': '#ec4899', 'Accroche': '#14b8a6', 'Motorisation': '#f97316',
+        'Mobilier': '#6b7280', 'Outillage & EPI': '#f59e0b', 'Divers': '#94a3b8',
       };
       
       if (mode === 'preview') {
@@ -407,8 +421,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           if (existing) {
             familyIdMap[key] = existing.id;
           } else {
-            const icon = FAMILY_ICONS[key] || '📦';
-            const color = FAMILY_COLORS[key] || '#6366f1';
+            const icon = FAMILY_ICONS[name] || FAMILY_ICONS[key] || '📦';
+            const color = FAMILY_COLORS[name] || FAMILY_COLORS[key] || '#6366f1';
             const result = insertFamily.run(name, icon, color, 'family');
             familyIdMap[key] = result.lastInsertRowid;
             familiesCreated++;
@@ -456,11 +470,16 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
           const reference = (row.code_libre || '').trim() || null;
           const serialNumber = (row.numero_serie || '').trim() || null;
-          const brand = (row.marque || '').trim() || null;
+          const rawBrand = (row.marque || '').trim() || null;
+          const resolved = normalizeBrand(rawBrand);
           const stock = parseInt(row.stock) || 1;
           const zone = (row.zone || '').trim() || null;
 
-          insertEquip.run(nom, reference, serialNumber, categoryId, brand, stock, zone, req.user.id);
+          insertEquip.run(nom, reference, serialNumber, categoryId, resolved.brand, stock, zone, req.user.id);
+          // Link brand_id if resolved
+          if (resolved.brand_id) {
+            db.prepare('UPDATE equipment SET brand_id = ? WHERE id = last_insert_rowid()').run(resolved.brand_id);
+          }
           created++;
         }
       });

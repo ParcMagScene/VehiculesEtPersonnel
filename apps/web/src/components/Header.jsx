@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, ClipboardCheck, Video } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, ClipboardCheck, Video, Layers } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -966,14 +966,14 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <QrCode size={20} />
             </button>
 
-            {(activeModule === 'vehicles' || activeModule === 'equipment') && (
+            {(activeModule === 'vehicles' || activeModule === 'equipment' || activeModule === 'stock') && (
             <button 
               className="management-button" 
               onClick={onOpenManagement} 
               aria-label="Ouvrir le panneau de gestion"
               style={{ position: 'relative' }}
             >
-              {activeModule === 'vehicles' ? <Truck size={18} /> : <Package size={18} />}
+              {activeModule === 'vehicles' ? <Truck size={18} /> : activeModule === 'stock' ? <Layers size={18} /> : <Package size={18} />}
               Gestion
             </button>
             )}

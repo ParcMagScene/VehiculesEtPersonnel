@@ -937,7 +937,8 @@
 .personnel-slide-panel,
 .affaire-slide-panel,
 .eq-slide-panel,
-.vehicle-slide-panel {
+.vehicle-slide-panel,
+.stock-slide-panel {
   width: 0;
   min-width: 0;
   overflow: hidden;
@@ -958,7 +959,8 @@
 .personnel-slide-panel > *,
 .affaire-slide-panel > *,
 .eq-slide-panel > *,
-.vehicle-slide-panel > * {
+.vehicle-slide-panel > *,
+.stock-slide-panel > * {
   transform: translateX(60px);
   opacity: 0;
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
@@ -969,7 +971,8 @@
 .personnel-slide-panel.open,
 .affaire-slide-panel.open,
 .eq-slide-panel.open,
-.vehicle-slide-panel.open {
+.vehicle-slide-panel.open,
+.stock-slide-panel.open {
   border-left: 1px solid var(--theme-border);
   opacity: 1;
   box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
@@ -979,7 +982,8 @@
 .personnel-slide-panel.open > *,
 .affaire-slide-panel.open > *,
 .eq-slide-panel.open > *,
-.vehicle-slide-panel.open > * {
+.vehicle-slide-panel.open > *,
+.stock-slide-panel.open > * {
   transform: translateX(0);
   opacity: 1;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
@@ -990,7 +994,8 @@
 .personnel-slide-panel.closing,
 .affaire-slide-panel.closing,
 .eq-slide-panel.closing,
-.vehicle-slide-panel.closing {
+.vehicle-slide-panel.closing,
+.stock-slide-panel.closing {
   width: 0;
   min-width: 0;
   border-left: 0px solid var(--theme-border);
@@ -1001,7 +1006,8 @@
 .personnel-slide-panel.closing > *,
 .affaire-slide-panel.closing > *,
 .eq-slide-panel.closing > *,
-.vehicle-slide-panel.closing > * {
+.vehicle-slide-panel.closing > *,
+.stock-slide-panel.closing > * {
   transform: translateX(60px);
   opacity: 0;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),

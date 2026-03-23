@@ -1446,14 +1446,19 @@ function initializeDatabase() {
     const catCount = db.prepare('SELECT COUNT(*) as c FROM equipment_categories').get();
     if (catCount.c === 0) {
       const insertCat = db.prepare('INSERT INTO equipment_categories (name, icon, color, level) VALUES (?, ?, ?, ?)');
-      insertCat.run('Outillage', '🔧', '#f59e0b', 'family');
-      insertCat.run('Électroportatif', '⚡', '#3b82f6', 'family');
-      insertCat.run('Levage & Manutention', '🏗️', '#ef4444', 'family');
-      insertCat.run('Mesure & Contrôle', '📐', '#10b981', 'family');
-      insertCat.run('EPI', '🦺', '#8b5cf6', 'family');
-      insertCat.run('Véhicule annexe', '🚗', '#6366f1', 'family');
+      insertCat.run('Sonorisation', '🔊', '#3b82f6', 'family');
+      insertCat.run('Éclairage', '💡', '#f59e0b', 'family');
+      insertCat.run('Structure', '🏗️', '#ef4444', 'family');
+      insertCat.run('Audiovisuel', '🎥', '#8b5cf6', 'family');
+      insertCat.run('Distribution Électrique', '⚡', '#f97316', 'family');
+      insertCat.run('Backline', '🎸', '#10b981', 'family');
+      insertCat.run('Rideau-Machinerie', '🎭', '#ec4899', 'family');
       insertCat.run('Informatique', '💻', '#06b6d4', 'family');
-      insertCat.run('Autre', '📦', '#64748b', 'family');
+      insertCat.run('Accroche', '🔗', '#14b8a6', 'family');
+      insertCat.run('Motorisation', '⚙️', '#f97316', 'family');
+      insertCat.run('Mobilier', '🪑', '#6b7280', 'family');
+      insertCat.run('Outillage & EPI', '🔧', '#f59e0b', 'family');
+      insertCat.run('Divers', '📋', '#94a3b8', 'family');
     }
   } catch (error) {
     logger.warn('⚠️ Migration parc matériel:', error.message);
@@ -1882,6 +1887,33 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON stock_movements(type)');
   } catch (error) {
     logger.warn('⚠️ Migration stock:', error.message);
+  }
+
+  // ═══ Migration: Localisation dépôt + type pour stock_items ═══
+  try {
+    const siCols = db.prepare("PRAGMA table_info(stock_items)").all();
+    const siColNames = siCols.map(c => c.name);
+    if (!siColNames.includes('stock_type')) {
+      db.prepare("ALTER TABLE stock_items ADD COLUMN stock_type TEXT DEFAULT 'vente'").run();
+      logger.info('✅ Migration: ajout colonne stock_type à stock_items');
+    }
+    if (!siColNames.includes('location_depot')) {
+      db.prepare("ALTER TABLE stock_items ADD COLUMN location_depot TEXT DEFAULT ''").run();
+      logger.info('✅ Migration: ajout colonne location_depot à stock_items');
+    }
+    if (!siColNames.includes('location_zone')) {
+      db.prepare("ALTER TABLE stock_items ADD COLUMN location_zone TEXT DEFAULT ''").run();
+      logger.info('✅ Migration: ajout colonne location_zone à stock_items');
+    }
+    if (!siColNames.includes('location_floor')) {
+      db.prepare("ALTER TABLE stock_items ADD COLUMN location_floor TEXT DEFAULT ''").run();
+      logger.info('✅ Migration: ajout colonne location_floor à stock_items');
+    }
+    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_type ON stock_items(stock_type)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_location_zone ON stock_items(location_zone)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_location_depot ON stock_items(location_depot)');
+  } catch (error) {
+    logger.warn('⚠️ Migration stock location/type:', error.message);
   }
 
   // ═══ MODULE COMMUNICATION (Affichage dynamique + Planification + Import BL) ═══

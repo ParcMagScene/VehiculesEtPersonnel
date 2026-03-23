@@ -102,7 +102,8 @@ function AppContent() {
   const [showMailing, setShowMailing] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [stockSubTab, setStockSubTab] = useState('stock');
+  const [stockSubTab, setStockSubTab] = useState('vente');
+  const [showStockManagement, setShowStockManagement] = useState(false);
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
   const [navigateToPersonId, setNavigateToPersonId] = useState(null);
   const [quickReservationSlot, setQuickReservationSlot] = useState(null);
@@ -363,6 +364,8 @@ function AppContent() {
         onOpenManagement={() => {
           if (activeModule === 'equipment') {
             setShowEquipmentManagement(true);
+          } else if (activeModule === 'stock') {
+            setShowStockManagement(true);
           } else {
             setShowManagement(true);
           }
@@ -609,21 +612,29 @@ function AppContent() {
         <ErrorBoundary moduleName="Stocks">
           <div className="stocks-container">
             <div className="sub-tabs">
-              <button className={`sub-tab ${stockSubTab === 'stock' ? 'active' : ''}`} onClick={() => setStockSubTab('stock')}>
-                📦 Stock
+              <button className={`sub-tab ${stockSubTab === 'vente' ? 'active' : ''}`} onClick={() => setStockSubTab('vente')}>
+                📦 Stock Vente
+              </button>
+              <button className={`sub-tab ${stockSubTab === 'sav' ? 'active' : ''}`} onClick={() => setStockSubTab('sav')}>
+                🔧 SAV (Pièces)
               </button>
               <button className={`sub-tab ${stockSubTab === 'inventory' ? 'active' : ''}`} onClick={() => setStockSubTab('inventory')}>
                 📋 Inventaire
               </button>
             </div>
-            {stockSubTab === 'stock' && (
+            {(stockSubTab === 'vente' || stockSubTab === 'sav') && (
               <Suspense fallback={
                 <div className="loading-overlay">
                   <div className="loading-spinner"></div>
                   <p>Chargement du stock...</p>
                 </div>
               }>
-                <StockPanel currentUser={currentUser} />
+                <StockPanel
+                  currentUser={currentUser}
+                  stockType={stockSubTab}
+                  showManagement={showStockManagement}
+                  onCloseManagement={() => setShowStockManagement(false)}
+                />
               </Suspense>
             )}
             {stockSubTab === 'inventory' && (

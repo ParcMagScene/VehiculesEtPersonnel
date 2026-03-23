@@ -10,6 +10,9 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runVideoMigrations } from './migrations/video-v1.js';
+import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
+import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
+import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -566,10 +569,15 @@ try {
         ['Audiovisuel',             'Connecteurs et accessoires vidéo',        null, '#8b5cf6', '🎥'],
         ['Câbles & Connectique',    'Câbles, connecteurs, adaptateurs',        null, '#3b82f6', '🔌'],
         ['Consommables',            'Gaffer, adhésifs, piles, mousses',        null, '#10b981', '📦'],
-        ['Mécanique & Outillage',   'Pièces mécaniques, outillage',            null, '#f97316', '🔧'],
+        ['Outillage & EPI',       'Pièces mécaniques, outillage, EPI',       null, '#f97316', '🔧'],
         ['Électronique',            'Composants, alimentations, pièces détachées', null, '#ec4899', '⚡'],
         ['Backline',                'Cordes, peaux, accessoires backline',     null, '#14b8a6', '🎸'],
         ['Divers',                  'Sans catégorie',                          null, '#94a3b8', '📋'],
+        ['Rideau-Machinerie',       'Rideaux, textiles, machinerie scénique',   null, '#a855f7', '🎭'],
+        ['Informatique',            'Matériel informatique',                   null, '#06b6d4', '💻'],
+        ['Accroche',                'Élingues, crochets, accessoires accroche', null, '#14b8a6', '🔗'],
+        ['Motorisation',            'Moteurs, pieds de levage',                null, '#f97316', '⚙️'],
+        ['Mobilier',                'Mobilier scénique, podiums',              null, '#6b7280', '🪑'],
       ];
       const parentIds = {};
       for (const [name, desc, , color, icon] of rootCats) {
@@ -608,10 +616,10 @@ try {
         ['Piles & Batteries',   parentIds['Consommables']],
         ['Mousse & Protection', parentIds['Consommables']],
         ['Consommables divers', parentIds['Consommables']],
-        // Mécanique & Outillage
-        ['Pièces mécaniques',   parentIds['Mécanique & Outillage']],
-        ['Outillage',           parentIds['Mécanique & Outillage']],
-        ['Quincaillerie',       parentIds['Mécanique & Outillage']],
+        // Outillage & EPI
+        ['Pièces mécaniques',   parentIds['Outillage & EPI']],
+        ['Outillage',           parentIds['Outillage & EPI']],
+        ['Quincaillerie',       parentIds['Outillage & EPI']],
         // Électronique
         ['Composants',          parentIds['Électronique']],
         ['Alimentations',       parentIds['Électronique']],
@@ -638,5 +646,14 @@ runInventoryMigrations(db);
 
 // ═══ Module Surveillance Vidéo ═══
 runVideoMigrations(db);
+
+// ═══ Uniformisation Taxonomie ═══
+runTaxonomyMigrations(db);
+
+// ═══ Maintenance Taxonomie — Phase 2 ═══
+runTaxonomyMaintenanceMigrations(db);
+
+// ═══ Uniformisation Marques & Sociétés — Phase 3 ═══
+runBrandsMigrations(db);
 
 } // fin runPostInitMigrations

@@ -559,8 +559,8 @@ export const parseBLVente = (text) => {
 // PARSEUR FORMAT B — "BON DE PRÉPARATION" (BL Affaires Location/Presta)
 // Structure : AF, nom affaire, client, adresse, devis, sections catégorisées
 // ═══════════════════════════════════════════════════════════════
-const SECTION_NAMES = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'REGIE', 'RÉGIE', 'REGIE/PLATEAU', 'RÉGIE/PLATEAU', 'VIDEO', 'VIDÉO', 'STRUCTURE', 'MOBILIER', 'DIVERS', 'ACCROCHE', 'MOTORISATION', 'PRATICABLE', 'PRATICABLES', 'ELECTRICITE', 'ÉLECTRICITÉ', 'CÂBLAGE', 'CABLAGE', 'AUDIOVISUEL', 'DIFFUSION', 'VENTE', 'VTE'];
-const SECTION_PATTERN = /^(SONORISATION|LUMIERE|LUMIÈRE|REGIE|RÉGIE|REGIE\/PLATEAU|RÉGIE\/PLATEAU|VIDEO|VIDÉO|STRUCTURE|MOBILIER|DIVERS|ACCROCHE|MOTORISATION|PRATICABLES?|ELECTRICITE|ÉLECTRICITÉ|CÂBLAGE|CABLAGE|AUDIOVISUEL|DIFFUSION|VENTE|VTE)(\s|$)/i;
+const SECTION_NAMES = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'ÉCLAIRAGE', 'ECLAIRAGE', 'REGIE', 'RÉGIE', 'REGIE/PLATEAU', 'RÉGIE/PLATEAU', 'VIDEO', 'VIDÉO', 'AUDIOVISUEL', 'STRUCTURE', 'MOBILIER', 'DIVERS', 'ACCROCHE', 'MOTORISATION', 'PRATICABLE', 'PRATICABLES', 'ELECTRICITE', 'ÉLECTRICITÉ', 'CÂBLAGE', 'CABLAGE', 'DISTRIBUTION', 'DIFFUSION', 'BACKLINE', 'RIDEAU', 'RIDEAU-MACHINERIE', 'MACHINERIE', 'INFORMATIQUE', 'OUTILLAGE', 'VENTE', 'VTE'];
+const SECTION_PATTERN = /^(SONORISATION|LUMIERE|LUMIÈRE|ÉCLAIRAGE|ECLAIRAGE|REGIE|RÉGIE|REGIE\/PLATEAU|RÉGIE\/PLATEAU|VIDEO|VIDÉO|AUDIOVISUEL|STRUCTURE|MOBILIER|DIVERS|ACCROCHE|MOTORISATION|PRATICABLES?|ELECTRICITE|ÉLECTRICITÉ|CÂBLAGE|CABLAGE|DISTRIBUTION|DIFFUSION|BACKLINE|RIDEAU(?:-MACHINERIE)?|MACHINERIE|INFORMATIQUE|OUTILLAGE|VENTE|VTE)(\s|$)/i;
 
 export const parseBonPreparation = (text) => {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l);
@@ -753,7 +753,7 @@ export const parseBonPreparation = (text) => {
         const addrLinesAfter = [];
         for (let j = addrLabelIdx + 1; j < Math.min(addrLabelIdx + 5, lines.length); j++) {
           const ln = lines[j];
-          if (/^(R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|SONORISATION|LUMIERE|STRUCTURE|REGIE|VIDEO)\b/i.test(ln)) break;
+          if (/^(R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|SONORISATION|LUMIERE|ÉCLAIRAGE|STRUCTURE|REGIE|VIDEO|AUDIOVISUEL|BACKLINE|INFORMATIQUE)\b/i.test(ln)) break;
           if (/\d{5}\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(ln) || /^\d+\s+(Rue|Avenue|Boulevard|Bd|Place|All[eé]e|Impasse|Chemin|Route)\b/i.test(ln) || /^(FRANCE|FR)$/i.test(ln)) {
             addrLinesAfter.push(ln);
           } else if (addrLinesAfter.length > 0 || ln.length > 5) {

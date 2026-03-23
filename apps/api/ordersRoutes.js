@@ -3,6 +3,7 @@ import logger from './logger.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { resolveBrand } from './brandHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -691,17 +692,18 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // 2) Enrichir les items sans fournisseur (BP Location/Prestation)
-      //    a) via bp_items → equipment.brand
+      //    a) via bp_items → equipment.brand (canonique via brands table)
       //    b) via extraction marque dans la description (après •)
       const brandIndex = {};
       try {
         db.prepare(`
-          SELECT bp.reference, e.brand FROM bp_items bp
+          SELECT bp.reference, COALESCE(b.name, e.brand) as brand FROM bp_items bp
           JOIN equipment e ON e.id = bp.equipment_id
+          LEFT JOIN brands b ON e.brand_id = b.id
           WHERE bp.bl_import_id IN (SELECT id FROM bl_imports WHERE affaire_id = ?)
-            AND e.brand IS NOT NULL AND e.brand != ''
+            AND (e.brand IS NOT NULL AND e.brand != '')
         `).all(affaire_id).forEach(r => {
-          if (r.reference && r.brand) brandIndex[r.reference.toUpperCase()] = r.brand.toUpperCase();
+          if (r.reference && r.brand) brandIndex[r.reference.toUpperCase()] = r.brand;
         });
       } catch { /* bp_items may not exist */ }
 
@@ -713,15 +715,17 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
           item.fournisseur = brandIndex[ref];
           continue;
         }
-        // b) Extraire marque avant ou après • dans la description
+        // b) Extraire marque avant ou après • dans la description, puis normaliser
         const desc = item.description || '';
         const beforeBullet = desc.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'.\/-]{0,30}?)\s*[•·]/);
         if (beforeBullet) {
-          item.fournisseur = beforeBullet[1].trim().toUpperCase();
+          const resolved = resolveBrand(beforeBullet[1].trim());
+          item.fournisseur = resolved ? resolved.name : beforeBullet[1].trim().toUpperCase();
         } else {
           const afterBullet = desc.match(/[•·]\s*([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'./-]{1,30})\s*$/);
           if (afterBullet) {
-            item.fournisseur = afterBullet[1].trim().toUpperCase();
+            const resolved = resolveBrand(afterBullet[1].trim());
+            item.fournisseur = resolved ? resolved.name : afterBullet[1].trim().toUpperCase();
           }
         }
       }

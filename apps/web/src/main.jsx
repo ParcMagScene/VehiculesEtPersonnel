@@ -4,6 +4,8 @@ import App from './App.jsx'
 import './theme.css'
 import './theme-palettes.css'
 import './theme-vscode.css'
+import './theme-density.css'
+import './theme-tv.css'
 import './index.css'
 
 // A11y: Allow keyboard activation (Enter/Space) on elements with role="button"

@@ -94,6 +94,19 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request(`/sav-tickets/${ticketId}/link`, { method: 'PUT', body: JSON.stringify({ equipment_id: equipmentId }) });
     },
 
+    // PDF SAV
+    async exportSavReportPdf(start, end, type = 'all') {
+      const qs = new URLSearchParams({ start, end, type }).toString();
+      const resp = await fetch(`${API_URL}/sav-tickets/report/pdf?${qs}`, { credentials: 'include' });
+      if (!resp.ok) throw new Error('Erreur export PDF rapport maintenance');
+      return resp.blob();
+    },
+    async exportSavActivePdf() {
+      const resp = await fetch(`${API_URL}/sav-tickets/active/pdf`, { credentials: 'include' });
+      if (!resp.ok) throw new Error('Erreur export PDF matériel en SAV');
+      return resp.blob();
+    },
+
     // Listes Favoris / Surveillance
     async getEquipmentLists() {
       return this.request('/equipment-lists');

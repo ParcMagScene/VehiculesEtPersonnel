@@ -6,6 +6,7 @@ import '../equipment/EquipmentImportModal.css'; // réutilise le même CSS
 // En-têtes CSV attendues (format Locmat Interventions)
 const HEADER_MAP = {
   'intervention': 'intervention',
+  'code libre': 'intervention',
   'code article': 'code_article',
   'nom article': 'nom_article',
   'numéro de série': 'numero_de_serie',
@@ -29,7 +30,7 @@ function parseCSV(text, separator = ';') {
   let headerLineIndex = 0;
   for (let i = 0; i < Math.min(3, lines.length); i++) {
     const lower = lines[i].toLowerCase();
-    if (lower.includes('intervention') && lower.includes('article')) {
+    if ((lower.includes('intervention') || lower.includes('code libre')) && lower.includes('article')) {
       headerLineIndex = i;
       break;
     }

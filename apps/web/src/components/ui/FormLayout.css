@@ -1,0 +1,76 @@
+/* ═══════════════════════════════════════
+   FormLayout — Organisme (Design System)
+   ═══════════════════════════════════════ */
+
+/* ── Layout container ── */
+.ui-form-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── Section ── */
+.ui-form-section {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ui-form-section-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--theme-border-light);
+}
+
+.ui-form-section-title {
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--theme-text-heading);
+}
+
+.ui-form-section-desc {
+  font-size: var(--font-sm);
+  color: var(--theme-text-muted);
+  line-height: var(--leading-normal, 1.55);
+}
+
+/* ── Row (auto grid) ── */
+.ui-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+/* ── Actions ── */
+.ui-form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--theme-border-light);
+}
+
+.ui-form-actions--end     { justify-content: flex-end; }
+.ui-form-actions--start   { justify-content: flex-start; }
+.ui-form-actions--between { justify-content: space-between; }
+.ui-form-actions--center  { justify-content: center; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .ui-form-row {
+    grid-template-columns: 1fr;
+  }
+  .ui-form-actions {
+    flex-direction: column-reverse;
+  }
+  .ui-form-actions > * {
+    width: 100%;
+  }
+}

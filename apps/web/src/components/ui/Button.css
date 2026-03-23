@@ -1,0 +1,145 @@
+/* ═══════════════════════════════════════
+   Button — Design System Atoms
+   ═══════════════════════════════════════ */
+
+/* ─── Base ─── */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: var(--btn-radius);
+  font-weight: var(--btn-font-weight);
+  cursor: pointer;
+  transition: var(--btn-transition);
+  white-space: nowrap;
+  text-decoration: none;
+  line-height: 1;
+  position: relative;
+  font-family: inherit;
+}
+
+.ui-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.ui-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ─── Sizes ─── */
+.ui-btn--xs {
+  height: var(--btn-height-xs);
+  padding: var(--btn-padding-xs);
+  font-size: var(--btn-font-size-xs);
+  gap: 4px;
+}
+.ui-btn--sm {
+  height: var(--btn-height-sm);
+  padding: var(--btn-padding-sm);
+  font-size: var(--btn-font-size-sm);
+  gap: 5px;
+}
+.ui-btn--md {
+  height: var(--btn-height-md);
+  padding: var(--btn-padding-md);
+  font-size: var(--btn-font-size-md);
+  gap: 8px;
+}
+.ui-btn--lg {
+  height: var(--btn-height-lg);
+  padding: var(--btn-padding-lg);
+  font-size: var(--btn-font-size-lg);
+  gap: 10px;
+}
+
+/* ─── Icon-only (square) ─── */
+.ui-btn--icon-only {
+  padding: 0;
+}
+.ui-btn--icon-only.ui-btn--xs { width: var(--btn-icon-size-sm); }
+.ui-btn--icon-only.ui-btn--sm { width: var(--btn-icon-size-sm); }
+.ui-btn--icon-only.ui-btn--md { width: var(--btn-icon-size); }
+.ui-btn--icon-only.ui-btn--lg { width: var(--btn-icon-size-lg); }
+
+/* ─── Variant: primary ─── */
+.ui-btn--primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  box-shadow: var(--btn-primary-shadow);
+}
+.ui-btn--primary:hover:not(:disabled) {
+  box-shadow: var(--btn-primary-hover-shadow);
+  transform: translateY(-1px);
+}
+.ui-btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ─── Variant: secondary ─── */
+.ui-btn--secondary {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  border: var(--btn-secondary-border);
+}
+.ui-btn--secondary:hover:not(:disabled) {
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border-color);
+}
+
+/* ─── Variant: danger ─── */
+.ui-btn--danger {
+  background: var(--btn-danger-bg);
+  color: var(--btn-danger-color);
+  border: var(--btn-danger-border);
+}
+.ui-btn--danger:hover:not(:disabled) {
+  background: var(--btn-danger-hover-bg);
+}
+
+/* ─── Variant: success ─── */
+.ui-btn--success {
+  background: var(--btn-success-bg);
+  color: var(--btn-success-color);
+  border: var(--btn-success-border);
+}
+.ui-btn--success:hover:not(:disabled) {
+  background: var(--btn-success-hover-bg);
+}
+
+/* ─── Variant: warning ─── */
+.ui-btn--warning {
+  background: var(--btn-warning-bg);
+  color: var(--btn-warning-color);
+  border: var(--btn-warning-border);
+}
+.ui-btn--warning:hover:not(:disabled) {
+  background: var(--btn-warning-hover-bg);
+}
+
+/* ─── Variant: ghost ─── */
+.ui-btn--ghost {
+  background: transparent;
+  color: var(--theme-text-secondary);
+  border: 1px solid transparent;
+}
+.ui-btn--ghost:hover:not(:disabled) {
+  background: var(--theme-bg-hover);
+  color: var(--theme-text-primary);
+}
+
+/* ─── Loading state ─── */
+.ui-btn--loading > *:not(.ui-btn__spinner) {
+  opacity: 0.5;
+}
+.ui-btn__spinner {
+  animation: ui-btn-spin 1s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes ui-btn-spin {
+  to { transform: rotate(360deg); }
+}

@@ -1,0 +1,87 @@
+/* ═══════════════════════════════════════
+   Tooltip — Design System Atoms
+   ═══════════════════════════════════════ */
+.ui-tooltip-trigger {
+  position: relative;
+  display: inline-flex;
+}
+
+.ui-tooltip {
+  position: absolute;
+  z-index: 99999;
+  background: rgba(17, 24, 39, 0.95);
+  color: white;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-xs);
+  line-height: var(--leading-normal);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-dropdown);
+  animation: ui-tooltip-fade 0.15s ease-out;
+}
+
+@keyframes ui-tooltip-fade {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ─── Positions ─── */
+.ui-tooltip--top {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.ui-tooltip--bottom {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.ui-tooltip--left {
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.ui-tooltip--right {
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ─── Arrow (using ::after) ─── */
+.ui-tooltip--top::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(17, 24, 39, 0.95);
+}
+.ui-tooltip--bottom::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: rgba(17, 24, 39, 0.95);
+}
+.ui-tooltip--left::after {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-left-color: rgba(17, 24, 39, 0.95);
+}
+.ui-tooltip--right::after {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: rgba(17, 24, 39, 0.95);
+}

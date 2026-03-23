@@ -1,0 +1,242 @@
+/* ═══════════════════════════════════════════════════════
+   THÈME TV — Contraste élevé, lisibilité à distance
+   ═══════════════════════════════════════════════════════
+   
+   Palette conçue pour la prévisualisation dans la web-app
+   de ce que le tv-client affiche réellement.
+   
+   Caractéristiques :
+     • Palette noir/cyan néon haute visibilité
+     • Texte très grand (prévu pour écrans distants)
+     • Contraste WCAG AAA (ratio ≥ 7:1)
+     • Pas d'ombres (écrans LED/LCD bas de gamme)
+     • Pas de dégradés (performance sur Raspberry Pi)
+     • Bordures épaisses pour séparer les zones
+   
+   Activé via data-palette="tv-display" sur <html>.
+   Fonctionne avec data-theme="dark" uniquement (TV = fond noir).
+   ═══════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────
+   1. MODE SOMBRE FORCÉ (fond noir)
+   ───────────────────────────────────────── */
+[data-palette="tv-display"] {
+  /* Force le color-scheme dark */
+  color-scheme: dark;
+  
+  /* ─── Couleurs principales : Cyan néon ─── */
+  --theme-primary: #00e1ff;
+  --theme-secondary: #00b8d4;
+  --theme-primary-dark: #0097a7;
+  --theme-primary-hover: #4dd0e1;
+  --theme-primary-light: #80deea;
+  --theme-accent: #00e5ff;
+  --theme-indigo: #00e1ff;
+
+  /* ─── Pas de dégradé (performance TV) ─── */
+  --theme-gradient: #00838f;
+  --theme-gradient-reverse: #006064;
+  --theme-gradient-subtle: #0a1929;
+  --theme-gradient-alt: #00838f;
+
+  /* ─── Texte : blanc pur haute visibilité ─── */
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #b0bec5;
+  --theme-text-muted: #78909c;
+  --theme-text-heading: #ffffff;
+  --theme-text-dark: #eceff1;
+  --theme-text-body: #e0e0e0;
+  --theme-text-subtle: #90a4ae;
+  --theme-text-gray: #9e9e9e;
+  --theme-text-inverse: #000000;
+
+  /* ─── Fonds : noir profond ─── */
+  --theme-bg-page: #000000;
+  --theme-bg-card: #0a1929;
+  --theme-bg-secondary: #0d2137;
+  --theme-bg-tertiary: #132f4c;
+  --theme-bg-hover: #1a3a5c;
+  --theme-bg-dark: #000000;
+  --theme-bg-darker: #000000;
+  --theme-bg-muted: #37474f;
+  --theme-bg-active: #004d40;
+  --theme-bg-selected: #003d33;
+  --theme-bg-indigo-light: #002233;
+  --theme-bg-indigo-lighter: #003344;
+  --theme-bg-card-translucent: rgba(10, 25, 41, 0.95);
+
+  /* ─── Bordures : visibles, épaisses ─── */
+  --theme-border: #263238;
+  --theme-border-light: #1a2733;
+  --theme-border-medium: #37474f;
+  --theme-border-muted: #455a64;
+  --theme-border-focus: #00e1ff;
+
+  /* ─── Sémantiques : couleurs TV saturées ─── */
+  --theme-danger: #ff5252;
+  --theme-danger-dark: #d32f2f;
+  --theme-danger-bg: #3e0000;
+  --theme-danger-border: #b71c1c;
+  --theme-danger-text: #ff8a80;
+
+  --theme-success: #69f0ae;
+  --theme-success-dark: #00e676;
+  --theme-success-bg: #003300;
+  --theme-success-border: #1b5e20;
+  --theme-success-text: #a5d6a7;
+
+  --theme-warning: #ffd740;
+  --theme-warning-dark: #ffc400;
+  --theme-warning-bg: #332b00;
+  --theme-warning-border: #f57f17;
+  --theme-warning-text: #fff59d;
+
+  --theme-info: #40c4ff;
+  --theme-info-dark: #00b0ff;
+  --theme-info-bg: #002233;
+  --theme-info-border: #0277bd;
+  --theme-info-text: #80d8ff;
+
+  /* ─── Overlays ─── */
+  --theme-overlay: rgba(0, 0, 0, 0.85);
+  --theme-overlay-dark: rgba(0, 0, 0, 0.9);
+
+  /* ─── Pas d'ombres (performance) ─── */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-modal: none;
+  --shadow-card: none;
+  --shadow-hover: none;
+  --shadow-inner: none;
+  --shadow-dropdown: 0 2px 8px rgba(0, 0, 0, 0.6);
+  --shadow-toast: 0 4px 16px rgba(0, 0, 0, 0.6);
+
+  /* ─── Focus ring cyan ─── */
+  --focus-ring: 0 0 0 3px rgba(0, 225, 255, 0.35);
+
+  /* ─── Modal header plat ─── */
+  --modal-header-bg: #00838f;
+  --modal-header-color: #ffffff;
+  --close-btn-bg: rgba(255, 255, 255, 0.1);
+  --close-btn-border: rgba(255, 255, 255, 0.2);
+  --close-btn-color: #ffffff;
+  --close-btn-hover-bg: rgba(255, 255, 255, 0.25);
+
+  /* ─── Boutons ─── */
+  --btn-secondary-bg: #132f4c;
+  --btn-secondary-color: #e0e0e0;
+  --btn-secondary-border: 1px solid #37474f;
+  --btn-secondary-hover-bg: #1a3a5c;
+
+  /* ─── Scrollbar ─── */
+  --scrollbar-track: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb: rgba(0, 225, 255, 0.2);
+  --scrollbar-thumb-hover: rgba(0, 225, 255, 0.4);
+
+  /* ─── Couleurs complémentaires ─── */
+  --theme-cyan: #00e5ff;
+  --theme-cyan-bg: #002233;
+  --theme-cyan-text: #80deea;
+  --theme-cyan-border: #006064;
+  --theme-amber: #ffd740;
+  --theme-amber-bg: #332b00;
+  --theme-amber-text: #fff59d;
+  --theme-amber-border: #f57f17;
+  --theme-purple-bg: #1a0033;
+  --theme-purple-text: #ce93d8;
+  --theme-purple-border: #4a148c;
+  --theme-neutral: #78909c;
+  --theme-neutral-bg: #263238;
+  --theme-neutral-text: #b0bec5;
+  --theme-neutral-border: #37474f;
+}
+
+/* ─────────────────────────────────────────
+   2. TYPOGRAPHIE TV — Tailles agrandies
+   ───────────────────────────────────────── */
+[data-palette="tv-display"] {
+  --font-2xs: 0.75rem;
+  --font-xs: 0.85rem;
+  --font-sm: 0.95rem;
+  --font-base: 1.05rem;
+  --font-md: 1.2rem;
+  --font-lg: 1.4rem;
+  --font-xl: 1.6rem;
+  --font-2xl: 2rem;
+  --font-3xl: 2.5rem;
+  --font-4xl: 3rem;
+
+  /* Poids plus forts pour lisibilité */
+  --weight-normal: 500;
+  --weight-medium: 600;
+  --weight-semibold: 700;
+  --weight-bold: 800;
+
+  /* Line-height aéré */
+  --leading-tight: 1.3;
+  --leading-snug: 1.45;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+}
+
+/* ─────────────────────────────────────────
+   3. BOUTONS TV — Cibles tactiles agrandies
+   ───────────────────────────────────────── */
+[data-palette="tv-display"] {
+  --btn-height: 48px;
+  --btn-height-xs: 32px;
+  --btn-height-sm: 40px;
+  --btn-height-md: 48px;
+  --btn-height-lg: 56px;
+
+  --btn-padding: 12px 24px;
+  --btn-padding-sm: 8px 16px;
+  --btn-padding-lg: 16px 32px;
+
+  --btn-font-size: 16px;
+  --btn-font-size-sm: 14px;
+  --btn-font-size-lg: 18px;
+  --btn-radius: 4px;
+
+  --btn-icon-size: 40px;
+  --btn-icon-size-sm: 32px;
+  --btn-icon-size-lg: 48px;
+}
+
+/* ─────────────────────────────────────────
+   4. TABLE TV — Lignes plus hautes
+   ───────────────────────────────────────── */
+[data-palette="tv-display"] {
+  --table-header-padding: 12px 16px;
+  --table-cell-padding: 10px 16px;
+  --table-header-font-size: var(--font-sm);
+  --table-radius: 4px;
+}
+
+/* ─────────────────────────────────────────
+   5. ICÔNES TV — Plus grandes
+   ───────────────────────────────────────── */
+[data-palette="tv-display"] {
+  --icon-xs: 18px;
+  --icon-sm: 20px;
+  --icon-md: 24px;
+  --icon-lg: 28px;
+  --icon-xl: 32px;
+  --icon-2xl: 40px;
+}
+
+/* ─────────────────────────────────────────
+   6. BORDURES RENFORCÉES — Visibilité TV
+   ───────────────────────────────────────── */
+[data-palette="tv-display"] .ui-card,
+[data-palette="tv-display"] .card,
+[data-palette="tv-display"] .ui-panel {
+  border-width: 2px;
+}
+
+[data-palette="tv-display"] .ui-input {
+  border-width: 2px;
+}

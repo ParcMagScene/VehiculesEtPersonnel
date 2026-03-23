@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2 } from 'lucide-react';
+import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2, Download } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../../utils/api';
 import { safeDate } from '../../utils/formatUtils';
@@ -410,6 +410,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSavImportModal, setShowSavImportModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [exportingSavPdf, setExportingSavPdf] = useState(false);
   const [labelPrintEquipment, setLabelPrintEquipment] = useState(null);
   const [mgmtTab, setMgmtTab] = useState('imports');
 
@@ -594,10 +595,14 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
     if (!confirm(`Sérialiser "${eq.name}" en ${qty} entités individuelles ?\n\nChaque exemplaire recevra son propre UID (EMAG-XXXXX).\nL'article original sera remplacé par ${qty} fiches individuelles.`)) return;
     try {
       const result = await api.serializeEquipment(eq.id);
-      toast.success(`${result.message} UID créés : ${result.created.map(c => c.uid).join(', ')}`);
+      toast.success(`${result.message} — UID créés : ${result.created.map(c => c.uid).join(', ')}`);
       setSelectedEquipment(null);
       setDialogEquipment(null);
-      loadData();
+      // Mise à jour immédiate du tableau sans recharger toutes les données
+      setEquipment(prev => [
+        ...prev.filter(e => e.id !== eq.id),
+        ...(result.items || [])
+      ]);
     } catch (err) {
       toast.error('Erreur sérialisation: ' + err.message);
     }
@@ -633,6 +638,26 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
       setEquipmentLists(listsData);
     } catch (err) {
       console.error('Erreur toggle liste:', err);
+    }
+  };
+
+  // Export PDF matériel en SAV
+  const handleExportSavPdf = async () => {
+    setExportingSavPdf(true);
+    try {
+      const blob = await api.exportSavActivePdf();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `materiel-en-sav-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erreur export PDF SAV:', err);
+    } finally {
+      setExportingSavPdf(false);
     }
   };
 
@@ -708,6 +733,9 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
               )}
               <button className="eq-btn-secondary" onClick={() => setShowReportModal(true)} title="Rapport maintenance matériel">
                 <FileText size={14} /> Rapport
+              </button>
+              <button className="eq-btn-secondary" onClick={handleExportSavPdf} disabled={exportingSavPdf} title="Exporter PDF du matériel en SAV">
+                <Download size={14} /> {exportingSavPdf ? 'Export...' : 'PDF SAV'}
               </button>
               <select className="eq-filter" value={savFilterStatus} onChange={(e) => setSavFilterStatus(e.target.value)}>
                 <option value="_active">En cours (actifs)</option>

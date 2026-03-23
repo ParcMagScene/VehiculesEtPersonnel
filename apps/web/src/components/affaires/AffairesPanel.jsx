@@ -718,7 +718,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const handleRefresh = async () => {
     setIsLoading(true);
     setError(null);
-    await Promise.all([loadDbAffaires(), loadGoogleAffaires()]);
+    await Promise.all([loadDbAffaires(), loadGoogleAffaires(), loadAllTasks()]);
     setIsLoading(false);
   };
 
@@ -1128,7 +1128,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         reservations={reservations}
         googleEventIds={dialogAffaire ? (googleEventIdsMap[dialogAffaire.numeroAffaire] || []) : []}
         onClose={() => setDialogAffaire(null)}
-        onDataChanged={(updatedAffaire) => { if (updatedAffaire) setDialogAffaire(updatedAffaire); loadDbAffaires(); }}
+        onDataChanged={(updatedAffaire) => { if (updatedAffaire) setDialogAffaire(updatedAffaire); loadDbAffaires(); loadAllTasks(); }}
         onNavigateToEntity={onNavigateToEntity}
       />
 

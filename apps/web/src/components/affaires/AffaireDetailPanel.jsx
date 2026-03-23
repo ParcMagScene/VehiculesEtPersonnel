@@ -555,6 +555,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
       if (total > 0) {
         showFeedback({ type: 'success', message: `Planification mise à jour (${toCreate.length} créée${toCreate.length > 1 ? 's' : ''}, ${toUpdate.length} modifiée${toUpdate.length > 1 ? 's' : ''}, ${toDelete.length} supprimée${toDelete.length > 1 ? 's' : ''})` });
         loadAffaireTasks();
+        if (onDataChanged) onDataChanged();
       }
     } catch (err) {
       console.error('Erreur sauvegarde tâches:', err);
@@ -562,7 +563,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     } finally {
       setSavingTasks(false);
     }
-  }, [taskSteps, affaire, getSectionForStep, showFeedback, loadAffaireTasks]);
+  }, [taskSteps, affaire, getSectionForStep, showFeedback, loadAffaireTasks, onDataChanged]);
 
   // Nombre d'étapes activées
   const visibleSteps = useMemo(() => getVisibleSteps(affaire.type), [affaire.type]);
@@ -987,6 +988,58 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         </section>
       )}
 
+      {/* ═══ Section : BL / BP importés ═══ */}
+      {linkedBLImports.length > 0 && (
+        <section className="detail-section">
+          <h3 className="detail-section-title">
+            <FileText size={15} /> BL / BP importés
+            <span className="section-count">{linkedBLImports.length}</span>
+          </h3>
+          <div className="bl-imports-list">
+            {linkedBLImports.map(bl => {
+              let pd = bl.parsedData || bl.parsed_data;
+              if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = null; } }
+              const sectionsCount = pd?.sections?.length || 0;
+              const itemsCount = pd?.items?.length || 0;
+              const docLabel = pd?.docTypeLabel || (bl.affaireType === 'Vente' ? 'BL Vente' : 'Bon de Préparation');
+              return (
+                <div
+                  key={bl.id}
+                  className="bl-import-card"
+                  style={{ cursor: bl.filePath ? 'pointer' : 'default' }}
+                  onClick={bl.filePath ? async () => {
+                    setAnnotatingBL(bl);
+                    await annotate(affaire.numeroAffaire, bl.id);
+                  } : undefined}
+                  title={bl.filePath ? 'Cliquer pour voir le PDF annoté' : undefined}
+                >
+                  <div className="bl-import-icon">
+                    <FileText size={16} />
+                  </div>
+                  <div className="bl-import-info">
+                    <div className="bl-import-filename">{bl.filename || 'Import'}</div>
+                    <div className="bl-import-meta">
+                      <span className="bl-import-type-badge">{docLabel}</span>
+                      {sectionsCount > 0 && <span>{sectionsCount} section{sectionsCount > 1 ? 's' : ''}</span>}
+                      {itemsCount > 0 && <span>{itemsCount} article{itemsCount > 1 ? 's' : ''}</span>}
+                      {bl.createdAt && <span><Clock size={11} /> {new Date(bl.createdAt).toLocaleDateString('fr-FR')}</span>}
+                    </div>
+                  </div>
+                  <div className={`bl-import-status ${bl.status || 'pending'}`}>
+                    {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
+                  </div>
+                  {editable && (
+                    <button className="bl-import-delete-btn" onClick={e => { e.stopPropagation(); handleDeleteBL(bl); }} title="Supprimer ce BL/BP">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ═══ Feedback action ═══ */}
       {actionFeedback && (
         <div className={`action-feedback ${actionFeedback.type}`}>
@@ -1295,58 +1348,6 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           </div>
         )}
       </section>
-
-      {/* ═══ Section : BL / BP importés ═══ */}
-      {linkedBLImports.length > 0 && (
-        <section className="detail-section">
-          <h3 className="detail-section-title">
-            <FileText size={15} /> BL / BP importés
-            <span className="section-count">{linkedBLImports.length}</span>
-          </h3>
-          <div className="bl-imports-list">
-            {linkedBLImports.map(bl => {
-              let pd = bl.parsedData || bl.parsed_data;
-              if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = null; } }
-              const sectionsCount = pd?.sections?.length || 0;
-              const itemsCount = pd?.items?.length || 0;
-              const docLabel = pd?.docTypeLabel || (bl.affaireType === 'Vente' ? 'BL Vente' : 'Bon de Préparation');
-              return (
-                <div
-                  key={bl.id}
-                  className="bl-import-card"
-                  style={{ cursor: bl.filePath ? 'pointer' : 'default' }}
-                  onClick={bl.filePath ? async () => {
-                    setAnnotatingBL(bl);
-                    await annotate(affaire.numeroAffaire, bl.id);
-                  } : undefined}
-                  title={bl.filePath ? 'Cliquer pour voir le PDF annoté' : undefined}
-                >
-                  <div className="bl-import-icon">
-                    <FileText size={16} />
-                  </div>
-                  <div className="bl-import-info">
-                    <div className="bl-import-filename">{bl.filename || 'Import'}</div>
-                    <div className="bl-import-meta">
-                      <span className="bl-import-type-badge">{docLabel}</span>
-                      {sectionsCount > 0 && <span>{sectionsCount} section{sectionsCount > 1 ? 's' : ''}</span>}
-                      {itemsCount > 0 && <span>{itemsCount} article{itemsCount > 1 ? 's' : ''}</span>}
-                      {bl.createdAt && <span><Clock size={11} /> {new Date(bl.createdAt).toLocaleDateString('fr-FR')}</span>}
-                    </div>
-                  </div>
-                  <div className={`bl-import-status ${bl.status || 'pending'}`}>
-                    {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
-                  </div>
-                  {editable && (
-                    <button className="bl-import-delete-btn" onClick={e => { e.stopPropagation(); handleDeleteBL(bl); }} title="Supprimer ce BL/BP">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
 
       {/* ═══ Section : Pièces et liens joints ═══ */}
       <section className="detail-section">
@@ -1849,7 +1850,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
         </button>
       </div>
       <div className="slide-panel-body">
-        <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onNavigateToEntity={onNavigateToEntity} />
+        <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={onRefresh} onNavigateToEntity={onNavigateToEntity} />
       </div>
       <div className="slide-panel-footer">
         <button className="slide-panel-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>

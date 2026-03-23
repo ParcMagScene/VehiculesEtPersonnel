@@ -1,8 +1,63 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { existsSync } from 'fs'
+import { join } from 'path'
+
+// Plugin : redirection auto quand le navigateur demande un asset périmé (ancien hash)
+function staleAssetReload() {
+  const distAssets = join(import.meta.dirname, 'dist', 'assets');
+  return {
+    name: 'stale-asset-reload',
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => {
+        // Uniquement pour les fichiers /assets/ avec hash (ex: PlanningPanel-DYyH5a4J.js)
+        if (req.url?.startsWith('/assets/') && /\-[a-zA-Z0-9_]{6,}\.(js|css)$/.test(req.url)) {
+          const filePath = join(distAssets, req.url.replace('/assets/', ''));
+          if (!existsSync(filePath)) {
+            if (req.url.endsWith('.js')) {
+              // Forcer un rechargement complet de la page pour obtenir le nouveau index.html
+              res.writeHead(200, { 'Content-Type': 'application/javascript', 'Cache-Control': 'no-store' });
+              res.end('window.location.reload();');
+            } else {
+              res.writeHead(404, { 'Content-Type': 'text/plain' });
+              res.end('Asset outdated');
+            }
+            return;
+          }
+        }
+        next();
+      });
+    },
+  }
+}
+
+// Plugin : headers de cache intelligents (HTML = no-cache, assets hashés = immutable)
+function smartCacheHeaders() {
+  return {
+    name: 'smart-cache-headers',
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url || '';
+        const origSetHeader = res.setHeader.bind(res);
+        res.setHeader = (name, value) => {
+          if (name.toLowerCase() === 'cache-control') {
+            // Assets avec hash → cache longue durée (le hash change à chaque build)
+            if (url.startsWith('/assets/') && /\-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)) {
+              return origSetHeader(name, 'public, max-age=31536000, immutable');
+            }
+            // HTML et autres → pas de cache
+            return origSetHeader(name, 'no-cache, no-store, must-revalidate');
+          }
+          return origSetHeader(name, value);
+        };
+        next();
+      });
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), staleAssetReload(), smartCacheHeaders()],
   // Le dossier public est à la racine du monorepo
   publicDir: '../../public',
   build: {
@@ -49,7 +104,6 @@ export default defineConfig({
     port: 4173,
     allowedHosts: ['localhost', '192.168.205.75', 'magsav.duckdns.org'],
     headers: {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0',
       'Content-Security-Policy': [

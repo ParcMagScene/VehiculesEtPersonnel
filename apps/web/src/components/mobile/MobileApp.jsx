@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck } from 'lucide-react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
@@ -15,6 +15,7 @@ import MobileOrders from './MobileOrders';
 import MobileLeaves from './MobileLeaves';
 import MobileInventory from './MobileInventory';
 import MobileLocation from './MobileLocation';
+import MobileAffaires from './MobileAffaires';
 import MobileLogin from './MobileLogin';
 import { useTheme, PALETTES } from '../../hooks/useTheme';
 import api from '../../utils/api';
@@ -326,6 +327,14 @@ function MobileApp({ onSwitchToDesktop }) {
               <span>Interventions</span>
             </button>
 
+            <button
+              className={currentScreen === 'affaires' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('affaires'); setMenuOpen(false); }}
+            >
+              <Briefcase size={20} />
+              <span>Affaires</span>
+            </button>
+
             <div className="menu-section-label">Équipe</div>
             <button
               className={currentScreen === 'personnel' ? 'active' : ''}
@@ -514,9 +523,16 @@ function MobileApp({ onSwitchToDesktop }) {
           />
         )}
 
+        {currentScreen === 'affaires' && (
+          <MobileAffaires
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
         {currentScreen === 'personnel' && (
           <MobilePersonnel
             onBack={() => setCurrentScreen('home')}
+            currentUser={currentUser}
           />
         )}
 
@@ -531,6 +547,7 @@ function MobileApp({ onSwitchToDesktop }) {
           <MobileEquipment
             onBack={() => setCurrentScreen('home')}
             initialTab="inventory"
+            currentUser={currentUser}
           />
         )}
 
@@ -538,6 +555,7 @@ function MobileApp({ onSwitchToDesktop }) {
           <MobileEquipment
             onBack={() => setCurrentScreen('home')}
             initialTab="sav"
+            currentUser={currentUser}
           />
         )}
 
@@ -553,6 +571,7 @@ function MobileApp({ onSwitchToDesktop }) {
         {currentScreen === 'orders' && (
           <MobileOrders
             onBack={() => setCurrentScreen('home')}
+            currentUser={currentUser}
           />
         )}
 

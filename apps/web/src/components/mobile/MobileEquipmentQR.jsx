@@ -65,13 +65,12 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     if (!defautForm.title.trim()) return toast.warning('Titre requis');
     setSubmitting(true);
     try {
-      await api.createSavTicket({
+      await api.createSavRequest({
         equipment_id: equipment.id,
         title: `⚠️ ${defautForm.title}`,
         description: defautForm.description,
         type: 'panne',
         priority: 'medium',
-        status: 'open',
       });
       setSubmitSuccess('Signalement envoyé !');
       setDefautForm({ title: '', description: '' });
@@ -87,13 +86,12 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     if (!savForm.title.trim()) return toast.warning('Titre requis');
     setSubmitting(true);
     try {
-      await api.createSavTicket({
+      await api.createSavRequest({
         equipment_id: equipment.id,
         title: savForm.title,
         description: savForm.description,
         type: savForm.type,
         priority: savForm.priority,
-        status: 'open',
       });
       setSubmitSuccess('Demande SAV créée !');
       setSavForm({ title: '', description: '', type: 'panne', priority: 'medium' });

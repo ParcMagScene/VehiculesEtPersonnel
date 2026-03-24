@@ -666,16 +666,27 @@
   display: none;
 }
 
-.mobile-module-content .eq-btn-add,
+.mobile-module-content .eq-btn-add:not(.eq-mobile-sav-request),
 .mobile-module-content [title="Plan du dépôt"] {
   display: none;
 }
 
-/* Import SAV / Rapport / +Ticket — masqués sur mobile */
+/* Import SAV / Rapport / PDF SAV / +Ticket — masqués sur mobile */
 .mobile-module-content [title="Importer interventions SAV"],
 .mobile-module-content [title="Rapport maintenance matériel"],
-.mobile-module-content .eq-btn-add {
+.mobile-module-content [title="Exporter PDF du matériel en SAV"],
+.mobile-module-content .eq-btn-add:not(.eq-mobile-sav-request) {
   display: none;
+}
+
+/* Bouton Demande SAV mobile — style adapté */
+.mobile-module-content .eq-mobile-sav-request {
+  display: flex !important;
+  width: 100%;
+  justify-content: center;
+  padding: 10px 16px;
+  font-size: 14px;
+  border-radius: 8px;
 }
 
 /* ─── Toolbar mobile : pleine largeur, empilée ─── */

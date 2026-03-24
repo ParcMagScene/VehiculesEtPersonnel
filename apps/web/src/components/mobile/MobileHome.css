@@ -36,6 +36,7 @@
 
 /* Couleurs icônes */
 .home-grid-item.parc { color: var(--theme-success-dark, #059669); }
+.home-grid-item.affaires { color: #3b82f6; }
 .home-grid-item.personnel { color: var(--theme-info); }
 .home-grid-item.equipment { color: var(--theme-warning-dark, #d97706); }
 .home-grid-item.sav { color: #ef4444; }

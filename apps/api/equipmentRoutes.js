@@ -242,8 +242,37 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         WHERE id = ?
       `).run(name, reference, serial_number, category_id, status, location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, resolved.brand, resolved.brand_id, stock_quantity, req.params.id);
       
+      // Propager la photo aux équipements ayant la même référence
+      if (photo !== undefined && reference) {
+        db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?').run(photo, reference, req.params.id);
+      }
+      
       addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
       
+      res.json({ success: true });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // PATCH /api/equipment/:id/photo — Mettre à jour uniquement la photo
+  app.patch('/api/equipment/:id/photo', authenticateToken, (req, res) => {
+    try {
+      const { photo } = req.body;
+      const eq = db.prepare('SELECT id, reference FROM equipment WHERE id = ?').get(req.params.id);
+      if (!eq) return res.status(404).json({ error: 'Équipement introuvable' });
+
+      db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .run(photo || null, req.params.id);
+
+      // Propager aux équipements de même référence
+      if (photo && eq.reference) {
+        db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?')
+          .run(photo, eq.reference, req.params.id);
+      }
+
+      addToHistory('equipment', req.params.id, 'update', { photo }, req.user.id, req.user.name);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
@@ -698,6 +727,29 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       db.prepare('UPDATE equipment SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, equipmentId);
     }
   };
+
+  // POST /api/sav-tickets/request — Demande SAV (tous utilisateurs authentifiés)
+  app.post('/api/sav-tickets/request', authenticateToken, (req, res) => {
+    try {
+      const { equipment_id, title, description, type, priority } = req.body;
+      if (!equipment_id || !title) return res.status(400).json({ error: 'Équipement et titre requis' });
+
+      const result = db.prepare(`
+        INSERT INTO sav_tickets (equipment_id, reported_by, assigned_to, type, priority, status, title, description)
+        VALUES (?, ?, NULL, ?, ?, 'open', ?, ?)
+      `).run(equipment_id, req.user.id, type || 'panne', priority || 'medium', title, description);
+
+      // Alerte email aux admins
+      try {
+        alertSavTicketCreated(db, { equipment_id, title, type, priority, description }, req.user.name);
+      } catch (emailErr) { logger.warn('Alerte email SAV:', emailErr.message); }
+
+      res.json({ id: result.lastInsertRowid });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
 
   // POST /api/sav-tickets
   app.post('/api/sav-tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {

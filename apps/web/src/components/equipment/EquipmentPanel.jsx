@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2, Download } from 'lucide-react';
+import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2, Download, Camera } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../../utils/api';
 import { safeDate } from '../../utils/formatUtils';
@@ -13,6 +13,7 @@ import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
 import './EquipmentPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { resolveGenericImage, getAllGenericImages, GENERIC_IMAGES } from '../../utils/genericImages';
 
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1", "A3" → "A1")
 const findZone = (zoneList, zid) => {
@@ -70,7 +71,16 @@ const normalizeStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const tokenize = (s) => (s || '').toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2);
 
 const matchPhotoToEquipment = (photos, eq) => {
+  // Priorité 0 : image générique manuellement choisie (format "generic:group/key")
+  if (eq.photo && eq.photo.startsWith('generic:')) {
+    const [groupKey, key] = eq.photo.slice(8).split('/');
+    return GENERIC_IMAGES[groupKey]?.[key] || null;
+  }
   if (!photos || photos.length === 0) return null;
+  // Priorité : photo manuellement associée en DB
+  if (eq.photo) {
+    if (photos.includes(eq.photo)) return `/Photos/Matériel/${eq.photo}`;
+  }
   const ref = normalizeStr(eq.reference);
   const name = normalizeStr(eq.name);
   const refTokens = tokenize(eq.reference);
@@ -170,8 +180,8 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
     const [type, idStr] = value.split(':');
     const id = parseInt(idStr);
     if (type === 'family') { const f = families.find(x => x.id === id); return f ? `${f.icon || '📦'} ${f.name}` : value; }
-    if (type === 'subfamily') { const sf = subfamilies.find(x => x.id === id); return sf ? `├ ${sf.name}` : value; }
-    if (type === 'category') { const c = leafCategories.find(x => x.id === id); return c ? `└ ${c.name}` : value; }
+    if (type === 'subfamily') { const sf = subfamilies.find(x => x.id === id); return sf ? `${sf.icon || '📂'} ${sf.name}` : value; }
+    if (type === 'category') { const c = leafCategories.find(x => x.id === id); return c ? `${c.icon || '📄'} ${c.name}` : value; }
     return value;
   };
 
@@ -199,7 +209,7 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
             const isExpanded = isMobile && expandedFamily === fam.id;
             const showSubs = isHovered || isExpanded;
             return (
-              <div key={fam.id}>
+              <div key={fam.id} className="eq-cascade-family-wrap">
                 <div className={`eq-cascade-item ${showSubs ? 'hovered' : ''} ${value === `family:${fam.id}` ? 'selected' : ''}`}
                   onMouseEnter={!isMobile ? () => { setHoveredFamily(fam.id); setHoveredSub(null); cancelClose(); } : undefined}
                   onClick={() => {
@@ -234,6 +244,7 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
                                 handleSelect(`subfamily:${sf.id}`);
                               }
                             }}>
+                            <span className="eq-cascade-icon" style={{ color: sf.color || 'var(--theme-text-gray)' }}>{sf.icon || '📂'}</span>
                             <span className="eq-cascade-label">{sf.name}</span>
                             {cats.length > 0 && <ChevronRight size={12} className={`eq-cascade-sub-arrow${isSubExpanded ? ' eq-cascade-expanded' : ''}`} />}
                           </div>
@@ -245,6 +256,7 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
                               {cats.map(cat => (
                                 <div key={cat.id} className={`eq-cascade-item ${value === `category:${cat.id}` ? 'selected' : ''}`}
                                   onClick={(e) => { e.stopPropagation(); handleSelect(`category:${cat.id}`); }}>
+                                  <span className="eq-cascade-icon" style={{ color: cat.color || 'var(--theme-text-gray)' }}>{cat.icon || '📄'}</span>
                                   <span className="eq-cascade-label">{cat.name}</span>
                                 </div>
                               ))}
@@ -261,16 +273,131 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
                       const cats = leafCategories.filter(c => (c.parentId || c.parent_id) === sf.id);
                       const isSubHovered = hoveredSub === sf.id;
                       return (
-                        <div key={sf.id} className={`eq-cascade-item ${isSubHovered ? 'hovered' : ''} ${value === `subfamily:${sf.id}` ? 'selected' : ''}`}
-                          onMouseEnter={() => { setHoveredSub(sf.id); cancelClose(); }}
-                          onClick={(e) => { e.stopPropagation(); handleSelect(`subfamily:${sf.id}`); }}>
-                          <span className="eq-cascade-label">{sf.name}</span>
-                          {cats.length > 0 && <ChevronRight size={12} className="eq-cascade-sub-arrow" />}
+                        <div key={sf.id} className="eq-cascade-sub-wrap">
+                          <div className={`eq-cascade-item ${isSubHovered ? 'hovered' : ''} ${value === `subfamily:${sf.id}` ? 'selected' : ''}`}
+                            onMouseEnter={() => { setHoveredSub(sf.id); cancelClose(); }}
+                            onClick={(e) => { e.stopPropagation(); handleSelect(`subfamily:${sf.id}`); }}>
+                            <span className="eq-cascade-icon" style={{ color: sf.color || 'var(--theme-text-gray)' }}>{sf.icon || '📂'}</span>
+                            <span className="eq-cascade-label">{sf.name}</span>
+                            {cats.length > 0 && <ChevronRight size={12} className="eq-cascade-sub-arrow" />}
+                          </div>
                           {isSubHovered && cats.length > 0 && (
                             <div className="eq-cascade-menu eq-cascade-l3" onMouseEnter={cancelClose}>
                               {cats.map(cat => (
                                 <div key={cat.id} className={`eq-cascade-item ${value === `category:${cat.id}` ? 'selected' : ''}`}
                                   onClick={(e) => { e.stopPropagation(); handleSelect(`category:${cat.id}`); }}>
+                                  <span className="eq-cascade-icon" style={{ color: cat.color || 'var(--theme-text-gray)' }}>{cat.icon || '📄'}</span>
+                                  <span className="eq-cascade-label">{cat.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ═══ SÉLECTEUR CASCADE CATÉGORIE (pour formulaire) ═══
+const CategoryCascadePicker = ({ families, subfamilies, leafCategories, value, onChange }) => {
+  // value = { family_id, subfamily_id, category_id }
+  const [isOpen, setIsOpen] = useState(false);
+  const [hoveredFamily, setHoveredFamily] = useState(null);
+  const [hoveredSub, setHoveredSub] = useState(null);
+  const containerRef = useRef(null);
+  const closeTimer = useRef(null);
+
+  const startClose = () => { closeTimer.current = setTimeout(() => { setIsOpen(false); setHoveredFamily(null); setHoveredSub(null); }, 200); };
+  const cancelClose = () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false); setHoveredFamily(null); setHoveredSub(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getLabel = () => {
+    const parts = [];
+    if (value.family_id) {
+      const f = families.find(x => x.id === parseInt(value.family_id));
+      if (f) parts.push(`${f.icon || '📦'} ${f.name}`);
+    }
+    if (value.subfamily_id) {
+      const sf = subfamilies.find(x => x.id === parseInt(value.subfamily_id));
+      if (sf) parts.push(`${sf.icon || '📂'} ${sf.name}`);
+    }
+    if (value.category_id) {
+      const c = leafCategories.find(x => x.id === parseInt(value.category_id));
+      if (c) parts.push(`${c.icon || '📄'} ${c.name}`);
+    }
+    return parts.length > 0 ? parts.join(' › ') : '— Sélectionner une catégorie —';
+  };
+
+  const handleSelect = (familyId, subfamilyId, categoryId) => {
+    onChange({
+      family_id: familyId ? String(familyId) : '',
+      subfamily_id: subfamilyId ? String(subfamilyId) : '',
+      category_id: categoryId ? String(categoryId) : '',
+    });
+    setIsOpen(false); setHoveredFamily(null); setHoveredSub(null);
+  };
+
+  return (
+    <div className="eq-cascade-filter eq-cascade-picker" ref={containerRef} onMouseLeave={startClose} onMouseEnter={cancelClose}>
+      <button type="button" className={`eq-cascade-btn eq-cascade-picker-btn ${value.family_id ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+        <Tag size={13} />
+        <span>{getLabel()}</span>
+        <ChevronRight size={12} className={`eq-cascade-arrow ${isOpen ? 'open' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="eq-cascade-menu eq-cascade-l1 eq-cascade-picker-menu">
+          <div className="eq-cascade-item eq-cascade-all" onClick={() => handleSelect('', '', '')}>
+            Aucune catégorie
+          </div>
+          {families.map(fam => {
+            const subs = subfamilies.filter(s => (s.parentId || s.parent_id) === fam.id);
+            const isHovered = hoveredFamily === fam.id;
+            return (
+              <div key={fam.id} className="eq-cascade-family-wrap">
+                <div className={`eq-cascade-item ${isHovered ? 'hovered' : ''} ${value.family_id === String(fam.id) && !value.subfamily_id ? 'selected' : ''}`}
+                  onMouseEnter={() => { setHoveredFamily(fam.id); setHoveredSub(null); cancelClose(); }}
+                  onClick={() => handleSelect(fam.id, '', '')}>
+                  <span className="eq-cascade-icon" style={{ color: fam.color || 'var(--theme-text-gray)' }}>{fam.icon || '📦'}</span>
+                  <span className="eq-cascade-label">{fam.name}</span>
+                  {subs.length > 0 && <ChevronRight size={12} className="eq-cascade-sub-arrow" />}
+                </div>
+                {isHovered && subs.length > 0 && (
+                  <div className="eq-cascade-menu eq-cascade-l2" onMouseEnter={cancelClose}>
+                    {subs.map(sf => {
+                      const cats = leafCategories.filter(c => (c.parentId || c.parent_id) === sf.id);
+                      const isSubHovered = hoveredSub === sf.id;
+                      return (
+                        <div key={sf.id} className="eq-cascade-sub-wrap">
+                          <div className={`eq-cascade-item ${isSubHovered ? 'hovered' : ''} ${value.subfamily_id === String(sf.id) && !value.category_id ? 'selected' : ''}`}
+                            onMouseEnter={() => { setHoveredSub(sf.id); cancelClose(); }}
+                            onClick={(e) => { e.stopPropagation(); handleSelect(fam.id, sf.id, ''); }}>
+                            <span className="eq-cascade-icon" style={{ color: sf.color || 'var(--theme-text-gray)' }}>{sf.icon || '📂'}</span>
+                            <span className="eq-cascade-label">{sf.name}</span>
+                            {cats.length > 0 && <ChevronRight size={12} className="eq-cascade-sub-arrow" />}
+                          </div>
+                          {isSubHovered && cats.length > 0 && (
+                            <div className="eq-cascade-menu eq-cascade-l3" onMouseEnter={cancelClose}>
+                              {cats.map(cat => (
+                                <div key={cat.id} className={`eq-cascade-item ${value.category_id === String(cat.id) ? 'selected' : ''}`}
+                                  onClick={(e) => { e.stopPropagation(); handleSelect(fam.id, sf.id, cat.id); }}>
+                                  <span className="eq-cascade-icon" style={{ color: cat.color || 'var(--theme-text-gray)' }}>{cat.icon || '📄'}</span>
                                   <span className="eq-cascade-label">{cat.name}</span>
                                 </div>
                               ))}
@@ -411,6 +538,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [showSavImportModal, setShowSavImportModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [exportingSavPdf, setExportingSavPdf] = useState(false);
+  const [showMobileSavRequest, setShowMobileSavRequest] = useState(false);
   const [labelPrintEquipment, setLabelPrintEquipment] = useState(null);
   const [mgmtTab, setMgmtTab] = useState('imports');
 
@@ -429,6 +557,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [allDepotZones, setAllDepotZones] = useState(null);
   const [locationStats, setLocationStats] = useState(null);
   const [filterZone, setFilterZone] = useState('');
+  const [filterSerialized, setFilterSerialized] = useState(false);
   const [showDepotMap, setShowDepotMap] = useState(false);
   const [depotMapModalZone, setDepotMapModalZone] = useState(null); // { zoneId, equipmentName } or null
 
@@ -508,6 +637,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const filteredEquipment = useMemo(() => {
     return equipment.filter(eq => {
       if (filterStatus && eq.status !== filterStatus) return false;
+      if (filterSerialized && !(eq.serialNumber || eq.serial_number)) return false;
       if (filterZone) {
         if (filterZone === '_none') {
           if (eq.location_zone || eq.locationZone) return false;
@@ -543,7 +673,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
       }
       return true;
     });
-  }, [equipment, filterStatus, filterZone, parsedCatFilter, search, subfamilies, leafCategories, listFilter, favoriteIds, watchIds]);
+  }, [equipment, filterStatus, filterSerialized, filterZone, parsedCatFilter, search, subfamilies, leafCategories, listFilter, favoriteIds, watchIds]);
 
   const filteredTickets = useMemo(() => {
     return savTickets.filter(t => {
@@ -565,6 +695,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   // ═══ HANDLERS ═══
   const handleSaveEquipment = async (data) => {
     try {
+      console.log('[EquipmentPanel] handleSaveEquipment — photo:', data.photo, '| editing:', !!editingEquipment);
       if (editingEquipment) {
         await api.updateEquipment(editingEquipment.id, data);
       } else {
@@ -703,6 +834,10 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                 onChange={setFilterCatTree}
                 isMobile={isMobile}
               />
+              <label className="eq-filter-check" title="Afficher uniquement les matériels sérialisés">
+                <input type="checkbox" checked={filterSerialized} onChange={(e) => setFilterSerialized(e.target.checked)} />
+                <span>Sérialisés</span>
+              </label>
               {depotZones && (
                 <select className="eq-filter eq-zone-filter" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} title="Filtrer par zone dépôt">
                   <option value="">Toutes zones</option>
@@ -731,20 +866,29 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                   <Upload size={14} /> Import SAV
                 </button>
               )}
-              <button className="eq-btn-secondary" onClick={() => setShowReportModal(true)} title="Rapport maintenance matériel">
-                <FileText size={14} /> Rapport
-              </button>
-              <button className="eq-btn-secondary" onClick={handleExportSavPdf} disabled={exportingSavPdf} title="Exporter PDF du matériel en SAV">
-                <Download size={14} /> {exportingSavPdf ? 'Export...' : 'PDF SAV'}
-              </button>
+              {canManageEquipmentMaintenance && (
+                <button className="eq-btn-secondary" onClick={() => setShowReportModal(true)} title="Rapport maintenance matériel">
+                  <FileText size={14} /> Rapport
+                </button>
+              )}
+              {canManageEquipmentMaintenance && (
+                <button className="eq-btn-secondary" onClick={handleExportSavPdf} disabled={exportingSavPdf} title="Exporter PDF du matériel en SAV">
+                  <Download size={14} /> {exportingSavPdf ? 'Export...' : 'PDF SAV'}
+                </button>
+              )}
               <select className="eq-filter" value={savFilterStatus} onChange={(e) => setSavFilterStatus(e.target.value)}>
                 <option value="_active">En cours (actifs)</option>
                 <option value="">Tous statuts</option>
                 {Object.entries(SAV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
-              {canManageEquipmentMaintenance && (
+              {canManageEquipmentMaintenance && !isMobile && (
                 <button className="eq-btn-add" onClick={() => { setSavTicketEquipment(null); setEditingSavTicket(null); setShowSavModal(true); }}>
                   <Plus size={14} /> Ticket SAV
+                </button>
+              )}
+              {isMobile && (
+                <button className="eq-btn-add eq-mobile-sav-request" onClick={() => setShowMobileSavRequest(true)}>
+                  <Plus size={14} /> Demande SAV
                 </button>
               )}
             </>
@@ -818,6 +962,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
               favoriteIds={favoriteIds}
               watchIds={watchIds}
               onToggleList={toggleList}
+              categories={categories}
               onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
               onSelect={(eq) => {
                 clearTimeout(clickTimerRef.current);
@@ -966,6 +1111,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
           brandsList={brandsList}
           depotZones={depotZones}
           allDepotZones={allDepotZones}
+          photosList={photosList}
           onSave={handleSaveEquipment}
           onClose={() => { setShowEquipmentModal(false); setEditingEquipment(null); }}
         />
@@ -979,6 +1125,18 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
           preselectedEquipment={savTicketEquipment || selectedEquipment}
           onSave={handleSaveSavTicket}
           onClose={() => { setShowSavModal(false); setEditingSavTicket(null); setSavTicketEquipment(null); }}
+        />
+      )}
+
+      {showMobileSavRequest && (
+        <MobileSavRequestForm
+          equipment={equipment}
+          onSubmit={async (data) => {
+            await api.createSavRequest(data);
+            setShowMobileSavRequest(false);
+            loadData();
+          }}
+          onClose={() => setShowMobileSavRequest(false)}
         />
       )}
 
@@ -1212,7 +1370,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
   // Manual link handler — associate a photo to an equipment by updating its `photo` field
   const handleManualLink = async (photoFilename, eq) => {
     try {
-      await api.updateEquipment(eq.id, { photo: photoFilename });
+      await api.linkEquipmentPhoto(eq.id, photoFilename);
       toast.success(`Photo associée à ${cleanName(eq.name)}`);
       setLinkingPhoto(null);
       setLinkSearch('');
@@ -1429,7 +1587,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
 };
 
 // ═══ LISTE D'ÉQUIPEMENTS (tableau) ═══
-const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photosList, logosList, favoriteIds, watchIds, onToggleList, onSelect, onDoubleClick, onOpenDepotMap }) => {
+const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photosList, logosList, favoriteIds, watchIds, onToggleList, onSelect, onDoubleClick, onOpenDepotMap, categories }) => {
   if (equipment.length === 0) {
     return (
       <div className="eq-empty">
@@ -1461,6 +1619,8 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
           {equipment.map(eq => {
             const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
             const photo = matchPhotoToEquipment(photosList, eq);
+            const hierarchy = categories ? getCategoryHierarchy(eq, categories) : null;
+            const genericImg = !photo ? resolveGenericImage(eq, hierarchy) : null;
             const isFav = favoriteIds.has(eq.id);
             const isWatch = watchIds.has(eq.id);
             return (
@@ -1471,8 +1631,8 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                 onDoubleClick={() => onDoubleClick && onDoubleClick(eq)}
               >
                 <td className="eq-table-thumb">
-                  {photo ? (
-                    <img src={photo} alt="" className="eq-table-photo" />
+                  {(photo || genericImg) ? (
+                    <img src={photo || genericImg} alt="" className={`eq-table-photo${!photo && genericImg ? ' eq-generic' : ''}`} />
                   ) : (
                     <span className="eq-table-photo-placeholder">{eq.categoryIcon || eq.category_icon || '📦'}</span>
                   )}
@@ -1549,14 +1709,15 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
   const isFav = favoriteIds?.has(eq.id);
   const isWatch = watchIds?.has(eq.id);
   const hierarchy = getCategoryHierarchy(eq, catList || []);
+  const genericImg = !photo ? resolveGenericImage(eq, hierarchy) : null;
 
   return (
     <div className="eq-detail-body">
       {/* ── Hero: Photo + Identité ── */}
       <div className="eq-detail-hero">
-        {photo && (
-          <div className="eq-detail-photo">
-            <img src={photo} alt={cleanName(eq.name)} />
+        {(photo || genericImg) && (
+          <div className={`eq-detail-photo${!photo && genericImg ? ' eq-generic' : ''}`}>
+            <img src={photo || genericImg} alt={cleanName(eq.name)} />
           </div>
         )}
         <div className="eq-detail-identity">
@@ -1978,8 +2139,12 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
 };
 
 // ═══ MODAL FORMULAIRE ÉQUIPEMENT ═══
-const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZones, allDepotZones, onSave, onClose }) => {
+const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZones, allDepotZones, photosList = [], onSave, onClose }) => {
   const [showMap, setShowMap] = useState(false);
+  const [mapSelection, setMapSelection] = useState('');
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+  const [photoSearch, setPhotoSearch] = useState('');
+  const [pickerTab, setPickerTab] = useState('photos'); // 'photos' | 'generic'
   const [mapDepotIdx, setMapDepotIdx] = useState(0); // index du dépôt affiché sur le plan
   // Hiérarchie des catégories
   const families = useMemo(() => categories.filter(c => c.level === 'family'), [categories]);
@@ -1991,52 +2156,103 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
     const cat = categories.find(c => c.id === catId);
     if (!cat) return { familyId: '', subfamilyId: '', categoryId: '' };
     if (cat.level === 'family') return { familyId: String(cat.id), subfamilyId: '', categoryId: '' };
-    if (cat.level === 'subfamily') return { familyId: String(cat.parent_id || ''), subfamilyId: String(cat.id), categoryId: '' };
+    const catParent = cat.parentId || cat.parent_id;
+    if (cat.level === 'subfamily') return { familyId: String(catParent || ''), subfamilyId: String(cat.id), categoryId: '' };
     // level === 'category'
-    const sf = categories.find(c => c.id === cat.parent_id);
-    return { familyId: String(sf?.parent_id || ''), subfamilyId: String(cat.parent_id || ''), categoryId: String(cat.id) };
+    const sf = categories.find(c => c.id === catParent);
+    const sfParent = sf?.parentId || sf?.parent_id;
+    return { familyId: String(sfParent || ''), subfamilyId: String(catParent || ''), categoryId: String(cat.id) };
   }, [categories]);
 
-  const parents = findParents(eq?.category_id);
+  const parents = findParents(eq?.categoryId || eq?.category_id);
   
   const [form, setForm] = useState({
     name: eq?.name || '',
     reference: eq?.reference || '',
-    serial_number: eq?.serial_number || '',
+    serial_number: eq?.serialNumber || eq?.serial_number || '',
     family_id: parents.familyId,
     subfamily_id: parents.subfamilyId,
-    category_id: parents.categoryId || (eq?.category_id ? String(eq.category_id) : ''),
+    category_id: parents.categoryId || (eq?.categoryId || eq?.category_id ? String(eq.categoryId || eq.category_id) : ''),
     status: eq?.status || 'available',
     location: eq?.location || '',
     location_depot: eq?.location_depot || eq?.locationDepot || '',
     location_zone: eq?.location_zone || eq?.locationZone || '',
     location_code: eq?.location_code || eq?.locationCode || '',
     location_floor: eq?.location_floor || eq?.locationFloor || '',
-    purchase_date: eq?.purchase_date || '',
-    purchase_price: eq?.purchase_price || '',
-    warranty_end: eq?.warranty_end || '',
+    purchase_date: eq?.purchaseDate || eq?.purchase_date || '',
+    purchase_price: eq?.purchasePrice || eq?.purchase_price || '',
+    warranty_end: eq?.warrantyEnd || eq?.warranty_end || '',
     notes: eq?.notes || '',
     brand: eq?.brand || '',
-    stock_quantity: eq?.stock_quantity || 1,
+    stock_quantity: eq?.stockQuantity || eq?.stock_quantity || 1,
+    photo: eq?.photo || '',
   });
 
   const currentSubfamilies = useMemo(() => {
     if (!form.family_id) return [];
-    return subfamilies.filter(sf => sf.parent_id === parseInt(form.family_id));
+    const fid = parseInt(form.family_id);
+    return subfamilies.filter(sf => (sf.parentId || sf.parent_id) === fid);
   }, [form.family_id, subfamilies]);
 
   const currentLeafCategories = useMemo(() => {
     if (!form.subfamily_id) return [];
-    return leafCategories.filter(c => c.parent_id === parseInt(form.subfamily_id));
+    const sid = parseInt(form.subfamily_id);
+    return leafCategories.filter(c => (c.parentId || c.parent_id) === sid);
   }, [form.subfamily_id, leafCategories]);
 
   // La category_id finale à envoyer au serveur
   const resolvedCategoryId = form.category_id || form.subfamily_id || form.family_id || '';
 
+  // Photo : manuelle (DB) ou auto-matchée
+  const autoMatchedPhoto = useMemo(() => {
+    if (!photosList.length) return null;
+    const fakeEq = { name: form.name, reference: form.reference };
+    return matchPhotoToEquipment(photosList, fakeEq);
+  }, [photosList, form.name, form.reference]);
+
+  const currentPhotoUrl = useMemo(() => {
+    if (!form.photo) return autoMatchedPhoto;
+    if (form.photo.startsWith('generic:')) {
+      const [groupKey, key] = form.photo.slice(8).split('/');
+      return GENERIC_IMAGES[groupKey]?.[key] || null;
+    }
+    return `/Photos/Matériel/${form.photo}`;
+  }, [form.photo, autoMatchedPhoto]);
+
+  // Catégorie résolue pour l'icône par défaut
+  const resolvedCat = useMemo(() => {
+    const cid = parseInt(resolvedCategoryId);
+    return cid ? categories.find(c => c.id === cid) : null;
+  }, [resolvedCategoryId, categories]);
+  const defaultIcon = resolvedCat?.icon || '📦';
+
+  // Photos filtrées pour le picker
+  const filteredPickerPhotos = useMemo(() => {
+    if (!photoSearch.trim()) return photosList;
+    const q = photoSearch.toLowerCase();
+    return photosList.filter(p => p.toLowerCase().includes(q));
+  }, [photosList, photoSearch]);
+
+  // Images génériques
+  const allGenerics = useMemo(() => getAllGenericImages(), []);
+  const filteredGenerics = useMemo(() => {
+    if (!photoSearch.trim()) return allGenerics;
+    const q = photoSearch.toLowerCase();
+    return allGenerics.filter(g => g.label.toLowerCase().includes(q) || g.group.toLowerCase().includes(q));
+  }, [allGenerics, photoSearch]);
+
+  // Image générique auto-résolue (pour preview quand pas de photo)
+  const genericImageUrl = useMemo(() => {
+    if (currentPhotoUrl) return null;
+    const fakeEq = { name: form.name, reference: form.reference };
+    const hierarchy = getCategoryHierarchy({ categoryId: parseInt(resolvedCategoryId) || 0 }, categories);
+    return resolveGenericImage(fakeEq, hierarchy);
+  }, [form.name, form.reference, resolvedCategoryId, categories, currentPhotoUrl]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.warning('Nom requis');
-    onSave({
+    const data = {
       ...form,
       category_id: resolvedCategoryId ? parseInt(resolvedCategoryId) : null,
       purchase_price: form.purchase_price ? parseFloat(form.purchase_price) : null,
@@ -2045,7 +2261,10 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
       location_zone: form.location_zone || null,
       location_code: form.location_code || null,
       location_floor: form.location_floor || null,
-    });
+      photo: form.photo || null,
+    };
+    console.log('[EquipmentForm] Submit — photo:', data.photo, '| form.photo:', form.photo);
+    onSave(data);
   };
 
   return (
@@ -2060,6 +2279,86 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
             <div className="eq-form-field eq-form-full">
               <label>Nom *</label>
               <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Enceinte 2 voies 8XT" autoFocus />
+            </div>
+
+            {/* Photo picker */}
+            <div className="eq-form-field eq-form-full">
+              <label>Photo</label>
+              <div className="eq-photo-picker">
+                <div className="eq-photo-picker-preview" onClick={() => setShowPhotoPicker(!showPhotoPicker)}>
+                  {currentPhotoUrl ? (
+                    <img src={currentPhotoUrl} alt="" />
+                  ) : genericImageUrl ? (
+                    <img src={genericImageUrl} alt="" className="eq-generic-preview" />
+                  ) : (
+                    <span className="eq-photo-picker-icon">{defaultIcon}</span>
+                  )}
+                  <span className="eq-photo-picker-label">
+                    {form.photo ? form.photo : (autoMatchedPhoto ? '(auto)' : genericImageUrl ? '(générique auto)' : 'Choisir une photo')}
+                  </span>
+                  <Camera size={16} />
+                </div>
+                {form.photo && (
+                  <button type="button" className="eq-photo-picker-clear" onClick={() => setForm(f => ({ ...f, photo: '' }))} title="Retirer la photo">
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              {showPhotoPicker && (
+                <div className="eq-photo-picker-dropdown">
+                  <div className="eq-photo-picker-search">
+                    <Search size={14} />
+                    <input type="text" value={photoSearch} onChange={(e) => setPhotoSearch(e.target.value)} placeholder="Rechercher..." autoFocus />
+                  </div>
+                  <div className="eq-photo-picker-tabs">
+                    <button type="button" className={`eq-picker-tab${pickerTab === 'photos' ? ' active' : ''}`} onClick={() => setPickerTab('photos')}>📸 Photos ({photosList.length})</button>
+                    <button type="button" className={`eq-picker-tab${pickerTab === 'generic' ? ' active' : ''}`} onClick={() => setPickerTab('generic')}>🖼️ Génériques ({allGenerics.length})</button>
+                  </div>
+                  <div className="eq-photo-picker-grid">
+                    {/* Option icône par défaut (pas de photo) */}
+                    <div
+                      className={`eq-photo-picker-item${!form.photo ? ' selected' : ''}`}
+                      onClick={() => { setForm(f => ({ ...f, photo: '' })); setShowPhotoPicker(false); setPhotoSearch(''); }}
+                    >
+                      <span className="eq-photo-picker-item-icon">{defaultIcon}</span>
+                      <span className="eq-photo-picker-item-label">Aucune photo</span>
+                    </div>
+                    {pickerTab === 'photos' && filteredPickerPhotos.map(p => (
+                      <div
+                        key={p}
+                        className={`eq-photo-picker-item${form.photo === p ? ' selected' : ''}`}
+                        onClick={() => { setForm(f => ({ ...f, photo: p })); setShowPhotoPicker(false); setPhotoSearch(''); }}
+                        title={p}
+                      >
+                        <img src={`/Photos/Matériel/${p}`} alt={p} />
+                        <span className="eq-photo-picker-item-label">{p.replace(/\.[^.]+$/, '')}</span>
+                      </div>
+                    ))}
+                    {pickerTab === 'generic' && (() => {
+                      let lastGroup = '';
+                      return filteredGenerics.map(g => {
+                        const showHeader = g.group !== lastGroup;
+                        lastGroup = g.group;
+                        return (
+                          <React.Fragment key={g.key}>
+                            {showHeader && <div className="eq-photo-picker-group-header">{g.group}</div>}
+                            <div
+                              className="eq-photo-picker-item eq-generic-item"
+                              onClick={() => { setForm(f => ({ ...f, photo: `generic:${g.groupKey}/${g.key}` })); setShowPhotoPicker(false); setPhotoSearch(''); }}
+                              title={g.label}
+                            >
+                              <img src={g.path} alt={g.label} />
+                              <span className="eq-photo-picker-item-label">{g.label}</span>
+                            </div>
+                          </React.Fragment>
+                        );
+                      });
+                    })()}
+                    {pickerTab === 'photos' && filteredPickerPhotos.length === 0 && <div className="eq-photo-picker-empty">Aucune photo trouvée</div>}
+                    {pickerTab === 'generic' && filteredGenerics.length === 0 && <div className="eq-photo-picker-empty">Aucune image générique trouvée</div>}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="eq-form-field">
               <label>Référence / Code</label>
@@ -2080,26 +2379,15 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
               <label>Quantité / Stock</label>
               <input type="number" min="1" value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })} />
             </div>
-            <div className="eq-form-field">
-              <label>Famille</label>
-              <select value={form.family_id} onChange={(e) => setForm({ ...form, family_id: e.target.value, subfamily_id: '', category_id: '' })}>
-                <option value="">— Sélectionner —</option>
-                {families.map(f => <option key={f.id} value={f.id}>{f.icon} {f.name}</option>)}
-              </select>
-            </div>
-            <div className="eq-form-field">
-              <label>Sous-famille</label>
-              <select value={form.subfamily_id} onChange={(e) => setForm({ ...form, subfamily_id: e.target.value, category_id: '' })} disabled={!form.family_id}>
-                <option value="">— Sélectionner —</option>
-                {currentSubfamilies.map(sf => <option key={sf.id} value={sf.id}>{sf.name}</option>)}
-              </select>
-            </div>
-            <div className="eq-form-field">
+            <div className="eq-form-field eq-form-full">
               <label>Catégorie</label>
-              <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} disabled={!form.subfamily_id}>
-                <option value="">— Sélectionner —</option>
-                {currentLeafCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <CategoryCascadePicker
+                families={families}
+                subfamilies={subfamilies}
+                leafCategories={leafCategories}
+                value={{ family_id: form.family_id, subfamily_id: form.subfamily_id, category_id: form.category_id }}
+                onChange={({ family_id, subfamily_id, category_id }) => setForm(f => ({ ...f, family_id, subfamily_id, category_id }))}
+              />
             </div>
             <div className="eq-form-field">
               <label>Statut</label>
@@ -2126,41 +2414,60 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                     location_floor: loc.location_floor || '',
                   }))}
                 />
-                <button type="button" className="eq-form-map-toggle" onClick={() => setShowMap(!showMap)}>
-                  <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
+                <button type="button" className="eq-form-map-toggle" onClick={() => setShowMap(true)}>
+                  <Map size={14} /> Choisir sur le plan
                 </button>
                 {showMap && (() => {
                   const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
                   const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
                   if (!currentDepotData) return null;
                   return (
-                    <div className="eq-form-map-container">
-                      {depotsList.length > 1 && (
-                        <div className="eq-form-map-tabs">
-                          {depotsList.map((d, i) => (
-                            <button key={d.id || i} type="button" className={`eq-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
-                              {d.name || `Dépôt ${d.id || i + 1}`}
-                            </button>
-                          ))}
+                    <div className="eq-depot-map-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowMap(false)}>
+                      <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                        <div className="eq-depot-map-modal-header">
+                          <h3><MapPin size={18} /> Choisir la localisation sur le plan</h3>
+                          {depotsList.length > 1 && (
+                            <div className="eq-form-map-tabs" style={{ position: 'static', margin: '0 auto 0 16px' }}>
+                              {depotsList.map((d, i) => (
+                                <button key={d.id || i} type="button" className={`eq-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
+                                  {d.name || `Dépôt ${d.id || i + 1}`}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <button className="eq-dialog-close" onClick={() => setShowMap(false)} title="Fermer"><X size={20} /></button>
                         </div>
-                      )}
-                      <DepotMap
-                        zones={currentDepotData}
-                        selectedZone={form.location_zone}
-                        onZoneSelect={(zoneId) => {
-                          if (!zoneId) return;
-                          const zoneObj = currentDepotData.zones?.find(z => z.id === zoneId);
-                          setForm(f => ({
-                            ...f,
-                            location_depot: currentDepotData.id || currentDepotData.depotId || '',
-                            location_zone: zoneId,
-                            location_code: '',
-                            location_floor: zoneObj?.floor || '',
-                          }));
-                        }}
-                        onZoneFilter={() => {}}
-                        compact={true}
-                      />
+                        <div className="eq-depot-map-modal-body">
+                          <DepotMap
+                            zones={currentDepotData}
+                            selectedZone={mapSelection || form.location_zone}
+                            onZoneSelect={(zoneId) => {
+                              setMapSelection(zoneId || '');
+                            }}
+                            onZoneFilter={() => {}}
+                          />
+                        </div>
+                        <div className="eq-depot-map-modal-footer">
+                          {mapSelection && (() => {
+                            const z = currentDepotData.zones?.find(z => z.id === mapSelection);
+                            return <span className="eq-depot-map-modal-zone-label" style={{ borderLeftColor: z?.color || 'var(--theme-primary)' }}>{z?.label || mapSelection}</span>;
+                          })()}
+                          <div style={{ flex: 1 }} />
+                          <button type="button" className="eq-btn-cancel" onClick={() => { setMapSelection(''); setShowMap(false); }}>Annuler</button>
+                          <button type="button" className="eq-btn-save" disabled={!mapSelection} onClick={() => {
+                            const zoneObj = currentDepotData.zones?.find(z => z.id === mapSelection);
+                            setForm(f => ({
+                              ...f,
+                              location_depot: currentDepotData.id || currentDepotData.depotId || '',
+                              location_zone: mapSelection,
+                              location_code: '',
+                              location_floor: zoneObj?.floor || '',
+                            }));
+                            setMapSelection('');
+                            setShowMap(false);
+                          }}>✓ Valider</button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -2297,6 +2604,167 @@ const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, 
           <div className="eq-modal-footer">
             <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
             <button type="submit" className="eq-btn-save">{ticket ? 'Enregistrer' : 'Créer'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ═══ FORMULAIRE DEMANDE SAV MOBILE (utilisateurs simples) ═══
+const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
+  const toast = useToast();
+  const [search, setSearch] = useState('');
+  const [selectedEquipment, setSelectedEquipment] = useState(null);
+  const [showResults, setShowResults] = useState(false);
+  const [form, setForm] = useState({ title: '', description: '', type: 'panne', priority: 'medium' });
+  const [submitting, setSubmitting] = useState(false);
+  const searchRef = useRef(null);
+
+  const filtered = useMemo(() => {
+    if (!search.trim() || search.length < 2) return [];
+    const q = search.toLowerCase();
+    return equipment.filter(eq =>
+      (eq.name && eq.name.toLowerCase().includes(q)) ||
+      (eq.uid && eq.uid.toLowerCase().includes(q)) ||
+      (eq.reference && eq.reference.toLowerCase().includes(q)) ||
+      (eq.serialNumber && eq.serialNumber.toLowerCase().includes(q))
+    ).slice(0, 20);
+  }, [equipment, search]);
+
+  const handleSelect = (eq) => {
+    setSelectedEquipment(eq);
+    setSearch('');
+    setShowResults(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedEquipment) return toast.warning('Sélectionnez un équipement');
+    if (!form.title.trim()) return toast.warning('Titre requis');
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        equipment_id: selectedEquipment.id,
+        title: form.title,
+        description: form.description,
+        type: form.type,
+        priority: form.priority,
+      });
+      toast.success('Demande SAV envoyée');
+    } catch (err) {
+      toast.error('Erreur: ' + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="eq-modal" style={{ maxWidth: '100%', width: '100%', margin: 0, borderRadius: '12px 12px 0 0', position: 'fixed', bottom: 0, left: 0, right: 0, maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="eq-modal-header">
+          <h3>🔧 Demande de SAV</h3>
+          <button onClick={onClose}><X size={18} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="eq-modal-body" style={{ overflowY: 'auto', flex: 1 }}>
+          {/* Sélection équipement */}
+          <div className="eq-form-field eq-form-full" style={{ marginBottom: '1rem', position: 'relative', zIndex: 100 }}>
+            <label>Équipement *</label>
+            {selectedEquipment ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem', background: 'var(--theme-bg-secondary)', borderRadius: 8, border: '1px solid var(--theme-border)' }}>
+                <span>{selectedEquipment.category_icon || selectedEquipment.categoryIcon || '📦'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{selectedEquipment.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
+                    {selectedEquipment.uid}{selectedEquipment.reference ? ` — ${selectedEquipment.reference}` : ''}
+                  </div>
+                  {selectedEquipment.serialNumber && (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--theme-accent, #2563eb)', fontWeight: 500 }}>S/N {selectedEquipment.serialNumber}</div>
+                  )}
+                </div>
+                <button type="button" onClick={() => setSelectedEquipment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--theme-text-muted)', padding: '4px' }}>
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <div style={{ position: 'relative', zIndex: 100 }}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--theme-text-muted)', pointerEvents: 'none' }} />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setShowResults(true); }}
+                    onFocus={() => search.length >= 2 && setShowResults(true)}
+                    placeholder="Rechercher un équipement (nom, UID, réf…)"
+                    style={{ paddingLeft: 32, width: '100%' }}
+                    autoFocus
+                  />
+                </div>
+                {showResults && filtered.length > 0 && (
+                  <div
+                    onTouchMove={(e) => {
+                      const el = e.currentTarget;
+                      if (el.scrollHeight > el.clientHeight) e.stopPropagation();
+                    }}
+                    style={{ position: 'absolute', left: 0, right: 0, zIndex: 200, marginTop: -1, background: 'var(--theme-bg-card, #fff)', border: '1px solid var(--theme-border)', borderTop: 'none', borderRadius: '0 0 10px 10px', maxHeight: 280, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}
+                  >
+                    {filtered.map(eq => (
+                      <div key={eq.id} role="button" tabIndex={0} onClick={() => handleSelect(eq)} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.65rem 0.75rem', width: '100%', textAlign: 'left', background: 'var(--theme-bg-card, #fff)', border: 'none', borderBottom: '1px solid var(--theme-border)', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--theme-text-primary)' }}>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{eq.category_icon || eq.categoryIcon || '📦'}</span>
+                        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                          <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{eq.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {eq.uid}{eq.reference ? ` — ${eq.reference}` : ''}
+                          </div>
+                          {eq.serialNumber ? (
+                            <div style={{ fontSize: '0.7rem', color: 'var(--theme-accent, #2563eb)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              S/N {eq.serialNumber}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {showResults && search.length >= 2 && filtered.length === 0 && (
+                  <div style={{ position: 'relative', zIndex: 200, marginTop: -1, background: 'var(--theme-bg-card, #fff)', border: '1px solid var(--theme-border)', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '0.75rem', textAlign: 'center', color: 'var(--theme-text-muted)', fontSize: '0.85rem', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
+                    Aucun résultat
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Champs du formulaire */}
+          <div className="eq-form-grid">
+            <div className="eq-form-field eq-form-full">
+              <label>Titre *</label>
+              <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex: Câble arraché, ne charge plus…" />
+            </div>
+            <div className="eq-form-field">
+              <label>Type</label>
+              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                {Object.entries(SAV_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div className="eq-form-field">
+              <label>Priorité</label>
+              <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                {Object.entries(SAV_PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+            </div>
+            <div className="eq-form-field eq-form-full">
+              <label>Description</label>
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} placeholder="Détails du problème, quand c'est arrivé…" />
+            </div>
+          </div>
+
+          <div className="eq-modal-footer">
+            <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
+            <button type="submit" className="eq-btn-save" disabled={submitting || !selectedEquipment}>
+              {submitting ? 'Envoi…' : '🔧 Envoyer la demande'}
+            </button>
           </div>
         </form>
       </div>

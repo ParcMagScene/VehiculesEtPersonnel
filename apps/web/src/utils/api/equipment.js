@@ -38,6 +38,9 @@ export function registerEquipmentMethods(ApiClient) {
     async serializeEquipment(id) {
       return this.request(`/equipment/${id}/serialize`, { method: 'POST' });
     },
+    async linkEquipmentPhoto(id, photo) {
+      return this.request(`/equipment/${id}/photo`, { method: 'PATCH', body: JSON.stringify({ photo }) });
+    },
     async importEquipmentCsv(data, mode = 'import') {
       return this.request('/equipment/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
     },
@@ -74,6 +77,9 @@ export function registerEquipmentMethods(ApiClient) {
     },
     async createSavTicket(data) {
       return this.request('/sav-tickets', { method: 'POST', body: JSON.stringify(data) });
+    },
+    async createSavRequest(data) {
+      return this.request('/sav-tickets/request', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateSavTicket(id, data) {
       return this.request(`/sav-tickets/${id}`, { method: 'PUT', body: JSON.stringify(data) });

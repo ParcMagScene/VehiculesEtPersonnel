@@ -393,39 +393,31 @@ export function buildPlaybackRtspUrl(camera, password, channel, startTime, endTi
 /** Enregistrer le stream playback dans MediaMTX (path séparé) */
 export async function registerPlaybackInProxy(cameraId, rtspUrl) {
   const streamName = `playback-${cameraId}`;
+  const pathConfig = {
+    source: rtspUrl,
+    sourceOnDemand: true,
+    sourceOnDemandStartTimeout: '15s',
+    sourceOnDemandCloseAfter: '60s',
+  };
   try {
-    // Essayer PATCH d'abord (si le path existe déjà d'un playback précédent)
-    let res = await fetch(`${MEDIAMTX_API}/v3/config/paths/edit/${streamName}`, {
-      method: 'PATCH',
+    // Supprimer l'ancien path s'il existe (force MediaMTX à reconnecter proprement)
+    await fetch(`${MEDIAMTX_API}/v3/config/paths/remove/${streamName}`, { method: 'DELETE' }).catch(() => {});
+
+    // Créer le path frais
+    const res = await fetch(`${MEDIAMTX_API}/v3/config/paths/add/${streamName}`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        source: rtspUrl,
-        sourceOnDemand: true,
-        sourceOnDemandStartTimeout: '15s',
-        sourceOnDemandCloseAfter: '60s',
-      }),
+      body: JSON.stringify(pathConfig),
     });
     if (!res.ok) {
-      // Créer s'il n'existe pas
-      res = await fetch(`${MEDIAMTX_API}/v3/config/paths/add/${streamName}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source: rtspUrl,
-          sourceOnDemand: true,
-          sourceOnDemandStartTimeout: '15s',
-          sourceOnDemandCloseAfter: '60s',
-        }),
-      });
-      if (!res.ok) {
-        logger.warn(`MediaMTX: impossible d'enregistrer playback-${cameraId}: ${res.status}`);
-        return false;
-      }
+      const errText = await res.text().catch(() => '');
+      logger.warn(`MediaMTX: impossible d'enregistrer ${streamName}: ${res.status} ${errText}`);
+      return false;
     }
-    logger.info(`🎬 Playback playback-${cameraId} enregistré dans MediaMTX`);
+    logger.info(`🎬 Playback ${streamName} enregistré dans MediaMTX`);
     return true;
   } catch (e) {
-    logger.warn(`MediaMTX non disponible pour playback-${cameraId}: ${e.message}`);
+    logger.warn(`MediaMTX non disponible pour ${streamName}: ${e.message}`);
     return false;
   }
 }

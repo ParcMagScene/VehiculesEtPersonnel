@@ -514,10 +514,10 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         const registered = await registerPlaybackInProxy(id, rtspUrl);
         if (!registered) return res.status(502).json({ error: 'Proxy vidéo indisponible' });
 
-        // Attendre que MediaMTX connecte la source RTSP du NVR (peut prendre plusieurs secondes)
-        // Retry WHEP jusqu'à 4 fois avec délai croissant
+        // Attendre que MediaMTX connecte la source RTSP du NVR
+        // Le path est recréé frais → sourceOnDemand déclenché au premier WHEP
         let result = null;
-        const delays = [2000, 3000, 3000, 2000]; // total max ~10s
+        const delays = [3000, 3000, 4000]; // total max ~10s
         for (let attempt = 0; attempt < delays.length; attempt++) {
           await new Promise(r => setTimeout(r, delays[attempt]));
           result = await whepPlaybackExchange(id, clientOffer);

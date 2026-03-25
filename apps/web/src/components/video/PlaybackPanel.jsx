@@ -67,6 +67,7 @@ const PlaybackPanel = ({ cameras }) => {
 
   // Démarrer le playback d'un segment
   const startPlayback = useCallback(async (startTime, endTime) => {
+    if (connecting) return; // Empêcher les clics multiples
     await stopPlayback();
     setConnecting(true);
     setPlaybackError(null);
@@ -131,7 +132,7 @@ const PlaybackPanel = ({ cameras }) => {
       setConnecting(false);
       setPlaying(false);
     }
-  }, [selectedCameraId, stopPlayback]);
+  }, [selectedCameraId, stopPlayback, connecting]);
 
   // Cleanup au démontage
   useEffect(() => {

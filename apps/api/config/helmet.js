@@ -13,7 +13,7 @@ export const helmetMiddleware = helmet({
       imgSrc: ["'self'", 'data:', 'blob:'],
       connectSrc: ["'self'"],
       frameSrc: ["'self'", 'blob:'],
-      objectSrc: ["'none'"],
+      objectSrc: ["'self'", 'blob:'],
       baseUri: ["'self'"],
       formAction: ["'self'"],
     },

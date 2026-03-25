@@ -12,7 +12,7 @@ import {
   fetchSnapshot, sendPTZCommand,
   generateSessionToken, storeSession, getSession, removeSession,
   getProxyStatus,
-  extractDahuaChannel, searchNvrRecordings,
+  extractDahuaChannel, extractPasswordFromRtspUrl, searchNvrRecordings,
   buildPlaybackRtspUrl, registerPlaybackInProxy, whepPlaybackExchange,
 } from './videoProxyService.js';
 
@@ -467,7 +467,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         const channel = extractDahuaChannel(camera);
         if (!channel) return res.status(400).json({ error: 'Cette caméra ne supporte pas la relecture (pas de channel NVR)' });
 
-        const pwd = decryptPassword(camera.password_encrypted) || '';
+        const pwd = decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
         const startTime = `${date} 00:00:00`;
         const endTime = `${date} 23:59:59`;
 
@@ -507,7 +507,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         const channel = extractDahuaChannel(camera);
         if (!channel) return res.status(400).json({ error: 'Cette caméra ne supporte pas la relecture' });
 
-        const pwd = decryptPassword(camera.password_encrypted) || '';
+        const pwd = decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
         const rtspUrl = buildPlaybackRtspUrl(camera, pwd, channel, startTime, endTime);
 
         // Enregistrer dans MediaMTX

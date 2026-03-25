@@ -305,6 +305,13 @@ export function extractDahuaChannel(camera) {
   return match ? parseInt(match[1], 10) : null;
 }
 
+/** Extraire le mot de passe embarqué dans l'URL RTSP (fallback si password_encrypted est null) */
+export function extractPasswordFromRtspUrl(camera) {
+  if (!camera.rtsp_url) return '';
+  const match = camera.rtsp_url.match(/:\/\/[^:]+:([^@]+)@/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
 /** Chercher les enregistrements NVR via l'API mediaFileFind de Dahua */
 export async function searchNvrRecordings(camera, password, channel, startTime, endTime) {
   const user = camera.username || '888888';

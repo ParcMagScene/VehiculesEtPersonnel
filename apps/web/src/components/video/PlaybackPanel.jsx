@@ -40,7 +40,8 @@ const PlaybackPanel = ({ cameras }) => {
         setSearchError('Aucun enregistrement trouvé pour cette date');
       }
     } catch (e) {
-      setSearchError(e.message || 'Erreur de recherche');
+      const detail = e.response?.data?.detail;
+      setSearchError(detail ? `${e.message} : ${detail}` : (e.message || 'Erreur de recherche'));
     } finally {
       setSearching(false);
     }

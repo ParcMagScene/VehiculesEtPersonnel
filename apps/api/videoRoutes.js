@@ -478,7 +478,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         res.json({ cameraId: id, date, recordings });
       } catch (error) {
         logger.error('GET recordings:', error);
-        res.status(500).json({ error: 'Erreur recherche enregistrements' });
+        res.status(500).json({ error: 'Erreur recherche enregistrements', detail: error.message });
       }
     })();
   });
@@ -514,12 +514,17 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         const registered = await registerPlaybackInProxy(id, rtspUrl);
         if (!registered) return res.status(502).json({ error: 'Proxy vidéo indisponible' });
 
-        // Attendre un instant pour que MediaMTX connecte la source RTSP
-        await new Promise(r => setTimeout(r, 1500));
-
-        // WHEP exchange
-        const result = await whepPlaybackExchange(id, clientOffer);
-        if (!result) return res.status(502).json({ error: 'Flux de relecture indisponible' });
+        // Attendre que MediaMTX connecte la source RTSP du NVR (peut prendre plusieurs secondes)
+        // Retry WHEP jusqu'à 4 fois avec délai croissant
+        let result = null;
+        const delays = [2000, 3000, 3000, 2000]; // total max ~10s
+        for (let attempt = 0; attempt < delays.length; attempt++) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+          result = await whepPlaybackExchange(id, clientOffer);
+          if (result) break;
+          logger.info(`🎬 Playback WHEP attempt ${attempt + 1}/${delays.length} pour cam ${id} — retry...`);
+        }
+        if (!result) return res.status(502).json({ error: 'Flux de relecture indisponible — le NVR met trop de temps à répondre' });
 
         // Session
         const token = generateSessionToken();

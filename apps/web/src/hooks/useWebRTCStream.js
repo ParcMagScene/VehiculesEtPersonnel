@@ -16,13 +16,8 @@ export function useWebRTCStream(camera) {
     setError(null);
 
     try {
-      // 0. Vérifier que le proxy vidéo (MediaMTX) est en ligne avant toute négociation
-      const proxyStatus = await api.getVideoProxyStatus().catch(() => null);
-      if (!proxyStatus?.running) {
-        setStatus('error');
-        setError('Proxy vidéo (MediaMTX) hors-ligne');
-        return;
-      }
+      // Le proxy status est déjà vérifié par VideoPanel (proxyAvailable prop)
+      // Pas besoin de re-vérifier pour chaque caméra individuellement
 
       // 1. Créer la connexion WebRTC et générer l'offre SDP
       const pc = new RTCPeerConnection({

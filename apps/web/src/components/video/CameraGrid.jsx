@@ -42,11 +42,12 @@ const CameraGrid = ({ cameras = [], proxyAvailable = false, gridSize = 4, page =
         className="camera-grid__grid"
         style={{ gridTemplateColumns: `repeat(${layout.cols}, 1fr)` }}
       >
-        {visibleCameras.map(cam => (
+        {visibleCameras.map((cam, idx) => (
           <CameraPlayerWebRTC
             key={cam.id}
             camera={cam}
             autoConnect={proxyAvailable}
+            connectDelay={idx * 500}
             onFullscreen={handleFullscreen}
             onSelect={onSelectCamera}
             isSelected={selectedCameraId === cam.id}

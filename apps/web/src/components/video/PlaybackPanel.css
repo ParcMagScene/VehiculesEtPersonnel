@@ -1,0 +1,280 @@
+/* ═══════════════════════════════════════════════════════════════
+   PlaybackPanel.css — Styles relecture enregistrements NVR
+   ═══════════════════════════════════════════════════════════════ */
+
+.playback-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  overflow: auto;
+  min-height: 0;
+}
+
+/* ── Contrôles de recherche ── */
+.playback-panel__controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: var(--bg-secondary, #fff);
+  border-radius: var(--radius-md, 6px);
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.playback-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.playback-panel__field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.playback-panel__field select,
+.playback-panel__field input {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-primary, #f8fafc);
+  font-size: 0.85rem;
+  color: var(--text-primary, #1e293b);
+  min-width: 180px;
+}
+.playback-panel__field select:focus,
+.playback-panel__field input:focus {
+  outline: none;
+  border-color: var(--color-primary, #667eea);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
+}
+
+.playback-panel__info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #64748b);
+  background: var(--bg-accent, #f1f5f9);
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* ── Timeline ── */
+.playback-panel__timeline-wrap {
+  background: var(--bg-secondary, #fff);
+  border-radius: var(--radius-md, 6px);
+  border: 1px solid var(--border-color, #e2e8f0);
+  padding: 12px;
+}
+
+.playback-panel__timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  margin-bottom: 8px;
+}
+
+.playback-panel__timeline {
+  position: relative;
+  height: 40px;
+  margin-bottom: 8px;
+}
+
+.playback-panel__timeline-bar {
+  position: relative;
+  height: 28px;
+  background: var(--bg-primary, #f1f5f9);
+  border-radius: 4px;
+  overflow: visible;
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.playback-panel__timeline-tick {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-left: 1px solid var(--border-color, #e2e8f0);
+}
+.playback-panel__timeline-tick span {
+  position: absolute;
+  bottom: -16px;
+  left: -8px;
+  font-size: 0.6rem;
+  color: var(--text-secondary, #94a3b8);
+  white-space: nowrap;
+}
+/* Cacher certains labels pour éviter le chevauchement */
+.playback-panel__timeline-tick:nth-child(odd) span {
+  display: none;
+}
+
+.playback-panel__timeline-segment {
+  position: absolute;
+  top: 2px;
+  height: calc(100% - 4px);
+  background: var(--color-primary, #667eea);
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.1s;
+  min-width: 3px;
+}
+.playback-panel__timeline-segment:hover {
+  opacity: 1;
+  transform: scaleY(1.15);
+}
+.playback-panel__timeline-segment.active {
+  opacity: 1;
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+/* ── Liste segments ── */
+.playback-panel__segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.playback-panel__segment-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-secondary, #fff);
+  color: var(--text-primary, #1e293b);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.playback-panel__segment-btn:hover {
+  background: var(--bg-accent, #eef2ff);
+  border-color: var(--color-primary, #667eea);
+}
+.playback-panel__segment-btn.active {
+  background: var(--color-primary, #667eea);
+  color: white;
+  border-color: var(--color-primary, #667eea);
+}
+.playback-panel__segment-size {
+  opacity: 0.6;
+  font-size: 0.7rem;
+}
+
+/* ── Lecteur vidéo ── */
+.playback-panel__player {
+  flex: 1;
+  position: relative;
+  background: #0f172a;
+  border-radius: var(--radius-md, 6px);
+  overflow: hidden;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playback-panel__video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.playback-panel__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 20px;
+}
+
+.playback-panel__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  background: rgba(15, 23, 42, 0.85);
+  z-index: 2;
+}
+.playback-panel__overlay--error {
+  color: #fca5a5;
+}
+
+.playback-panel__player-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  z-index: 3;
+}
+.playback-panel__player-controls .btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.playback-panel__player-controls .btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.playback-panel__now-playing {
+  color: #a5f3fc;
+  font-size: 0.8rem;
+}
+
+.playback-panel__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.85rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .playback-panel__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .playback-panel__field select,
+  .playback-panel__field input {
+    min-width: unset;
+    width: 100%;
+  }
+  .playback-panel__timeline-tick span {
+    font-size: 0.5rem;
+  }
+}

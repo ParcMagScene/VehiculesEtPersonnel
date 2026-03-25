@@ -7,13 +7,17 @@ import { useWebRTCStream } from '../../hooks/useWebRTCStream';
 import { Maximize, Minimize, Camera, RefreshCw, WifiOff, Loader } from 'lucide-react';
 import api from '../../utils/api';
 
-const CameraPlayerWebRTC = ({ camera, autoConnect = true, onFullscreen, isFullscreen = false, onSelect, isSelected = false }) => {
+const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFullscreen, isFullscreen = false, onSelect, isSelected = false }) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
   const [snapshotUrl, setSnapshotUrl] = useState(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
 
   useEffect(() => {
     if (autoConnect && camera?.enabled) {
+      if (connectDelay > 0) {
+        const timer = setTimeout(() => connect(), connectDelay);
+        return () => { clearTimeout(timer); disconnect(); };
+      }
       connect();
     }
     return () => { disconnect(); };

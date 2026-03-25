@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase } from 'lucide-react';
+import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase, ClipboardList } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
@@ -16,6 +16,7 @@ import MobileLeaves from './MobileLeaves';
 import MobileInventory from './MobileInventory';
 import MobileLocation from './MobileLocation';
 import MobileAffaires from './MobileAffaires';
+import MobileTasks from './MobileTasks';
 import MobileLogin from './MobileLogin';
 import { useTheme, PALETTES } from '../../hooks/useTheme';
 import api from '../../utils/api';
@@ -334,6 +335,13 @@ function MobileApp({ onSwitchToDesktop }) {
               <Briefcase size={20} />
               <span>Affaires</span>
             </button>
+            <button
+              className={currentScreen === 'tasks' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('tasks'); setMenuOpen(false); }}
+            >
+              <ClipboardList size={20} />
+              <span>Tâches du jour</span>
+            </button>
 
             <div className="menu-section-label">Équipe</div>
             <button
@@ -525,6 +533,13 @@ function MobileApp({ onSwitchToDesktop }) {
 
         {currentScreen === 'affaires' && (
           <MobileAffaires
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'tasks' && (
+          <MobileTasks
+            currentUser={currentUser}
             onBack={() => setCurrentScreen('home')}
           />
         )}

@@ -1,0 +1,102 @@
+/* ═══════════════════════════════════════
+   Input — Design System Atoms
+   ═══════════════════════════════════════ */
+
+/* ─── Wrapper ─── */
+.ui-input-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  background: var(--theme-bg-card);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.ui-input-wrapper:focus-within {
+  border-color: var(--theme-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+/* ─── Error state ─── */
+.ui-input-wrapper--error {
+  border-color: var(--theme-danger);
+}
+.ui-input-wrapper--error:focus-within {
+  border-color: var(--theme-danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* ─── Disabled state ─── */
+.ui-input-wrapper--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--theme-bg-tertiary);
+  border-color: var(--theme-border-disabled);
+}
+
+/* ─── Input element ─── */
+.ui-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--theme-text-primary);
+  font-family: inherit;
+  outline: none;
+}
+.ui-input::placeholder {
+  color: var(--theme-text-muted);
+}
+.ui-input:disabled {
+  cursor: not-allowed;
+  color: var(--theme-text-disabled);
+}
+
+/* ─── Sizes ─── */
+.ui-input-wrapper--sm {
+  height: var(--btn-height-sm);
+}
+.ui-input-wrapper--sm .ui-input {
+  padding: 0 var(--space-2);
+  font-size: var(--font-sm);
+}
+
+.ui-input-wrapper--md {
+  height: var(--btn-height-md);
+}
+.ui-input-wrapper--md .ui-input {
+  padding: 0 var(--space-3);
+  font-size: var(--font-base);
+}
+
+.ui-input-wrapper--lg {
+  height: var(--btn-height-lg);
+}
+.ui-input-wrapper--lg .ui-input {
+  padding: 0 var(--space-4);
+  font-size: var(--font-md);
+}
+
+/* ─── Prefix / Suffix ─── */
+.ui-input__prefix,
+.ui-input__suffix {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-text-muted);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.ui-input__prefix {
+  padding-left: var(--space-3);
+}
+.ui-input__suffix {
+  padding-right: var(--space-3);
+}
+
+.ui-input-wrapper--has-prefix .ui-input {
+  padding-left: var(--space-1);
+}
+.ui-input-wrapper--has-suffix .ui-input {
+  padding-right: var(--space-1);
+}

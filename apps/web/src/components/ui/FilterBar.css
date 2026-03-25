@@ -1,0 +1,77 @@
+/* ═══════════════════════════════════════
+   FilterBar — Design System Molecules
+   ═══════════════════════════════════════ */
+
+.ui-filter-bar {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+/* ─── Filter button ─── */
+.ui-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1-5) var(--space-3);
+  border: 1px solid var(--theme-border);
+  border-radius: 999px;
+  background: var(--theme-bg-card);
+  color: var(--theme-text-secondary);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--duration-fast);
+}
+.ui-filter-btn:hover:not(:disabled) {
+  border-color: var(--theme-border-medium);
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-hover);
+}
+
+/* Active */
+.ui-filter-btn--active {
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  border-color: var(--theme-primary);
+}
+.ui-filter-btn--active:hover:not(:disabled) {
+  background: var(--theme-primary-hover);
+  border-color: var(--theme-primary-hover);
+  color: var(--theme-text-inverse);
+}
+
+/* Disabled */
+.ui-filter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Icon */
+.ui-filter-btn__icon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* Count badge */
+.ui-filter-btn__count {
+  font-size: var(--font-2xs);
+  font-weight: var(--weight-semibold);
+  padding: 0 5px;
+  border-radius: 999px;
+  min-width: 16px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.08);
+}
+.ui-filter-btn--active .ui-filter-btn__count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Size: sm ─── */
+.ui-filter-bar--sm .ui-filter-btn {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-xs);
+  gap: var(--space-0-5);
+}

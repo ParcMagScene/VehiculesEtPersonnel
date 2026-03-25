@@ -1,0 +1,542 @@
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import {
+  X, Check, Plus, Search, Unlink, MapPin, Clock, User, Briefcase, Truck, ChevronDown
+} from 'lucide-react';
+import api from '../../utils/api';
+import AffaireBadge from '../AffaireBadge';
+import AddressAutocomplete from '../AddressAutocomplete';
+import { useToast } from '../../hooks/useToast';
+import './AddTaskModal.css';
+
+// ═══ Constantes (miroir de TaskPlanningPanel) ═══
+const SECTIONS = {
+  taches_prioritaires: { label: 'Tâches Prioritaires', emoji: '🔴', color: '#ef4444' },
+  courses:             { label: 'Courses',              emoji: '🚗', color: '#8b5cf6' },
+  prep_locations:      { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b', affaireOnly: true },
+  prep_prestations:    { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6', affaireOnly: true },
+  prep_ventes:         { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981', affaireOnly: true },
+  prep_installations:  { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6', affaireOnly: true },
+  prep_tournees:       { label: 'Préparations Tournées',       emoji: '🚐', color: '#ec4899', affaireOnly: true },
+  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
+  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6', affaireOnly: true },
+  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
+  montage:             { label: 'Montage',              emoji: '🔩', color: '#0891b2', affaireOnly: true },
+  demontage:           { label: 'Démontage',            emoji: '🔧', color: '#dc2626', affaireOnly: true },
+  taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
+  manual:              { label: 'Autres',               emoji: '📋', color: '#64748b' },
+};
+
+const EVENT_TYPES = {
+  preparation:  { label: 'Préparation',  emoji: '🔧' },
+  enlevement:   { label: 'Enlèvement',   emoji: '📦' },
+  livraison:    { label: 'Livraison',     emoji: '🚚' },
+  depart:       { label: 'Départ',        emoji: '🚀' },
+  retour:       { label: 'Retour',        emoji: '↩️' },
+  recuperation: { label: 'Récupération',  emoji: '📥' },
+  montage:      { label: 'Montage',       emoji: '🔩' },
+  demontage:    { label: 'Démontage',     emoji: '🔧' },
+};
+
+const VEHICLE_SECTIONS = new Set(['courses', 'chargement', 'depart', 'enlevement', 'retour', 'recuperation']);
+const COURSE_SECTION = 'courses';
+
+export default function AddTaskModal({
+  isOpen,
+  onClose,
+  selectedDate,
+  persons,
+  affaires,
+  allAffaires,
+  googleEvents,
+  icalEvents,
+  vehicles,
+  reservations,
+  onTaskCreated,
+  loadVehiclesAndReservations,
+}) {
+  const toast = useToast();
+
+  // Form state
+  const [section, setSection] = useState('manual');
+  const [title, setTitle] = useState('');
+  const [courseType, setCourseType] = useState('');
+  const [personId, setPersonId] = useState('');
+  const [client, setClient] = useState('');
+  const [time, setTime] = useState('');
+  const [period, setPeriod] = useState('AM');
+  const [affaireNum, setAffaireNum] = useState('');
+  const [googleEventId, setGoogleEventId] = useState('');
+  const [reservationId, setReservationId] = useState('');
+  const [vehicleId, setVehicleId] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Affaire autocomplete
+  const [affaireSearch, setAffaireSearch] = useState('');
+  const [affaireOpen, setAffaireOpen] = useState(false);
+  const affaireRef = useRef(null);
+
+  // Locations eMag (enregistrées)
+  const [emagLocations, setEmagLocations] = useState([]);
+
+  // Load eMag locations
+  useEffect(() => {
+    if (isOpen) {
+      api.getLocations().then(setEmagLocations).catch(() => {});
+    }
+  }, [isOpen]);
+
+  // Reset on open
+  useEffect(() => {
+    if (isOpen) {
+      setSection('manual');
+      setTitle('');
+      setCourseType('');
+      setPersonId('');
+      setClient('');
+      setTime('');
+      setPeriod('AM');
+      setAffaireNum('');
+      setGoogleEventId('');
+      setReservationId('');
+      setVehicleId('');
+      setLocationAddress('');
+      setAffaireSearch('');
+      setAffaireOpen(false);
+    }
+  }, [isOpen]);
+
+  // Close affaire dropdown on outside click
+  useEffect(() => {
+    if (!affaireOpen) return;
+    const handle = (e) => {
+      if (affaireRef.current && !affaireRef.current.contains(e.target)) setAffaireOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [affaireOpen]);
+
+  // Filtered affaires
+  const allAffairesList = allAffaires || affaires || [];
+  const filteredAffaires = useMemo(() => {
+    if (!affaireSearch.trim()) return allAffairesList.slice(0, 30);
+    const q = affaireSearch.toLowerCase();
+    return allAffairesList.filter(a =>
+      (a.numeroAffaire || '').toLowerCase().includes(q) ||
+      (a.client || '').toLowerCase().includes(q) ||
+      (a.nom || '').toLowerCase().includes(q) ||
+      (a.titre || '').toLowerCase().includes(q)
+    ).slice(0, 30);
+  }, [allAffairesList, affaireSearch]);
+
+  const selectedAffaire = useMemo(() => {
+    return affaireNum ? allAffairesList.find(a => a.numeroAffaire === affaireNum) : null;
+  }, [allAffairesList, affaireNum]);
+
+  // All events for dropdown
+  const allEvents = useMemo(() => [...(googleEvents || []), ...(icalEvents || [])], [googleEvents, icalEvents]);
+
+  // Reservations filtered for date
+  const dayReservations = useMemo(() => {
+    return (reservations || []).filter(r => r.startDate <= selectedDate && r.endDate >= selectedDate);
+  }, [reservations, selectedDate]);
+
+  // Location suggestions from eMag (deduplicated, name + address)
+  const locationSuggestions = useMemo(() => {
+    const seen = new Set();
+    return emagLocations
+      .filter(l => {
+        const key = (l.address || l.name || '').toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map(l => ({
+        name: l.name || '',
+        address: l.address || '',
+        value: l.address || l.name,
+      }));
+  }, [emagLocations]);
+
+  // Location dropdown state
+  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
+  const locationRef = useRef(null);
+  useEffect(() => {
+    if (!locationDropdownOpen) return;
+    const handle = (e) => {
+      if (locationRef.current && !locationRef.current.contains(e.target)) setLocationDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [locationDropdownOpen]);
+
+  const filteredLocationSuggestions = useMemo(() => {
+    if (!locationAddress.trim()) return locationSuggestions;
+    const q = locationAddress.toLowerCase();
+    return locationSuggestions.filter(s =>
+      s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)
+    );
+  }, [locationSuggestions, locationAddress]);
+
+  // ═══ Submit ═══
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      toast.warning('Titre requis');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      let effectiveSection = section;
+
+      // Build final title
+      let finalTitle = title.trim();
+      finalTitle = finalTitle.charAt(0).toUpperCase() + finalTitle.slice(1);
+      if (section === COURSE_SECTION && courseType) {
+        const typeInfo = EVENT_TYPES[courseType];
+        if (typeInfo) finalTitle = `${typeInfo.emoji} ${typeInfo.label} — ${finalTitle}`;
+      }
+
+      // Handle vehicle reservation
+      let finalReservationId = null;
+      if (reservationId && reservationId !== '__new__') {
+        finalReservationId = reservationId;
+      } else if (reservationId === '__new__' && vehicleId) {
+        try {
+          const newRez = await api.createReservation({
+            id: `${Date.now()}.${Math.random()}`,
+            vehicle_id: vehicleId,
+            start_date: selectedDate,
+            start_period: period || 'AM',
+            end_date: selectedDate,
+            end_period: period || 'PM',
+            client_name: client || selectedAffaire?.client || '',
+            driver_name: personId ? persons.find(p => String(p.id) === String(personId))?.firstName || '' : '',
+            prestation_name: finalTitle,
+            affaire: affaireNum || '',
+            notes: '',
+          });
+          finalReservationId = newRez.id;
+          if (loadVehiclesAndReservations) loadVehiclesAndReservations();
+        } catch {
+          toast.error('Erreur création réservation véhicule');
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // Source type
+      const selectedGoogEvent = googleEventId ? allEvents.find(e => e.id === googleEventId) : null;
+      const sourceType = selectedGoogEvent
+        ? (selectedGoogEvent._source === 'ical' ? 'ical_event' : 'google_event')
+        : selectedAffaire ? 'affaire' : 'manual';
+
+      await api.createTask({
+        date: selectedDate,
+        period: period || 'AM',
+        time: time || null,
+        section: effectiveSection,
+        title: finalTitle,
+        person_id: personId || null,
+        status: 'pending',
+        source_type: sourceType,
+        source_id: selectedGoogEvent?.id || null,
+        google_event_title: selectedGoogEvent?.summary || selectedGoogEvent?.title || null,
+        affaire_num: affaireNum || null,
+        reservation_id: finalReservationId,
+        location_address: locationAddress || null,
+      });
+
+      toast.success('Tâche ajoutée');
+      onTaskCreated();
+      onClose();
+    } catch {
+      toast.error('Erreur création tâche');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Auto-set period from time
+  const handleTimeChange = (val) => {
+    setTime(val);
+    if (val) {
+      const h = parseInt(val.split(':')[0], 10);
+      setPeriod(h < 12 ? 'AM' : 'PM');
+    }
+  };
+
+  // ESC to close
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const showCourseType = section === COURSE_SECTION;
+  const showLocation = section === COURSE_SECTION;
+  const showVehicle = VEHICLE_SECTIONS.has(section);
+
+  return (
+    <div className="atm-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="atm-modal">
+        {/* Header */}
+        <div className="atm-header">
+          <h3><Plus size={18} /> Nouvelle tâche</h3>
+          <button className="atm-close" onClick={onClose}><X size={18} /></button>
+        </div>
+
+        {/* Body */}
+        <div className="atm-body">
+
+          {/* Section / Type de tâche */}
+          <div className="atm-field">
+            <label>Type de tâche</label>
+            <select
+              value={section}
+              onChange={e => {
+                const key = e.target.value;
+                setSection(key);
+                if (key !== COURSE_SECTION) setCourseType('');
+                if (!VEHICLE_SECTIONS.has(key)) { setReservationId(''); setVehicleId(''); }
+                if (key !== COURSE_SECTION) setLocationAddress('');
+              }}
+            >
+              {Object.entries(SECTIONS).map(([key, info]) => (
+                <option key={key} value={key}>{info.emoji} {info.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Course type (sous-type) */}
+          {showCourseType && (
+            <div className="atm-field">
+              <label>Type de course</label>
+              <select value={courseType} onChange={e => setCourseType(e.target.value)}>
+                <option value="">— Sélectionner —</option>
+                {Object.entries(EVENT_TYPES).map(([key, info]) => (
+                  <option key={key} value={key}>{info.emoji} {info.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Titre */}
+          <div className="atm-field">
+            <label>Titre <span className="atm-required">*</span></label>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              onBlur={e => {
+                const v = e.target.value.trim();
+                if (v) setTitle(v.charAt(0).toUpperCase() + v.slice(1));
+              }}
+              placeholder="Titre de la tâche..."
+              autoFocus
+              spellCheck
+              lang="fr"
+              autoComplete="off"
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSubmit(); }}
+            />
+          </div>
+
+          {/* Affaire */}
+          <div className="atm-field" ref={affaireRef}>
+            <label><Briefcase size={13} /> Affaire</label>
+            {affaireNum ? (
+              <div className="atm-affaire-selected">
+                <AffaireBadge numero={affaireNum} type={selectedAffaire?.type} />
+                <span className="atm-affaire-client">{selectedAffaire?.client || ''}</span>
+                <button type="button" className="atm-affaire-clear" onClick={() => { setAffaireNum(''); setClient(''); setAffaireSearch(''); }}>
+                  <Unlink size={12} />
+                </button>
+              </div>
+            ) : (
+              <div className="atm-affaire-wrap">
+                <Search size={13} className="atm-affaire-icon" />
+                <input
+                  type="text"
+                  value={affaireSearch}
+                  onChange={e => { setAffaireSearch(e.target.value); setAffaireOpen(true); }}
+                  onFocus={() => setAffaireOpen(true)}
+                  placeholder="N° affaire, client…"
+                  className="atm-affaire-input"
+                />
+                {affaireOpen && (
+                  <div className="atm-affaire-dropdown">
+                    {filteredAffaires.length === 0 ? (
+                      <div className="atm-affaire-empty">Aucune affaire trouvée</div>
+                    ) : filteredAffaires.map(a => (
+                      <button
+                        key={a.numeroAffaire}
+                        type="button"
+                        className="atm-affaire-option"
+                        onClick={() => {
+                          setAffaireNum(a.numeroAffaire);
+                          setGoogleEventId('');
+                          setClient(a.client || '');
+                          if (!title) setTitle(a.nom || a.event_name || '');
+                          setAffaireSearch('');
+                          setAffaireOpen(false);
+                        }}
+                      >
+                        <span className="atm-affaire-opt-num">{a.numeroAffaire}</span>
+                        <span className="atm-affaire-opt-client">{a.client || a.nom || ''}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Google / iCal Event */}
+          {allEvents.length > 0 && (
+            <div className="atm-field">
+              <label>Événement associé</label>
+              <select
+                value={googleEventId}
+                onChange={e => {
+                  const evId = e.target.value;
+                  setGoogleEventId(evId);
+                  setAffaireNum('');
+                  if (evId) {
+                    const ev = allEvents.find(ev2 => ev2.id === evId);
+                    if (ev) {
+                      setTitle(ev.summary || ev.title || '');
+                      const startDT = ev._source === 'ical' ? (ev.start || '') : (ev.start?.dateTime || '');
+                      if (startDT && startDT.includes('T')) {
+                        const d = new Date(startDT);
+                        setTime(d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+                        setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
+                      }
+                    }
+                  }
+                }}
+              >
+                <option value="">— Événement Google / iCal —</option>
+                {allEvents.map(ev => (
+                  <option key={ev.id} value={ev.id}>{ev.summary || ev.title || '(sans titre)'}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Lieu (courses) */}
+          {showLocation && (
+            <div className="atm-field atm-field-location" ref={locationRef}>
+              <label><MapPin size={13} /> Lieu</label>
+              <AddressAutocomplete
+                value={locationAddress}
+                onChange={(val) => { setLocationAddress(val); setLocationDropdownOpen(true); }}
+                placeholder="Adresse ou lieu de la course…"
+                className="atm-location-input"
+              />
+              {locationSuggestions.length > 0 && (
+                <button
+                  type="button"
+                  className="atm-location-toggle"
+                  onClick={() => setLocationDropdownOpen(v => !v)}
+                >
+                  <MapPin size={12} /> Lieux enregistrés <ChevronDown size={12} />
+                </button>
+              )}
+              {locationDropdownOpen && filteredLocationSuggestions.length > 0 && (
+                <div className="atm-location-dropdown">
+                  {filteredLocationSuggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="atm-location-option"
+                      onClick={() => {
+                        setLocationAddress(s.value);
+                        setLocationDropdownOpen(false);
+                      }}
+                    >
+                      <strong>{s.name}</strong>
+                      {s.address && s.address !== s.name && (
+                        <span className="atm-location-addr"> — {s.address}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Responsable + Client (row) */}
+          <div className="atm-row">
+            <div className="atm-field atm-field-half">
+              <label><User size={13} /> Responsable</label>
+              <select value={personId} onChange={e => setPersonId(e.target.value)}>
+                <option value="">— Aucun —</option>
+                {persons.map(p => (
+                  <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                ))}
+              </select>
+            </div>
+            <div className="atm-field atm-field-half">
+              <label>Client</label>
+              <input
+                type="text"
+                value={client}
+                onChange={e => setClient(e.target.value)}
+                placeholder="Client..."
+              />
+            </div>
+          </div>
+
+          {/* Véhicule (si section compatible) */}
+          {showVehicle && (
+            <div className="atm-field">
+              <label><Truck size={13} /> Réservation véhicule</label>
+              <select value={reservationId} onChange={e => { setReservationId(e.target.value); if (e.target.value !== '__new__') setVehicleId(''); }}>
+                <option value="">— Aucune —</option>
+                {dayReservations.map(r => (
+                  <option key={r.id} value={r.id}>
+                    🚗 {r.vehicleName || '?'} {r.immatriculation ? `(${r.immatriculation})` : ''} — {r.clientName || r.prestationName || r.driverName || 'Sans nom'}
+                  </option>
+                ))}
+                <option value="__new__">＋ Nouvelle réservation…</option>
+              </select>
+              {reservationId === '__new__' && (
+                <select className="atm-vehicle-select" value={vehicleId} onChange={e => setVehicleId(e.target.value)}>
+                  <option value="">— Véhicule —</option>
+                  {(vehicles || []).map(v => (
+                    <option key={v.id} value={v.id}>{v.name} {v.registration ? `(${v.registration})` : ''}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          {/* Heure + Période */}
+          <div className="atm-row">
+            <div className="atm-field atm-field-half">
+              <label><Clock size={13} /> Heure</label>
+              <input type="time" value={time} onChange={e => handleTimeChange(e.target.value)} />
+            </div>
+            <div className="atm-field atm-field-half">
+              <label>Période</label>
+              <select value={period} onChange={e => setPeriod(e.target.value)}>
+                <option value="AM">AM (Matin)</option>
+                <option value="PM">PM (Après-midi)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="atm-footer">
+          <button className="atm-btn-cancel" onClick={onClose}>Annuler</button>
+          <button className="atm-btn-submit" onClick={handleSubmit} disabled={submitting || !title.trim()}>
+            {submitting ? 'Ajout…' : <><Plus size={15} /> Ajouter</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

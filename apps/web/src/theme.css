@@ -315,6 +315,92 @@
   --panel-header-padding: var(--space-4) var(--space-5);
   --panel-body-padding: var(--space-5);
   --section-header-gap: var(--space-2);
+
+  /* ─── [DS] Couleurs supplémentaires ─── */
+  --theme-cyan: #06b6d4;
+  --theme-cyan-dark: #0891b2;
+  --theme-cyan-bg: #ecfeff;
+  --theme-cyan-text: #155e75;
+  --theme-cyan-border: #67e8f9;
+  --theme-amber: #f59e0b;
+  --theme-amber-bg: #fffbeb;
+  --theme-amber-text: #92400e;
+  --theme-amber-border: #fde68a;
+  --theme-neutral: #6b7280;
+  --theme-neutral-bg: #f3f4f6;
+  --theme-neutral-text: #374151;
+  --theme-neutral-border: #d1d5db;
+
+  /* ─── [DS] Texte supplémentaire ─── */
+  --theme-text-link: var(--theme-primary);
+  --theme-text-link-hover: var(--theme-primary-hover);
+  --theme-text-disabled: #9ca3b8;
+  --theme-border-disabled: #e5e7eb;
+
+  /* ─── [DS] Surfaces supplémentaires ─── */
+  --theme-bg-active: #e0e7ff;
+  --theme-bg-selected: #eef2ff;
+  --theme-bg-code: #f1f5f9;
+
+  /* ─── [DS] Spacing supplémentaires ─── */
+  --space-3-5: 14px;
+  --space-7: 28px;
+  --space-9: 36px;
+  --space-14: 56px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ─── [DS] Typography supplémentaire ─── */
+  --font-4xl: 2.25rem;
+  --tracking-tight: -0.025em;
+  --tracking-snug: -0.015em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.1em;
+
+  /* ─── [DS] Shadows supplémentaires ─── */
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-toast: 0 8px 30px rgba(0, 0, 0, 0.18);
+
+  /* ─── [DS] Transitions supplémentaires ─── */
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-smooth: 300ms;
+  --duration-slow: 400ms;
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─── [DS] Z-Index supplémentaires ─── */
+  --z-modal-nested: 2500;
+  --z-draggable: 4000;
+
+  /* ─── [DS] Icon sizes ─── */
+  --icon-xs: 14px;
+  --icon-sm: 16px;
+  --icon-md: 18px;
+  --icon-lg: 20px;
+  --icon-xl: 24px;
+  --icon-2xl: 32px;
+
+  /* ─── [DS] Button sizes ─── */
+  --btn-height-xs: 26px;
+  --btn-height-sm: 32px;
+  --btn-height-md: 40px;
+  --btn-height-lg: 48px;
+  --btn-padding-xs: 4px 8px;
+  --btn-padding-sm: 6px 12px;
+  --btn-padding-md: 10px 20px;
+  --btn-padding-lg: 12px 24px;
+  --btn-font-size-xs: var(--font-xs);
+  --btn-font-size-sm: var(--font-sm);
+  --btn-font-size-md: var(--font-base);
+  --btn-font-size-lg: var(--font-md);
+  --btn-icon-size: 32px;
+  --btn-icon-size-sm: 26px;
+  --btn-icon-size-lg: 38px;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -465,6 +551,37 @@
   
   /* ─── Focus ─── */
   --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.25);
+
+  /* ─── [DS] Couleurs supplémentaires dark ─── */
+  --theme-cyan: #22d3ee;
+  --theme-cyan-dark: #06b6d4;
+  --theme-cyan-bg: #164e63;
+  --theme-cyan-text: #67e8f9;
+  --theme-cyan-border: #0e7490;
+  --theme-amber: #fbbf24;
+  --theme-amber-bg: #451a03;
+  --theme-amber-text: #fde68a;
+  --theme-amber-border: #78350f;
+  --theme-neutral: #9ca3af;
+  --theme-neutral-bg: #374151;
+  --theme-neutral-text: #d1d5db;
+  --theme-neutral-border: #4b5563;
+
+  /* ─── [DS] Texte supplémentaire dark ─── */
+  --theme-text-link: var(--theme-primary);
+  --theme-text-link-hover: var(--theme-primary-hover);
+  --theme-text-disabled: #4b5563;
+  --theme-border-disabled: #374151;
+
+  /* ─── [DS] Surfaces supplémentaires dark ─── */
+  --theme-bg-active: #312e81;
+  --theme-bg-selected: #1e1b4b;
+  --theme-bg-code: #1e293b;
+
+  /* ─── [DS] Shadows supplémentaires dark ─── */
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-toast: 0 8px 30px rgba(0, 0, 0, 0.5);
   
   color-scheme: dark;
 }

@@ -1,0 +1,300 @@
+/* ═══ AddTaskModal ═══ */
+
+.atm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  backdrop-filter: blur(2px);
+}
+
+.atm-modal {
+  background: var(--bg-card, #fff);
+  border-radius: 12px;
+  width: 520px;
+  max-width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: atm-slideIn 0.2s ease;
+}
+
+@keyframes atm-slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Header */
+.atm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.atm-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.atm-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.atm-close:hover { background: var(--bg-hover, #f1f5f9); color: var(--text-primary); }
+
+/* Body */
+.atm-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Field */
+.atm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.atm-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.atm-required { color: #ef4444; }
+
+.atm-field input,
+.atm-field select {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text-primary, #1e293b);
+  background: var(--bg-input, #fff);
+  transition: border-color 0.15s;
+}
+.atm-field input:focus,
+.atm-field select:focus {
+  outline: none;
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Row */
+.atm-row {
+  display: flex;
+  gap: 10px;
+}
+.atm-field-half {
+  flex: 1;
+}
+
+/* ═══ Location dropdown ═══ */
+.atm-field-location {
+  position: relative;
+}
+.atm-location-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--primary, #3b82f6);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 4px 0;
+  font-weight: 500;
+}
+.atm-location-toggle:hover { text-decoration: underline; }
+.atm-location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 20;
+  margin-top: 2px;
+}
+.atm-location-option {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.82rem;
+  color: var(--text-primary, #1e293b);
+  line-height: 1.4;
+}
+.atm-location-option:hover { background: var(--bg-hover, #f1f5f9); }
+.atm-location-option strong { font-weight: 700; }
+.atm-location-addr { color: var(--text-secondary, #64748b); font-size: 0.78rem; }
+
+/* ═══ Affaire Autocomplete ═══ */
+.atm-affaire-wrap {
+  position: relative;
+}
+.atm-affaire-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary, #94a3b8);
+  pointer-events: none;
+}
+.atm-affaire-input {
+  padding-left: 30px !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+.atm-affaire-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 20;
+  margin-top: 4px;
+}
+.atm-affaire-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.82rem;
+  color: var(--text-primary, #1e293b);
+}
+.atm-affaire-option:hover { background: var(--bg-hover, #f1f5f9); }
+.atm-affaire-opt-num { font-weight: 600; flex-shrink: 0; }
+.atm-affaire-opt-client { color: var(--text-secondary, #64748b); overflow: hidden; text-overflow: ellipsis; }
+.atm-affaire-empty { padding: 10px 12px; font-size: 0.82rem; color: var(--text-secondary, #94a3b8); }
+
+.atm-affaire-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-hover, #f1f5f9);
+  border-radius: 8px;
+}
+.atm-affaire-client { font-size: 0.82rem; color: var(--text-secondary, #64748b); flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.atm-affaire-clear {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+}
+.atm-affaire-clear:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+/* ═══ Location input ═══ */
+.atm-location-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text-primary, #1e293b);
+  background: var(--bg-input, #fff);
+}
+.atm-location-input:focus {
+  outline: none;
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ═══ Vehicle select ═══ */
+.atm-vehicle-select {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  width: 100%;
+  color: var(--text-primary, #1e293b);
+  background: var(--bg-input, #fff);
+}
+
+/* ═══ Footer ═══ */
+.atm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+}
+.atm-btn-cancel {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: var(--bg-card, #fff);
+  color: var(--text-secondary, #64748b);
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+.atm-btn-cancel:hover { background: var(--bg-hover, #f1f5f9); }
+
+.atm-btn-submit {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s;
+}
+.atm-btn-submit:hover:not(:disabled) { background: var(--primary-dark, #2563eb); }
+.atm-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══ Responsive ═══ */
+@media (max-width: 600px) {
+  .atm-modal { width: 98vw; max-height: 92vh; }
+  .atm-section-grid { grid-template-columns: repeat(2, 1fr); }
+  .atm-row { flex-direction: column; gap: 14px; }
+}

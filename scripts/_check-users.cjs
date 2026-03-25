@@ -1,0 +1,11 @@
+const Database = require("better-sqlite3");
+const dev = new Database("apps/api/vehicules-dev.db", {readonly: true});
+const prod = new Database("apps/api/vehicules.db", {readonly: true});
+const devUsers = dev.prepare("SELECT id, email, name, is_admin FROM users ORDER BY id").all();
+const prodUsers = prod.prepare("SELECT id, email, name, is_admin FROM users ORDER BY id").all();
+console.log("USERS PROD:");
+prodUsers.forEach(u => console.log(` ${u.id} | ${u.email} | ${u.name} | admin=${u.is_admin}`));
+console.log("\nUSERS DEV ONLY:");
+const prodIds = new Set(prodUsers.map(u => u.id));
+devUsers.filter(u => !prodIds.has(u.id)).forEach(u => console.log(` ${u.id} | ${u.email} | ${u.name} | admin=${u.is_admin}`));
+prod.close(); dev.close();

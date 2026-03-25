@@ -3,8 +3,8 @@ import { ArrowLeft } from 'lucide-react';
 
 const EquipmentPanel = lazy(() => import('../equipment/EquipmentPanel'));
 
-function MobileEquipment({ onBack, initialTab = 'inventory' }) {
-  const title = initialTab === 'sav' ? 'SAV' : 'Matériel';
+function MobileEquipment({ onBack, initialTab = 'inventory', currentUser }) {
+  const title = initialTab === 'sav' ? 'SAV' : 'Équipements';
   return (
     <div className="mobile-module-wrapper">
       <div className="mobile-module-header">
@@ -15,7 +15,7 @@ function MobileEquipment({ onBack, initialTab = 'inventory' }) {
       </div>
       <div className="mobile-module-content">
         <Suspense fallback={<div className="mobile-module-loading">Chargement...</div>}>
-          <EquipmentPanel initialTab={initialTab} isMobile={true} />
+          <EquipmentPanel initialTab={initialTab} isMobile={true} currentUser={currentUser} />
         </Suspense>
       </div>
     </div>

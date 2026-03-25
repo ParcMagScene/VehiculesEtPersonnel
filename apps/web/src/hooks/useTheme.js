@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 
 /**
- * Hook pour la gestion du thème eM@g (mode + palette).
+ * Hook pour la gestion du thème eM@g (mode + palette + densité).
  * 
- * Deux axes indépendants :
- *   • mode    : 'light' | 'dark'       → data-theme="light|dark"
- *   • palette : 'default' | 'flat-*'   → data-palette="..."
+ * Trois axes indépendants :
+ *   • mode    : 'light' | 'dark'             → data-theme="light|dark"
+ *   • palette : 'default' | 'flat-*' | ...   → data-palette="..."
+ *   • density : 'normal' | 'compact'          → data-density="compact"
  * 
  * Persistance :
- *   1. localStorage ('emag-theme', 'emag-palette')
+ *   1. localStorage ('emag-theme', 'emag-palette', 'emag-density')
  *   2. API préférences (via le composant UserPreferencesModal)
  * 
  * Priorité mode :
@@ -17,7 +18,7 @@ import { useState, useEffect, useCallback } from 'react';
  *   3. Fallback: 'light'
  * 
  * Usage:
- *   const { theme, palette, toggleTheme, setTheme, setPalette, isDark } = useTheme();
+ *   const { theme, palette, density, toggleTheme, setTheme, setPalette, setDensity, isDark, isCompact } = useTheme();
  */
 
 export const PALETTES = [
@@ -84,6 +85,18 @@ export const PALETTES = [
     colors: { primary: '#0078d4', secondary: '#005a9e', accent: '#e8ab53', bg: '#f3f3f3', card: '#ffffff' },
     darkColors: { primary: '#0078d4', secondary: '#005a9e', accent: '#e8ab53', bg: '#f3f3f3', card: '#ffffff' },
   },
+  {
+    id: 'tv-display',
+    name: 'TV Display',
+    description: 'Contraste élevé pour écrans distants',
+    colors: { primary: '#00e1ff', secondary: '#00b8d4', accent: '#00e5ff', bg: '#000000', card: '#0a1929' },
+    darkColors: { primary: '#00e1ff', secondary: '#00b8d4', accent: '#00e5ff', bg: '#000000', card: '#0a1929' },
+  },
+];
+
+export const DENSITIES = [
+  { id: 'normal', name: 'Normal', description: 'Espacement standard' },
+  { id: 'compact', name: 'Compact', description: 'Densité réduite, plus de contenu visible' },
 ];
 
 export function useTheme() {
@@ -102,6 +115,13 @@ export function useTheme() {
     return 'default';
   });
 
+  // ─── Densité (normal/compact) ───
+  const [density, setDensityState] = useState(() => {
+    const saved = localStorage.getItem('emag-density');
+    if (saved === 'compact' || saved === 'normal') return saved;
+    return 'normal';
+  });
+
   // Appliquer le mode au DOM
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -117,6 +137,16 @@ export function useTheme() {
     }
     localStorage.setItem('emag-palette', palette);
   }, [palette]);
+
+  // Appliquer la densité au DOM
+  useEffect(() => {
+    if (density === 'compact') {
+      document.documentElement.setAttribute('data-density', 'compact');
+    } else {
+      document.documentElement.removeAttribute('data-density');
+    }
+    localStorage.setItem('emag-density', density);
+  }, [density]);
 
   // Écouter les changements de préférence système
   useEffect(() => {
@@ -145,9 +175,20 @@ export function useTheme() {
     }
   }, []);
 
-  const isDark = theme === 'dark';
+  const setDensity = useCallback((newDensity) => {
+    if (newDensity === 'compact' || newDensity === 'normal') {
+      setDensityState(newDensity);
+    }
+  }, []);
 
-  return { theme, isDark, toggleTheme, setTheme, palette, setPalette };
+  const toggleDensity = useCallback(() => {
+    setDensityState(prev => prev === 'compact' ? 'normal' : 'compact');
+  }, []);
+
+  const isDark = theme === 'dark';
+  const isCompact = density === 'compact';
+
+  return { theme, isDark, toggleTheme, setTheme, palette, setPalette, density, isCompact, setDensity, toggleDensity };
 }
 
 export default useTheme;

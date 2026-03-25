@@ -59,9 +59,10 @@ const DOC_TYPES = {
 };
 
 // ═══ Composant Principal ═══
-function OrdersPanel({ currentUser }) {
+function OrdersPanel({ currentUser, isMobile }) {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState('orders');
+  const isSimpleUser = isMobile && !currentUser?.isAdmin;
+  const [activeTab, setActiveTab] = useState(isSimpleUser ? 'requests' : 'orders');
   const [orders, setOrders] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -70,6 +71,7 @@ function OrdersPanel({ currentUser }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [myLinkedOrders, setMyLinkedOrders] = useState([]);
 
   // Détail / formulaires
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -117,6 +119,22 @@ function OrdersPanel({ currentUser }) {
       if (searchTerm) params.search = searchTerm;
       if (statusFilter) params.status = statusFilter;
 
+      // Mode utilisateur simple mobile : ne charger que ses demandes + commandes liées
+      if (isSimpleUser) {
+        const requestParams = { ...params, requested_by: currentUser.id };
+        const promises = [
+          api.getMaterialRequests(requestParams),
+          api.getMaterialRequestsStats(),
+          api.getMyLinkedOrders(),
+          api.getSuppliers({}),
+        ];
+        const results = await Promise.all(promises);
+        if (controller.signal.aborted) return;
+        setMaterialRequests(results[0]);
+        setRequestStats(results[1]);
+        setMyLinkedOrders(results[2]);
+        setSuppliers(results[3]);
+      } else {
       // Charger seulement les données de l'onglet actif + fournisseurs (nécessaires pour le formulaire commande)
       const promises = [api.getSuppliers(searchTerm ? { search: searchTerm } : {})];
       if (activeTab === 'orders' || !orders.length) promises.push(api.getOrders(params));
@@ -142,6 +160,7 @@ function OrdersPanel({ currentUser }) {
       setRequestStats(results[idx++]);
       if (activeTab === 'suppliers') setSuppliersWithOrders(results[idx++]);
       setCompletionAlerts(results[idx] || []);
+      }
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('Erreur chargement commandes:', error);
@@ -432,6 +451,19 @@ function OrdersPanel({ currentUser }) {
 
       {/* Tabs + Stats unified */}
       <div className="orders-tabs">
+        {isSimpleUser ? (
+          <>
+            <button className={`orders-tab ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => { setActiveTab('requests'); setStatusFilter(''); }}>
+              <ClipboardList size={16} /> Mes demandes
+              {requestStats?.pending > 0 && <span className="tab-badge">{requestStats.pending}</span>}
+            </button>
+            <button className={`orders-tab ${activeTab === 'tracking' ? 'active' : ''}`} onClick={() => { setActiveTab('tracking'); setStatusFilter(''); }}>
+              <Package size={16} /> Suivi commandes
+              {myLinkedOrders.length > 0 && <span className="tab-badge">{myLinkedOrders.length}</span>}
+            </button>
+          </>
+        ) : (
+          <>
         <button className={`orders-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => { setActiveTab('orders'); setStatusFilter(''); }}>
           <ShoppingCart size={16} /> Commandes
         </button>
@@ -448,6 +480,8 @@ function OrdersPanel({ currentUser }) {
         <button className={`orders-tab ${activeTab === 'catalog' ? 'active' : ''}`} onClick={() => { setActiveTab('catalog'); setStatusFilter(''); }}>
           <BookOpen size={16} /> Catalogue
         </button>
+          </>
+        )}
       </div>
 
       {activeTab === 'catalog' && (
@@ -457,7 +491,7 @@ function OrdersPanel({ currentUser }) {
       )}
 
       {/* Toolbar */}
-      {activeTab !== 'catalog' && <div className="orders-toolbar">
+      {activeTab !== 'catalog' && activeTab !== 'tracking' && <div className="orders-toolbar">
         <div className="orders-search">
           <Search size={16} />
           <input
@@ -476,7 +510,7 @@ function OrdersPanel({ currentUser }) {
             </select>
           </div>
         )}
-        {activeTab !== 'suppliers' && activeTab !== 'requests' && (
+        {!isSimpleUser && activeTab !== 'suppliers' && activeTab !== 'requests' && (
           <div className="orders-filter">
             <Filter size={14} />
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
@@ -487,12 +521,19 @@ function OrdersPanel({ currentUser }) {
             </select>
           </div>
         )}
-        {activeTab === 'suppliers' && (
+        {!isSimpleUser && activeTab === 'suppliers' && (
           <label className="archived-toggle">
             <input type="checkbox" checked={showArchivedSuppliers} onChange={(e) => setShowArchivedSuppliers(e.target.checked)} />
             <Archive size={14} /> Inclure archivées
           </label>
         )}
+        {isSimpleUser ? (
+          activeTab === 'requests' && (
+            <button className="orders-add-btn" onClick={() => setShowRequestModal(true)}>
+              <Plus size={16} /> Nouvelle demande
+            </button>
+          )
+        ) : (
         <button className="orders-add-btn" onClick={() => {
           if (activeTab === 'orders') { setEditingOrder(null); setShowOrderForm(true); }
           else if (activeTab === 'quotes') { setEditingQuote(null); setShowQuoteForm(true); }
@@ -502,10 +543,11 @@ function OrdersPanel({ currentUser }) {
           <Plus size={16} />
           {activeTab === 'orders' ? 'Nouvelle commande' : activeTab === 'quotes' ? 'Nouveau devis' : activeTab === 'requests' ? 'Nouvelle demande' : 'Nouveau fournisseur'}
         </button>
+        )}
       </div>}
 
       {/* Stats */}
-      {activeTab !== 'catalog' && stats && (
+      {!isSimpleUser && activeTab !== 'catalog' && stats && (
         <div className="orders-header-stats">
           <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
           <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
@@ -517,7 +559,7 @@ function OrdersPanel({ currentUser }) {
       )}
 
       {/* Body: table + slide panel côte à côte */}
-      {activeTab !== 'catalog' && <div className="orders-body">
+      {activeTab !== 'catalog' && activeTab !== 'tracking' && <div className="orders-body">
         <div className="orders-list">
           {loading ? (
             <div className="orders-loading">Chargement...</div>
@@ -543,6 +585,7 @@ function OrdersPanel({ currentUser }) {
                 <MaterialRequestsList 
                   requests={materialRequests} 
                   isAdmin={currentUser?.isAdmin}
+                  isSimpleUser={isSimpleUser}
                   onValidate={handleValidateRequest} 
                   onDelete={handleDeleteRequest}
                   onClick={handleRequestRowClick}
@@ -610,6 +653,11 @@ function OrdersPanel({ currentUser }) {
           />
         )}
       </div>}
+
+      {/* Onglet Suivi commandes — utilisateurs simples */}
+      {activeTab === 'tracking' && (
+        <MyLinkedOrdersList orders={myLinkedOrders} loading={loading} />
+      )}
 
       {/* Dialog modals (double-clic) — overlay au-dessus */}
       {dialogOrder && (
@@ -1341,12 +1389,101 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
   );
 });
 
+// ═══ Suivi des commandes liées (utilisateurs simples) ═══
+const MyLinkedOrdersList = React.memo(({ orders, loading }) => {
+  if (loading) return <div className="orders-loading">Chargement...</div>;
+  if (!orders.length) return (
+    <div className="orders-empty" style={{ padding: '2rem 1rem' }}>
+      <Package size={32} />
+      <p>Aucune commande en cours liée à vos demandes</p>
+      <p style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)', marginTop: '0.5rem' }}>
+        Les commandes créées à partir de vos demandes apparaîtront ici
+      </p>
+    </div>
+  );
+  return (
+    <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {orders.map(order => {
+        const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
+        const completion = order.item_count > 0 ? Math.round((order.completed_items / order.item_count) * 100) : 0;
+        return (
+          <div key={order.id} style={{ background: 'var(--theme-bg-card, #fff)', border: '1px solid var(--theme-border)', borderRadius: 10, padding: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}>
+                <Hash size={14} style={{ verticalAlign: -2 }} /> {order.reference}
+              </span>
+              <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color, fontSize: '0.7rem', padding: '2px 8px' }}>
+                {status.icon} {status.label}
+              </span>
+            </div>
+            {order.supplier_name && (
+              <div style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)', marginBottom: '0.4rem' }}>
+                <Building2 size={13} style={{ verticalAlign: -2 }} /> {order.supplier_name}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--theme-text-muted)', marginBottom: '0.5rem' }}>
+              <span>{order.item_count} article(s)</span>
+              {order.order_date && <span>{formatDate(order.order_date)}</span>}
+            </div>
+            {/* Barre de progression */}
+            <div style={{ background: 'var(--theme-bg-secondary, #f3f4f6)', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${completion}%`, borderRadius: 6, background: completion === 100 ? '#10b981' : '#3b82f6', transition: 'width 0.3s ease' }} />
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)', marginTop: '0.25rem', textAlign: 'right' }}>
+              {completion}% réceptionné
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
 // ═══ Liste des demandes de matériel ═══
-const MaterialRequestsList = React.memo(({ requests, isAdmin, onValidate, onDelete, onClick, onDoubleClick, selectedId }) => {
+const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onValidate, onDelete, onClick, onDoubleClick, selectedId }) => {
   const [rejectingId, setRejectingId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  if (!requests.length) return <div className="orders-empty"><ClipboardList size={24} /><p>Aucune demande de matériel</p></div>;
+  if (!requests.length) return <div className="orders-empty"><ClipboardList size={24} /><p>{isSimpleUser ? 'Vous n\'avez aucune demande' : 'Aucune demande de matériel'}</p></div>;
+
+  // Mode carte mobile pour utilisateurs simples
+  if (isSimpleUser) {
+    return (
+      <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        {requests.map(req => {
+          const status = REQUEST_STATUS[req.status] || REQUEST_STATUS.pending;
+          const priority = REQUEST_PRIORITY[req.priority] || REQUEST_PRIORITY.normal;
+          return (
+            <div key={req.id} onClick={() => onClick?.(req)}
+              style={{ background: 'var(--theme-bg-card, #fff)', border: `1px solid ${selectedId === req.id ? 'var(--theme-accent, #2563eb)' : 'var(--theme-border)'}`, borderRadius: 10, padding: '0.8rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}>{req.article}</div>
+                  {req.ref_code && <div style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)' }}>Réf: {req.ref_code}</div>}
+                </div>
+                <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color, fontSize: '0.7rem', padding: '2px 8px', flexShrink: 0 }}>
+                  {status.icon} {status.label}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
+                <span>Qté: {req.quantity}</span>
+                <span style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
+                {req.supplier_name && <span>📦 {req.supplier_name}</span>}
+                <span>📍 {req.destination === 'Autre' ? req.destination_other || 'Autre' : req.destination}</span>
+              </div>
+              {req.order_id && (
+                <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: 'var(--theme-accent, #2563eb)', fontWeight: 600 }}>
+                  → Commande #{req.order_id}
+                </div>
+              )}
+              {req.notes && <div style={{ marginTop: '0.3rem', fontSize: '0.7rem', color: 'var(--theme-text-muted)', fontStyle: 'italic' }}>{req.notes}</div>}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="orders-table-wrapper">
       <table className="orders-table requests-table">

@@ -217,6 +217,33 @@
   border-color: var(--theme-primary);
 }
 
+/* Location row (input + Maps link) */
+.etm-location-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.etm-location-row input {
+  flex: 1;
+}
+.etm-maps-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #4285f415;
+  color: #4285f4;
+  border: 1px solid #4285f430;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  text-decoration: none;
+}
+.etm-maps-link:hover {
+  background: #4285f425;
+}
+
 /* Footer */
 .etm-footer {
   display: flex;

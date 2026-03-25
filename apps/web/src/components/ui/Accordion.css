@@ -1,0 +1,70 @@
+/* ═══════════════════════════════════════
+   Accordion — Design System Molecules
+   ═══════════════════════════════════════ */
+
+.ui-accordion {
+  border: 1px solid var(--theme-border-light);
+  border-radius: var(--radius-md);
+  background: var(--theme-bg-card);
+  overflow: hidden;
+}
+
+.ui-accordion + .ui-accordion {
+  margin-top: -1px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* ─── Trigger ─── */
+.ui-accordion__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: none;
+  color: var(--theme-text-primary);
+  font-size: var(--font-base);
+  font-weight: var(--weight-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration-fast);
+}
+.ui-accordion__trigger:hover {
+  background: var(--theme-bg-hover);
+}
+.ui-accordion__trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  z-index: 1;
+  position: relative;
+}
+
+.ui-accordion__icon {
+  display: flex;
+  color: var(--theme-text-secondary);
+  flex-shrink: 0;
+}
+
+.ui-accordion__title {
+  flex: 1;
+}
+
+.ui-accordion__chevron {
+  color: var(--theme-text-muted);
+  transition: transform var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
+}
+.ui-accordion--open .ui-accordion__chevron {
+  transform: rotate(180deg);
+}
+
+/* ─── Content ─── */
+.ui-accordion__content {
+  padding: 0 var(--space-4) var(--space-4);
+  color: var(--theme-text-body);
+  font-size: var(--font-base);
+  line-height: var(--leading-normal);
+}

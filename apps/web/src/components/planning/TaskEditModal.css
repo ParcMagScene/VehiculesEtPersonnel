@@ -289,6 +289,33 @@
   white-space: nowrap;
 }
 
+/* Location row (input + Maps link) */
+.tem-location-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.tem-location-row input {
+  flex: 1;
+}
+.tem-maps-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #4285f415;
+  color: #4285f4;
+  border: 1px solid #4285f430;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tem-maps-link:hover {
+  background: #4285f425;
+  border-color: #4285f460;
+}
+
 /* Footer */
 .tem-footer {
   display: flex;

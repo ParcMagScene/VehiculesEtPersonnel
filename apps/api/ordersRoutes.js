@@ -186,6 +186,27 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // Commandes liées aux demandes de l'utilisateur courant (pour utilisateurs simples)
+  app.get('/api/orders/my-linked', authenticateToken, (req, res) => {
+    try {
+      const userId = req.user.id;
+      const orders = db.prepare(`
+        SELECT DISTINCT o.*, s.name as supplier_name, u.name as created_by_name,
+          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
+          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND received_qty >= quantity) as completed_items
+        FROM orders o
+        INNER JOIN material_requests mr ON mr.order_id = o.id AND mr.requested_by = ?
+        LEFT JOIN suppliers s ON o.supplier_id = s.id
+        LEFT JOIN users u ON o.created_by = u.id
+        ORDER BY o.created_at DESC
+      `).all(userId);
+      res.json(orders);
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
   // Détail d'une commande avec ses lignes
   app.get('/api/orders/:id', authenticateToken, (req, res) => {
     try {

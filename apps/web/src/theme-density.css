@@ -1,0 +1,250 @@
+/* ═══════════════════════════════════════════════════════
+   THÈME COMPACT — Densité réduite
+   ═══════════════════════════════════════════════════════
+   
+   Axe indépendant du mode (light/dark) et de la palette.
+   Activé via data-density="compact" sur <html>.
+   
+   Réduit spacing, paddings, hauteurs et font-sizes pour
+   afficher plus d'information à l'écran.
+   ═══════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────
+   1. TOKENS — Espacement réduit (~75%)
+   ───────────────────────────────────────── */
+[data-density="compact"] {
+  /* Spacing scale réduit */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 8px;
+  --space-3-5: 10px;
+  --space-4: 12px;
+  --space-5: 14px;
+  --space-6: 16px;
+  --space-7: 20px;
+  --space-8: 24px;
+  --space-9: 28px;
+  --space-10: 32px;
+  --space-12: 40px;
+  --space-14: 48px;
+  --space-16: 56px;
+  --space-20: 64px;
+  --space-24: 80px;
+
+  /* Typographie un cran en-dessous */
+  --font-2xs: 0.6rem;
+  --font-xs: 0.65rem;
+  --font-sm: 0.75rem;
+  --font-base: 0.8rem;
+  --font-md: 0.875rem;
+  --font-lg: 1rem;
+  --font-xl: 1.125rem;
+  --font-2xl: 1.25rem;
+  --font-3xl: 1.5rem;
+  --font-4xl: 1.875rem;
+
+  /* Hauteurs de lignes serrées */
+  --leading-tight: 1.15;
+  --leading-snug: 1.25;
+  --leading-normal: 1.375;
+  --leading-relaxed: 1.5;
+
+  /* Radius réduits */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+}
+
+/* ─────────────────────────────────────────
+   2. BOUTONS — Hauteurs réduites
+   ───────────────────────────────────────── */
+[data-density="compact"] {
+  --btn-height: 32px;
+  --btn-height-xs: 22px;
+  --btn-height-sm: 26px;
+  --btn-height-md: 32px;
+  --btn-height-lg: 40px;
+
+  --btn-padding: 6px 14px;
+  --btn-padding-xs: 2px 6px;
+  --btn-padding-sm: 4px 10px;
+  --btn-padding-md: 6px 14px;
+  --btn-padding-lg: 8px 18px;
+
+  --btn-font-size: 13px;
+  --btn-font-size-xs: 10px;
+  --btn-font-size-sm: 11px;
+  --btn-font-size-md: 13px;
+  --btn-font-size-lg: 14px;
+
+  --btn-icon-size: 28px;
+  --btn-icon-size-sm: 22px;
+  --btn-icon-size-lg: 32px;
+
+  --close-btn-size: 30px;
+}
+
+/* ─────────────────────────────────────────
+   3. TABLE — Cellules condensées
+   ───────────────────────────────────────── */
+[data-density="compact"] {
+  --table-header-padding: 4px 8px;
+  --table-cell-padding: 4px 8px;
+  --table-header-font-size: 11px;
+}
+
+/* ─────────────────────────────────────────
+   4. ICÔNES — Un cran plus petit
+   ───────────────────────────────────────── */
+[data-density="compact"] {
+  --icon-xs: 12px;
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 18px;
+  --icon-xl: 20px;
+  --icon-2xl: 28px;
+}
+
+/* ─────────────────────────────────────────
+   5. SCROLLBAR — Plus fin
+   ───────────────────────────────────────── */
+[data-density="compact"] {
+  --scrollbar-width: 6px;
+  --scrollbar-width-thin: 4px;
+}
+
+/* ─────────────────────────────────────────
+   6. COMPOSANTS CONCRETS — Overrides
+   ───────────────────────────────────────── */
+
+/* Modal header compact */
+[data-density="compact"] .theme-modal-header,
+[data-density="compact"] .ui-modal-header {
+  padding: 12px 16px;
+}
+
+/* Modal body/footer compact */
+[data-density="compact"] .theme-modal-body,
+[data-density="compact"] .ui-modal-body {
+  padding: 12px 16px;
+}
+
+[data-density="compact"] .theme-modal-footer,
+[data-density="compact"] .ui-modal-footer {
+  padding: 10px 16px;
+}
+
+/* Panels compacts */
+[data-density="compact"] .panel-body,
+[data-density="compact"] .ui-panel .panel-body {
+  padding: 8px 12px;
+}
+
+/* Formulaires compacts */
+[data-density="compact"] .ui-form-section {
+  padding: 8px 0;
+  gap: 6px;
+}
+
+[data-density="compact"] .ui-form-row {
+  gap: 8px;
+}
+
+/* Inputs compacts */
+[data-density="compact"] .ui-input {
+  height: 32px;
+  padding: 4px 10px;
+  font-size: var(--font-sm);
+}
+
+[data-density="compact"] .ui-input[data-size="sm"] {
+  height: 26px;
+  padding: 2px 8px;
+}
+
+/* Tags/Badges compacts */
+[data-density="compact"] .ui-tag {
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+[data-density="compact"] .ui-badge {
+  padding: 0 5px;
+  font-size: 10px;
+  min-width: 16px;
+  height: 16px;
+}
+
+/* Tabs compact */
+[data-density="compact"] .ui-tab {
+  padding: 6px 12px;
+  font-size: var(--font-sm);
+}
+
+/* Accordion compact */
+[data-density="compact"] .ui-accordion-trigger {
+  padding: 8px 12px;
+}
+
+/* Card compact */
+[data-density="compact"] .ui-card,
+[data-density="compact"] .card {
+  padding: 8px 12px;
+}
+
+/* SectionHeader compact */
+[data-density="compact"] .section-header {
+  padding: 8px 12px;
+}
+
+/* PageHeader compact */
+[data-density="compact"] .ui-page-header {
+  padding: 12px 16px;
+  gap: 8px;
+}
+
+/* SearchBar compact */
+[data-density="compact"] .ui-search-bar input {
+  height: 32px;
+}
+
+/* Drawer compact */
+[data-density="compact"] .ui-drawer-header {
+  padding: 10px 14px;
+}
+
+[data-density="compact"] .ui-drawer-body {
+  padding: 10px 14px;
+}
+
+/* ListItem compact */
+[data-density="compact"] .ui-list-item {
+  padding: 6px 10px;
+  min-height: 32px;
+}
+
+/* Dropdown compact */
+[data-density="compact"] .ui-dropdown-menu {
+  padding: 2px;
+}
+
+[data-density="compact"] .ui-dropdown-item {
+  padding: 4px 10px;
+  font-size: var(--font-sm);
+}
+
+/* Gap général réduit */
+[data-density="compact"] .ui-module-toolbar {
+  padding: 8px 12px;
+  gap: 6px;
+}
+
+[data-density="compact"] .ui-module-content {
+  padding: 8px 12px;
+}
+
+[data-density="compact"] .ui-module-footer {
+  padding: 8px 12px;
+}

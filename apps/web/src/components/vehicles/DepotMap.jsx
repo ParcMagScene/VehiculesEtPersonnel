@@ -349,21 +349,21 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           )}
           {/* Éditer le plan (admin uniquement) */}
           {!compact && currentUser?.isAdmin && (
-            <button className="depot-edit-btn" onClick={() => setShowEditor(true)} title="Éditer le plan">
+            <button type="button" className="depot-edit-btn" onClick={() => setShowEditor(true)} title="Éditer le plan">
               <Settings2 size={14} />
               Éditer
             </button>
           )}
           {/* Zoom */}
           <div className="depot-zoom-controls">
-            <button onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM} title="Dézoomer">
+            <button type="button" onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM} title="Dézoomer">
               <ZoomOut size={16} />
             </button>
             <span className="depot-zoom-level">{Math.round(zoom * 100)}%</span>
-            <button onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM} title="Zoomer">
+            <button type="button" onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM} title="Zoomer">
               <ZoomIn size={16} />
             </button>
-            <button onClick={handleZoomReset} title="Réinitialiser">
+            <button type="button" onClick={handleZoomReset} title="Réinitialiser">
               <Maximize2 size={14} />
             </button>
           </div>
@@ -371,6 +371,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           <div className="depot-floor-selector">
             {floors.map(f => (
               <button
+                type="button"
                 key={f.id}
                 className={`depot-floor-btn ${activeFloor === f.id ? 'active' : ''}`}
                 onClick={() => setActiveFloor(f.id)}
@@ -729,6 +730,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
         <span className="legend-label">Zones :</span>
         {floorZones.map(zone => (
           <button
+            type="button"
             key={zone.id}
             className={`legend-chip ${selectedZone === zone.id ? 'active' : ''} ${highlightedZone === zone.id ? 'highlighted' : ''}`}
             style={{ '--chip-color': zone.color }}

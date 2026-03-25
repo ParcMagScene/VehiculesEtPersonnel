@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════
+   ListItem — Design System Molecules
+   ═══════════════════════════════════════ */
+
+.ui-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border-light);
+  border-radius: var(--radius-md);
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: background var(--duration-fast);
+}
+
+/* Clickable */
+.ui-list-item--clickable {
+  cursor: pointer;
+  border: 1px solid var(--theme-border-light);
+}
+.ui-list-item--clickable:hover {
+  background: var(--theme-bg-hover);
+}
+.ui-list-item--clickable:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Selected */
+.ui-list-item--selected {
+  background: var(--theme-bg-selected);
+  border-color: var(--theme-primary);
+}
+
+/* ─── Visual (icon / avatar) ─── */
+.ui-list-item__visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-text-secondary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ─── Content ─── */
+.ui-list-item__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ui-list-item__title {
+  font-size: var(--font-base);
+  font-weight: var(--weight-medium);
+  color: var(--theme-text-primary);
+  line-height: var(--leading-snug);
+}
+
+.ui-list-item__desc {
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+  line-height: var(--leading-normal);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ui-list-item__meta {
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ─── Actions ─── */
+.ui-list-item__actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* ─── Stacking in lists ─── */
+.ui-list-item + .ui-list-item {
+  margin-top: calc(-1 * var(--space-px));
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.ui-list-item:has(+ .ui-list-item) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}

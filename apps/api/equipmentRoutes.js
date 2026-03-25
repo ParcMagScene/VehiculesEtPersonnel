@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import logger from './logger.js';
 import { normalizeBrand } from './brandHelpers.js';
+import PDFDocument from 'pdfkit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -241,8 +242,37 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         WHERE id = ?
       `).run(name, reference, serial_number, category_id, status, location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, resolved.brand, resolved.brand_id, stock_quantity, req.params.id);
       
+      // Propager la photo aux équipements ayant la même référence
+      if (photo !== undefined && reference) {
+        db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?').run(photo, reference, req.params.id);
+      }
+      
       addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
       
+      res.json({ success: true });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // PATCH /api/equipment/:id/photo — Mettre à jour uniquement la photo
+  app.patch('/api/equipment/:id/photo', authenticateToken, (req, res) => {
+    try {
+      const { photo } = req.body;
+      const eq = db.prepare('SELECT id, reference FROM equipment WHERE id = ?').get(req.params.id);
+      if (!eq) return res.status(404).json({ error: 'Équipement introuvable' });
+
+      db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .run(photo || null, req.params.id);
+
+      // Propager aux équipements de même référence
+      if (photo && eq.reference) {
+        db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?')
+          .run(photo, eq.reference, req.params.id);
+      }
+
+      addToHistory('equipment', req.params.id, 'update', { photo }, req.user.id, req.user.name);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
@@ -286,8 +316,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
       const run = db.transaction(() => {
         for (let i = 1; i <= qty; i++) {
-          const suffix = ` #${i}`;
-          const name = original.name + suffix;
+          const name = original.name;
           const serial = original.serial_number ? `${original.serial_number}-${String(i).padStart(3, '0')}` : null;
 
           const result = insertStmt.run(
@@ -320,6 +349,15 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
       run();
 
+      // Récupérer les items complets pour le frontend
+      const createdIds = created.map(c => c.id);
+      const fullItems = db.prepare(
+        `SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
+         FROM equipment e
+         LEFT JOIN equipment_categories ec ON e.category_id = ec.id
+         WHERE e.id IN (${createdIds.map(() => '?').join(',')})`
+      ).all(...createdIds);
+
       addToHistory('equipment', original.id, 'serialize', {
         originalName: original.name,
         originalQty: qty,
@@ -329,7 +367,9 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       res.json({
         success: true,
         message: `${original.name} sérialisé en ${qty} entités individuelles`,
-        created
+        created,
+        items: fullItems,
+        deletedId: original.id
       });
     } catch (error) {
       logger.error('Erreur sérialisation:', error);
@@ -589,6 +629,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       const { equipment_id, status, priority } = req.query;
       let sql = `
         SELECT st.*, e.name as equipment_name, e.reference as equipment_reference,
+               e.uid as equipment_uid, e.serial_number as equipment_serial_number,
                ec.icon as category_icon, ec.color as category_color,
                u.name as reported_by_name,
                p.first_name as tech_first_name, p.last_name as tech_last_name
@@ -687,6 +728,29 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       db.prepare('UPDATE equipment SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, equipmentId);
     }
   };
+
+  // POST /api/sav-tickets/request — Demande SAV (tous utilisateurs authentifiés)
+  app.post('/api/sav-tickets/request', authenticateToken, (req, res) => {
+    try {
+      const { equipment_id, title, description, type, priority } = req.body;
+      if (!equipment_id || !title) return res.status(400).json({ error: 'Équipement et titre requis' });
+
+      const result = db.prepare(`
+        INSERT INTO sav_tickets (equipment_id, reported_by, assigned_to, type, priority, status, title, description)
+        VALUES (?, ?, NULL, ?, ?, 'open', ?, ?)
+      `).run(equipment_id, req.user.id, type || 'panne', priority || 'medium', title, description);
+
+      // Alerte email aux admins
+      try {
+        alertSavTicketCreated(db, { equipment_id, title, type, priority, description }, req.user.name);
+      } catch (emailErr) { logger.warn('Alerte email SAV:', emailErr.message); }
+
+      res.json({ id: result.lastInsertRowid });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
 
   // POST /api/sav-tickets
   app.post('/api/sav-tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
@@ -1059,6 +1123,182 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
     } catch (error) {
       logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ── Helper PDF : dessiner un tableau SAV sur un document PDFKit ──
+  const drawSavPdfTable = (doc, rows, title, subtitle) => {
+    const pageW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const leftX = doc.page.margins.left;
+
+    // En-tête
+    doc.fontSize(16).font('Helvetica-Bold').text(title, { align: 'center' });
+    doc.moveDown(0.2);
+    if (subtitle) {
+      doc.fontSize(10).font('Helvetica').fillColor('#666666').text(subtitle, { align: 'center' });
+      doc.fillColor('#000000');
+    }
+    doc.moveDown(0.2);
+    const now = new Date();
+    doc.fontSize(7).fillColor('#999999')
+      .text(`Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} — ${rows.length} élément${rows.length > 1 ? 's' : ''}`, { align: 'center' });
+    doc.fillColor('#000000');
+    doc.moveDown(0.5);
+
+    if (rows.length === 0) {
+      doc.fontSize(11).font('Helvetica').text('Aucune intervention trouvée.', { align: 'center' });
+      return;
+    }
+
+    // Colonnes
+    const cols = [
+      { label: 'Référence', width: 60, key: 'equipment_reference' },
+      { label: 'Matériel', width: 90, key: 'equipment_name' },
+      { label: 'UID', width: 45, key: 'equipment_uid' },
+      { label: 'N° Série', width: 55, key: 'equipment_serial_number' },
+      { label: 'Intervention', width: 120, key: 'title' },
+      { label: 'Statut', width: 50, key: 'status' },
+      { label: 'Entrée', width: 55, key: 'created_at' },
+      { label: 'Sortie', width: 55, key: 'resolved_at' },
+      { label: 'Coût', width: 45, key: 'cost' },
+    ];
+    const totalColW = cols.reduce((s, c) => s + c.width, 0);
+    const scale = pageW / totalColW;
+    cols.forEach(c => { c.width = Math.floor(c.width * scale); });
+
+    const STATUS_LABELS = { open: 'Ouvert', in_progress: 'En cours', waiting_parts: 'Att. pièces', resolved: 'Résolu', closed: 'Fermé' };
+    const fmtDate = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('fr-FR'); } catch { return '—'; } };
+    const fmtCost = (c) => { if (c == null) return '—'; return parseFloat(c).toFixed(2) + ' €'; };
+
+    const fs = 7;
+    const rowH = 14;
+    const headerH = 16;
+
+    // Header
+    let x = leftX;
+    const headerY = doc.y;
+    doc.rect(leftX, headerY, pageW, headerH).fillColor('#374151').fill();
+    doc.font('Helvetica-Bold').fontSize(fs).fillColor('#ffffff');
+    cols.forEach(col => {
+      doc.text(col.label, x + 2, headerY + 4, { width: col.width - 4, lineBreak: false });
+      x += col.width;
+    });
+    doc.fillColor('#000000');
+    doc.y = headerY + headerH;
+
+    // Rows
+    let totalCost = 0;
+    rows.forEach((row, i) => {
+      if (doc.y + rowH > doc.page.height - doc.page.margins.bottom - 20) {
+        doc.addPage();
+      }
+      const rowY = doc.y;
+      if (i % 2 === 0) {
+        doc.rect(leftX, rowY, pageW, rowH).fillColor('#f9fafb').fill();
+      }
+      doc.font('Helvetica').fontSize(fs).fillColor('#333333');
+      x = leftX;
+      cols.forEach(col => {
+        let val = '—';
+        if (col.key === 'cost') { val = fmtCost(row.cost); if (row.cost) totalCost += parseFloat(row.cost); }
+        else if (col.key === 'created_at') val = fmtDate(row.created_at);
+        else if (col.key === 'resolved_at') val = fmtDate(row.resolved_at);
+        else if (col.key === 'status') val = STATUS_LABELS[row.status] || row.status || '—';
+        else if (col.key === 'title') val = (row.title || '') + (row.description ? ` — ${row.description}` : '');
+        else val = row[col.key] || '—';
+        doc.text(String(val).substring(0, 40), x + 2, rowY + 3, { width: col.width - 4, lineBreak: false });
+        x += col.width;
+      });
+      doc.y = rowY + rowH;
+    });
+
+    // Footer
+    doc.moveDown(0.3);
+    doc.moveTo(leftX, doc.y).lineTo(leftX + pageW, doc.y).strokeColor('#333333').lineWidth(1).stroke();
+    doc.moveDown(0.3);
+    doc.font('Helvetica-Bold').fontSize(9);
+    doc.text(`Total : ${rows.length} intervention${rows.length > 1 ? 's' : ''}`, leftX, doc.y);
+    doc.text(`Coût total : ${fmtCost(totalCost)}`, leftX + pageW / 2, doc.y - doc.currentLineHeight(), { width: pageW / 2, align: 'right' });
+  };
+
+  // GET /api/sav-tickets/report/pdf — Rapport maintenance en PDF (par période)
+  app.get('/api/sav-tickets/report/pdf', authenticateToken, (req, res) => {
+    try {
+      const { start, end, type } = req.query;
+      if (!start || !end) return res.status(400).json({ error: 'Paramètres start et end requis' });
+
+      let sql = `
+        SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
+               st.created_at, st.resolved_at,
+               e.name as equipment_name, e.reference as equipment_reference,
+               e.uid as equipment_uid, e.serial_number as equipment_serial_number,
+               u.name as reported_by_name
+        FROM sav_tickets st
+        LEFT JOIN equipment e ON st.equipment_id = e.id
+        LEFT JOIN users u ON st.reported_by = u.id
+        WHERE 1=1
+      `;
+      const params = [];
+      if (type === 'entries') {
+        sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
+        params.push(start, end);
+      } else if (type === 'exits') {
+        sql += ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
+        params.push(start, end);
+      } else {
+        sql += ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
+        params.push(start, end, start, end);
+      }
+      sql += ' ORDER BY st.created_at DESC';
+      const rows = db.prepare(sql).all(...params);
+
+      const TYPE_LABELS = { entries: 'Entrées', exits: 'Sorties', all: 'Entrées & Sorties' };
+      const subtitle = `Du ${start} au ${end} — ${TYPE_LABELS[type] || 'Tous'}`;
+
+      const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margins: { top: 25, bottom: 20, left: 20, right: 20 },
+        info: { Title: `Rapport Maintenance - ${start} au ${end}`, Author: 'eM@g' }
+      });
+      const filename = `rapport-maintenance-${start}-${end}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      doc.pipe(res);
+      drawSavPdfTable(doc, rows, 'Rapport Maintenance Matériel', subtitle);
+      doc.end();
+    } catch (error) {
+      logger.error('GET /api/sav-tickets/report/pdf error:', error);
+      res.status(500).json({ error: 'Erreur génération PDF' });
+    }
+  });
+
+  // GET /api/sav-tickets/active/pdf — PDF de tout le matériel en SAV (tickets actifs)
+  app.get('/api/sav-tickets/active/pdf', authenticateToken, (req, res) => {
+    try {
+      const rows = db.prepare(`
+        SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
+               st.created_at, st.resolved_at,
+               e.name as equipment_name, e.reference as equipment_reference,
+               e.uid as equipment_uid, e.serial_number as equipment_serial_number,
+               u.name as reported_by_name
+        FROM sav_tickets st
+        LEFT JOIN equipment e ON st.equipment_id = e.id
+        LEFT JOIN users u ON st.reported_by = u.id
+        WHERE st.status IN ('open', 'in_progress', 'waiting_parts')
+        ORDER BY st.created_at DESC
+      `).all();
+
+      const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margins: { top: 25, bottom: 20, left: 20, right: 20 },
+        info: { Title: 'Matériel en SAV / Maintenance', Author: 'eM@g' }
+      });
+      const today = new Date().toISOString().slice(0, 10);
+      const filename = `materiel-en-sav-${today}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      doc.pipe(res);
+      drawSavPdfTable(doc, rows, 'Matériel en SAV / Maintenance', 'Tickets actifs (ouverts, en cours, en attente de pièces)');
+      doc.end();
+    } catch (error) {
+      logger.error('GET /api/sav-tickets/active/pdf error:', error);
+      res.status(500).json({ error: 'Erreur génération PDF' });
     }
   });
 }

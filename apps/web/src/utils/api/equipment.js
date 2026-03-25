@@ -38,6 +38,9 @@ export function registerEquipmentMethods(ApiClient) {
     async serializeEquipment(id) {
       return this.request(`/equipment/${id}/serialize`, { method: 'POST' });
     },
+    async linkEquipmentPhoto(id, photo) {
+      return this.request(`/equipment/${id}/photo`, { method: 'PATCH', body: JSON.stringify({ photo }) });
+    },
     async importEquipmentCsv(data, mode = 'import') {
       return this.request('/equipment/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
     },
@@ -75,6 +78,9 @@ export function registerEquipmentMethods(ApiClient) {
     async createSavTicket(data) {
       return this.request('/sav-tickets', { method: 'POST', body: JSON.stringify(data) });
     },
+    async createSavRequest(data) {
+      return this.request('/sav-tickets/request', { method: 'POST', body: JSON.stringify(data) });
+    },
     async updateSavTicket(id, data) {
       return this.request(`/sav-tickets/${id}`, { method: 'PUT', body: JSON.stringify(data) });
     },
@@ -92,6 +98,19 @@ export function registerEquipmentMethods(ApiClient) {
     },
     async linkSavTicket(ticketId, equipmentId) {
       return this.request(`/sav-tickets/${ticketId}/link`, { method: 'PUT', body: JSON.stringify({ equipment_id: equipmentId }) });
+    },
+
+    // PDF SAV
+    async exportSavReportPdf(start, end, type = 'all') {
+      const qs = new URLSearchParams({ start, end, type }).toString();
+      const resp = await fetch(`${API_URL}/sav-tickets/report/pdf?${qs}`, { credentials: 'include' });
+      if (!resp.ok) throw new Error('Erreur export PDF rapport maintenance');
+      return resp.blob();
+    },
+    async exportSavActivePdf() {
+      const resp = await fetch(`${API_URL}/sav-tickets/active/pdf`, { credentials: 'include' });
+      if (!resp.ok) throw new Error('Erreur export PDF matériel en SAV');
+      return resp.blob();
     },
 
     // Listes Favoris / Surveillance

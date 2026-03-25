@@ -170,8 +170,28 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
     }, 500);
   };
 
-  // Export PDF (via impression navigateur)
-  const handleExportPDF = handlePrint;
+  // Export PDF (téléchargement réel via backend PDFKit)
+  const [exporting, setExporting] = useState(false);
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      const startStr = format(start, 'yyyy-MM-dd');
+      const endStr = format(end, 'yyyy-MM-dd');
+      const blob = await api.exportSavReportPdf(startStr, endStr, reportType);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport-maintenance-${startStr}-${endStr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erreur export PDF:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -209,8 +229,8 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
             <button className="mr-action-btn" onClick={handlePrint} title="Imprimer">
               <Printer size={16} /> Imprimer
             </button>
-            <button className="mr-action-btn export" onClick={handleExportPDF} title="Exporter en PDF">
-              <Download size={16} /> PDF
+            <button className="mr-action-btn export" onClick={handleExportPDF} title="Télécharger en PDF" disabled={exporting}>
+              <Download size={16} /> {exporting ? 'Export...' : 'PDF'}
             </button>
           </div>
         </div>

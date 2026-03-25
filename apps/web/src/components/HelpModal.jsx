@@ -12,8 +12,8 @@ const FAQ_ITEMS = [
   { q: "Comment signaler une panne sur un véhicule ?", a: "Ouvrez la fiche du véhicule et cliquez sur le bouton Signaler une intervention. Choisissez le type (panne, entretien, contrôle technique) et décrivez le problème." },
   { q: "Comment créer un bon de commande ?", a: "Allez dans le module Commandes, onglet Commandes, et cliquez sur Nouvelle commande. Sélectionnez un fournisseur, ajoutez les lignes de commande et enregistrez. La référence est générée automatiquement (BC-YYYY-NNN)." },
   { q: "Comment convertir un devis en commande ?", a: "Dans le module Commandes, cliquez sur le devis accepté, puis sur le bouton Convertir en commande. Un bon de commande sera créé automatiquement avec les mêmes lignes." },
-  { q: "Comment ajouter un équipement au parc matériel ?", a: "Dans le module Matériel, cliquez sur Ajouter un équipement. Remplissez les informations (nom, référence, catégorie, etc.) et enregistrez." },
-  { q: "Comment créer un ticket SAV ?", a: "Dans le module Matériel, onglet SAV, cliquez sur Nouveau ticket. Sélectionnez l'équipement concerné, décrivez le problème et assignez un technicien si nécessaire." },
+  { q: "Comment ajouter un équipement au parc matériel ?", a: "Dans le module Équipements, cliquez sur Ajouter un équipement. Remplissez les informations (nom, référence, catégorie, etc.) et enregistrez." },
+  { q: "Comment créer un ticket SAV ?", a: "Dans le module Équipements, onglet SAV, cliquez sur Nouveau ticket. Sélectionnez l'équipement concerné, décrivez le problème et assignez un technicien si nécessaire." },
   { q: "Comment accéder à la messagerie interne ?", a: "Cliquez sur l'icône messagerie (💬) dans le header ou utilisez le raccourci ⌘/Ctrl+M. Créez des conversations avec les autres utilisateurs et partagez des fichiers." },
   { q: "Comment personnaliser mes préférences ?", a: "Cliquez sur votre avatar en haut à droite, puis Préférences (ou ⌘/Ctrl+,). Vous pouvez changer le thème, le module par défaut et la vue calendrier initiale." },
 ];
@@ -44,9 +44,9 @@ const MODULE_GUIDES = [
     ]
   },
   {
-    id: 'materiel', icon: Package, title: 'Module Matériel', color: '#8b5cf6',
+    id: 'materiel', icon: Package, title: 'Module Équipements', color: '#8b5cf6',
     tips: [
-      { title: 'Inventaire', text: "Gérez votre parc de matériel avec catégories, statuts et emplacements. Assignez du matériel à des personnes ou des affaires." },
+      { title: 'Équipements', text: "Gérez votre parc de matériel avec catégories, statuts et emplacements. Assignez du matériel à des personnes ou des affaires." },
       { title: 'Tickets SAV', text: "Créez des tickets pour les pannes, entretiens et calibrages. Suivez leur résolution et les coûts associés." },
     ]
   },

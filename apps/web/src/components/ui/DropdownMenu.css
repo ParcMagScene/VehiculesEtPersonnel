@@ -1,0 +1,75 @@
+/* ═══════════════════════════════════════
+   DropdownMenu — Design System Molecules
+   ═══════════════════════════════════════ */
+
+.ui-dropdown-trigger {
+  display: inline-flex;
+}
+
+.ui-dropdown-menu {
+  z-index: var(--z-dropdown, 5000);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-dropdown);
+  padding: var(--space-1) 0;
+  min-width: 160px;
+  animation: ui-dropdown-in 0.15s var(--ease-out);
+  overflow: hidden;
+}
+
+@keyframes ui-dropdown-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Item ─── */
+.ui-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: none;
+  color: var(--theme-text-primary);
+  font-size: var(--font-sm);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration-fast);
+  white-space: nowrap;
+}
+.ui-dropdown-item:hover {
+  background: var(--theme-bg-hover);
+}
+.ui-dropdown-item__icon {
+  display: flex;
+  color: var(--theme-text-secondary);
+  flex-shrink: 0;
+}
+
+/* Danger variant */
+.ui-dropdown-item--danger {
+  color: var(--theme-danger);
+}
+.ui-dropdown-item--danger .ui-dropdown-item__icon {
+  color: var(--theme-danger);
+}
+.ui-dropdown-item--danger:hover {
+  background: var(--theme-danger-bg);
+}
+
+/* Disabled */
+.ui-dropdown-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ─── Divider ─── */
+.ui-dropdown-divider {
+  height: 1px;
+  background: var(--theme-border-light);
+  margin: var(--space-1) 0;
+}

@@ -87,6 +87,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         endTime: existing?.endTime || eventInfo.endTime || '',
         period: existing?.period || defaultPeriod,
         notes: existing?.notes || '',
+        locationAddress: existing?.locationAddress || existing?.location_address || '',
         taskId: existing?.id || null,
       };
     });
@@ -198,6 +199,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
           google_event_title: eventInfo.cleanSummary || eventInfo.summary,
           affaire_num: eventInfo.affaireNum || null,
           status: 'pending',
+          location_address: s.locationAddress || null,
         };
       });
 
@@ -315,6 +317,31 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                         onChange={e => updateStep(step.key, 'notes', e.target.value)}
                       />
                     </div>
+                    {step.defaultSection === 'courses' && (
+                      <div className="etm-field full">
+                        <label><MapPin size={12} /> Lieu</label>
+                        <div className="etm-location-row">
+                          <input
+                            type="text"
+                            placeholder="Adresse ou lieu…"
+                            value={s.locationAddress}
+                            onChange={e => updateStep(step.key, 'locationAddress', e.target.value)}
+                          />
+                          {s.locationAddress?.trim() && (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.locationAddress.trim())}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="etm-maps-link"
+                              title="Ouvrir dans Google Maps"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <MapPin size={14} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

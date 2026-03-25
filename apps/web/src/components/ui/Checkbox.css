@@ -1,0 +1,132 @@
+/* ═══════════════════════════════════════
+   Checkbox & Toggle — Design System Atoms
+   ═══════════════════════════════════════ */
+
+/* ─── CHECKBOX ─── */
+.ui-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+}
+.ui-checkbox--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ui-checkbox__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.ui-checkbox__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--theme-border-muted);
+  border-radius: var(--radius-sm);
+  background: var(--theme-bg-card);
+  color: white;
+  transition: all var(--duration-fast);
+  flex-shrink: 0;
+}
+
+.ui-checkbox__input:checked + .ui-checkbox__box,
+.ui-checkbox__input[aria-checked="mixed"] + .ui-checkbox__box {
+  background: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.ui-checkbox__input:focus-visible + .ui-checkbox__box {
+  box-shadow: var(--focus-ring);
+}
+
+.ui-checkbox__label {
+  font-size: var(--font-base);
+  color: var(--theme-text-primary);
+  line-height: var(--leading-normal);
+}
+
+/* ─── TOGGLE ─── */
+.ui-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+}
+.ui-toggle--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ui-toggle__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.ui-toggle__track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--theme-border-muted);
+  transition: background var(--duration-fast);
+  flex-shrink: 0;
+}
+
+.ui-toggle__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.ui-toggle__input:checked + .ui-toggle__track {
+  background: var(--theme-primary);
+}
+.ui-toggle__input:checked + .ui-toggle__track .ui-toggle__thumb {
+  transform: translateX(18px);
+}
+
+.ui-toggle__input:focus-visible + .ui-toggle__track {
+  box-shadow: var(--focus-ring);
+}
+
+.ui-toggle__label {
+  font-size: var(--font-base);
+  color: var(--theme-text-primary);
+  line-height: var(--leading-normal);
+}
+
+/* ─── Toggle: sm ─── */
+.ui-toggle--sm .ui-toggle__track {
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+}
+.ui-toggle--sm .ui-toggle__thumb {
+  width: 14px;
+  height: 14px;
+}
+.ui-toggle--sm .ui-toggle__input:checked + .ui-toggle__track .ui-toggle__thumb {
+  transform: translateX(14px);
+}

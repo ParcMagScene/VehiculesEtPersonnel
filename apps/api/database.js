@@ -2077,6 +2077,18 @@ function initializeDatabase() {
       db.exec('ALTER TABLE task_assignments ADD COLUMN reservation_id TEXT REFERENCES reservations(id) ON DELETE SET NULL');
       logger.info('  + task_assignments.reservation_id');
     }
+    if (!taColNames.includes('location_address')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN location_address TEXT');
+      logger.info('  + task_assignments.location_address');
+    }
+    if (!taColNames.includes('location_lat')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN location_lat REAL');
+      logger.info('  + task_assignments.location_lat');
+    }
+    if (!taColNames.includes('location_lng')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN location_lng REAL');
+      logger.info('  + task_assignments.location_lng');
+    }
 
     // Migration : corriger le CHECK constraint section pour inclure rdv et prep_installations
     try {

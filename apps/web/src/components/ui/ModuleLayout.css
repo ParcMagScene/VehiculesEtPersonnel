@@ -1,0 +1,100 @@
+/* ═══════════════════════════════════════
+   ModuleLayout — Organisme (Design System)
+   ═══════════════════════════════════════ */
+
+/* ── Module container ── */
+.ui-module-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+.ui-module-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--theme-border-light);
+  background: var(--theme-bg-card);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* ── Content ── */
+.ui-module-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.ui-module-content--no-padding {
+  padding: 0;
+}
+
+/* ── Footer ── */
+.ui-module-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--theme-border-light);
+  background: var(--theme-bg-secondary);
+  flex-shrink: 0;
+  font-size: var(--font-sm);
+  color: var(--theme-text-muted);
+}
+
+/* ═══════ SplitLayout ═══════ */
+
+.ui-split-layout {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ui-split-sidebar {
+  overflow-y: auto;
+  border-color: var(--theme-border-light);
+  background: var(--theme-bg-secondary);
+  flex-shrink: 0;
+}
+
+.ui-split-layout--left .ui-split-sidebar {
+  border-right: 1px solid var(--theme-border-light);
+}
+
+.ui-split-layout--right .ui-split-sidebar {
+  border-left: 1px solid var(--theme-border-light);
+}
+
+.ui-split-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .ui-split-layout {
+    flex-direction: column;
+  }
+  .ui-split-sidebar {
+    width: 100% !important;
+    max-height: 40vh;
+    border-right: none !important;
+    border-left: none !important;
+  }
+  .ui-split-layout--left .ui-split-sidebar {
+    border-bottom: 1px solid var(--theme-border-light);
+  }
+  .ui-split-layout--right .ui-split-sidebar {
+    border-top: 1px solid var(--theme-border-light);
+    order: 2;
+  }
+}

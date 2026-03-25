@@ -41,13 +41,16 @@ const TASK_SOURCE_COLORS = {
   google_event: '#06b6d4',
 };
 
-function MobilePersonnel({ onBack }) {
+function MobilePersonnel({ onBack, currentUser }) {
   const [persons, setPersons] = useState([]);
   const [planning, setPlanning] = useState({ missions: [], availabilities: [], taskAssignments: [] });
   const [loading, setLoading] = useState(true);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [viewMode, setViewMode] = useState('day'); // 'day' | 'week'
   const [currentDate, setCurrentDate] = useState(startOfDay(new Date()));
+  const [myPersonId, setMyPersonId] = useState(null);
+
+  const isSimpleUser = currentUser && !currentUser.isAdmin;
 
   // Personnes permanentes actives uniquement
   const permanentPersons = useMemo(
@@ -82,18 +85,32 @@ function MobilePersonnel({ onBack }) {
     try {
       const startStr = format(dateRange.start, 'yyyy-MM-dd');
       const endStr = format(dateRange.end, 'yyyy-MM-dd');
-      const [persData, planData] = await Promise.all([
-        api.getPersons(),
-        api.getPersonnelPlanning({ startDate: startStr, endDate: endStr }),
-      ]);
+
+      // Charger les personnes pour résoudre le lien user → person
+      const persData = await api.getPersons();
       setPersons(persData);
+
+      // Pour un utilisateur simple, trouver son person_id
+      let personId = myPersonId;
+      if (isSimpleUser && !personId && currentUser?.id) {
+        const myPerson = persData.find(p => p.userId == currentUser.id || p.user_id == currentUser.id);
+        if (myPerson) {
+          personId = myPerson.id;
+          setMyPersonId(myPerson.id);
+        }
+      }
+
+      const planParams = { startDate: startStr, endDate: endStr };
+      if (isSimpleUser && personId) planParams.personId = personId;
+
+      const planData = await api.getPersonnelPlanning(planParams);
       setPlanning(planData);
     } catch (err) {
       console.error('Erreur chargement planning personnel:', err);
     } finally {
       setLoading(false);
     }
-  }, [dateRange]);
+  }, [dateRange, isSimpleUser, currentUser?.id, myPersonId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -239,7 +256,7 @@ function MobilePersonnel({ onBack }) {
         <button className="mpers-back" onClick={onBack}>
           <ArrowLeft size={20} />
         </button>
-        <h2>Personnel</h2>
+        <h2>{isSimpleUser ? 'Mon planning' : 'Personnel'}</h2>
         <div className="mpers-view-toggle">
           <button className={viewMode === 'day' ? 'active' : ''} onClick={() => setViewMode('day')}>Jour</button>
           <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Semaine</button>
@@ -261,12 +278,175 @@ function MobilePersonnel({ onBack }) {
           <ChevronRight size={20} />
         </button>
       </div>
+      {!isToday && (
+        <button className="mpers-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
+          Aujourd'hui
+        </button>
+      )}
 
       {loading ? (
         <div className="mpers-loading">
           <div className="spinner"></div>
           <p>Chargement...</p>
         </div>
+      ) : isSimpleUser ? (
+        /* ═══ VUE UTILISATEUR SIMPLE — Mon planning ═══ */
+        (() => {
+          const myPerson = persons.find(p => p.id === myPersonId);
+          if (!myPerson) {
+            return (
+              <div className="mpers-empty-list">
+                <User size={40} />
+                <p>Aucun profil personnel associé à votre compte</p>
+              </div>
+            );
+          }
+          const fullName = `${myPerson.firstName || ''} ${myPerson.lastName || ''}`.trim();
+
+          if (viewMode === 'day') {
+            const missions = getMissionsForPersonDay(myPersonId, currentDate);
+            const unavail = getUnavailForPersonDay(myPersonId, currentDate);
+            const tasks = getTasksForPersonDay(myPersonId, currentDate);
+            const isUnavailable = unavail.length > 0;
+            const hasContent = missions.length > 0 || tasks.length > 0;
+            return (
+              <div className="mpers-my-planning">
+                {/* En-tête profil */}
+                <div className="mpers-my-profile">
+                  {myPerson.photo ? (
+                    <img src={`/avatars/${myPerson.photo}`} alt="" className="mpers-my-avatar-img" />
+                  ) : (
+                    <div className="mpers-my-avatar" style={{ background: getAvatarColor(fullName) }}>
+                      {getInitials(myPerson.firstName, myPerson.lastName)}
+                    </div>
+                  )}
+                  <div className="mpers-my-name">{fullName}</div>
+                </div>
+
+                {/* Statut du jour */}
+                {isUnavailable ? (
+                  <div className="mpers-my-section">
+                    <h4>Indisponibilité</h4>
+                    {unavail.map((u, i) => (
+                      <div key={i} className="mpers-my-unavail-card">
+                        <span className="mpers-my-unavail-reason">{u.reason || 'Indisponible'}</span>
+                        {(u.startDate || u.start_date) && (
+                          <span className="mpers-my-unavail-dates">
+                            Du {format(parseISO(u.startDate || u.start_date), 'd MMM', { locale: fr })} au {format(parseISO(u.endDate || u.end_date), 'd MMM', { locale: fr })}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {/* Missions */}
+                {missions.length > 0 && (
+                  <div className="mpers-my-section">
+                    <h4>Missions</h4>
+                    {missions.map(m => (
+                      <div key={m.id} className="mpers-my-mission-card" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
+                        <div className="mpers-my-mission-title">{m.title || m.affaire || 'Mission'}</div>
+                        {(m.clientName || m.client_name) && (
+                          <div className="mpers-my-mission-client">{m.clientName || m.client_name}</div>
+                        )}
+                        {(m.startTime || m.start_time) && (
+                          <div className="mpers-my-mission-time">
+                            <Calendar size={14} /> {m.startTime || m.start_time}{(m.endTime || m.end_time) ? ` — ${m.endTime || m.end_time}` : ''}
+                          </div>
+                        )}
+                        {(m.location || m.address) && (
+                          <div className="mpers-my-mission-location">{m.location || m.address}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tâches */}
+                {tasks.length > 0 && (
+                  <div className="mpers-my-section">
+                    <h4>Tâches</h4>
+                    {tasks.map(ta => (
+                      <div key={ta.id} className="mpers-my-task-card" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                        <div className="mpers-my-task-title">{ta.title || ta.affaire_num || 'Tâche'}</div>
+                        {ta.section && <div className="mpers-my-task-section">{ta.section}</div>}
+                        {ta.period && <div className="mpers-my-task-period">{ta.period}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Rien de prévu */}
+                {!isUnavailable && !hasContent && (
+                  <div className="mpers-my-free">
+                    <Calendar size={32} />
+                    <p>Aucune activité prévue ce jour</p>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Vue semaine simple user
+          return (
+            <div className="mpers-my-planning">
+              <div className="mpers-my-profile">
+                {myPerson.photo ? (
+                  <img src={`/avatars/${myPerson.photo}`} alt="" className="mpers-my-avatar-img" />
+                ) : (
+                  <div className="mpers-my-avatar" style={{ background: getAvatarColor(fullName) }}>
+                    {getInitials(myPerson.firstName, myPerson.lastName)}
+                  </div>
+                )}
+                <div className="mpers-my-name">{fullName}</div>
+              </div>
+
+              <div className="mpers-my-week-grid">
+                {weekDays.map(d => {
+                  const missions = getMissionsForPersonDay(myPersonId, d);
+                  const unavail = getUnavailForPersonDay(myPersonId, d);
+                  const tasks = getTasksForPersonDay(myPersonId, d);
+                  const isUnavailable = unavail.length > 0;
+                  const hasContent = missions.length > 0 || tasks.length > 0;
+                  const isDayToday = isSameDay(d, new Date());
+                  return (
+                    <div
+                      key={d.toISOString()}
+                      className={`mpers-my-week-day ${isUnavailable ? 'unavail' : ''} ${isDayToday ? 'today' : ''}`}
+                      onClick={() => { setCurrentDate(d); setViewMode('day'); }}
+                    >
+                      <div className="mpers-my-week-day-header">
+                        <span className="mpers-my-week-day-name">{format(d, 'EEE', { locale: fr })}</span>
+                        <span className="mpers-my-week-day-num">{format(d, 'd')}</span>
+                      </div>
+                      <div className="mpers-my-week-day-content">
+                        {isUnavailable ? (
+                          <div className="mpers-my-week-unavail">{unavail[0].reason || 'Absent'}</div>
+                        ) : hasContent ? (
+                          <>
+                            {missions.map(m => (
+                              <div key={m.id} className="mpers-my-week-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
+                                {m.title || m.affaire || 'Mission'}
+                              </div>
+                            ))}
+                            {tasks.map(ta => (
+                              <div key={ta.id} className="mpers-my-week-task" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                                {ta.title || ta.affaire_num || 'Tâche'}
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          <div className="mpers-my-week-free">—</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()
       ) : viewMode === 'day' ? (
         /* ═══ VUE JOUR ═══ */
         <div className="mpers-day-list">

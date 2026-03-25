@@ -11,7 +11,7 @@ const ALL_MODULES = [
   { id: 'vehicles', label: 'Parc', icon: Truck, locked: true },
   { id: 'personnel', label: 'Personnel', icon: Users },
   { id: 'affaires', label: 'Affaires', icon: Briefcase },
-  { id: 'equipment', label: 'Matériel', icon: Package },
+  { id: 'equipment', label: 'Équipements', icon: Package },
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
   { id: 'catalog', label: 'Catalogue', icon: BookOpen },
   { id: 'stock', label: 'Stock', icon: Boxes },
@@ -161,7 +161,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                 <option value="vehicles">Parc</option>
                 <option value="personnel">Personnel</option>
                 <option value="affaires">Affaires</option>
-                <option value="equipment">Matériel</option>
+                <option value="equipment">Équipements</option>
                 <option value="orders">Commandes</option>
                 <option value="catalog">Catalogue</option>
                 <option value="stock">Stock</option>

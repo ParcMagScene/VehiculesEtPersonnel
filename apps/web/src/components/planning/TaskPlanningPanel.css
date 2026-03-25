@@ -88,6 +88,17 @@
   background: var(--theme-bg-tertiary);
 }
 
+/* Bouton principal "Nouvelle tâche" */
+.task-planning-panel .btn-add-task-main {
+  background: var(--primary, #3b82f6) !important;
+  color: #fff !important;
+  border-color: var(--primary, #3b82f6) !important;
+}
+.task-planning-panel .btn-add-task-main:hover {
+  background: var(--primary-dark, #2563eb) !important;
+  border-color: var(--primary-dark, #2563eb) !important;
+}
+
 /* Sections container */
 .task-planning-panel .sections-container {
   flex: 1 1 0;
@@ -951,6 +962,28 @@
   white-space: nowrap;
   line-height: 1.5;
   vertical-align: middle;
+}
+.task-planning-panel .task-location-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  margin-left: 4px;
+  border-radius: 10px;
+  background: rgba(234, 67, 53, 0.08);
+  color: #ea4335;
+  border: 1px solid rgba(234, 67, 53, 0.25);
+  white-space: nowrap;
+  line-height: 1.5;
+  vertical-align: middle;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.task-planning-panel .task-location-badge:hover {
+  background: rgba(234, 67, 53, 0.18);
 }
 /* Origine (badge compact dans actions) */
 .task-planning-panel .ev-col-origin {

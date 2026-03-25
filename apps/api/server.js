@@ -284,6 +284,8 @@ app.listen(PORT, '0.0.0.0', () => {
 // ── Serveur secondaire sur port 3001 — Client TV standalone ──
 // Rétrocompatibilité avec les navigateurs des écrans TV (ex calendar-dashboard)
 // Sert la même app Express, les écrans existants sur http://192.168.205.75:3001/ continuent de fonctionner
+// En DEV, on ne démarre PAS ce serveur pour laisser la production servir les écrans TV
+if (!isDev) {
 const TV_PORT = 3001;
 const tvServer = http.createServer(app);
 tvServer.listen(TV_PORT, '0.0.0.0', () => {
@@ -296,6 +298,9 @@ tvServer.on('error', (err) => {
     logger.error('Erreur serveur TV:', err.message);
   }
 });
+} else {
+  logger.info('📺 Mode DEV — serveur TV (port 3001) non démarré, la production garde la main');
+}
 
 /**
  * Nettoyage des sessions expirées et tokens de reset expirés

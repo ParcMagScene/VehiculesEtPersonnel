@@ -158,13 +158,13 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
   const st = EQUIPMENT_STATUS[equipment.status] || EQUIPMENT_STATUS.available;
   const activeTickets = (equipment.savTickets || []).filter(t => t.status === 'open' || t.status === 'in_progress' || t.status === 'waiting_parts');
 
-  // ═══ FICHE MATÉRIEL ═══
+  // ═══ FICHE ÉQUIPEMENT ═══
   if (screen === 'fiche') {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
           <button onClick={() => setScreen('menu')}><ArrowLeft size={20} /></button>
-          <h2>Fiche Matériel</h2>
+          <h2>Fiche Équipement</h2>
         </div>
         <div className="m-eq-qr-fiche">
           <div className="m-eq-qr-fiche-title">
@@ -367,7 +367,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
         <button className="m-eq-qr-menu-btn fiche" onClick={() => setScreen('fiche')}>
           <FileText size={24} />
           <div>
-            <strong>Fiche Matériel</strong>
+            <strong>Fiche Équipement</strong>
             <span>Voir les détails, attributions, historique</span>
           </div>
         </button>

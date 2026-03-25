@@ -656,4 +656,15 @@ runTaxonomyMaintenanceMigrations(db);
 // ═══ Uniformisation Marques & Sociétés — Phase 3 ═══
 runBrandsMigrations(db);
 
+// ═══ Nettoyage noms sérialisés (retirer suffixe #N) ═══
+try {
+  const dirty = db.prepare("SELECT COUNT(*) as c FROM equipment WHERE name LIKE '% #%'").get();
+  if (dirty.c > 0) {
+    db.prepare("UPDATE equipment SET name = TRIM(SUBSTR(name, 1, INSTR(name, ' #') - 1)) WHERE name LIKE '% #%' AND INSTR(name, ' #') > 0").run();
+    logger.info(`✅ Migration: suffixe #N retiré de ${dirty.c} noms d'équipements sérialisés`);
+  }
+} catch (e) {
+  logger.warn('⚠️ Migration cleanup serialize names:', e.message);
+}
+
 } // fin runPostInitMigrations

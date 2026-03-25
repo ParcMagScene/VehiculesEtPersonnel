@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 const EquipmentPanel = lazy(() => import('../equipment/EquipmentPanel'));
 
 function MobileEquipment({ onBack, initialTab = 'inventory', currentUser }) {
-  const title = initialTab === 'sav' ? 'SAV' : 'Matériel';
+  const title = initialTab === 'sav' ? 'SAV' : 'Équipements';
   return (
     <div className="mobile-module-wrapper">
       <div className="mobile-module-header">

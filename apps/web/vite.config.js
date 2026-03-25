@@ -113,7 +113,7 @@ export default defineConfig({
         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
         "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com",
         "connect-src 'self' https://*.googleapis.com https://accounts.google.com",
-        "frame-src https://accounts.google.com",
+        "frame-src 'self' blob: https://accounts.google.com",
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",

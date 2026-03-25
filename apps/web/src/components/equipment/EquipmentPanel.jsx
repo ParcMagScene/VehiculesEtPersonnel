@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2, Download, Camera } from 'lucide-react';
+import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Check, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2, Download, Camera } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../../utils/api';
 import { safeDate } from '../../utils/formatUtils';
@@ -417,78 +417,145 @@ const CategoryCascadePicker = ({ families, subfamilies, leafCategories, value, o
   );
 };
 
-// ═══ ARBORESCENCE CATÉGORIES (accordéon 3 niveaux) ═══
-const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, categories, equipment }) => {
+// ═══ ARBORESCENCE CATÉGORIES (accordéon 3 niveaux + édition inline) ═══
+const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, categories, equipment, onRefresh }) => {
   const [expandedFamilies, setExpandedFamilies] = useState({});
   const [expandedSubs, setExpandedSubs] = useState({});
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef(null);
 
   const toggleFamily = (id) => setExpandedFamilies(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleSub = (id) => setExpandedSubs(prev => ({ ...prev, [id]: !prev[id] }));
 
+  const pid = (c) => c.parentId || c.parent_id;
+
+  const startEdit = (item, e) => {
+    e.stopPropagation();
+    setEditingId(item.id);
+    setEditValue(item.name);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const cancelEdit = () => { setEditingId(null); setEditValue(''); };
+
+  const saveEdit = async (item) => {
+    const trimmed = editValue.trim();
+    if (!trimmed || trimmed === item.name) { cancelEdit(); return; }
+    setSaving(true);
+    try {
+      await api.updateEquipmentCategory(item.id, {
+        name: trimmed,
+        icon: item.icon || null,
+        color: item.color || null,
+        description: item.description || null,
+        parent_id: pid(item) || null,
+        level: item.level
+      });
+      cancelEdit();
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Erreur renommage catégorie:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e, item) => {
+    if (e.key === 'Enter') saveEdit(item);
+    if (e.key === 'Escape') cancelEdit();
+  };
+
   const countEquipment = (familyId) => {
     return equipment.filter(e => {
-      const cat = categories.find(c => c.id === e.category_id);
+      const cat = categories.find(c => c.id === (e.categoryId || e.category_id));
       if (!cat) return false;
       if (cat.id === familyId) return true;
-      if (cat.parent_id === familyId) return true;
-      const sub = categories.find(s => s.id === cat.parent_id);
-      return sub?.parent_id === familyId;
+      if (pid(cat) === familyId) return true;
+      const sub = categories.find(s => s.id === pid(cat));
+      return sub && pid(sub) === familyId;
     }).length;
   };
 
   const countSubEquipment = (subId) => {
     return equipment.filter(e => {
-      const cat = categories.find(c => c.id === e.category_id);
+      const cat = categories.find(c => c.id === (e.categoryId || e.category_id));
       if (!cat) return false;
-      return cat.id === subId || cat.parent_id === subId;
+      return cat.id === subId || pid(cat) === subId;
     }).length;
   };
 
-  const countLeafEquipment = (catId) => equipment.filter(e => e.category_id === catId).length;
+  const countLeafEquipment = (catId) => equipment.filter(e => (e.categoryId || e.category_id) === catId).length;
 
   if (families.length === 0) {
     return <p className="eq-cat-empty">Aucune catégorie définie. Importez un CSV pour créer la hiérarchie.</p>;
   }
 
+  const renderEditableNameOrInput = (item, className) => {
+    if (editingId === item.id) {
+      return (
+        <span className="eq-cat-edit-inline" onClick={(e) => e.stopPropagation()}>
+          <input
+            ref={inputRef}
+            className="eq-cat-edit-input"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={(e) => handleKeyDown(e, item)}
+            disabled={saving}
+          />
+          <button className="eq-cat-edit-confirm" onClick={() => saveEdit(item)} disabled={saving}><Check size={14} /></button>
+          <button className="eq-cat-edit-cancel" onClick={cancelEdit}><X size={14} /></button>
+        </span>
+      );
+    }
+    return (
+      <>
+        <span className={className}>{item.name}</span>
+        <button className="eq-cat-edit-btn" onClick={(e) => startEdit(item, e)} title="Renommer"><Edit2 size={12} /></button>
+      </>
+    );
+  };
+
   return (
     <div className="eq-cat-tree">
       {families.map(fam => {
         const isOpen = expandedFamilies[fam.id];
-        const subs = subfamilies.filter(s => s.parent_id === fam.id);
+        const subs = subfamilies.filter(s => pid(s) === fam.id);
         const famCount = countEquipment(fam.id);
         return (
           <div key={fam.id} className={`eq-cat-family ${isOpen ? 'open' : ''}`}>
-            <button className="eq-cat-family-btn" onClick={() => toggleFamily(fam.id)}>
+            <button className="eq-cat-family-btn" onClick={() => editingId !== fam.id && toggleFamily(fam.id)}>
               <ChevronRight size={14} className={`eq-cat-chevron ${isOpen ? 'rotated' : ''}`} />
               <span className="eq-cat-family-icon" style={{ color: fam.color || 'var(--theme-text-gray)' }}>{fam.icon || '📦'}</span>
-              <span className="eq-cat-family-name">{fam.name}</span>
-              <span className="eq-cat-badge-sub">{subs.length} sous-fam.</span>
+              {renderEditableNameOrInput(fam, 'eq-cat-family-name')}
+              <span className="eq-cat-badge-sub">{subs.length} cat.</span>
               <span className="eq-cat-badge-count">{famCount} éq.</span>
             </button>
             {isOpen && (
               <div className="eq-cat-children">
-                {subs.length === 0 && <span className="eq-cat-empty-child">Aucune sous-famille</span>}
+                {subs.length === 0 && <span className="eq-cat-empty-child">Aucune catégorie</span>}
                 {subs.map(sub => {
                   const isSubOpen = expandedSubs[sub.id];
-                  const leaves = leafCategories.filter(c => c.parent_id === sub.id);
+                  const leaves = leafCategories.filter(c => pid(c) === sub.id);
                   const subCount = countSubEquipment(sub.id);
                   return (
                     <div key={sub.id} className={`eq-cat-sub ${isSubOpen ? 'open' : ''}`}>
-                      <button className="eq-cat-sub-btn" onClick={() => toggleSub(sub.id)}>
+                      <button className="eq-cat-sub-btn" onClick={() => editingId !== sub.id && toggleSub(sub.id)}>
                         <ChevronRight size={12} className={`eq-cat-chevron ${isSubOpen ? 'rotated' : ''}`} />
-                        <span className="eq-cat-sub-name">{sub.name}</span>
-                        <span className="eq-cat-badge-leaf">{leaves.length} cat.</span>
+                        {renderEditableNameOrInput(sub, 'eq-cat-sub-name')}
+                        <span className="eq-cat-badge-leaf">{leaves.length} types</span>
                         <span className="eq-cat-badge-count">{subCount} éq.</span>
                       </button>
                       {isSubOpen && (
                         <div className="eq-cat-leaves">
-                          {leaves.length === 0 && <span className="eq-cat-empty-child">Aucune catégorie</span>}
+                          {leaves.length === 0 && <span className="eq-cat-empty-child">Aucun type</span>}
                           {leaves.map(leaf => {
                             const leafCount = countLeafEquipment(leaf.id);
                             return (
                               <div key={leaf.id} className="eq-cat-leaf">
                                 <span className="eq-cat-leaf-dot" />
-                                <span className="eq-cat-leaf-name">{leaf.name}</span>
+                                {renderEditableNameOrInput(leaf, 'eq-cat-leaf-name')}
                                 <span className="eq-cat-badge-count">{leafCount} éq.</span>
                               </div>
                             );
@@ -523,6 +590,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCatTree, setFilterCatTree] = useState('');
   const [savFilterStatus, setSavFilterStatus] = useState('_active');
+  const [savSearch, setSavSearch] = useState('');
 
   // Modals
   const [showEquipmentModal, setShowEquipmentModal] = useState(false);
@@ -677,11 +745,16 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
 
   const filteredTickets = useMemo(() => {
     return savTickets.filter(t => {
-      if (savFilterStatus === '_active') return t.status !== 'resolved' && t.status !== 'closed';
-      if (savFilterStatus && t.status !== savFilterStatus) return false;
+      if (savFilterStatus === '_active' && (t.status === 'resolved' || t.status === 'closed')) return false;
+      if (savFilterStatus && savFilterStatus !== '_active' && t.status !== savFilterStatus) return false;
+      if (savSearch) {
+        const s = savSearch.toLowerCase();
+        const fields = [t.title, t.equipmentName, t.importName, t.equipmentReference, t.importCode, t.equipmentSerialNumber, t.importSerial, t.equipmentUid, t.description];
+        if (!fields.some(f => f && String(f).toLowerCase().includes(s))) return false;
+      }
       return true;
     });
-  }, [savTickets, savFilterStatus]);
+  }, [savTickets, savFilterStatus, savSearch]);
 
   // ═══ STATS ═══
   const stats = useMemo(() => ({
@@ -804,7 +877,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
         <div className="eq-toolbar-top">
           <div className="eq-tabs">
             <button className={`eq-tab ${subTab === 'inventory' ? 'active' : ''}`} onClick={() => setSubTab('inventory')}>
-              <Package size={14} /> Inventaire
+              <Package size={14} /> Équipements
             </button>
             <button className={`eq-tab ${subTab === 'sav' ? 'active' : ''}`} onClick={() => setSubTab('sav')}>
               <Wrench size={14} /> SAV
@@ -855,12 +928,22 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                 </button>
               )}
               <button className="eq-btn-add" onClick={() => { setEditingEquipment(null); setShowEquipmentModal(true); }}>
-                <Plus size={14} /> Matériel
+                <Plus size={14} /> Équipement
               </button>
             </>
           )}
           {subTab === 'sav' && (
             <>
+              <div className="eq-search">
+                <Search size={14} />
+                <input
+                  type="text"
+                  value={savSearch}
+                  onChange={(e) => setSavSearch(e.target.value)}
+                  placeholder="Rechercher ticket, matériel..."
+                />
+                {savSearch && <button className="eq-search-clear" onClick={() => setSavSearch('')}><X size={12} /></button>}
+              </div>
               {isAdmin && (
                 <button className="eq-btn-secondary" onClick={() => setShowSavImportModal(true)} title="Importer interventions SAV">
                   <Upload size={14} /> Import SAV
@@ -1121,6 +1204,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
         <SavTicketFormModal
           ticket={editingSavTicket}
           equipment={equipment}
+          categories={categories}
           persons={persons}
           preselectedEquipment={savTicketEquipment || selectedEquipment}
           onSave={handleSaveSavTicket}
@@ -1179,7 +1263,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
             <div className="eq-mgmt-tabs">
               {[
                 { id: 'imports', label: 'Imports', icon: Upload, color: '#3b82f6' },
-                { id: 'categories', label: 'Catégories', icon: Tag, color: '#8b5cf6' },
+                { id: 'categories', label: 'Familles et catégories', icon: Tag, color: '#8b5cf6' },
                 { id: 'labels', label: 'Étiquettes', icon: Printer, color: '#f97316' },
                 { id: 'stats', label: 'Statistiques', icon: Hash, color: '#10b981' },
                 { id: 'media', label: 'Médias', icon: ImageIcon, color: '#ec4899' },
@@ -1202,7 +1286,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                 <>
                   <div className="eq-management-section">
                     <h3><Upload size={18} /> Import CSV Inventaire</h3>
-                    <p>Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent). Les familles, sous-familles et catégories seront automatiquement créées.</p>
+                    <p>Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent). Les familles, catégories et types seront automatiquement créés.</p>
                     <button className="eq-btn-save" onClick={() => { onCloseManagement(); setShowImportModal(true); }} style={{ marginTop: 12 }}>
                       <Upload size={16} /> Importer un fichier CSV
                     </button>
@@ -1220,8 +1304,8 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
               {/* Onglet Catégories */}
               {mgmtTab === 'categories' && (
                 <div className="eq-management-section">
-                  <h3><Tag size={18} /> Catégories ({categories.length})</h3>
-                  <EquipmentCategoriesTree families={families} subfamilies={subfamilies} leafCategories={leafCategories} categories={categories} equipment={equipment} />
+                  <h3><Tag size={18} /> Familles et catégories ({categories.length})</h3>
+                  <EquipmentCategoriesTree families={families} subfamilies={subfamilies} leafCategories={leafCategories} categories={categories} equipment={equipment} onRefresh={loadData} />
                 </div>
               )}
 
@@ -1242,8 +1326,8 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                   <div className="eq-management-stats">
                     <div className="eq-mgmt-stat"><strong>{equipment.length}</strong><span>Équipements</span></div>
                     <div className="eq-mgmt-stat"><strong>{families.length}</strong><span>Familles</span></div>
-                    <div className="eq-mgmt-stat"><strong>{subfamilies.length}</strong><span>Sous-familles</span></div>
-                    <div className="eq-mgmt-stat"><strong>{leafCategories.length}</strong><span>Catégories</span></div>
+                    <div className="eq-mgmt-stat"><strong>{subfamilies.length}</strong><span>Catégories</span></div>
+                    <div className="eq-mgmt-stat"><strong>{leafCategories.length}</strong><span>Types</span></div>
                     <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'available').length}</strong><span>Disponibles</span></div>
                     <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'maintenance').length}</strong><span>En maintenance</span></div>
                   </div>
@@ -1957,8 +2041,8 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
     <div className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
       <div className="eq-slide-header">
         <div className="eq-slide-title-row">
-          <span className="eq-slide-name">{cleanName(currentEq.name)}</span>
-          <span className="eq-slide-status" style={{ background: st.color }}>{st.icon} {st.label}</span>
+          <span className="eq-slide-name">{currentEq.reference || cleanName(currentEq.name)}</span>
+          <span className="eq-slide-type">{currentEq.categoryIcon || currentEq.category_icon || '📦'} {currentEq.categoryName || currentEq.category_name || ''}</span>
         </div>
         <button className="eq-slide-close" onClick={handleClose} title="Fermer">
           <X size={18} />
@@ -2013,10 +2097,10 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
       <div className="eq-dialog">
         <div className="eq-dialog-header" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'space-between' }}>
           <div className="eq-dialog-title-row" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            <span className="eq-dialog-name">{eq.reference || cleanName(eq.name)}</span>
             <span className="eq-dialog-cat" style={{ background: (eq.categoryColor || eq.category_color || '#6366f1') }}>
               {eq.categoryIcon || eq.category_icon || '📦'} {eq.categoryName || eq.category_name || ''}
             </span>
-            <span className="eq-dialog-name">{cleanName(eq.name)}</span>
           </div>
           <button className="eq-dialog-close" onClick={handleClose} title="Fermer" style={{ flexShrink: 0, marginLeft: '12px' }}>
             <X size={20} />
@@ -2099,11 +2183,14 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
             <th>Priorité</th>
             <th>Titre</th>
             <th>Matériel</th>
+            <th className="sav-col-ref">Réf.</th>
+            <th className="sav-col-uid">UID</th>
+            <th className="sav-col-serial">N° Série</th>
             <th>Type</th>
             <th>Statut</th>
-            <th>Début</th>
-            <th>Fin</th>
-            <th>Coût</th>
+            <th className="sav-col-date">Début</th>
+            <th className="sav-col-date">Fin</th>
+            <th className="sav-col-cost">Coût</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -2116,13 +2203,16 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
                 <td><span className="eq-pri-dot" style={{ background: pri.color }} title={pri.label} /></td>
                 <td className="eq-ticket-title-cell">{t.title}</td>
                 <td>
-                  <span className="eq-ticket-eq">{t.categoryIcon} {t.equipmentName || <em style={{ color: 'var(--theme-text-muted)' }}>Non lié</em>}</span>
+                  <span className="eq-ticket-eq">{t.categoryIcon} {t.equipmentName || t.importName || <em style={{ color: 'var(--theme-text-muted)' }}>Non lié</em>}</span>
                 </td>
+                <td className="sav-col-ref">{t.equipmentReference || t.importCode || '—'}</td>
+                <td className="sav-col-uid"><code>{t.equipmentUid || '—'}</code></td>
+                <td className="sav-col-serial">{t.equipmentSerialNumber || t.importSerial || '—'}</td>
                 <td>{SAV_TYPES[t.type] || t.type}</td>
                 <td><span className="eq-status-badge" style={{ background: tst.color }}>{tst.label}</span></td>
-                <td>{safeDate(t.createdAt)}</td>
-                <td>{safeDate(t.resolvedAt)}</td>
-                <td>{t.cost != null ? `${parseFloat(t.cost).toFixed(2)} €` : '—'}</td>
+                <td className="sav-col-date">{safeDate(t.createdAt)}</td>
+                <td className="sav-col-date">{safeDate(t.resolvedAt)}</td>
+                <td className="sav-col-cost">{t.cost != null ? `${parseFloat(t.cost).toFixed(2)} €` : '—'}</td>
                 <td>
                   <div className="eq-table-actions">
                     <button onClick={(e) => { e.stopPropagation(); onEdit(t); }} title="Modifier"><Edit2 size={14} /></button>
@@ -2507,7 +2597,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
 };
 
 // ═══ MODAL TICKET SAV ═══
-const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, onSave, onClose }) => {
+const SavTicketFormModal = ({ ticket, equipment, persons, categories, preselectedEquipment, onSave, onClose }) => {
   const [form, setForm] = useState({
     equipment_id: ticket?.equipmentId || ticket?.equipment_id || preselectedEquipment?.id || '',
     assigned_to: ticket?.assignedTo || ticket?.assigned_to || '',
@@ -2519,6 +2609,45 @@ const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, 
     resolution: ticket?.resolution || '',
     cost: ticket?.cost || '',
   });
+
+  // ── Sélection hiérarchique : famille → sous-famille → type → équipement ──
+  const allCategories = categories || [];
+  const familles = useMemo(() => allCategories.filter(c => c.level === 'family'), [allCategories]);
+  const sousFamilles = useMemo(() => allCategories.filter(c => c.level === 'subfamily'), [allCategories]);
+  const types = useMemo(() => allCategories.filter(c => c.level === 'category'), [allCategories]);
+
+  // Init cascade from preselected or editing equipment
+  const initEquipId = ticket?.equipmentId || ticket?.equipment_id || preselectedEquipment?.id || '';
+  const initEquip = initEquipId ? equipment.find(e => e.id === Number(initEquipId)) : null;
+  const initHier = initEquip ? getCategoryHierarchy(initEquip, allCategories) : null;
+
+  const [selFamille, setSelFamille] = useState(initHier?.family?.id ? String(initHier.family.id) : '');
+  const [selSousFamille, setSelSousFamille] = useState(initHier?.subfamily?.id ? String(initHier.subfamily.id) : '');
+  const [selType, setSelType] = useState(initHier?.category?.id ? String(initHier.category.id) : '');
+
+  const filteredSousFamilles = useMemo(() => {
+    if (!selFamille) return [];
+    return sousFamilles.filter(s => String(s.parentId || s.parent_id) === selFamille);
+  }, [sousFamilles, selFamille]);
+
+  const filteredTypes = useMemo(() => {
+    if (!selSousFamille) return [];
+    return types.filter(t => String(t.parentId || t.parent_id) === selSousFamille);
+  }, [types, selSousFamille]);
+
+  const filteredEquipment = useMemo(() => {
+    if (selType) return equipment.filter(e => String(e.categoryId || e.category_id) === selType);
+    if (selSousFamille) {
+      const typeIds = new Set(types.filter(t => String(t.parentId || t.parent_id) === selSousFamille).map(t => t.id));
+      return equipment.filter(e => typeIds.has(e.categoryId || e.category_id));
+    }
+    if (selFamille) {
+      const sfIds = sousFamilles.filter(s => String(s.parentId || s.parent_id) === selFamille).map(s => s.id);
+      const typeIds = new Set(types.filter(t => sfIds.includes(t.parentId || t.parent_id)).map(t => t.id));
+      return equipment.filter(e => typeIds.has(e.categoryId || e.category_id));
+    }
+    return equipment;
+  }, [equipment, sousFamilles, types, selFamille, selSousFamille, selType]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -2547,14 +2676,40 @@ const SavTicketFormModal = ({ ticket, equipment, persons, preselectedEquipment, 
                   {preselectedEquipment.category_icon || preselectedEquipment.categoryIcon || '📦'} {cleanName(preselectedEquipment.name)} {preselectedEquipment.reference ? `(${preselectedEquipment.reference})` : ''}
                 </div>
               ) : (
-                <select value={form.equipment_id} onChange={(e) => setForm({ ...form, equipment_id: e.target.value })} required>
-                  <option value="">— Sélectionner —</option>
-                  {equipment.map(eq => <option key={eq.id} value={eq.id}>{eq.category_icon} {cleanName(eq.name)} {eq.reference ? `(${eq.reference})` : ''}</option>)}
-                </select>
+                <>
+                  <div className="eq-form-cascade">
+                    <select value={selFamille} onChange={(e) => { setSelFamille(e.target.value); setSelSousFamille(''); setSelType(''); setForm(f => ({ ...f, equipment_id: '' })); }}>
+                      <option value="">— Famille —</option>
+                      {familles.map(f => <option key={f.id} value={f.id}>{f.icon || '📁'} {f.name}</option>)}
+                    </select>
+                    <select value={selSousFamille} onChange={(e) => { setSelSousFamille(e.target.value); setSelType(''); setForm(f => ({ ...f, equipment_id: '' })); }} disabled={!selFamille}>
+                      <option value="">— Catégorie —</option>
+                      {filteredSousFamilles.map(s => <option key={s.id} value={s.id}>{s.icon || '📂'} {s.name}</option>)}
+                    </select>
+                    <select value={selType} onChange={(e) => { setSelType(e.target.value); setForm(f => ({ ...f, equipment_id: '' })); }} disabled={!selSousFamille}>
+                      <option value="">— Type —</option>
+                      {filteredTypes.map(t => <option key={t.id} value={t.id}>{t.icon || '📄'} {t.name}</option>)}
+                    </select>
+                  </div>
+                  <select value={form.equipment_id} onChange={(e) => setForm({ ...form, equipment_id: e.target.value })} required>
+                    <option value="">— Sélectionner l'équipement —</option>
+                    {filteredEquipment.map(eq => <option key={eq.id} value={eq.id}>{eq.categoryIcon || '📦'} {cleanName(eq.name)} {eq.reference ? `(${eq.reference})` : ''} {eq.serialNumber || eq.serial_number ? `[S/N: ${eq.serialNumber || eq.serial_number}]` : ''}</option>)}
+                  </select>
+                  {(() => {
+                    const sel = form.equipment_id ? equipment.find(e => e.id === Number(form.equipment_id)) : null;
+                    if (!sel) return null;
+                    return (
+                      <div className="eq-form-cascade-info">
+                        {sel.reference && <span>🏷️ Réf : <strong>{sel.reference}</strong></span>}
+                        {(sel.serialNumber || sel.serial_number) && <span>🔢 S/N : <strong>{sel.serialNumber || sel.serial_number}</strong></span>}
+                      </div>
+                    );
+                  })()}
+                </>
               )}
             </div>
             <div className="eq-form-field eq-form-full">
-              <label>Titre *</label>
+              <label>Panne *</label>
               <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex: Batterie ne charge plus" autoFocus />
             </div>
             <div className="eq-form-field">
@@ -2867,6 +3022,8 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
   const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
   const eq = equipment.find(e => e.id === t.equipmentId);
   const tech = t.assignedTo ? persons.find(p => p.id === t.assignedTo) : null;
+  const displayRef = eq?.reference || t.importCode || null;
+  const displaySerial = eq?.serialNumber || eq?.serial_number || t.importSerial || null;
 
   return (
     <div className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
@@ -2876,7 +3033,7 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
             <span className="eq-dialog-cat" style={{ background: tst.color }}>
               🔧 {tst.label}
             </span>
-            <span className="eq-dialog-name">{t.title}</span>
+            {(eq || t.importName || t.importCode) && <span className="eq-dialog-equip-ref">{eq ? `${eq.categoryIcon || '📦'} ${cleanName(eq.name)}` : (t.importName || '')} {displayRef ? `(${displayRef})` : ''}</span>}
           </div>
           <button className="eq-dialog-close" onClick={handleClose} title="Fermer">
             <X size={20} />
@@ -2885,9 +3042,11 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
         <div className="eq-dialog-body">
           <div className="eq-detail-body">
             <div className="eq-detail-fields">
+              <div className="eq-detail-field"><span>🔴</span><span>Panne</span><strong>{t.title}</strong></div>
               <div className="eq-detail-field"><span>🎯</span><span>Priorité</span><strong style={{ color: pri.color }}>{pri.label}</strong></div>
               <div className="eq-detail-field"><span>🔧</span><span>Type</span><strong>{SAV_TYPES[t.type] || t.type}</strong></div>
-              {eq && <div className="eq-detail-field"><Package size={14} /><span>Matériel</span><strong className="eq-clickable-link" onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}>{eq.categoryIcon || '📦'} {cleanName(eq.name)} {eq.reference ? `(${eq.reference})` : ''}</strong></div>}
+              {displayRef && <div className="eq-detail-field"><span>🏷️</span><span>Référence</span><strong>{displayRef}</strong></div>}
+              {displaySerial && <div className="eq-detail-field"><span>🔢</span><span>N° Série</span><strong>{displaySerial}</strong></div>}
               {tech && <div className="eq-detail-field"><User size={14} /><span>Technicien</span><strong>{tech.firstName} {tech.lastName}</strong></div>}
               <div className="eq-detail-field"><Calendar size={14} /><span>Créé le</span><strong>{safeDate(t.createdAt)}</strong></div>
               {t.resolvedAt && <div className="eq-detail-field"><CheckCircle size={14} /><span>Résolu le</span><strong>{safeDate(t.resolvedAt)}</strong></div>}

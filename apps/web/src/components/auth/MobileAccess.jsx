@@ -11,9 +11,9 @@ const MOBILE_FEATURES = [
   { icon: '🔧', label: 'Interventions', desc: 'Demander et suivre les maintenances' },
   { icon: '👥', label: 'Personnel', desc: 'Équipe, compétences et coordonnées' },
   { icon: '💬', label: 'Messagerie', desc: 'Conversations en temps réel' },
-  { icon: '📦', label: 'Matériel & SAV', desc: 'Inventaire, affectations et tickets' },
+  { icon: '📦', label: 'Équipements & SAV', desc: 'Équipements, affectations et tickets' },
   { icon: '🛒', label: 'Commandes', desc: 'Bons de commande et devis' },
-  { icon: '📱', label: 'QR Code Matériel', desc: 'Scanner pour accès fiche équipement' },
+  { icon: '📱', label: 'QR Code Équipement', desc: 'Scanner pour accès fiche équipement' },
   { icon: '🔔', label: 'Notifications', desc: 'Alertes messages et mises à jour' },
 ];
 

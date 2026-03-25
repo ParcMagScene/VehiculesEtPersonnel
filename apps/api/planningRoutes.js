@@ -1695,7 +1695,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   // ─── POST /api/planning/tasks ───
   app.post('/api/planning/tasks', authenticateToken, (req, res) => {
     try {
-      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id } = req.body;
+      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id, location_address, location_lat, location_lng } = req.body;
 
       if (!date) {
         return res.status(400).json({ error: 'Le champ date est obligatoire' });
@@ -1709,8 +1709,8 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       const defaultVisible = EVENT_SECTIONS.includes(effectiveSection) ? 0 : 1;
 
       const stmt = db.prepare(`
-        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, reservation_id, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, reservation_id, location_address, location_lat, location_lng, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
       stmt.run(
@@ -1731,6 +1731,9 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         status || 'pending',
         defaultVisible,
         reservation_id || null,
+        location_address || null,
+        location_lat != null ? location_lat : null,
+        location_lng != null ? location_lng : null,
         req.user.id
       );
 
@@ -1765,8 +1768,8 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
 
       const EVENT_SECTIONS_BATCH = ['rdv', 'evenements'];
       const insertStmt = db.prepare(`
-        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
       const createdIds = [];
@@ -1793,6 +1796,9 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
             t.affaire_num || null,
             t.status || 'pending',
             vis,
+            t.location_address || null,
+            t.location_lat != null ? t.location_lat : null,
+            t.location_lng != null ? t.location_lng : null,
             req.user.id
           );
           createdIds.push(id);
@@ -1841,11 +1847,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
 
-      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id } = req.body;
+      const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id, location_address, location_lat, location_lng } = req.body;
 
       const stmt = db.prepare(`
         UPDATE task_assignments
-        SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, reservation_id = ?, modified_by = ?, modified_at = datetime('now')
+        SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, reservation_id = ?, location_address = ?, location_lat = ?, location_lng = ?, modified_by = ?, modified_at = datetime('now')
         WHERE id = ?
       `);
 
@@ -1865,6 +1871,9 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         affaire_num !== undefined ? affaire_num : existing.affaire_num,
         status || existing.status,
         reservation_id !== undefined ? reservation_id : existing.reservation_id,
+        location_address !== undefined ? location_address : existing.location_address,
+        location_lat !== undefined ? location_lat : existing.location_lat,
+        location_lng !== undefined ? location_lng : existing.location_lng,
         req.user.id,
         req.params.id
       );
@@ -2591,8 +2600,8 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
     `).all(fromDate);
 
     const insertStmt = db.prepare(`
-      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'))
+      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, datetime('now'))
     `);
     // Soft-delete l'originale après report pour éviter les copies infinies
     const markRolledStmt = db.prepare(
@@ -2612,7 +2621,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       }
 
       const id = crypto.randomUUID().replace(/-/g, '');
-      insertStmt.run(id, t.display_event_id, t.person_id, nextDate, t.period, t.time, t.end_time, t.section, t.title, t.notes || '', t.source_type, t.source_id, t.google_event_title, t.affaire_num, t.visible ?? 1);
+      insertStmt.run(id, t.display_event_id, t.person_id, nextDate, t.period, t.time, t.end_time, t.section, t.title, t.notes || '', t.source_type, t.source_id, t.google_event_title, t.affaire_num, t.visible ?? 1, t.location_address || null, t.location_lat ?? null, t.location_lng ?? null);
       markRolledStmt.run(t.id);
       count++;
     }
@@ -2767,8 +2776,8 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         `).all(pastDate);
 
         const insertStmt = db.prepare(`
-          INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'))
+          INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, datetime('now'))
         `);
 
         for (const t of pending) {
@@ -2783,7 +2792,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           }
 
           const id = crypto.randomUUID().replace(/-/g, '');
-          insertStmt.run(id, t.display_event_id, t.person_id, todayStr, t.period, t.time, t.end_time, t.section, t.title, t.notes || '', t.source_type, t.source_id, t.google_event_title, t.affaire_num, t.visible ?? 1);
+          insertStmt.run(id, t.display_event_id, t.person_id, todayStr, t.period, t.time, t.end_time, t.section, t.title, t.notes || '', t.source_type, t.source_id, t.google_event_title, t.affaire_num, t.visible ?? 1, t.location_address || null, t.location_lat ?? null, t.location_lng ?? null);
           markRolledStmt.run(t.id);
           totalRolled++;
         }

@@ -21,7 +21,7 @@ function MobileHome({ onNavigate }) {
         </button>
         <button className="home-grid-item equipment" onClick={() => onNavigate('equipment')}>
           <Package size={28} />
-          <span>Matériel</span>
+          <span>Équipements</span>
         </button>
         <button className="home-grid-item sav" onClick={() => onNavigate('sav')}>
           <Wrench size={28} />

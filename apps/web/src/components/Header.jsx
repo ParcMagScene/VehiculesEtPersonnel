@@ -238,7 +238,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             {(() => {
               const allTabs = [
                 { id: 'vehicles', label: 'Parc', icon: Truck },
-                { id: 'equipment', label: 'Matériel', icon: Package },
+                { id: 'equipment', label: 'Équipements', icon: Package },
                 { id: 'affaires', label: 'Affaires', icon: Briefcase },
                 { id: 'orders', label: 'Commandes', icon: ShoppingCart },
                 { id: 'stock', label: 'Stocks', icon: Boxes },

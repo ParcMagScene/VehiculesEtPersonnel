@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  X, Clock, User, FileText, Calendar, Check, Loader, Save, Briefcase, Search, Link2, Unlink
+  X, Clock, User, FileText, Calendar, Check, Loader, Save, Briefcase, Search, Link2, Unlink, MapPin, ExternalLink
 } from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
@@ -61,6 +61,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     section: task.section || 'manual',
     status: task.status || 'pending',
     affaireNum: task.affaireNum || task.affaire_num || '',
+    locationAddress: task.locationAddress || task.location_address || '',
   });
 
   // Charger les affaires
@@ -94,6 +95,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       section: task.section || 'manual',
       status: task.status || 'pending',
       affaireNum: task.affaireNum || task.affaire_num || '',
+      locationAddress: task.locationAddress || task.location_address || '',
     });
   }, [task]);
 
@@ -134,6 +136,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         section: form.section,
         status: form.status,
         affaire_num: form.affaireNum || null,
+        location_address: form.locationAddress || null,
       });
       toast.success('Tâche mise à jour');
       onSave?.();
@@ -301,6 +304,33 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               ))}
             </select>
           </div>
+
+          {/* Lieu / Adresse (affiché pour les sections courses) */}
+          {COURSE_SECTIONS.has(form.section) && (
+            <div className="tem-field full">
+              <label><MapPin size={13} /> Lieu</label>
+              <div className="tem-location-row">
+                <input
+                  type="text"
+                  value={form.locationAddress}
+                  onChange={e => update('locationAddress', e.target.value)}
+                  placeholder="Adresse ou lieu de la course…"
+                  autoComplete="off"
+                />
+                {form.locationAddress.trim() && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.locationAddress.trim())}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="tem-maps-link"
+                    title="Ouvrir dans Google Maps"
+                  >
+                    <ExternalLink size={14} />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Statut */}
           <div className="tem-field full">

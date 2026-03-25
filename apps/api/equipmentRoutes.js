@@ -629,6 +629,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       const { equipment_id, status, priority } = req.query;
       let sql = `
         SELECT st.*, e.name as equipment_name, e.reference as equipment_reference,
+               e.uid as equipment_uid, e.serial_number as equipment_serial_number,
                ec.icon as category_icon, ec.color as category_color,
                u.name as reported_by_name,
                p.first_name as tech_first_name, p.last_name as tech_last_name

@@ -14,6 +14,33 @@ import AddressAutocomplete from '../AddressAutocomplete';
 import './OrdersPanel.css';
 import { useToast } from '../../hooks/useToast';
 import EntityCombobox from '../ui/EntityCombobox';
+import AffaireBadge from '../AffaireBadge';
+
+// Helper : grouper les articles par demandeur (affaire ou personne physique)
+function groupItemsByRequester(items) {
+  const groups = new Map();
+  for (const item of items) {
+    const key = item.source_affaire_id || item.source_requester_name || '_sans_demandeur';
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        isAffaire: !!item.source_affaire_id,
+        affaireId: item.source_affaire_id || null,
+        requesterName: item.source_requester_name || null,
+        items: [],
+        totalQty: 0,
+        receivedQty: 0,
+        totalHt: 0,
+      });
+    }
+    const g = groups.get(key);
+    g.items.push(item);
+    g.totalQty += item.quantity || 0;
+    g.receivedQty += item.received_qty || 0;
+    g.totalHt += item.total_ht || 0;
+  }
+  return [...groups.values()];
+}
 
 // ═══ Constantes ═══
 const ORDER_STATUS = {
@@ -777,7 +804,7 @@ const OrdersList = React.memo(({ orders, onView, onDoubleClick, onEdit, onDelete
                 className={`clickable-row${selectedId === order.id ? ' selected' : ''}`}>
                 <td className="ref-cell"><Hash size={14} /> {order.reference}</td>
                 <td>{order.supplier_name || '—'}</td>
-                <td className="affaire-cell">{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</td>
+                <td className="affaire-cell">{order.affaire_id ? <AffaireBadge numero={order.affaire_id} size="sm" /> : '—'}</td>
                 <td>{formatDate(order.order_date)}</td>
                 <td>
                   <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
@@ -2132,25 +2159,33 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
           <div className="slide-field"><span>Fournisseur</span><strong>{order.supplier_name || '—'}</strong></div>
           <div className="slide-field"><span>Date</span><strong>{formatDate(order.order_date)}</strong></div>
           <div className="slide-field"><span>Date prévue</span><strong>{formatDate(order.expected_date)}</strong></div>
-          <div className="slide-field"><span>Affaire</span><strong>{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</strong></div>
+          <div className="slide-field"><span>Affaire</span><strong>{order.affaire_id ? <AffaireBadge numero={order.affaire_id} size="sm" /> : '—'}</strong></div>
           <div className="slide-field"><span>Total HT</span><strong className="amount">{formatCurrency(order.total_ht)}</strong></div>
           <div className="slide-field"><span>Total TTC</span><strong className="amount">{formatCurrency(order.total_ttc)}</strong></div>
         </div>
         {items.length > 0 && (
           <>
             <h4>Articles ({items.length})</h4>
-            <table className="items-table compact">
-              <thead><tr><th>Désignation</th><th>Qté</th><th>Reçu</th></tr></thead>
-              <tbody>
-                {items.map(item => (
-                  <tr key={item.id} className={item.received_qty >= item.quantity ? 'received-row' : ''}>
-                    <td>{item.designation}</td>
-                    <td className="center">{item.quantity}</td>
-                    <td className="center">{item.received_qty || 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="requester-groups">
+              {groupItemsByRequester(items).map(group => (
+                <div key={group.key} className="requester-group">
+                  <div className="requester-line">
+                    <span className="requester-label">
+                      {group.isAffaire ? (
+                        <AffaireBadge numero={group.affaireId} size="sm" />
+                      ) : group.requesterName ? (
+                        <><UsersIcon size={12} /> {group.requesterName}</>
+                      ) : (
+                        <span className="muted">Sans demandeur</span>
+                      )}
+                    </span>
+                    <span className="requester-summary">
+                      {group.items.length} art. — {group.receivedQty}/{group.totalQty} reçu{group.totalQty > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
         {order.notes && <div className="slide-notes"><h4>Notes</h4><p>{order.notes}</p></div>}
@@ -2160,6 +2195,7 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
           {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
           <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
           <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+          <button className="action-btn" onClick={onClose}><X size={14} /> Fermer</button>
         </div>
       </div>
     </div>
@@ -2340,7 +2376,7 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
               <div className="detail-field"><span className="field-label">Fournisseur</span><span>{order.supplier_name || '—'}</span></div>
               <div className="detail-field"><span className="field-label">Date commande</span><span>{formatDate(order.order_date)}</span></div>
               <div className="detail-field"><span className="field-label">Date prévue</span><span>{formatDate(order.expected_date)}</span></div>
-              <div className="detail-field"><span className="field-label">Affaire</span><span>{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</span></div>
+              <div className="detail-field"><span className="field-label">Affaire</span><span>{order.affaire_id ? <AffaireBadge numero={order.affaire_id} size="sm" /> : '—'}</span></div>
               <div className="detail-field"><span className="field-label">Créé par</span><span>{order.created_by_name || '—'}</span></div>
             </div>
           </div>
@@ -2357,23 +2393,46 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
         <div className="detail-section">
           <h3>Lignes de commande ({items.length})</h3>
           {items.length > 0 ? (
-            <table className="items-table">
-              <thead><tr><th>Réf</th><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr></thead>
-              <tbody>
-                {items.map(item => (
-                  <tr key={item.id}>
-                    <td className="ref-code">{item.ref_code || '—'}</td>
-                    <td>{item.designation}</td>
-                    <td className="center">{item.quantity}</td>
-                    <td className="center">{item.unit}</td>
-                    <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
-                    <td className="amount">{formatCurrency(item.total_ht)}</td>
-                    <td className="center">{item.received_qty || 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="requester-groups detail">
+              {groupItemsByRequester(items).map(group => (
+                <div key={group.key} className="requester-group">
+                  <div className="requester-group-header">
+                    <span className="requester-label">
+                      {group.isAffaire ? (
+                        <AffaireBadge numero={group.affaireId} size="sm" />
+                      ) : group.requesterName ? (
+                        <><UsersIcon size={14} /> {group.requesterName}</>
+                      ) : (
+                        <span className="muted">Sans demandeur</span>
+                      )}
+                    </span>
+                    <span className="requester-summary">
+                      {group.items.length} article{group.items.length > 1 ? 's' : ''} — {formatCurrency(group.totalHt)} HT — {group.receivedQty}/{group.totalQty} reçu{group.totalQty > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <table className="items-table compact">
+                    <thead><tr><th>Réf</th><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr></thead>
+                    <tbody>
+                      {group.items.map(item => (
+                        <tr key={item.id} className={item.received_qty >= item.quantity ? 'received-row' : ''}>
+                          <td className="ref-code">{item.ref_code || '—'}</td>
+                          <td>{item.designation}</td>
+                          <td className="center">{item.quantity}</td>
+                          <td className="center">{item.unit}</td>
+                          <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
+                          <td className="amount">{formatCurrency(item.total_ht)}</td>
+                          <td className="center">{item.received_qty || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
           ) : <p className="no-items">Aucune ligne</p>}
+        </div>
+        <div className="dialog-footer">
+          <button className="action-btn" onClick={onClose}><X size={14} /> Fermer</button>
         </div>
       </div>
     </div>

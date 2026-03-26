@@ -7,8 +7,8 @@ import { Calendar, Play, Square, Search, Loader, Clock, Film, AlertCircle } from
 import api from '../../utils/api';
 import './PlaybackPanel.css';
 
-const PlaybackPanel = ({ cameras }) => {
-  const [selectedCameraId, setSelectedCameraId] = useState('');
+const PlaybackPanel = ({ cameras, initialCameraId }) => {
+  const [selectedCameraId, setSelectedCameraId] = useState(() => initialCameraId || '');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [recordings, setRecordings] = useState([]);
   const [searching, setSearching] = useState(false);

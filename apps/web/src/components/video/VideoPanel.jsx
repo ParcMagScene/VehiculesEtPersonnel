@@ -29,6 +29,7 @@ const VideoPanel = ({ currentUser }) => {
   const [editingCamera, setEditingCamera] = useState(null);
   const [testingAll, setTestingAll] = useState(false);
   const [proxyAvailable, setProxyAvailable] = useState(false);
+  const [playbackCameraId, setPlaybackCameraId] = useState(null);
 
   // État grille (remonté de CameraGrid)
   const [gridSize, setGridSize] = useState(4);
@@ -100,6 +101,11 @@ const VideoPanel = ({ currentUser }) => {
 
   const handleSelectCamera = useCallback((cam) => {
     setSelectedCamera(prev => prev?.id === cam.id ? null : cam);
+  }, []);
+
+  const handlePlayback = useCallback((cam) => {
+    setPlaybackCameraId(String(cam.id));
+    setViewMode('playback');
   }, []);
 
   const handleSaveCamera = useCallback(async (formData) => {
@@ -248,6 +254,7 @@ const VideoPanel = ({ currentUser }) => {
                 page={gridPage}
                 onSelectCamera={handleSelectCamera}
                 selectedCameraId={selectedCamera?.id}
+                onPlayback={handlePlayback}
               />
               {selectedCamera?.ptzSupported && (
                 <div className="video-panel__ptz-sidebar">
@@ -260,7 +267,7 @@ const VideoPanel = ({ currentUser }) => {
       )}
 
       {viewMode === 'playback' && (
-        <PlaybackPanel cameras={cameras} />
+        <PlaybackPanel cameras={cameras} initialCameraId={playbackCameraId} />
       )}
 
       {viewMode === 'list' && (

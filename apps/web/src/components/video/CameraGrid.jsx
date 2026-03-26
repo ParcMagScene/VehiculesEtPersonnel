@@ -12,7 +12,7 @@ const GRID_LAYOUTS = [
   { id: 16, cols: 4 },
 ];
 
-const CameraGrid = ({ cameras = [], proxyAvailable = false, gridSize = 4, page = 0, onSelectCamera, selectedCameraId }) => {
+const CameraGrid = ({ cameras = [], proxyAvailable = false, gridSize = 4, page = 0, onSelectCamera, selectedCameraId, onPlayback }) => {
   const [fullscreenCamera, setFullscreenCamera] = useState(null);
 
   const layout = GRID_LAYOUTS.find(l => l.id === gridSize) || GRID_LAYOUTS[1];
@@ -31,6 +31,7 @@ const CameraGrid = ({ cameras = [], proxyAvailable = false, gridSize = 4, page =
           autoConnect={proxyAvailable}
           onFullscreen={handleFullscreen}
           isFullscreen
+          onPlayback={onPlayback}
         />
       </div>
     );
@@ -51,6 +52,7 @@ const CameraGrid = ({ cameras = [], proxyAvailable = false, gridSize = 4, page =
             onFullscreen={handleFullscreen}
             onSelect={onSelectCamera}
             isSelected={selectedCameraId === cam.id}
+            onPlayback={onPlayback}
           />
         ))}
         {/* Remplir les slots vides */}

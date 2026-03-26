@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Calendar, Play, Square, Search, Loader, Clock, Film, AlertCircle } from 'lucide-react';
+import { Calendar, Play, Square, Loader, Clock, Film, AlertCircle } from 'lucide-react';
 import api from '../../utils/api';
 import './PlaybackPanel.css';
 
@@ -138,6 +138,13 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
     }
   }, [selectedCameraId, stopPlayback]);
 
+  // Recherche automatique dès qu'une caméra et une date sont sélectionnées
+  useEffect(() => {
+    if (selectedCameraId && date) {
+      handleSearch();
+    }
+  }, [selectedCameraId, date, handleSearch]);
+
   // Cleanup au démontage
   useEffect(() => {
     return () => { stopPlayback(); };
@@ -158,7 +165,7 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
           <label><Film size={14} /> Caméra</label>
           <select
             value={selectedCameraId}
-            onChange={e => { setSelectedCameraId(e.target.value); setRecordings([]); setSearchError(null); }}
+            onChange={e => setSelectedCameraId(e.target.value)}
           >
             <option value="">Sélectionner une caméra…</option>
             {nvrCameras.map(c => (
@@ -172,17 +179,10 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
             type="date"
             value={date}
             max={new Date().toISOString().slice(0, 10)}
-            onChange={e => { setDate(e.target.value); setRecordings([]); setSearchError(null); }}
+            onChange={e => setDate(e.target.value)}
           />
         </div>
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={handleSearch}
-          disabled={!selectedCameraId || !date || searching}
-        >
-          {searching ? <Loader size={16} className="spin" /> : <Search size={16} />}
-          Rechercher
-        </button>
+        {searching && <Loader size={16} className="spin" style={{ color: 'var(--accent)', marginLeft: 8 }} />}
       </div>
 
       {searchError && (
@@ -252,7 +252,7 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
         {!playing && !connecting && !currentSegment && (
           <div className="playback-panel__placeholder">
             <Film size={48} style={{ opacity: 0.2 }} />
-            <p>Sélectionnez une caméra et une date, puis cliquez sur un segment pour lancer la relecture</p>
+            <p>Sélectionnez une date, puis cliquez sur un segment pour lancer la relecture</p>
           </div>
         )}
         {connecting && (

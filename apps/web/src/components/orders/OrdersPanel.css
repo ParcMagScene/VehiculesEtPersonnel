@@ -1202,7 +1202,7 @@
 .catalog-card-info { flex: 1; min-width: 0; }
 .catalog-card-name { font-weight: 600; font-size: 0.95rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .catalog-card-meta { display: flex; gap: 10px; font-size: 0.8rem; color: var(--theme-text-muted); margin-top: 4px; }
-.catalog-indicator { color: var(--theme-accent, var(--theme-info)); margin-left: 4px; vertical-align: middle; }
+.catalog-badge { display: inline-flex; align-items: center; gap: 4px; color: var(--theme-accent, var(--theme-info)); font-weight: 500; font-size: 0.85rem; }
 
 .supplier-order-card {
   padding: 12px; border: 1px solid var(--theme-border);

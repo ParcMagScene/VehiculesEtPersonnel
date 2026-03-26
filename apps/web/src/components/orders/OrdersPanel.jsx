@@ -120,6 +120,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   const [materialRequests, setMaterialRequests] = useState([]);
   const [requestStats, setRequestStats] = useState(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [editingRequest, setEditingRequest] = useState(null);
 
   // Fournisseurs enrichis
   const [suppliersWithOrders, setSuppliersWithOrders] = useState([]);
@@ -366,11 +367,22 @@ function OrdersPanel({ currentUser, isMobile }) {
   // ═══ Handlers Demandes de matériel ═══
   const handleSaveRequest = async (data) => {
     try {
-      await api.createMaterialRequest(data);
+      if (editingRequest) {
+        await api.updateMaterialRequest(editingRequest.id, data);
+        setEditingRequest(null);
+        toast.success('Demande modifiée');
+      } else {
+        await api.createMaterialRequest(data);
+        toast.success('Demande créée avec succès');
+      }
       setShowRequestModal(false);
-      toast.success('Demande créée avec succès');
       loadData();
     } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
+  const handleEditRequest = (request) => {
+    setEditingRequest(request);
+    setShowRequestModal(true);
   };
 
   const handleValidateRequest = async (request, action, reason = null) => {
@@ -672,6 +684,7 @@ function OrdersPanel({ currentUser, isMobile }) {
             onOpenDialog={(r) => { setSelectedRequest(null); setDialogRequest(r); }}
             isAdmin={currentUser?.isAdmin}
             onValidate={handleValidateRequest}
+            onEdit={(r) => { setSelectedRequest(null); handleEditRequest(r); }}
           />
         )}
         {activeTab === 'suppliers' && selectedSupplierPanel && (
@@ -730,6 +743,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           isAdmin={currentUser?.isAdmin}
           onValidate={handleValidateRequest}
           onDelete={handleDeleteRequest}
+          onEdit={(r) => { setDialogRequest(null); handleEditRequest(r); }}
         />
       )}
 
@@ -759,9 +773,10 @@ function OrdersPanel({ currentUser, isMobile }) {
       )}
       {showRequestModal && (
         <MaterialRequestModal 
+          request={editingRequest}
           suppliers={suppliers}
           onSave={handleSaveRequest}
-          onClose={() => setShowRequestModal(false)}
+          onClose={() => { setShowRequestModal(false); setEditingRequest(null); }}
         />
       )}
       {supplierDetailData && (
@@ -1754,12 +1769,13 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
 });
 
 // ═══ Modal demande de matériel ═══
-const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
+const MaterialRequestModal = React.memo(({ request, suppliers, onSave, onClose }) => {
   const [form, setForm] = useState({
-    article: '', supplier_id: '', supplier_name: '', quantity: 1,
-    priority: 'normal', affaire_id: '', destination: 'Stock Mag Scène',
-    destination_other: '', notes: '', ref_code: '',
+    article: request?.article || '', supplier_id: request?.supplier_id ? String(request.supplier_id) : '', supplier_name: request?.supplier_name || '', quantity: request?.quantity || 1,
+    priority: request?.priority || 'normal', affaire_id: request?.affaire_id || '', destination: request?.destination || 'Stock Mag Scène',
+    destination_other: request?.destination_other || '', notes: request?.notes || '', ref_code: request?.ref_code || '',
   });
+  const isEditing = !!request;
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
 
   const handleCatalogSelect = (item) => {
@@ -1782,7 +1798,7 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
       <div className="order-form-modal material-request-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2><ClipboardList size={20} /> Nouvelle demande de matériel</h2>
+          <h2><ClipboardList size={20} /> {isEditing ? 'Modifier la demande' : 'Nouvelle demande de matériel'}</h2>
           <button className="close-btn" onClick={onClose}><X size={20} /></button>
         </div>
         <div className="modal-body">
@@ -1845,7 +1861,7 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
         <div className="modal-footer">
           <button className="cancel-btn" onClick={onClose}>Annuler</button>
           <button className="save-btn" onClick={() => onSave(form)} disabled={!form.article.trim()}>
-            <Check size={16} /> Créer la demande
+            <Check size={16} /> {isEditing ? 'Enregistrer' : 'Créer la demande'}
           </button>
         </div>
       </div>
@@ -1872,6 +1888,7 @@ const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick
             <th>Contact</th>
             <th>Email</th>
             <th>Téléphone</th>
+            <th>Catalogues</th>
             <th>Commandes</th>
             <th>Total HT</th>
             <th>Statuts</th>
@@ -1884,10 +1901,11 @@ const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick
               onClick={() => onClick?.(supplier)}
               onDoubleClick={() => onDoubleClick?.(supplier)}
               className={`clickable-row${selectedId === supplier.id ? ' selected' : ''}`}>
-              <td className="ref-cell"><Building2 size={14} /> {supplier.name} {supplier.catalog_count > 0 && <BookOpen size={12} title={`${supplier.catalog_count} catalogue(s) importé(s)`} className="catalog-indicator" />}</td>
+              <td className="ref-cell"><Building2 size={14} /> {supplier.name}</td>
               <td>{supplier.contact_name || '—'}</td>
               <td>{supplier.email || '—'}</td>
               <td>{supplier.phone ? formatPhoneDisplay(supplier.phone) : '—'}</td>
+              <td className="center">{supplier.catalog_count > 0 ? <span className="catalog-badge" title={`${supplier.catalog_count} catalogue(s)`}><BookOpen size={12} /> {supplier.catalog_count}</span> : '—'}</td>
               <td className="center">{supplier.active_order_count || 0}</td>
               <td className="amount">{supplier.total_ht > 0 ? formatCurrency(supplier.total_ht) : '—'}</td>
               <td>
@@ -2285,7 +2303,7 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
 });
 
 // ═══ Volet latéral Demande (clic simple) ═══
-const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin, onValidate }) => {
+const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin, onValidate, onEdit }) => {
   if (!request) return <div className="orders-slide-panel" />;
   const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
   const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
@@ -2294,7 +2312,10 @@ const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin,
       <div className="slide-panel-header">
         <button className="back-btn" onClick={onClose}><X size={18} /></button>
         <h3>{request.article}</h3>
-        <button className="action-btn small" onClick={() => onOpenDialog(request)} title="Ouvrir en détail"><Eye size={14} /></button>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button className="action-btn small" onClick={() => onEdit(request)} title="Modifier"><Edit2 size={14} /></button>
+          <button className="action-btn small" onClick={() => onOpenDialog(request)} title="Ouvrir en détail"><Eye size={14} /></button>
+        </div>
       </div>
       <div className="slide-panel-body">
         <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
@@ -2557,7 +2578,7 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
 });
 
 // ═══ Dialog Demande (double-clic) ═══
-const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate, onDelete }) => {
+const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate, onDelete, onEdit }) => {
   const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
   const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
   return (
@@ -2578,6 +2599,7 @@ const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate,
                 <button className="action-btn danger" onClick={() => { onValidate(request, 'reject'); onClose(); }}><X size={14} /> Refuser</button>
               </>
             )}
+            <button className="action-btn" onClick={() => onEdit(request)}><Edit2 size={14} /> Modifier</button>
             <button className="action-btn danger" onClick={() => { onDelete(request); onClose(); }}><Trash2 size={14} /> Supprimer</button>
             <button className="close-btn" onClick={onClose}><X size={20} /></button>
           </div>

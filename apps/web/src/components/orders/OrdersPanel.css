@@ -1160,6 +1160,49 @@
 
 .supplier-orders-list { display: flex; flex-direction: column; gap: 10px; }
 
+/* ═══ Catalogues fournisseur ═══ */
+.supplier-catalogs-list {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;
+}
+.catalog-link-card {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border: 1px solid var(--theme-border);
+  border-radius: 8px; text-decoration: none; color: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.catalog-link-card:hover {
+  border-color: var(--theme-accent, var(--theme-info));
+  background: color-mix(in srgb, var(--theme-accent, var(--theme-info)) 8%, transparent);
+}
+.catalog-link-card svg { color: var(--theme-accent, var(--theme-info)); flex-shrink: 0; }
+.catalog-name { flex: 1; font-weight: 500; font-size: 0.9rem; }
+.catalog-meta { font-size: 0.78rem; color: var(--theme-text-muted); white-space: nowrap; }
+
+/* Catalogues — section dans SupplierDetailModal */
+.supplier-catalogs-section {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
+}
+.catalog-detail-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px; border: 1px solid var(--theme-border);
+  border-radius: 10px; text-decoration: none; color: inherit;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.catalog-detail-card:hover {
+  border-color: var(--theme-accent, var(--theme-info));
+  background: color-mix(in srgb, var(--theme-accent, var(--theme-info)) 6%, transparent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.catalog-card-icon {
+  width: 48px; height: 48px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--theme-accent, var(--theme-info)) 12%, transparent);
+  color: var(--theme-accent, var(--theme-info)); flex-shrink: 0;
+}
+.catalog-card-info { flex: 1; min-width: 0; }
+.catalog-card-name { font-weight: 600; font-size: 0.95rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalog-card-meta { display: flex; gap: 10px; font-size: 0.8rem; color: var(--theme-text-muted); margin-top: 4px; }
+
 .supplier-order-card {
   padding: 12px; border: 1px solid var(--theme-border);
   border-radius: 8px; cursor: pointer;

@@ -1353,6 +1353,17 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
     }
   });
 
+  // ═══ Catalogues importés d'un fournisseur ═══
+  app.get('/api/suppliers/:id/catalogs', authenticateToken, (req, res) => {
+    try {
+      const catalogs = db.prepare('SELECT * FROM catalog_imports WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
+      res.json(catalogs);
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
   // ═══ Détail complet fournisseur (commandes + documents + BL correspondance) ═══
   app.get('/api/suppliers/:id/full-detail', authenticateToken, (req, res) => {
     try {
@@ -1386,6 +1397,9 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
 
       const documents = db.prepare('SELECT * FROM supplier_documents WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
 
+      // Catalog imports for this supplier
+      const catalogs = db.prepare('SELECT * FROM catalog_imports WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
+
       // BL correspondence: find affaires linked to this supplier's orders
       const affaireIds = [...new Set(orders.map(o => o.affaire_id).filter(Boolean))];
       const blCorrespondence = [];
@@ -1415,7 +1429,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
         };
       });
 
-      res.json({ supplier, orders, documents, blCorrespondence, workflow });
+      res.json({ supplier, orders, documents, catalogs, blCorrespondence, workflow });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });

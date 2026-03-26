@@ -403,8 +403,11 @@ function OrdersPanel({ currentUser, isMobile }) {
   // ═══ Handlers Fournisseurs enrichis ═══
   const handleSupplierClick = async (supplier) => {
     try {
-      const orders = await api.getSupplierOrders(supplier.id, showArchivedSuppliers);
-      setSelectedSupplierPanel({ ...supplier, orders });
+      const [orders, catalogs] = await Promise.all([
+        api.getSupplierOrders(supplier.id, showArchivedSuppliers),
+        api.getSupplierCatalogs(supplier.id),
+      ]);
+      setSelectedSupplierPanel({ ...supplier, orders, catalogs });
     } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
@@ -1971,7 +1974,7 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
 
 // ═══ Modal détail fournisseur (double clic) ═══
 const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, currentUser }) => {
-  const { supplier, orders, documents, workflow } = data;
+  const { supplier, orders, documents, catalogs, workflow } = data;
   const [activeSection, setActiveSection] = useState('workflow');
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const toast = useToast();
@@ -2007,6 +2010,11 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
           <button className={activeSection === 'documents' ? 'active' : ''} onClick={() => setActiveSection('documents')}>
             <FileText size={14} /> Documents ({documents.length})
           </button>
+          {catalogs?.length > 0 && (
+            <button className={activeSection === 'catalogs' ? 'active' : ''} onClick={() => setActiveSection('catalogs')}>
+              <BookOpen size={14} /> Catalogues ({catalogs.length})
+            </button>
+          )}
         </div>
 
         <div className="modal-body supplier-detail-body">
@@ -2131,6 +2139,25 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* ═══ Section Catalogues ═══ */}
+          {activeSection === 'catalogs' && catalogs?.length > 0 && (
+            <div className="supplier-catalogs-section">
+              {catalogs.map(cat => (
+                <a key={cat.id} className="catalog-detail-card" href={`/catalogues/${cat.filename}`} target="_blank" rel="noopener noreferrer">
+                  <div className="catalog-card-icon"><BookOpen size={24} /></div>
+                  <div className="catalog-card-info">
+                    <span className="catalog-card-name">{cat.filename}</span>
+                    <div className="catalog-card-meta">
+                      {cat.items_count > 0 && <span>{cat.items_count} article{cat.items_count > 1 ? 's' : ''}</span>}
+                      {cat.page_count > 0 && <span>{cat.page_count} page{cat.page_count > 1 ? 's' : ''}</span>}
+                      <span>{formatDate(cat.created_at)}</span>
+                    </div>
+                  </div>
+                </a>
+              ))}
             </div>
           )}
         </div>
@@ -2311,6 +2338,20 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
           {supplier.email && <div className="slide-field"><span>Email</span><strong>{supplier.email}</strong></div>}
           {supplier.phone && <div className="slide-field"><span>Tél.</span><strong>{formatPhoneDisplay(supplier.phone)}</strong></div>}
         </div>
+        {supplier.catalogs?.length > 0 && (
+          <>
+            <h4><BookOpen size={14} /> Catalogues importés ({supplier.catalogs.length})</h4>
+            <div className="supplier-catalogs-list">
+              {supplier.catalogs.map(cat => (
+                <a key={cat.id} className="catalog-link-card" href={`/catalogues/${cat.filename}`} target="_blank" rel="noopener noreferrer">
+                  <FileText size={14} />
+                  <span className="catalog-name">{cat.filename}</span>
+                  <span className="catalog-meta">{cat.items_count || 0} article{(cat.items_count || 0) > 1 ? 's' : ''}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
         <h4>Commandes en cours ({supplier.orders?.length || 0})</h4>
         {!supplier.orders?.length ? (
           <p className="no-items">Aucune commande en cours</p>

@@ -510,19 +510,19 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         const pwd = decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
         const rtspUrl = buildPlaybackRtspUrl(camera, pwd, channel, startTime, endTime);
 
-        // Enregistrer dans MediaMTX
+        // Enregistrer dans MediaMTX (DELETE ancien + POST nouveau)
         const registered = await registerPlaybackInProxy(id, rtspUrl);
         if (!registered) return res.status(502).json({ error: 'Proxy vidéo indisponible' });
 
-        // Attendre que MediaMTX connecte la source RTSP du NVR
-        // Le path est recréé frais → sourceOnDemand déclenché au premier WHEP
-        let result = null;
-        const delays = [3000, 3000, 4000]; // total max ~10s
-        for (let attempt = 0; attempt < delays.length; attempt++) {
-          await new Promise(r => setTimeout(r, delays[attempt]));
+        // Le WHEP déclenche sourceOnDemand → MediaMTX connecte le RTSP du NVR
+        // MediaMTX bloque la requête WHEP jusqu'à sourceOnDemandStartTimeout (15s)
+        // Donc pas besoin de délai artificiel — on essaie directement
+        let result = await whepPlaybackExchange(id, clientOffer);
+        if (!result) {
+          // Retry une fois après 2s (le NVR peut être lent à démarrer)
+          logger.info(`🎬 Playback WHEP 1ère tentative échouée pour cam ${id}, retry dans 2s...`);
+          await new Promise(r => setTimeout(r, 2000));
           result = await whepPlaybackExchange(id, clientOffer);
-          if (result) break;
-          logger.info(`🎬 Playback WHEP attempt ${attempt + 1}/${delays.length} pour cam ${id} — retry...`);
         }
         if (!result) return res.status(502).json({ error: 'Flux de relecture indisponible — le NVR met trop de temps à répondre' });
 

@@ -400,8 +400,12 @@ export async function registerPlaybackInProxy(cameraId, rtspUrl) {
     sourceOnDemandCloseAfter: '60s',
   };
   try {
-    // Supprimer l'ancien path s'il existe (force MediaMTX à reconnecter proprement)
-    await fetch(`${MEDIAMTX_API}/v3/config/paths/remove/${streamName}`, { method: 'DELETE' }).catch(() => {});
+    // Toujours supprimer l'ancien path (force reconnexion propre même si le précédent est en erreur)
+    const delRes = await fetch(`${MEDIAMTX_API}/v3/config/paths/remove/${streamName}`, { method: 'DELETE' }).catch(() => null);
+    if (delRes?.ok) {
+      // Laisser MediaMTX nettoyer la connexion RTSP sortante
+      await new Promise(r => setTimeout(r, 500));
+    }
 
     // Créer le path frais
     const res = await fetch(`${MEDIAMTX_API}/v3/config/paths/add/${streamName}`, {

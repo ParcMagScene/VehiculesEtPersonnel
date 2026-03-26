@@ -23,6 +23,7 @@ const PlaybackPanel = ({ cameras }) => {
   const videoRef = useRef(null);
   const pcRef = useRef(null);
   const sessionTokenRef = useRef(null);
+  const connectingRef = useRef(false);
 
   // Filtrer les caméras qui supportent le playback (NVR avec enregistrement)
   const nvrCameras = cameras.filter(c => c.enabled && c.supportsPlayback);
@@ -67,7 +68,8 @@ const PlaybackPanel = ({ cameras }) => {
 
   // Démarrer le playback d'un segment
   const startPlayback = useCallback(async (startTime, endTime) => {
-    if (connecting) return; // Empêcher les clics multiples
+    if (connectingRef.current) return; // Empêcher les clics multiples (ref = pas de stale closure)
+    connectingRef.current = true;
     await stopPlayback();
     setConnecting(true);
     setPlaybackError(null);
@@ -131,8 +133,10 @@ const PlaybackPanel = ({ cameras }) => {
       setPlaybackError(e.message || 'Erreur de connexion');
       setConnecting(false);
       setPlaying(false);
+    } finally {
+      connectingRef.current = false;
     }
-  }, [selectedCameraId, stopPlayback, connecting]);
+  }, [selectedCameraId, stopPlayback]);
 
   // Cleanup au démontage
   useEffect(() => {

@@ -400,10 +400,9 @@ export async function registerPlaybackInProxy(cameraId, rtspUrl) {
     sourceOnDemandCloseAfter: '60s',
   };
   try {
-    // Toujours supprimer l'ancien path (force reconnexion propre même si le précédent est en erreur)
+    // Supprimer l'ancien path (force reconnexion propre si le précédent est en erreur)
     const delRes = await fetch(`${MEDIAMTX_API}/v3/config/paths/remove/${streamName}`, { method: 'DELETE' }).catch(() => null);
     if (delRes?.ok) {
-      // Laisser MediaMTX nettoyer la connexion RTSP sortante
       await new Promise(r => setTimeout(r, 500));
     }
 
@@ -413,13 +412,28 @@ export async function registerPlaybackInProxy(cameraId, rtspUrl) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pathConfig),
     });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      logger.warn(`MediaMTX: impossible d'enregistrer ${streamName}: ${res.status} ${errText}`);
-      return false;
+    if (res.ok) {
+      logger.info(`🎬 Playback ${streamName} enregistré dans MediaMTX`);
+      return true;
     }
-    logger.info(`🎬 Playback ${streamName} enregistré dans MediaMTX`);
-    return true;
+
+    // Si le runtime path existe encore (DELETE config ≠ runtime cleanup),
+    // mettre à jour via PATCH pour changer l'URL source
+    if (res.status === 400) {
+      const patchRes = await fetch(`${MEDIAMTX_API}/v3/config/paths/edit/${streamName}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pathConfig),
+      });
+      if (patchRes.ok) {
+        logger.info(`🎬 Playback ${streamName} mis à jour dans MediaMTX`);
+        return true;
+      }
+    }
+
+    const errText = await res.text().catch(() => '');
+    logger.warn(`MediaMTX: impossible d'enregistrer ${streamName}: ${res.status} ${errText}`);
+    return false;
   } catch (e) {
     logger.warn(`MediaMTX non disponible pour ${streamName}: ${e.message}`);
     return false;

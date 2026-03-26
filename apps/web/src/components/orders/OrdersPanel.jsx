@@ -524,6 +524,18 @@ function OrdersPanel({ currentUser, isMobile }) {
         </button>
           </>
         )}
+
+        {/* Stats inline dans les tabs */}
+        {!isSimpleUser && activeTab !== 'catalog' && stats && (
+          <div className="orders-header-stats">
+            <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
+            <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
+            <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
+            {completionAlerts.length > 0 && (
+              <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {activeTab === 'catalog' && (
@@ -587,18 +599,6 @@ function OrdersPanel({ currentUser, isMobile }) {
         </button>
         )}
       </div>}
-
-      {/* Stats */}
-      {!isSimpleUser && activeTab !== 'catalog' && stats && (
-        <div className="orders-header-stats">
-          <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
-          <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
-          <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
-          {completionAlerts.length > 0 && (
-            <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
-          )}
-        </div>
-      )}
 
       {/* Body: table + slide panel côte à côte */}
       {activeTab !== 'catalog' && activeTab !== 'tracking' && <div className="orders-body">

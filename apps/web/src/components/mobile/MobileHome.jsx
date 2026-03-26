@@ -1,5 +1,5 @@
 import React from 'react';
-import { Truck, Users, Package, ShoppingCart, Palmtree, Map, Wrench, Briefcase } from 'lucide-react';
+import { Truck, Users, Package, ShoppingCart, Palmtree, Map, Wrench, Briefcase, ClipboardList } from 'lucide-react';
 import './MobileHome.css';
 
 function MobileHome({ onNavigate }) {
@@ -14,6 +14,10 @@ function MobileHome({ onNavigate }) {
         <button className="home-grid-item affaires" onClick={() => onNavigate('affaires')}>
           <Briefcase size={28} />
           <span>Affaires</span>
+        </button>
+        <button className="home-grid-item tasks" onClick={() => onNavigate('tasks')}>
+          <ClipboardList size={28} />
+          <span>Tâches</span>
         </button>
         <button className="home-grid-item personnel" onClick={() => onNavigate('personnel')}>
           <Users size={28} />

@@ -8,6 +8,26 @@ export function useWebRTCStream(camera) {
   const pcRef = useRef(null);
   const videoRef = useRef(null);
   const sessionTokenRef = useRef(null);
+  const reconnectTimer = useRef(null);
+  const reconnectAttempts = useRef(0);
+  const connectRef = useRef(null); // Ref pour éviter les closures stale
+  const MAX_RECONNECT = 2;
+
+  const doReconnect = useCallback(() => {
+    if (reconnectAttempts.current >= MAX_RECONNECT) {
+      setStatus('error');
+      setError('Connexion perdue');
+      return;
+    }
+    reconnectAttempts.current++;
+    if (pcRef.current) { pcRef.current.close(); pcRef.current = null; }
+    if (sessionTokenRef.current) {
+      api.closeVideoSession(sessionTokenRef.current).catch(() => {});
+      sessionTokenRef.current = null;
+    }
+    // Appeler connect via ref pour avoir la version courante
+    connectRef.current?.();
+  }, []);
 
   const connect = useCallback(async () => {
     if (!camera?.id || !camera.enabled) return;
@@ -16,25 +36,14 @@ export function useWebRTCStream(camera) {
     setError(null);
 
     try {
-      // 0. Vérifier que le proxy vidéo (MediaMTX) est en ligne avant toute négociation
-      const proxyStatus = await api.getVideoProxyStatus().catch(() => null);
-      if (!proxyStatus?.running) {
-        setStatus('error');
-        setError('Proxy vidéo (MediaMTX) hors-ligne');
-        return;
-      }
-
-      // 1. Créer la connexion WebRTC et générer l'offre SDP
       const pc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       });
       pcRef.current = pc;
 
-      // Transceivers en réception seulement
       pc.addTransceiver('video', { direction: 'recvonly' });
       pc.addTransceiver('audio', { direction: 'recvonly' });
 
-      // Track distant → élément vidéo
       pc.ontrack = (event) => {
         if (videoRef.current && event.streams?.[0]) {
           videoRef.current.srcObject = event.streams[0];
@@ -43,17 +52,26 @@ export function useWebRTCStream(camera) {
       };
 
       pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-          setStatus('error');
-          setError('Connexion perdue');
+        const state = pc.iceConnectionState;
+        if (state === 'connected' || state === 'completed') {
+          reconnectAttempts.current = 0;
+          clearTimeout(reconnectTimer.current);
+        } else if (state === 'disconnected') {
+          // Temporaire — attendre 5s avant de reconnecter
+          clearTimeout(reconnectTimer.current);
+          reconnectTimer.current = setTimeout(() => {
+            if (pcRef.current?.iceConnectionState === 'disconnected') {
+              doReconnect();
+            }
+          }, 5000);
+        } else if (state === 'failed') {
+          doReconnect();
         }
       };
 
-      // Créer l'offre SDP
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Attendre fin ICE gathering
       await new Promise((resolve) => {
         if (pc.iceGatheringState === 'complete') return resolve();
         const check = () => {
@@ -66,22 +84,25 @@ export function useWebRTCStream(camera) {
         setTimeout(resolve, 3000);
       });
 
-      // 2. Envoyer l'offre au backend, qui la transmet à MediaMTX WHEP
       const result = await api.whepNegotiate(camera.id, pc.localDescription.sdp);
       if (!result?.answerSdp) {
         throw new Error('Proxy vidéo indisponible');
       }
       sessionTokenRef.current = result.sessionToken;
 
-      // 3. Appliquer la réponse SDP
       await pc.setRemoteDescription({ type: 'answer', sdp: result.answerSdp });
     } catch (e) {
       setStatus('error');
       setError(e.message || 'Erreur de connexion WebRTC');
     }
-  }, [camera?.id, camera?.enabled]);
+  }, [camera?.id, camera?.enabled, doReconnect]);
+
+  // Garder connect à jour dans la ref
+  useEffect(() => { connectRef.current = connect; }, [connect]);
 
   const disconnect = useCallback(async () => {
+    clearTimeout(reconnectTimer.current);
+    reconnectAttempts.current = 0;
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;

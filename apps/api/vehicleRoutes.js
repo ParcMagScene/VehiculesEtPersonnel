@@ -21,7 +21,7 @@ export function setupVehicleRoutes(app, authenticateToken, requireAdmin, require
 
 app.get('/api/vehicles', authenticateToken, cacheMiddleware(listCache, () => 'vehicles', 30_000), (req, res) => {
   try {
-    const stmt = db.prepare('SELECT * FROM vehicles LIMIT 5000');
+    const stmt = db.prepare('SELECT * FROM vehicles ORDER BY order_index ASC LIMIT 5000');
     const vehicles = stmt.all();
     
     // Mapper snake_case vers camelCase pour le frontend
@@ -50,6 +50,8 @@ app.get('/api/vehicles', authenticateToken, cacheMiddleware(listCache, () => 've
       insuranceCompany: v.insurance_company,
       insuranceNumber: v.insurance_number,
       insuranceExpiry: v.insurance_expiry,
+      isLocation: v.is_location ? true : false,
+      orderIndex: v.order_index || 0,
       latitude: v.latitude,
       longitude: v.longitude,
       locationUpdatedAt: v.location_updated_at
@@ -69,8 +71,9 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
       INSERT INTO vehicles (id, name, type, category, registration, brand, model, year, color, vin, status, notes, photo,
         last_maintenance_date, last_maintenance_km, controles_techniques, kilometrage, mileage_history, assigned_to, pupitre,
         is_insured, insurance_company, insurance_number, insurance_expiry,
+        is_location, order_index,
         latitude, longitude, location_updated_at, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       vehicle.id,
@@ -97,6 +100,8 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
       vehicle.insuranceCompany || '',
       vehicle.insuranceNumber || '',
       vehicle.insuranceExpiry || null,
+      vehicle.isLocation ? 1 : 0,
+      vehicle.orderIndex || 0,
       vehicle.latitude || null,
       vehicle.longitude || null,
       vehicle.locationUpdatedAt || null,
@@ -123,6 +128,7 @@ app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
         last_maintenance_date = ?, last_maintenance_km = ?, controles_techniques = ?, kilometrage = ?, mileage_history = ?,
         assigned_to = ?, pupitre = ?,
         is_insured = ?, insurance_company = ?, insurance_number = ?, insurance_expiry = ?,
+        is_location = ?, order_index = ?,
         latitude = ?, longitude = ?, location_updated_at = ?,
         modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
@@ -151,6 +157,8 @@ app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
       vehicle.insuranceCompany || '',
       vehicle.insuranceNumber || '',
       vehicle.insuranceExpiry || null,
+      vehicle.isLocation ? 1 : 0,
+      vehicle.orderIndex || 0,
       vehicle.latitude || null,
       vehicle.longitude || null,
       vehicle.locationUpdatedAt || null,

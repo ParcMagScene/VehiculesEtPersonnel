@@ -296,6 +296,173 @@ export async function sendPTZCommand(camera, password, command, speed = 1) {
   }
 }
 
+// ── NVR Recordings (Dahua) ──
+
+/** Extraire le numéro de channel (1-based) depuis l'URL RTSP de la caméra */
+export function extractDahuaChannel(camera) {
+  if (!camera.rtsp_url) return null;
+  const match = camera.rtsp_url.match(/channel=(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/** Extraire le mot de passe embarqué dans l'URL RTSP (fallback si password_encrypted est null) */
+export function extractPasswordFromRtspUrl(camera) {
+  if (!camera.rtsp_url) return '';
+  const match = camera.rtsp_url.match(/:\/\/[^:]+:([^@]+)@/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+/** Chercher les enregistrements NVR via l'API mediaFileFind de Dahua */
+export async function searchNvrRecordings(camera, password, channel, startTime, endTime) {
+  const user = camera.username || '888888';
+  const auth = 'Basic ' + Buffer.from(`${user}:${password}`).toString('base64');
+  const baseUrl = `http://${camera.ip}:${camera.http_port || 80}`;
+  const ch = channel - 1; // API Dahua = channel 0-based
+
+  // 1. Créer un finder
+  const createRes = await fetch(
+    `${baseUrl}/cgi-bin/mediaFileFind.cgi?action=factory.create`,
+    { headers: { Authorization: auth }, signal: AbortSignal.timeout(5000) }
+  );
+  const createText = await createRes.text();
+  const idMatch = createText.match(/result=(\d+)/);
+  if (!idMatch) throw new Error('Impossible de créer la session de recherche NVR');
+  const finderId = idMatch[1];
+
+  try {
+    // 2. Lancer la recherche
+    const startEnc = encodeURIComponent(startTime);
+    const endEnc = encodeURIComponent(endTime);
+    const findUrl = `${baseUrl}/cgi-bin/mediaFileFind.cgi?action=findFile&object=${finderId}` +
+      `&condition.Channel=${ch}&condition.StartTime=${startEnc}&condition.EndTime=${endEnc}` +
+      `&condition.Types[0]=dav&condition.Flags[0]=Timing`;
+
+    await fetch(findUrl, {
+      headers: { Authorization: auth },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    // 3. Récupérer les résultats par blocs de 30
+    const allRecordings = [];
+    let hasMore = true;
+    while (hasMore) {
+      const nextRes = await fetch(
+        `${baseUrl}/cgi-bin/mediaFileFind.cgi?action=findNextFile&object=${finderId}&count=30`,
+        { headers: { Authorization: auth }, signal: AbortSignal.timeout(5000) }
+      );
+      const nextText = await nextRes.text();
+      const foundMatch = nextText.match(/found=(\d+)/);
+      const count = foundMatch ? parseInt(foundMatch[1], 10) : 0;
+      if (count === 0) { hasMore = false; break; }
+
+      for (let i = 0; i < count; i++) {
+        const sM = nextText.match(new RegExp(`items\\[${i}\\]\\.StartTime=(.+)`));
+        const eM = nextText.match(new RegExp(`items\\[${i}\\]\\.EndTime=(.+)`));
+        const lM = nextText.match(new RegExp(`items\\[${i}\\]\\.Length=(\\d+)`));
+        if (sM && eM) {
+          allRecordings.push({
+            startTime: sM[1].trim(),
+            endTime: eM[1].trim(),
+            size: lM ? parseInt(lM[1].trim(), 10) : 0,
+          });
+        }
+      }
+    }
+
+    return allRecordings;
+  } finally {
+    // Nettoyage
+    fetch(`${baseUrl}/cgi-bin/mediaFileFind.cgi?action=close&object=${finderId}`, {
+      headers: { Authorization: auth },
+    }).catch(() => {});
+    fetch(`${baseUrl}/cgi-bin/mediaFileFind.cgi?action=destroy&object=${finderId}`, {
+      headers: { Authorization: auth },
+    }).catch(() => {});
+  }
+}
+
+/** Construire l'URL RTSP de playback pour une caméra Dahua/NVR */
+export function buildPlaybackRtspUrl(camera, password, channel, startTime, endTime) {
+  const user = camera.username || '888888';
+  const pass = password || '';
+  const fmt = (t) => t.replace(/[-: ]/g, '_'); // 2026-03-25 10:00:00 → 2026_03_25_10_00_00
+  return `rtsp://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${camera.ip}:554` +
+    `/cam/playback?channel=${channel}&starttime=${fmt(startTime)}&endtime=${fmt(endTime)}`;
+}
+
+/** Enregistrer le stream playback dans MediaMTX (path séparé) */
+export async function registerPlaybackInProxy(cameraId, rtspUrl) {
+  const streamName = `playback-${cameraId}`;
+  const pathConfig = {
+    source: rtspUrl,
+    sourceOnDemand: true,
+    sourceOnDemandStartTimeout: '15s',
+    sourceOnDemandCloseAfter: '60s',
+  };
+  try {
+    // Supprimer l'ancien path (force reconnexion propre si le précédent est en erreur)
+    const delRes = await fetch(`${MEDIAMTX_API}/v3/config/paths/remove/${streamName}`, { method: 'DELETE' }).catch(() => null);
+    if (delRes?.ok) {
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    // Créer le path frais
+    const res = await fetch(`${MEDIAMTX_API}/v3/config/paths/add/${streamName}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pathConfig),
+    });
+    if (res.ok) {
+      logger.info(`🎬 Playback ${streamName} enregistré dans MediaMTX`);
+      return true;
+    }
+
+    // Si le runtime path existe encore (DELETE config ≠ runtime cleanup),
+    // mettre à jour via PATCH pour changer l'URL source
+    if (res.status === 400) {
+      const patchRes = await fetch(`${MEDIAMTX_API}/v3/config/paths/edit/${streamName}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pathConfig),
+      });
+      if (patchRes.ok) {
+        logger.info(`🎬 Playback ${streamName} mis à jour dans MediaMTX`);
+        return true;
+      }
+    }
+
+    const errText = await res.text().catch(() => '');
+    logger.warn(`MediaMTX: impossible d'enregistrer ${streamName}: ${res.status} ${errText}`);
+    return false;
+  } catch (e) {
+    logger.warn(`MediaMTX non disponible pour ${streamName}: ${e.message}`);
+    return false;
+  }
+}
+
+/** WHEP exchange pour un stream playback */
+export async function whepPlaybackExchange(cameraId, clientOfferSdp) {
+  const streamName = `playback-${cameraId}`;
+  try {
+    const res = await fetch(`${MEDIAMTX_WEBRTC}/${streamName}/whep`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/sdp' },
+      body: clientOfferSdp,
+    });
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      logger.warn(`WHEP playback ${streamName} HTTP ${res.status}: ${errBody}`);
+      return null;
+    }
+    const answerSdp = await res.text();
+    const location = res.headers.get('location');
+    return { answerSdp, location, streamName };
+  } catch (e) {
+    logger.warn(`WHEP playback exchange failed for ${streamName}: ${e.message}`);
+    return null;
+  }
+}
+
 // ── Statut MediaMTX ──
 export async function getProxyStatus() {
   try {

@@ -464,16 +464,25 @@ const ManagementPanel = ({
     }
   };
 
-  const handleMoveUp = (index) => {
+  const handleMoveUp = async (index) => {
     if (index === 0) return;
     const currentList = [...getCurrentList()];
     [currentList[index - 1], currentList[index]] = [currentList[index], currentList[index - 1]];
     
     // Mettre à jour les ordre si c'est des véhicules
     if (activeTab === 'vehicles') {
-      currentList.forEach((v, i) => v.order = i);
+      currentList.forEach((v, i) => v.orderIndex = i);
       setVehicles(currentList);
       saveToIndexedDB(STORES.vehicles, currentList);
+      // Persister les 2 véhicules échangés côté serveur
+      try {
+        await Promise.all([
+          api.updateVehicle(currentList[index - 1].id, currentList[index - 1]),
+          api.updateVehicle(currentList[index].id, currentList[index])
+        ]);
+      } catch (error) {
+        console.error('Erreur sauvegarde ordre:', error);
+      }
     } else {
       if (activeTab === 'clients') {
         setClients(currentList);
@@ -487,16 +496,25 @@ const ManagementPanel = ({
     }
   };
 
-  const handleMoveDown = (index) => {
+  const handleMoveDown = async (index) => {
     const currentList = [...getCurrentList()];
     if (index === currentList.length - 1) return;
     [currentList[index], currentList[index + 1]] = [currentList[index + 1], currentList[index]];
     
     // Mettre à jour les ordre si c'est des véhicules
     if (activeTab === 'vehicles') {
-      currentList.forEach((v, i) => v.order = i);
+      currentList.forEach((v, i) => v.orderIndex = i);
       setVehicles(currentList);
       saveToIndexedDB(STORES.vehicles, currentList);
+      // Persister les 2 véhicules échangés côté serveur
+      try {
+        await Promise.all([
+          api.updateVehicle(currentList[index].id, currentList[index]),
+          api.updateVehicle(currentList[index + 1].id, currentList[index + 1])
+        ]);
+      } catch (error) {
+        console.error('Erreur sauvegarde ordre:', error);
+      }
     } else {
       if (activeTab === 'clients') {
         setClients(currentList);
@@ -541,7 +559,7 @@ const ManagementPanel = ({
         : [...otherVehicles, ...sectionVehicles];
       
       // Mettre à jour l'ordre de tous les véhicules
-      newList.forEach((v, i) => v.order = i);
+      newList.forEach((v, i) => v.orderIndex = i);
       
       // Sauvegarder localement immédiatement pour une UI réactive
       setVehicles(newList);

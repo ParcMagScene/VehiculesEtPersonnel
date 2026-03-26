@@ -7,7 +7,8 @@ import { useCameraList } from '../../hooks/useCameraList';
 import { usePTZ } from '../../hooks/usePTZ';
 import CameraGrid from './CameraGrid';
 import CameraPTZControls from './CameraPTZControls';
-import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import PlaybackPanel from './PlaybackPanel';
+import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight, Film } from 'lucide-react';
 import api from '../../utils/api';
 import './VideoPanel.css';
 
@@ -28,6 +29,7 @@ const VideoPanel = ({ currentUser }) => {
   const [editingCamera, setEditingCamera] = useState(null);
   const [testingAll, setTestingAll] = useState(false);
   const [proxyAvailable, setProxyAvailable] = useState(false);
+  const [playbackCameraId, setPlaybackCameraId] = useState(null);
 
   // État grille (remonté de CameraGrid)
   const [gridSize, setGridSize] = useState(4);
@@ -101,6 +103,11 @@ const VideoPanel = ({ currentUser }) => {
     setSelectedCamera(prev => prev?.id === cam.id ? null : cam);
   }, []);
 
+  const handlePlayback = useCallback((cam) => {
+    setPlaybackCameraId(String(cam.id));
+    setViewMode('playback');
+  }, []);
+
   const handleSaveCamera = useCallback(async (formData) => {
     if (editingCamera?.id) {
       await updateCamera(editingCamera.id, formData);
@@ -151,6 +158,9 @@ const VideoPanel = ({ currentUser }) => {
             </button>
             <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste">
               <List size={18} />
+            </button>
+            <button className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements">
+              <Film size={18} />
             </button>
             {isAdmin && (
               <button className={viewMode === 'admin' ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
@@ -244,6 +254,7 @@ const VideoPanel = ({ currentUser }) => {
                 page={gridPage}
                 onSelectCamera={handleSelectCamera}
                 selectedCameraId={selectedCamera?.id}
+                onPlayback={handlePlayback}
               />
               {selectedCamera?.ptzSupported && (
                 <div className="video-panel__ptz-sidebar">
@@ -253,6 +264,10 @@ const VideoPanel = ({ currentUser }) => {
             </>
           )}
         </div>
+      )}
+
+      {viewMode === 'playback' && (
+        <PlaybackPanel cameras={cameras} initialCameraId={playbackCameraId} />
       )}
 
       {viewMode === 'list' && (

@@ -4,16 +4,20 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useWebRTCStream } from '../../hooks/useWebRTCStream';
-import { Maximize, Minimize, Camera, RefreshCw, WifiOff, Loader } from 'lucide-react';
+import { Maximize, Minimize, Camera, RefreshCw, WifiOff, Loader, Film } from 'lucide-react';
 import api from '../../utils/api';
 
-const CameraPlayerWebRTC = ({ camera, autoConnect = true, onFullscreen, isFullscreen = false, onSelect, isSelected = false }) => {
+const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFullscreen, isFullscreen = false, onSelect, isSelected = false, onPlayback }) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
   const [snapshotUrl, setSnapshotUrl] = useState(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
 
   useEffect(() => {
     if (autoConnect && camera?.enabled) {
+      if (connectDelay > 0) {
+        const timer = setTimeout(() => connect(), connectDelay);
+        return () => { clearTimeout(timer); disconnect(); };
+      }
       connect();
     }
     return () => { disconnect(); };
@@ -76,6 +80,11 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, onFullscreen, isFullsc
           <span className="camera-player__status-text">{statusLabel}</span>
         </div>
         <div className="camera-player__actions">
+          {camera?.supportsPlayback && onPlayback && (
+            <button onClick={(e) => { e.stopPropagation(); onPlayback(camera); }} title="Enregistrements" className="camera-player__btn">
+              <Film size={16} />
+            </button>
+          )}
           <button onClick={handleSnapshot} disabled={status !== 'streaming' || snapshotLoading} title="Snapshot" className="camera-player__btn">
             <Camera size={16} />
           </button>

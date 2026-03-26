@@ -96,4 +96,18 @@ export function registerVideoMethods(ApiClient) {
   ApiClient.prototype.testAllVideoCameras = async function () {
     return this.request('/video/cameras/test-all', { method: 'POST' });
   };
+
+  // ── Enregistrements / Playback ──
+
+  ApiClient.prototype.getRecordings = async function (cameraId, date) {
+    const data = await this.request(`/video/cameras/${cameraId}/recordings?date=${date}`);
+    return toCamelCase(data);
+  };
+
+  ApiClient.prototype.startPlayback = async function (cameraId, offerSdp, startTime, endTime) {
+    return this.request(`/video/cameras/${cameraId}/playback`, {
+      method: 'POST',
+      body: JSON.stringify({ sdp: offerSdp, startTime, endTime }),
+    });
+  };
 }

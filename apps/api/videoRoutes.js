@@ -12,12 +12,14 @@ import {
   fetchSnapshot, sendPTZCommand,
   generateSessionToken, storeSession, getSession, removeSession,
   getProxyStatus,
+  extractDahuaChannel, extractPasswordFromRtspUrl, searchNvrRecordings,
+  buildPlaybackRtspUrl, registerPlaybackInProxy, whepPlaybackExchange,
 } from './videoProxyService.js';
 
 // Rate limiting simple pour les flux vidéo
 const streamRateMap = new Map();
 const STREAM_RATE_WINDOW = 60_000; // 1 min
-const STREAM_RATE_MAX = 30; // max 30 requêtes/min par user
+const STREAM_RATE_MAX = 120; // max 120 requêtes/min par user (grid 16 + rotation)
 
 function checkStreamRate(userId) {
   const now = Date.now();
@@ -51,13 +53,18 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/video/cameras', authenticateToken, requireAdmin, (_req, res) => {
     try {
       const cameras = db.prepare(`
-        SELECT id, name, brand, model, ip, rtsp_port, http_port, ptz_supported,
+        SELECT id, name, brand, model, ip, rtsp_url, rtsp_port, http_port, ptz_supported,
                location, affaire_id, zone, enabled, stream_profile, status,
                sort_order, notes, last_seen, created_at, updated_at
         FROM cameras ORDER BY sort_order, name
       `).all();
-      // Ne jamais exposer username/password
-      res.json(cameras);
+      // Ne jamais exposer username/password — ajouter flag playback & retirer rtsp_url
+      const result = cameras.map(c => {
+        const supportsPlayback = !!extractDahuaChannel(c);
+        const { rtsp_url, ...rest } = c;
+        return { ...rest, supports_playback: supportsPlayback };
+      });
+      res.json(result);
     } catch (error) {
       logger.error('GET /api/video/cameras:', error);
       res.status(500).json({ error: 'Erreur serveur' });
@@ -433,6 +440,105 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       } catch (error) {
         logger.error('POST test-all:', error);
         res.status(500).json({ error: 'Erreur serveur' });
+      }
+    })();
+  });
+
+  // ════════════════════════════════════════
+  // ENREGISTREMENTS NVR (Playback)
+  // ════════════════════════════════════════
+
+  // GET /api/video/cameras/:id/recordings?date=YYYY-MM-DD — Rechercher les enregistrements
+  app.get('/api/video/cameras/:id/recordings', authenticateToken, (req, res) => {
+    (async () => {
+      try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+        if (!checkStreamRate(req.user.id)) return res.status(429).json({ error: 'Trop de requêtes' });
+
+        const { date } = req.query;
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          return res.status(400).json({ error: 'Paramètre date requis (YYYY-MM-DD)' });
+        }
+
+        const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
+        if (!camera) return res.status(404).json({ error: 'Caméra introuvable' });
+
+        const channel = extractDahuaChannel(camera);
+        if (!channel) return res.status(400).json({ error: 'Cette caméra ne supporte pas la relecture (pas de channel NVR)' });
+
+        const pwd = decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
+        const startTime = `${date} 00:00:00`;
+        const endTime = `${date} 23:59:59`;
+
+        const recordings = await searchNvrRecordings(camera, pwd, channel, startTime, endTime);
+
+        logVideoAccess(req.user.id, req.user.name, id, camera.name, 'recordings_search', req.ip, date);
+
+        res.json({ cameraId: id, date, recordings });
+      } catch (error) {
+        logger.error('GET recordings:', error);
+        res.status(500).json({ error: 'Erreur recherche enregistrements', detail: error.message });
+      }
+    })();
+  });
+
+  // POST /api/video/cameras/:id/playback — Démarrer la relecture (WHEP)
+  app.post('/api/video/cameras/:id/playback', authenticateToken, (req, res) => {
+    (async () => {
+      try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+        if (!checkStreamRate(req.user.id)) return res.status(429).json({ error: 'Trop de requêtes vidéo' });
+
+        const { sdp: clientOffer, startTime, endTime } = req.body;
+        if (!clientOffer) return res.status(400).json({ error: 'SDP offer requis' });
+        if (!startTime || !endTime) return res.status(400).json({ error: 'startTime et endTime requis' });
+
+        // Validation format date
+        if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(startTime) ||
+            !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(endTime)) {
+          return res.status(400).json({ error: 'Format date invalide (YYYY-MM-DD HH:MM:SS)' });
+        }
+
+        const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
+        if (!camera) return res.status(404).json({ error: 'Caméra introuvable ou désactivée' });
+
+        const channel = extractDahuaChannel(camera);
+        if (!channel) return res.status(400).json({ error: 'Cette caméra ne supporte pas la relecture' });
+
+        const pwd = decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
+        const rtspUrl = buildPlaybackRtspUrl(camera, pwd, channel, startTime, endTime);
+
+        // Enregistrer dans MediaMTX (DELETE ancien + POST nouveau)
+        const registered = await registerPlaybackInProxy(id, rtspUrl);
+        if (!registered) return res.status(502).json({ error: 'Proxy vidéo indisponible' });
+
+        // Le WHEP déclenche sourceOnDemand → MediaMTX connecte le RTSP du NVR
+        // MediaMTX bloque la requête WHEP jusqu'à sourceOnDemandStartTimeout (15s)
+        // Donc pas besoin de délai artificiel — on essaie directement
+        let result = await whepPlaybackExchange(id, clientOffer);
+        if (!result) {
+          // Retry une fois après 2s (le NVR peut être lent à démarrer)
+          logger.info(`🎬 Playback WHEP 1ère tentative échouée pour cam ${id}, retry dans 2s...`);
+          await new Promise(r => setTimeout(r, 2000));
+          result = await whepPlaybackExchange(id, clientOffer);
+        }
+        if (!result) return res.status(502).json({ error: 'Flux de relecture indisponible — le NVR met trop de temps à répondre' });
+
+        // Session
+        const token = generateSessionToken();
+        storeSession(token, { cameraId: id, userId: req.user.id, location: result.location, playback: true });
+
+        db.prepare(`INSERT INTO video_sessions (camera_id, user_id, session_token, status)
+          VALUES (?, ?, ?, 'active')`).run(id, req.user.id, token);
+
+        logVideoAccess(req.user.id, req.user.name, id, camera.name, 'playback', req.ip, `${startTime} → ${endTime}`);
+
+        res.json({ answerSdp: result.answerSdp, sessionToken: token });
+      } catch (error) {
+        logger.error('POST playback:', error);
+        res.status(500).json({ error: 'Erreur relecture' });
       }
     })();
   });

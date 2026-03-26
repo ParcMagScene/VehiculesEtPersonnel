@@ -55,9 +55,14 @@ function MobileTasks({ currentUser, onBack }) {
     setLoading(true);
     try {
       const params = { date: today };
-      if (personId && !showAllTasks) params.person_id = personId;
       const data = await api.getTasks(params);
-      setTasks(Array.isArray(data) ? data : []);
+      const all = Array.isArray(data) ? data : [];
+      // En mode "mes tâches" : assignées à moi + non assignées
+      if (personId && !showAllTasks) {
+        setTasks(all.filter(t => !t.person_id || t.person_id === personId));
+      } else {
+        setTasks(all);
+      }
     } catch (e) {
       console.error('Erreur chargement tâches:', e);
     }

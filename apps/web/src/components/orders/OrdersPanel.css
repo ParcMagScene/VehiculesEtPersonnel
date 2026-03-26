@@ -122,10 +122,9 @@
 /* ═══ Selected row highlight ═══ */
 .orders-table tr.clickable-row.selected {
   background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
-  border-left: 3px solid var(--theme-primary);
 }
 .orders-table tr.clickable-row.selected td:first-child {
-  padding-left: calc(1rem - 3px);
+  box-shadow: inset 3px 0 0 var(--theme-primary);
 }
 
 /* ═══ Detail Dialog (double-clic overlay) ═══ */

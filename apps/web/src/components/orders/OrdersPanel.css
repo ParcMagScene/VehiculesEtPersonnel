@@ -248,8 +248,8 @@
   border: 1px solid var(--theme-border);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
-  flex: 1;
-  min-width: 200px;
+  max-width: 280px;
+  min-width: 160px;
 }
 .orders-search svg { color: var(--theme-text-secondary); flex-shrink: 0; }
 .orders-search input {
@@ -869,7 +869,7 @@
 @media (max-width: 768px) {
   .orders-header-stats { display: none; }
   .orders-toolbar { flex-direction: column; }
-  .orders-search { min-width: 100%; }
+  .orders-search { min-width: 100%; max-width: none; }
   .orders-add-btn { width: 100%; justify-content: center; }
   .order-detail-grid { grid-template-columns: 1fr; }
   .order-detail-header { flex-direction: column; align-items: flex-start; }

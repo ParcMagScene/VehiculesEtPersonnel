@@ -57,7 +57,7 @@ function MobileTasks({ currentUser, onBack }) {
       const params = { date: today };
       if (personId && !showAllTasks) params.person_id = personId;
       const data = await api.getTasks(params);
-      setTasks(Array.isArray(data) ? data.filter(t => t.visible !== 0) : []);
+      setTasks(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Erreur chargement tâches:', e);
     }

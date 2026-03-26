@@ -121,7 +121,7 @@
 
 /* ═══ Selected row highlight ═══ */
 .orders-table tr.clickable-row.selected {
-  background: var(--theme-primary)10;
+  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
   border-left: 3px solid var(--theme-primary);
 }
 .orders-table tr.clickable-row.selected td:first-child {

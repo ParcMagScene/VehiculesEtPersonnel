@@ -1862,7 +1862,7 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
 
 // ═══ Liste fournisseurs enrichie (tableau) ═══
 const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick, onDoubleClick, selectedId }) => {
-  if (!suppliers.length) return <div className="orders-empty"><Building2 size={24} /><p>Aucun fournisseur avec commandes en cours</p></div>;
+  if (!suppliers.length) return <div className="orders-empty"><Building2 size={24} /><p>Aucun fournisseur</p></div>;
   return (
     <div className="orders-table-wrapper">
       <table className="orders-table suppliers-table">
@@ -1884,7 +1884,7 @@ const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick
               onClick={() => onClick?.(supplier)}
               onDoubleClick={() => onDoubleClick?.(supplier)}
               className={`clickable-row${selectedId === supplier.id ? ' selected' : ''}`}>
-              <td className="ref-cell"><Building2 size={14} /> {supplier.name}</td>
+              <td className="ref-cell"><Building2 size={14} /> {supplier.name} {supplier.catalog_count > 0 && <BookOpen size={12} title={`${supplier.catalog_count} catalogue(s) importé(s)`} className="catalog-indicator" />}</td>
               <td>{supplier.contact_name || '—'}</td>
               <td>{supplier.email || '—'}</td>
               <td>{supplier.phone ? formatPhoneDisplay(supplier.phone) : '—'}</td>

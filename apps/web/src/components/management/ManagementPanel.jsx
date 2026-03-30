@@ -169,7 +169,6 @@ const ManagementPanel = ({
   ] : [
     { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
     { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
-    { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
     ...(currentUser?.isAdmin ? [
       { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
     ] : []),

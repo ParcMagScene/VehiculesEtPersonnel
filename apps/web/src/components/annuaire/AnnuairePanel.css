@@ -873,3 +873,50 @@
   .annuaire-tab span { display: none; }
   .annuaire-tab { padding: 8px 12px; }
 }
+
+/* ═══ Locations Tab ═══ */
+.location-group-row td {
+  background: var(--bg-secondary, var(--theme-bg-page));
+  padding: 6px 12px !important;
+  font-size: 0.78rem;
+  color: var(--text-secondary, var(--theme-text-secondary));
+  border-bottom: 1px solid var(--border-color, var(--theme-border));
+}
+.company-location-row {
+  background: color-mix(in srgb, var(--theme-primary) 5%, transparent);
+}
+.company-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  background: var(--theme-gradient);
+  color: var(--theme-text-inverse);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+.location-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  color: #10b981;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.coords-link {
+  color: var(--theme-primary);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-family: 'SF Mono', Monaco, monospace;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.coords-link:hover {
+  text-decoration: underline;
+}
+.stat-badge.location {
+  color: #10b981;
+}

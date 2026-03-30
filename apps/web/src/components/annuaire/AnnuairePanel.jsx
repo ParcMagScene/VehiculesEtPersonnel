@@ -10,6 +10,7 @@ import ConfirmDialog from '../ConfirmDialog';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import './AnnuairePanel.css';
 import { useToast } from '../../hooks/useToast';
+import LocationsTab from './LocationsTab';
 
 // ═══ Constantes ═══
 const ENTITY_TABS = [
@@ -17,6 +18,7 @@ const ENTITY_TABS = [
   { id: 'suppliers', label: 'Fournisseurs', icon: Building, color: '#10b981' },
   { id: 'prestataires', label: 'Prestataires', icon: UserCheck, color: '#8b5cf6' },
   { id: 'contacts', label: 'Contacts', icon: Contact, color: '#f59e0b' },
+  { id: 'lieux', label: 'Lieux', icon: MapPin, color: '#10b981' },
   { id: 'referentiels', label: 'Référentiels', icon: BookOpen, color: '#64748b' },
 ];
 
@@ -307,7 +309,7 @@ function AnnuairePanel({ currentUser }) {
       </div>
 
       {/* Toolbar */}
-      {activeTab !== 'referentiels' && (
+      {activeTab !== 'referentiels' && activeTab !== 'lieux' && (
         <div className="annuaire-toolbar">
           <div className="annuaire-search">
             <Search size={16} />
@@ -349,7 +351,7 @@ function AnnuairePanel({ currentUser }) {
       )}
 
       {/* Filters bar */}
-      {showFilters && activeTab !== 'referentiels' && activeTab !== 'contacts' && (
+      {showFilters && activeTab !== 'referentiels' && activeTab !== 'contacts' && activeTab !== 'lieux' && (
         <div className="annuaire-filters">
           {activeTab === 'clients' && (
             <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}>
@@ -371,7 +373,7 @@ function AnnuairePanel({ currentUser }) {
       )}
 
       {/* Stats */}
-      {stats && (
+      {stats && activeTab !== 'lieux' && (
         <div className="annuaire-header-stats">
           <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
           <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
@@ -380,8 +382,11 @@ function AnnuairePanel({ currentUser }) {
         </div>
       )}
 
+      {/* Lieux Tab — composant autonome */}
+      {activeTab === 'lieux' && <LocationsTab currentUser={currentUser} />}
+
       {/* Content */}
-      <div className="annuaire-content">
+      {activeTab !== 'lieux' && <div className="annuaire-content">
         {loading ? (
           <div className="annuaire-loading">
             <div className="loading-spinner" />
@@ -435,7 +440,7 @@ function AnnuairePanel({ currentUser }) {
             )}
           </>
         )}
-      </div>
+      </div>}
 
       {/* Form Modal */}
       {showForm && (

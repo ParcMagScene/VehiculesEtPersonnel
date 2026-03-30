@@ -321,14 +321,15 @@
   font-size: 0.85rem;
   color: var(--theme-text-primary);
   border-bottom: 1px solid var(--theme-border-light);
+  vertical-align: middle;
 }
 .orders-table tr.clickable-row { cursor: pointer; transition: background 0.15s; }
 .orders-table tr.clickable-row:hover { background: var(--theme-bg-page); }
-.orders-table .ref-cell { font-weight: 600; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
-.orders-table .ref-cell svg { color: var(--theme-primary); }
+.orders-table .ref-cell { font-weight: 600; white-space: nowrap; }
+.orders-table .ref-cell svg { color: var(--theme-primary); vertical-align: -2px; margin-right: 0.35rem; }
 .orders-table .center { text-align: center; }
 .orders-table .amount { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-.orders-table .actions-cell { display: flex; gap: 0.25rem; justify-content: flex-end; }
+.orders-table .actions-cell { white-space: nowrap; text-align: right; }
 
 /* ═══ Status Badge ═══ */
 .status-badge {

@@ -159,10 +159,10 @@ function LocationsTab({ currentUser }) {
                         </td>
                         <td>
                           {!loc.isCompanyLocation && (
-                            <div className="annuaire-actions">
-                              <button className="btn-icon" title="Modifier" onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></button>
+                            <div className="actions-cell">
+                              <button title="Modifier" onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></button>
                               {currentUser?.isAdmin && (
-                                <button className="btn-icon danger" title="Supprimer" onClick={() => handleDelete(loc)}><Trash2 size={14} /></button>
+                                <button className="btn-danger" title="Supprimer" onClick={() => handleDelete(loc)}><Trash2 size={14} /></button>
                               )}
                             </div>
                           )}

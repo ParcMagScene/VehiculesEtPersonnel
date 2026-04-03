@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--theme-overlay);
   backdrop-filter: blur(4px);
   isolation: isolate;
   display: flex;
@@ -21,11 +21,11 @@
   width: 100%;
   max-width: 1200px;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px var(--shadow-xl);
   animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -34,7 +34,7 @@
   width: 100%;
   margin-bottom: 0.5rem;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .autocomplete-container gmp-place-autocomplete {
@@ -63,7 +63,7 @@
   background: var(--theme-bg-card) !important;
   border: 1px solid var(--theme-border) !important;
   border-radius: 4px !important;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+  box-shadow: 0 4px 6px var(--shadow-sm) !important;
 }
 
 .location-dialog-header {
@@ -91,7 +91,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--success-tint-vivid);
   color: var(--theme-success-alt);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -177,7 +177,7 @@
   padding: 1.5rem;
   margin: 1.5rem;
   color: var(--theme-danger-text);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 4px 12px var(--theme-danger-bg);
 }
 
 .success-banner {
@@ -187,7 +187,7 @@
   padding: 1.5rem;
   margin: 1.5rem;
   color: var(--theme-success-text);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 4px 12px var(--success-tint-light);
   animation: slideInDown 0.3s ease-out;
 }
 
@@ -215,7 +215,7 @@
   padding: 1.5rem;
   margin: 0 2rem 1.5rem 2rem;
   color: var(--theme-danger-text);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 4px 12px var(--theme-danger-bg);
 }
 
 .error-banner strong {
@@ -240,7 +240,7 @@
 }
 
 .error-banner code {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--shadow-sm);
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
   font-family: 'Monaco', 'Courier New', monospace;
@@ -283,7 +283,7 @@
   border: 3px solid var(--theme-border-medium);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
   background: var(--theme-bg-secondary);
   position: relative;
   height: 300px;
@@ -297,7 +297,7 @@
   right: 0;
   height: 3px;
   background: var(--theme-gradient);
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .map-section {
@@ -311,7 +311,7 @@
   border: 3px solid var(--theme-border-medium);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
   background: var(--theme-bg-secondary);
   position: relative;
   height: 300px;
@@ -326,7 +326,7 @@
   right: 0;
   height: 3px;
   background: var(--theme-gradient);
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .map,
@@ -409,11 +409,11 @@
 
 .geolocate-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 6px 16px var(--success-tint-medium);
 }
 
 .coordinates-info {
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #e0f2fe 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
   border: 2px solid #0ea5e9;
   padding: 1.25rem;
   border-radius: 10px;
@@ -500,7 +500,7 @@
   position: sticky;
   bottom: 0;
   margin-top: auto;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .location-dialog-footer button,
@@ -669,7 +669,7 @@
 [data-theme="dark"] .pac-container {
   background: var(--theme-bg-card) !important;
   border-color: var(--theme-border) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+  box-shadow: 0 4px 12px var(--overlay-light) !important;
 }
 [data-theme="dark"] .pac-container .pac-item {
   background: var(--theme-bg-card);
@@ -684,7 +684,7 @@
 }
 
 [data-theme="dark"] .coordinates-badge.success {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--success-tint-accent);
   color: var(--theme-success-border);
 }
 [data-theme="dark"] .coordinates-badge strong {
@@ -696,21 +696,21 @@
 
 [data-theme="dark"] .error-banner,
 [data-theme="dark"] .location-error {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.1) 100%);
+  background: linear-gradient(135deg, var(--theme-danger-border) 0%, var(--theme-danger-bg) 100%);
   color: var(--theme-danger-border);
 }
 [data-theme="dark"] .error-banner strong {
-  color: #f87171;
+  color: var(--theme-danger);
 }
 [data-theme="dark"] .error-banner small {
   color: var(--theme-danger-border);
 }
 [data-theme="dark"] .error-banner code {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-subtle);
 }
 
 [data-theme="dark"] .success-banner {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%);
+  background: linear-gradient(135deg, var(--success-tint-accent) 0%, var(--success-tint-light) 100%);
   color: var(--theme-success-border);
 }
 [data-theme="dark"] .success-banner strong {

@@ -35,15 +35,15 @@
 }
 
 /* Couleurs icônes */
-.home-grid-item.parc { color: var(--theme-success-dark, #059669); }
-.home-grid-item.affaires { color: #3b82f6; }
-.home-grid-item.tasks { color: #f59e0b; }
+.home-grid-item.parc { color: var(--theme-success-dark, var(--theme-success-text)); }
+.home-grid-item.affaires { color: var(--theme-info); }
+.home-grid-item.tasks { color: var(--theme-warning); }
 .home-grid-item.personnel { color: var(--theme-info); }
-.home-grid-item.equipment { color: var(--theme-warning-dark, #d97706); }
-.home-grid-item.sav { color: #ef4444; }
-.home-grid-item.orders { color: #db2777; }
-.home-grid-item.leaves { color: var(--theme-success-alt, #10b981); }
-.home-grid-item.location { color: #6366f1; }
+.home-grid-item.equipment { color: var(--theme-warning-dark, var(--theme-warning-dark)); }
+.home-grid-item.sav { color: var(--theme-danger); }
+.home-grid-item.orders { color: var(--theme-danger); }
+.home-grid-item.leaves { color: var(--theme-success-alt, var(--theme-success-alt)); }
+.home-grid-item.location { color: var(--theme-indigo); }
 
 .module-card {
   background: var(--theme-bg-card);
@@ -53,7 +53,7 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 14px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-inner);
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
   position: relative;
@@ -81,11 +81,11 @@
 }
 
 .module-card.orders {
-  border-left-color: #ec4899;
+  border-left-color: var(--theme-danger);
 }
 
 .module-card.location {
-  border-left-color: #06b6d4;
+  border-left-color: var(--theme-cyan);
 }
 
 .module-card.leaves {
@@ -125,16 +125,16 @@
 
 .module-card.orders .module-icon {
   background: linear-gradient(135deg, #fce7f3, #fbcfe8);
-  color: #db2777;
+  color: var(--theme-danger);
 }
 
 .module-card.location .module-icon {
-  background: linear-gradient(135deg, #cffafe, #a5f3fc);
-  color: #0891b2;
+  background: linear-gradient(135deg, #cffafe, var(--theme-cyan-border));
+  color: var(--theme-cyan-dark);
 }
 
 .module-card.leaves .module-icon {
-  background: linear-gradient(135deg, var(--theme-success-bg-strong), #a7f3d0);
+  background: linear-gradient(135deg, var(--theme-success-bg-strong), var(--theme-success-border));
   color: var(--theme-success-dark);
 }
 

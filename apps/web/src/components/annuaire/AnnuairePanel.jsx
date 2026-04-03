@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  Search, Plus, Edit2, Trash2, Filter, X, Check, ChevronDown, ChevronRight,
+  Plus, Edit2, Trash2, Filter, X, Check, ChevronDown, ChevronRight,
   Building2, Users2, UserCheck, Phone, Mail, Globe, MapPin, FileText,
   Upload, Download, BarChart3, BookOpen, Contact, Eye, EyeOff,
   Building, Hash, Tag, ArrowLeft, Briefcase, Star, RefreshCw
 } from 'lucide-react';
 import api from '../../utils/api';
-import ConfirmDialog from '../ConfirmDialog';
+import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, SearchBar, Tooltip, SectionHeader } from '@/design-system';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import './AnnuairePanel.css';
 import { useToast } from '../../hooks/useToast';
@@ -311,41 +311,36 @@ function AnnuairePanel({ currentUser }) {
       {/* Toolbar */}
       {activeTab !== 'referentiels' && activeTab !== 'lieux' && (
         <div className="annuaire-toolbar">
-          <div className="annuaire-search">
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={e => { setSearchTerm(e.target.value); setPage(1); }}
-            />
-            {searchTerm && <X size={14} className="clear-search" onClick={() => setSearchTerm('')} />}
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={val => { setSearchTerm(val); setPage(1); }}
+            placeholder="Rechercher..."
+          />
 
           <div className="annuaire-toolbar-actions">
             {(activeTab === 'clients' || activeTab === 'suppliers') && (
-              <button className="btn-filter" onClick={() => setShowFilters(!showFilters)}>
+              <Button variant="ghost" size="sm" iconOnly onClick={() => setShowFilters(!showFilters)}>
                 <Filter size={15} />
-              </button>
+              </Button>
             )}
             {activeTab === 'clients' && currentUser?.isAdmin && (
-              <button className="btn-import" onClick={() => handleImportCSV('clients')} title="Import CSV Clients Locmat">
+              <Button variant="secondary" onClick={() => handleImportCSV('clients')} title="Import CSV Clients Locmat">
                 <Upload size={15} /> CSV
-              </button>
+              </Button>
             )}
             {activeTab === 'suppliers' && currentUser?.isAdmin && (
-              <button className="btn-import" onClick={() => handleImportCSV('suppliers')} title="Import CSV Fournisseurs Locmat">
+              <Button variant="secondary" onClick={() => handleImportCSV('suppliers')} title="Import CSV Fournisseurs Locmat">
                 <Upload size={15} /> CSV
-              </button>
+              </Button>
             )}
             {activeTab === 'contacts' && currentUser?.isAdmin && (
-              <button className="btn-import" onClick={() => setShowContactsImport(true)} title="Import CSV Contacts Locmat">
+              <Button variant="secondary" onClick={() => setShowContactsImport(true)} title="Import CSV Contacts Locmat">
                 <Upload size={15} /> CSV
-              </button>
+              </Button>
             )}
-            <button className="btn-add" onClick={() => { setEditingItem(null); setShowForm(true); }}>
+            <Button variant="primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
               <Plus size={15} /> Nouveau
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -354,21 +349,21 @@ function AnnuairePanel({ currentUser }) {
       {showFilters && activeTab !== 'referentiels' && activeTab !== 'contacts' && activeTab !== 'lieux' && (
         <div className="annuaire-filters">
           {activeTab === 'clients' && (
-            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}>
+            <Select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}>
               <option value="">Tous les types</option>
               {CLIENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+            </Select>
           )}
           {activeTab === 'suppliers' && (
-            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}>
+            <Select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}>
               <option value="">Tous les types</option>
               {SUPPLIER_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+            </Select>
           )}
-          <select value={sectorFilter} onChange={e => { setSectorFilter(e.target.value); setPage(1); }}>
+          <Select value={sectorFilter} onChange={e => { setSectorFilter(e.target.value); setPage(1); }}>
             <option value="">Tous les secteurs</option>
             {(lookups.activity_sectors || []).map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
-          </select>
+          </Select>
         </div>
       )}
 
@@ -389,7 +384,7 @@ function AnnuairePanel({ currentUser }) {
       {activeTab !== 'lieux' && <div className="annuaire-content">
         {loading ? (
           <div className="annuaire-loading">
-            <div className="loading-spinner" />
+            <Spinner size="lg" />
             <p>Chargement...</p>
           </div>
         ) : selectedItem ? (
@@ -464,7 +459,17 @@ function AnnuairePanel({ currentUser }) {
         />
       )}
 
-      {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
+        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
+      >
+        {confirmDialog?.message}
+      </Dialog>
 
       {showContactsImport && (
         <ContactsCSVImportDialog
@@ -491,7 +496,7 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
   if (entityType === 'contacts') {
     return (
       <div className="annuaire-table-wrapper">
-        <table className="annuaire-table">
+        <Table className="annuaire-table">
           <thead>
             <tr>
               <th>Nom</th>
@@ -518,13 +523,13 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
                 <td>{c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : '—'}</td>
                 <td>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : '—'}</td>
                 <td className="actions-cell">
-                  <button onClick={() => onEdit(c)} title="Modifier"><Edit2 size={14} /></button>
-                  {currentUser?.isAdmin && <button onClick={() => onDelete(c)} title="Supprimer" className="btn-danger"><Trash2 size={14} /></button>}
+                  <Tooltip content="Modifier"><button onClick={() => onEdit(c)}><Edit2 size={14} /></button></Tooltip>
+                  {currentUser?.isAdmin && <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(c)}><Trash2 size={14} /></Button></Tooltip>}
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </Table>
       </div>
     );
   }
@@ -532,7 +537,7 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
   // Clients / Suppliers / Prestataires
   return (
     <div className="annuaire-table-wrapper">
-      <table className="annuaire-table">
+      <Table className="annuaire-table">
         <thead>
           <tr>
             <th>Code</th>
@@ -565,14 +570,14 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
               )}
               <td className="count-cell">{item.contact_count || 0}</td>
               <td className="actions-cell">
-                <button onClick={() => onSelect(item)} title="Voir"><Eye size={14} /></button>
-                <button onClick={() => onEdit(item)} title="Modifier"><Edit2 size={14} /></button>
-                {currentUser?.isAdmin && <button onClick={() => onDelete(item)} title="Supprimer" className="btn-danger"><Trash2 size={14} /></button>}
+                <Tooltip content="Voir"><button onClick={() => onSelect(item)}><Eye size={14} /></button></Tooltip>
+                <Tooltip content="Modifier"><button onClick={() => onEdit(item)}><Edit2 size={14} /></button></Tooltip>
+                {currentUser?.isAdmin && <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(item)}><Trash2 size={14} /></Button></Tooltip>}
               </td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 }
@@ -607,7 +612,7 @@ function DetailView({ item, entityType, lookups, getLookupName, currentUser, onB
     return () => { cancelled = true; };
   }, [item.id, entityType]);
 
-  if (loading || !detail) return <div className="annuaire-loading"><div className="loading-spinner" /></div>;
+  if (loading || !detail) return <div className="annuaire-loading"><Spinner size="lg" /></div>;
 
   const serviceTypes = (() => {
     try {
@@ -620,13 +625,13 @@ function DetailView({ item, entityType, lookups, getLookupName, currentUser, onB
   return (
     <div className="annuaire-detail">
       <div className="detail-header">
-        <button className="btn-back" onClick={onBack}><ArrowLeft size={16} /> Retour</button>
+        <Button variant="ghost" onClick={onBack}><ArrowLeft size={16} /> Retour</Button>
         <div className="detail-title">
           <h3>{detail.name}</h3>
           {detail.code_libre && <span className="code-badge">{detail.code_libre}</span>}
           {detail.is_active === 0 && <span className="inactive-badge">Inactif</span>}
         </div>
-        <button className="btn-edit" onClick={() => onEdit(detail)}><Edit2 size={14} /> Modifier</button>
+        <Button variant="secondary" onClick={() => onEdit(detail)}><Edit2 size={14} /> Modifier</Button>
       </div>
 
       <div className="detail-grid">
@@ -678,12 +683,15 @@ function DetailView({ item, entityType, lookups, getLookupName, currentUser, onB
 
         {/* Contacts */}
         <div className="detail-section full-width">
-          <div className="section-header">
-            <h4>Contacts ({detail.contacts?.length || 0})</h4>
-            <button className="btn-add-small" onClick={() => onAddContact(parentType, detail.id)}>
-              <Plus size={13} /> Ajouter
-            </button>
-          </div>
+          <SectionHeader
+            as="h4"
+            title={`Contacts (${detail.contacts?.length || 0})`}
+            actions={
+              <Button variant="primary" size="sm" onClick={() => onAddContact(parentType, detail.id)}>
+                <Plus size={13} /> Ajouter
+              </Button>
+            }
+          />
           {detail.contacts?.length > 0 ? (
             <div className="contacts-grid">
               {detail.contacts.map(c => (
@@ -705,7 +713,7 @@ function DetailView({ item, entityType, lookups, getLookupName, currentUser, onB
         {entityType === 'suppliers' && detail.orders?.length > 0 && (
           <div className="detail-section full-width">
             <h4>Dernières commandes</h4>
-            <table className="mini-table">
+            <Table className="mini-table">
               <thead><tr><th>Réf.</th><th>Date</th><th>Statut</th><th>Total TTC</th></tr></thead>
               <tbody>
                 {detail.orders.map(o => (
@@ -717,7 +725,7 @@ function DetailView({ item, entityType, lookups, getLookupName, currentUser, onB
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </div>
         )}
       </div>
@@ -801,183 +809,163 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
   const types = entityType === 'clients' ? CLIENT_TYPES : entityType === 'suppliers' ? SUPPLIER_TYPES : [];
 
   return (
-    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="annuaire-form-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>{isEdit ? 'Modifier' : 'Nouveau'} {
-            isContact ? 'contact' :
-            entityType === 'clients' ? 'client' :
-            entityType === 'suppliers' ? 'fournisseur' : 'prestataire'
-          }</h3>
-          <button className="btn-close" onClick={onClose}><X size={18} /></button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="annuaire-form">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={`${isEdit ? 'Modifier' : 'Nouveau'} ${
+        isContact ? 'contact' :
+        entityType === 'clients' ? 'client' :
+        entityType === 'suppliers' ? 'fournisseur' : 'prestataire'
+      }`}
+      size="lg"
+      className="annuaire-form-modal"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="entity-form"><Check size={15} /> {isEdit ? 'Modifier' : 'Créer'}</Button>
+        </>
+      }
+    >
+        <form id="entity-form" onSubmit={handleSubmit} className="annuaire-form">
           {isContact ? (
             // ─── Contact form ───
             <>
               <div className="form-row">
-                <div className="form-group">
-                  <label>Prénom</label>
-                  <input value={form.first_name || ''} onChange={e => handleChange('first_name', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Nom *</label>
-                  <input value={form.last_name || ''} onChange={e => handleChange('last_name', e.target.value)} required />
-                </div>
+                <FormField className="form-group" label="Prénom">
+                  <Input value={form.first_name || ''} onChange={e => handleChange('first_name', e.target.value)} />
+                </FormField>
+                <FormField className="form-group" label="Nom" required>
+                  <Input value={form.last_name || ''} onChange={e => handleChange('last_name', e.target.value)} required />
+                </FormField>
               </div>
               <div className="form-row">
-                <div className="form-group">
-                  <label>Fonction</label>
-                  <input value={form.job_title || ''} onChange={e => handleChange('job_title', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Catégorie</label>
-                  <select value={form.category || ''} onChange={e => handleChange('category', e.target.value)}>
+                <FormField className="form-group" label="Fonction">
+                  <Input value={form.job_title || ''} onChange={e => handleChange('job_title', e.target.value)} />
+                </FormField>
+                <FormField className="form-group" label="Catégorie">
+                  <Select value={form.category || ''} onChange={e => handleChange('category', e.target.value)}>
                     <option value="">— Choisir —</option>
                     {(lookups.contact_categories || []).map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
               </div>
               <div className="form-row">
-                <div className="form-group">
-                  <label>Téléphone</label>
-                  <input value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Tél. 2</label>
-                  <input value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
-                </div>
+                <FormField className="form-group" label="Téléphone">
+                  <Input value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
+                </FormField>
+                <FormField className="form-group" label="Tél. 2">
+                  <Input value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
+                </FormField>
               </div>
-              <div className="form-group">
-                <label>Email</label>
-                <input type="email" value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
-              </div>
+              <FormField className="form-group" label="Email">
+                <Input type="email" value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
+              </FormField>
               <div className="form-group">
                 <label className="checkbox-label">
-                  <input type="checkbox" checked={form.is_primary || false} onChange={e => handleChange('is_primary', e.target.checked)} />
+                  <Checkbox checked={form.is_primary || false} onChange={e => handleChange('is_primary', e.target.checked)} />
                   Contact principal
                 </label>
               </div>
-              <div className="form-group">
-                <label>Notes</label>
-                <textarea value={form.notes || ''} onChange={e => handleChange('notes', e.target.value)} rows={2} />
-              </div>
+              <FormField className="form-group" label="Notes">
+                <Textarea value={form.notes || ''} onChange={e => handleChange('notes', e.target.value)} rows={2} />
+              </FormField>
             </>
           ) : (
             // ─── Entity form (client/supplier/prestataire) ───
             <>
               <div className="form-row">
-                <div className="form-group flex-2">
-                  <label>Nom *</label>
-                  <input value={form.name} onChange={e => handleChange('name', e.target.value)} required />
-                </div>
-                <div className="form-group">
-                  <label>Code libre</label>
-                  <input value={form.code_libre || ''} onChange={e => handleChange('code_libre', e.target.value)} />
-                </div>
+                <FormField className="form-group flex-2" label="Nom" required>
+                  <Input value={form.name} onChange={e => handleChange('name', e.target.value)} required />
+                </FormField>
+                <FormField className="form-group" label="Code libre">
+                  <Input value={form.code_libre || ''} onChange={e => handleChange('code_libre', e.target.value)} />
+                </FormField>
               </div>
 
               {types.length > 0 && (
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Type</label>
-                    <select value={form.type || ''} onChange={e => handleChange('type', e.target.value)}>
+                  <FormField className="form-group" label="Type">
+                    <Select value={form.type || ''} onChange={e => handleChange('type', e.target.value)}>
                       <option value="">— Choisir —</option>
                       {types.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Forme juridique</label>
-                    <select value={form.legal_structure || ''} onChange={e => handleChange('legal_structure', e.target.value)}>
+                    </Select>
+                  </FormField>
+                  <FormField className="form-group" label="Forme juridique">
+                    <Select value={form.legal_structure || ''} onChange={e => handleChange('legal_structure', e.target.value)}>
                       <option value="">— Choisir —</option>
                       {(lookups.legal_structures || []).map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 </div>
               )}
 
               {entityType === 'prestataires' && (
-                <div className="form-group">
-                  <label>Forme juridique</label>
-                  <select value={form.legal_structure || ''} onChange={e => handleChange('legal_structure', e.target.value)}>
+                <FormField className="form-group" label="Forme juridique">
+                  <Select value={form.legal_structure || ''} onChange={e => handleChange('legal_structure', e.target.value)}>
                     <option value="">— Choisir —</option>
                     {(lookups.legal_structures || []).map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
               )}
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>SIRET</label>
-                  <input value={form.siret || ''} onChange={e => handleChange('siret', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>TVA Intra.</label>
-                  <input value={form.tva_intra || ''} onChange={e => handleChange('tva_intra', e.target.value)} />
-                </div>
+                <FormField className="form-group" label="SIRET">
+                  <Input value={form.siret || ''} onChange={e => handleChange('siret', e.target.value)} />
+                </FormField>
+                <FormField className="form-group" label="TVA Intra.">
+                  <Input value={form.tva_intra || ''} onChange={e => handleChange('tva_intra', e.target.value)} />
+                </FormField>
               </div>
 
-              <div className="form-group">
-                <label>Adresse</label>
-                <input value={form.address || ''} onChange={e => handleChange('address', e.target.value)} />
+              <FormField className="form-group" label="Adresse">
+                <Input value={form.address || ''} onChange={e => handleChange('address', e.target.value)} />
+              </FormField>
+
+              <div className="form-row">
+                <FormField className="form-group" label="Code postal">
+                  <Input value={form.postal_code || ''} onChange={e => handleChange('postal_code', e.target.value)} />
+                </FormField>
+                <FormField className="form-group flex-2" label="Ville">
+                  <Input value={form.city || ''} onChange={e => handleChange('city', e.target.value)} />
+                </FormField>
               </div>
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Code postal</label>
-                  <input value={form.postal_code || ''} onChange={e => handleChange('postal_code', e.target.value)} />
-                </div>
-                <div className="form-group flex-2">
-                  <label>Ville</label>
-                  <input value={form.city || ''} onChange={e => handleChange('city', e.target.value)} />
-                </div>
+                <FormField className="form-group" label="Téléphone">
+                  <Input value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
+                </FormField>
+                <FormField className="form-group" label="Tél. 2">
+                  <Input value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
+                </FormField>
               </div>
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Téléphone</label>
-                  <input value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Tél. 2</label>
-                  <input value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Email</label>
-                  <input type="email" value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Site web</label>
-                  <input value={form.website || ''} onChange={e => handleChange('website', e.target.value)} />
-                </div>
+                <FormField className="form-group" label="Email">
+                  <Input type="email" value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
+                </FormField>
+                <FormField className="form-group" label="Site web">
+                  <Input value={form.website || ''} onChange={e => handleChange('website', e.target.value)} />
+                </FormField>
               </div>
 
               {entityType === 'suppliers' && (
-                <div className="form-group">
-                  <label>Nom du contact</label>
-                  <input value={form.contact_name || ''} onChange={e => handleChange('contact_name', e.target.value)} />
-                </div>
+                <FormField className="form-group" label="Nom du contact">
+                  <Input value={form.contact_name || ''} onChange={e => handleChange('contact_name', e.target.value)} />
+                </FormField>
               )}
 
-              <div className="form-group">
-                <label>Secteur d'activité</label>
-                <select value={form.activity_sector || ''} onChange={e => handleChange('activity_sector', e.target.value)}>
+              <FormField className="form-group" label="Secteur d'activité">
+                <Select value={form.activity_sector || ''} onChange={e => handleChange('activity_sector', e.target.value)}>
                   <option value="">— Choisir —</option>
                   {(lookups.activity_sectors || []).map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
-                </select>
-              </div>
+                </Select>
+              </FormField>
 
-              <div className="form-group">
-                <label>Types de prestation</label>
+              <FormField className="form-group" label="Types de prestation">
                 <div className="service-types-grid">
                   {(lookups.service_types || []).map(st => (
                     <label key={st.code} className={`service-type-chip ${(form.service_types || []).includes(st.code) ? 'selected' : ''}`}>
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={(form.service_types || []).includes(st.code)}
                         onChange={() => toggleServiceType(st.code)}
                       />
@@ -985,22 +973,15 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
                     </label>
                   ))}
                 </div>
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label>Notes</label>
-                <textarea value={form.notes || ''} onChange={e => handleChange('notes', e.target.value)} rows={3} />
-              </div>
+              <FormField className="form-group" label="Notes">
+                <Textarea value={form.notes || ''} onChange={e => handleChange('notes', e.target.value)} rows={3} />
+              </FormField>
             </>
           )}
-
-          <div className="form-actions">
-            <button type="button" className="btn-cancel" onClick={onClose}>Annuler</button>
-            <button type="submit" className="btn-save"><Check size={15} /> {isEdit ? 'Modifier' : 'Créer'}</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 
@@ -1020,12 +1001,12 @@ function ReferentielsView({ refTab, setRefTab, refData, loading, currentUser, on
 
       <div className="ref-toolbar">
         {currentUser?.isAdmin && (
-          <button className="btn-add" onClick={onAdd}><Plus size={15} /> Ajouter</button>
+          <Button variant="primary" onClick={onAdd}><Plus size={15} /> Ajouter</Button>
         )}
       </div>
 
       <div className="annuaire-table-wrapper">
-        <table className="annuaire-table">
+        <Table className="annuaire-table">
           <thead>
             <tr>
               <th>Code</th>
@@ -1044,8 +1025,8 @@ function ReferentielsView({ refTab, setRefTab, refData, loading, currentUser, on
                 <td>{item.is_active ? <Check size={14} className="text-success" /> : <X size={14} className="text-muted" />}</td>
                 {currentUser?.isAdmin && (
                   <td className="actions-cell">
-                    <button onClick={() => onEdit(item)} title="Modifier"><Edit2 size={14} /></button>
-                    <button onClick={() => onDelete(item)} title="Supprimer" className="btn-danger"><Trash2 size={14} /></button>
+                    <Tooltip content="Modifier"><button onClick={() => onEdit(item)}><Edit2 size={14} /></button></Tooltip>
+                    <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(item)}><Trash2 size={14} /></Button></Tooltip>
                   </td>
                 )}
               </tr>
@@ -1054,7 +1035,7 @@ function ReferentielsView({ refTab, setRefTab, refData, loading, currentUser, on
               <tr><td colSpan={5} className="empty-cell">Aucune donnée</td></tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
     </div>
   );
@@ -1077,42 +1058,41 @@ function RefFormModal({ item, onSave, onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="annuaire-form-modal small" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>{item ? 'Modifier' : 'Ajouter'}</h3>
-          <button className="btn-close" onClick={onClose}><X size={18} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="annuaire-form">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={item ? 'Modifier' : 'Ajouter'}
+      size="sm"
+      className="annuaire-form-modal small"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="ref-form"><Check size={15} /> Enregistrer</Button>
+        </>
+      }
+    >
+        <form id="ref-form" onSubmit={handleSubmit} className="annuaire-form">
           <div className="form-row">
-            <div className="form-group">
-              <label>Code *</label>
-              <input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} required />
-            </div>
-            <div className="form-group flex-2">
-              <label>Libellé *</label>
-              <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
-            </div>
+            <FormField className="form-group" label="Code" required>
+              <Input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} required />
+            </FormField>
+            <FormField className="form-group flex-2" label="Libellé" required>
+              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+            </FormField>
           </div>
           <div className="form-row">
-            <div className="form-group">
-              <label>Ordre</label>
-              <input type="number" value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
-            </div>
+            <FormField className="form-group" label="Ordre">
+              <Input type="number" value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
+            </FormField>
             <div className="form-group">
               <label className="checkbox-label">
-                <input type="checkbox" checked={!!form.is_active} onChange={e => setForm(p => ({ ...p, is_active: e.target.checked ? 1 : 0 }))} />
+                <Checkbox checked={!!form.is_active} onChange={e => setForm(p => ({ ...p, is_active: e.target.checked ? 1 : 0 }))} />
                 Actif
               </label>
             </div>
           </div>
-          <div className="form-actions">
-            <button type="button" className="btn-cancel" onClick={onClose}>Annuler</button>
-            <button type="submit" className="btn-save"><Check size={15} /> Enregistrer</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 

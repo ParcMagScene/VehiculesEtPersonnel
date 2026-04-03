@@ -79,7 +79,7 @@
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
   border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 25px var(--shadow-xl);
   margin-top: 4px;
   min-width: 240px;
   max-height: 300px;
@@ -167,14 +167,14 @@
 }
 
 [data-theme="dark"] .phone-local-input:focus {
-  border-color: var(--primary, #818cf8);
+  border-color: var(--primary, var(--theme-indigo));
   box-shadow: var(--focus-ring);
 }
 
 [data-theme="dark"] .phone-dropdown {
   background: var(--theme-bg-card);
   border-color: var(--theme-border);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 25px var(--overlay-light);
 }
 
 [data-theme="dark"] .phone-dropdown-search {
@@ -192,7 +192,7 @@
 }
 
 [data-theme="dark"] .phone-dropdown-item.active {
-  background: #312e81;
+  background: var(--theme-primary-dark);
 }
 
 [data-theme="dark"] .phone-dropdown-label {

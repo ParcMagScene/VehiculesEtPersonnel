@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, User } from 'lucide-react';
 import api, { getApiUrl } from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
-import UserAvatar from '../UserAvatar';
 import './LoginForm.css';
+import { Button, FormField, Input, Avatar, InlineAlert } from '@/design-system';
 
 const LoginForm = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -203,8 +203,7 @@ const LoginForm = ({ onLogin }) => {
 
         <form onSubmit={handleSubmit} className="login-form">
           {users.length > 0 && (
-            <div className="form-group">
-              <label>Sélectionner un utilisateur</label>
+            <FormField className="form-group" label="Sélectionner un utilisateur">
               <div 
                 className="user-selector"
                 onClick={() => setShowUserList(!showUserList)}
@@ -222,7 +221,7 @@ const LoginForm = ({ onLogin }) => {
               >
                 {selectedUser ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <UserAvatar name={selectedUser.name} avatar={selectedUser.avatar} size={40} gradient={false} />
+                    <Avatar name={selectedUser.name} avatar={selectedUser.avatar} size="md" gradient={false} />
                     <div>
                       <div style={{ fontWeight: '500', color: 'var(--theme-text-heading)' }}>{selectedUser.name}</div>
                       <div style={{ fontSize: '13px', color: 'var(--theme-text-gray)' }}>{selectedUser.email}</div>
@@ -270,7 +269,7 @@ const LoginForm = ({ onLogin }) => {
                         onMouseEnter={(e) => e.target.style.background = 'var(--theme-bg-secondary)'}
                         onMouseLeave={(e) => e.target.style.background = 'white'}
                       >
-                        <UserAvatar name={user.name} avatar={user.avatar} size={40} gradient={false} />
+                        <Avatar name={user.name} avatar={user.avatar} size="md" gradient={false} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: '500', color: 'var(--theme-text-heading)' }}>{user.name}</div>
                           <div style={{ fontSize: '13px', color: 'var(--theme-text-gray)' }}>{user.email}</div>
@@ -280,25 +279,23 @@ const LoginForm = ({ onLogin }) => {
                   </div>
                 )}
               </div>
-            </div>
+            </FormField>
           )}
 
           {!users.length && (
-            <div className="form-group">
-              <label>Email</label>
-              <input
+            <FormField className="form-group" label="Email">
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="email@exemple.com"
               />
-            </div>
+            </FormField>
           )}
 
-          <div className="form-group">
-            <label>Mot de passe</label>
-            <input
+          <FormField className="form-group" label="Mot de passe">
+            <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -306,9 +303,9 @@ const LoginForm = ({ onLogin }) => {
               placeholder="••••••••"
               minLength={6}
             />
-          </div>
+          </FormField>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           <button type="submit" className="login-button" disabled={loading}>
             {loading ? 'Chargement...' : 'Se connecter'}
@@ -365,15 +362,12 @@ const LoginForm = ({ onLogin }) => {
                 </p>
                 
                 {error && (
-                  <div className="error-message" style={{ marginBottom: '16px' }}>
-                    {error}
-                  </div>
+                  <InlineAlert style={{ marginBottom: '16px' }}>{error}</InlineAlert>
                 )}
                 
                 <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
-                    className="btn-secondary"
+                  <Button
+                    variant="ghost"
                     onClick={() => {
                       setShowSessionConflict(false);
                       setConflictUser(null);
@@ -381,16 +375,14 @@ const LoginForm = ({ onLogin }) => {
                     disabled={loading}
                   >
                     Annuler
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-primary"
+                  </Button>
+                  <Button
+                    variant="danger"
                     onClick={handleForceLogin}
                     disabled={loading}
-                    style={{ background: '#ef4444' }}
                   >
                     {loading ? 'Connexion...' : 'Fermer les autres sessions et se connecter'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -421,11 +413,8 @@ const LoginForm = ({ onLogin }) => {
                 </p>
                 
                 <form onSubmit={handleSelfResetPassword}>
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
-                    <label htmlFor="reset-email" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                      Adresse email
-                    </label>
-                    <input
+                  <FormField className="form-group" label="Adresse email" htmlFor="reset-email" style={{ marginBottom: '12px' }}>
+                    <Input
                       id="reset-email"
                       type="email"
                       value={resetFormEmail}
@@ -435,13 +424,10 @@ const LoginForm = ({ onLogin }) => {
                       autoFocus
                       style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                     />
-                  </div>
+                  </FormField>
 
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
-                    <label htmlFor="reset-name" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                      Nom complet
-                    </label>
-                    <input
+                  <FormField className="form-group" label="Nom complet" htmlFor="reset-name" style={{ marginBottom: '12px' }}>
+                    <Input
                       id="reset-name"
                       type="text"
                       value={resetFormName}
@@ -450,14 +436,11 @@ const LoginForm = ({ onLogin }) => {
                       required
                       style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                     />
-                  </div>
+                  </FormField>
 
                   {resetStep === 'confirm' && (
-                    <div className="form-group" style={{ marginBottom: '12px' }}>
-                      <label htmlFor="reset-token" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                        Code de vérification (OTP)
-                      </label>
-                      <input
+                    <FormField className="form-group" label="Code de vérification (OTP)" htmlFor="reset-token" style={{ marginBottom: '12px' }}>
+                      <Input
                         id="reset-token"
                         type="text"
                         value={resetToken}
@@ -466,14 +449,11 @@ const LoginForm = ({ onLogin }) => {
                         required
                         style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                       />
-                    </div>
+                    </FormField>
                   )}
 
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
-                    <label htmlFor="new-password" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                      Nouveau mot de passe
-                    </label>
-                    <input
+                  <FormField className="form-group" label="Nouveau mot de passe" htmlFor="new-password" style={{ marginBottom: '12px' }}>
+                    <Input
                       id="new-password"
                       type="password"
                       value={newPassword}
@@ -483,13 +463,10 @@ const LoginForm = ({ onLogin }) => {
                       required
                       style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                     />
-                  </div>
+                  </FormField>
 
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label htmlFor="confirm-password" style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                      Confirmer le mot de passe
-                    </label>
-                    <input
+                  <FormField className="form-group" label="Confirmer le mot de passe" htmlFor="confirm-password" style={{ marginBottom: '16px' }}>
+                    <Input
                       id="confirm-password"
                       type="password"
                       value={newPasswordConfirm}
@@ -499,7 +476,7 @@ const LoginForm = ({ onLogin }) => {
                       required
                       style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
                     />
-                  </div>
+                  </FormField>
 
                   {resetStep === 'confirm' && (
                     <div style={{ marginBottom: '16px', fontSize: '13px', color: 'var(--theme-text-gray)' }}>
@@ -519,15 +496,12 @@ const LoginForm = ({ onLogin }) => {
                   )}
 
                   {resetError && (
-                    <div className="error-message" style={{ marginBottom: '16px' }}>
-                      {resetError}
-                    </div>
+                    <InlineAlert style={{ marginBottom: '16px' }}>{resetError}</InlineAlert>
                   )}
                   
                   <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                    <button
-                      type="button"
-                      className="btn-secondary"
+                    <Button
+                      variant="ghost"
                       onClick={() => {
                         setShowResetPassword(false);
                         setResetStep('request');
@@ -537,10 +511,10 @@ const LoginForm = ({ onLogin }) => {
                       disabled={loading}
                     >
                       Annuler
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="primary"
                       type="submit"
-                      className="btn-primary"
                       disabled={
                         loading ||
                         !resetFormEmail ||
@@ -553,7 +527,7 @@ const LoginForm = ({ onLogin }) => {
                         : resetStep === 'request'
                         ? 'Envoyer le code'
                         : 'Réinitialiser'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               </div>

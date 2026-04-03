@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './PhoneInput.css';
+import { Input } from '@/design-system';
 
 const COUNTRY_CODES = [
   { code: '+262', flag: '🇷🇪', label: 'Réunion', format: '0692 XX XX XX', maxDigits: 10 },
@@ -165,7 +166,7 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
 
         {showDropdown && (
           <div className="phone-dropdown">
-            <input
+            <Input
               type="text"
               className="phone-dropdown-search"
               placeholder="Rechercher..."
@@ -191,7 +192,7 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
         )}
       </div>
 
-      <input
+      <Input
         ref={inputRef}
         id={id}
         type="tel"

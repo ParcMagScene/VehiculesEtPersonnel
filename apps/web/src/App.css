@@ -51,7 +51,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: var(--z-tooltip);
   backdrop-filter: blur(4px);
   isolation: isolate;
 }
@@ -64,20 +64,20 @@
 }
 
 .loading-overlay .loading-spinner {
-  border-color: rgba(255, 255, 255, 0.2);
-  border-top-color: white;
+  border-color: var(--glass-light);
+  border-top-color: var(--theme-text-inverse);
 }
 
 .header {
-  background: var(--theme-bg-card-translucent, rgba(255, 255, 255, 0.95));
+  background: var(--theme-bg-card-translucent, var(--theme-bg-card-translucent));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--theme-border);
   padding: 0.75rem 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 6px -1px var(--shadow-xs), 0 2px 4px -1px var(--overlay-subtle);
   position: sticky;
   top: 0;
-  z-index: 200;
+  z-index: var(--z-sticky);
   flex-shrink: 0;
 }
 
@@ -140,7 +140,7 @@
   color: var(--theme-primary-dark);
   border-color: #a5b4fc;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 8px var(--accent-tint-vivid);
 }
 
 /* Bouton toggle thème (dark/light) */
@@ -163,7 +163,7 @@
   color: var(--theme-warning, var(--theme-warning));
   border-color: var(--theme-border-muted, var(--theme-border-muted));
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-sm);
 }
 
 [data-theme="dark"] .theme-toggle-btn:hover {
@@ -203,7 +203,7 @@
 .header-title-container .module-tab.active {
   background: var(--theme-bg-card);
   color: var(--theme-info);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 4px var(--shadow-sm);
   border-color: var(--theme-border);
 }
 
@@ -223,7 +223,7 @@
   align-items: center;
   gap: 0.5rem;
   animation: pulse 2s infinite;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 6px -1px var(--shadow-sm), 0 2px 4px -1px var(--shadow-xs);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -234,7 +234,7 @@
 
 .notification-badge:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px var(--shadow-sm), 0 4px 6px -2px var(--shadow-xs);
 }
 
 .notification-badge.immobilized {
@@ -256,7 +256,7 @@
 
 .notification-badge.reported:hover {
   background: var(--btn-warning-bg);
-  border-color: #fcd34d;
+  border-color: var(--theme-warning-border);
 }
 
 .notification-badge.scheduled {
@@ -289,7 +289,7 @@
 
 .notification-badge.conflict:hover {
   background: var(--btn-danger-bg);
-  border-color: #f87171;
+  border-color: var(--theme-danger);
 }
 
 /* Badge de notification unifié */
@@ -302,22 +302,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px var(--shadow-xl);
   animation: pulse 2s infinite;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .notification-badge.unified.has-overdue {
-  background: linear-gradient(135deg, var(--theme-danger-dark), #b91c1c);
+  background: linear-gradient(135deg, var(--theme-danger-dark), var(--theme-danger-text-alt));
   color: var(--theme-text-inverse);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--close-btn-hover-bg);
   animation: pulse-overdue 2s ease-in-out infinite;
 }
 
 @keyframes pulse-overdue {
   0%, 100% {
-    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    box-shadow: 0 2px 8px var(--danger-tint-dark);
     transform: scale(1);
   }
   50% {
@@ -327,21 +327,21 @@
 }
 
 .notification-badge.unified.has-critical {
-  background: linear-gradient(135deg, var(--theme-danger-dark), #991b1b);
+  background: linear-gradient(135deg, var(--theme-danger-dark), var(--theme-danger-text));
   color: var(--theme-text-inverse);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--close-btn-hover-bg);
 }
 
 .notification-badge.unified.has-conflict {
   background: linear-gradient(135deg, var(--theme-warning), var(--theme-warning-dark));
   color: var(--theme-text-inverse);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--close-btn-hover-bg);
 }
 
 .notification-badge.unified.has-reported {
   background: linear-gradient(135deg, var(--theme-danger), var(--theme-danger-dark));
   color: var(--theme-text-inverse);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--close-btn-hover-bg);
   animation: pulse-reported 2s ease-in-out infinite;
 }
 
@@ -357,33 +357,33 @@
 }
 
 .notification-badge.unified.has-pending {
-  background: linear-gradient(135deg, var(--theme-primary-hover), #6d28d9);
+  background: linear-gradient(135deg, var(--theme-primary-hover), var(--theme-primary-dark));
   color: var(--theme-text-inverse);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--close-btn-hover-bg);
 }
 
 .notification-badge.unified.has-scheduled {
-  background: linear-gradient(135deg, var(--theme-info-dark), #1d4ed8);
+  background: linear-gradient(135deg, var(--theme-info-dark), var(--theme-info-text));
   color: var(--theme-text-inverse);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--close-btn-hover-bg);
 }
 
 /* Badge de demandes de réservation */
 .notification-badge.unified.requests-badge {
-  background: linear-gradient(135deg, var(--theme-success-alt), #059669);
+  background: linear-gradient(135deg, var(--theme-success-alt), var(--theme-success-text));
   color: var(--theme-text-inverse);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--close-btn-hover-bg);
   animation: none;
 }
 
 .notification-badge.unified.requests-badge:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px var(--success-tint-bold);
 }
 
 .notification-badge.unified:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--shadow-modal);
 }
 
 .notification-count {
@@ -400,7 +400,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px var(--shadow-xl);
   border: 2px solid currentColor;
   padding: 0 3px;
 }
@@ -409,7 +409,7 @@
   position: absolute;
   bottom: -2px;
   left: -2px;
-  background: #fbbf24;
+  background: var(--theme-warning);
   color: var(--theme-warning-text-alt);
   width: 18px;
   height: 18px;
@@ -417,7 +417,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px var(--shadow-xl);
   border: 2px solid var(--theme-bg-card);
   animation: bounce 1s infinite;
 }
@@ -442,7 +442,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   padding-top: 100px;
   animation: fadeIn 0.2s ease-out;
 }
@@ -455,7 +455,7 @@
   max-height: 70vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
   animation: slideDown 0.3s ease-out;
 }
 
@@ -647,7 +647,7 @@
 }
 
 .notification-item.has-conflict {
-  border-left: 4px solid #b91c1c;
+  border-left: 4px solid var(--theme-danger-text-alt);
   background: var(--theme-danger-bg);
 }
 
@@ -708,7 +708,7 @@
 .reject-reason-input:focus {
   outline: none;
   border-color: var(--theme-danger);
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+  box-shadow: 0 0 0 2px var(--theme-danger-border);
 }
 
 .reject-form-buttons {
@@ -747,7 +747,7 @@
 }
 
 .notif-action-btn.approve:hover {
-  background: #059669;
+  background: var(--theme-success-text);
 }
 
 .notif-action-btn.reject {
@@ -1070,7 +1070,7 @@
 }
 
 .date-navigation .nav-button.today-highlight:hover {
-  background: linear-gradient(135deg, var(--theme-info-dark) 0%, #1d4ed8 100%) !important;
+  background: linear-gradient(135deg, var(--theme-info-dark) 0%, var(--theme-info-text) 100%) !important;
   border-color: var(--theme-info-dark) !important;
 }
 
@@ -1123,13 +1123,13 @@
   font-weight: 600;
   transition: all 0.2s;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 8px var(--warning-tint-medium);
 }
 
 .new-affaire-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-  background: linear-gradient(135deg, #fbbf24, var(--theme-warning));
+  background: linear-gradient(135deg, var(--theme-warning), var(--theme-warning));
 }
 
 .new-affaire-button svg {
@@ -1151,12 +1151,12 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 6px var(--accent-tint-strong);
 }
 
 .msg-toggle-button:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 12px var(--accent-tint-bold);
 }
 
 .msg-toggle-badge {
@@ -1195,7 +1195,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 25px var(--accent-tint-bold);
   cursor: pointer;
   z-index: 9000;
   animation: toast-slide-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1207,7 +1207,7 @@
 
 .msg-toast:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 12px 30px var(--accent-tint-heavy);
 }
 
 @keyframes toast-slide-in {
@@ -1233,7 +1233,7 @@
 .msg-toast-close {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--glass-opaque);
   font-size: 1.2rem;
   cursor: pointer;
   padding: 0 2px;
@@ -1283,7 +1283,7 @@
 .pwa-dismiss-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--glass-opaque);
   cursor: pointer;
   font-size: 1rem;
   padding: 2px;
@@ -1309,7 +1309,7 @@
 }
 
 .qr-button:hover {
-  background: #059669;
+  background: var(--theme-success-text);
   transform: scale(1.05);
 }
 
@@ -1395,7 +1395,7 @@
 .calendar {
   background: var(--theme-bg-card);
   border-radius: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -1418,7 +1418,7 @@
   text-align: center;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .calendar-header-cell:first-child {
@@ -1441,7 +1441,7 @@
   color: var(--theme-bg-dark);
   position: sticky;
   left: 0;
-  z-index: 5;
+  z-index: var(--z-base);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1469,8 +1469,8 @@
   align-items: center;
   justify-content: center;
   border: 1.5px solid var(--theme-bg-card);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  z-index: 2;
+  box-shadow: 0 1px 3px var(--shadow-xl);
+  z-index: var(--z-base);
   pointer-events: none;
 }
 
@@ -1483,7 +1483,7 @@
   width: 18px;
   height: 18px;
   border-radius: 4px;
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--theme-danger-border);
   color: var(--theme-danger);
   border: none;
   cursor: pointer;
@@ -1491,7 +1491,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  z-index: 3;
+  z-index: 25;
   pointer-events: all;
   opacity: 0;
   transition: opacity 0.15s, background 0.15s;
@@ -1502,7 +1502,7 @@
 }
 
 .reservation-delete-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: var(--danger-tint-medium);
   color: var(--theme-danger-dark);
 }
 
@@ -1786,14 +1786,14 @@
 
 /* ═══════════════════════════════════════════════════════
    DARK THEME OVERRIDES — App.css
-   Remplace tous les `background: white` et couleurs
+   Remplace tous les `background: var(--theme-bg-card)` et couleurs
    hardcodées par les variables du thème sombre.
    ═══════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .module-tab.active {
   background: var(--theme-bg-card);
   color: var(--theme-primary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px var(--shadow-modal);
 }
 
 [data-theme="dark"] .notification-count {
@@ -1803,7 +1803,7 @@
 
 [data-theme="dark"] .notifications-popup {
   background: var(--theme-bg-card);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px var(--theme-overlay);
 }
 
 [data-theme="dark"] .nav-button {
@@ -1844,7 +1844,7 @@
 
 [data-theme="dark"] .calendar {
   background: var(--theme-bg-card);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px var(--shadow-modal);
 }
 
 [data-theme="dark"] .vehicle-cell {

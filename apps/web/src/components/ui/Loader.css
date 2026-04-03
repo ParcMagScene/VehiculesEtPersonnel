@@ -21,9 +21,9 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--glass-opaque);
   backdrop-filter: blur(2px);
-  z-index: 10;
+  z-index: var(--z-dropdown);
   border-radius: inherit;
 }
 

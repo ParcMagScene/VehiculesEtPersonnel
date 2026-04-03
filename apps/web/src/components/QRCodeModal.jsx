@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { X, QrCode, Printer, Link as LinkIcon, Download } from 'lucide-react';
+import { QrCode, Printer, Link as LinkIcon, Download } from 'lucide-react';
+import { ModalLayout } from '@/design-system';
 import './QRCodeModal.css';
 
 function QRCodeModal({ onClose }) {
@@ -239,18 +240,26 @@ function QRCodeModal({ onClose }) {
   };
 
   return (
-    <div className="qr-modal-overlay" onMouseDown={handleOverlayClick}>
-      <div className="qr-modal">
-        <div className="qr-modal-header no-print">
-          <h2>
-            <QrCode size={24} />
-            Accès Mobile
-          </h2>
-          <button className="qr-close-button" onClick={onClose}>
-            <X size={20} />
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Accès Mobile"
+      icon={<QrCode size={20} />}
+      size="md"
+      className="qr-modal"
+      footer={
+        <>
+          <button className="print-button" onClick={handlePrint}>
+            <Printer size={20} />
+            Imprimer
           </button>
-        </div>
-
+          <button className="print-button" onClick={handleDownloadJPG}>
+            <Download size={20} />
+            Télécharger JPG
+          </button>
+        </>
+      }
+    >
         <div className="qr-modal-content">
           <div className="qr-code-container">
             <canvas ref={canvasRef} />
@@ -284,19 +293,7 @@ function QRCodeModal({ onClose }) {
             </div>
           </div>
         </div>
-
-        <div className="qr-modal-footer no-print">
-          <button className="print-button" onClick={handlePrint}>
-            <Printer size={20} />
-            Imprimer
-          </button>
-          <button className="print-button" onClick={handleDownloadJPG}>
-            <Download size={20} />
-            Télécharger JPG
-          </button>
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 

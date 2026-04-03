@@ -8,7 +8,7 @@ import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDa
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Dialog, Input, Textarea, Spinner, InlineAlert } from '@/design-system';
 import './AssignmentDialog.css';
 
 const POSITION_CATEGORIES = [
@@ -106,7 +106,7 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
         <div className="asd-position-dropdown">
           <div className="asd-position-search">
             <Search size={14} />
-            <input
+            <Input
               type="text"
               placeholder="Rechercher…"
               value={search}
@@ -736,7 +736,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 </div>
                 {showPersonDropdown && (
                   <div className="asd-person-dropdown-wrapper">
-                    <input
+                    <Input
                       type="text"
                       className="asd-person-search"
                       placeholder="Rechercher un personnel…"
@@ -821,7 +821,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 </button>
                 {showAddPersonDropdown && (
                   <div className="asd-add-person-dropdown">
-                    <input
+                    <Input
                       type="text"
                       className="asd-person-search"
                       placeholder="Rechercher un personnel…"
@@ -884,7 +884,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 </div>
               ) : (
                 <div className="asd-affaire-dropdown-wrapper">
-                  <input
+                  <Input
                     type="text"
                     className="asd-affaire-search"
                     placeholder={loading ? 'Chargement…' : `Rechercher parmi ${affaires.length} affaire(s)…`}
@@ -1053,10 +1053,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
             {/* Warning compétences non détenues */}
             {skillWarnings && (
-              <div className="asd-skill-warning">
-                <AlertTriangle size={14} />
-                <span>{skillWarnings}</span>
-              </div>
+              <InlineAlert variant="warning">{skillWarnings}</InlineAlert>
             )}
           </div>
 
@@ -1089,7 +1086,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
               </div>
               <div className="asd-field">
                 <label>Notes</label>
-                <textarea
+                <Textarea
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder="Notes de mission…"
@@ -1101,16 +1098,10 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
           {/* Erreur / Succès */}
           {error && (
-            <div className="asd-message asd-error">
-              <AlertTriangle size={14} />
-              <span>{error}</span>
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
           {success && (
-            <div className="asd-message asd-success">
-              <Check size={14} />
-              <span>{isEdit ? 'Affectation mise à jour !' : additionalPersonIds.length > 0 ? `${1 + additionalPersonIds.length} affectations créées avec succès !` : 'Affectation créée avec succès !'}</span>
-            </div>
+            <InlineAlert variant="success">{isEdit ? 'Affectation mise à jour !' : additionalPersonIds.length > 0 ? `${1 + additionalPersonIds.length} affectations créées avec succès !` : 'Affectation créée avec succès !'}</InlineAlert>
           )}
         </div>
 
@@ -1126,7 +1117,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           >
             {saving ? (
               <>
-                <div className="asd-spinner" />
+                <Spinner size="sm" />
                 Enregistrement…
               </>
             ) : (
@@ -1139,12 +1130,18 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         </div>
       </div>
 
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-        />
-      )}
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
     </div>
   );
 

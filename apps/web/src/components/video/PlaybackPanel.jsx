@@ -5,6 +5,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Calendar, Play, Square, Loader, Clock, Film, AlertCircle } from 'lucide-react';
 import api from '../../utils/api';
+import { Button, Select } from '@/design-system';
 import './PlaybackPanel.css';
 
 const PlaybackPanel = ({ cameras, initialCameraId }) => {
@@ -163,7 +164,7 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
       <div className="playback-panel__controls">
         <div className="playback-panel__field">
           <label><Film size={14} /> Caméra</label>
-          <select
+          <Select
             value={selectedCameraId}
             onChange={e => setSelectedCameraId(e.target.value)}
           >
@@ -171,7 +172,7 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
             {nvrCameras.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="playback-panel__field">
           <label><Calendar size={14} /> Date</label>
@@ -276,9 +277,9 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
         />
         {(playing || connecting) && (
           <div className="playback-panel__player-controls">
-            <button className="btn btn-sm" onClick={stopPlayback} title="Arrêter">
+            <Button variant="secondary" size="sm" onClick={stopPlayback} title="Arrêter">
               <Square size={16} /> Arrêter
-            </button>
+            </Button>
             {currentSegment && (
               <span className="playback-panel__now-playing">
                 🎬 {currentSegment.startTime.slice(11, 16)} → {currentSegment.endTime.slice(11, 16)}

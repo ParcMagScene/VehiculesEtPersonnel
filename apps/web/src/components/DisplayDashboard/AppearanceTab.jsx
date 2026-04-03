@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Palette, Sun, Music, Eye, Save, RefreshCw } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Input, Select, Checkbox, SectionHeader } from '@/design-system';
 
 const FONT_OPTIONS = [
   { value: 'Arial, sans-serif', label: 'Arial' },
@@ -100,9 +101,7 @@ function AppearanceTab({ currentUser, refreshKey, onPreviewChange }) {
     <div className="dtv-appearance">
       {/* Couleurs */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Palette size={16} /> Couleurs
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Palette size={16} />} title="Couleurs" />
         <div className="dtv-form-grid">
           <div className="dtv-form-group">
             <label>Couleur principale</label>
@@ -137,19 +136,17 @@ function AppearanceTab({ currentUser, refreshKey, onPreviewChange }) {
 
       {/* Police */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Eye size={16} /> Police & Affichage
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Eye size={16} />} title="Police & Affichage" />
         <div className="dtv-form-grid">
           <div className="dtv-form-group">
             <label>Police</label>
-            <select value={config.fontFamily} onChange={e => handleChange('fontFamily', e.target.value)}>
+            <Select value={config.fontFamily} onChange={e => handleChange('fontFamily', e.target.value)}>
               {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="dtv-form-group dtv-toggle-row">
             <label>
-              <input type="checkbox" checked={config.autoScroll} onChange={e => handleChange('autoScroll', e.target.checked)} />
+              <Checkbox checked={config.autoScroll} onChange={e => handleChange('autoScroll', e.target.checked)} />
               Défilement automatique des événements
             </label>
           </div>
@@ -158,24 +155,22 @@ function AppearanceTab({ currentUser, refreshKey, onPreviewChange }) {
 
       {/* Météo */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Sun size={16} /> Météo
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Sun size={16} />} title="Météo" />
         <div className="dtv-form-grid">
           <div className="dtv-form-group dtv-toggle-row">
             <label>
-              <input type="checkbox" checked={config.showWeather} onChange={e => handleChange('showWeather', e.target.checked)} />
+              <Checkbox checked={config.showWeather} onChange={e => handleChange('showWeather', e.target.checked)} />
               Afficher la météo sur l'écran TV
             </label>
           </div>
           <div className="dtv-form-group">
             <label>Clé API OpenWeatherMap</label>
-            <input type="text" value={config.weatherApiKey} onChange={e => handleChange('weatherApiKey', e.target.value)}
+            <Input type="text" value={config.weatherApiKey} onChange={e => handleChange('weatherApiKey', e.target.value)}
               placeholder="Votre clé API..." />
           </div>
           <div className="dtv-form-group">
             <label>Ville</label>
-            <input type="text" value={config.weatherCity} onChange={e => handleChange('weatherCity', e.target.value)}
+            <Input type="text" value={config.weatherCity} onChange={e => handleChange('weatherCity', e.target.value)}
               placeholder="Saint-Denis,RE,FR" />
           </div>
         </div>
@@ -183,19 +178,17 @@ function AppearanceTab({ currentUser, refreshKey, onPreviewChange }) {
 
       {/* Sonos */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Music size={16} /> Sonos
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Music size={16} />} title="Sonos" />
         <div className="dtv-form-group">
           <label>Adresse IP du Sonos</label>
-          <input type="text" value={sonosIP} onChange={e => setSonosIP(e.target.value)}
+          <Input type="text" value={sonosIP} onChange={e => setSonosIP(e.target.value)}
             placeholder="192.168.1.xxx" />
         </div>
       </div>
 
       {/* Logo */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">Logo de l'entreprise</h3>
+        <SectionHeader className="dtv-section-title" title="Logo de l'entreprise" />
         <div className="dtv-logo-section">
           {logoPath && (
             <img src={logoPath} alt="Logo actuel" className="dtv-logo-preview" />
@@ -209,9 +202,9 @@ function AppearanceTab({ currentUser, refreshKey, onPreviewChange }) {
 
       {/* Bouton sauvegarder */}
       <div className="dtv-actions">
-        <button className="btn-primary-sm" onClick={handleSave} disabled={saving}>
+        <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
           <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer la configuration'}
-        </button>
+        </Button>
       </div>
     </div>
   );

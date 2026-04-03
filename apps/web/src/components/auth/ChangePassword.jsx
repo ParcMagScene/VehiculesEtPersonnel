@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, Save, Eye, EyeOff, Shield, KeyRound } from 'lucide-react';
 import api from '../../utils/api';
+import { Button, FormField, Input } from '@/design-system';
 import './ChangePassword.css';
 import { useToast } from '../../hooks/useToast';
 
@@ -78,10 +79,7 @@ const ChangePassword = ({ currentUser }) => {
             <p className="admin-password-hint">Définissez directement un nouveau mot de passe sans saisir l’ancien</p>
           </div>
           <div className="admin-password-form">
-            <div className="form-group">
-              <label htmlFor="adminNewPassword">
-                Nouveau mot de passe
-              </label>
+            <FormField className="form-group" label="Nouveau mot de passe" htmlFor="adminNewPassword">
               <div className="password-input-wrapper">
                 <input
                   id="adminNewPassword"
@@ -101,17 +99,16 @@ const ChangePassword = ({ currentUser }) => {
                 </button>
               </div>
               <p className="field-hint">Minimum 4 caractères</p>
-            </div>
+            </FormField>
             <div className="form-actions">
-              <button
-                type="button"
-                className="btn-save btn-admin-password"
+              <Button
+                variant="primary"
                 onClick={handleAdminSetPassword}
                 disabled={isSavingAdmin || adminNewPassword.length < 4}
               >
                 <KeyRound size={16} />
                 {isSavingAdmin ? 'Application...' : 'Appliquer le mot de passe'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -122,12 +119,8 @@ const ChangePassword = ({ currentUser }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="change-password-form">
-        <div className="form-group">
-          <label htmlFor="currentPassword">
-            Mot de passe actuel
-            <span className="required">*</span>
-          </label>
-          <input
+        <FormField className="form-group" label="Mot de passe actuel" htmlFor="currentPassword" required>
+          <Input
             id="currentPassword"
             type="password"
             value={currentPassword}
@@ -135,13 +128,9 @@ const ChangePassword = ({ currentUser }) => {
             required
             autoComplete="current-password"
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label htmlFor="newPassword">
-            Nouveau mot de passe
-            <span className="required">*</span>
-          </label>
+        <FormField className="form-group" label="Nouveau mot de passe" htmlFor="newPassword" required>
           <div className="password-input-wrapper">
           <input
             id="newPassword"
@@ -162,13 +151,9 @@ const ChangePassword = ({ currentUser }) => {
           </button>
           </div>
           <p className="field-hint">Minimum 4 caractères</p>
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label htmlFor="confirmPassword">
-            Confirmer le nouveau mot de passe
-            <span className="required">*</span>
-          </label>
+        <FormField className="form-group" label="Confirmer le nouveau mot de passe" htmlFor="confirmPassword" required>
           <div className="password-input-wrapper">
           <input
             id="confirmPassword"
@@ -188,17 +173,17 @@ const ChangePassword = ({ currentUser }) => {
             {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
           </div>
-        </div>
+        </FormField>
 
         <div className="form-actions">
-          <button 
-            type="submit" 
-            className="btn-save"
+          <Button 
+            variant="primary"
+            type="submit"
             disabled={isSaving}
           >
             <Save size={18} />
             {isSaving ? 'Enregistrement...' : 'Modifier le mot de passe'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

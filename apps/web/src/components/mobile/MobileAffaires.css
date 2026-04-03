@@ -89,7 +89,7 @@
   padding: 4px 16px;
   border: none;
   background: var(--theme-primary-main);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: 0 0 12px 12px;
@@ -173,7 +173,7 @@
 
 .maff-filter-pill.active {
   background: var(--theme-primary-main);
-  color: white;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-primary-main);
 }
 
@@ -194,7 +194,7 @@
 
 .maff-count {
   background: var(--theme-primary-main);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 0.72rem;
   font-weight: 700;
   padding: 1px 7px;
@@ -238,7 +238,7 @@
   background: var(--theme-bg-card);
   border-radius: 10px;
   padding: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px var(--shadow-inner);
   border-left: 4px solid transparent;
   cursor: pointer;
   transition: transform 0.1s;
@@ -251,7 +251,7 @@
 .maff-card.active {
   border-left-color: var(--theme-primary-main);
   background: var(--theme-primary-bg, var(--theme-bg-card));
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+  box-shadow: 0 2px 8px var(--primary-tint);
 }
 
 .maff-card-header {
@@ -269,7 +269,7 @@
   height: 26px;
   border-radius: 6px;
   font-size: 0.85rem;
-  color: white;
+  color: var(--theme-text-inverse);
   flex-shrink: 0;
 }
 
@@ -290,13 +290,13 @@
 }
 
 .maff-card-status.active {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--theme-success-bg-strong);
+  color: var(--theme-success-dark);
 }
 
 .maff-card-status.upcoming {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-dark);
 }
 
 .maff-card-title {
@@ -378,7 +378,7 @@
   gap: 4px;
   padding: 4px 12px;
   border-radius: 16px;
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -391,13 +391,13 @@
 }
 
 .maff-status-badge.active {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--theme-success-bg-strong);
+  color: var(--theme-success-dark);
 }
 
 .maff-status-badge.upcoming {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-dark);
 }
 
 .maff-status-badge.past {
@@ -504,7 +504,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   background: var(--theme-primary-main);
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 600;
 }
 
@@ -569,7 +569,7 @@
   text-transform: capitalize;
 }
 
-.maff-resa-status.confirmed { background: #dcfce7; color: #16a34a; }
+.maff-resa-status.confirmed { background: var(--theme-success-bg-strong); color: var(--theme-success-dark); }
 .maff-resa-status.pending   { background: #fef9c3; color: #a16207; }
 
 /* ═══════════════════════════════════
@@ -596,8 +596,8 @@
   margin-top: 1px;
 }
 
-.maff-task-status-icon.done     { color: #16a34a; }
-.maff-task-status-icon.progress { color: #2563eb; }
+.maff-task-status-icon.done     { color: var(--theme-success-dark); }
+.maff-task-status-icon.progress { color: var(--theme-info-dark); }
 
 .maff-task-info {
   flex: 1;
@@ -648,7 +648,7 @@
   height: 32px;
   border-radius: 50%;
   background: var(--theme-primary-main);
-  color: white;
+  color: var(--theme-text-inverse);
   flex-shrink: 0;
 }
 

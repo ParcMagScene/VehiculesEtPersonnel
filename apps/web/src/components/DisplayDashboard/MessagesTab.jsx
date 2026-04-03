@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { MessageSquare, Trash2, Settings, ToggleLeft, ToggleRight, AlertTriangle, Clock } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
 
 const PRIORITY_CONFIG = {
   low: { label: 'Basse', color: 'var(--theme-text-muted)', icon: null },
@@ -15,6 +16,7 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -32,15 +34,23 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
     loadMessages();
   }, [loadMessages, refreshKey]);
 
-  const handleDelete = useCallback(async (msg) => {
-    if (!confirm(`Supprimer le message « ${msg.title} » ?`)) return;
-    try {
-      await api.deleteDisplayMessage(msg.id);
-      toast.success('Message supprimé');
-      onRefresh();
-    } catch {
-      toast.error('Erreur suppression');
-    }
+  const handleDelete = useCallback((msg) => {
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: `Supprimer le message \xAB ${msg.title} \xBB ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.deleteDisplayMessage(msg.id);
+          toast.success('Message supprim\xE9');
+          onRefresh();
+        } catch {
+          toast.error('Erreur suppression');
+        }
+      },
+    });
   }, [toast, onRefresh]);
 
   const handleToggle = useCallback(async (msg) => {
@@ -57,11 +67,7 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
 
   if (messages.length === 0) {
     return (
-      <div className="display-empty">
-        <MessageSquare size={48} strokeWidth={1} />
-        <h3>Aucun message</h3>
-        <p>Créez des messages ou annonces à afficher sur vos écrans.</p>
-      </div>
+      <EmptyState icon={<MessageSquare size={48} strokeWidth={1} />} title="Aucun message" description="Créez des messages ou annonces à afficher sur vos écrans." />
     );
   }
 
@@ -97,19 +103,36 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
               </div>
             </div>
             <div className="list-item-actions">
-              <button className="btn-icon-sm" onClick={() => onEdit(msg)} title="Modifier">
-                <Settings size={14} />
-              </button>
-              <button className="btn-icon-sm" onClick={() => handleToggle(msg)} title={msg.is_active ? 'Désactiver' : 'Activer'}>
-                {msg.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-              </button>
-              <button className="btn-icon-sm danger" onClick={() => handleDelete(msg)} title="Supprimer">
-                <Trash2 size={14} />
-              </button>
+              <Tooltip content="Modifier">
+                <Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(msg)}>
+                  <Settings size={14} />
+                </Button>
+              </Tooltip>
+              <Tooltip content={msg.is_active ? 'Désactiver' : 'Activer'}>
+                <Button variant="ghost" size="sm" iconOnly onClick={() => handleToggle(msg)}>
+                  {msg.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                </Button>
+              </Tooltip>
+              <Tooltip content="Supprimer">
+                <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(msg)}>
+                  <Trash2 size={14} />
+                </Button>
+              </Tooltip>
             </div>
           </div>
         );
       })}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }

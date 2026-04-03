@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { MessageCircle, Zap, Save, Trash2, Clock } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Select, Textarea, SectionHeader} from '@/design-system';
 
 const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
 const DAY_LABELS = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven' };
@@ -113,26 +114,24 @@ function WelcomeMessagesTab({ currentUser, refreshKey, onPreviewChange }) {
     <div className="dtv-welcome-messages">
       {/* Message furtif */}
       <div className="dtv-section dtv-sneaky-section">
-        <h3 className="dtv-section-title">
-          <Zap size={16} /> Message d'accueil furtif
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Zap size={16} />} title="Message d'accueil furtif" />
         <p className="dtv-hint">Active un message temporaire qui remplace le message d'accueil configuré.</p>
 
         <div className="dtv-form-group">
           <label>Message à afficher</label>
-          <textarea value={sneakyText} onChange={e => setSneakyText(e.target.value)}
+          <Textarea value={sneakyText} onChange={e => setSneakyText(e.target.value)}
             placeholder="Entrez votre message furtif..." rows={2} />
         </div>
         <div className="dtv-form-row">
           <div className="dtv-form-group" style={{ flex: 1 }}>
             <label>Durée d'affichage</label>
-            <select value={sneakyDuration} onChange={e => setSneakyDuration(e.target.value)}>
+            <Select value={sneakyDuration} onChange={e => setSneakyDuration(e.target.value)}>
               {DURATION_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-            </select>
+            </Select>
           </div>
-          <button className="btn-primary-sm" onClick={handleActivateSneaky} style={{ alignSelf: 'flex-end' }}>
+          <Button variant="primary" size="sm" onClick={handleActivateSneaky} style={{ alignSelf: 'flex-end' }}>
             <Zap size={14} /> Activer
-          </button>
+          </Button>
         </div>
 
         {sneakyStatus.active && (
@@ -144,18 +143,16 @@ function WelcomeMessagesTab({ currentUser, refreshKey, onPreviewChange }) {
               </span>
             </div>
             <div className="dtv-sneaky-preview">« {sneakyStatus.message} »</div>
-            <button className="btn-danger-sm" onClick={handleDisableSneaky}>
+            <Button variant="danger" size="sm" onClick={handleDisableSneaky}>
               <Trash2 size={14} /> Désactiver
-            </button>
+            </Button>
           </div>
         )}
       </div>
 
       {/* Messages par jour/créneau */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <MessageCircle size={16} /> Messages d'accueil dynamiques
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<MessageCircle size={16} />} title="Messages d'accueil dynamiques" />
         <p className="dtv-hint">Configurez les messages affichés selon le jour et le créneau horaire.</p>
 
         {/* Onglets jours */}
@@ -174,7 +171,7 @@ function WelcomeMessagesTab({ currentUser, refreshKey, onPreviewChange }) {
           {SLOTS.map(slot => (
             <div key={slot.id} className="dtv-form-group">
               <label>{slot.label}</label>
-              <textarea
+              <Textarea
                 value={messages[activeDay]?.[slot.id] || ''}
                 onChange={e => handleMessageChange(activeDay, slot.id, e.target.value)}
                 placeholder={`Message pour ${slot.label.toLowerCase()}...`}
@@ -185,9 +182,9 @@ function WelcomeMessagesTab({ currentUser, refreshKey, onPreviewChange }) {
         </div>
 
         <div className="dtv-actions">
-          <button className="btn-primary-sm" onClick={handleSaveMessages} disabled={saving}>
+          <Button variant="primary" size="sm" onClick={handleSaveMessages} disabled={saving}>
             <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer les messages'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

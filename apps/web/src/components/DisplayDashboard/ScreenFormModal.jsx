@@ -1,6 +1,7 @@
 // ScreenFormModal — Création / édition d'un écran d'affichage
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { X, Monitor, Save } from 'lucide-react';
+import { Monitor, Save } from 'lucide-react';
+import { Button, FormField, ModalLayout, Input, Select } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 
@@ -64,68 +65,61 @@ function ScreenFormModal({ screen, onSave, onClose }) {
   }, [form, screen, toast, onSave]);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container modal-md" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3><Monitor size={18} /> {screen ? 'Modifier l\'écran' : 'Nouvel écran'}</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
-        </div>
-        <div className="modal-body">
-          <div className="form-group">
-            <label>Nom *</label>
-            <input
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={screen ? 'Modifier l\'\u00e9cran' : 'Nouvel \u00e9cran'}
+      icon={<Monitor size={18} />}
+      size="md"
+      footer={<>
+        <Button variant="ghost" onClick={onClose}>Annuler</Button>
+        <Button variant="primary" onClick={handleSave} disabled={saving}>
+          <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+        </Button>
+      </>}
+    >
+          <FormField className="form-group" label="Nom" required>
+            <Input
               type="text"
               value={form.name}
               onChange={e => handleChange('name', e.target.value)}
               placeholder="Ex: Écran Hall d'entrée"
               autoFocus
             />
-          </div>
-          <div className="form-group">
-            <label>Emplacement</label>
-            <input
+          </FormField>
+          <FormField className="form-group" label="Emplacement">
+            <Input
               type="text"
               value={form.location}
               onChange={e => handleChange('location', e.target.value)}
               placeholder="Ex: Hall principal"
             />
-          </div>
+          </FormField>
           <div className="form-row">
-            <div className="form-group">
-              <label>Résolution</label>
-              <select value={form.resolution} onChange={e => handleChange('resolution', e.target.value)}>
+            <FormField className="form-group" label="Résolution">
+              <Select value={form.resolution} onChange={e => handleChange('resolution', e.target.value)}>
                 <option value="1920x1080">1920×1080 (Full HD)</option>
                 <option value="3840x2160">3840×2160 (4K)</option>
                 <option value="1280x720">1280×720 (HD)</option>
                 <option value="1080x1920">1080×1920 (Full HD portrait)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Orientation</label>
-              <select value={form.orientation} onChange={e => handleChange('orientation', e.target.value)}>
+              </Select>
+            </FormField>
+            <FormField className="form-group" label="Orientation">
+              <Select value={form.orientation} onChange={e => handleChange('orientation', e.target.value)}>
                 <option value="landscape">Paysage</option>
                 <option value="portrait">Portrait</option>
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
-          <div className="form-group">
-            <label>Playlist assignée</label>
-            <select value={form.playlistId} onChange={e => handleChange('playlistId', e.target.value)}>
+          <FormField className="form-group" label="Playlist assignée">
+            <Select value={form.playlistId} onChange={e => handleChange('playlistId', e.target.value)}>
               <option value="">— Aucune —</option>
               {playlists.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
-            </select>
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Annuler</button>
-          <button className="btn-primary" onClick={handleSave} disabled={saving}>
-            <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
-        </div>
-      </div>
-    </div>
+            </Select>
+          </FormField>
+    </ModalLayout>
   );
 }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Calendar, MapPin, User, Phone,
-  FileText, Truck, Clock, Package, Users, DollarSign, Briefcase, Search, X,
+  FileText, Truck, Clock, Package, Users, DollarSign, Briefcase,
   ClipboardList, CheckCircle, AlertCircle,
 } from 'lucide-react';
 import { format, addDays, startOfDay, parseISO, isSameDay } from 'date-fns';
@@ -9,6 +9,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import './MobileAffaires.css';
+import { Input, Spinner, Avatar, SearchBar } from '@/design-system';
 
 // Statut temporel
 const getAffaireStatus = (a, todayStr) => {
@@ -304,9 +305,7 @@ function MobileAffaires({ onBack }) {
               <div className="maff-personnel-list">
                 {detailData.personnel.map((p, i) => (
                   <div key={p.id || i} className="maff-person-card">
-                    <div className="maff-person-avatar">
-                      <User size={16} />
-                    </div>
+                    <Avatar name={p.name} size="xs" />
                     <div className="maff-person-info">
                       <div className="maff-person-name">{p.name}</div>
                       {p.role && <div className="maff-person-role">{p.role}</div>}
@@ -340,7 +339,7 @@ function MobileAffaires({ onBack }) {
 
           {detailLoading && (
             <div className="maff-detail-loading">
-              <div className="spinner" />
+              <Spinner size="lg" />
             </div>
           )}
         </div>
@@ -380,22 +379,12 @@ function MobileAffaires({ onBack }) {
       )}
 
       {/* Recherche */}
-      <div className="maff-search-bar">
-        <Search size={16} className="maff-search-icon" />
-        <input
-          ref={searchRef}
-          type="text"
-          className="maff-search-input"
-          placeholder="Rechercher (n°, client, lieu…)"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
-        {searchTerm && (
-          <button className="maff-search-clear" onClick={() => { setSearchTerm(''); searchRef.current?.focus(); }}>
-            <X size={16} />
-          </button>
-        )}
-      </div>
+      <SearchBar
+        ref={searchRef}
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Rechercher (n°, client, lieu…)"
+      />
 
       {/* Filtres par type */}
       <div className="maff-type-filters">
@@ -425,7 +414,7 @@ function MobileAffaires({ onBack }) {
 
       {loading ? (
         <div className="maff-loading">
-          <div className="spinner" />
+          <Spinner size="lg" />
           <p>Chargement…</p>
         </div>
       ) : filteredAffaires.length === 0 ? (

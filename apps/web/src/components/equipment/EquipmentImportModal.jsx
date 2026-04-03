@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle, X, ChevronDown, ChevronRight, Eye, Download, Loader } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, CheckCircle, X, ChevronDown, ChevronRight, Eye, Download } from 'lucide-react';
+import { Button, ModalLayout, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
 import './EquipmentImportModal.css';
 
@@ -149,19 +150,37 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
   };
 
   return (
-    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="eq-modal eq-import-modal">
-        <div className="eq-modal-header">
-          <h3><Upload size={18} /> Import CSV Matériel</h3>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-
-        <div className="eq-modal-body eq-import-body">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Import CSV Mat\u00e9riel"
+      icon={<Upload size={18} />}
+      size="lg"
+      className="eq-import-modal"
+      bodyClassName="eq-import-body"
+      footer={<>
+        {step === 'upload' && (
+          <Button variant="ghost" onClick={onClose}>Fermer</Button>
+        )}
+        {step === 'preview' && (
+          <>
+            <Button variant="ghost" onClick={() => { setStep('upload'); setCsvData(null); setFile(null); }}>
+              ← Retour
+            </Button>
+            <Button variant="primary" onClick={handleImport} disabled={loading}>
+              <Download size={14} /> Importer {csvData.rows.length} équipements
+            </Button>
+          </>
+        )}
+        {step === 'done' && (
+          <Button variant="primary" onClick={() => { onImportDone(); onClose(); }}>
+            <CheckCircle size={14} /> Terminé
+          </Button>
+        )}
+      </>}
+    >
           {error && (
-            <div className="eq-import-error">
-              <AlertTriangle size={16} /> {error}
-              <button onClick={() => setError(null)}><X size={14} /></button>
-            </div>
+            <InlineAlert dismissible onDismiss={() => setError(null)}>{error}</InlineAlert>
           )}
 
           {/* Étape 1 : Upload */}
@@ -183,9 +202,9 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
                   accept=".csv,text/csv"
                   onChange={handleFileSelect}
                 />
-                <button className="eq-btn-primary" onClick={() => document.getElementById('csv-file-input').click()}>
+                <Button variant="primary" onClick={() => document.getElementById('csv-file-input').click()}>
                   <Upload size={14} /> Choisir un fichier
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -249,7 +268,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
               <div className="eq-import-section">
                 <h4><Eye size={14} /> Aperçu des données (10 premières lignes)</h4>
                 <div className="eq-import-table-wrap">
-                  <table className="eq-import-table">
+                  <Table className="eq-import-table">
                     <thead>
                       <tr>
                         <th>#</th>
@@ -280,7 +299,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </Table>
                 </div>
                 {csvData.rows.length > 10 && (
                   <p className="eq-import-more">... et {csvData.rows.length - 10} lignes supplémentaires</p>
@@ -292,7 +311,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
           {/* Étape 3 : Import en cours */}
           {step === 'importing' && (
             <div className="eq-import-progress">
-              <Loader size={48} className="eq-spinner" />
+              <Spinner size="xl" />
               <h4>Import en cours...</h4>
               <p>Création des familles, sous-familles, catégories et équipements...</p>
             </div>
@@ -329,30 +348,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
               </div>
             </div>
           )}
-        </div>
-
-        <div className="eq-modal-footer">
-          {step === 'upload' && (
-            <button className="eq-btn-cancel" onClick={onClose}>Fermer</button>
-          )}
-          {step === 'preview' && (
-            <>
-              <button className="eq-btn-cancel" onClick={() => { setStep('upload'); setCsvData(null); setFile(null); }}>
-                ← Retour
-              </button>
-              <button className="eq-btn-save" onClick={handleImport} disabled={loading}>
-                <Download size={14} /> Importer {csvData.rows.length} équipements
-              </button>
-            </>
-          )}
-          {step === 'done' && (
-            <button className="eq-btn-save" onClick={() => { onImportDone(); onClose(); }}>
-              <CheckCircle size={14} /> Terminé
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 };
 

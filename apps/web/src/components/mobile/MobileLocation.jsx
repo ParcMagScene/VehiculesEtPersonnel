@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  ChevronLeft, Search, MapPin, Package, Layers, ChevronDown, ChevronUp, 
+  ChevronLeft, MapPin, Package, Layers, ChevronDown, ChevronUp, 
   X, ZoomIn, ZoomOut, RotateCcw, Filter, Eye
 } from 'lucide-react';
 import api from '../../utils/api';
 import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from '../vehicles/DepotMapEditor';
 import './MobileLocation.css';
+import { Input, SearchBar } from '@/design-system';
 
 function MobileLocation({ onBack }) {
   const [zones, setZones] = useState(null);
@@ -146,17 +147,7 @@ function MobileLocation({ onBack }) {
       </div>
 
       {/* Barre de recherche */}
-      <div className="mloc-search-bar">
-        <Search size={18} />
-        <input 
-          type="text" 
-          value={search} 
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher un équipement..."
-          className="mloc-search-input"
-        />
-        {search && <button className="mloc-search-clear" onClick={() => setSearch('')}><X size={16} /></button>}
-      </div>
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher un équipement..." />
 
       {/* Résultats de recherche */}
       {searchResults && (

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { X, Upload, FileText, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { Button, ModalLayout, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
 import './ContactsCSVImportDialog.css';
 
@@ -146,21 +147,32 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, toast }) {
   }, [parsedRows, onSuccess]);
 
   return (
-    <div className="csv-import-overlay" onClick={onClose}>
-      <div className="csv-import-dialog" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="csv-import-header">
-          <div className="csv-import-title">
-            <Upload size={20} />
-            <h3>Import CSV Contacts</h3>
-          </div>
-          <button className="csv-import-close" onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="csv-import-content">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Import CSV Contacts"
+      icon={<Upload size={20} />}
+      size="lg"
+      bodyClassName="csv-import-content"
+      footer={<>
+        {step === 'upload' && (
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+        )}
+        {step === 'preview' && (
+          <>
+            <Button variant="ghost" onClick={() => { setStep('upload'); setParsedRows([]); setPreview(null); setError(null); }}>
+              ← Retour
+            </Button>
+            <Button variant="primary" onClick={handleImport}>
+              <Download size={15} /> Importer {parsedRows.length} contacts
+            </Button>
+          </>
+        )}
+        {step === 'done' && (
+          <Button variant="primary" onClick={onClose}>Fermer</Button>
+        )}
+      </>}
+    >
           {/* ── ÉTAPE 1 : Upload ── */}
           {step === 'upload' && (
             <div className="csv-upload-zone">
@@ -199,7 +211,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, toast }) {
               </div>
 
               <div className="csv-preview-table-wrapper">
-                <table className="csv-preview-table">
+                <Table className="csv-preview-table">
                   <thead>
                     <tr>
                       <th>Code</th>
@@ -222,7 +234,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, toast }) {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               </div>
 
               {preview.totalRows > 30 && (
@@ -236,7 +248,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, toast }) {
           {/* ── ÉTAPE 3 : Import en cours ── */}
           {step === 'importing' && (
             <div className="csv-importing-zone">
-              <div className="csv-spinner" />
+              <Spinner size="lg" />
               <p>Import en cours… {parsedRows.length} contacts</p>
             </div>
           )}
@@ -271,33 +283,8 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, toast }) {
 
           {/* ── Erreur ── */}
           {error && (
-            <div className="csv-error">
-              <AlertTriangle size={16} />
-              <span>{error}</span>
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="csv-import-footer">
-          {step === 'upload' && (
-            <button className="btn-secondary" onClick={onClose}>Annuler</button>
-          )}
-          {step === 'preview' && (
-            <>
-              <button className="btn-secondary" onClick={() => { setStep('upload'); setParsedRows([]); setPreview(null); setError(null); }}>
-                ← Retour
-              </button>
-              <button className="btn-primary" onClick={handleImport}>
-                <Download size={15} /> Importer {parsedRows.length} contacts
-              </button>
-            </>
-          )}
-          {step === 'done' && (
-            <button className="btn-primary" onClick={onClose}>Fermer</button>
-          )}
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }

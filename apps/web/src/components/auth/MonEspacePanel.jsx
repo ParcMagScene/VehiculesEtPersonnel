@@ -14,6 +14,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
+import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
 import './MonEspacePanel.css';
 
 const MonEspacePanel = ({ currentUser, onClose }) => {
@@ -139,9 +140,9 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
               <span className="mep-subtitle">{currentUser?.name}</span>
             </div>
           </div>
-          <button className="mep-close" onClick={onClose} title="Fermer">
+          <Tooltip content="Fermer"><button className="mep-close" onClick={onClose}>
             <X size={18} />
-          </button>
+          </button></Tooltip>
         </div>
 
         {/* ─── Navigation espace ─── */}
@@ -159,11 +160,7 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
         {/* ─── Contenu ─── */}
         <div className="mep-body">
           {error && (
-            <div className="mep-error">
-              <AlertTriangle size={14} />
-              {error}
-              <button onClick={() => setError('')}>✕</button>
-            </div>
+            <InlineAlert dismissible onDismiss={() => setError('')}>{error}</InlineAlert>
           )}
 
           {/* ─── Solde congés ─── */}
@@ -222,10 +219,10 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
               Chargement…
             </div>
           ) : filteredLeaves.length === 0 ? (
-            <div className="mep-empty">
-              <CalendarOff size={32} />
-              <p>{filter === 'all' ? 'Aucune demande de congé' : 'Aucune demande avec ce filtre'}</p>
-            </div>
+            <EmptyState
+              icon={<CalendarOff size={32} />}
+              title={filter === 'all' ? 'Aucune demande de congé' : 'Aucune demande avec ce filtre'}
+            />
           ) : (
             <div className="mep-list">
               {filteredLeaves.map(leave => {
@@ -268,41 +265,25 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                     {isExpanded && (
                       <div className="mep-card-details">
                         <div className="mep-detail-grid">
-                          <div className="mep-detail-row">
-                            <span className="mep-detail-label">Période :</span>
-                            <span>
-                              Du {fmtDate(leave.startDate || leave.start_date)} ({fmtPeriod(leave.startPeriod || leave.start_period)})
-                              au {fmtDate(leave.endDate || leave.end_date)} ({fmtPeriod(leave.endPeriod || leave.end_period)})
-                            </span>
-                          </div>
-                          <div className="mep-detail-row">
-                            <span className="mep-detail-label">Jours ouvrables :</span>
-                            <span><strong>{leave.workingDays || leave.working_days}</strong> jour{(leave.workingDays || leave.working_days) > 1 ? 's' : ''}</span>
-                          </div>
+                          <DetailRow className="mep-detail-row" label="Période :">
+                            Du {fmtDate(leave.startDate || leave.start_date)} ({fmtPeriod(leave.startPeriod || leave.start_period)})
+                            au {fmtDate(leave.endDate || leave.end_date)} ({fmtPeriod(leave.endPeriod || leave.end_period)})
+                          </DetailRow>
+                          <DetailRow className="mep-detail-row" label="Jours ouvrables :">
+                            <strong>{leave.workingDays || leave.working_days}</strong> jour{(leave.workingDays || leave.working_days) > 1 ? 's' : ''}
+                          </DetailRow>
                           {(leave.employeeComment || leave.employee_comment) && (
-                            <div className="mep-detail-row">
-                              <span className="mep-detail-label">Mon commentaire :</span>
-                              <span>{leave.employeeComment || leave.employee_comment}</span>
-                            </div>
+                            <DetailRow className="mep-detail-row" label="Mon commentaire :" value={leave.employeeComment || leave.employee_comment} />
                           )}
-                          <div className="mep-detail-row">
-                            <span className="mep-detail-label">Déposée le :</span>
-                            <span>{fmtDate(leave.requestDate || leave.request_date)}</span>
-                          </div>
+                          <DetailRow className="mep-detail-row" label="Déposée le :" value={fmtDate(leave.requestDate || leave.request_date)} />
                           {(leave.decisionDate || leave.decision_date) && (
-                            <div className="mep-detail-row">
-                              <span className="mep-detail-label">Décision :</span>
-                              <span>
-                                {fmtDate(leave.decisionDate || leave.decision_date)}
-                                {(leave.decisionByName || leave.decision_by_name) && ` par ${leave.decisionByName || leave.decision_by_name}`}
-                              </span>
-                            </div>
+                            <DetailRow className="mep-detail-row" label="Décision :">
+                              {fmtDate(leave.decisionDate || leave.decision_date)}
+                              {(leave.decisionByName || leave.decision_by_name) && ` par ${leave.decisionByName || leave.decision_by_name}`}
+                            </DetailRow>
                           )}
                           {(leave.adminComment || leave.admin_comment) && (
-                            <div className="mep-detail-row">
-                              <span className="mep-detail-label">Commentaire direction :</span>
-                              <span>{leave.adminComment || leave.admin_comment}</span>
-                            </div>
+                            <DetailRow className="mep-detail-row" label="Commentaire direction :" value={leave.adminComment || leave.admin_comment} />
                           )}
                         </div>
 

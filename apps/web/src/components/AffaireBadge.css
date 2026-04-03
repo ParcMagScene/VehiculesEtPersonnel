@@ -50,7 +50,7 @@
 
 /* ═══ Variante inversée (sur fond coloré) ═══ */
 .affaire-badge-unified.inverted {
-  color: #fff;
+  color: var(--theme-bg-card);
   background: var(--badge-color);
   border-color: transparent;
   opacity: 0.9;

@@ -35,7 +35,7 @@
   height: 36px;
   border-radius: 4px;
   flex-shrink: 0;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 1px 4px var(--shadow-xl), inset 0 1px 0 var(--close-btn-hover-bg);
 }
 
 .vdp-slide-title-info {
@@ -64,7 +64,7 @@
   border-radius: 20px;
   font-size: 11px;
   font-weight: 700;
-  background: rgba(255,255,255,0.2);
+  background: var(--glass-light);
   color: var(--theme-text-inverse);
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -73,8 +73,8 @@
 .vdp-slide-reg {
   font-family: 'SF Mono', 'Fira Code', monospace;
   letter-spacing: 1px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
+  background: var(--close-btn-bg);
+  border: 1px solid var(--close-btn-border);
 }
 
 /* ═══ Body ═══ */
@@ -231,22 +231,22 @@
 .vdp-schedule {
   background: linear-gradient(135deg, var(--theme-success-alt) 0%, var(--theme-success-dark) 100%);
 }
-.vdp-schedule:hover { box-shadow: 0 3px 8px rgba(16, 185, 129, 0.4); }
+.vdp-schedule:hover { box-shadow: 0 3px 8px var(--success-tint-bold); }
 
 .vdp-request {
   background: var(--theme-gradient);
 }
-.vdp-request:hover { box-shadow: 0 3px 8px rgba(102, 126, 234, 0.4); }
+.vdp-request:hover { box-shadow: 0 3px 8px var(--btn-primary-hover-shadow); }
 
 .vdp-km-ctrl {
-  background: linear-gradient(135deg, var(--theme-info) 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--theme-info) 0%, var(--theme-info-text) 100%);
 }
-.vdp-km-ctrl:hover { box-shadow: 0 3px 8px rgba(59, 130, 246, 0.4); }
+.vdp-km-ctrl:hover { box-shadow: 0 3px 8px var(--primary-tint-bold); }
 
 .vdp-breakdown {
   background: linear-gradient(135deg, var(--theme-warning) 0%, var(--theme-danger-dark) 100%);
 }
-.vdp-breakdown:hover { box-shadow: 0 3px 8px rgba(220, 38, 38, 0.4); }
+.vdp-breakdown:hover { box-shadow: 0 3px 8px var(--danger-tint-dark); }
 
 /* Contrôles techniques */
 .vdp-ct-list {
@@ -393,7 +393,7 @@
 .vdp-status-badge.status-pending { background: var(--theme-purple-bg); color: var(--theme-primary-dark); }
 .vdp-status-badge.status-reported { background: var(--theme-danger-bg); color: var(--theme-danger-text); }
 .vdp-status-badge.status-cancelled { background: var(--theme-bg-tertiary); color: var(--theme-text-subtle); }
-.vdp-status-badge.status-rescheduled { background: var(--theme-warning-bg); color: #9a3412; }
+.vdp-status-badge.status-rescheduled { background: var(--theme-warning-bg); color: var(--theme-orange-text); }
 
 .vdp-intervention-date {
   font-size: 11px;
@@ -465,7 +465,7 @@
 }
 
 .vdp-slide-open-btn:hover {
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px var(--btn-primary-hover-shadow);
   transform: translateY(-1px);
 }
 
@@ -485,6 +485,6 @@
     top: 0;
     right: 0;
     bottom: 0;
-    z-index: 50;
+    z-index: var(--z-dropdown);
   }
 }

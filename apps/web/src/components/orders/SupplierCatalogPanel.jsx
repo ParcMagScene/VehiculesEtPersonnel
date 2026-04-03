@@ -4,14 +4,14 @@
 // ============================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FileText, Search, Upload, Trash2, X, ChevronLeft, ChevronRight, Package, Filter, History, BarChart3, AlertCircle, DatabaseZap, Settings, RefreshCw } from 'lucide-react';
+import { FileText, Upload, Trash2, X, ChevronLeft, ChevronRight, Package, Filter, History, BarChart3, AlertCircle, DatabaseZap, Settings, RefreshCw } from 'lucide-react';
 import api from '../../utils/api';
 import './SupplierCatalogPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { Button, Dialog, ModalLayout, Input, Select, Table, EntityCombobox, Spinner, Tag, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import { extractTextFromPDF, extractPDFMeta } from '../../utils/pdfParser';
 import { parseCatalog, detectSupplier, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
 import CatalogSettingsPanel from './CatalogSettingsPanel';
-import EntityCombobox from '../ui/EntityCombobox';
 
 const PAGE_SIZE = 50;
 
@@ -40,6 +40,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // Modal import
   const [showImport, setShowImport] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const isAdmin = currentUser?.isAdmin;
   const canWrite = isAdmin || currentUser?.permissions?.can_manage_catalog === true;
@@ -102,42 +103,63 @@ export default function SupplierCatalogPanel({ currentUser }) {
   const resetPage = () => setPage(0);
 
   // ── Suppression d'un article ──
-  const handleDeleteArticle = async (id) => {
-    if (!confirm('Supprimer cet article ?')) return;
-    try {
-      await api.deleteSupplierArticle(id);
-      toast.success('Article supprimé');
-      loadArticles();
-    } catch {
-      toast.error('Erreur suppression');
-    }
+  const handleDeleteArticle = (id) => {
+    setConfirmDialog({
+      title: 'Supprimer l\'article',
+      message: 'Supprimer cet article ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteSupplierArticle(id);
+          toast.success('Article supprimé');
+          loadArticles();
+        } catch {
+          toast.error('Erreur suppression');
+        }
+      },
+    });
   };
 
   // ── Suppression d'un import (+ ses articles) ──
-  const handleDeleteImport = async (imp) => {
-    if (!confirm(`Supprimer l'import "${imp.filename}" et ses ${imp.items_count} articles ?`)) return;
-    try {
-      await api.deleteCatalogImport(imp.id);
-      toast.success(`Import supprimé (${imp.items_count} articles)`);
-      loadImports();
-      loadArticles();
-    } catch {
-      toast.error('Erreur suppression import');
-    }
+  const handleDeleteImport = (imp) => {
+    setConfirmDialog({
+      title: 'Supprimer l\'import',
+      message: `Supprimer l'import "${imp.filename}" et ses ${imp.items_count} articles ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteCatalogImport(imp.id);
+          toast.success(`Import supprimé (${imp.items_count} articles)`);
+          loadImports();
+          loadArticles();
+        } catch {
+          toast.error('Erreur suppression import');
+        }
+      },
+    });
   };
 
   // ── Purge totale ──
-  const handlePurge = async () => {
-    if (!confirm(`⚠️ Supprimer TOUS les ${total} articles fournisseurs et l'historique d'imports ?\n\nCette action est irréversible.`)) return;
-    try {
-      const result = await api.purgeSupplierArticles();
-      toast.success(`Base vidée : ${result.deletedArticles} articles, ${result.deletedImports} imports supprimés`);
-      loadArticles();
-      if (view === 'imports') loadImports();
-      if (view === 'stats') api.getSupplierArticleStats().then(s => setStats(s)).catch(() => {});
-    } catch {
-      toast.error('Erreur lors de la purge');
-    }
+  const handlePurge = () => {
+    setConfirmDialog({
+      title: 'Purger la base',
+      message: `⚠️ Supprimer TOUS les ${total} articles fournisseurs et l'historique d'imports ?\n\nCette action est irréversible.`,
+      variant: 'danger',
+      confirmLabel: 'Purger',
+      onConfirm: async () => {
+        try {
+          const result = await api.purgeSupplierArticles();
+          toast.success(`Base vidée : ${result.deletedArticles} articles, ${result.deletedImports} imports supprimés`);
+          loadArticles();
+          if (view === 'imports') loadImports();
+          if (view === 'stats') api.getSupplierArticleStats().then(s => setStats(s)).catch(() => {});
+        } catch {
+          toast.error('Erreur lors de la purge');
+        }
+      },
+    });
   };
 
   // ── Rafraîchir les marques (détection auto dans les désignations) ──
@@ -209,19 +231,19 @@ export default function SupplierCatalogPanel({ currentUser }) {
             <Settings size={16} /> Paramètres
           </button>
           {canWrite && (
-            <button className="catalog-btn catalog-btn-primary" onClick={() => setShowImport(true)}>
+            <Button variant="primary" onClick={() => setShowImport(true)}>
               <Upload size={16} /> Importer PDF
-            </button>
+            </Button>
           )}
           {canWrite && total > 0 && (
-            <button className="catalog-btn catalog-btn-secondary" onClick={handleRefreshBrands} disabled={refreshingBrands} title="Détecter automatiquement les marques dans les désignations">
+            <Button variant="secondary" onClick={handleRefreshBrands} disabled={refreshingBrands} title="Détecter automatiquement les marques dans les désignations">
               <RefreshCw size={16} className={refreshingBrands ? 'spin' : ''} /> Màj marques
-            </button>
+            </Button>
           )}
           {canWrite && total > 0 && (
-            <button className="catalog-btn catalog-btn-danger" onClick={handlePurge} title="Vider toute la base articles fournisseurs">
+            <Button variant="danger" onClick={handlePurge} title="Vider toute la base articles fournisseurs">
               <DatabaseZap size={16} /> Vider la base
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -231,16 +253,13 @@ export default function SupplierCatalogPanel({ currentUser }) {
         <>
           {/* Toolbar filtres */}
           <div className="catalog-toolbar">
-            <div style={{ position: 'relative', flex: '1 1 200px' }}>
-              <Search size={16} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--theme-text-secondary)' }} />
-              <input
-                type="text"
-                placeholder="Rechercher (réf, désignation, marque, modèle)…"
-                value={search}
-                onChange={e => { setSearch(e.target.value); resetPage(); }}
-                style={{ paddingLeft: 30, width: '100%' }}
-              />
-            </div>
+            <SearchBar
+              value={search}
+              onChange={val => { setSearch(val); resetPage(); }}
+              placeholder="Rechercher (réf, désignation, marque, modèle)…"
+              className="scp-search"
+              style={{ flex: '1 1 200px' }}
+            />
             <EntityCombobox
               value={supplierFilter}
               onChange={val => { setSupplierFilter(val); setBrandFilter(''); setFamilyFilter(''); setCategoryFilter(''); resetPage(); }}
@@ -287,7 +306,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
             </div>
           ) : (
             <div className="catalog-table-wrapper">
-              <table className="catalog-table">
+              <Table className="catalog-table">
                 <thead>
                   <tr>
                     <th>Réf.</th>
@@ -305,35 +324,37 @@ export default function SupplierCatalogPanel({ currentUser }) {
                     <tr key={a.id}>
                       <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{a.supplier_ref || '—'}</td>
                       <td>{a.designation}</td>
-                      <td>{(a.brand_canonical || a.brand) && <span className="catalog-badge">{a.brand_canonical || a.brand}</span>}</td>
+                      <td>{(a.brand_canonical || a.brand) && <Tag color="primary" size="sm">{a.brand_canonical || a.brand}</Tag>}</td>
                       <td style={{ fontSize: '0.85rem' }}>{a.model || ''}</td>
                       <td style={{ fontSize: '0.85rem' }}>{a.family || ''}</td>
                       <td style={{ textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmtPrice(a.price_ht)}</td>
                       <td style={{ fontSize: '0.85rem' }}>{a.supplier_name || ''}</td>
                       {canWrite && (
                         <td>
-                          <button className="catalog-btn catalog-btn-danger" style={{ padding: '0.25rem' }} onClick={() => handleDeleteArticle(a.id)} title="Supprimer">
-                            <Trash2 size={14} />
-                          </button>
+                          <Tooltip content="Supprimer">
+                            <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} onClick={() => handleDeleteArticle(a.id)}>
+                              <Trash2 size={14} />
+                            </Button>
+                          </Tooltip>
                         </td>
                       )}
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
 
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="pagination" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
-              <button className="catalog-btn catalog-btn-secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+              <Button variant="secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
                 <ChevronLeft size={16} />
-              </button>
+              </Button>
               <span style={{ fontSize: '0.85rem' }}>Page {page + 1} / {totalPages}</span>
-              <button className="catalog-btn catalog-btn-secondary" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+              <Button variant="secondary" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
                 <ChevronRight size={16} />
-              </button>
+              </Button>
             </div>
           )}
         </>
@@ -348,7 +369,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
               <p>Aucun import réalisé</p>
             </div>
           ) : (
-            <table className="catalog-table">
+            <Table className="catalog-table">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -371,15 +392,17 @@ export default function SupplierCatalogPanel({ currentUser }) {
                     <td style={{ fontSize: '0.85rem' }}>{imp.imported_by_name || '—'}</td>
                     {canWrite && (
                       <td>
-                        <button className="catalog-btn catalog-btn-danger" style={{ padding: '0.25rem' }} onClick={() => handleDeleteImport(imp)} title="Supprimer import + articles">
-                          <Trash2 size={14} />
-                        </button>
+                        <Tooltip content="Supprimer import + articles">
+                          <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} onClick={() => handleDeleteImport(imp)}>
+                            <Trash2 size={14} />
+                          </Button>
+                        </Tooltip>
                       </td>
                     )}
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           )}
         </div>
       )}
@@ -428,7 +451,15 @@ export default function SupplierCatalogPanel({ currentUser }) {
           onClose={() => setShowImport(false)}
         />
       )}
-    </div>
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title}
+        variant={confirmDialog?.variant}
+        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+        confirmLabel={confirmDialog?.confirmLabel}
+        cancelLabel="Annuler"
+      />    </div>
   );
 }
 
@@ -515,22 +546,38 @@ function ImportPDFModal({ onDone, onClose }) {
   };
 
   return (
-    <div className="catalog-modal-overlay" onClick={e => e.target === e.currentTarget && step !== 'parsing' && step !== 'importing' && onClose()}>
-      <div className="catalog-modal" style={{ maxWidth: 900 }}>
-        {/* ── Header ── */}
-        <div className="catalog-modal-header">
-          <h3><Upload size={20} /> Importer {files.length > 1 ? 'des catalogues' : 'un catalogue'} PDF</h3>
-          {step !== 'parsing' && step !== 'importing' && (
-            <button className="catalog-btn catalog-btn-secondary" onClick={onClose}><X size={16} /></button>
-          )}
-        </div>
-
+    <ModalLayout
+      open
+      onClose={() => { if (step !== 'parsing' && step !== 'importing') onClose(); }}
+      title={`Importer ${files.length > 1 ? 'des catalogues' : 'un catalogue'} PDF`}
+      icon={<Upload size={20} />}
+      size="xl"
+      footer={
+        step === 'select' ? (
+          <>
+            <Button variant="ghost" onClick={onClose}>Annuler</Button>
+            <Button variant="primary" onClick={handleParse} disabled={!supplierId || files.length === 0}>
+              Analyser {files.length > 1 ? `les ${files.length} PDFs` : 'le PDF'}
+            </Button>
+          </>
+        ) : step === 'preview' && totalItems > 0 ? (
+          <>
+            <Button variant="ghost" onClick={() => { setStep('select'); setParseResults([]); }}>
+              ← Retour
+            </Button>
+            <Button variant="primary" onClick={handleImport}>
+              <Upload size={16} /> Importer {totalItems} articles ({parseResults.length} catalogue{parseResults.length > 1 ? 's' : ''})
+            </Button>
+          </>
+        ) : step === 'preview' && totalItems === 0 ? (
+          <Button variant="ghost" onClick={() => setStep('select')}>← Retour</Button>
+        ) : null
+      }
+    >
         {/* ── Body ── */}
         <div className="catalog-modal-body">
           {error && (
-            <div className="catalog-import-error">
-              <AlertCircle size={16} /> {error}
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
 
           {/* ── STEP: SELECT ── */}
@@ -548,9 +595,9 @@ function ImportPDFModal({ onDone, onClose }) {
                 </div>
                 <div className="catalog-form-group">
                   <label>Parser</label>
-                  <select value={parserId} onChange={e => setParserId(e.target.value)}>
+                  <Select value={parserId} onChange={e => setParserId(e.target.value)}>
                     {AVAILABLE_PARSERS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-                  </select>
+                  </Select>
                 </div>
               </div>
 
@@ -572,9 +619,11 @@ function ImportPDFModal({ onDone, onClose }) {
                         <FileText size={14} />
                         <span>{f.name}</span>
                         <span className="catalog-import-file-size">{(f.size / 1024 / 1024).toFixed(1)} Mo</span>
-                        <button className="catalog-btn-icon" onClick={() => handleRemoveFile(i)} title="Retirer">
-                          <X size={14} />
-                        </button>
+                        <Tooltip content="Retirer">
+                          <Button variant="ghost" size="sm" iconOnly onClick={() => handleRemoveFile(i)}>
+                            <X size={14} />
+                          </Button>
+                        </Tooltip>
                       </div>
                     ))}
                     <span className="catalog-import-hint">
@@ -589,7 +638,7 @@ function ImportPDFModal({ onDone, onClose }) {
           {/* ── STEP: PARSING ── */}
           {step === 'parsing' && (
             <div className="catalog-import-loading">
-              <div className="loading-spinner"></div>
+              <Spinner size="lg" />
               <p>{parseProgress || 'Analyse en cours…'}</p>
               <p className="catalog-import-hint">Cela peut prendre un moment pour les gros fichiers</p>
             </div>
@@ -624,7 +673,7 @@ function ImportPDFModal({ onDone, onClose }) {
                     </div>
                     {pr.result.items.length > 0 && (
                       <div className="catalog-import-preview">
-                        <table className="catalog-table">
+                        <Table className="catalog-table">
                           <thead>
                             <tr>
                               <th>Réf.</th>
@@ -651,7 +700,7 @@ function ImportPDFModal({ onDone, onClose }) {
                               </tr>
                             ))}
                           </tbody>
-                        </table>
+                        </Table>
                         {pr.result.items.length > 20 && (
                           <p className="catalog-import-hint" style={{ textAlign: 'center', marginTop: 4 }}>
                             …et {pr.result.items.length - 20} autres articles
@@ -668,37 +717,11 @@ function ImportPDFModal({ onDone, onClose }) {
           {/* ── STEP: IMPORTING ── */}
           {step === 'importing' && (
             <div className="catalog-import-loading">
-              <div className="loading-spinner"></div>
+              <Spinner size="lg" />
               <p>{parseProgress || `Import en cours (${totalItems} articles)…`}</p>
             </div>
           )}
         </div>
-
-        {/* ── Footer ── */}
-        {step === 'select' && (
-          <div className="catalog-modal-footer">
-            <button className="catalog-btn catalog-btn-secondary" onClick={onClose}>Annuler</button>
-            <button className="catalog-btn catalog-btn-primary" onClick={handleParse} disabled={!supplierId || files.length === 0}>
-              Analyser {files.length > 1 ? `les ${files.length} PDFs` : 'le PDF'}
-            </button>
-          </div>
-        )}
-        {step === 'preview' && totalItems > 0 && (
-          <div className="catalog-modal-footer">
-            <button className="catalog-btn catalog-btn-secondary" onClick={() => { setStep('select'); setParseResults([]); }}>
-              ← Retour
-            </button>
-            <button className="catalog-btn catalog-btn-primary" onClick={handleImport}>
-              <Upload size={16} /> Importer {totalItems} articles ({parseResults.length} catalogue{parseResults.length > 1 ? 's' : ''})
-            </button>
-          </div>
-        )}
-        {step === 'preview' && totalItems === 0 && (
-          <div className="catalog-modal-footer">
-            <button className="catalog-btn catalog-btn-secondary" onClick={() => setStep('select')}>← Retour</button>
-          </div>
-        )}
-      </div>
-    </div>
+    </ModalLayout>
   );
 }

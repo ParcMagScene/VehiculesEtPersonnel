@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import logger from '../../utils/logger';
 import './DashboardPanel.css';
+import { Spinner, Card, SectionHeader } from '@/design-system';
 
 // ═══════════════════════════════════════════════════
 // Point 1 — Dashboard global desktop
@@ -226,7 +227,7 @@ const DashboardPanel = ({
       {/* ═══ KPI Cards ═══ */}
       <div className="dashboard-kpi-grid">
         {/* Véhicules */}
-        <div role="button" tabIndex={0} className="kpi-card kpi-vehicles" onClick={() => onNavigateToModule?.('vehicles')}>
+        <Card className="kpi-card kpi-vehicles" onClick={() => onNavigateToModule?.('vehicles')}>
           <div className="kpi-icon">🚛</div>
           <div className="kpi-body">
             <div className="kpi-value">{vehicleStats.total}</div>
@@ -239,10 +240,10 @@ const DashboardPanel = ({
               )}
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Réservations */}
-        <div role="button" tabIndex={0} className="kpi-card kpi-reservations" onClick={() => onNavigateToModule?.('vehicles')}>
+        <Card className="kpi-card kpi-reservations" onClick={() => onNavigateToModule?.('vehicles')}>
           <div className="kpi-icon">📅</div>
           <div className="kpi-body">
             <div className="kpi-value">{reservationStats.todayCount}</div>
@@ -252,10 +253,10 @@ const DashboardPanel = ({
               <span className="kpi-detail">{reservationStats.weekCount} cette semaine</span>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Maintenances */}
-        <div role="button" tabIndex={0} className="kpi-card kpi-maintenance" onClick={() => onNavigateToModule?.('vehicles')}>
+        <Card className="kpi-card kpi-maintenance" onClick={() => onNavigateToModule?.('vehicles')}>
           <div className="kpi-icon">🔧</div>
           <div className="kpi-body">
             <div className="kpi-value">{maintenanceStats.upcoming7d}</div>
@@ -269,28 +270,28 @@ const DashboardPanel = ({
               )}
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Personnel */}
-        <div role="button" tabIndex={0} className="kpi-card kpi-personnel" onClick={() => onNavigateToModule?.('personnel')}>
+        <Card className="kpi-card kpi-personnel" onClick={() => onNavigateToModule?.('personnel')}>
           <div className="kpi-icon">👷</div>
           <div className="kpi-body">
             <div className="kpi-value">{personnelStats.total}</div>
             <div className="kpi-label">Personnel actif</div>
           </div>
-        </div>
+        </Card>
 
         {/* Affaires */}
-        <div role="button" tabIndex={0} className="kpi-card kpi-affaires" onClick={() => onNavigateToModule?.('affaires')}>
+        <Card className="kpi-card kpi-affaires" onClick={() => onNavigateToModule?.('affaires')}>
           <div className="kpi-icon">📂</div>
           <div className="kpi-body">
             <div className="kpi-value">{affairesCount || '—'}</div>
             <div className="kpi-label">Affaires</div>
           </div>
-        </div>
+        </Card>
 
         {/* Commandes */}
-        <div role="button" tabIndex={0} className="kpi-card kpi-orders" onClick={() => onNavigateToModule?.('orders')}>
+        <Card className="kpi-card kpi-orders" onClick={() => onNavigateToModule?.('orders')}>
           <div className="kpi-icon">🛒</div>
           <div className="kpi-body">
             <div className="kpi-value">{ordersCount.pending || 0}</div>
@@ -299,19 +300,18 @@ const DashboardPanel = ({
               <span className="kpi-detail">{ordersCount.total} total</span>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* ═══ Sections détaillées ═══ */}
       <div className="dashboard-sections">
         {/* Prochaines réservations */}
         <div className="dashboard-section">
-          <div className="section-header">
-            <h3>📅 Prochaines réservations</h3>
+          <SectionHeader className="section-header" title="📅 Prochaines réservations" actions={
             <button className="section-link" onClick={() => onNavigateToModule?.('vehicles')}>
               Voir tout →
             </button>
-          </div>
+          } />
           <div className="section-body">
             {upcomingReservations.length === 0 ? (
               <p className="empty-text">Aucune réservation à venir</p>
@@ -341,12 +341,11 @@ const DashboardPanel = ({
 
         {/* Maintenances en cours / à venir */}
         <div className="dashboard-section">
-          <div className="section-header">
-            <h3>🔧 Maintenances</h3>
+          <SectionHeader className="section-header" title="🔧 Maintenances" actions={
             <button className="section-link" onClick={() => onNavigateToModule?.('vehicles')}>
               Voir tout →
             </button>
-          </div>
+          } />
           <div className="section-body">
             {upcomingMaintenances.length === 0 ? (
               <p className="empty-text">Aucune maintenance en attente</p>
@@ -377,12 +376,11 @@ const DashboardPanel = ({
         {/* Alertes stock */}
         {stockAlerts.length > 0 && (
           <div className="dashboard-section section-alerts">
-            <div className="section-header">
-              <h3>⚠️ Alertes stock bas</h3>
+            <SectionHeader className="section-header" title="⚠️ Alertes stock bas" actions={
               <button className="section-link" onClick={() => onNavigateToModule?.('stock')}>
                 Voir le stock →
               </button>
-            </div>
+            } />
             <div className="section-body">
               <div className="stock-alert-list">
                 {stockAlerts.map((item, i) => (
@@ -400,9 +398,7 @@ const DashboardPanel = ({
         {/* Demandes en attente (admin) */}
         {currentUser?.role === 'admin' && pendingRequests > 0 && (
           <div className="dashboard-section section-pending">
-            <div className="section-header">
-              <h3>📬 Demandes en attente</h3>
-            </div>
+            <SectionHeader className="section-header" title="📬 Demandes en attente" />
             <div className="section-body">
               <div className="pending-banner">
                 <span className="pending-count">{pendingRequests}</span>
@@ -415,7 +411,7 @@ const DashboardPanel = ({
 
       {isLoading && (
         <div className="dashboard-loading-overlay">
-          <div className="loading-spinner" />
+          <Spinner size="lg" />
         </div>
       )}
     </div>

@@ -8,6 +8,7 @@ import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../../utils/affaireCons
 import AffaireBadge from '../AffaireBadge';
 import { useToast } from '../../hooks/useToast';
 import './EventTaskModal.css';
+import { Input, Select } from '@/design-system';
 
 // ═══ Définition des étapes opérationnelles ═══
 const TASK_STEPS = [
@@ -284,13 +285,13 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                     </div>
                     <div className="etm-field">
                       <label>Période</label>
-                      <select
+                      <Select
                         value={s.period}
                         onChange={e => updateStep(step.key, 'period', e.target.value)}
                       >
                         <option value="AM">Matin (AM)</option>
                         <option value="PM">Après-midi (PM)</option>
-                      </select>
+                      </Select>
                     </div>
                     <div className="etm-field">
                       <label>Heure début</label>
@@ -310,7 +311,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                     </div>
                     <div className="etm-field full">
                       <label>Notes</label>
-                      <input
+                      <Input
                         type="text"
                         placeholder="Notes..."
                         value={s.notes}
@@ -321,7 +322,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                       <div className="etm-field full">
                         <label><MapPin size={12} /> Lieu</label>
                         <div className="etm-location-row">
-                          <input
+                          <Input
                             type="text"
                             placeholder="Adresse ou lieu…"
                             value={s.locationAddress}

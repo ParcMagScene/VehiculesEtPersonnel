@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  box-shadow: 0 20px 60px var(--shadow-xl);
 }
 
 /* Header */
@@ -45,13 +45,13 @@
 .mailing-close {
   background: none;
   border: none;
-  color: rgba(255,255,255,0.8);
+  color: var(--glass-bright);
   cursor: pointer;
   padding: 4px;
   border-radius: 6px;
   transition: all 0.15s;
 }
-.mailing-close:hover { color: var(--theme-text-inverse); background: rgba(255,255,255,0.15); }
+.mailing-close:hover { color: var(--theme-text-inverse); background: var(--close-btn-bg); }
 
 /* Tabs */
 .mailing-tabs {
@@ -260,7 +260,7 @@
 .type-user { background: var(--theme-info-bg-strong); color: var(--theme-info-dark); }
 .type-person { background: var(--theme-success-bg-strong); color: var(--theme-success-dark); }
 .type-client { background: var(--theme-warning-bg); color: var(--theme-warning-dark); }
-.type-supplier { background: var(--theme-danger-bg); color: #db2777; }
+.type-supplier { background: var(--theme-danger-bg); color: var(--theme-danger); }
 
 /* HTML Editor */
 .mailing-html-editor {
@@ -377,7 +377,7 @@
 .mailing-preview-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: var(--overlay-light);
   z-index: 2100;
   display: flex;
   align-items: center;
@@ -390,7 +390,7 @@
   max-width: 640px;
   max-height: 80vh;
   overflow: hidden;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 16px 40px var(--shadow-xl);
 }
 .mailing-preview-header {
   display: flex;
@@ -452,7 +452,7 @@
 .cat-general { background: var(--theme-border); color: var(--theme-text-subtle); }
 .cat-commercial { background: var(--theme-info-bg-strong); color: var(--theme-info-dark); }
 .cat-technique { background: var(--theme-success-bg-strong); color: var(--theme-success-dark); }
-.cat-rh { background: var(--theme-danger-bg); color: #db2777; }
+.cat-rh { background: var(--theme-danger-bg); color: var(--theme-danger); }
 .cat-relance { background: var(--theme-warning-bg); color: var(--theme-warning-dark); }
 .mailing-tpl-actions {
   display: flex;

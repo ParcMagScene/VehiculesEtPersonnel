@@ -1,0 +1,48 @@
+/* ═══════════════════════════════════════
+   EmptyState — Design System
+   ═══════════════════════════════════════ */
+
+.ui-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+/* ── Tailles ── */
+.ui-empty-state--sm { padding: 1rem; }
+.ui-empty-state--md { padding: 2rem 1rem; }
+.ui-empty-state--lg { padding: 3rem 1.5rem; }
+
+/* ── Icône ── */
+.ui-empty-state__icon {
+  opacity: 0.5;
+  margin-bottom: 0.25rem;
+}
+.ui-empty-state--sm .ui-empty-state__icon { opacity: 0.4; }
+.ui-empty-state--lg .ui-empty-state__icon { opacity: 0.6; }
+
+/* ── Titre ── */
+.ui-empty-state__title {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text-primary, #374151);
+}
+.ui-empty-state--sm .ui-empty-state__title { font-size: 0.85rem; }
+.ui-empty-state--md .ui-empty-state__title { font-size: 0.95rem; }
+.ui-empty-state--lg .ui-empty-state__title { font-size: 1.1rem; }
+
+/* ── Description ── */
+.ui-empty-state__description {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* ── Action ── */
+.ui-empty-state__action {
+  margin-top: 0.5rem;
+}

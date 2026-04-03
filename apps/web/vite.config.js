@@ -131,6 +131,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@': join(import.meta.dirname, 'src'),
       'pdfjs-dist/build/pdf.worker.min.mjs': 'pdfjs-dist/build/pdf.worker.mjs'
     }
   }

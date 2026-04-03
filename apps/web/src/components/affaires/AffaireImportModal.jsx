@@ -7,6 +7,7 @@ import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '..
 import PhoneInput from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
+import { Button, FormField, ModalLayout, Input, Textarea, Select, Spinner, ProgressBar } from '@/design-system';
 
 const AffaireImportModal = ({ 
   isOpen, 
@@ -671,19 +672,20 @@ const AffaireImportModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="affaire-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="affaire-modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="affaire-modal-header">
-          <h2>
-            {step === 'choice' && 'Import BL'}
-            {step === 'upload' && 'Import BL - Sélection du fichier'}
-            {step === 'upload-additional' && 'Ajouter un BL supplémentaire'}
-            {step === 'form' && `Import BL - ${formData.numeroAffaire || 'Informations'}`}
-            {step === 'edit-event' && 'Modifier l\'événement'}
-          </h2>
-          <button className="close-button" onClick={onClose}>×</button>
-        </div>
-
+    <ModalLayout
+      open={isOpen}
+      onClose={onClose}
+      title={
+        (step === 'choice' && 'Import BL') ||
+        (step === 'upload' && 'Import BL - Sélection du fichier') ||
+        (step === 'upload-additional' && 'Ajouter un BL supplémentaire') ||
+        (step === 'form' && `Import BL - ${formData.numeroAffaire || 'Informations'}`) ||
+        (step === 'edit-event' && "Modifier l'événement") ||
+        'Import BL'
+      }
+      size="xl"
+      className="affaire-modal-content"
+    >
         <div className="affaire-modal-body">
           {/* Étape 1: Choix de l'action */}
           {step === 'choice' && (
@@ -800,9 +802,9 @@ const AffaireImportModal = ({
             <div className="batch-results-panel">
               <div className="batch-results-header">
                 <h3>📦 {batchResults.length} documents analysés</h3>
-                <button className="btn-reset-batch" onClick={() => { setBatchMode(false); setBatchResults([]); }}>
+                <Button variant="secondary" onClick={() => { setBatchMode(false); setBatchResults([]); }}>
                   ← Retour
-                </button>
+                </Button>
               </div>
               <div className="batch-results-list">
                 {batchResults.map((result, idx) => (
@@ -838,13 +840,11 @@ const AffaireImportModal = ({
 
           {isProcessing && (
             <div className="processing-indicator">
-              <div className="spinner"></div>
+              <Spinner size="lg" />
               {batchMode ? (
                 <div>
                   <p>Analyse des PDFs... {batchProgress.current}/{batchProgress.total}</p>
-                  <div className="batch-progress-bar">
-                    <div className="batch-progress-fill" style={{ width: `${batchProgress.total ? (batchProgress.current / batchProgress.total * 100) : 0}%` }} />
-                  </div>
+                  <ProgressBar value={batchProgress.current} max={batchProgress.total || 1} />
                 </div>
               ) : (
                 <p>Analyse du PDF en cours...</p>
@@ -862,25 +862,21 @@ const AffaireImportModal = ({
                 Que souhaitez-vous faire ?
               </p>
               <div className="button-group">
-                <button className="btn-cancel" onClick={handleCancelReplace}>
+                <Button variant="ghost" onClick={handleCancelReplace}>
                   Annuler
-                </button>
-                <button 
-                  className="btn-add" 
+                </Button>
+                <Button 
+                  variant="success" 
                   onClick={() => handleConfirmReplace('add')}
-                  style={{
-                    background: 'var(--theme-success)',
-                    color: 'var(--theme-text-inverse)'
-                  }}
                 >
                   ➕ Ajouter comme nouvelle affaire
-                </button>
-                <button 
-                  className="btn-confirm" 
+                </Button>
+                <Button 
+                  variant="primary" 
                   onClick={() => handleConfirmReplace('replace')}
                 >
                   🔄 Remplacer les données existantes
-                </button>
+                </Button>
               </div>
               <p style={{ fontSize: '12px', color: 'var(--theme-text-muted)', marginTop: '12px' }}>
                 <strong>Ajouter :</strong> Crée une nouvelle affaire avec ce BL, liée à cet événement<br/>
@@ -1040,70 +1036,63 @@ const AffaireImportModal = ({
                 </div>
               )}
               
-              <div className="form-group">
-                <label>Numéro d'affaire *</label>
-                <input
+              <FormField className="form-group" label="Numéro d'affaire" required>
+                <Input
                   type="text"
                   value={formData.numeroAffaire}
                   onChange={(e) => setFormData(prev => ({ ...prev, numeroAffaire: e.target.value }))}
                   placeholder="AF32742"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label>Type *</label>
-                <select
+              <FormField className="form-group" label="Type" required>
+                <Select
                   value={formData.type}
                   onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                 >
                   <option value="Prestation">Prestation</option>
                   <option value="Location">Location</option>
                   <option value="Installation">Installation</option>
-                </select>
-              </div>
+                </Select>
+              </FormField>
 
-              <div className="form-group">
-                <label>Client</label>
-                <input
+              <FormField className="form-group" label="Client">
+                <Input
                   type="text"
                   value={formData.client}
                   onChange={(e) => setFormData(prev => ({ ...prev, client: e.target.value }))}
                   placeholder="VILLE DU CHAMBON FEUGEROLLES"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label>Interlocuteur</label>
-                <input
+              <FormField className="form-group" label="Interlocuteur">
+                <Input
                   type="text"
                   value={formData.interlocuteur}
                   onChange={(e) => setFormData(prev => ({ ...prev, interlocuteur: e.target.value }))}
                   placeholder="Monsieur Guillaume RIBOUAT"
                 />
-              </div>
+              </FormField>
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Téléphone</label>
+                <FormField className="form-group" label="Téléphone">
                   <PhoneInput
                     value={formData.tel}
                     onChange={(val) => setFormData(prev => ({ ...prev, tel: val }))}
                   />
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label>Fax</label>
+                <FormField className="form-group" label="Fax">
                   <PhoneInput
                     value={formData.fax}
                     onChange={(val) => setFormData(prev => ({ ...prev, fax: val }))}
                     placeholder="01 23 45 67 89"
                   />
-                </div>
+                </FormField>
               </div>
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Date de l'affaire *</label>
+                <FormField className="form-group" label="Date de l'affaire" required>
                   <input
                     type="date"
                     value={formData.dateDebut}
@@ -1112,21 +1101,19 @@ const AffaireImportModal = ({
                   <small style={{ color: 'var(--theme-text-gray)', fontSize: '12px' }}>
                     Date de la prestation (doit être dans la période de l'événement)
                   </small>
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label>Devis</label>
-                  <input
+                <FormField className="form-group" label="Devis">
+                  <Input
                     type="text"
                     value={formData.devis}
                     onChange={(e) => setFormData(prev => ({ ...prev, devis: e.target.value }))}
                     placeholder="1001 du 20/01/2026"
                   />
-                </div>
+                </FormField>
               </div>
 
-              <div className="form-group">
-                <label>Adresse de livraison</label>
+              <FormField className="form-group" label="Adresse de livraison">
                 <AddressAutocomplete
                   as="textarea"
                   value={formData.adresseLivraison}
@@ -1134,32 +1121,30 @@ const AffaireImportModal = ({
                   placeholder="Adresse complète de livraison"
                   rows={3}
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label>Titre de l'événement</label>
-                <input
+              <FormField className="form-group" label="Titre de l'événement">
+                <Input
                   type="text"
                   value={formData.titre}
                   onChange={(e) => setFormData(prev => ({ ...prev, titre: e.target.value }))}
                   placeholder="Titre qui apparaîtra dans le calendrier"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
+              <FormField className="form-group" label="Description">
+                <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Notes ou informations complémentaires"
                   rows="3"
                 />
-              </div>
+              </FormField>
 
               <div className="form-actions">
-                <button className="btn-submit" onClick={handleSubmit}>
+                <Button variant="primary" onClick={handleSubmit}>
                   Valider l'import
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -1195,8 +1180,7 @@ const AffaireImportModal = ({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 };
 

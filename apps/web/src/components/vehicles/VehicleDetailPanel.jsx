@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader, User, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
+import { Tag } from '@/design-system';
 import './VehicleDetailPanel.css';
 
 /* ═══════════════════════════════════════════════
@@ -209,10 +210,10 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
                 {m.description && <div className="vdp-intervention-desc">{m.description}</div>}
                 <div className="vdp-intervention-tags">
                   {m.mileage && parseInt(m.mileage) > 0 && (
-                    <span className="vdp-tag vdp-tag-km"><Gauge size={11} /> {parseInt(m.mileage).toLocaleString('fr-FR')} km</span>
+                    <Tag color="info" size="sm"><Gauge size={11} /> {parseInt(m.mileage).toLocaleString('fr-FR')} km</Tag>
                   )}
-                  {m.cost && <span className="vdp-tag vdp-tag-cost">💰 {parseFloat(m.cost).toFixed(0)} €</span>}
-                  {m.garage && <span className="vdp-tag vdp-tag-garage">📍 {m.garage}</span>}
+                  {m.cost && <Tag color="amber" size="sm">💰 {parseFloat(m.cost).toFixed(0)} €</Tag>}
+                  {m.garage && <Tag color="neutral" size="sm">📍 {m.garage}</Tag>}
                 </div>
               </div>
             ))}

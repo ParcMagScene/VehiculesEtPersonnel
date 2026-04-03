@@ -15,7 +15,7 @@
 .management-panel > .personnel-panel .personnel-subtabs {
   position: sticky;
   top: 72px;
-  z-index: 5;
+  z-index: var(--z-base);
   margin-left: -8px;
   margin-right: -8px;
   padding: 6px;
@@ -95,7 +95,7 @@
 .personnel-subtab.active {
   background: var(--theme-bg-card);
   color: var(--tab-color, var(--theme-info));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .personnel-content {
@@ -270,7 +270,7 @@
 .form-field textarea:focus {
   outline: none;
   border-color: var(--focus-border, var(--theme-border-focus));
-  box-shadow: var(--focus-ring, 0 0 0 3px rgba(102, 126, 234, 0.15));
+  box-shadow: var(--focus-ring, 0 0 0 3px var(--focus-ring));
 }
 
 .form-field textarea {
@@ -287,9 +287,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px var(--shadow-xl);
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -601,7 +601,7 @@
 
 .pp-type-badge.type-permanent { background: var(--theme-info-bg-strong); color: var(--theme-info-dark); }
 .pp-type-badge.type-salarie  { background: var(--btn-success-bg); color: var(--theme-success-text); }
-.pp-type-badge.type-stagiaire { background: #f3e8ff; color: #7c3aed; }
+.pp-type-badge.type-stagiaire { background: #f3e8ff; color: var(--theme-primary-hover); }
 .pp-type-badge.type-contractuel { background: var(--theme-danger-bg); color: #9d174d; }
 .pp-type-badge.type-apprenti  { background: #ccfbf1; color: #0d9488; }
 
@@ -716,7 +716,7 @@
 }
 
 .person-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-inner);
 }
 
 .person-card.inactive {
@@ -770,11 +770,11 @@
 .person-type-badge.type-permanent { background: var(--theme-info-bg-strong); color: var(--theme-info-dark); }
 .person-type-badge.type-contractuel { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
 .person-type-badge.type-salarié { background: var(--btn-success-bg); color: var(--theme-success-text); }
-.person-type-badge.type-stagiaire { background: #f3e8ff; color: #7c3aed; }
+.person-type-badge.type-stagiaire { background: #f3e8ff; color: var(--theme-primary-hover); }
 .person-type-badge.type-apprenti { background: #ccfbf1; color: #0d9488; }
 .person-type-badge.contract-type.type-intermittent { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
 .person-type-badge.contract-type.type-freelance { background: var(--theme-danger-bg); color: #be123c; }
-.person-type-badge.contract-type.type-entreprise { background: var(--theme-purple-bg); color: #6d28d9; }
+.person-type-badge.contract-type.type-entreprise { background: var(--theme-purple-bg); color: var(--theme-primary-dark); }
 
 .person-linked-badge {
   display: inline-flex;
@@ -1215,7 +1215,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   position: relative;
-  z-index: 2;
+  z-index: var(--z-base);
 }
 
 .pp-column-header > span {
@@ -1234,8 +1234,8 @@
   align-items: center;
   gap: 3px;
   padding: 2px 7px;
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--close-btn-border);
+  border: 1px solid var(--glass);
   border-radius: 10px;
   color: var(--theme-text-inverse);
   font-size: 11px;
@@ -1246,12 +1246,12 @@
 }
 
 @keyframes pulse-badge {
-  0%, 100% { background: rgba(255, 255, 255, 0.25); }
+  0%, 100% { background: var(--close-btn-border); }
   50% { background: rgba(251, 191, 36, 0.5); }
 }
 
 .pp-leave-badge-btn:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--glass);
   animation: none;
 }
 
@@ -1265,8 +1265,8 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--glass-light);
+  border: 1px solid var(--glass-medium);
   border-radius: 5px;
   color: var(--theme-text-inverse);
   cursor: pointer;
@@ -1274,7 +1274,7 @@
 }
 
 .pp-leave-add-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-medium);
 }
 
 /* Bouton d'ajout de personne dans le planning */
@@ -1284,8 +1284,8 @@
   justify-content: center;
   gap: 2px;
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--close-btn-border);
+  border: 1px solid var(--glass);
   border-radius: 5px;
   color: var(--theme-text-inverse);
   cursor: pointer;
@@ -1294,7 +1294,7 @@
 }
 
 .pp-person-add-btn:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--glass);
   transform: scale(1.05);
 }
 
@@ -1307,7 +1307,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1338,7 +1338,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1362,8 +1362,8 @@
 
 /* Bouton toggle section */
 .pp-section-toggle {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--glass-light);
+  border: 1px solid var(--glass);
   color: var(--theme-text-inverse);
   width: 24px;
   height: 24px;
@@ -1379,7 +1379,7 @@
 }
 
 .pp-section-toggle:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--close-btn-hover-bg);
   transform: scale(1.05);
 }
 
@@ -1430,7 +1430,7 @@
   padding: 0.5rem 0.5rem;
   font-weight: 600;
   text-align: center;
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid var(--glass-light);
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -1453,8 +1453,8 @@
 }
 
 .pp-header-cell.day-header.today {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
-  box-shadow: inset 0 3px 0 var(--theme-success-alt), inset 2px 0 0 rgba(16, 185, 129, 0.45), inset -2px 0 0 rgba(16, 185, 129, 0.45);
+  background: linear-gradient(135deg, var(--success-tint-accent) 0%, var(--success-tint-faint) 100%);
+  box-shadow: inset 0 3px 0 var(--theme-success-alt), inset 2px 0 0 var(--success-tint-strong), inset -2px 0 0 var(--success-tint-strong);
 }
 
 /* Cellule AM/PM */
@@ -1465,7 +1465,7 @@
   background: linear-gradient(135deg, var(--theme-purple-accent) 0%, var(--theme-accent) 100%);
   color: var(--theme-text-inverse);
   height: 1.8rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  border-right: 1px solid var(--close-btn-hover-bg);
 }
 
 .pp-header-cell.period-cell.weekend {
@@ -1532,7 +1532,7 @@
   scrollbar-width: none;
   background: var(--theme-bg-card);
   position: relative;
-  z-index: 2;
+  z-index: var(--z-base);
 }
 
 .pp-person-column::-webkit-scrollbar {
@@ -1605,8 +1605,8 @@
 }
 
 .pp-slot.today-slot {
-  background: rgba(16, 185, 129, 0.06);
-  box-shadow: inset 2px 0 0 rgba(16, 185, 129, 0.45), inset -2px 0 0 rgba(16, 185, 129, 0.45);
+  background: var(--success-tint-subtle);
+  box-shadow: inset 2px 0 0 var(--success-tint-strong), inset -2px 0 0 var(--success-tint-strong);
 }
 
 .pp-slot.reserved {
@@ -1675,8 +1675,8 @@
   text-transform: uppercase;
   opacity: 0.85;
   pointer-events: none;
-  z-index: 1;
-  text-shadow: 0 0 3px rgba(255,255,255,0.6);
+  z-index: var(--z-base);
+  text-shadow: 0 0 3px var(--glass-strong);
 }
 
 /* ═══ Tâches assignées dans le planning ═══ */
@@ -1687,7 +1687,7 @@
   flex-direction: column;
   gap: 1px;
   overflow: hidden;
-  z-index: 1;
+  z-index: var(--z-base);
   pointer-events: none;
 }
 
@@ -1697,15 +1697,15 @@
   padding: 1px 4px;
   border-radius: 3px;
   background: rgba(245, 158, 11, 0.18);
-  border-left: 2px solid #f59e0b;
+  border-left: 2px solid var(--theme-warning);
   min-height: 14px;
   pointer-events: auto;
   cursor: default;
 }
 
 .pp-task-chip.affaire {
-  background: rgba(59, 130, 246, 0.15);
-  border-left-color: #3b82f6;
+  background: var(--primary-tint-medium);
+  border-left-color: var(--theme-info);
 }
 
 .pp-task-chip-title {
@@ -1731,7 +1731,7 @@
   min-width: 0;
   cursor: pointer;
   transition: filter 0.15s;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .pp-assignment-block:not(.clipped-left)::before {
@@ -1770,7 +1770,7 @@
 /* Contenu texte au-dessus des bandes */
 .pp-assignment-content {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1836,7 +1836,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s, background 0.15s;
-  z-index: 5;
+  z-index: var(--z-base);
   padding: 0;
 }
 
@@ -1966,9 +1966,9 @@
 
 /* ===== Drag-to-create selection ===== */
 .pp-slot.pp-drag-selected {
-  background-color: rgba(59, 130, 246, 0.15) !important;
+  background-color: var(--primary-tint-medium) !important;
   border: 2px solid var(--theme-info) !important;
-  z-index: 10;
+  z-index: var(--z-dropdown);
   box-sizing: border-box;
 }
 
@@ -2003,7 +2003,7 @@
 }
 
 .pp-resize-handle:hover {
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--theme-overlay-dark);
   width: 10px;
 }
 

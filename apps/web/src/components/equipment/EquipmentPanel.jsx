@@ -13,6 +13,7 @@ import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
 import './EquipmentPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { Button, Dialog, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, EmptyState, SearchBar, Tooltip } from '@/design-system';
 import { resolveGenericImage, getAllGenericImages, GENERIC_IMAGES } from '../../utils/genericImages';
 
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1", "A3" → "A1")
@@ -496,7 +497,7 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
     if (editingId === item.id) {
       return (
         <span className="eq-cat-edit-inline" onClick={(e) => e.stopPropagation()}>
-          <input
+          <Input
             ref={inputRef}
             className="eq-cat-edit-input"
             value={editValue}
@@ -512,7 +513,9 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
     return (
       <>
         <span className={className}>{item.name}</span>
-        <button className="eq-cat-edit-btn" onClick={(e) => startEdit(item, e)} title="Renommer"><Edit2 size={12} /></button>
+        <Tooltip content="Renommer">
+          <button className="eq-cat-edit-btn" onClick={(e) => startEdit(item, e)}><Edit2 size={12} /></button>
+        </Tooltip>
       </>
     );
   };
@@ -628,6 +631,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [filterSerialized, setFilterSerialized] = useState(false);
   const [showDepotMap, setShowDepotMap] = useState(false);
   const [depotMapModalZone, setDepotMapModalZone] = useState(null); // { zoneId, equipmentName } or null
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Trouver le bon dépôt pour la zone cliquée (dépôt 1 ou 2)
   const modalDepotData = useMemo(() => {
@@ -783,10 +787,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   };
 
   const handleDeleteEquipment = async (id) => {
-    if (!confirm('Supprimer cet équipement et tout son historique ?')) return;
+    if (!window.confirm('Supprimer cet équipement et tout son historique ?')) return;
     try {
       await api.deleteEquipment(id);
       setSelectedEquipment(null);
+      setDialogEquipment(null);
       loadData();
     } catch (err) {
       toast.error('Erreur: ' + err.message);
@@ -795,18 +800,17 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
 
   const handleSerializeEquipment = async (eq) => {
     const qty = eq.stockQuantity || eq.stock_quantity || 1;
-    if (qty <= 1) return toast.warning('Cet équipement a déjà une quantité de 1.');
-    if (!confirm(`Sérialiser "${eq.name}" en ${qty} entités individuelles ?\n\nChaque exemplaire recevra son propre UID (EMAG-XXXXX).\nL'article original sera remplacé par ${qty} fiches individuelles.`)) return;
+    if (eq.uid && qty <= 1) return toast.warning('Cet équipement possède déjà un UID.');
+    const msg = qty > 1
+      ? `Sérialiser "${eq.name}" en ${qty} entités individuelles ?\n\nChaque exemplaire recevra son propre UID (EMAG-XXXXX).\nL'article original sera remplacé par ${qty} fiches individuelles.`
+      : `Attribuer un UID unique (EMAG-XXXXX) à "${eq.name}" ?`;
+    if (!window.confirm(msg)) return;
     try {
       const result = await api.serializeEquipment(eq.id);
-      toast.success(`${result.message} — UID créés : ${result.created.map(c => c.uid).join(', ')}`);
+      toast.success(`${result.message} — UID : ${result.created.map(c => c.uid).join(', ')}`);
       setSelectedEquipment(null);
       setDialogEquipment(null);
-      // Mise à jour immédiate du tableau sans recharger toutes les données
-      setEquipment(prev => [
-        ...prev.filter(e => e.id !== eq.id),
-        ...(result.items || [])
-      ]);
+      loadData();
     } catch (err) {
       toast.error('Erreur sérialisation: ' + err.message);
     }
@@ -867,7 +871,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
 
   // ═══ RENDU ═══
   if (loading && equipment.length === 0) {
-    return <div className="eq-loading"><div className="eq-spinner" /> Chargement du parc matériel...</div>;
+    return <div className="eq-loading"><Spinner size="lg" /> Chargement du parc matériel...</div>;
   }
 
   return (
@@ -889,16 +893,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
         <div className="eq-toolbar-actions">
           {subTab === 'inventory' && (
             <>
-              <div className="eq-search">
-                <Search size={14} />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher..."
-                />
-                {search && <button className="eq-search-clear" onClick={() => setSearch('')}><X size={12} /></button>}
-              </div>
+              <SearchBar value={search} onChange={setSearch} placeholder="Rechercher..." size="sm" />
               <CategoryCascadeFilter
                 families={families}
                 subfamilies={subfamilies}
@@ -908,11 +903,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                 isMobile={isMobile}
               />
               <label className="eq-filter-check" title="Afficher uniquement les matériels sérialisés">
-                <input type="checkbox" checked={filterSerialized} onChange={(e) => setFilterSerialized(e.target.checked)} />
+                <Checkbox checked={filterSerialized} onChange={(e) => setFilterSerialized(e.target.checked)} />
                 <span>Sérialisés</span>
               </label>
               {depotZones && (
-                <select className="eq-filter eq-zone-filter" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} title="Filtrer par zone dépôt">
+                <Select className="eq-filter eq-zone-filter" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} title="Filtrer par zone dépôt">
                   <option value="">Toutes zones</option>
                   <option value="_none">📍 Sans zone</option>
                   {allDepotZones?.depots ? allDepotZones.depots.map(d => (
@@ -920,59 +915,50 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                       {d.zones.map(z => <option key={`${d.id}-${z.id}`} value={z.id}>📍 {z.label}</option>)}
                     </optgroup>
                   )) : depotZones.zones.map(z => <option key={z.id} value={z.id}>📍 {z.label}</option>)}
-                </select>
+                </Select>
               )}
               {depotZones && (
-                <button className={`eq-btn-secondary${showDepotMap ? ' active' : ''}`} onClick={() => setShowDepotMap(!showDepotMap)} title="Plan du dépôt">
+                <Button variant="secondary" className={showDepotMap ? 'active' : ''} onClick={() => setShowDepotMap(!showDepotMap)} title="Plan du dépôt">
                   <Map size={14} />
-                </button>
+                </Button>
               )}
-              <button className="eq-btn-add" onClick={() => { setEditingEquipment(null); setShowEquipmentModal(true); }}>
+              <Button variant="primary" onClick={() => { setEditingEquipment(null); setShowEquipmentModal(true); }}>
                 <Plus size={14} /> Équipement
-              </button>
+              </Button>
             </>
           )}
           {subTab === 'sav' && (
             <>
-              <div className="eq-search">
-                <Search size={14} />
-                <input
-                  type="text"
-                  value={savSearch}
-                  onChange={(e) => setSavSearch(e.target.value)}
-                  placeholder="Rechercher ticket, matériel..."
-                />
-                {savSearch && <button className="eq-search-clear" onClick={() => setSavSearch('')}><X size={12} /></button>}
-              </div>
+              <SearchBar value={savSearch} onChange={setSavSearch} placeholder="Rechercher ticket, matériel..." size="sm" />
               {isAdmin && (
-                <button className="eq-btn-secondary" onClick={() => setShowSavImportModal(true)} title="Importer interventions SAV">
+                <Button variant="secondary" onClick={() => setShowSavImportModal(true)} title="Importer interventions SAV">
                   <Upload size={14} /> Import SAV
-                </button>
+                </Button>
               )}
               {canManageEquipmentMaintenance && (
-                <button className="eq-btn-secondary" onClick={() => setShowReportModal(true)} title="Rapport maintenance matériel">
+                <Button variant="secondary" onClick={() => setShowReportModal(true)} title="Rapport maintenance matériel">
                   <FileText size={14} /> Rapport
-                </button>
+                </Button>
               )}
               {canManageEquipmentMaintenance && (
-                <button className="eq-btn-secondary" onClick={handleExportSavPdf} disabled={exportingSavPdf} title="Exporter PDF du matériel en SAV">
+                <Button variant="secondary" onClick={handleExportSavPdf} disabled={exportingSavPdf} title="Exporter PDF du matériel en SAV">
                   <Download size={14} /> {exportingSavPdf ? 'Export...' : 'PDF SAV'}
-                </button>
+                </Button>
               )}
-              <select className="eq-filter" value={savFilterStatus} onChange={(e) => setSavFilterStatus(e.target.value)}>
+              <Select className="eq-filter" value={savFilterStatus} onChange={(e) => setSavFilterStatus(e.target.value)}>
                 <option value="_active">En cours (actifs)</option>
                 <option value="">Tous statuts</option>
                 {Object.entries(SAV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              </Select>
               {canManageEquipmentMaintenance && !isMobile && (
-                <button className="eq-btn-add" onClick={() => { setSavTicketEquipment(null); setEditingSavTicket(null); setShowSavModal(true); }}>
+                <Button variant="primary" onClick={() => { setSavTicketEquipment(null); setEditingSavTicket(null); setShowSavModal(true); }}>
                   <Plus size={14} /> Ticket SAV
-                </button>
+                </Button>
               )}
               {isMobile && (
-                <button className="eq-btn-add eq-mobile-sav-request" onClick={() => setShowMobileSavRequest(true)}>
+                <Button variant="primary" className="eq-mobile-sav-request" onClick={() => setShowMobileSavRequest(true)}>
                   <Plus size={14} /> Demande SAV
-                </button>
+                </Button>
               )}
             </>
           )}
@@ -1096,9 +1082,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
             }}
             onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
             onDelete={async (id) => {
-              if (!confirm('Supprimer ce ticket ?')) return;
-              await api.deleteSavTicket(id);
-              loadData();
+              if (!window.confirm('Supprimer ce ticket ?')) return;
+              try {
+                await api.deleteSavTicket(id);
+                loadData();
+              } catch (err) { toast.error('Erreur: ' + err.message); }
             }}
           />
           )}
@@ -1135,10 +1123,12 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
             onClose={() => setSelectedTicket(null)}
             onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
             onDelete={async (id) => {
-              if (!confirm('Supprimer ce ticket ?')) return;
-              await api.deleteSavTicket(id);
-              setSelectedTicket(null);
-              loadData();
+              if (!window.confirm('Supprimer ce ticket ?')) return;
+              try {
+                await api.deleteSavTicket(id);
+                setSelectedTicket(null);
+                loadData();
+              } catch (err) { toast.error('Erreur: ' + err.message); }
             }}
             onOpenDialog={(t) => { setSelectedTicket(null); setDialogTicket(t); }}
             onOpenEquipmentDialog={(eq) => { setSelectedTicket(null); setDialogEquipment(eq); }}
@@ -1178,10 +1168,12 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
         onClose={() => setDialogTicket(null)}
         onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
         onDelete={async (id) => {
-          if (!confirm('Supprimer ce ticket ?')) return;
-          await api.deleteSavTicket(id);
-          setDialogTicket(null);
-          loadData();
+          if (!window.confirm('Supprimer ce ticket ?')) return;
+          try {
+            await api.deleteSavTicket(id);
+            setDialogTicket(null);
+            loadData();
+          } catch (err) { toast.error('Erreur: ' + err.message); }
         }}
         onOpenEquipmentDialog={(eq) => { setDialogTicket(null); setDialogEquipment(eq); }}
       />
@@ -1287,16 +1279,16 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                   <div className="eq-management-section">
                     <h3><Upload size={18} /> Import CSV Inventaire</h3>
                     <p>Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent). Les familles, catégories et types seront automatiquement créés.</p>
-                    <button className="eq-btn-save" onClick={() => { onCloseManagement(); setShowImportModal(true); }} style={{ marginTop: 12 }}>
+                    <Button variant="primary" onClick={() => { onCloseManagement(); setShowImportModal(true); }} style={{ marginTop: 12 }}>
                       <Upload size={16} /> Importer un fichier CSV
-                    </button>
+                    </Button>
                   </div>
                   <div className="eq-management-section">
                     <h3><Wrench size={18} /> Import Interventions SAV</h3>
                     <p>Importez les interventions SAV depuis un fichier CSV Locmat. Les interventions seront automatiquement liées aux équipements via leur numéro de série.</p>
-                    <button className="eq-btn-save" onClick={() => { onCloseManagement(); setShowSavImportModal(true); }} style={{ marginTop: 12 }}>
+                    <Button variant="primary" onClick={() => { onCloseManagement(); setShowSavImportModal(true); }} style={{ marginTop: 12 }}>
                       <Upload size={16} /> Importer les interventions
-                    </button>
+                    </Button>
                   </div>
                 </>
               )}
@@ -1350,12 +1342,13 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
 
       {/* Modal Plan dépôt (ouvert depuis un clic sur une zone) */}
       {depotMapModalZone && modalDepotData && (
-        <div className="eq-depot-map-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setDepotMapModalZone(null)}>
-          <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="eq-depot-map-modal-header">
-              <h3><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone.zoneId}{depotMapModalZone.equipmentName ? ` · ${depotMapModalZone.equipmentName}` : ''}</h3>
-              <button className="eq-dialog-close" onClick={() => setDepotMapModalZone(null)} title="Fermer"><X size={20} /></button>
-            </div>
+        <ModalLayout
+          open
+          onClose={() => setDepotMapModalZone(null)}
+          title={<><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone.zoneId}{depotMapModalZone.equipmentName ? ` · ${depotMapModalZone.equipmentName}` : ''}</>}
+          size="xl"
+          className="eq-depot-map-modal"
+        >
             <div className="eq-depot-map-modal-body">
               <DepotMap
                 zones={modalDepotData}
@@ -1368,9 +1361,20 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                 compact={true}
               />
             </div>
-          </div>
-        </div>
+        </ModalLayout>
       )}
+
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title}
+        variant={confirmDialog?.variant}
+        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+        confirmLabel={confirmDialog?.confirmLabel}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 };
@@ -1387,6 +1391,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
   const [renameValue, setRenameValue] = useState('');
   const [linkingPhoto, setLinkingPhoto] = useState(null);
   const [linkSearch, setLinkSearch] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Filtrer les photos par recherche
   const filteredPhotos = useMemo(() => {
@@ -1423,15 +1428,22 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
   };
 
   // Delete handler
-  const handleDelete = async (filename) => {
-    if (!confirm(`Supprimer la photo "${filename}" ?\nCette action est irréversible.`)) return;
-    try {
-      await api.deleteEquipmentPhoto(filename);
-      toast.success(`Photo "${filename}" supprimée`);
-      onRefresh();
-    } catch (err) {
-      toast.error('Erreur suppression : ' + (err.message || 'inconnu'));
-    }
+  const handleDelete = (filename) => {
+    setConfirmDialog({
+      title: 'Supprimer la photo',
+      message: `Supprimer la photo "${filename}" ?\nCette action est irréversible.`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteEquipmentPhoto(filename);
+          toast.success(`Photo "${filename}" supprimée`);
+          onRefresh();
+        } catch (err) {
+          toast.error('Erreur suppression : ' + (err.message || 'inconnu'));
+        }
+      },
+    });
   };
 
   // Rename handler
@@ -1496,19 +1508,10 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
 
       {/* Barre d'actions */}
       <div className="eq-media-toolbar">
-        <div className="eq-media-search">
-          <Search size={14} />
-          <input
-            type="text"
-            placeholder="Rechercher une photo..."
-            value={mediaSearch}
-            onChange={(e) => setMediaSearch(e.target.value)}
-          />
-          {mediaSearch && <button className="eq-media-search-clear" onClick={() => setMediaSearch('')}><X size={12} /></button>}
-        </div>
-        <button className="eq-btn-save" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+        <SearchBar value={mediaSearch} onChange={setMediaSearch} placeholder="Rechercher une photo..." size="sm" />
+        <Button variant="primary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
           <Upload size={16} /> {uploading ? 'Upload...' : 'Ajouter des photos'}
-        </button>
+        </Button>
         <input
           ref={fileInputRef}
           type="file"
@@ -1550,7 +1553,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                   <div className="eq-media-card-info">
                     {renamingPhoto === p ? (
                       <div style={{ display: 'flex', gap: 3, width: '100%' }}>
-                        <input
+                        <Input
                           type="text"
                           value={renameValue}
                           onChange={e => setRenameValue(e.target.value)}
@@ -1569,7 +1572,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                       </span>
                     ) : linkingPhoto === p ? (
                       <div className="eq-media-link-picker" style={{ width: '100%' }}>
-                        <input
+                        <Input
                           type="text"
                           placeholder="Rechercher équipement..."
                           value={linkSearch}
@@ -1600,15 +1603,21 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                     )}
                   </div>
                   <div className="eq-media-card-actions" style={{ display: 'flex', gap: 2 }}>
-                    <button className="eq-media-card-action-btn" onClick={() => { setRenamingPhoto(p); setRenameValue(p.replace(/\.[^.]+$/, '')); }} title="Renommer">
-                      <Edit2 size={12} />
-                    </button>
-                    <button className="eq-media-card-action-btn" onClick={() => setLinkingPhoto(linkingPhoto === p ? null : p)} title="Associer manuellement">
-                      <Link2 size={12} />
-                    </button>
-                    <button className="eq-media-card-delete" onClick={() => handleDelete(p)} title="Supprimer cette photo">
-                      <Trash2 size={13} />
-                    </button>
+                    <Tooltip content="Renommer">
+                      <button className="eq-media-card-action-btn" onClick={() => { setRenamingPhoto(p); setRenameValue(p.replace(/\.[^.]+$/, '')); }}>
+                        <Edit2 size={12} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Associer manuellement">
+                      <button className="eq-media-card-action-btn" onClick={() => setLinkingPhoto(linkingPhoto === p ? null : p)}>
+                        <Link2 size={12} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Supprimer cette photo">
+                      <button className="eq-media-card-delete" onClick={() => handleDelete(p)}>
+                        <Trash2 size={13} />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               );
@@ -1666,6 +1675,17 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
         </div>
       )}
 
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title}
+        variant={confirmDialog?.variant}
+        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+        confirmLabel={confirmDialog?.confirmLabel}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 };
@@ -1674,17 +1694,13 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
 const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photosList, logosList, favoriteIds, watchIds, onToggleList, onSelect, onDoubleClick, onOpenDepotMap, categories }) => {
   if (equipment.length === 0) {
     return (
-      <div className="eq-empty">
-        <Package size={48} strokeWidth={1} />
-        <p>Aucun matériel trouvé</p>
-        <span>Ajoutez votre premier équipement avec le bouton +</span>
-      </div>
+      <EmptyState icon={<Package size={48} strokeWidth={1} />} title="Aucun matériel trouvé" description="Ajoutez votre premier équipement avec le bouton +" />
     );
   }
 
   return (
     <div className="eq-table-wrap">
-      <table className="eq-table">
+      <Table className="eq-table">
         <thead>
           <tr>
             <th style={{ width: 50 }}></th>
@@ -1778,7 +1794,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
             );
           })}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 };
@@ -1814,17 +1830,23 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
             <div className="eq-detail-uid-row">
               <Hash size={14} />
               <code className="eq-uid-code">{eq.uid}</code>
-              <button className="eq-btn-qr" onClick={() => setShowQR(!showQR)} title="Afficher QR Code">
-                <QrCode size={16} />
-              </button>
+              <Tooltip content="Afficher QR Code">
+                <button className="eq-btn-qr" onClick={() => setShowQR(!showQR)}>
+                  <QrCode size={16} />
+                </button>
+              </Tooltip>
               {onToggleList && (
                 <>
-                  <button className={`eq-btn-list-star ${isFav ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'favorite'); }} title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
-                    <Star size={16} fill={isFav ? '#f59e0b' : 'none'} />
-                  </button>
-                  <button className={`eq-btn-list-eye ${isWatch ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'watch'); }} title={isWatch ? 'Retirer de la surveillance' : 'Mettre en surveillance'}>
-                    <Eye size={16} />
-                  </button>
+                  <Tooltip content={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
+                    <button className={`eq-btn-list-star ${isFav ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'favorite'); }}>
+                      <Star size={16} fill={isFav ? '#f59e0b' : 'none'} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content={isWatch ? 'Retirer de la surveillance' : 'Mettre en surveillance'}>
+                    <button className={`eq-btn-list-eye ${isWatch ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'watch'); }}>
+                      <Eye size={16} />
+                    </button>
+                  </Tooltip>
                 </>
               )}
             </div>
@@ -2044,23 +2066,29 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
           <span className="eq-slide-name">{currentEq.reference || cleanName(currentEq.name)}</span>
           <span className="eq-slide-type">{currentEq.categoryIcon || currentEq.category_icon || '📦'} {currentEq.categoryName || currentEq.category_name || ''}</span>
         </div>
-        <button className="eq-slide-close" onClick={handleClose} title="Fermer">
-          <X size={18} />
-        </button>
+        <Tooltip content="Fermer">
+          <button className="eq-slide-close" onClick={handleClose}>
+            <X size={18} />
+          </button>
+        </Tooltip>
       </div>
       <div className="eq-slide-body">
         <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} onOpenDepotMap={onOpenDepotMap} categories={categories} />
       </div>
       <div className="eq-slide-footer">
         {onPrintLabel && (
-          <button className="eq-btn-secondary eq-footer-icon-btn" onClick={() => onPrintLabel(currentEq)} title="Imprimer étiquette">
-            <Printer size={14} />
-          </button>
+          <Tooltip content="Imprimer étiquette">
+            <Button variant="secondary" className="eq-footer-icon-btn" iconOnly onClick={() => onPrintLabel(currentEq)}>
+              <Printer size={14} />
+            </Button>
+          </Tooltip>
         )}
         {onPrintSheet && (
-          <button className="eq-btn-secondary eq-footer-icon-btn" onClick={() => onPrintSheet(currentEq)} title="Imprimer la fiche">
-            <FileText size={14} />
-          </button>
+          <Tooltip content="Imprimer la fiche">
+            <Button variant="secondary" className="eq-footer-icon-btn" iconOnly onClick={() => onPrintSheet(currentEq)}>
+              <FileText size={14} />
+            </Button>
+          </Tooltip>
         )}
         <button className="eq-slide-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentEq); }}>
           <ExternalLink size={14} /> Ouvrir la fiche complète
@@ -2102,9 +2130,11 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
               {eq.categoryIcon || eq.category_icon || '📦'} {eq.categoryName || eq.category_name || ''}
             </span>
           </div>
-          <button className="eq-dialog-close" onClick={handleClose} title="Fermer" style={{ flexShrink: 0, marginLeft: '12px' }}>
-            <X size={20} />
-          </button>
+          <Tooltip content="Fermer">
+            <button className="eq-dialog-close" onClick={handleClose} style={{ flexShrink: 0, marginLeft: '12px' }}>
+              <X size={20} />
+            </button>
+          </Tooltip>
         </div>
         <div className="eq-dialog-body">
           <EquipmentDetailContent
@@ -2124,37 +2154,37 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
         <div className="eq-dialog-footer">
           <div className="eq-dialog-actions">
             <div className="eq-actions-group">
-              <button className="eq-btn-primary" onClick={() => onEdit(eq)}><Edit2 size={14} /> Modifier</button>
+              <Button variant="primary" onClick={() => onEdit(eq)}><Edit2 size={14} /> Modifier</Button>
             </div>
             <div className="eq-actions-group">
               {onCreateTicket && (
-                <button className="eq-btn-secondary" onClick={() => onCreateTicket(eq)}>
+                <Button variant="secondary" onClick={() => onCreateTicket(eq)}>
                   <Wrench size={14} /> Ticket SAV
-                </button>
+                </Button>
               )}
               {onOpenDepotMap && (
-                <button className="eq-btn-secondary" onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}>
+                <Button variant="secondary" onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}>
                   <MapPin size={14} /> Localisation
-                </button>
+                </Button>
               )}
               {onPrintLabel && (
-                <button className="eq-btn-secondary" onClick={() => onPrintLabel(eq)}>
+                <Button variant="secondary" onClick={() => onPrintLabel(eq)}>
                   <Printer size={14} /> Étiquette
-                </button>
+                </Button>
               )}
               {onPrintSheet && (
-                <button className="eq-btn-secondary" onClick={() => onPrintSheet(eq)}>
+                <Button variant="secondary" onClick={() => onPrintSheet(eq)}>
                   <FileText size={14} /> Fiche
-                </button>
+                </Button>
               )}
-              {isAdmin && onSerialize && (eq.stockQuantity || eq.stock_quantity || 1) > 1 && (
-                <button className="eq-btn-secondary" onClick={() => onSerialize(eq)} title={`Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`}>
-                  <Package size={14} /> Sérialiser ({eq.stockQuantity || eq.stock_quantity})
-                </button>
+              {isAdmin && onSerialize && ((eq.stockQuantity || eq.stock_quantity || 1) > 1 || !eq.uid) && (
+                <Button variant="secondary" onClick={() => onSerialize(eq)} title={(eq.stockQuantity || eq.stock_quantity || 1) > 1 ? `Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID` : 'Attribuer un UID unique à cet équipement'}>
+                  <Package size={14} /> Sérialiser{(eq.stockQuantity || eq.stock_quantity || 1) > 1 ? ` (${eq.stockQuantity || eq.stock_quantity})` : ''}
+                </Button>
               )}
             </div>
             {isAdmin && onDelete && (
-              <button className="eq-btn-danger" onClick={() => onDelete(eq.id)}><Trash2 size={14} /> Supprimer</button>
+              <Button variant="danger" onClick={() => onDelete(eq.id)}><Trash2 size={14} /> Supprimer</Button>
             )}
           </div>
         </div>
@@ -2167,17 +2197,13 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
 const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onDoubleClick, onEdit, onDelete }) => {
   if (tickets.length === 0) {
     return (
-      <div className="eq-empty">
-        <Wrench size={48} strokeWidth={1} />
-        <p>Aucun ticket SAV</p>
-        <span>Les tickets apparaîtront ici lorsque du matériel nécessitera une intervention</span>
-      </div>
+      <EmptyState icon={<Wrench size={48} strokeWidth={1} />} title="Aucun ticket SAV" description="Les tickets apparaîtront ici lorsque du matériel nécessitera une intervention" />
     );
   }
 
   return (
     <div className="eq-tickets-table">
-      <table>
+      <Table>
         <thead>
           <tr>
             <th>Priorité</th>
@@ -2215,15 +2241,19 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
                 <td className="sav-col-cost">{t.cost != null ? `${parseFloat(t.cost).toFixed(2)} €` : '—'}</td>
                 <td>
                   <div className="eq-table-actions">
-                    <button onClick={(e) => { e.stopPropagation(); onEdit(t); }} title="Modifier"><Edit2 size={14} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} title="Supprimer" className="eq-btn-danger-sm"><Trash2 size={14} /></button>
+                    <Tooltip content="Modifier">
+                      <button onClick={(e) => { e.stopPropagation(); onEdit(t); }}><Edit2 size={14} /></button>
+                    </Tooltip>
+                    <Tooltip content="Supprimer">
+                      <Button variant="danger" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); onDelete(t.id); }}><Trash2 size={14} /></Button>
+                    </Tooltip>
                   </div>
                 </td>
               </tr>
             );
           })}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 };
@@ -2358,17 +2388,24 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
   };
 
   return (
-    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="eq-modal">
-        <div className="eq-modal-header">
-          <h3>{eq ? '✏️ Modifier l\'équipement' : '➕ Nouveau matériel'}</h3>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="eq-modal-body">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={eq ? '✏️ Modifier l\'équipement' : '➕ Nouveau matériel'}
+      size="lg"
+      className="eq-modal"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="equipment-form">{eq ? 'Enregistrer' : 'Créer'}</Button>
+        </>
+      }
+    >
+        <form id="equipment-form" onSubmit={handleSubmit} className="eq-modal-body">
           <div className="eq-form-grid">
             <div className="eq-form-field eq-form-full">
               <label>Nom *</label>
-              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Enceinte 2 voies 8XT" autoFocus />
+              <Input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Enceinte 2 voies 8XT" autoFocus />
             </div>
 
             {/* Photo picker */}
@@ -2389,16 +2426,18 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                   <Camera size={16} />
                 </div>
                 {form.photo && (
-                  <button type="button" className="eq-photo-picker-clear" onClick={() => setForm(f => ({ ...f, photo: '' }))} title="Retirer la photo">
-                    <X size={14} />
-                  </button>
+                  <Tooltip content="Retirer la photo">
+                    <button type="button" className="eq-photo-picker-clear" onClick={() => setForm(f => ({ ...f, photo: '' }))}>
+                      <X size={14} />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
               {showPhotoPicker && (
                 <div className="eq-photo-picker-dropdown">
                   <div className="eq-photo-picker-search">
                     <Search size={14} />
-                    <input type="text" value={photoSearch} onChange={(e) => setPhotoSearch(e.target.value)} placeholder="Rechercher..." autoFocus />
+                    <Input type="text" value={photoSearch} onChange={(e) => setPhotoSearch(e.target.value)} placeholder="Rechercher..." autoFocus />
                   </div>
                   <div className="eq-photo-picker-tabs">
                     <button type="button" className={`eq-picker-tab${pickerTab === 'photos' ? ' active' : ''}`} onClick={() => setPickerTab('photos')}>📸 Photos ({photosList.length})</button>
@@ -2452,22 +2491,22 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
             </div>
             <div className="eq-form-field">
               <label>Référence / Code</label>
-              <input type="text" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder="Ex: MTD108-8XT" />
+              <Input type="text" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder="Ex: MTD108-8XT" />
             </div>
             <div className="eq-form-field">
               <label>N° de série</label>
-              <input type="text" value={form.serial_number} onChange={(e) => setForm({ ...form, serial_number: e.target.value })} />
+              <Input type="text" value={form.serial_number} onChange={(e) => setForm({ ...form, serial_number: e.target.value })} />
             </div>
             <div className="eq-form-field">
               <label>Marque</label>
-              <input type="text" list="eq-brands-list" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="Ex: L-Acoustics" />
+              <Input type="text" list="eq-brands-list" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="Ex: L-Acoustics" />
               <datalist id="eq-brands-list">
                 {brandsList.map(b => <option key={b.id} value={b.name} />)}
               </datalist>
             </div>
             <div className="eq-form-field">
               <label>Quantité / Stock</label>
-              <input type="number" min="1" value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })} />
+              <Input type="number" min="1" value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })} />
             </div>
             <div className="eq-form-field eq-form-full">
               <label>Catégorie</label>
@@ -2481,9 +2520,9 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
             </div>
             <div className="eq-form-field">
               <label>Statut</label>
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                 {Object.entries(EQUIPMENT_STATUS).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
-              </select>
+              </Select>
             </div>
             {(depotZones || allDepotZones) && (
               <div className="eq-form-field eq-form-full">
@@ -2512,21 +2551,44 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                   const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
                   if (!currentDepotData) return null;
                   return (
-                    <div className="eq-depot-map-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowMap(false)}>
-                      <div className="eq-depot-map-modal" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-                        <div className="eq-depot-map-modal-header">
-                          <h3><MapPin size={18} /> Choisir la localisation sur le plan</h3>
-                          {depotsList.length > 1 && (
-                            <div className="eq-form-map-tabs" style={{ position: 'static', margin: '0 auto 0 16px' }}>
-                              {depotsList.map((d, i) => (
-                                <button key={d.id || i} type="button" className={`eq-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
-                                  {d.name || `Dépôt ${d.id || i + 1}`}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          <button className="eq-dialog-close" onClick={() => setShowMap(false)} title="Fermer"><X size={20} /></button>
-                        </div>
+                    <ModalLayout
+                      open
+                      onClose={() => setShowMap(false)}
+                      title={<>
+                        <MapPin size={18} /> Choisir la localisation sur le plan
+                        {depotsList.length > 1 && (
+                          <div className="eq-form-map-tabs" style={{ position: 'static', margin: '0 auto 0 16px' }}>
+                            {depotsList.map((d, i) => (
+                              <button key={d.id || i} type="button" className={`eq-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
+                                {d.name || `Dépôt ${d.id || i + 1}`}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>}
+                      size="xl"
+                      className="eq-depot-map-modal"
+                      footer={<>
+                        {mapSelection && (() => {
+                          const z = currentDepotData.zones?.find(z => z.id === mapSelection);
+                          return <span className="eq-depot-map-modal-zone-label" style={{ borderLeftColor: z?.color || 'var(--theme-primary)' }}>{z?.label || mapSelection}</span>;
+                        })()}
+                        <div style={{ flex: 1 }} />
+                        <Button variant="ghost" onClick={() => { setMapSelection(''); setShowMap(false); }}>Annuler</Button>
+                        <Button variant="primary" disabled={!mapSelection} onClick={() => {
+                          const zoneObj = currentDepotData.zones?.find(z => z.id === mapSelection);
+                          setForm(f => ({
+                            ...f,
+                            location_depot: currentDepotData.id || currentDepotData.depotId || '',
+                            location_zone: mapSelection,
+                            location_code: '',
+                            location_floor: zoneObj?.floor || '',
+                          }));
+                          setMapSelection('');
+                          setShowMap(false);
+                        }}>✓ Valider</Button>
+                      </>}
+                    >
                         <div className="eq-depot-map-modal-body">
                           <DepotMap
                             zones={currentDepotData}
@@ -2537,28 +2599,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                             onZoneFilter={() => {}}
                           />
                         </div>
-                        <div className="eq-depot-map-modal-footer">
-                          {mapSelection && (() => {
-                            const z = currentDepotData.zones?.find(z => z.id === mapSelection);
-                            return <span className="eq-depot-map-modal-zone-label" style={{ borderLeftColor: z?.color || 'var(--theme-primary)' }}>{z?.label || mapSelection}</span>;
-                          })()}
-                          <div style={{ flex: 1 }} />
-                          <button type="button" className="eq-btn-cancel" onClick={() => { setMapSelection(''); setShowMap(false); }}>Annuler</button>
-                          <button type="button" className="eq-btn-save" disabled={!mapSelection} onClick={() => {
-                            const zoneObj = currentDepotData.zones?.find(z => z.id === mapSelection);
-                            setForm(f => ({
-                              ...f,
-                              location_depot: currentDepotData.id || currentDepotData.depotId || '',
-                              location_zone: mapSelection,
-                              location_code: '',
-                              location_floor: zoneObj?.floor || '',
-                            }));
-                            setMapSelection('');
-                            setShowMap(false);
-                          }}>✓ Valider</button>
-                        </div>
-                      </div>
-                    </div>
+                    </ModalLayout>
                   );
                 })()}
               </div>
@@ -2566,7 +2607,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
             {!depotZones && !allDepotZones && (
               <div className="eq-form-field">
                 <label>Localisation / Zone</label>
-                <input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ex: Dépôt A, Étagère 3" />
+                <Input type="text" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ex: Dépôt A, Étagère 3" />
               </div>
             )}
             <div className="eq-form-field">
@@ -2575,7 +2616,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
             </div>
             <div className="eq-form-field">
               <label>Prix d'achat (€)</label>
-              <input type="number" step="0.01" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} />
+              <Input type="number" step="0.01" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} />
             </div>
             <div className="eq-form-field">
               <label>Fin de garantie</label>
@@ -2583,16 +2624,11 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
             </div>
             <div className="eq-form-field eq-form-full">
               <label>Notes</label>
-              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Remarques, accessoires inclus..." />
+              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} placeholder="Remarques, accessoires inclus..." />
             </div>
           </div>
-          <div className="eq-modal-footer">
-            <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
-            <button type="submit" className="eq-btn-save">{eq ? 'Enregistrer' : 'Créer'}</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 };
 
@@ -2661,13 +2697,20 @@ const SavTicketFormModal = ({ ticket, equipment, persons, categories, preselecte
   };
 
   return (
-    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="eq-modal">
-        <div className="eq-modal-header">
-          <h3>{ticket ? '✏️ Modifier le ticket' : '🔧 Nouveau ticket SAV'}</h3>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="eq-modal-body">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={ticket ? '✏️ Modifier le ticket' : '🔧 Nouveau ticket SAV'}
+      size="lg"
+      className="eq-modal"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="sav-ticket-form">{ticket ? 'Enregistrer' : 'Créer'}</Button>
+        </>
+      }
+    >
+        <form id="sav-ticket-form" onSubmit={handleSubmit} className="eq-modal-body">
           <div className="eq-form-grid">
             <div className="eq-form-field eq-form-full">
               <label>Équipement *</label>
@@ -2678,23 +2721,23 @@ const SavTicketFormModal = ({ ticket, equipment, persons, categories, preselecte
               ) : (
                 <>
                   <div className="eq-form-cascade">
-                    <select value={selFamille} onChange={(e) => { setSelFamille(e.target.value); setSelSousFamille(''); setSelType(''); setForm(f => ({ ...f, equipment_id: '' })); }}>
+                    <Select value={selFamille} onChange={(e) => { setSelFamille(e.target.value); setSelSousFamille(''); setSelType(''); setForm(f => ({ ...f, equipment_id: '' })); }}>
                       <option value="">— Famille —</option>
                       {familles.map(f => <option key={f.id} value={f.id}>{f.icon || '📁'} {f.name}</option>)}
-                    </select>
-                    <select value={selSousFamille} onChange={(e) => { setSelSousFamille(e.target.value); setSelType(''); setForm(f => ({ ...f, equipment_id: '' })); }} disabled={!selFamille}>
+                    </Select>
+                    <Select value={selSousFamille} onChange={(e) => { setSelSousFamille(e.target.value); setSelType(''); setForm(f => ({ ...f, equipment_id: '' })); }} disabled={!selFamille}>
                       <option value="">— Catégorie —</option>
                       {filteredSousFamilles.map(s => <option key={s.id} value={s.id}>{s.icon || '📂'} {s.name}</option>)}
-                    </select>
-                    <select value={selType} onChange={(e) => { setSelType(e.target.value); setForm(f => ({ ...f, equipment_id: '' })); }} disabled={!selSousFamille}>
+                    </Select>
+                    <Select value={selType} onChange={(e) => { setSelType(e.target.value); setForm(f => ({ ...f, equipment_id: '' })); }} disabled={!selSousFamille}>
                       <option value="">— Type —</option>
                       {filteredTypes.map(t => <option key={t.id} value={t.id}>{t.icon || '📄'} {t.name}</option>)}
-                    </select>
+                    </Select>
                   </div>
-                  <select value={form.equipment_id} onChange={(e) => setForm({ ...form, equipment_id: e.target.value })} required>
+                  <Select value={form.equipment_id} onChange={(e) => setForm({ ...form, equipment_id: e.target.value })} required>
                     <option value="">— Sélectionner l'équipement —</option>
                     {filteredEquipment.map(eq => <option key={eq.id} value={eq.id}>{eq.categoryIcon || '📦'} {cleanName(eq.name)} {eq.reference ? `(${eq.reference})` : ''} {eq.serialNumber || eq.serial_number ? `[S/N: ${eq.serialNumber || eq.serial_number}]` : ''}</option>)}
-                  </select>
+                  </Select>
                   {(() => {
                     const sel = form.equipment_id ? equipment.find(e => e.id === Number(form.equipment_id)) : null;
                     if (!sel) return null;
@@ -2710,59 +2753,54 @@ const SavTicketFormModal = ({ ticket, equipment, persons, categories, preselecte
             </div>
             <div className="eq-form-field eq-form-full">
               <label>Panne *</label>
-              <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex: Batterie ne charge plus" autoFocus />
+              <Input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex: Batterie ne charge plus" autoFocus />
             </div>
             <div className="eq-form-field">
               <label>Type</label>
-              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+              <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                 {Object.entries(SAV_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="eq-form-field">
               <label>Priorité</label>
-              <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+              <Select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
                 {Object.entries(SAV_PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              </Select>
             </div>
             {ticket && (
               <div className="eq-form-field">
                 <label>Statut</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                   {Object.entries(SAV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select>
+                </Select>
               </div>
             )}
             <div className="eq-form-field">
               <label>Technicien assigné</label>
-              <select value={form.assigned_to} onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}>
+              <Select value={form.assigned_to} onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}>
                 <option value="">— Non assigné —</option>
                 {persons.map(p => <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="eq-form-field eq-form-full">
               <label>Description</label>
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Détails du problème, circonstances..." />
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Détails du problème, circonstances..." />
             </div>
             {ticket && (
               <>
                 <div className="eq-form-field eq-form-full">
                   <label>Résolution</label>
-                  <textarea value={form.resolution} onChange={(e) => setForm({ ...form, resolution: e.target.value })} rows={2} placeholder="Action corrective, pièces changées..." />
+                  <Textarea value={form.resolution} onChange={(e) => setForm({ ...form, resolution: e.target.value })} rows={2} placeholder="Action corrective, pièces changées..." />
                 </div>
                 <div className="eq-form-field">
                   <label>Coût (€)</label>
-                  <input type="number" step="0.01" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+                  <Input type="number" step="0.01" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
                 </div>
               </>
             )}
           </div>
-          <div className="eq-modal-footer">
-            <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
-            <button type="submit" className="eq-btn-save">{ticket ? 'Enregistrer' : 'Créer'}</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 };
 
@@ -2815,13 +2853,23 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
   };
 
   return (
-    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="eq-modal" style={{ maxWidth: '100%', width: '100%', margin: 0, borderRadius: '12px 12px 0 0', position: 'fixed', bottom: 0, left: 0, right: 0, maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
-        <div className="eq-modal-header">
-          <h3>🔧 Demande de SAV</h3>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="eq-modal-body" style={{ overflowY: 'auto', flex: 1 }}>
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="🔧 Demande de SAV"
+      size="full"
+      className="eq-modal eq-mobile-sav-sheet"
+      bodyClassName="eq-modal-body"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="mobile-sav-form" disabled={submitting || !selectedEquipment}>
+            {submitting ? 'Envoi…' : '🔧 Envoyer la demande'}
+          </Button>
+        </>
+      }
+    >
+        <form id="mobile-sav-form" onSubmit={handleSubmit} style={{ overflowY: 'auto', flex: 1 }}>
           {/* Sélection équipement */}
           <div className="eq-form-field eq-form-full" style={{ marginBottom: '1rem', position: 'relative', zIndex: 100 }}>
             <label>Équipement *</label>
@@ -2845,7 +2893,7 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
               <div style={{ position: 'relative', zIndex: 100 }}>
                 <div style={{ position: 'relative' }}>
                   <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--theme-text-muted)', pointerEvents: 'none' }} />
-                  <input
+                  <Input
                     ref={searchRef}
                     type="text"
                     value={search}
@@ -2895,35 +2943,28 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
           <div className="eq-form-grid">
             <div className="eq-form-field eq-form-full">
               <label>Titre *</label>
-              <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex: Câble arraché, ne charge plus…" />
+              <Input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ex: Câble arraché, ne charge plus…" />
             </div>
             <div className="eq-form-field">
               <label>Type</label>
-              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+              <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                 {Object.entries(SAV_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="eq-form-field">
               <label>Priorité</label>
-              <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+              <Select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
                 {Object.entries(SAV_PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="eq-form-field eq-form-full">
               <label>Description</label>
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} placeholder="Détails du problème, quand c'est arrivé…" />
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} placeholder="Détails du problème, quand c'est arrivé…" />
             </div>
           </div>
 
-          <div className="eq-modal-footer">
-            <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
-            <button type="submit" className="eq-btn-save" disabled={submitting || !selectedEquipment}>
-              {submitting ? 'Envoi…' : '🔧 Envoyer la demande'}
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 };
 
@@ -2970,9 +3011,11 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onDelete, 
           <span className="eq-slide-name" style={{ fontSize: 15 }}>🔧 {t.title}</span>
           <span className="eq-slide-status" style={{ background: tst.color }}>{tst.label}</span>
         </div>
-        <button className="eq-slide-close" onClick={handleClose} title="Fermer">
-          <X size={18} />
-        </button>
+        <Tooltip content="Fermer">
+          <button className="eq-slide-close" onClick={handleClose}>
+            <X size={18} />
+          </button>
+        </Tooltip>
       </div>
       <div className="eq-slide-body">
         <div className="eq-detail-fields">
@@ -2987,11 +3030,11 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onDelete, 
         {t.resolution && <div className="eq-detail-notes"><h4>✅ Résolution</h4><p>{t.resolution}</p></div>}
       </div>
       <div className="eq-slide-footer">
-        <button className="eq-btn-secondary" onClick={() => onEdit(t)} style={{ flex: 1 }}><Edit2 size={14} /> Modifier</button>
+        <Button variant="secondary" onClick={() => onEdit(t)} style={{ flex: 1 }}><Edit2 size={14} /> Modifier</Button>
         <button className="eq-slide-open-btn" onClick={() => onOpenDialog(t)} style={{ flex: 1 }}>
           <ExternalLink size={14} /> Fiche complète
         </button>
-        {onDelete && <button className="eq-btn-danger-sm" onClick={() => onDelete(t.id)} title="Supprimer" style={{ padding: '6px 10px' }}><Trash2 size={14} /></button>}
+        {onDelete && <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(t.id)} style={{ padding: '6px 10px' }}><Trash2 size={14} /></Button></Tooltip>}
       </div>
     </div>
   );
@@ -3035,9 +3078,11 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
             </span>
             {(eq || t.importName || t.importCode) && <span className="eq-dialog-equip-ref">{eq ? `${eq.categoryIcon || '📦'} ${cleanName(eq.name)}` : (t.importName || '')} {displayRef ? `(${displayRef})` : ''}</span>}
           </div>
-          <button className="eq-dialog-close" onClick={handleClose} title="Fermer">
-            <X size={20} />
-          </button>
+          <Tooltip content="Fermer">
+            <button className="eq-dialog-close" onClick={handleClose}>
+              <X size={20} />
+            </button>
+          </Tooltip>
         </div>
         <div className="eq-dialog-body">
           <div className="eq-detail-body">
@@ -3056,8 +3101,8 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
             {t.resolution && <div className="eq-detail-notes"><h4>✅ Résolution</h4><p>{t.resolution}</p></div>}
             
             <div className="eq-dialog-actions">
-              <button className="eq-btn-secondary" onClick={() => onEdit(t)}><Edit2 size={14} /> Modifier</button>
-              {isAdmin && <button className="eq-btn-danger" onClick={() => onDelete(t.id)}><Trash2 size={14} /> Supprimer</button>}
+              <Button variant="secondary" onClick={() => onEdit(t)}><Edit2 size={14} /> Modifier</Button>
+              {isAdmin && <Button variant="danger" onClick={() => onDelete(t.id)}><Trash2 size={14} /> Supprimer</Button>}
             </div>
           </div>
         </div>

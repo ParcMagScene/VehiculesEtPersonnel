@@ -34,7 +34,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.2);
+  background: var(--glass-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,15 +68,15 @@
   border-radius: 12px;
   font-size: 10px;
   font-weight: 600;
-  background: rgba(255,255,255,0.2);
+  background: var(--glass-light);
   color: var(--theme-text-inverse);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .pdp-slide-badge.pdp-contract-type {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
+  background: var(--close-btn-bg);
+  border: 1px solid var(--close-btn-border);
 }
 
 /* ═══ Body ═══ */
@@ -178,7 +178,7 @@
 }
 
 .pdp-contract-badge {
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid var(--shadow-sm);
 }
 
 /* Coordonnées */
@@ -302,7 +302,7 @@
 }
 
 .pdp-slide-edit-btn:hover {
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px var(--btn-primary-hover-shadow);
   transform: translateY(-1px);
 }
 
@@ -400,6 +400,6 @@
     top: 0;
     right: 0;
     bottom: 0;
-    z-index: 50;
+    z-index: var(--z-dropdown);
   }
 }

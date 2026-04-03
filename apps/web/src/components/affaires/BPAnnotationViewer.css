@@ -1,25 +1,25 @@
 .bp-annotation-footer span:first-child {
-  color: #10b981;
+  color: var(--theme-success-alt);
   font-weight: 500;
 }
 
 .bp-annotation-footer span:nth-child(2) {
-  color: #3b82f6;
+  color: var(--theme-info);
 }
 
 .bp-annotation-footer span:nth-child(3) {
-  color: #f59e0b;
+  color: var(--theme-warning);
 }
 
 .bp-annotation-footer span:last-child {
-  color: #6b7280;
+  color: var(--theme-neutral);
   font-size: 11px;
 }
 
 .bp-annotation-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--overlay-darker);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -38,14 +38,14 @@
 }
 
 .bp-annotation-modal {
-  background: var(--theme-bg-card, #1e293b);
+  background: var(--theme-bg-card, var(--theme-text-primary));
   border-radius: 14px;
   width: 95vw;
   height: 92dvh;
   display: flex;
   flex-direction: column;
   overflow: auto; /* Changer à auto pour permettre scroll si nécessaire */
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 80px var(--theme-overlay);
   animation: bpSlideUp 0.25s ease;
   resize: both;
   min-width: 600px;
@@ -68,9 +68,9 @@
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--theme-border, #334155);
+  border-bottom: 1px solid var(--theme-border, var(--theme-text-dark));
   gap: 0.75rem;
-  background: var(--theme-bg-card, #1e293b);
+  background: var(--theme-bg-card, var(--theme-text-primary));
   flex-shrink: 0;
 }
 
@@ -80,7 +80,7 @@
   gap: 0.5rem;
   font-weight: 600;
   font-size: 0.95rem;
-  color: var(--theme-text, #f1f5f9);
+  color: var(--theme-text, var(--theme-border-light));
   min-width: 0;
   flex-shrink: 1;
   overflow: hidden;
@@ -94,8 +94,8 @@
 
 .bp-filename {
   font-size: 0.75rem;
-  color: var(--theme-text-secondary, #94a3b8);
-  background: var(--theme-bg-hover, #334155);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
+  background: var(--theme-bg-hover, var(--theme-text-dark));
   padding: 0.15rem 0.5rem;
   border-radius: 6px;
   white-space: nowrap;
@@ -112,7 +112,7 @@
 .bp-annotation-toolbar button {
   background: none;
   border: none;
-  color: var(--theme-text-secondary, #94a3b8);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
   padding: 0.35rem;
   border-radius: 6px;
@@ -122,13 +122,13 @@
 }
 
 .bp-annotation-toolbar button:hover {
-  background: var(--theme-bg-hover, #334155);
-  color: var(--theme-text, #f1f5f9);
+  background: var(--theme-bg-hover, var(--theme-text-dark));
+  color: var(--theme-text, var(--theme-border-light));
 }
 
 .bp-annotation-toolbar button.active {
-  background: var(--theme-accent, #6366f1);
-  color: white;
+  background: var(--theme-accent, var(--theme-indigo));
+  color: var(--theme-text-inverse);
 }
 
 .bp-annotation-toolbar button:disabled {
@@ -139,14 +139,14 @@
 .bp-toolbar-sep {
   width: 1px;
   height: 20px;
-  background: var(--theme-border, #334155);
+  background: var(--theme-border, var(--theme-text-dark));
   margin: 0 0.25rem;
 }
 
 .bp-zoom-label,
 .bp-page-label {
   font-size: 0.75rem;
-  color: var(--theme-text-secondary, #94a3b8);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
   min-width: 3.5rem;
   text-align: center;
   user-select: none;
@@ -155,7 +155,7 @@
 .bp-annotation-close {
   background: none;
   border: none;
-  color: var(--theme-text-secondary, #94a3b8);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
   padding: 0.35rem;
   border-radius: 6px;
@@ -165,8 +165,8 @@
 }
 
 .bp-annotation-close:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: var(--danger-tint);
+  color: var(--theme-danger);
 }
 
 /* ─── Body ─── */
@@ -183,9 +183,9 @@
   width: 180px;
   flex-shrink: 0;
   padding: 0.75rem;
-  border-right: 1px solid var(--theme-border, #334155);
+  border-right: 1px solid var(--theme-border, var(--theme-text-dark));
   overflow-y: auto;
-  background: var(--theme-bg-main, #0f172a);
+  background: var(--theme-bg-main, var(--theme-bg-darker));
 }
 
 .bp-legend-title {
@@ -193,7 +193,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--theme-text-secondary, #94a3b8);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
   margin-bottom: 0.5rem;
 }
 
@@ -203,7 +203,7 @@
   gap: 0.4rem;
   padding: 0.3rem 0;
   font-size: 0.78rem;
-  color: var(--theme-text, #f1f5f9);
+  color: var(--theme-text, var(--theme-border-light));
 }
 
 .bp-legend-swatch {
@@ -219,18 +219,18 @@
     45deg,
     transparent,
     transparent 3px,
-    rgba(99, 102, 241, 0.3) 3px,
-    rgba(99, 102, 241, 0.3) 6px
+    var(--accent-tint-strong) 3px,
+    var(--accent-tint-strong) 6px
   );
-  border-color: #6366f1;
+  border-color: var(--theme-indigo);
   border-style: dashed;
 }
 
 .bp-legend-count {
   margin-left: auto;
   font-size: 0.7rem;
-  color: var(--theme-text-secondary, #94a3b8);
-  background: var(--theme-bg-hover, #334155);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
+  background: var(--theme-bg-hover, var(--theme-text-dark));
   padding: 0.1rem 0.4rem;
   border-radius: 8px;
   min-width: 1.2rem;
@@ -269,12 +269,12 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--theme-bg-card, #1e293b);
+  background: var(--theme-bg-card, var(--theme-text-primary));
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  color: var(--theme-text-secondary, #94a3b8);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
   font-size: 0.85rem;
-  z-index: 2;
+  z-index: var(--z-base);
 }
 
 /* ─── Footer ─── */
@@ -284,10 +284,10 @@
   justify-content: center;
   gap: 1.5rem;
   padding: 0.5rem 1rem;
-  border-top: 1px solid var(--theme-border, #334155);
+  border-top: 1px solid var(--theme-border, var(--theme-text-dark));
   font-size: 0.75rem;
-  color: var(--theme-text-secondary, #94a3b8);
-  background: var(--theme-bg-card, #1e293b);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
+  background: var(--theme-bg-card, var(--theme-text-primary));
   flex-shrink: 0;
 }
 

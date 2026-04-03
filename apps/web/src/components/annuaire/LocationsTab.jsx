@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MapPin, Plus, Edit2, Trash2, ExternalLink, Search, X } from 'lucide-react';
+import { MapPin, Plus, Edit2, Trash2, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import LocationDialog from '../vehicles/LocationDialog';
-import ConfirmDialog from '../ConfirmDialog';
+import { Button, Dialog, Input, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
 import { useToast } from '../../hooks/useToast';
 
@@ -53,18 +53,9 @@ function LocationsTab({ currentUser }) {
     grouped[t].push(loc);
   });
 
-  const handleSave = async (locationData) => {
-    try {
-      if (editingLocation) {
-        await api.updateLocation(editingLocation.id, locationData);
-      } else {
-        await api.createLocation(locationData);
-      }
-      await loadLocations();
-    } catch (err) {
-      console.error('Erreur sauvegarde lieu:', err);
-      toast.error(`Erreur: ${err.message}`);
-    }
+  const handleSave = async () => {
+    // LocationDialog gère le save API lui-même — on rafraîchit juste la liste
+    await loadLocations();
   };
 
   const handleDelete = (loc) => {
@@ -86,22 +77,18 @@ function LocationsTab({ currentUser }) {
   };
 
   if (loading) {
-    return <div className="annuaire-loading"><div className="loading-spinner" /><p>Chargement...</p></div>;
+    return <div className="annuaire-loading"><Spinner size="lg" /><p>Chargement...</p></div>;
   }
 
   return (
     <>
       {/* Toolbar */}
       <div className="annuaire-toolbar">
-        <div className="annuaire-search">
-          <Search size={16} />
-          <input type="text" placeholder="Rechercher un lieu..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-          {searchTerm && <X size={14} className="clear-search" onClick={() => setSearchTerm('')} />}
-        </div>
+        <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un lieu..." />
         <div className="annuaire-toolbar-actions">
-          <button className="btn-add" onClick={() => { setEditingLocation(null); setShowDialog(true); }}>
+          <Button variant="primary" onClick={() => { setEditingLocation(null); setShowDialog(true); }}>
             <Plus size={15} /> Nouveau lieu
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -117,7 +104,7 @@ function LocationsTab({ currentUser }) {
       {/* Content */}
       <div className="annuaire-content">
         <div className="annuaire-table-wrapper">
-          <table className="annuaire-table">
+          <Table className="annuaire-table">
             <thead>
               <tr>
                 <th>Nom</th>
@@ -160,9 +147,9 @@ function LocationsTab({ currentUser }) {
                         <td>
                           {!loc.isCompanyLocation && (
                             <div className="actions-cell">
-                              <button title="Modifier" onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></button>
+                              <Tooltip content="Modifier"><button onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></button></Tooltip>
                               {currentUser?.isAdmin && (
-                                <button className="btn-danger" title="Supprimer" onClick={() => handleDelete(loc)}><Trash2 size={14} /></button>
+                                <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(loc)}><Trash2 size={14} /></Button></Tooltip>
                               )}
                             </div>
                           )}
@@ -173,7 +160,7 @@ function LocationsTab({ currentUser }) {
                 );
               })}
             </tbody>
-          </table>
+          </Table>
           {filtered.length === 0 && (
             <div className="annuaire-empty"><p>Aucun lieu trouvé</p></div>
           )}
@@ -189,7 +176,17 @@ function LocationsTab({ currentUser }) {
         />
       )}
 
-      {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
+        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </>
   );
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Smartphone, Link as LinkIcon, QrCode, Copy, Check, Printer, Truck, Users, MessageSquare, Package, ShoppingCart, Calendar, Settings, Wrench, LayoutGrid, Eye } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './MobileAccess.css';
+import { Input } from '@/design-system';
 
 // Fonctionnalités mobiles à afficher sur l'affichette
 const MOBILE_FEATURES = [
@@ -219,7 +220,7 @@ function MobileAccess() {
             URL de l'interface mobile
           </label>
           <div className="url-input-group">
-            <input type="text" value={mobileUrl} readOnly onClick={(e) => e.target.select()} />
+            <Input type="text" value={mobileUrl} readOnly onClick={(e) => e.target.select()} />
             <button onClick={copyToClipboard} className="copy-button">
               {copied ? <Check size={20} /> : <Copy size={20} />}
             </button>
@@ -269,7 +270,7 @@ function MobileAccess() {
             </div>
             <div className="poster-option-group">
               <label>Quantité</label>
-              <input
+              <Input
                 type="number"
                 min={1}
                 max={20}

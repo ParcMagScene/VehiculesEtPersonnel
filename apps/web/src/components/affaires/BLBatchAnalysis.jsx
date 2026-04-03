@@ -3,7 +3,8 @@
  * Phase 6 : Scanner plusieurs BL, afficher couverture de parsing et statistiques
  */
 import React, { useState, useCallback } from 'react';
-import { X, Upload, FileText, CheckCircle, AlertTriangle, BarChart2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertTriangle, BarChart2, ChevronDown, ChevronRight } from 'lucide-react';
+import { ModalLayout } from '@/design-system';
 import { batchParsePDFs, getDocTypeLabel } from '../../utils/pdfParser';
 
 const CONF_COLORS = { high: '#10b981', medium: '#f59e0b', low: '#ef4444' };
@@ -88,24 +89,13 @@ export default function BLBatchAnalysis({ onClose }) {
   })() : null;
 
   return (
-    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="modal-content"
-        style={{ maxWidth: 800, maxHeight: '90vh', overflow: 'auto' }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="theme-modal-header">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, margin: 0, fontSize: '1.1rem', color: 'var(--theme-text-inverse)' }}>
-            <BarChart2 size={20} /> Analyse batch des BL
-          </h3>
-          <button onClick={onClose} className="theme-close-btn">
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: '16px 20px' }}>
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Analyse batch des BL"
+      icon={<BarChart2 size={20} />}
+      size="xl"
+    >
           {/* Sélection fichiers */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
             <label
@@ -297,9 +287,7 @@ export default function BLBatchAnalysis({ onClose }) {
               </p>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 

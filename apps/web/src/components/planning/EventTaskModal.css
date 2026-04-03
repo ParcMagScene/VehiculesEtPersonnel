@@ -7,7 +7,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-tooltip);
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +27,7 @@
   max-width: 560px;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
   display: flex;
   flex-direction: column;
 }
@@ -93,22 +93,22 @@
 }
 
 .etm-badge.affaire {
-  background: rgba(99, 102, 241, 0.12);
+  background: var(--accent-tint);
   color: var(--theme-indigo);
 }
 
 .etm-badge.time {
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--primary-tint);
   color: var(--theme-info);
 }
 
 .etm-badge.location {
-  background: rgba(16, 185, 129, 0.12);
+  background: var(--success-tint);
   color: var(--theme-success-alt);
 }
 
 .etm-badge.type {
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--warning-tint);
   color: var(--theme-warning);
 }
 
@@ -129,7 +129,7 @@
 
 .etm-step.enabled {
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 1px var(--theme-primary-alpha, rgba(59, 130, 246, 0.15));
+  box-shadow: 0 0 0 1px var(--theme-primary-alpha, var(--primary-tint-medium));
 }
 
 .etm-step-header {
@@ -156,7 +156,7 @@
   justify-content: center;
   flex-shrink: 0;
   transition: all 0.15s;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .etm-step-check.checked {
@@ -234,7 +234,7 @@
   height: 28px;
   border-radius: 6px;
   background: #4285f415;
-  color: #4285f4;
+  color: var(--theme-info);
   border: 1px solid #4285f430;
   flex-shrink: 0;
   transition: background 0.15s;
@@ -275,7 +275,7 @@
 
 .etm-btn.primary {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 .etm-btn.primary:hover:not(:disabled) {
   filter: brightness(1.1);
@@ -294,11 +294,11 @@
 }
 
 .etm-btn.danger {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--theme-danger-bg);
   color: var(--theme-danger);
 }
 .etm-btn.danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--danger-tint);
 }
 
 /* @keyframes spin is in theme.css */

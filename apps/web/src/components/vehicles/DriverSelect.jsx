@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, ChevronDown, Check } from 'lucide-react';
+import { Avatar } from '@/design-system';
 import './DriverSelect.css';
 
 /**
@@ -40,21 +41,6 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
     }
   }, [isOpen]);
 
-  const getInitials = (name) => {
-    if (!name) return '?';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return name[0]?.toUpperCase() || '?';
-  };
-
-  const getAvatarColor = (name) => {
-    if (!name) return 'var(--theme-text-muted)';
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-    return colors[Math.abs(hash) % colors.length];
-  };
-
   // Suggestions historiques non qualifiées
   const otherDrivers = historySuggestions.filter(s => !qualifiedDrivers.some(q => q.name === s));
 
@@ -66,28 +52,9 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
     setIsOpen(false);
   };
 
-  const renderAvatar = (driver, size = 28) => {
-    if (driver?.photo) {
-      return (
-        <img
-          src={`/avatars/${driver.photo}`}
-          alt=""
-          className="driver-select-avatar-img"
-          style={{ width: size, height: size }}
-        />
-      );
-    }
-    const initials = getInitials(driver?.name || '');
-    const bgColor = getAvatarColor(driver?.name || '');
-    return (
-      <div
-        className="driver-select-avatar-initials"
-        style={{ width: size, height: size, background: bgColor, fontSize: size * 0.4 }}
-      >
-        {initials}
-      </div>
-    );
-  };
+  const renderAvatar = (driver, size = 28) => (
+    <Avatar name={driver?.name || ''} avatar={driver?.photo ? `/avatars/${driver.photo}` : undefined} size={size} />
+  );
 
   return (
     <div className={`driver-select ${disabled ? 'disabled' : ''}`} ref={containerRef}>

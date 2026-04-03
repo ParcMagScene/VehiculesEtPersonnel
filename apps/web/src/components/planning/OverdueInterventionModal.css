@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(15, 23, 42, 0.5);
+  background-color: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,7 +28,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px var(--shadow-xl);
   animation: oiSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -159,7 +159,7 @@
   background: var(--theme-success);
   color: var(--theme-text-inverse);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px var(--success-tint-medium);
 }
 
 .action-button.not-completed {
@@ -171,7 +171,7 @@
   background: var(--theme-danger);
   color: var(--theme-text-inverse);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px var(--danger-tint-medium);
 }
 
 .action-button.reschedule {
@@ -268,7 +268,7 @@
 
 .overdue-intervention-modal .confirm-button:hover {
   background: var(--theme-danger-dark);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px var(--danger-tint-medium);
 }
 
 @media (max-width: 600px) {

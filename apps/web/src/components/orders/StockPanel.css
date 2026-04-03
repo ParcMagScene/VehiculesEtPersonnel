@@ -37,13 +37,13 @@
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 12px;
-  background: rgba(99, 102, 241, 0.08);
+  background: var(--accent-tint-light);
   color: var(--theme-primary);
   white-space: nowrap;
 }
 
 .stock-header-stats .stat-badge.warning {
-  background: rgba(245, 158, 11, 0.1);
+  background: var(--warning-tint-light);
   color: var(--theme-warning);
 }
 
@@ -134,7 +134,7 @@
   padding: 16px;
   background: var(--theme-bg-card);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
 
@@ -169,7 +169,7 @@
   background: var(--theme-bg-card);
   border-radius: 10px;
   padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
 
@@ -450,7 +450,7 @@
   background: var(--theme-bg-card);
   border-radius: 10px;
   border: 1px solid var(--theme-border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px var(--shadow-inner);
 }
 
 .stock-table {
@@ -472,7 +472,7 @@
   white-space: nowrap;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .stock-table tbody tr {
@@ -666,7 +666,7 @@
   border-radius: 10px;
   padding: 18px;
   border: 1px solid var(--theme-border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px var(--shadow-inner);
 }
 
 .stock-detail-card h4 {
@@ -932,12 +932,12 @@
   padding: 16px;
   border: 1px solid var(--theme-border);
   border-left-width: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px var(--shadow-inner);
   transition: box-shadow 0.15s;
 }
 
 .stock-category-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .cat-card-header {
@@ -1032,7 +1032,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px var(--shadow-xl);
   overflow: hidden;
 }
 
@@ -1391,8 +1391,8 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: var(--theme-danger-bg, #fef2f2);
-  color: var(--theme-danger, #dc2626);
+  background: var(--theme-danger-bg, var(--theme-danger-bg));
+  color: var(--theme-danger, var(--theme-danger-dark));
   border-radius: 8px;
   font-size: 0.85rem;
   margin-bottom: 12px;
@@ -1538,8 +1538,8 @@
 
 .stock-header-stats .stat-badge.warning {
   background: var(--btn-warning-bg);
-  color: #92400e;
-  border-color: #f59e0b;
+  color: var(--theme-warning-text);
+  border-color: var(--theme-warning);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1682,7 +1682,7 @@
   gap: 4px;
   padding: 6px 12px;
   background: var(--btn-primary-bg);
-  color: var(--btn-primary-text, #fff);
+  color: var(--btn-primary-text, var(--theme-bg-card));
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -1695,7 +1695,7 @@
    SELECTED ROW
    ═══════════════════════════════════════════════════════ */
 .stock-row.selected {
-  background: var(--theme-info-bg-strong, rgba(59, 130, 246, 0.12)) !important;
+  background: var(--theme-info-bg-strong, var(--primary-tint)) !important;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1705,7 +1705,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.35);
-  z-index: 1000;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1755,9 +1755,9 @@
   gap: 4px;
   padding: 2px 8px;
   margin-left: 8px;
-  background: var(--theme-info-bg-strong, rgba(59, 130, 246, 0.1));
-  color: var(--theme-info-text, #3b82f6);
-  border: 1px solid var(--theme-info-border, rgba(59, 130, 246, 0.25));
+  background: var(--theme-info-bg-strong, var(--primary-tint-light));
+  color: var(--theme-info-text, var(--theme-info));
+  border: 1px solid var(--theme-info-border, var(--primary-tint-vivid));
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.78rem;
@@ -1828,7 +1828,7 @@
   border-left-color: var(--theme-border);
 }
 [data-theme="dark"] .stock-management-overlay { background: rgba(0,0,0,0.55); }
-[data-theme="dark"] .stock-header-stats .stat-badge.warning { color: #fbbf24; }
+[data-theme="dark"] .stock-header-stats .stat-badge.warning { color: var(--theme-warning); }
 
 /* ═══════════════════════════════════════════════════════
    RESPONSIVE

@@ -87,8 +87,8 @@ export function registerEquipmentMethods(ApiClient) {
     async deleteSavTicket(id) {
       return this.request(`/sav-tickets/${id}`, { method: 'DELETE' });
     },
-    async importSavTicketsCsv(data, mode = 'import', manualLinks = null, skipDuplicates = false) {
-      return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks, skipDuplicates }) });
+    async importSavTicketsCsv(data, mode = 'import', manualLinks = null, skipDuplicates = false, updateDuplicates = false) {
+      return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks, skipDuplicates, updateDuplicates }) });
     },
     async removeSavDuplicates() {
       return this.request('/sav-tickets/duplicates', { method: 'DELETE' });

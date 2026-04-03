@@ -4,6 +4,7 @@ import api from '../utils/api';
 import { useToast } from '../hooks/useToast';
 import AddressAutocomplete from './AddressAutocomplete';
 import './DynamicDisplayDialog.css';
+import { Button, Input, Textarea, FormField } from '@/design-system';
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {
@@ -175,8 +176,7 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
         {/* Body */}
         <div className="dialog-body">
           {/* Type */}
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label>Type d'événement <span className="required">*</span></label>
+          <FormField className="form-group" label="Type d'événement" required style={{ marginBottom: 16 }}>
             <div className="type-selector">
               {Object.entries(EVENT_TYPES).map(([key, info]) => (
                 <span
@@ -189,11 +189,10 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
                 </span>
               ))}
             </div>
-          </div>
+          </FormField>
 
           {/* Catégorie */}
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label>Catégorie</label>
+          <FormField className="form-group" label="Catégorie" style={{ marginBottom: 16 }}>
             <div className="category-selector">
               {Object.entries(EVENT_CATEGORIES).map(([key, info]) => (
                 <span
@@ -206,13 +205,13 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
                 </span>
               ))}
             </div>
-          </div>
+          </FormField>
 
           {/* Affaire + Client */}
           <div className="form-row">
-            <div className="form-group affaire-autocomplete" ref={suggRef}>
-              <label><Briefcase size={12} /> Affaire</label>
-              <input
+            <div ref={suggRef} className="form-group affaire-autocomplete">
+            <FormField label={<><Briefcase size={12} /> Affaire</>}>
+              <Input
                 type="text"
                 value={affaireSearch}
                 onChange={e => handleAffaireInput(e.target.value)}
@@ -235,41 +234,38 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
                   ))}
                 </div>
               )}
+            </FormField>
             </div>
-            <div className="form-group">
-              <label><User size={12} /> Client</label>
-              <input
+            <FormField className="form-group" label={<><User size={12} /> Client</>}>
+              <Input
                 type="text"
                 value={form.client}
                 onChange={e => updateField('client', e.target.value)}
                 placeholder="Nom du client"
               />
-            </div>
+            </FormField>
           </div>
 
           {/* Date + Période */}
           <div className="form-row">
-            <div className="form-group">
-              <label><Calendar size={12} /> Date <span className="required">*</span></label>
+            <FormField className="form-group" label={<><Calendar size={12} /> Date</>} required>
               <input
                 type="date"
                 value={form.date}
                 onChange={e => updateField('date', e.target.value)}
               />
-            </div>
-            <div className="form-group">
-              <label><Clock size={12} /> Heure (optionnel)</label>
+            </FormField>
+            <FormField className="form-group" label={<><Clock size={12} /> Heure (optionnel)</>}>
               <input
                 type="time"
                 value={form.time}
                 onChange={e => updateField('time', e.target.value)}
               />
-            </div>
+            </FormField>
           </div>
 
           {/* Période Matin/Après-midi */}
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label>Période</label>
+          <FormField className="form-group" label="Période" style={{ marginBottom: 16 }}>
             <div className="period-toggle">
               <button
                 type="button"
@@ -286,11 +282,10 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
                 ☀️ Après-midi
               </button>
             </div>
-          </div>
+          </FormField>
 
           {/* Lieu */}
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label><MapPin size={12} /> Lieu</label>
+          <FormField className="form-group" label={<><MapPin size={12} /> Lieu</>} style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <AddressAutocomplete
                 value={form.location}
@@ -320,27 +315,26 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
                 </a>
               )}
             </div>
-          </div>
+          </FormField>
 
           {/* Commentaire */}
-          <div className="form-group">
-            <label><MessageSquare size={12} /> Commentaire</label>
-            <textarea
+          <FormField className="form-group" label={<><MessageSquare size={12} /> Commentaire</>}>
+            <Textarea
               value={form.comment}
               onChange={e => updateField('comment', e.target.value)}
               placeholder="Détails supplémentaires..."
               rows={3}
             />
-          </div>
+          </FormField>
         </div>
 
         {/* Footer */}
         <div className="dialog-footer">
-          <button className="btn-cancel" onClick={onClose}>Annuler</button>
-          <button className="btn-save" onClick={handleSave} disabled={saving}>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
             <Save size={15} />
             {saving ? 'Enregistrement...' : (isEdit ? 'Modifier' : 'Créer')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

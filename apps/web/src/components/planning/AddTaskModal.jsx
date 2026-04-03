@@ -6,6 +6,7 @@ import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
+import { Button, Input, Select } from '@/design-system';
 import './AddTaskModal.css';
 
 // ═══ Constantes (miroir de TaskPlanningPanel) ═══
@@ -294,7 +295,7 @@ export default function AddTaskModal({
           {/* Section / Type de tâche */}
           <div className="atm-field">
             <label>Type de tâche</label>
-            <select
+            <Select
               value={section}
               onChange={e => {
                 const key = e.target.value;
@@ -307,26 +308,26 @@ export default function AddTaskModal({
               {Object.entries(SECTIONS).map(([key, info]) => (
                 <option key={key} value={key}>{info.emoji} {info.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {/* Course type (sous-type) */}
           {showCourseType && (
             <div className="atm-field">
               <label>Type de course</label>
-              <select value={courseType} onChange={e => setCourseType(e.target.value)}>
+              <Select value={courseType} onChange={e => setCourseType(e.target.value)}>
                 <option value="">— Sélectionner —</option>
                 {Object.entries(EVENT_TYPES).map(([key, info]) => (
                   <option key={key} value={key}>{info.emoji} {info.label}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
 
           {/* Titre */}
           <div className="atm-field">
             <label>Titre <span className="atm-required">*</span></label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
@@ -357,7 +358,7 @@ export default function AddTaskModal({
             ) : (
               <div className="atm-affaire-wrap">
                 <Search size={13} className="atm-affaire-icon" />
-                <input
+                <Input
                   type="text"
                   value={affaireSearch}
                   onChange={e => { setAffaireSearch(e.target.value); setAffaireOpen(true); }}
@@ -397,7 +398,7 @@ export default function AddTaskModal({
           {allEvents.length > 0 && (
             <div className="atm-field">
               <label>Événement associé</label>
-              <select
+              <Select
                 value={googleEventId}
                 onChange={e => {
                   const evId = e.target.value;
@@ -421,7 +422,7 @@ export default function AddTaskModal({
                 {allEvents.map(ev => (
                   <option key={ev.id} value={ev.id}>{ev.summary || ev.title || '(sans titre)'}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
 
@@ -471,16 +472,16 @@ export default function AddTaskModal({
           <div className="atm-row">
             <div className="atm-field atm-field-half">
               <label><User size={13} /> Responsable</label>
-              <select value={personId} onChange={e => setPersonId(e.target.value)}>
+              <Select value={personId} onChange={e => setPersonId(e.target.value)}>
                 <option value="">— Aucun —</option>
                 {persons.map(p => (
                   <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="atm-field atm-field-half">
               <label>Client</label>
-              <input
+              <Input
                 type="text"
                 value={client}
                 onChange={e => setClient(e.target.value)}
@@ -493,7 +494,7 @@ export default function AddTaskModal({
           {showVehicle && (
             <div className="atm-field">
               <label><Truck size={13} /> Réservation véhicule</label>
-              <select value={reservationId} onChange={e => { setReservationId(e.target.value); if (e.target.value !== '__new__') setVehicleId(''); }}>
+              <Select value={reservationId} onChange={e => { setReservationId(e.target.value); if (e.target.value !== '__new__') setVehicleId(''); }}>
                 <option value="">— Aucune —</option>
                 {dayReservations.map(r => (
                   <option key={r.id} value={r.id}>
@@ -501,14 +502,14 @@ export default function AddTaskModal({
                   </option>
                 ))}
                 <option value="__new__">＋ Nouvelle réservation…</option>
-              </select>
+              </Select>
               {reservationId === '__new__' && (
-                <select className="atm-vehicle-select" value={vehicleId} onChange={e => setVehicleId(e.target.value)}>
+                <Select className="atm-vehicle-select" value={vehicleId} onChange={e => setVehicleId(e.target.value)}>
                   <option value="">— Véhicule —</option>
                   {(vehicles || []).map(v => (
                     <option key={v.id} value={v.id}>{v.name} {v.registration ? `(${v.registration})` : ''}</option>
                   ))}
-                </select>
+                </Select>
               )}
             </div>
           )}
@@ -521,20 +522,20 @@ export default function AddTaskModal({
             </div>
             <div className="atm-field atm-field-half">
               <label>Période</label>
-              <select value={period} onChange={e => setPeriod(e.target.value)}>
+              <Select value={period} onChange={e => setPeriod(e.target.value)}>
                 <option value="AM">AM (Matin)</option>
                 <option value="PM">PM (Après-midi)</option>
-              </select>
+              </Select>
             </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="atm-footer">
-          <button className="atm-btn-cancel" onClick={onClose}>Annuler</button>
-          <button className="atm-btn-submit" onClick={handleSubmit} disabled={submitting || !title.trim()}>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={submitting || !title.trim()}>
             {submitting ? 'Ajout…' : <><Plus size={15} /> Ajouter</>}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

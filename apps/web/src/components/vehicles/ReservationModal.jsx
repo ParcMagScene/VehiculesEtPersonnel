@@ -2,7 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X, Trash2, MapPin, Link2, Unlink, Paperclip } from 'lucide-react';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Button, Dialog, FormField, Input, Textarea, Select, Checkbox, SectionHeader } from '@/design-system';
 import { useAutocomplete } from '../../hooks/useAutocomplete';
 
 import TripDetailsModal from './TripDetailsModal';
@@ -903,8 +903,7 @@ const ReservationModal = ({
             }}
             title="En mode tournée, les détails (client, conducteur, lieu) seront définis individuellement pour chaque événement lié."
           >
-            <input
-              type="checkbox"
+            <Checkbox
               checked={formData.isTournee}
               onChange={(e) => setFormData(prev => ({ ...prev, isTournee: e.target.checked }))}
               style={{ margin: 0, cursor: isReadOnly ? 'default' : 'pointer' }}
@@ -928,11 +927,10 @@ const ReservationModal = ({
 
           {/* SECTION RÉSERVATION */}
           <div className="form-section">
-            <h3 className="section-title">📋 Réservation</h3>
+            <SectionHeader title="📋 Réservation" className="section-title" />
 
           {isMultiVehicle ? (
-            <div className="form-group">
-              <label>Véhicules * (Sélectionnez un ou plusieurs véhicules)</label>
+            <FormField className="form-group" label="Véhicules * (Sélectionnez un ou plusieurs véhicules)">
               <VehiclePickerCards
                 vehicles={vehicles}
                 selectedIds={selectedVehicleIds}
@@ -946,11 +944,10 @@ const ReservationModal = ({
                   <strong>{selectedVehicleIds.length}</strong> véhicule(s) sélectionné(s)
                 </div>
               )}
-            </div>
+            </FormField>
           ) : (
             <>
-            <div className="form-group">
-              <label htmlFor="vehicleId">Véhicule *</label>
+            <FormField className="form-group" label="Véhicule" htmlFor="vehicleId" required>
               <VehiclePickerCards
                 vehicles={vehicles}
                 selectedId={formData.vehicleId}
@@ -958,10 +955,9 @@ const ReservationModal = ({
                 disabled={isReadOnly}
                 variant="desktop"
               />
-            </div>
+            </FormField>
 
-            <div className="form-group">
-              <label htmlFor="driverName">Conducteur</label>
+            <FormField className="form-group" label="Conducteur" htmlFor="driverName">
               <DriverSelect
                 value={formData.driverName}
                 onChange={(name) => handleChange({ target: { name: 'driverName', value: name } })}
@@ -969,18 +965,15 @@ const ReservationModal = ({
                 historySuggestions={driverSuggestions}
                 disabled={isReadOnly}
               />
-            </div>
+            </FormField>
             </>
           )}
-
-          <div className="form-divider" />
 
           {/* Champs conditionnels (masqués si tournée) */}
           {!formData.isTournee && (
             <>
-              <div className="form-group">
-                <label htmlFor="clientName">Client / Prestation</label>
-                <input
+              <FormField className="form-group" label="Client / Prestation" htmlFor="clientName">
+                <Input
                   id="clientName"
                   type="text"
                   name="clientName"
@@ -997,11 +990,10 @@ const ReservationModal = ({
                     <option key={client.id} value={client.name} />
                   ))}
                 </datalist>
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="prestationName">Nom de prestation</label>
-                <input
+              <FormField className="form-group" label="Nom de prestation" htmlFor="prestationName">
+                <Input
                   id="prestationName"
                   type="text"
                   name="prestationName"
@@ -1015,15 +1007,14 @@ const ReservationModal = ({
                     <option key={idx} value={suggestion} />
                   ))}
                 </datalist>
-              </div>
+              </FormField>
 
               <div className="form-row">
-                <div className="form-group" style={{ flex: 'initial', width: 'auto' }}>
-                  <label htmlFor="locationName">Lieu</label>
+                <FormField className="form-group" label="Lieu" htmlFor="locationName" style={{ flex: 'initial', width: 'auto' }}>
                   {/* Filtre par type de lieu */}
                   {locationTypes.length > 1 && (
                     <div style={{ marginBottom: '6px' }}>
-                      <select
+                      <Select
                         value={locationTypeFilter}
                         onChange={(e) => setLocationTypeFilter(e.target.value)}
                         style={{ fontSize: '0.85rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--theme-border)' }}
@@ -1032,12 +1023,12 @@ const ReservationModal = ({
                         {locationTypes.map(t => (
                           <option key={t} value={t}>{t}</option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
                     <div style={{ minWidth: '300px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                      <input
+                      <Input
                         ref={locationInputRef}
                         id="locationName"
                         type="text"
@@ -1148,15 +1139,14 @@ const ReservationModal = ({
                     }
                     return null;
                   })()}
-                </div>
+                </FormField>
               </div>
             </>
           )}
 
           {/* Dates et périodes */}
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="date">Date de début *</label>
+            <FormField className="form-group" label="Date de début" htmlFor="date" required>
               <input
                 id="date"
                 type="date"
@@ -1169,11 +1159,10 @@ const ReservationModal = ({
               {displayDate && (
                 <div className="date-display">{displayDate}</div>
               )}
-            </div>
+            </FormField>
 
-            <div className="form-group">
-              <label htmlFor="period">Période de début *</label>
-              <select
+            <FormField className="form-group" label="Période de début" htmlFor="period" required>
+              <Select
                 id="period"
                 name="period"
                 value={formData.period}
@@ -1183,13 +1172,12 @@ const ReservationModal = ({
               >
                 <option value="AM">🌅 AM</option>
                 <option value="PM">🌆 PM</option>
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="endDate">Date de fin *</label>
+            <FormField className="form-group" label="Date de fin" htmlFor="endDate" required>
               <input
                 id="endDate"
                 type="date"
@@ -1200,11 +1188,10 @@ const ReservationModal = ({
                 aria-required="true"
                 min={formData.date}
               />
-            </div>
+            </FormField>
 
-            <div className="form-group">
-              <label htmlFor="endPeriod">Période de fin *</label>
-              <select
+            <FormField className="form-group" label="Période de fin" htmlFor="endPeriod" required>
+              <Select
                 id="endPeriod"
                 name="endPeriod"
                 value={formData.endPeriod}
@@ -1214,20 +1201,18 @@ const ReservationModal = ({
               >
                 <option value="AM">🌅 AM</option>
                 <option value="PM">🌆 PM</option>
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
           </div>
           {/* Fin de la section RÉSERVATION */}
 
           {/* SECTION ÉVÉNEMENTS LIÉS */}
-          <div className="form-divider" />
           <div className="form-section">
-            <h3 className="section-title">🔗 Événements liés</h3>
+            <SectionHeader title="🔗 Événements liés" className="section-title" />
 
             {!isMultiVehicle && googleEvents.length > 0 && (
-              <div className="form-group">
-                <label htmlFor="googleEventSelect">Lier à un événement Google (optionnel)</label>
+              <FormField className="form-group" label="Lier à un événement Google (optionnel)" htmlFor="googleEventSelect">
                 <div className="custom-dropdown">
                   <div 
                     className="custom-dropdown-trigger"
@@ -1402,7 +1387,7 @@ const ReservationModal = ({
                     </div>
                   )}
                 </div>
-              </div>
+              </FormField>
             )}
 
             {formData.isTournee && formData.linkedEventIds.length > 0 && (() => {
@@ -1750,10 +1735,8 @@ const ReservationModal = ({
           {/* Fin de la section ÉVÉNEMENTS LIÉS */}
 
           {/* SECTION NOTES */}
-          <div className="form-divider" />
-          <div className="form-group">
-            <label htmlFor="notes">Notes</label>
-            <textarea
+          <FormField className="form-group" label="Notes" htmlFor="notes">
+            <Textarea
               id="notes"
               name="notes"
               value={formData.notes}
@@ -1761,12 +1744,11 @@ const ReservationModal = ({
               placeholder="Notes supplémentaires..."
               rows="3"
             />
-          </div>
+          </FormField>
 
           {/* SECTION MATÉRIEL (uniquement en édition) */}
           {isEdit && reservation?.id && (
             <>
-              <div className="form-divider" />
               <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-gray)' }}>Chargement matériel...</div>}>
                 <ReservationEquipment
                   reservationId={reservation.id}
@@ -1790,9 +1772,9 @@ const ReservationModal = ({
               Supprimer
             </button>
           )}
-          <button type="button" className="cancel-button" onClick={isReadOnly ? onClose : handleSafeClose}>
+          <Button variant="ghost" onClick={isReadOnly ? onClose : handleSafeClose}>
             {isReadOnly ? 'Fermer' : 'Annuler'}
-          </button>
+          </Button>
           {!isEdit && (
             <button type="submit" form="reservation-form" className="submit-button">
               {currentUser?.isAdmin ? 'Créer' : 'Demander'}
@@ -1863,12 +1845,18 @@ const ReservationModal = ({
         />
       )}
 
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-        />
-      )}
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 import { X, Printer, FileText, ChevronLeft, ChevronRight, Calendar, Download, Filter } from 'lucide-react';
 import api from '../../utils/api';
 import './MaintenanceReportModal.css';
+import { Select, Table } from '@/design-system';
 
 const PERIOD_MODES = [
   { value: 'day', label: 'Journalier' },
@@ -223,9 +224,9 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
             <span className="mr-date-label">{label}</span>
           </div>
           <div className="mr-toolbar-right">
-            <select className="mr-type-select" value={reportType} onChange={e => setReportType(e.target.value)}>
+            <Select className="mr-type-select" value={reportType} onChange={e => setReportType(e.target.value)}>
               {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+            </Select>
             <button className="mr-action-btn" onClick={handlePrint} title="Imprimer">
               <Printer size={16} /> Imprimer
             </button>
@@ -243,7 +244,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
             <div className="mr-empty">Aucune intervention sur cette période</div>
           ) : (
             <div className="mr-table-wrapper">
-              <table className="mr-table">
+              <Table className="mr-table">
                 <thead>
                   <tr>
                     <th>Mouvement</th>
@@ -278,7 +279,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
 
               <div className="mr-summary">
                 <span>{reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}</span>
@@ -297,7 +298,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
               <span>Généré le {format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
               <span>{reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}</span>
             </div>
-            <table>
+            <Table>
               <thead>
                 <tr>
                   <th>Mouvement</th>
@@ -332,7 +333,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
             <div class="report-footer">
               <span>Total : {reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}</span>
               <span>Coût total : {formatCost(totalCost)}</span>

@@ -63,10 +63,10 @@
   border-radius: 999px;
   min-width: 16px;
   text-align: center;
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--shadow-sm);
 }
 .ui-filter-btn--active .ui-filter-btn__count {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
 }
 
 /* ─── Size: sm ─── */

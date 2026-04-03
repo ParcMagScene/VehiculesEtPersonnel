@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Image, Film, Trash2, Download, Eye } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
 
 function formatFileSize(bytes) {
   if (!bytes) return '0 o';
@@ -18,6 +19,7 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all | image | video
   const [preview, setPreview] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadMedia = useCallback(async () => {
     try {
@@ -36,15 +38,23 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
     loadMedia();
   }, [loadMedia, refreshKey]);
 
-  const handleDelete = useCallback(async (item) => {
-    if (!confirm(`Supprimer « ${item.original_name} » ?`)) return;
-    try {
-      await api.deleteDisplayMedia(item.id);
-      toast.success('Média supprimé');
-      onRefresh();
-    } catch {
-      toast.error('Erreur suppression');
-    }
+  const handleDelete = useCallback((item) => {
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: `Supprimer \xAB ${item.original_name} \xBB ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.deleteDisplayMedia(item.id);
+          toast.success('M\xE9dia supprim\xE9');
+          onRefresh();
+        } catch {
+          toast.error('Erreur suppression');
+        }
+      },
+    });
   }, [toast, onRefresh]);
 
   if (loading) return <div className="display-loading">Chargement des médias…</div>;
@@ -66,11 +76,7 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
       </div>
 
       {media.length === 0 ? (
-        <div className="display-empty">
-          <Image size={48} strokeWidth={1} />
-          <h3>Aucun média</h3>
-          <p>Uploadez des images ou vidéos pour vos écrans d'affichage.</p>
-        </div>
+        <EmptyState icon={<Image size={48} strokeWidth={1} />} title="Aucun média" description="Uploadez des images ou vidéos pour vos écrans d'affichage." />
       ) : (
         <div className="media-grid">
           {media.map(item => (
@@ -91,12 +97,16 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
                 <span className="media-size">{formatFileSize(item.file_size)}</span>
               </div>
               <div className="media-actions">
-                <button className="btn-icon-sm" onClick={() => setPreview(item)} title="Aperçu">
-                  <Eye size={14} />
-                </button>
-                <button className="btn-icon-sm danger" onClick={() => handleDelete(item)} title="Supprimer">
-                  <Trash2 size={14} />
-                </button>
+                <Tooltip content="Aperçu">
+                  <Button variant="ghost" size="sm" iconOnly onClick={() => setPreview(item)}>
+                    <Eye size={14} />
+                  </Button>
+                </Tooltip>
+                <Tooltip content="Supprimer">
+                  <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(item)}>
+                    <Trash2 size={14} />
+                  </Button>
+                </Tooltip>
               </div>
             </div>
           ))}
@@ -117,6 +127,17 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
           </div>
         </div>
       )}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }

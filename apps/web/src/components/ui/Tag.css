@@ -86,7 +86,7 @@
 
 .ui-badge {
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 /* Count badge */
@@ -117,15 +117,15 @@
 /* Badge color variants */
 .ui-badge--danger {
   background: var(--theme-danger);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 .ui-badge--primary {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 .ui-badge--success {
   background: var(--theme-success);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 .ui-badge--warning {
   background: var(--theme-warning);
@@ -133,5 +133,5 @@
 }
 .ui-badge--neutral {
   background: var(--theme-neutral);
-  color: white;
+  color: var(--theme-text-inverse);
 }

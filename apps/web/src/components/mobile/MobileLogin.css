@@ -15,7 +15,7 @@
   padding: 2rem;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
 }
 
 .mobile-login .login-header {
@@ -105,7 +105,7 @@
 
 .mobile-login .login-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px var(--btn-primary-hover-shadow);
 }
 
 .mobile-login .login-button:disabled {

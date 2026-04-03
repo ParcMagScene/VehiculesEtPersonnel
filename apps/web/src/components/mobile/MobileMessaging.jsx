@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Send, Paperclip, Plus, MessageSquare, File, Image, Download, Users } from 'lucide-react';
+import { ModalLayout, Input, Spinner } from '@/design-system';
 import api, { getApiUrl } from '../../utils/api';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -260,7 +261,7 @@ function MobileMessaging({ currentUser, onBack }) {
             <Paperclip size={20} />
           </button>
           <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
-          <input
+          <Input
             className="mmsg-input"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -290,7 +291,7 @@ function MobileMessaging({ currentUser, onBack }) {
 
       {loading ? (
         <div className="mmsg-loading">
-          <div className="spinner"></div>
+          <Spinner size="lg" />
           <p>Chargement...</p>
         </div>
       ) : conversations.length === 0 ? (
@@ -336,9 +337,19 @@ function MobileMessaging({ currentUser, onBack }) {
 
       {/* Modal nouvelle conversation */}
       {showNewConv && (
-        <div className="mmsg-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowNewConv(false); }}>
-          <div className="mmsg-modal">
-            <h3>Nouveau message</h3>
+        <ModalLayout
+          open
+          onClose={() => setShowNewConv(false)}
+          title="Nouveau message"
+          icon={<MessageSquare size={20} />}
+          size="sm"
+          footer={
+            <>
+              <button className="mmsg-cancel" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</button>
+              <button className="mmsg-confirm" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</button>
+            </>
+          }
+        >
             <div className="mmsg-user-list">
               {allUsers.map(user => (
                 <div
@@ -354,12 +365,7 @@ function MobileMessaging({ currentUser, onBack }) {
               ))}
               {allUsers.length === 0 && <p className="mmsg-no-users">Aucun autre utilisateur</p>}
             </div>
-            <div className="mmsg-modal-actions">
-              <button className="mmsg-cancel" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</button>
-              <button className="mmsg-confirm" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</button>
-            </div>
-          </div>
-        </div>
+        </ModalLayout>
       )}
     </div>
   );

@@ -239,7 +239,7 @@
 .detail-list-item.clickable:hover {
   background: var(--theme-bg-hover);
   border-color: var(--theme-bg-indigo-lighter);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 2px 8px var(--focus-ring);
 }
 
 .resa-chevron {
@@ -568,7 +568,7 @@
 .affaire-dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--theme-overlay);
   backdrop-filter: blur(4px);
   z-index: var(--z-overlay);
   display: flex;
@@ -589,7 +589,7 @@
   max-height: calc(85vh - 70px);
   background: var(--theme-bg-page);
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px var(--shadow-xl);
   display: flex;
   flex-direction: column;
 }
@@ -660,8 +660,8 @@
   gap: 5px;
   padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--close-btn-hover-bg);
+  background: var(--glass-subtle);
   color: var(--theme-text-inverse);
   font-size: 12px;
   font-weight: 600;
@@ -671,8 +671,8 @@
 }
 
 .dialog-bl-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--glass-light);
+  border-color: var(--glass-heavy);
 }
 
 .dialog-display-btn {
@@ -681,8 +681,8 @@
   gap: 5px;
   padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid var(--close-btn-hover-bg);
+  background: var(--success-tint-accent);
   color: var(--theme-text-inverse);
   font-size: 12px;
   font-weight: 600;
@@ -692,8 +692,8 @@
 }
 
 .dialog-display-btn:hover {
-  background: rgba(16, 185, 129, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--success-tint-medium);
+  border-color: var(--glass-heavy);
 }
 
 .slide-panel-display-btn {
@@ -704,7 +704,7 @@
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid var(--theme-success-alt);
-  background: rgba(16, 185, 129, 0.06);
+  background: var(--success-tint-subtle);
   color: var(--theme-success-alt);
   font-size: 13px;
   font-weight: 600;
@@ -764,7 +764,7 @@
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid var(--theme-primary);
-  background: rgba(99, 102, 241, 0.06);
+  background: var(--accent-tint-extra);
   color: var(--theme-primary);
   font-size: 13px;
   font-weight: 600;
@@ -793,13 +793,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px var(--btn-primary-shadow);
 }
 
 .slide-panel-open-btn:hover {
   background: linear-gradient(135deg, var(--theme-secondary) 0%, var(--theme-primary) 100%);
   color: var(--theme-text-inverse);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px var(--btn-primary-hover-shadow);
   transform: translateY(-1px);
 }
 
@@ -849,7 +849,7 @@
 
 .section-action-btn.primary {
   background: var(--theme-primary);
-  color: #fff;
+  color: var(--theme-bg-card);
   border-color: var(--theme-primary);
 }
 .section-action-btn.primary:hover {
@@ -882,7 +882,7 @@
 
 .task-step-item.enabled {
   background: var(--theme-bg-card);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  box-shadow: 0 1px 3px var(--shadow-inner);
 }
 
 .task-step-header {
@@ -981,7 +981,7 @@
 }
 .tsf-today-btn:hover {
   background: var(--theme-primary);
-  color: #fff;
+  color: var(--theme-bg-card);
 }
 
 .tsf-notes {
@@ -1141,11 +1141,11 @@
   background: var(--theme-gradient);
   border-color: transparent;
   color: var(--theme-text-inverse);
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 6px var(--btn-primary-shadow);
 }
 
 .inline-btn.confirm:hover {
-  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 10px var(--btn-primary-hover-shadow);
   transform: translateY(-1px);
 }
 
@@ -1187,7 +1187,7 @@
 .articles-table thead {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .articles-table th {
@@ -1303,7 +1303,7 @@
 
 .generate-orders-btn:hover:not(:disabled) {
   background: var(--theme-primary-light);
-  color: white;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-primary-light);
   border-style: solid;
 }
@@ -1457,8 +1457,8 @@
 }
 
 .bl-import-annotate-btn:hover {
-  background: rgba(99, 102, 241, 0.15);
-  color: #6366f1;
+  background: var(--accent-tint-medium);
+  color: var(--theme-indigo);
 }
 
 .bl-import-annotate-btn:disabled {
@@ -1476,8 +1476,8 @@
   gap: 5px;
   padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid var(--close-btn-hover-bg);
+  background: var(--primary-tint-medium);
   color: var(--theme-text-inverse);
   font-size: 12px;
   font-weight: 600;
@@ -1488,7 +1488,7 @@
 
 .dialog-edit-btn:hover {
   background: rgba(59, 130, 246, 0.35);
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: var(--glass-heavy);
 }
 
 .dialog-save-btn {
@@ -1508,7 +1508,7 @@
 }
 
 .dialog-save-btn:hover {
-  background: rgba(16, 185, 129, 0.45);
+  background: var(--success-tint-strong);
   border-color: rgba(16, 185, 129, 0.8);
 }
 
@@ -1523,9 +1523,9 @@
   gap: 5px;
   padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--glass-light);
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--glass-opaque);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -1533,7 +1533,7 @@
 }
 
 .dialog-cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--close-btn-bg);
   color: var(--theme-text-inverse);
 }
 
@@ -1609,7 +1609,7 @@ select.edit-input {
   transition: border-color 0.2s;
 }
 .link-search-input:focus {
-  border-color: #ec4899;
+  border-color: var(--theme-danger);
   box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
 }
 .link-search-results {
@@ -1617,10 +1617,10 @@ select.edit-input {
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
   border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 20px var(--shadow-dropdown);
   z-index: 20;
   max-height: 240px;
   overflow-y: auto;
@@ -1715,10 +1715,10 @@ select.edit-input {
   z-index: var(--z-dropdown);
   max-height: 200px;
   overflow-y: auto;
-  background: var(--theme-card-bg, #fff);
+  background: var(--theme-card-bg, var(--theme-bg-card));
   border: 1px solid var(--theme-border, var(--theme-border-medium));
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px var(--shadow-xl);
   list-style: none;
   margin: 4px 0 0;
   padding: 4px;

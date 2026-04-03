@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import AddressAutocomplete from '../AddressAutocomplete';
 import './BLImportModal.css';
+import { Button, Input, ProgressBar, Tooltip } from '@/design-system';
 
 // Types d'affaire incompatibles avec un BL Vente
 const BL_VENTE_FORBIDDEN_TYPES = ['Location', 'Prestation'];
@@ -309,22 +310,20 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                     {getDocTypeLabel(docType)}
                   </span>
                 )}
-                <button className="file-remove" onClick={handleRemoveFile} title="Retirer">
+                <Tooltip content="Retirer"><button className="file-remove" onClick={handleRemoveFile}>
                   <X size={16} />
-                </button>
+                </button></Tooltip>
               </div>
 
               {/* Parsing progress */}
               {parsing && (
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: '60%' }} />
-                </div>
+                <ProgressBar indeterminate />
               )}
 
               {/* Association affaire */}
               <div className="affaire-section">
                 <label><Briefcase size={14} /> Associer à une affaire</label>
-                <input
+                <Input
                   type="text"
                   value={affaireId}
                   onChange={e => setAffaireId(e.target.value)}
@@ -424,7 +423,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                               style={inputStyle}
                             />
                           ) : (
-                            <input
+                            <Input
                               type="text"
                               value={val}
                               onChange={e => {
@@ -555,7 +554,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
             )}
           </div>
           <div className="footer-right">
-            <button className="btn-secondary" onClick={onClose}>Annuler</button>
+            <Button variant="ghost" onClick={onClose}>Annuler</Button>
             {parsedData && (
               <button
                 className="btn-generate"
@@ -567,14 +566,14 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                 {generating ? 'Génération...' : 'Importer + Créer événements'}
               </button>
             )}
-            <button
-              className="btn-primary"
+            <Button
+              variant="primary"
               onClick={handleSave}
               disabled={!file || saving || generating || isBLVenteIncompat}
             >
               <Save size={15} />
               {saving ? 'Import...' : 'Enregistrer BL'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

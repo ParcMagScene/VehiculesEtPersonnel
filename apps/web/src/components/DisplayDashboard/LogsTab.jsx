@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Table, EmptyState } from '@/design-system';
 
 const PAGE_SIZE = 50;
 
@@ -54,17 +55,13 @@ function LogsTab({ refreshKey }) {
 
   if (logs.length === 0) {
     return (
-      <div className="display-empty">
-        <Activity size={48} strokeWidth={1} />
-        <h3>Aucun log</h3>
-        <p>L'historique des actions apparaîtra ici.</p>
-      </div>
+      <EmptyState icon={<Activity size={48} strokeWidth={1} />} title="Aucun log" description="L'historique des actions apparaîtra ici." />
     );
   }
 
   return (
     <div className="display-logs">
-      <table className="logs-table">
+      <Table className="logs-table">
         <thead>
           <tr>
             <th>Date</th>
@@ -97,7 +94,7 @@ function LogsTab({ refreshKey }) {
             );
           })}
         </tbody>
-      </table>
+      </Table>
 
       {totalPages > 1 && (
         <div className="logs-pagination">

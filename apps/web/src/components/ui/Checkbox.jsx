@@ -3,7 +3,13 @@ import { useId } from 'react';
 /**
  * Checkbox — Composant atomique Design System
  *
- * Props : checked, onChange, label, disabled, indeterminate
+ * Mode complet (label fourni) :
+ *   <Checkbox checked={v} onChange={fn} label="Activer" />
+ *   → rend un <label> autonome avec checkbox custom + texte.
+ *
+ * Mode bare (pas de label) :
+ *   <label className="my-class"><Checkbox checked={v} onChange={fn} /> Mon texte</label>
+ *   → rend un <span> (pas de <label>) pour s'imbriquer dans un label existant.
  */
 export function Checkbox({
   checked = false,
@@ -15,11 +21,18 @@ export function Checkbox({
   ...props
 }) {
   const id = useId();
+  const Wrapper = label ? 'label' : 'span';
+
+  const cls = [
+    'ui-checkbox',
+    disabled && 'ui-checkbox--disabled',
+    className,
+  ].filter(Boolean).join(' ');
 
   return (
-    <label
-      className={`ui-checkbox ${disabled ? 'ui-checkbox--disabled' : ''} ${className}`}
-      htmlFor={id}
+    <Wrapper
+      className={cls}
+      {...(label ? { htmlFor: id } : {})}
     >
       <input
         id={id}
@@ -40,14 +53,18 @@ export function Checkbox({
         ) : null}
       </span>
       {label && <span className="ui-checkbox__label">{label}</span>}
-    </label>
+    </Wrapper>
   );
 }
 
 /**
  * Toggle — Composant atomique Design System (switch)
  *
- * Props : checked, onChange, label, disabled, size (sm | md)
+ * Mode complet (label fourni) :
+ *   <Toggle checked={v} onChange={fn} label="Notifications" />
+ *
+ * Mode bare (pas de label) :
+ *   <label className="my-toggle"><Toggle checked={v} onChange={fn} /> Activer</label>
  */
 export function Toggle({
   checked = false,
@@ -59,11 +76,19 @@ export function Toggle({
   ...props
 }) {
   const id = useId();
+  const Wrapper = label ? 'label' : 'span';
+
+  const cls = [
+    'ui-toggle',
+    `ui-toggle--${size}`,
+    disabled && 'ui-toggle--disabled',
+    className,
+  ].filter(Boolean).join(' ');
 
   return (
-    <label
-      className={`ui-toggle ui-toggle--${size} ${disabled ? 'ui-toggle--disabled' : ''} ${className}`}
-      htmlFor={id}
+    <Wrapper
+      className={cls}
+      {...(label ? { htmlFor: id } : {})}
     >
       <input
         id={id}
@@ -80,6 +105,6 @@ export function Toggle({
         <span className="ui-toggle__thumb" />
       </span>
       {label && <span className="ui-toggle__label">{label}</span>}
-    </label>
+    </Wrapper>
   );
 }

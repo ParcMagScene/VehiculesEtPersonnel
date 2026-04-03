@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Tag, Plus, Trash2, Save, GripVertical } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Select, Tooltip, SectionHeader } from '@/design-system';
 
 // Types de tâches (sections) disponibles pour l'association couleur
 const TASK_SECTIONS = [
@@ -88,9 +89,7 @@ function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
   return (
     <div className="dtv-color-rules">
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Tag size={16} /> Couleurs par type de tâche
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Tag size={16} />} title="Couleurs par type de tâche" />
         <p className="dtv-hint">
           Attribuez une couleur d'affichage sur l'écran TV à chaque type de tâche.
         </p>
@@ -109,7 +108,7 @@ function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
                   className="dtv-rule-color"
                   title="Couleur"
                 />
-                <select
+                <Select
                   value={rule.keyword}
                   onChange={e => handleChange(index, 'keyword', e.target.value)}
                   className="dtv-rule-keyword"
@@ -121,22 +120,24 @@ function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
                       <option key={s.key} value={s.key}>{s.label}</option>
                     ))
                   }
-                </select>
-                <button className="btn-icon-sm danger" onClick={() => handleRemove(index)} title="Supprimer">
-                  <Trash2 size={14} />
-                </button>
+                </Select>
+                <Tooltip content="Supprimer">
+                  <Button variant="danger" size="sm" iconOnly onClick={() => handleRemove(index)}>
+                    <Trash2 size={14} />
+                  </Button>
+                </Tooltip>
               </div>
             </div>
           ))}
         </div>
 
         <div className="dtv-actions">
-          <button className="btn-secondary-sm" onClick={handleAdd}>
+          <Button variant="secondary" size="sm" onClick={handleAdd}>
             <Plus size={14} /> Ajouter une règle
-          </button>
-          <button className="btn-primary-sm" onClick={handleSave} disabled={saving}>
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
             <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

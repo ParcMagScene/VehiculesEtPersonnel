@@ -4,7 +4,8 @@
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, Trash2, Box, Search, X, Weight, Ruler, ExternalLink } from 'lucide-react';
+import { Package, Plus, Trash2, Box, Search, Weight, Ruler, ExternalLink } from 'lucide-react';
+import { Button, Dialog, ModalLayout, Input, Tooltip } from '@/design-system';
 import api from '../../utils/api';
 import { formatDimensions, buildChargementUrlForReservation, openInChargement } from '../../utils/deepLinking';
 import './ReservationEquipment.css';
@@ -15,6 +16,7 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
   const [data, setData] = useState({ items: [], summary: { count: 0, totalQuantity: 0, totalWeight: 0, totalVolume: 0 } });
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadEquipment = useCallback(async () => {
     if (!reservationId) return;
@@ -31,14 +33,22 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
 
   useEffect(() => { loadEquipment(); }, [loadEquipment]);
 
-  const handleRemove = async (linkId) => {
-    if (!confirm('Retirer cet équipement de la réservation ?')) return;
-    try {
-      await api.removeEquipmentFromReservation(reservationId, linkId);
-      loadEquipment();
-    } catch (e) {
-      toast.error(e.message || 'Erreur');
-    }
+  const handleRemove = (linkId) => {
+    setConfirmDialog({
+      title: 'Retirer',
+      message: 'Retirer cet \xE9quipement de la r\xE9servation ?',
+      variant: 'danger',
+      confirmLabel: 'Retirer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.removeEquipmentFromReservation(reservationId, linkId);
+          loadEquipment();
+        } catch (e) {
+          toast.error(e.message || 'Erreur');
+        }
+      },
+    });
   };
 
   const handleOpenChargement = () => {
@@ -75,9 +85,9 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-        <button className="catalog-btn catalog-btn-primary catalog-btn-sm" onClick={() => setShowAddDialog(true)}>
+        <Button variant="primary" size="sm" onClick={() => setShowAddDialog(true)}>
           <Plus size={14} /> Ajouter du matériel
-        </button>
+        </Button>
         {items.length > 0 && (
           <button className="catalog-btn catalog-btn-3d catalog-btn-sm" onClick={handleOpenChargement}>
             <Box size={14} /> Charger dans 3D
@@ -109,9 +119,11 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
               </div>
               <span className="eq-qty">×{item.quantity}</span>
               {item.weight && <span style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>{item.weight * item.quantity} kg</span>}
-              <button className="catalog-btn catalog-btn-danger catalog-btn-sm" onClick={() => handleRemove(item.id)} title="Retirer">
-                <Trash2 size={14} />
-              </button>
+              <Tooltip content="Retirer">
+                <Button variant="danger" size="sm" iconOnly onClick={() => handleRemove(item.id)}>
+                  <Trash2 size={14} />
+                </Button>
+              </Tooltip>
             </div>
           ))}
         </div>
@@ -125,6 +137,17 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
           onClose={() => setShowAddDialog(false)}
         />
       )}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }
@@ -171,19 +194,32 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
   };
 
   return (
-    <div className="catalog-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="catalog-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-        <div className="catalog-modal-header">
-          <h3><Plus size={20} /> Ajouter du matériel</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
-        </div>
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Ajouter du matériel"
+      icon={<Plus size={20} />}
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button
+            variant="primary"
+            onClick={handleAssign}
+            disabled={!selectedItem || submitting}
+          >
+            {submitting ? 'Ajout…' : 'Ajouter'}
+          </Button>
+        </>
+      }
+    >
         <div className="catalog-modal-body">
           {/* Search */}
           <div className="catalog-form-group">
             <label>Rechercher dans le catalogue</label>
             <div style={{ position: 'relative' }}>
               <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--theme-text-muted)' }} />
-              <input
+              <Input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -226,7 +262,7 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
           {selectedItem && (
             <div className="catalog-form-group" style={{ marginTop: '0.75rem' }}>
               <label>Quantité pour « {selectedItem.name} »</label>
-              <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} style={{ maxWidth: '120px' }} />
+              <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} style={{ maxWidth: '120px' }} />
               {selectedItem.defaultFlightcaseId && (
                 <div style={{ fontSize: '0.8rem', color: '#059669', marginTop: '0.25rem' }}>
                   <Box size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
@@ -236,18 +272,6 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
             </div>
           )}
         </div>
-        <div className="catalog-modal-footer">
-          <button type="button" className="catalog-btn catalog-btn-secondary" onClick={onClose}>Annuler</button>
-          <button
-            type="button"
-            className="catalog-btn catalog-btn-primary"
-            onClick={handleAssign}
-            disabled={!selectedItem || submitting}
-          >
-            {submitting ? 'Ajout…' : 'Ajouter'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }

@@ -15,7 +15,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px var(--shadow-xl);
   animation: slideUp 0.25s ease;
 }
 
@@ -160,7 +160,7 @@
   background: var(--theme-bg-card);
   border-radius: 50%;
   transition: transform 0.25s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .prefs-toggle input:checked + .prefs-toggle-slider {
@@ -379,7 +379,7 @@
   border-radius: 50%;
   background: var(--theme-primary);
   border: 2px solid var(--theme-text-inverse);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 4px var(--shadow-xl);
   cursor: pointer;
 }
 .prefs-volume-slider::-moz-range-thumb {
@@ -388,7 +388,7 @@
   border-radius: 50%;
   background: var(--theme-primary);
   border: 2px solid var(--theme-text-inverse);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 4px var(--shadow-xl);
   cursor: pointer;
 }
 
@@ -459,7 +459,7 @@
 
 .prefs-palette-card:hover {
   border-color: var(--theme-primary);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px var(--shadow-sm);
   transform: translateY(-2px);
 }
 
@@ -485,14 +485,14 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--glass);
+  box-shadow: 0 1px 3px var(--shadow-xl);
 }
 
 .prefs-palette-mini-card {
   background: var(--theme-bg-card);
   border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--shadow-inner);
   padding: 4px;
   height: 24px;
   display: flex;

@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, Filter,
   TrendingUp, TrendingDown, AlertTriangle, BarChart3, ArrowUpCircle, ArrowDownCircle,
-  RotateCcw, Layers, Tag, MapPin, Euro, Hash, X, Check, ChevronDown,
+  RotateCcw, Layers, Tag as TagIcon, MapPin, Euro, Hash, X, Check, ChevronDown,
   Archive, Eye, FolderOpen, Upload, FileText, AlertCircle, ExternalLink, Map } from 'lucide-react';
 import api from '../../utils/api';
 import { formatCurrency, formatDateTime as formatDate, formatDateSimple as formatDateShort } from '../../utils/formatUtils';
-import ConfirmDialog from '../ConfirmDialog';
+import { Button, Dialog, ModalLayout, Input, Textarea, Select, Table, EntityCombobox, Spinner, Tag, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import './StockPanel.css';
 import { useToast } from '../../hooks/useToast';
-import EntityCombobox from '../ui/EntityCombobox';
 import { extractTextFromPDF } from '../../utils/pdfParser';
 import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
@@ -214,7 +213,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           <div className="stock-content">
             {loading && !items.length ? (
               <div className="stock-loading">
-                <div className="loading-spinner" />
+                <Spinner size="lg" />
                 <p>Chargement du stock...</p>
               </div>
             ) : dialogItem ? (
@@ -308,7 +307,17 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           onClose={() => setShowMovementForm(false)}
         />
       )}
-      {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
+        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
+      >
+        {confirmDialog?.message}
+      </Dialog>
       {showImport && (
         <ImportStockModal
           onDone={() => { setShowImport(false); loadData(); }}
@@ -398,7 +407,9 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
           <span className="stock-slide-name">{current.name}</span>
           <span className="stock-slide-ref">{current.reference}</span>
         </div>
-        <button className="stock-slide-close" onClick={handleClose} title="Fermer"><X size={18} /></button>
+        <Tooltip content="Fermer">
+          <button className="stock-slide-close" onClick={handleClose}><X size={18} /></button>
+        </Tooltip>
       </div>
       <div className="stock-slide-body">
         {current.category_name && (
@@ -410,8 +421,8 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
           <span className={`stock-qty-big ${isOut ? 'rupture' : isLow ? 'low' : 'ok'}`}>
             {current.quantity} {current.unit}
           </span>
-          {isLow && !isOut && <span className="qty-badge warning">Stock bas</span>}
-          {isOut && <span className="qty-badge danger">Rupture</span>}
+          {isLow && !isOut && <Tag color="warning" size="sm">Stock bas</Tag>}
+          {isOut && <Tag color="danger" size="sm">Rupture</Tag>}
           {current.min_quantity > 0 && <small className="stock-slide-min">Seuil : {current.min_quantity} {current.unit}</small>}
         </div>
         <div className="stock-slide-prices">
@@ -430,13 +441,15 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
         {current.notes && <p className="stock-slide-notes">{current.notes}</p>}
       </div>
       <div className="stock-slide-footer">
-        <button className="stock-btn-secondary" onClick={() => onMovement()} title="Mouvement">
+        <Button variant="secondary" onClick={() => onMovement()} title="Mouvement">
           <TrendingUp size={14} /> Mouvement
-        </button>
+        </Button>
         {isAdmin && (
-          <button className="stock-btn-secondary" onClick={() => onEdit(current)} title="Modifier">
-            <Edit2 size={14} />
-          </button>
+          <Tooltip content="Modifier">
+            <Button variant="secondary" onClick={() => onEdit(current)} iconOnly>
+              <Edit2 size={14} />
+            </Button>
+          </Tooltip>
         )}
         <button className="stock-slide-open-btn" onClick={() => onOpenDialog(current)}>
           <ExternalLink size={14} /> Ouvrir la fiche
@@ -564,15 +577,7 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
     <div className="stock-items-view">
       {/* Toolbar */}
       <div className="stock-toolbar">
-        <div className="stock-search">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="Rechercher un article..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-        </div>
+        <SearchBar value={searchTerm} onChange={onSearchChange} placeholder="Rechercher un article..." />
         <div className="stock-filters">
           <EntityCombobox
             value={categoryFilter}
@@ -602,16 +607,14 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
 
       {/* Table */}
       {items.length === 0 ? (
-        <div className="stock-empty">
-          <Package size={48} />
-          <p>Aucun article trouvé</p>
-          <button className="stock-add-btn" onClick={onAdd}>
-            <Plus size={16} /> Créer un article
-          </button>
-        </div>
+        <EmptyState
+          icon={<Package size={48} />}
+          title="Aucun article trouvé"
+          action={<button className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer un article</button>}
+        />
       ) : (
         <div className="stock-table-container">
-          <table className="stock-table">
+          <Table className="stock-table">
             <thead>
               <tr>
                 <th>Réf.</th>
@@ -667,7 +670,7 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
                 );
               })}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
 
@@ -723,7 +726,7 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
 
           <div className="stock-detail-grid">
             <div className="stock-detail-field">
-              <label><Tag size={14} /> Catégorie</label>
+              <label><TagIcon size={14} /> Catégorie</label>
               <span>
                 {item.category_name ? (
                   <span className="stock-cat-badge" style={item.category_color ? { background: item.category_color + '20', color: item.category_color, borderColor: item.category_color } : undefined}>
@@ -736,8 +739,8 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
               <label><Package size={14} /> Quantité</label>
               <span className={`stock-qty-big ${isOut ? 'rupture' : isLow ? 'low' : 'ok'}`}>
                 {item.quantity} {item.unit}
-                {isLow && !isOut && <span className="qty-badge warning">Stock bas</span>}
-                {isOut && <span className="qty-badge danger">Rupture</span>}
+                {isLow && !isOut && <Tag color="warning" size="sm">Stock bas</Tag>}
+                {isOut && <Tag color="danger" size="sm">Rupture</Tag>}
               </span>
             </div>
             <div className="stock-detail-field">
@@ -850,12 +853,12 @@ function MovementsView({ movements, items, onAddMovement, onRefresh }) {
     <div className="stock-movements-view">
       <div className="stock-toolbar">
         <div className="stock-filters">
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
             <option value="">Tous types</option>
             {Object.entries(MOVEMENT_TYPES).map(([k, v]) => (
               <option key={k} value={k}>{v.icon} {v.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <button className="stock-add-btn" onClick={onAddMovement}>
           <Plus size={16} /> Nouveau mouvement
@@ -863,13 +866,10 @@ function MovementsView({ movements, items, onAddMovement, onRefresh }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="stock-empty">
-          <TrendingUp size={48} />
-          <p>Aucun mouvement enregistré</p>
-        </div>
+        <EmptyState icon={<TrendingUp size={48} />} title="Aucun mouvement enregistré" />
       ) : (
         <div className="stock-table-container">
-          <table className="stock-table">
+          <Table className="stock-table">
             <thead>
               <tr>
                 <th>Date</th>
@@ -910,7 +910,7 @@ function MovementsView({ movements, items, onAddMovement, onRefresh }) {
                 );
               })}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>
@@ -933,13 +933,11 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
       </div>
 
       {categories.length === 0 ? (
-        <div className="stock-empty">
-          <Layers size={48} />
-          <p>Aucune catégorie créée</p>
-          {isAdmin && (
-            <button className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer</button>
-          )}
-        </div>
+        <EmptyState
+          icon={<Layers size={48} />}
+          title="Aucune catégorie créée"
+          action={isAdmin && <button className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer</button>}
+        />
       ) : (
         <div className="stock-categories-grid">
           {categories.map(cat => (
@@ -953,8 +951,12 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
               {cat.parent_name && <span className="cat-parent">↳ {cat.parent_name}</span>}
               {isAdmin && (
                 <div className="cat-actions">
-                  <button onClick={() => onEdit(cat)} title="Modifier"><Edit2 size={14} /></button>
-                  <button onClick={() => onDelete(cat)} title="Supprimer" disabled={cat.item_count > 0}><Trash2 size={14} /></button>
+                  <Tooltip content="Modifier">
+                    <button onClick={() => onEdit(cat)}><Edit2 size={14} /></button>
+                  </Tooltip>
+                  <Tooltip content="Supprimer">
+                    <button onClick={() => onDelete(cat)} disabled={cat.item_count > 0}><Trash2 size={14} /></button>
+                  </Tooltip>
                 </div>
               )}
             </div>
@@ -1006,26 +1008,33 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
   };
 
   return (
-    <div className="stock-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="stock-modal" onClick={e => e.stopPropagation()}>
-        <div className="stock-modal-header">
-          <h3>{item ? 'Modifier l\'article' : 'Nouvel article'}</h3>
-          <button onClick={onClose}><X size={20} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="stock-modal-form">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={item ? "Modifier l'article" : 'Nouvel article'}
+      size="lg"
+      className="stock-modal"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="stock-item-form"><Check size={16} /> {item ? 'Enregistrer' : 'Créer'}</Button>
+        </>
+      }
+    >
+        <form id="stock-item-form" onSubmit={handleSubmit} className="stock-modal-form">
           <div className="stock-form-row">
             <div className="stock-form-field">
               <label>Référence</label>
-              <input type="text" value={form.reference} onChange={(e) => handleChange('reference', e.target.value)} placeholder="Auto-généré si vide" />
+              <Input type="text" value={form.reference} onChange={(e) => handleChange('reference', e.target.value)} placeholder="Auto-généré si vide" />
             </div>
             <div className="stock-form-field full">
               <label>Nom *</label>
-              <input type="text" value={form.name} onChange={(e) => handleChange('name', e.target.value)} required />
+              <Input type="text" value={form.name} onChange={(e) => handleChange('name', e.target.value)} required />
             </div>
           </div>
           <div className="stock-form-field">
             <label>Description</label>
-            <textarea value={form.description} onChange={(e) => handleChange('description', e.target.value)} rows={2} />
+            <Textarea value={form.description} onChange={(e) => handleChange('description', e.target.value)} rows={2} />
           </div>
           <div className="stock-form-row">
             <div className="stock-form-field">
@@ -1039,9 +1048,9 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
             </div>
             <div className="stock-form-field">
               <label>Unité</label>
-              <select value={form.unit} onChange={(e) => handleChange('unit', e.target.value)}>
+              <Select value={form.unit} onChange={(e) => handleChange('unit', e.target.value)}>
                 {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="stock-form-field">
               <label>Fournisseur</label>
@@ -1056,19 +1065,19 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
           <div className="stock-form-row">
             <div className="stock-form-field">
               <label>P.U. Achat (€)</label>
-              <input type="number" step="0.01" min="0" value={form.unit_price} onChange={(e) => handleChange('unit_price', e.target.value)} />
+              <Input type="number" step="0.01" min="0" value={form.unit_price} onChange={(e) => handleChange('unit_price', e.target.value)} />
             </div>
             <div className="stock-form-field">
               <label>P.U. Vente (€)</label>
-              <input type="number" step="0.01" min="0" value={form.sell_price} onChange={(e) => handleChange('sell_price', e.target.value)} />
+              <Input type="number" step="0.01" min="0" value={form.sell_price} onChange={(e) => handleChange('sell_price', e.target.value)} />
             </div>
             <div className="stock-form-field">
               <label>Quantité</label>
-              <input type="number" step="0.01" min="0" value={form.quantity} onChange={(e) => handleChange('quantity', e.target.value)} />
+              <Input type="number" step="0.01" min="0" value={form.quantity} onChange={(e) => handleChange('quantity', e.target.value)} />
             </div>
             <div className="stock-form-field">
               <label>Seuil alerte</label>
-              <input type="number" step="0.01" min="0" value={form.min_quantity} onChange={(e) => handleChange('min_quantity', e.target.value)} />
+              <Input type="number" step="0.01" min="0" value={form.min_quantity} onChange={(e) => handleChange('min_quantity', e.target.value)} />
             </div>
           </div>
           {(depotZones || allDepotZones) ? (
@@ -1129,20 +1138,15 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
           ) : (
             <div className="stock-form-field">
               <label>Emplacement</label>
-              <input type="text" value={form.location} onChange={(e) => handleChange('location', e.target.value)} placeholder="ex: Étagère A3, Atelier B..." />
+              <Input type="text" value={form.location} onChange={(e) => handleChange('location', e.target.value)} placeholder="ex: Étagère A3, Atelier B..." />
             </div>
           )}
           <div className="stock-form-field">
             <label>Notes</label>
-            <textarea value={form.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} />
-          </div>
-          <div className="stock-modal-actions">
-            <button type="button" onClick={onClose} className="stock-btn-cancel">Annuler</button>
-            <button type="submit" className="stock-btn-save"><Check size={16} /> {item ? 'Enregistrer' : 'Créer'}</button>
+            <Textarea value={form.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} />
           </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 
@@ -1167,20 +1171,27 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
   };
 
   return (
-    <div className="stock-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="stock-modal stock-modal-sm" onClick={e => e.stopPropagation()}>
-        <div className="stock-modal-header">
-          <h3>{category ? 'Modifier la catégorie' : 'Nouvelle catégorie'}</h3>
-          <button onClick={onClose}><X size={20} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="stock-modal-form">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={category ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+      size="sm"
+      className="stock-modal stock-modal-sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="category-form"><Check size={16} /> {category ? 'Enregistrer' : 'Créer'}</Button>
+        </>
+      }
+    >
+        <form id="category-form" onSubmit={handleSubmit} className="stock-modal-form">
           <div className="stock-form-field">
             <label>Nom *</label>
-            <input type="text" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} required />
+            <Input type="text" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} required />
           </div>
           <div className="stock-form-field">
             <label>Description</label>
-            <input type="text" value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} />
+            <Input type="text" value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} />
           </div>
           <div className="stock-form-field">
             <label>Parent</label>
@@ -1218,13 +1229,8 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
               ))}
             </div>
           </div>
-          <div className="stock-modal-actions">
-            <button type="button" onClick={onClose} className="stock-btn-cancel">Annuler</button>
-            <button type="submit" className="stock-btn-save"><Check size={16} /> {category ? 'Enregistrer' : 'Créer'}</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 
@@ -1253,16 +1259,23 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
   };
 
   return (
-    <div className="stock-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="stock-modal stock-modal-sm" onClick={e => e.stopPropagation()}>
-        <div className="stock-modal-header">
-          <h3>Nouveau mouvement</h3>
-          <button onClick={onClose}><X size={20} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="stock-modal-form">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Nouveau mouvement"
+      size="sm"
+      className="stock-modal stock-modal-sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="movement-form"><Check size={16} /> Valider</Button>
+        </>
+      }
+    >
+        <form id="movement-form" onSubmit={handleSubmit} className="stock-modal-form">
           <div className="stock-form-field">
             <label>Article *</label>
-            <select
+            <Select
               value={form.stock_item_id}
               onChange={(e) => setForm(f => ({ ...f, stock_item_id: e.target.value }))}
               required
@@ -1273,7 +1286,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
                   [{item.reference}] {item.name} (stock: {item.quantity} {item.unit})
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="stock-form-field">
             <label>Type de mouvement</label>
@@ -1294,7 +1307,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
           <div className="stock-form-row">
             <div className="stock-form-field">
               <label>Quantité *</label>
-              <input
+              <Input
                 type="number"
                 step="0.01"
                 min="0.01"
@@ -1324,7 +1337,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
           </div>
           <div className="stock-form-field">
             <label>Motif / Raison</label>
-            <input
+            <Input
               type="text"
               value={form.reason}
               onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))}
@@ -1333,20 +1346,15 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
           </div>
           <div className="stock-form-field">
             <label>Référence (BL, facture...)</label>
-            <input
+            <Input
               type="text"
               value={form.reference}
               onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))}
               placeholder="ex: BL-2024-0045"
             />
           </div>
-          <div className="stock-modal-actions">
-            <button type="button" onClick={onClose} className="stock-btn-cancel">Annuler</button>
-            <button type="submit" className="stock-btn-save"><Check size={16} /> Valider</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 
@@ -1602,18 +1610,33 @@ function ImportStockModal({ onDone, onClose }) {
   );
 
   return (
-    <div className="stock-modal-overlay" onMouseDown={e => e.target === e.currentTarget && step !== 'importing' && onClose()}>
-      <div className="stock-modal stock-modal-lg" onClick={e => e.stopPropagation()}>
-        <div className="stock-modal-header">
-          <h3><Upload size={20} /> Importer un inventaire</h3>
-          {step !== 'importing' && <button onClick={onClose}><X size={20} /></button>}
-        </div>
-
+    <ModalLayout
+      open
+      onClose={step !== 'importing' ? onClose : undefined}
+      title={<><Upload size={20} /> Importer un inventaire</>}
+      size="lg"
+      className="stock-modal stock-modal-lg"
+      footer={
+        step === 'select' ? (
+          <>
+            <Button variant="ghost" onClick={onClose}>Annuler</Button>
+            <Button variant="primary" onClick={handleParse} disabled={!file && !pasteText.trim()}>
+              <Search size={16} /> Analyser
+            </Button>
+          </>
+        ) : step === 'preview' ? (
+          <>
+            <Button variant="ghost" onClick={() => { setStep('select'); setParsedItems([]); }}>← Retour</Button>
+            <Button variant="primary" onClick={handleImport}>
+              <Upload size={16} /> Importer {parsedItems.length} articles
+            </Button>
+          </>
+        ) : null
+      }
+    >
         <div className="stock-modal-body" style={{ maxHeight: '70vh', overflow: 'auto' }}>
           {error && (
-            <div className="stock-import-error">
-              <AlertCircle size={16} /> {error}
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
 
           {/* STEP: SELECT */}
@@ -1636,7 +1659,7 @@ function ImportStockModal({ onDone, onClose }) {
               {!isPDF && (
                 <div className="stock-form-field">
                   <label>Ou coller les données (CSV)</label>
-                  <textarea
+                  <Textarea
                     rows={8}
                     value={pasteText}
                     onChange={e => { setPasteText(e.target.value); setFile(null); }}
@@ -1698,7 +1721,7 @@ function ImportStockModal({ onDone, onClose }) {
 
               {/* Aperçu */}
               <div className="stock-import-preview">
-                <table className="stock-table">
+                <Table className="stock-table">
                   <thead>
                     <tr>
                       <th>Réf.</th>
@@ -1723,7 +1746,7 @@ function ImportStockModal({ onDone, onClose }) {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
                 {parsedItems.length > 30 && (
                   <p className="stock-import-hint" style={{ textAlign: 'center', marginTop: 8 }}>
                     …et {parsedItems.length - 30} autres articles
@@ -1736,31 +1759,12 @@ function ImportStockModal({ onDone, onClose }) {
           {/* STEP: IMPORTING */}
           {step === 'importing' && (
             <div className="stock-import-loading">
-              <div className="loading-spinner" />
+              <Spinner size="lg" />
               <p>Import de {parsedItems.length} articles en cours…</p>
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        {step === 'select' && (
-          <div className="stock-modal-actions" style={{ padding: '12px 20px', borderTop: '1px solid var(--theme-border)' }}>
-            <button className="stock-btn-cancel" onClick={onClose}>Annuler</button>
-            <button className="stock-btn-save" onClick={handleParse} disabled={!file && !pasteText.trim()}>
-              <Search size={16} /> Analyser
-            </button>
-          </div>
-        )}
-        {step === 'preview' && (
-          <div className="stock-modal-actions" style={{ padding: '12px 20px', borderTop: '1px solid var(--theme-border)' }}>
-            <button className="stock-btn-cancel" onClick={() => { setStep('select'); setParsedItems([]); }}>← Retour</button>
-            <button className="stock-btn-save" onClick={handleImport}>
-              <Upload size={16} /> Importer {parsedItems.length} articles
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 

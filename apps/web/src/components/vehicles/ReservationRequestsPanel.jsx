@@ -3,6 +3,7 @@ import { Calendar, Check, X, Clock, User } from 'lucide-react';
 import api from '../../utils/api';
 import './ReservationRequestsPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { DetailRow, Dialog, Textarea} from '@/design-system';
 
 const ReservationRequestsPanel = ({ onRequestProcessed }) => {
   const toast = useToast();
@@ -12,6 +13,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadRequests();
@@ -27,25 +29,30 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
     }
   };
 
-  const handleApprove = async (requestId) => {
-    if (!confirm('Approuver cette demande et créer la réservation ?')) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await api.approveReservationRequest(requestId);
-      toast.success('Demande approuvée ! La réservation a été créée.');
-      await loadRequests();
-      if (onRequestProcessed) {
-        onRequestProcessed();
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'approbation:', error);
-      toast.error('Erreur lors de l\'approbation de la demande: ' + (error.message || 'Erreur inconnue'));
-    } finally {
-      setLoading(false);
-    }
+  const handleApprove = (requestId) => {
+    setConfirmDialog({
+      title: 'Approuver',
+      message: 'Approuver cette demande et cr\xE9er la r\xE9servation ?',
+      variant: 'confirm',
+      confirmLabel: 'Approuver',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setLoading(true);
+        try {
+          await api.approveReservationRequest(requestId);
+          toast.success('Demande approuv\xE9e ! La r\xE9servation a \xE9t\xE9 cr\xE9\xE9e.');
+          await loadRequests();
+          if (onRequestProcessed) {
+            onRequestProcessed();
+          }
+        } catch (error) {
+          console.error('Erreur lors de l\'approbation:', error);
+          toast.error('Erreur lors de l\'approbation de la demande: ' + (error.message || 'Erreur inconnue'));
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleRejectClick = (request) => {
@@ -169,41 +176,23 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
               </div>
 
               <div className="request-details">
-                <div className="request-detail-item">
-                  <span className="request-detail-label">Début</span>
-                  <span className="request-detail-value">
-                    {formatDate(request.startDate)} - {formatPeriod(request.startPeriod)}
-                  </span>
-                </div>
-                <div className="request-detail-item">
-                  <span className="request-detail-label">Fin</span>
-                  <span className="request-detail-value">
-                    {formatDate(request.endDate)} - {formatPeriod(request.endPeriod)}
-                  </span>
-                </div>
+                <DetailRow className="request-detail-item" label="Début">
+                  {formatDate(request.startDate)} - {formatPeriod(request.startPeriod)}
+                </DetailRow>
+                <DetailRow className="request-detail-item" label="Fin">
+                  {formatDate(request.endDate)} - {formatPeriod(request.endPeriod)}
+                </DetailRow>
                 {request.clientName && (
-                  <div className="request-detail-item">
-                    <span className="request-detail-label">Client</span>
-                    <span className="request-detail-value">{request.clientName}</span>
-                  </div>
+                  <DetailRow className="request-detail-item" label="Client" value={request.clientName} />
                 )}
                 {request.driverName && (
-                  <div className="request-detail-item">
-                    <span className="request-detail-label">Conducteur</span>
-                    <span className="request-detail-value">{request.driverName}</span>
-                  </div>
+                  <DetailRow className="request-detail-item" label="Conducteur" value={request.driverName} />
                 )}
                 {request.locationName && (
-                  <div className="request-detail-item">
-                    <span className="request-detail-label">Lieu</span>
-                    <span className="request-detail-value">{request.locationName}</span>
-                  </div>
+                  <DetailRow className="request-detail-item" label="Lieu" value={request.locationName} />
                 )}
                 {request.prestationName && (
-                  <div className="request-detail-item">
-                    <span className="request-detail-label">Prestation</span>
-                    <span className="request-detail-value">{request.prestationName}</span>
-                  </div>
+                  <DetailRow className="request-detail-item" label="Prestation" value={request.prestationName} />
                 )}
               </div>
 
@@ -260,7 +249,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
         <div className="reject-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && setRejectDialogOpen(false)}>
           <div className="reject-dialog" onClick={(e) => e.stopPropagation()}>
             <h3>Rejeter la demande</h3>
-            <textarea
+            <Textarea
               placeholder="Indiquez le motif du rejet..."
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
@@ -283,6 +272,17 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
           </div>
         </div>
       )}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 };

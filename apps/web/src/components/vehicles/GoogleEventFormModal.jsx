@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar, MapPin, Save, Clock, Type, AlignLeft } from 'lucide-react';
 import './GoogleEventFormModal.css';
+import { Button, Input, Textarea, Checkbox, Toggle } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
 import AddressAutocomplete from '../AddressAutocomplete';
 
@@ -143,7 +144,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
             {/* Titre */}
             <div className="event-form-field">
               <label><Type size={15} /> Titre</label>
-              <input
+              <Input
                 type="text"
                 value={formData.summary}
                 onChange={e => handleChange('summary', e.target.value)}
@@ -156,14 +157,10 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
             {/* Journée entière toggle */}
             <div className="event-form-field event-form-toggle">
               <label><Clock size={15} /> Journée entière</label>
-              <label className="event-form-switch">
-                <input
-                  type="checkbox"
-                  checked={formData.allDay}
-                  onChange={e => handleChange('allDay', e.target.checked)}
-                />
-                <span className="event-form-slider"></span>
-              </label>
+              <Toggle
+                checked={formData.allDay}
+                onChange={e => handleChange('allDay', e.target.checked)}
+              />
             </div>
 
             {/* Dates */}
@@ -223,7 +220,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
             {/* Description */}
             <div className="event-form-field">
               <label><AlignLeft size={15} /> Description</label>
-              <textarea
+              <Textarea
                 value={formData.description}
                 onChange={e => handleChange('description', e.target.value)}
                 placeholder="Description de l'événement"
@@ -233,13 +230,13 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
           </div>
 
           <div className="event-form-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>
+            <Button variant="ghost" onClick={onClose}>
               Annuler
-            </button>
-            <button type="submit" className="btn-primary" disabled={saving}>
+            </Button>
+            <Button variant="primary" type="submit" disabled={saving}>
               <Save size={16} />
               {saving ? 'Enregistrement...' : mode === 'edit' ? 'Mettre à jour' : 'Créer l\'événement'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Users, Award, CalendarDays, Briefcase,
-  Plus, Edit2, Trash2, X, Save, Search,
+  Plus, Edit2, Trash2, Save,
   ChevronLeft, ChevronRight, AlertTriangle, CheckCircle,
   User, Check, Clock,
   Link2, Upload, Star, Filter, CalendarOff,
 } from 'lucide-react';
-import ConfirmDialog from '../ConfirmDialog';
 import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear,
@@ -29,6 +28,7 @@ import WeekSelector from '../WeekSelector';
 import YearSelector from '../YearSelector';
 import './PersonnelPanel.css';
 import '../equipment/EquipmentPanel.css';
+import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select, Table, Spinner, Avatar, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import '../vehicles/Calendar.css';
 import { useToast } from '../../hooks/useToast';
 import PersonnelAgenda from './PersonnelAgenda';
@@ -211,7 +211,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     return (
       <div className="personnel-panel">
         <div className="personnel-loading">
-          <div className="loading-spinner" />
+          <Spinner size="lg" />
           <p>Chargement du module Personnel...</p>
         </div>
       </div>
@@ -223,81 +223,78 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     return (
       <div className="personnel-panel personnel-panel--main">
         {error && (
-          <div className="personnel-error">
-            <AlertTriangle size={16} /> {error}
-            <button onClick={loadData}>Réessayer</button>
-          </div>
+          <InlineAlert action={<button onClick={loadData}>Réessayer</button>}>{error}</InlineAlert>
         )}
         <PlanningTab persons={persons} skills={skills} positions={positions} view={view} setView={setView} currentDate={currentDate} setCurrentDate={setCurrentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} currentUser={currentUser} />
         {editFormVisible && (
-          <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && resetEditForm()}>
-            <div className="personnel-edit-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2><User size={20} /> {editingPersonDirect ? 'Modifier la fiche' : 'Nouvelle personne'}</h2>
-                <button className="close-button" onClick={resetEditForm}><X size={24} /></button>
-              </div>
+          <ModalLayout
+            open
+            onClose={resetEditForm}
+            title={<><User size={20} /> {editingPersonDirect ? 'Modifier la fiche' : 'Nouvelle personne'}</>}
+            size="lg"
+            className="personnel-edit-modal"
+            footer={
+              <>
+                <div />
+                <div className="right-actions">
+                  <Button variant="ghost" onClick={resetEditForm}>Annuler</Button>
+                  <Button variant="primary" type="submit" form="personnel-edit-form"><Save size={18} /> Enregistrer</Button>
+                </div>
+              </>
+            }
+          >
 
               <form id="personnel-edit-form" className="personnel-edit-form-body" onSubmit={handleEditSubmit}>
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Prénom *</label>
-                    <input required value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} />
-                  </div>
-                  <div className="form-group">
-                    <label>Nom *</label>
-                    <input required value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} />
-                  </div>
+                  <FormField className="form-group" label="Prénom" required>
+                    <Input required value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} />
+                  </FormField>
+                  <FormField className="form-group" label="Nom" required>
+                    <Input required value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} />
+                  </FormField>
                 </div>
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Email</label>
-                    <input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
-                  </div>
-                  <div className="form-group">
-                    <label>Téléphone</label>
+                  <FormField className="form-group" label="Email">
+                    <Input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
+                  </FormField>
+                  <FormField className="form-group" label="Téléphone">
                     <PhoneInput value={editForm.phone} onChange={(val) => setEditForm({ ...editForm, phone: val })} />
-                  </div>
+                  </FormField>
                 </div>
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Catégorie</label>
-                    <select value={editForm.type} onChange={e => setEditForm({ ...editForm, type: e.target.value, contractType: e.target.value === 'permanent' ? '' : editForm.contractType })}>
+                  <FormField className="form-group" label="Catégorie">
+                    <Select value={editForm.type} onChange={e => setEditForm({ ...editForm, type: e.target.value, contractType: e.target.value === 'permanent' ? '' : editForm.contractType })}>
                       {PERSON_TYPES.map(t => (<option key={t.value} value={t.value}>{t.label}</option>))}
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                   {editForm.type === 'contractuel' ? (
-                    <div className="form-group">
-                      <label>Type de contrat</label>
-                      <select value={editForm.contractType} onChange={e => setEditForm({ ...editForm, contractType: e.target.value })}>
+                    <FormField className="form-group" label="Type de contrat">
+                      <Select value={editForm.contractType} onChange={e => setEditForm({ ...editForm, contractType: e.target.value })}>
                         <option value="">-- Choisir --</option>
                         {CONTRACT_TYPES.map(t => (<option key={t.value} value={t.value}>{t.label}</option>))}
-                      </select>
-                    </div>
+                      </Select>
+                    </FormField>
                   ) : (
-                    <div className="form-group">
-                      <label>Statut</label>
-                      <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
+                    <FormField className="form-group" label="Statut">
+                      <Select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
                         <option value="active">Actif</option>
                         <option value="inactive">Inactif</option>
-                      </select>
-                    </div>
+                      </Select>
+                    </FormField>
                   )}
                 </div>
                 {editForm.type === 'contractuel' && (
-                  <div className="form-group">
-                    <label>Statut</label>
-                    <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
+                  <FormField className="form-group" label="Statut">
+                    <Select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
                       <option value="active">Actif</option>
                       <option value="inactive">Inactif</option>
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 )}
-                <div className="form-group">
-                  <label>Notes</label>
-                  <textarea rows={2} value={editForm.notes} onChange={e => setEditForm({ ...editForm, notes: e.target.value })} />
-                </div>
-                <div className="form-group">
-                  <label>Compétences</label>
+                <FormField className="form-group" label="Notes">
+                  <Textarea rows={2} value={editForm.notes} onChange={e => setEditForm({ ...editForm, notes: e.target.value })} />
+                </FormField>
+                <FormField className="form-group" label="Compétences">
                   <div className="skills-selector">
                     {skills.map(skill => {
                       const selected = editForm.skills.find(s => s.skillId === skill.id);
@@ -307,17 +304,16 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
                             {selected && <Check size={12} />} {skill.name}
                           </button>
                           {selected && (
-                            <select className="skill-level-select" value={selected.level} onChange={e => updateEditSkillLevel(skill.id, e.target.value)}>
+                            <Select className="skill-level-select" value={selected.level} onChange={e => updateEditSkillLevel(skill.id, e.target.value)}>
                               {SKILL_LEVELS.map(l => (<option key={l.value} value={l.value}>{l.label}</option>))}
-                            </select>
+                            </Select>
                           )}
                         </div>
                       );
                     })}
                   </div>
-                </div>
-                <div className="form-group">
-                  <label>Postes habituels</label>
+                </FormField>
+                <FormField className="form-group" label="Postes habituels">
                   <div className="skills-selector">
                     {positions.map(pos => {
                       const selected = editForm.defaultPositions.includes(pos.name);
@@ -331,18 +327,10 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
                       );
                     })}
                   </div>
-                </div>
+                </FormField>
               </form>
 
-              <div className="form-actions">
-                <div />
-                <div className="right-actions">
-                  <button type="button" className="cancel-button" onClick={resetEditForm}>Annuler</button>
-                  <button type="submit" form="personnel-edit-form" className="save-button"><Save size={18} /> Enregistrer</button>
-                </div>
-              </div>
-            </div>
-          </div>
+          </ModalLayout>
         )}
       </div>
     );
@@ -351,10 +339,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
   return (
     <div className="personnel-panel">
       {error && (
-        <div className="personnel-error">
-          <AlertTriangle size={16} /> {error}
-          <button onClick={loadData}>Réessayer</button>
-        </div>
+        <InlineAlert action={<button onClick={loadData}>Réessayer</button>}>{error}</InlineAlert>
       )}
 
       {/* Sous-onglets */}
@@ -450,6 +435,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
   const [editingPerson, setEditingPerson] = useState(null);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const filteredPersons = useMemo(() => persons.filter(p => {
     const matchSearch = `${p.firstName} ${p.lastName} ${p.email || ''} ${p.phone || ''}`
@@ -506,15 +492,22 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Supprimer cette personne ?')) return;
-    try {
-      await api.deletePerson(id);
-      setPersons(prev => prev.filter(p => p.id !== id));
-      if (selectedPerson?.id === id) setSelectedPerson(null);
-    } catch (err) {
-      toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
-    }
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      title: 'Supprimer cette personne',
+      message: 'Supprimer cette personne ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deletePerson(id);
+          setPersons(prev => prev.filter(p => p.id !== id));
+          if (selectedPerson?.id === id) setSelectedPerson(null);
+        } catch (err) {
+          toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
+        }
+      },
+    });
   };
 
   const getTypeBadge = (person) => {
@@ -535,30 +528,21 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
       {/* Toolbar */}
       <div className="eq-toolbar pp-toolbar">
         <div className="eq-toolbar-actions">
-          <div className="eq-search">
-            <Search size={14} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Rechercher..."
-            />
-            {searchTerm && <button className="eq-search-clear" onClick={() => setSearchTerm('')}><X size={12} /></button>}
-          </div>
-          <select className="eq-filter" value={filterType} onChange={e => setFilterType(e.target.value)}>
+          <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher..." size="sm" />
+          <Select className="eq-filter" value={filterType} onChange={e => setFilterType(e.target.value)}>
             <option value="">Tous les types</option>
             {PERSON_TYPES.map(t => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
-          </select>
+          </Select>
           {currentUser?.isAdmin && (
-            <button className="eq-btn-secondary" onClick={() => setShowImportModal(true)} title="Importer depuis un CSV">
+            <Button variant="secondary" onClick={() => setShowImportModal(true)} title="Importer depuis un CSV">
               <Upload size={14} /> Import CSV
-            </button>
+            </Button>
           )}
-          <button className="eq-btn-add" onClick={openCreate}>
+          <Button variant="primary" onClick={openCreate}>
             <Plus size={14} /> Personnel
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -599,14 +583,14 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
       <div className="eq-content-wrapper">
         <div className="eq-content">
           {filteredPersons.length === 0 ? (
-            <div className="eq-empty">
-              <Users size={48} strokeWidth={1} />
-              <p>{searchTerm ? 'Aucun résultat' : 'Aucune personne enregistrée'}</p>
-              <span>Ajoutez votre premier personnel avec le bouton +</span>
-            </div>
+            <EmptyState
+              icon={<Users size={48} strokeWidth={1} />}
+              title={searchTerm ? 'Aucun résultat' : 'Aucune personne enregistrée'}
+              description="Ajoutez votre premier personnel avec le bouton +"
+            />
           ) : (
             <div className="eq-table-wrap">
-              <table className="eq-table pp-table">
+              <Table className="eq-table pp-table">
                 <thead>
                   <tr>
                     <th style={{ width: 40 }}></th>
@@ -639,7 +623,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                         onDoubleClick={() => openEdit(person)}
                       >
                         <td className="eq-table-thumb">
-                          <span className="pp-avatar-cell"><User size={16} /></span>
+                          <Avatar name={`${person.firstName} ${person.lastName}`} size="xs" />
                         </td>
                         <td className="eq-table-name">{person.lastName}</td>
                         <td>{person.firstName}</td>
@@ -666,13 +650,17 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                           </span>
                         </td>
                         <td className="pp-actions-cell">
-                          <button className="icon-btn" onClick={(e) => { e.stopPropagation(); openEdit(person); }} title="Modifier">
-                            <Edit2 size={14} />
-                          </button>
+                          <Tooltip content="Modifier">
+                            <Button variant="ghost" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); openEdit(person); }}>
+                              <Edit2 size={14} />
+                            </Button>
+                          </Tooltip>
                           {currentUser?.isAdmin && (
-                            <button className="icon-btn danger" onClick={(e) => { e.stopPropagation(); handleDelete(person.id); }} title="Supprimer">
-                              <Trash2 size={14} />
-                            </button>
+                            <Tooltip content="Supprimer">
+                              <Button variant="danger" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); handleDelete(person.id); }}>
+                                <Trash2 size={14} />
+                              </Button>
+                            </Tooltip>
                           )}
                         </td>
                       </tr>
@@ -704,7 +692,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                     );
                   })()}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
         </div>
@@ -743,6 +731,16 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
           }}
         />
       )}
+
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title}
+        variant={confirmDialog?.variant}
+        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+        confirmLabel={confirmDialog?.confirmLabel}
+        cancelLabel="Annuler"
+      />
     </div>
   );
 };
@@ -812,25 +810,32 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
   };
 
   return (
-    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="eq-modal pp-form-modal">
-        <div className="eq-modal-header">
-          <h3>{person ? '✏️ Modifier la fiche' : '➕ Nouvelle personne'}</h3>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="eq-modal-body">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={person ? '✏️ Modifier la fiche' : '➕ Nouvelle personne'}
+      size="lg"
+      className="eq-modal pp-form-modal"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" type="submit" form="person-form">{person ? 'Enregistrer' : 'Créer'}</Button>
+        </>
+      }
+    >
+        <form id="person-form" onSubmit={handleSubmit} className="eq-modal-body">
           <div className="eq-form-grid">
             <div className="eq-form-field">
               <label>Prénom *</label>
-              <input type="text" required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} autoFocus />
+              <Input type="text" required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} autoFocus />
             </div>
             <div className="eq-form-field">
               <label>Nom *</label>
-              <input type="text" required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
+              <Input type="text" required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
             </div>
             <div className="eq-form-field">
               <label>Email</label>
-              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
             </div>
             <div className="eq-form-field">
               <label>Téléphone</label>
@@ -838,29 +843,29 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
             </div>
             <div className="eq-form-field">
               <label>Catégorie</label>
-              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value, contractType: e.target.value !== 'contractuel' ? '' : form.contractType })}>
+              <Select value={form.type} onChange={e => setForm({ ...form, type: e.target.value, contractType: e.target.value !== 'contractuel' ? '' : form.contractType })}>
                 {PERSON_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              </Select>
             </div>
             {form.type === 'contractuel' && (
               <div className="eq-form-field">
                 <label>Type de contrat</label>
-                <select value={form.contractType} onChange={e => setForm({ ...form, contractType: e.target.value })}>
+                <Select value={form.contractType} onChange={e => setForm({ ...form, contractType: e.target.value })}>
                   <option value="">— Choisir —</option>
                   {CONTRACT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
+                </Select>
               </div>
             )}
             <div className="eq-form-field">
               <label>Statut</label>
-              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+              <Select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
                 <option value="active">Actif</option>
                 <option value="inactive">Inactif</option>
-              </select>
+              </Select>
             </div>
             <div className="eq-form-field">
               <label><Link2 size={14} /> Compte utilisateur</label>
-              <select
+              <Select
                 value={form.userId || ''}
                 onChange={e => setForm({ ...form, userId: e.target.value || null })}
               >
@@ -868,11 +873,11 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
                 {(users || []).map(u => (
                   <option key={u.id} value={u.id}>{u.name || u.email || `Utilisateur #${u.id}`}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="eq-form-field eq-form-full">
               <label>Notes</label>
-              <textarea rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+              <Textarea rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
             </div>
 
             {/* Compétences */}
@@ -887,9 +892,9 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
                         {selected && <Check size={12} />} {skill.name}
                       </button>
                       {selected && (
-                        <select className="skill-level-select" value={selected.level} onChange={e => updateSkillLevel(skill.id, e.target.value)}>
+                        <Select className="skill-level-select" value={selected.level} onChange={e => updateSkillLevel(skill.id, e.target.value)}>
                           {SKILL_LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-                        </select>
+                        </Select>
                       )}
                     </div>
                   );
@@ -915,13 +920,8 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
               </div>
             </div>
           </div>
-          <div className="eq-modal-footer">
-            <button type="button" className="eq-btn-cancel" onClick={onClose}>Annuler</button>
-            <button type="submit" className="eq-btn-save">{person ? 'Enregistrer' : 'Créer'}</button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalLayout>
   );
 };
 
@@ -1800,29 +1800,17 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
             </div>
           </div>
         )}
-        <div className="pp-planning-search">
-          <Search size={14} />
-          <input
-            type="text"
-            placeholder="Rechercher un personnel..."
-            value={planningSearch}
-            onChange={e => setPlanningSearch(e.target.value)}
-            className="pp-planning-search-input"
-          />
-          {planningSearch && (
-            <button className="pp-planning-search-clear" onClick={() => setPlanningSearch('')}><X size={12} /></button>
-          )}
-        </div>
+        <SearchBar value={planningSearch} onChange={setPlanningSearch} placeholder="Rechercher un personnel..." size="sm" />
         <div className="pp-planning-filters">
           <Filter size={14} />
-          <select
+          <Select
             value={planningFilter}
             onChange={e => setPlanningFilter(e.target.value)}
             className="pp-planning-filter-select"
           >
             <option value="">Tous les types</option>
             {PERSON_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+          </Select>
         </div>
         <button
           className={`pp-planning-fav-btn${sortByFavorites ? ' active' : ''}`}
@@ -1835,15 +1823,15 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       </div>
 
       {activePersons.length === 0 ? (
-        <div className="personnel-empty">
-          <CalendarDays size={48} />
-          <p>Ajoutez du personnel pour afficher le planning</p>
-          {onPersonCreate && (
+        <EmptyState
+          icon={<CalendarDays size={48} />}
+          title="Ajoutez du personnel pour afficher le planning"
+          action={onPersonCreate && (
             <button className="personnel-add-btn" onClick={onPersonCreate} style={{ marginTop: 12 }}>
               <Plus size={16} /> Ajouter une personne
             </button>
           )}
-        </div>
+        />
       ) : (
         <div className="pp-planning-with-panel">
           <div className="pp-calendar-container">

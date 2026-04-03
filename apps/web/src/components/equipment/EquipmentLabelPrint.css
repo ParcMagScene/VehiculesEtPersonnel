@@ -5,7 +5,7 @@
 .elp-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-medium);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -27,7 +27,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px var(--shadow-xl);
   animation: elpSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
@@ -62,15 +62,15 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--close-btn-hover-bg);
+  background: var(--close-btn-bg);
   color: var(--theme-text-inverse);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .elp-close:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--close-btn-hover-bg);
 }
 
 /* Body */

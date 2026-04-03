@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ArrowLeft, Settings, AlertTriangle, Calendar, Plus, MapPin } from 'lucide-react';
 import api from '../../utils/api';
+import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';
 import './MobileMaintenances.css';
 
 const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, currentUser, onMaintenanceCreated, onBack }, ref) => {
@@ -149,12 +150,8 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
         </div>
 
         <form onSubmit={handleSubmit} className="maintenance-form">
-          <div className="form-group">
-            <label>
-              <Settings size={18} />
-              Véhicule
-            </label>
-            <select
+          <FormField className="form-group" label={<><Settings size={18} /> Véhicule</>}>
+            <Select
               value={formData.vehicleId}
               onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
               required
@@ -165,45 +162,33 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
                   {vehicle.name} - {vehicle.registration || vehicle.immatriculation}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
 
           {formType === 'scheduled' && (
             <>
               <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    <Calendar size={18} />
-                    Début
-                  </label>
+                <FormField className="form-group" label={<><Calendar size={18} /> Début</>}>
                   <input
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     required
                   />
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label>
-                    <Calendar size={18} />
-                    Fin
-                  </label>
+                <FormField className="form-group" label={<><Calendar size={18} /> Fin</>}>
                   <input
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     min={formData.startDate}
                   />
-                </div>
+                </FormField>
               </div>
 
-              <div className="form-group">
-                <label>
-                  <MapPin size={18} />
-                  Garage
-                </label>
-                <select
+              <FormField className="form-group" label={<><MapPin size={18} /> Garage</>}>
+                <Select
                   value={formData.garageId}
                   onChange={(e) => setFormData({ ...formData, garageId: e.target.value })}
                 >
@@ -211,31 +196,30 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
                   {garages.map(garage => (
                     <option key={garage.id} value={garage.id}>{garage.name}</option>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormField>
             </>
-          )}
+          )}}
 
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
+          <FormField className="form-group" label="Description">
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows="4"
               placeholder="Décrivez l'intervention ou le problème..."
               required
             />
-          </div>
+          </FormField>
 
-          {error && <div className="form-error">{error}</div>}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           <div className="form-actions">
-            <button type="button" onClick={() => setFormType('')} className="btn-cancel">
+            <Button variant="ghost" type="button" onClick={() => setFormType('')}>
               Retour
-            </button>
-            <button type="submit" disabled={isSubmitting} className="btn-submit">
+            </Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Envoi...' : 'Envoyer'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -259,9 +243,9 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
           <div className="empty-state">
             <Settings size={48} />
             <p>Aucune intervention</p>
-            <button className="btn-primary" onClick={() => setShowForm(true)}>
+            <Button variant="primary" onClick={() => setShowForm(true)}>
               Créer une intervention
-            </button>
+            </Button>
           </div>
         ) : (
           myMaintenances.map(maintenance => {

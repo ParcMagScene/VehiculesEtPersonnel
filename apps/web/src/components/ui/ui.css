@@ -295,7 +295,7 @@
 }
 
 .ui-form-input--error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  box-shadow: 0 0 0 3px var(--theme-danger-border);
 }
 
 .ui-form-hint {

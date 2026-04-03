@@ -8,6 +8,7 @@ import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { Save, X, Undo2, Redo2, Image, Move, Maximize2, Plus, Trash2, RotateCcw, Eye, EyeOff, Grid3X3, Copy, ZoomIn, ZoomOut, Scissors } from 'lucide-react';
 import api from '../../utils/api';
 import './DepotMapEditor.css';
+import { Button, Dialog, Input, Select, Tooltip } from '@/design-system';
 
 const HANDLE_SIZE = 8;
 const SNAP_GRID = 5;
@@ -255,6 +256,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [spaceHeld, setSpaceHeld] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const EDITOR_MIN_ZOOM = 0.3;
   const EDITOR_MAX_ZOOM = 6;
@@ -631,14 +633,22 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   // Delete selected zone
   const handleDeleteZone = () => {
     if (!selectedZoneId) return;
-    if (!confirm(`Supprimer la zone "${selectedZoneId}" ?`)) return;
-    pushHistory();
-    setZonesData(prev => ({
-      ...prev,
-      zones: prev.zones.filter(z => z.id !== selectedZoneId),
-    }));
-    setSelectedZoneId(null);
-    setDirty(true);
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: `Supprimer la zone "${selectedZoneId}" ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: () => {
+        setConfirmDialog(null);
+        pushHistory();
+        setZonesData(prev => ({
+          ...prev,
+          zones: prev.zones.filter(z => z.id !== selectedZoneId),
+        }));
+        setSelectedZoneId(null);
+        setDirty(true);
+      },
+    });
   };
 
   // Duplicate selected zone
@@ -873,12 +883,12 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
             <button className="dep-ed-btn" onClick={handleRedo} disabled={redoStack.length === 0} title="Rétablir (⌘⇧Z)">
               <Redo2 size={16} /> Rétablir
             </button>
-            <button className="dep-ed-btn dep-ed-btn-save" onClick={handleSave} disabled={saving || !dirty} title="Sauvegarder (⌘S)">
+            <Button variant="primary" onClick={handleSave} disabled={saving || !dirty} title="Sauvegarder (⌘S)">
               <Save size={16} /> {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-            </button>
-            <button className="dep-ed-btn dep-ed-btn-close" onClick={onClose} title="Fermer (Esc)">
+            </Button>
+            <Tooltip content="Fermer (Esc)"><button className="dep-ed-btn dep-ed-btn-close" onClick={onClose}>
               <X size={16} />
-            </button>
+            </button></Tooltip>
           </div>
         </div>
 
@@ -924,10 +934,10 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
             <div className="dep-ed-section">
               <label>Dimensions SVG</label>
               <div className="dep-ed-dim-inputs">
-                <input type="number" value={SVG_WIDTH} min={200} max={2000} step={10}
+                <Input type="number" value={SVG_WIDTH} min={200} max={2000} step={10}
                   onChange={e => updateSvgDimensions(parseInt(e.target.value) || SVG_WIDTH, SVG_HEIGHT)} />
                 <span>×</span>
-                <input type="number" value={SVG_HEIGHT} min={200} max={2000} step={10}
+                <Input type="number" value={SVG_HEIGHT} min={200} max={2000} step={10}
                   onChange={e => updateSvgDimensions(SVG_WIDTH, parseInt(e.target.value) || SVG_HEIGHT)} />
               </div>
             </div>
@@ -985,9 +995,9 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                   <button className="dep-ed-btn-sm" onClick={handleDuplicateZone}>
                     <Copy size={14} /> Dupliquer
                   </button>
-                  <button className="dep-ed-btn-sm dep-ed-btn-danger" onClick={handleDeleteZone}>
+                  <Button variant="danger" size="sm" onClick={handleDeleteZone}>
                     <Trash2 size={14} /> Supprimer
-                  </button>
+                  </Button>
                   <button
                     className={`dep-ed-btn-sm ${subtractMode ? 'active' : ''}`}
                     onClick={subtractMode ? cancelSubtract : startSubtractMode}
@@ -1005,23 +1015,23 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                 <label>Zone : {selectedZone.id}</label>
                 <div className="dep-ed-field">
                   <span>Label</span>
-                  <input type="text" value={selectedZone.label}
+                  <Input type="text" value={selectedZone.label}
                     onChange={e => handleZonePropertyChange('label', e.target.value)} />
                 </div>
                 <div className="dep-ed-field">
                   <span>Catégorie</span>
-                  <select value={selectedZone.category}
+                  <Select value={selectedZone.category}
                     onChange={e => handleZoneCategoryChange(e.target.value)}>
                     {zonesData.categories?.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.label}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="dep-ed-field dep-ed-color-field">
                   <span>Couleur</span>
                   <input type="color" value={selectedZone.color}
                     onChange={e => { pushHistory(); handleZonePropertyChange('color', e.target.value); }} />
-                  <input type="text" value={selectedZone.color} className="dep-ed-hex-input"
+                  <Input type="text" value={selectedZone.color} className="dep-ed-hex-input"
                     onChange={e => {
                       const v = e.target.value;
                       if (/^#[0-9a-fA-F]{6}$/.test(v)) { pushHistory(); handleZonePropertyChange('color', v); }
@@ -1044,22 +1054,22 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                 <div className="dep-ed-coords">
                   <div className="dep-ed-field">
                     <span>X</span>
-                    <input type="number" value={selectedZone.bbox.x} step={SNAP_GRID}
+                    <Input type="number" value={selectedZone.bbox.x} step={SNAP_GRID}
                       onChange={e => { pushHistory(); updateZoneBbox(selectedZone.id, { x: parseInt(e.target.value) || 0 }); }} />
                   </div>
                   <div className="dep-ed-field">
                     <span>Y</span>
-                    <input type="number" value={selectedZone.bbox.y} step={SNAP_GRID}
+                    <Input type="number" value={selectedZone.bbox.y} step={SNAP_GRID}
                       onChange={e => { pushHistory(); updateZoneBbox(selectedZone.id, { y: parseInt(e.target.value) || 0 }); }} />
                   </div>
                   <div className="dep-ed-field">
                     <span>L</span>
-                    <input type="number" value={selectedZone.bbox.width} step={SNAP_GRID} min={MIN_ZONE_SIZE}
+                    <Input type="number" value={selectedZone.bbox.width} step={SNAP_GRID} min={MIN_ZONE_SIZE}
                       onChange={e => { pushHistory(); updateZoneBbox(selectedZone.id, { width: parseInt(e.target.value) || MIN_ZONE_SIZE }); }} />
                   </div>
                   <div className="dep-ed-field">
                     <span>H</span>
-                    <input type="number" value={selectedZone.bbox.height} step={SNAP_GRID} min={MIN_ZONE_SIZE}
+                    <Input type="number" value={selectedZone.bbox.height} step={SNAP_GRID} min={MIN_ZONE_SIZE}
                       onChange={e => { pushHistory(); updateZoneBbox(selectedZone.id, { height: parseInt(e.target.value) || MIN_ZONE_SIZE }); }} />
                   </div>
                 </div>
@@ -1084,7 +1094,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                       </button>
                     </div>
                   ) : (
-                    <select value={selectedZone.shape || 'rect'}
+                    <Select value={selectedZone.shape || 'rect'}
                       onChange={e => {
                         pushHistory();
                         const newShape = e.target.value;
@@ -1095,7 +1105,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                       }}>
                       <option value="rect">Rectangle</option>
                       <option value="trapezoid">Trapèze</option>
-                    </select>
+                    </Select>
                   )}
                 </div>
 
@@ -1119,10 +1129,10 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                               <span>{c.label}</span>
                               <div className="dep-ed-skew-xy">
                                 <label>X</label>
-                                <input type="number" value={sv.x} step={5}
+                                <Input type="number" value={sv.x} step={5}
                                   onChange={e => { pushHistory(); updateZoneSkew(selectedZone.id, c.key, { x: parseInt(e.target.value) || 0, y: sv.y }); }} />
                                 <label>Y</label>
-                                <input type="number" value={sv.y} step={5}
+                                <Input type="number" value={sv.y} step={5}
                                   onChange={e => { pushHistory(); updateZoneSkew(selectedZone.id, c.key, { x: sv.x, y: parseInt(e.target.value) || 0 }); }} />
                               </div>
                             </div>
@@ -1165,11 +1175,11 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
           >
             {/* Zoom controls floating */}
             <div className="dep-ed-zoom-controls">
-              <button onClick={handleEditorZoomOut} title="Dézoomer" className="dep-ed-btn-sm"><ZoomOut size={14} /></button>
+              <Tooltip content="Dézoomer"><button onClick={handleEditorZoomOut} className="dep-ed-btn-sm"><ZoomOut size={14} /></button></Tooltip>
               <span className="dep-ed-zoom-level">{Math.round(editorZoom * 100)}%</span>
-              <button onClick={handleEditorZoomIn} title="Zoomer" className="dep-ed-btn-sm"><ZoomIn size={14} /></button>
-              <button onClick={handleEditorZoomReset} title="100%" className="dep-ed-btn-sm">1:1</button>
-              <button onClick={handleEditorZoomFit} title="Ajuster" className="dep-ed-btn-sm"><Maximize2 size={14} /></button>
+              <Tooltip content="Zoomer"><button onClick={handleEditorZoomIn} className="dep-ed-btn-sm"><ZoomIn size={14} /></button></Tooltip>
+              <Tooltip content="100%"><button onClick={handleEditorZoomReset} className="dep-ed-btn-sm">1:1</button></Tooltip>
+              <Tooltip content="Ajuster"><button onClick={handleEditorZoomFit} className="dep-ed-btn-sm"><Maximize2 size={14} /></button></Tooltip>
             </div>
 
             {/* Subtract mode banner */}
@@ -1188,13 +1198,13 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                   <h4>Soustraction booléenne</h4>
                   <p>Garder le chevauchement dans :</p>
                   <div className="dep-ed-subtract-choices">
-                    <button className="dep-ed-btn dep-ed-btn-save" onClick={() => executeSubtract('source')}>
+                    <Button variant="primary" onClick={() => executeSubtract('source')}>
                       {subtractSourceId}
-                    </button>
+                    </Button>
                     <span>ou</span>
-                    <button className="dep-ed-btn dep-ed-btn-save" onClick={() => executeSubtract('target')}>
+                    <Button variant="primary" onClick={() => executeSubtract('target')}>
                       {subtractTargetId}
-                    </button>
+                    </Button>
                   </div>
                   <button className="dep-ed-btn-sm" onClick={cancelSubtract} style={{ marginTop: 8 }}>Annuler</button>
                 </div>
@@ -1348,6 +1358,17 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
           </div>
         </div>
       </div>
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import api from '../../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 import AffaireBadge from '../AffaireBadge';
 import { formatDateFr } from '../../utils/formatUtils';
-import ConfirmDialog from '../ConfirmDialog';
+import { Accordion, Button, DetailRow, Dialog, Divider, Input, Select, Tooltip } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
 import EventTaskModal from './EventTaskModal';
 import TaskEditModal from './TaskEditModal';
@@ -841,9 +841,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               {a.firstName} {a.lastName?.charAt(0)}.
             </span>
           ))}
-          <button className="btn-assign" onClick={() => setAssigningEntity(isOpen ? null : key)} title="Affecter du personnel">
-            <UserPlus size={13} />
-          </button>
+          <Tooltip content="Affecter du personnel">
+            <Button variant="primary" size="sm" iconOnly className="btn-assign" onClick={() => setAssigningEntity(isOpen ? null : key)}>
+              <UserPlus size={13} />
+            </Button>
+          </Tooltip>
         </div>
         {isOpen && (
           <div className="assign-dropdown">
@@ -1209,23 +1211,27 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               <Link size={13} />
             </button>
           )}
-          <button
-            className={`toggle-visible ${isHidden ? 'off' : ''}`}
-            onClick={() => handleToggleTaskVisible(task)}
-            title={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}
-          >
-            {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
-          <button
-            className="edit"
-            onClick={() => setEditingTask(task)}
-            title="Modifier cette tâche"
-          >
-            <Edit2 size={14} />
-          </button>
-          <button className="delete" onClick={() => handleDelete(task.id)} title="Supprimer">
-            <Trash2 size={14} />
-          </button>
+          <Tooltip content={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}>
+            <button
+              className={`toggle-visible ${isHidden ? 'off' : ''}`}
+              onClick={() => handleToggleTaskVisible(task)}
+            >
+              {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </Tooltip>
+          <Tooltip content="Modifier cette tâche">
+            <button
+              className="edit"
+              onClick={() => setEditingTask(task)}
+            >
+              <Edit2 size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip content="Supprimer">
+            <button className="delete" onClick={() => handleDelete(task.id)}>
+              <Trash2 size={14} />
+            </button>
+          </Tooltip>
         </div>
         {/* Popover de liaison manuelle tâche → affaire */}
         {linkingTaskId === task.id && (() => {
@@ -1259,7 +1265,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                   <X size={14} />
                 </button>
               </div>
-              <input
+              <Input
                 type="text"
                 className="link-search-input"
                 placeholder="Filtrer par AF, client…"
@@ -1361,16 +1367,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="task-actions">
           {/* Multi-affectation personnel */}
           {renderMultiAssign('display_event', event.id)}
-          <button
-            className={`toggle-visible ${isHidden ? 'off' : ''}`}
-            onClick={() => handleToggleDisplayEventVisible(event)}
-            title={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}
-          >
-            {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
-          <button className="delete" onClick={() => handleDeleteDisplayEvent(event.id)} title="Retirer">
-            <Trash2 size={14} />
-          </button>
+          <Tooltip content={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}>
+            <button
+              className={`toggle-visible ${isHidden ? 'off' : ''}`}
+              onClick={() => handleToggleDisplayEventVisible(event)}
+            >
+              {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </Tooltip>
+          <Tooltip content="Retirer">
+            <button className="delete" onClick={() => handleDeleteDisplayEvent(event.id)}>
+              <Trash2 size={14} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     );
@@ -1450,25 +1459,31 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="task-actions rdv-actions">
           {/* Multi-affectation personnel directe sur l'affaire */}
           {renderMultiAssign('affaire', affaire.numeroAffaire)}
-          <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
-            <Eye size={14} />
-          </button>
-          <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }} title="Définir les tâches pour cette affaire">
-            <Plus size={14} />
-          </button>
-          <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }} title="Retirer de la planification">
-            <X size={14} />
-          </button>
+          <Tooltip content="Voir détails">
+            <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
+              <Eye size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip content="Définir les tâches pour cette affaire">
+            <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
+              <Plus size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip content="Retirer de la planification">
+            <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
+              <X size={14} />
+            </button>
+          </Tooltip>
         </div>
 
         {isExpanded && (
           <div className="rdv-detail-card">
-            <div className="rdv-detail-row"><strong>Client :</strong> {affaire.client || '—'}</div>
-            <div className="rdv-detail-row"><strong>Interlocuteur :</strong> {affaire.interlocuteur || '—'}</div>
-            <div className="rdv-detail-row"><strong>Tél :</strong> {affaire.tel || '—'}</div>
-            <div className="rdv-detail-row"><strong>Adresse :</strong> {affaire.adresseLivraison?.split('\n').join(', ') || '—'}</div>
-            {affaire.titre && <div className="rdv-detail-row"><strong>Titre :</strong> {affaire.titre}</div>}
-            {affaire.devis && <div className="rdv-detail-row"><strong>Devis :</strong> {affaire.devis}</div>}
+            <DetailRow className="rdv-detail-row" label="Client :" value={affaire.client || '—'} />
+            <DetailRow className="rdv-detail-row" label="Interlocuteur :" value={affaire.interlocuteur || '—'} />
+            <DetailRow className="rdv-detail-row" label="Tél :" value={affaire.tel || '—'} />
+            <DetailRow className="rdv-detail-row" label="Adresse :" value={affaire.adresseLivraison?.split('\n').join(', ') || '—'} />
+            {affaire.titre && <DetailRow className="rdv-detail-row" label="Titre :" value={affaire.titre} />}
+            {affaire.devis && <DetailRow className="rdv-detail-row" label="Devis :" value={affaire.devis} />}
           </div>
         )}
       </div>
@@ -1562,7 +1577,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                 <X size={14} />
               </button>
             </div>
-            <input
+            <Input
               type="text"
               className="link-search-input"
               placeholder="Rechercher AF, client…"
@@ -1643,25 +1658,31 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </span>
 
         <div className="task-actions rdv-actions">
-          <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)} title="Voir détails">
-            <Eye size={14} />
-          </button>
-          <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }} title="Définir les tâches pour cette affaire">
-            <Plus size={14} />
-          </button>
-          <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }} title="Retirer de la planification">
-            <X size={14} />
-          </button>
+          <Tooltip content="Voir détails">
+            <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
+              <Eye size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip content="Définir les tâches pour cette affaire">
+            <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
+              <Plus size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip content="Retirer de la planification">
+            <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
+              <X size={14} />
+            </button>
+          </Tooltip>
         </div>
 
         {isExpanded && (
           <div className="rdv-detail-card">
-            <div className="rdv-detail-row"><strong>Client :</strong> {affaire.client || '—'}</div>
-            <div className="rdv-detail-row"><strong>Interlocuteur :</strong> {affaire.interlocuteur || '—'}</div>
-            <div className="rdv-detail-row"><strong>Tél :</strong> {affaire.tel || '—'}</div>
-            <div className="rdv-detail-row"><strong>Adresse :</strong> {affaire.adresseLivraison?.split('\n').join(', ') || '—'}</div>
-            {affaire.titre && <div className="rdv-detail-row"><strong>Titre :</strong> {affaire.titre}</div>}
-            {affaire.devis && <div className="rdv-detail-row"><strong>Devis :</strong> {affaire.devis}</div>}
+            <DetailRow className="rdv-detail-row" label="Client :" value={affaire.client || '—'} />
+            <DetailRow className="rdv-detail-row" label="Interlocuteur :" value={affaire.interlocuteur || '—'} />
+            <DetailRow className="rdv-detail-row" label="Tél :" value={affaire.tel || '—'} />
+            <DetailRow className="rdv-detail-row" label="Adresse :" value={affaire.adresseLivraison?.split('\n').join(', ') || '—'} />
+            {affaire.titre && <DetailRow className="rdv-detail-row" label="Titre :" value={affaire.titre} />}
+            {affaire.devis && <DetailRow className="rdv-detail-row" label="Devis :" value={affaire.devis} />}
           </div>
         )}
       </div>
@@ -1770,7 +1791,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                 <X size={14} />
               </button>
             </div>
-            <input
+            <Input
               type="text"
               className="link-search-input"
               placeholder="Rechercher AF, client…"
@@ -2050,9 +2071,11 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               <button className="ical-manage-btn" onClick={() => setShowIcalManager(v => !v)}>
                 <Link size={13} /> iCal ({icalCalendars.length})
               </button>
-              <button className="ical-refresh-btn" onClick={() => { loadIcalCalendars(); loadIcalEvents(); }} title="Rafraîchir les événements iCal">
-                <RefreshCw size={13} className={icalLoading ? 'spinning' : ''} />
-              </button>
+              <Tooltip content="Rafraîchir les événements iCal">
+                <button className="ical-refresh-btn" onClick={() => { loadIcalCalendars(); loadIcalEvents(); }}>
+                  <RefreshCw size={13} className={icalLoading ? 'spinning' : ''} />
+                </button>
+              </Tooltip>
             </div>
           )}
         </div>
@@ -2098,14 +2121,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <>
               {/* Événements précédents */}
               {pastEvents.length > 0 && (
-                <div className={`events-subgroup events-past-group ${collapsedPastEvents ? 'collapsed' : ''}`}>
-                  <div className="events-subgroup-header" onClick={() => setCollapsedPastEvents(v => !v)}>
-                    <ChevronDown size={14} className={`subgroup-chevron ${collapsedPastEvents ? 'collapsed' : ''}`} />
-                    <span className="subgroup-label">Événements précédents</span>
-                    <span className="subgroup-count">{pastEvents.length}</span>
-                  </div>
-                  {!collapsedPastEvents && <div className="events-subgroup-content">{pastEvents.map(renderEvRow)}</div>}
-                </div>
+                <Accordion
+                  title={<><span className="subgroup-label">Événements précédents</span> <span className="subgroup-count">{pastEvents.length}</span></>}
+                  open={!collapsedPastEvents}
+                  onToggle={() => setCollapsedPastEvents(v => !v)}
+                  className="events-subgroup events-past-group"
+                >
+                  <div className="events-subgroup-content">{pastEvents.map(renderEvRow)}</div>
+                </Accordion>
               )}
               {/* Événements du jour */}
               {todayEvents.length > 0 && (
@@ -2113,14 +2136,14 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               )}
               {/* Événements suivants */}
               {futureEvents.length > 0 && (
-                <div className={`events-subgroup events-future-group ${collapsedFutureEvents ? 'collapsed' : ''}`}>
-                  <div className="events-subgroup-header" onClick={() => setCollapsedFutureEvents(v => !v)}>
-                    <ChevronDown size={14} className={`subgroup-chevron ${collapsedFutureEvents ? 'collapsed' : ''}`} />
-                    <span className="subgroup-label">Événements suivants</span>
-                    <span className="subgroup-count">{futureEvents.length}</span>
-                  </div>
-                  {!collapsedFutureEvents && <div className="events-subgroup-content">{futureEvents.map(renderEvRow)}</div>}
-                </div>
+                <Accordion
+                  title={<><span className="subgroup-label">Événements suivants</span> <span className="subgroup-count">{futureEvents.length}</span></>}
+                  open={!collapsedFutureEvents}
+                  onToggle={() => setCollapsedFutureEvents(v => !v)}
+                  className="events-subgroup events-future-group"
+                >
+                  <div className="events-subgroup-content">{futureEvents.map(renderEvRow)}</div>
+                </Accordion>
               )}
             </>
           );
@@ -2237,24 +2260,24 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           )}
         </div>
         <div className="tp-toolbar-right">
-          <button className="btn-toolbar-action" onClick={handleRollover} title="Reporter les tâches non terminées au lendemain">
+          <Button variant="secondary" className="btn-toolbar-action" onClick={handleRollover} title="Reporter les tâches non terminées au lendemain">
             <SkipForward size={16} /> Reporter
-          </button>
-          <button className="btn-toolbar-action btn-clear-done" onClick={handleClearCompleted} title="Effacer les tâches terminées du planning et du dashboard" disabled={doneTasks === 0}>
+          </Button>
+          <Button variant="secondary" className="btn-toolbar-action btn-clear-done" onClick={handleClearCompleted} title="Effacer les tâches terminées du planning et du dashboard" disabled={doneTasks === 0}>
             <CheckCheck size={16} /> Effacer terminées
-          </button>
-          <button className="btn-toolbar-action" onClick={handleGenerateRecurring} title="Générer les tâches récurrentes pour ce jour">
+          </Button>
+          <Button variant="secondary" className="btn-toolbar-action" onClick={handleGenerateRecurring} title="Générer les tâches récurrentes pour ce jour">
             <Repeat size={16} /> Générer
-          </button>
-          <button className={`btn-toolbar-action ${showRecurring ? 'active' : ''}`} onClick={() => setShowRecurring(v => !v)} title="Gérer les tâches récurrentes">
+          </Button>
+          <Button variant={showRecurring ? 'primary' : 'secondary'} className={`btn-toolbar-action ${showRecurring ? 'active' : ''}`} onClick={() => setShowRecurring(v => !v)} title="Gérer les tâches récurrentes">
             <Settings size={16} /> Récurrentes
-          </button>
-          <button className="btn-export-pdf" onClick={handleExportPdf} title="Exporter la fiche de tâches en PDF">
+          </Button>
+          <Button variant="secondary" className="btn-export-pdf" onClick={handleExportPdf} title="Exporter la fiche de tâches en PDF">
             <FileDown size={16} /> PDF
-          </button>
-          <button className="btn-toolbar-action btn-add-task-main" onClick={() => setShowAddTaskModal(true)} title="Ajouter une nouvelle tâche">
+          </Button>
+          <Button variant="primary" className="btn-toolbar-action" onClick={() => setShowAddTaskModal(true)} title="Ajouter une nouvelle tâche">
             <Plus size={16} /> Nouvelle tâche
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -2263,49 +2286,49 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="recurring-panel">
           <div className="recurring-panel-header">
             <h3><Repeat size={18} /> Tâches Récurrentes</h3>
-            <button className="btn-add-recurring" onClick={() => setRecurringForm({ title: '', section: 'manual', recurrence: 'daily', dayOfWeek: 1, dayOfMonth: 1, time: '08:00', period: 'AM', notes: '' })}>
+            <Button variant="primary" size="sm" onClick={() => setRecurringForm({ title: '', section: 'manual', recurrence: 'daily', dayOfWeek: 1, dayOfMonth: 1, time: '08:00', period: 'AM', notes: '' })}>
               <Plus size={14} /> Ajouter
-            </button>
+            </Button>
           </div>
 
           {/* Formulaire création/édition */}
           {recurringForm && (
             <div className="recurring-form">
               <div className="recurring-form-row">
-                <input type="text" placeholder="Titre de la tâche..." value={recurringForm.title || ''} onChange={e => setRecurringForm(f => ({ ...f, title: e.target.value }))} autoFocus />
-                <select value={recurringForm.section || 'manual'} onChange={e => setRecurringForm(f => ({ ...f, section: e.target.value }))}>
+                <Input type="text" placeholder="Titre de la tâche..." value={recurringForm.title || ''} onChange={e => setRecurringForm(f => ({ ...f, title: e.target.value }))} autoFocus />
+                <Select value={recurringForm.section || 'manual'} onChange={e => setRecurringForm(f => ({ ...f, section: e.target.value }))}>
                   {Object.entries(SECTIONS).map(([k, v]) => (
                     <option key={k} value={k}>{v.emoji} {v.label}</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="recurring-form-row">
-                <select value={recurringForm.recurrence || 'daily'} onChange={e => setRecurringForm(f => ({ ...f, recurrence: e.target.value }))}>
+                <Select value={recurringForm.recurrence || 'daily'} onChange={e => setRecurringForm(f => ({ ...f, recurrence: e.target.value }))}>
                   <option value="daily">Journalière</option>
                   <option value="weekly">Hebdomadaire</option>
                   <option value="monthly">Mensuelle</option>
-                </select>
+                </Select>
                 {recurringForm.recurrence === 'weekly' && (
-                  <select value={recurringForm.dayOfWeek ?? 1} onChange={e => setRecurringForm(f => ({ ...f, dayOfWeek: parseInt(e.target.value) }))}>
+                  <Select value={recurringForm.dayOfWeek ?? 1} onChange={e => setRecurringForm(f => ({ ...f, dayOfWeek: parseInt(e.target.value) }))}>
                     {DAYS_FR.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                  </select>
+                  </Select>
                 )}
                 {recurringForm.recurrence === 'monthly' && (
-                  <select value={recurringForm.dayOfMonth ?? 1} onChange={e => setRecurringForm(f => ({ ...f, dayOfMonth: parseInt(e.target.value) }))}>
+                  <Select value={recurringForm.dayOfMonth ?? 1} onChange={e => setRecurringForm(f => ({ ...f, dayOfMonth: parseInt(e.target.value) }))}>
                     {Array.from({ length: 31 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
-                  </select>
+                  </Select>
                 )}
                 <input type="time" value={recurringForm.time || '08:00'} onChange={e => setRecurringForm(f => ({ ...f, time: e.target.value }))} />
-                <select value={recurringForm.period || 'AM'} onChange={e => setRecurringForm(f => ({ ...f, period: e.target.value }))}>
+                <Select value={recurringForm.period || 'AM'} onChange={e => setRecurringForm(f => ({ ...f, period: e.target.value }))}>
                   <option value="AM">Matin</option>
                   <option value="PM">Après-midi</option>
-                </select>
+                </Select>
               </div>
               <div className="recurring-form-row">
-                <input type="text" placeholder="Notes (optionnel)" value={recurringForm.notes || ''} onChange={e => setRecurringForm(f => ({ ...f, notes: e.target.value }))} />
+                <Input type="text" placeholder="Notes (optionnel)" value={recurringForm.notes || ''} onChange={e => setRecurringForm(f => ({ ...f, notes: e.target.value }))} />
                 <div className="form-actions">
-                  <button className="btn-confirm" onClick={handleSaveRecurring}><Check size={14} /></button>
-                  <button className="btn-cancel" onClick={() => setRecurringForm(null)}><X size={14} /></button>
+                  <Button variant="success" size="sm" iconOnly onClick={handleSaveRecurring}><Check size={14} /></Button>
+                  <Button variant="ghost" size="sm" iconOnly onClick={() => setRecurringForm(null)}><X size={14} /></Button>
                 </div>
               </div>
             </div>
@@ -2329,8 +2352,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                   </span>
                 </div>
                 <div className="recurring-item-actions">
-                  <button onClick={() => setRecurringForm({ ...rt })} title="Modifier"><Edit2 size={14} /></button>
-                  <button className="delete" onClick={() => handleDeleteRecurring(rt.id)} title="Supprimer"><Trash2 size={14} /></button>
+                  <Tooltip content="Modifier"><button onClick={() => setRecurringForm({ ...rt })}><Edit2 size={14} /></button></Tooltip>
+                  <Tooltip content="Supprimer"><button className="delete" onClick={() => handleDeleteRecurring(rt.id)}><Trash2 size={14} /></button></Tooltip>
                 </div>
               </div>
             ))}
@@ -2477,20 +2500,20 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               <div className="ical-manager-panel">
                 <div className="ical-manager-header">
                   <h5><Link size={14} /> Calendriers iCal</h5>
-                  <button className="btn-add-ical" onClick={() => setIcalForm({ name: '', url: '', color: '#3b82f6' })}>
+                  <Button variant="primary" size="sm" onClick={() => setIcalForm({ name: '', url: '', color: '#3b82f6' })}>
                     <Plus size={14} /> Ajouter
-                  </button>
+                  </Button>
                 </div>
 
                 {icalForm && (
                   <div className="ical-form">
-                    <input type="text" placeholder="Nom du calendrier" value={icalForm.name} onChange={e => setIcalForm(f => ({ ...f, name: e.target.value }))} autoFocus />
-                    <input type="url" placeholder="URL iCal (.ics)" value={icalForm.url} onChange={e => setIcalForm(f => ({ ...f, url: e.target.value }))} />
+                    <Input type="text" placeholder="Nom du calendrier" value={icalForm.name} onChange={e => setIcalForm(f => ({ ...f, name: e.target.value }))} autoFocus />
+                    <Input type="url" placeholder="URL iCal (.ics)" value={icalForm.url} onChange={e => setIcalForm(f => ({ ...f, url: e.target.value }))} />
                     <div className="ical-form-row">
                       <input type="color" value={icalForm.color || '#3b82f6'} onChange={e => setIcalForm(f => ({ ...f, color: e.target.value }))} title="Couleur" />
                       <div className="form-actions">
-                        <button className="btn-confirm" onClick={handleSaveIcal}><Check size={14} /></button>
-                        <button className="btn-cancel" onClick={() => setIcalForm(null)}><X size={14} /></button>
+                        <Button variant="success" size="sm" iconOnly onClick={handleSaveIcal}><Check size={14} /></Button>
+                        <Button variant="ghost" size="sm" iconOnly onClick={() => setIcalForm(null)}><X size={14} /></Button>
                       </div>
                     </div>
                   </div>
@@ -2511,8 +2534,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                         )}
                       </div>
                       <div className="ical-cal-actions">
-                        <button onClick={() => setIcalForm({ ...cal })} title="Modifier"><Edit2 size={13} /></button>
-                        <button className="delete" onClick={() => handleDeleteIcal(cal.id)} title="Supprimer"><Trash2 size={13} /></button>
+                        <Tooltip content="Modifier"><button onClick={() => setIcalForm({ ...cal })}><Edit2 size={13} /></button></Tooltip>
+                        <Tooltip content="Supprimer"><button className="delete" onClick={() => handleDeleteIcal(cal.id)}><Trash2 size={13} /></button></Tooltip>
                       </div>
                     </div>
                   ))}
@@ -2526,16 +2549,24 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             {renderSection('rdv')}
           </div>
 
-          <div className="sections-divider">
-            <span>Opérations & Tâches</span>
-          </div>
+          <Divider label="Opérations & Tâches" style={{ margin: '18px 0 14px' }} />
           <div className="sections-group sections-ops-group">
             {OPS_SECTION_KEYS.map(renderSection)}
           </div>
         </div>
       )}
 
-      {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
+        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
+      >
+        {confirmDialog?.message}
+      </Dialog>
       {showPdfExport && (
         <Suspense fallback={null}>
           <TaskPDFExportModal

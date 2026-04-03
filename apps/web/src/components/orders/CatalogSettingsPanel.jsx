@@ -2,37 +2,27 @@
 // CatalogSettingsPanel.jsx — Apprentissage parsers & normalisation taxonomie
 // ============================================================
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, Upload, AlertTriangle, CheckCircle2, BarChart3, Tags, ArrowRight, RefreshCw, Zap, Eye, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Settings, Upload, AlertTriangle, CheckCircle2, BarChart3, Tags, ArrowRight, RefreshCw, Zap, Eye, Trash2 } from 'lucide-react';
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
 import { extractPDFMeta } from '../../utils/pdfParser';
 import { parseCatalog, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
+import { Select, Table, Checkbox, Tabs, TabList, Tab, TabPanel, Spinner, Tag, Accordion } from '@/design-system';
 
 // ═══════════════════════════════════════════════════════════
 // COMPOSANT PRINCIPAL — Onglets Parsers / Taxonomie
 // ═══════════════════════════════════════════════════════════
 export default function CatalogSettingsPanel() {
-  const [tab, setTab] = useState('parsers'); // 'parsers' | 'taxonomy'
-
   return (
     <div className="catalog-settings">
-      <div className="catalog-settings-tabs">
-        <button
-          className={`catalog-btn ${tab === 'parsers' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
-          onClick={() => setTab('parsers')}
-        >
-          <Zap size={16} /> Apprentissage Parsers
-        </button>
-        <button
-          className={`catalog-btn ${tab === 'taxonomy' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
-          onClick={() => setTab('taxonomy')}
-        >
-          <Tags size={16} /> Familles &amp; Catégories
-        </button>
-      </div>
-
-      {tab === 'parsers' && <ParserLearningTab />}
-      {tab === 'taxonomy' && <TaxonomyTab />}
+      <Tabs defaultValue="parsers">
+        <TabList className="catalog-settings-tabs">
+          <Tab value="parsers" icon={<Zap size={16} />}>Apprentissage Parsers</Tab>
+          <Tab value="taxonomy" icon={<Tags size={16} />}>Familles &amp; Catégories</Tab>
+        </TabList>
+        <TabPanel value="parsers"><ParserLearningTab /></TabPanel>
+        <TabPanel value="taxonomy"><TaxonomyTab /></TabPanel>
+      </Tabs>
     </div>
   );
 }
@@ -117,14 +107,14 @@ function ParserLearningTab() {
         {!compareMode && (
           <div className="catalog-form-group" style={{ flex: 1 }}>
             <label>Parser</label>
-            <select value={parserId} onChange={e => setParserId(e.target.value)}>
+            <Select value={parserId} onChange={e => setParserId(e.target.value)}>
               {AVAILABLE_PARSERS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         <div className="catalog-form-group">
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-            <input type="checkbox" checked={compareMode} onChange={e => setCompareMode(e.target.checked)} />
+            <Checkbox checked={compareMode} onChange={e => setCompareMode(e.target.checked)} />
             Comparer tous les parsers
           </label>
         </div>
@@ -152,8 +142,7 @@ function ParserLearningTab() {
 function SingleParserReport({ report }) {
   const { result, analysis, parserLabel } = report;
   const m = analysis?.metrics;
-  const [showFP, setShowFP] = useState(false);
-  const [showSkipped, setShowSkipped] = useState(false);
+
 
   if (!m) return null;
 
@@ -177,9 +166,9 @@ function SingleParserReport({ report }) {
           <h5><Tags size={14} /> Familles détectées ({analysis.families.length})</h5>
           <div className="parser-tags">
             {analysis.families.slice(0, 15).map((f, i) => (
-              <span key={i} className="catalog-badge">{f.name} ({f.count})</span>
+              <Tag key={i} color="neutral" size="sm">{f.name} ({f.count})</Tag>
             ))}
-            {analysis.families.length > 15 && <span className="catalog-badge">+{analysis.families.length - 15} autres</span>}
+            {analysis.families.length > 15 && <Tag color="neutral" size="sm">+{analysis.families.length - 15} autres</Tag>}
           </div>
         </div>
       )}
@@ -187,12 +176,8 @@ function SingleParserReport({ report }) {
       {/* Faux positifs */}
       {analysis.falsePositiveCount > 0 && (
         <div className="parser-section">
-          <button className="catalog-btn catalog-btn-secondary" onClick={() => setShowFP(!showFP)}>
-            {showFP ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            <AlertTriangle size={14} /> {analysis.falsePositiveCount} faux positifs potentiels
-          </button>
-          {showFP && (
-            <table className="catalog-table" style={{ marginTop: 8 }}>
+          <Accordion title={<><AlertTriangle size={14} /> {analysis.falsePositiveCount} faux positifs potentiels</>}>
+            <Table className="catalog-table" style={{ marginTop: 8 }}>
               <thead>
                 <tr><th>Réf.</th><th>Désignation</th><th>Prix</th><th>Problèmes</th></tr>
               </thead>
@@ -204,33 +189,29 @@ function SingleParserReport({ report }) {
                     <td style={{ textAlign: 'right' }}>{fp.priceHt != null ? `${fp.priceHt} €` : '—'}</td>
                     <td>
                       {fp.issues?.map((issue, j) => (
-                        <span key={j} className="catalog-badge catalog-badge-warning" style={{ marginRight: 4 }}>
+                        <Tag key={j} color="warning" size="sm" style={{ marginRight: 4 }}>
                           {issueLabel(issue)}
-                        </span>
+                        </Tag>
                       ))}
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          )}
+            </Table>
+          </Accordion>
         </div>
       )}
 
       {/* Lignes ignorées avec prix */}
       {analysis.skippedWithPrice?.length > 0 && (
         <div className="parser-section">
-          <button className="catalog-btn catalog-btn-secondary" onClick={() => setShowSkipped(!showSkipped)}>
-            {showSkipped ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            <Eye size={14} /> {analysis.skippedWithPrice.length} lignes ignorées contenant un prix
-          </button>
-          {showSkipped && (
+          <Accordion title={<><Eye size={14} /> {analysis.skippedWithPrice.length} lignes ignorées contenant un prix</>}>
             <div className="parser-skipped-lines">
               {analysis.skippedWithPrice.map((line, i) => (
                 <div key={i} className="parser-skipped-line">{line}</div>
               ))}
             </div>
-          )}
+          </Accordion>
         </div>
       )}
 
@@ -238,7 +219,7 @@ function SingleParserReport({ report }) {
       {result?.items?.length > 0 && (
         <div className="parser-section">
           <h5>Aperçu des 10 premiers articles</h5>
-          <table className="catalog-table">
+          <Table className="catalog-table">
             <thead>
               <tr><th>Réf.</th><th>Désignation</th><th>Marque</th><th>Famille</th><th style={{ textAlign: 'right' }}>Prix HT</th></tr>
             </thead>
@@ -253,7 +234,7 @@ function SingleParserReport({ report }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>
@@ -267,7 +248,7 @@ function MultiParserComparison({ reports }) {
   return (
     <div className="parser-comparison">
       <h4><BarChart3 size={18} /> Comparaison des parsers</h4>
-      <table className="catalog-table">
+      <Table className="catalog-table">
         <thead>
           <tr>
             <th>Parser</th>
@@ -333,7 +314,7 @@ function MultiParserComparison({ reports }) {
             );
           })}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 }
@@ -386,7 +367,7 @@ function TaxonomyTab() {
     }
   };
 
-  if (loading) return <div className="catalog-import-loading"><div className="loading-spinner" /><p>Chargement de la taxonomie…</p></div>;
+  if (loading) return <div className="catalog-import-loading"><Spinner size="lg" /><p>Chargement de la taxonomie…</p></div>;
   if (!taxonomy) return null;
 
   const groups = activeSection === 'families' ? taxonomy.suggestions?.familyGroups : taxonomy.suggestions?.categoryGroups;
@@ -453,7 +434,7 @@ function TaxonomyTab() {
       {/* Liste complète */}
       <details className="taxonomy-full-list">
         <summary>Voir toutes les {activeSection === 'families' ? 'familles' : 'catégories'} ({items?.length || 0})</summary>
-        <table className="catalog-table" style={{ marginTop: 8 }}>
+        <Table className="catalog-table" style={{ marginTop: 8 }}>
           <thead>
             <tr><th>Nom</th><th style={{ textAlign: 'right' }}>Articles</th><th>Fournisseurs</th></tr>
           </thead>
@@ -466,7 +447,7 @@ function TaxonomyTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </Table>
       </details>
 
       {/* Bouton appliquer */}
@@ -488,48 +469,41 @@ function TaxonomyTab() {
 
 // ── Groupe de taxonomie ──
 function TaxonomyGroup({ group, type, selectedRules, onToggle }) {
-  const [open, setOpen] = useState(true);
-
   return (
-    <div className="taxonomy-group">
-      <div className="taxonomy-group-header" onClick={() => setOpen(!open)}>
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <strong>{group.canonical}</strong>
-        <span className="catalog-badge">{group.members.length} variantes</span>
-        <span className="catalog-badge">{group.totalCount} articles</span>
+    <Accordion
+      title={<><strong>{group.canonical}</strong> <Tag color="neutral" size="sm">{group.members.length} variantes</Tag> <Tag color="neutral" size="sm">{group.totalCount} articles</Tag></>}
+      defaultOpen
+      className="taxonomy-group"
+    >
+      <div className="taxonomy-group-members">
+        {group.members.map((member, mi) => {
+          const isCanonical = member.name === group.canonical;
+          const isSelected = selectedRules.some(r => r.type === type && r.from === member.name);
+          return (
+            <div key={mi} className={`taxonomy-member ${isCanonical ? 'taxonomy-member-canonical' : ''}`}>
+              {!isCanonical ? (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={() => onToggle(type, member.name, group.canonical)}
+                  />
+                  <span className="taxonomy-member-name">{member.name}</span>
+                  <ArrowRight size={12} style={{ opacity: 0.5 }} />
+                  <span className="taxonomy-member-target">{group.canonical}</span>
+                  <Tag color="neutral" size="sm" style={{ marginLeft: 'auto' }}>{member.count}</Tag>
+                </label>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <CheckCircle2 size={14} style={{ color: 'var(--theme-success)' }} />
+                  <span className="taxonomy-member-name"><strong>{member.name}</strong> (référence)</span>
+                  <Tag color="neutral" size="sm" style={{ marginLeft: 'auto' }}>{member.count}</Tag>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-      {open && (
-        <div className="taxonomy-group-members">
-          {group.members.map((member, mi) => {
-            const isCanonical = member.name === group.canonical;
-            const isSelected = selectedRules.some(r => r.type === type && r.from === member.name);
-            return (
-              <div key={mi} className={`taxonomy-member ${isCanonical ? 'taxonomy-member-canonical' : ''}`}>
-                {!isCanonical ? (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => onToggle(type, member.name, group.canonical)}
-                    />
-                    <span className="taxonomy-member-name">{member.name}</span>
-                    <ArrowRight size={12} style={{ opacity: 0.5 }} />
-                    <span className="taxonomy-member-target">{group.canonical}</span>
-                    <span className="catalog-badge" style={{ marginLeft: 'auto' }}>{member.count}</span>
-                  </label>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <CheckCircle2 size={14} style={{ color: 'var(--theme-success)' }} />
-                    <span className="taxonomy-member-name"><strong>{member.name}</strong> (référence)</span>
-                    <span className="catalog-badge" style={{ marginLeft: 'auto' }}>{member.count}</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    </Accordion>
   );
 }
 

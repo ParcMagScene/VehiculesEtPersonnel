@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, User, Send, Lock, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
+import { Mail, User, Send, Lock, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
+import { Button, ModalLayout, Input, InlineAlert, FormField } from '@/design-system';
 import { getApiUrl } from '../../utils/api';
 import api from '../../utils/api';
 import './AccessRequestModal.css';
@@ -113,30 +114,36 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   // ===== ÉTAPE 1 : FORMULAIRE DE DEMANDE =====
   if (step === 'request') {
     return (
-      <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-        <div className="access-request-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="access-request-header">
-            <h2>Demande d'accès</h2>
-            <button className="close-button" onClick={onClose}>
-              <X size={24} />
-            </button>
-          </div>
-
+      <ModalLayout
+        open
+        onClose={onClose}
+        title="Demande d'accès"
+        icon={<Mail size={20} />}
+        size="md"
+        className="access-request-modal"
+        footer={
+          <>
+            <Button variant="ghost" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" form="ar-request-form" disabled={loading}>
+              <Send size={18} />
+              {loading ? 'Vérification...' : 'Continuer'}
+            </Button>
+          </>
+        }
+      >
           <div className="access-request-content">
             <p className="access-request-description">
               Renseignez votre nom et adresse email pour accéder à l'application.
               Si votre email a déjà été autorisé, vous pourrez créer votre mot de passe immédiatement.
             </p>
 
-            {error && <div className="error-message">{error}</div>}
+            {error && <InlineAlert>{error}</InlineAlert>}
 
-            <form onSubmit={handleSubmitRequest}>
-              <div className="form-group">
-                <label htmlFor="ar-name">
-                  <User size={18} />
-                  Nom complet *
-                </label>
-                <input
+            <form id="ar-request-form" onSubmit={handleSubmitRequest}>
+              <FormField className="form-group" label={<><User size={18} /> Nom complet</>} htmlFor="ar-name" required>
+                <Input
                   type="text"
                   id="ar-name"
                   name="name"
@@ -146,14 +153,10 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   placeholder="Votre nom et prénom"
                   autoComplete="name"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="ar-email">
-                  <Mail size={18} />
-                  Adresse email *
-                </label>
-                <input
+              <FormField className="form-group" label={<><Mail size={18} /> Adresse email</>} htmlFor="ar-email" required>
+                <Input
                   type="email"
                   id="ar-email"
                   name="email"
@@ -163,36 +166,37 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   placeholder="votre.email@example.com"
                   autoComplete="email"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={onClose}>
-                  Annuler
-                </button>
-                <button type="submit" className="btn-primary" disabled={loading}>
-                  <Send size={18} />
-                  {loading ? 'Vérification...' : 'Continuer'}
-                </button>
-              </div>
-            </form>
+              </form>
           </div>
-        </div>
-      </div>
+      </ModalLayout>
     );
   }
 
   // ===== ÉTAPE 2A : CRÉATION DE MOT DE PASSE (email autorisé) =====
   if (step === 'create-password') {
     return (
-      <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-        <div className="access-request-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="access-request-header access-request-header-success">
-            <h2>Créer votre compte</h2>
-            <button className="close-button" onClick={onClose}>
-              <X size={24} />
-            </button>
-          </div>
-
+      <ModalLayout
+        open
+        onClose={onClose}
+        title="Créer votre compte"
+        icon={<CheckCircle size={20} />}
+        size="md"
+        className="access-request-modal"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setStep('request')}>
+              <ArrowLeft size={18} />
+              Retour
+            </Button>
+            <Button variant="primary" type="submit" form="ar-create-form" disabled={loading || password.length < 6}>
+              <CheckCircle size={18} />
+              {loading ? 'Création...' : 'Créer mon compte'}
+            </Button>
+          </>
+        }
+      >
           <div className="access-request-content">
             <div className="success-banner">
               <CheckCircle size={24} />
@@ -202,15 +206,11 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
               </div>
             </div>
 
-            {error && <div className="error-message">{error}</div>}
+            {error && <InlineAlert>{error}</InlineAlert>}
 
-            <form onSubmit={handleCreateAccount}>
-              <div className="form-group">
-                <label htmlFor="ar-create-name">
-                  <User size={18} />
-                  Nom complet *
-                </label>
-                <input
+            <form id="ar-create-form" onSubmit={handleCreateAccount}>
+              <FormField className="form-group" label={<><User size={18} /> Nom complet</>} htmlFor="ar-create-name" required>
+                <Input
                   type="text"
                   id="ar-create-name"
                   name="name"
@@ -220,27 +220,19 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   placeholder="Votre nom et prénom"
                   autoComplete="name"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label>
-                  <Mail size={18} />
-                  Email
-                </label>
-                <input
+              <FormField className="form-group" label={<><Mail size={18} /> Email</>}>
+                <Input
                   type="email"
                   value={formData.email}
                   disabled
                   className="input-disabled"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="ar-password">
-                  <Lock size={18} />
-                  Mot de passe *
-                </label>
-                <input
+              <FormField className="form-group" label={<><Lock size={18} /> Mot de passe</>} htmlFor="ar-password" required>
+                <Input
                   type="password"
                   id="ar-password"
                   value={password}
@@ -251,14 +243,10 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   autoFocus
                   autoComplete="new-password"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="ar-confirm-password">
-                  <Lock size={18} />
-                  Confirmer le mot de passe *
-                </label>
-                <input
+              <FormField className="form-group" label={<><Lock size={18} /> Confirmer le mot de passe</>} htmlFor="ar-confirm-password" required>
+                <Input
                   type="password"
                   id="ar-confirm-password"
                   value={confirmPassword}
@@ -268,37 +256,31 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   minLength={6}
                   autoComplete="new-password"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setStep('request')}>
-                  <ArrowLeft size={18} />
-                  Retour
-                </button>
-                <button type="submit" className="btn-primary" disabled={loading || password.length < 6}>
-                  <CheckCircle size={18} />
-                  {loading ? 'Création...' : 'Créer mon compte'}
-                </button>
-              </div>
-            </form>
+              </form>
           </div>
-        </div>
-      </div>
+      </ModalLayout>
     );
   }
 
   // ===== ÉTAPE 2B : DEMANDE EN ATTENTE DE VALIDATION =====
   if (step === 'pending') {
     return (
-      <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-        <div className="access-request-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="access-request-header access-request-header-pending">
-            <h2>Demande envoyée</h2>
-            <button className="close-button" onClick={onClose}>
-              <X size={24} />
-            </button>
-          </div>
-
+      <ModalLayout
+        open
+        onClose={onClose}
+        title="Demande envoyée"
+        icon={<Clock size={20} />}
+        size="md"
+        className="access-request-modal"
+        footer={
+          <Button variant="primary" onClick={onClose}>
+            Compris
+          </Button>
+        }
+        footerAlign="center"
+      >
           <div className="access-request-content">
             <div className="pending-banner">
               <Clock size={48} />
@@ -312,15 +294,8 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                 <span>{formData.email}</span>
               </div>
             </div>
-
-            <div className="form-actions" style={{ justifyContent: 'center' }}>
-              <button type="button" className="btn-primary" onClick={onClose}>
-                Compris
-              </button>
-            </div>
           </div>
-        </div>
-      </div>
+      </ModalLayout>
     );
   }
 

@@ -148,11 +148,11 @@ code {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
   padding: 1rem;
   backdrop-filter: blur(4px);
   isolation: isolate;

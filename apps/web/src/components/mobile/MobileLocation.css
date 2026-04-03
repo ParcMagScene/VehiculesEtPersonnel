@@ -86,7 +86,7 @@
 .mloc-search-zone-count {
   margin-left: auto;
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   padding: 1px 7px;
   border-radius: 10px;
   font-size: 0.72rem;
@@ -172,7 +172,7 @@
 
 .mloc-view-toggle button.active {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 /* ── Sélecteur d'étage ── */
@@ -198,7 +198,7 @@
 
 .mloc-floor-btn.active {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-primary);
 }
 
@@ -226,7 +226,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .mloc-zoom-controls button {
@@ -240,7 +240,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px var(--shadow-sm);
 }
 
 .mloc-zoom-controls button:active {
@@ -267,7 +267,7 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px var(--shadow-xs);
 }
 
 .mloc-zone-item:active {
@@ -320,8 +320,8 @@
   max-height: 55vh;
   background: var(--theme-bg-card);
   border-radius: 20px 20px 0 0;
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
-  z-index: 50;
+  box-shadow: 0 -4px 24px var(--shadow-xl);
+  z-index: var(--z-dropdown);
   display: flex;
   flex-direction: column;
   animation: panel-slide-up 0.3s ease-out;
@@ -435,7 +435,7 @@
 
 .mloc-eq-status.in_use {
   background: var(--theme-info-bg-strong);
-  color: #2563eb;
+  color: var(--theme-info-dark);
 }
 
 .mloc-eq-status.maintenance {

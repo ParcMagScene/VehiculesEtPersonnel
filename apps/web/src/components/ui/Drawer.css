@@ -27,7 +27,7 @@
   max-width: 96vw;
   transition: transform var(--duration-normal, 0.3s) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
   will-change: transform;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 /* ── Right side (default) ── */
@@ -57,7 +57,7 @@
   justify-content: space-between;
   padding: var(--space-4) var(--space-5);
   background: var(--modal-header-bg, var(--theme-gradient));
-  color: var(--modal-header-color, #fff);
+  color: var(--modal-header-color, var(--theme-bg-card));
   gap: var(--space-3);
   flex-shrink: 0;
 }
@@ -97,9 +97,9 @@
   width: var(--close-btn-size, 32px);
   height: var(--close-btn-size, 32px);
   border-radius: var(--close-btn-radius, 8px);
-  border: 1px solid var(--close-btn-border, rgba(255,255,255,0.25));
+  border: 1px solid var(--close-btn-border, var(--close-btn-border));
   background: var(--close-btn-bg, rgba(255,255,255,0.12));
-  color: var(--close-btn-color, #fff);
+  color: var(--close-btn-color, var(--theme-bg-card));
   cursor: pointer;
   transition: background var(--duration-fast), border-color var(--duration-fast);
   padding: 0;
@@ -108,7 +108,7 @@
 
 .ui-drawer-close:hover {
   background: var(--close-btn-hover-bg, rgba(255,255,255,0.22));
-  border-color: var(--close-btn-hover-border, rgba(255,255,255,0.4));
+  border-color: var(--close-btn-hover-border, var(--glass));
 }
 
 /* ── Body ── */

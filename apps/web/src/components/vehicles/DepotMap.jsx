@@ -5,11 +5,12 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { MapPin, Layers, BarChart3, Search, ZoomIn, ZoomOut, Maximize2, Settings2 } from 'lucide-react';
+import { MapPin, Layers, BarChart3, ZoomIn, ZoomOut, Maximize2, Settings2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
 import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from './DepotMapEditor';
 import './DepotMap.css';
+import { Input, SearchBar, Tooltip } from '@/design-system';
 
 const DepotMapEditor = lazy(() => import('./DepotMapEditor'));
 
@@ -260,8 +261,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
 
   // Debounced search
   const searchTimeoutRef = useRef(null);
-  const onSearchInput = (e) => {
-    const val = e.target.value;
+  const onSearchInput = (val) => {
     setSearchQuery(val);
     clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => handleSearch(val), 400);
@@ -333,13 +333,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           {/* Recherche */}
           {!compact && (
           <div className="depot-search">
-            <Search size={14} />
-            <input
-              type="text"
-              placeholder="Rechercher un équipement..."
-              value={searchQuery}
-              onChange={onSearchInput}
-            />
+            <SearchBar value={searchQuery} onChange={onSearchInput} placeholder="Rechercher un équipement..." size="sm" />
             {searchResults && Object.keys(searchResults).length > 0 && (
               <span className="depot-search-count">
                 {Object.values(searchResults).reduce((s, c) => s + c, 0)} trouvé(s)
@@ -356,16 +350,16 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           )}
           {/* Zoom */}
           <div className="depot-zoom-controls">
-            <button type="button" onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM} title="Dézoomer">
+            <Tooltip content="Dézoomer"><button type="button" onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM}>
               <ZoomOut size={16} />
-            </button>
+            </button></Tooltip>
             <span className="depot-zoom-level">{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM} title="Zoomer">
+            <Tooltip content="Zoomer"><button type="button" onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM}>
               <ZoomIn size={16} />
-            </button>
-            <button type="button" onClick={handleZoomReset} title="Réinitialiser">
+            </button></Tooltip>
+            <Tooltip content="Réinitialiser"><button type="button" onClick={handleZoomReset}>
               <Maximize2 size={14} />
-            </button>
+            </button></Tooltip>
           </div>
           {/* Étage */}
           <div className="depot-floor-selector">

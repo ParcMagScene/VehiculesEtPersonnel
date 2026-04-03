@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
-  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 2px 12px var(--accent-tint-medium);
   overflow: hidden;
 }
 
@@ -49,7 +49,7 @@
   border-radius: 0.75rem;
   padding: 2rem;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--theme-border);
 }
 
@@ -81,7 +81,7 @@
   background: var(--theme-bg-card);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--theme-border);
 }
 
@@ -148,7 +148,7 @@
   background: var(--theme-bg-card);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--theme-border);
 }
 
@@ -208,8 +208,8 @@
   background: var(--theme-bg-card);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 2px solid rgba(99, 102, 241, 0.2);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--accent-tint-vivid);
 }
 
 .poster-section h3 {

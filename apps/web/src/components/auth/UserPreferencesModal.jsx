@@ -3,7 +3,7 @@ import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, E
 import api from '../../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, getVolume, SOUND_TYPES } from '../../utils/notificationSound';
 import { PALETTES } from '../../hooks/useTheme';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Button, Dialog, Select, Checkbox, Toggle } from '@/design-system';
 import './UserPreferencesModal.css';
 import { useToast } from '../../hooks/useToast';
 
@@ -153,7 +153,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
               <span className="prefs-field-label">
                 <Layout size={14} /> Module par défaut
               </span>
-              <select
+              <Select
                 className="prefs-select"
                 value={prefs.defaultModule}
                 onChange={(e) => updatePref('defaultModule', e.target.value)}
@@ -166,14 +166,14 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                 <option value="catalog">Catalogue</option>
                 <option value="stock">Stock</option>
                 <option value="planning">Planning</option>
-              </select>
+              </Select>
             </div>
 
             <div className="prefs-field">
               <span className="prefs-field-label">
                 <Monitor size={14} /> Vue calendrier
               </span>
-              <select
+              <Select
                 className="prefs-select"
                 value={prefs.defaultView}
                 onChange={(e) => updatePref('defaultView', e.target.value)}
@@ -181,21 +181,17 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                 <option value="week">Semaine</option>
                 <option value="month">Mois</option>
                 <option value="year">Année</option>
-              </select>
+              </Select>
             </div>
 
             <div className="prefs-field">
               <span className="prefs-field-label">
                 <Layout size={14} /> Mode compact
               </span>
-              <label className="prefs-toggle">
-                <input
-                  type="checkbox"
-                  checked={prefs.compactMode}
-                  onChange={(e) => updatePref('compactMode', e.target.checked)}
-                />
-                <span className="prefs-toggle-slider" />
-              </label>
+              <Toggle
+                checked={prefs.compactMode}
+                onChange={(e) => updatePref('compactMode', e.target.checked)}
+              />
             </div>
           </div>
 
@@ -255,14 +251,10 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
               <span className="prefs-field-label">
                 {isDark ? <Moon size={14} /> : <Sun size={14} />} Mode sombre
               </span>
-              <label className="prefs-toggle">
-                <input
-                  type="checkbox"
-                  checked={isDark}
-                  onChange={() => onToggleTheme && onToggleTheme()}
-                />
-                <span className="prefs-toggle-slider" />
-              </label>
+              <Toggle
+                checked={isDark}
+                onChange={() => onToggleTheme && onToggleTheme()}
+              />
             </div>
 
             {/* Sélecteur de palette */}
@@ -310,28 +302,20 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
               <span className="prefs-field-label">
                 <Bell size={14} /> Notifications navigateur
               </span>
-              <label className="prefs-toggle">
-                <input
-                  type="checkbox"
-                  checked={prefs.notificationsEnabled}
-                  onChange={(e) => updatePref('notificationsEnabled', e.target.checked)}
-                />
-                <span className="prefs-toggle-slider" />
-              </label>
+              <Toggle
+                checked={prefs.notificationsEnabled}
+                onChange={(e) => updatePref('notificationsEnabled', e.target.checked)}
+              />
             </div>
 
             <div className="prefs-field">
               <span className="prefs-field-label">
                 <Bell size={14} /> Son de notification
               </span>
-              <label className="prefs-toggle">
-                <input
-                  type="checkbox"
-                  checked={prefs.soundEnabled}
-                  onChange={(e) => updatePref('soundEnabled', e.target.checked)}
-                />
-                <span className="prefs-toggle-slider" />
-              </label>
+              <Toggle
+                checked={prefs.soundEnabled}
+                onChange={(e) => updatePref('soundEnabled', e.target.checked)}
+              />
             </div>
 
             {prefs.soundEnabled && (
@@ -405,20 +389,26 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
               <Check size={14} /> Enregistré
             </span>
           )}
-          <button className="prefs-btn-cancel" onClick={handleSafeClose}>Fermer</button>
-          <button className="prefs-btn-save" onClick={handleSave} disabled={!hasChanges || saving}>
+          <Button variant="ghost" onClick={handleSafeClose}>Fermer</Button>
+          <Button variant="primary" onClick={handleSave} disabled={!hasChanges || saving}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
+          </Button>
         </div>
       </div>
 
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-          onSave={handleSave}
-        />
-      )}
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+        extraAction={{ label: 'Enregistrer', onClick: handleSave, variant: 'primary' }}
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
     </div>
   );
 };

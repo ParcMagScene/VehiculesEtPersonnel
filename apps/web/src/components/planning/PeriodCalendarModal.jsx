@@ -7,6 +7,7 @@ import {
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, X, AlertTriangle, Check, Clock, CalendarPlus, Briefcase, User } from 'lucide-react';
 import api from '../../utils/api';
+import { Button, Input, Checkbox, InlineAlert } from '@/design-system';
 import { PERIOD_MENU_ITEMS } from '../personnel/PersonnelContextMenu';
 import './PeriodCalendarModal.css';
 
@@ -335,8 +336,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                   {/* Google Calendar sync toggle */}
                   <div className="pcm-option-row pcm-google-sync">
                     <label className="pcm-checkbox-label">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={syncGoogle}
                         onChange={(e) => setSyncGoogle(e.target.checked)}
                       />
@@ -390,7 +390,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
               {/* Motif */}
               <div className="pcm-reason">
                 <label>Motif (optionnel) :</label>
-                <input
+                <Input
                   type="text"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -410,17 +410,13 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
 
               {/* Avertissement approbation */}
               {periodInfo.requiresApproval && !isAdmin && (
-                <div className="pcm-approval-notice">
-                  <Clock size={14} />
-                  <span>Cette demande sera soumise à validation par les administrateurs</span>
-                </div>
+                <InlineAlert variant="info">
+                  Cette demande sera soumise à validation par les administrateurs
+                </InlineAlert>
               )}
 
               {error && (
-                <div className="pcm-error">
-                  <AlertTriangle size={14} />
-                  <span>{error}</span>
-                </div>
+                <InlineAlert>{error}</InlineAlert>
               )}
             </div>
           )}
@@ -440,11 +436,11 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
 
         {/* Footer */}
         <div className="pcm-footer">
-          <button className="pcm-btn-cancel" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             {successCount > 0 ? 'Fermer' : 'Annuler'}
-          </button>
-          <button
-            className="pcm-btn-submit"
+          </Button>
+          <Button
+            variant="primary"
             style={{ background: periodInfo.color }}
             disabled={!startDate || submitting}
             onClick={handleSubmit}
@@ -455,7 +451,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                 successCount > 0 ? 'Ajouter cette période' : 'Enregistrer'
               )
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

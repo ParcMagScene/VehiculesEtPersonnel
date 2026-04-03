@@ -2,20 +2,20 @@ import React from 'react';
 import './ui.css';
 
 /**
- * Table — Tableau standardisé avec striping, hover, sticky header
+ * Table — Tableau standardisé
  *
- * @param {Array<{key, label, width?, align?, render?}>} columns  Définition des colonnes
- * @param {Array<Object>} data      Données (chaque objet doit avoir un `id` ou utiliser `rowKey`)
- * @param {function} rowKey         Fonction (row, index) => key unique
- * @param {boolean}  striped        Alternance de couleurs
- * @param {boolean}  compact        Padding réduit
- * @param {function} onRowClick     Callback (row, index) au clic sur une ligne
- * @param {string}   emptyMessage   Message quand data est vide
- * @param {string}   className      Classes additionnelles
- * @param {number}   maxHeight      Hauteur max avec scroll (px)
+ * Mode bare (children fournis) :
+ *   <Table className="my-table">
+ *     <thead>…</thead><tbody>…</tbody>
+ *   </Table>
+ *   → rend un <table> nu avec className passé directement.
+ *
+ * Mode déclaratif (columns + data) :
+ *   <Table columns={cols} data={rows} striped compact />
+ *   → rend un <table> enveloppé dans un wrapper scrollable.
  */
 function Table({
-  columns = [],
+  columns,
   data = [],
   rowKey,
   striped = false,
@@ -25,8 +25,20 @@ function Table({
   className = '',
   maxHeight,
   style,
+  children,
   ...rest
 }) {
+  /* ── Mode bare : children pass-through ── */
+  if (children) {
+    const cls = [className].filter(Boolean).join(' ');
+    return (
+      <table className={cls || undefined} style={style} {...rest}>
+        {children}
+      </table>
+    );
+  }
+
+  /* ── Mode déclaratif : columns + data ── */
   const tableCls = [
     'ui-table',
     striped && 'ui-table--striped',
@@ -50,7 +62,7 @@ function Table({
       <table className={tableCls}>
         <thead>
           <tr>
-            {columns.map((col) => (
+            {(columns || []).map((col) => (
               <th key={col.key} style={{ width: col.width, textAlign: col.align || 'left' }}>
                 {col.label}
               </th>
@@ -60,7 +72,7 @@ function Table({
         <tbody>
           {data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--theme-text-muted)' }}>
+              <td colSpan={(columns || []).length} style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--theme-text-muted)' }}>
                 {emptyMessage}
               </td>
             </tr>
@@ -71,7 +83,7 @@ function Table({
                 onClick={onRowClick ? () => onRowClick(row, idx) : undefined}
                 style={onRowClick ? { cursor: 'pointer' } : undefined}
               >
-                {columns.map((col) => (
+                {(columns || []).map((col) => (
                   <td key={col.key} style={{ textAlign: col.align || 'left' }}>
                     {col.render ? col.render(row[col.key], row, idx) : row[col.key]}
                   </td>

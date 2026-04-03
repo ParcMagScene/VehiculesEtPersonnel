@@ -1,6 +1,7 @@
 // MediaUploadModal — Upload de médias (images/vidéos)
 import React, { useState, useCallback, useRef, memo } from 'react';
-import { X, Upload, Image, Film, Loader } from 'lucide-react';
+import { Upload, Image, Film, Loader } from 'lucide-react';
+import { Button, FormField, ModalLayout, Input } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 
@@ -80,13 +81,23 @@ function MediaUploadModal({ onSave, onClose }) {
   }, [file, tags, toast, onSave]);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container modal-md" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3><Upload size={18} /> Upload média</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
-        </div>
-        <div className="modal-body">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Upload média"
+      icon={<Upload size={18} />}
+      size="md"
+      footer={<>
+        <Button variant="ghost" onClick={onClose}>Annuler</Button>
+        <Button variant="primary" onClick={handleUpload} disabled={uploading || !file}>
+          {uploading ? (
+            <><Loader size={14} className="spin" /> Upload en cours…</>
+          ) : (
+            <><Upload size={14} /> Uploader</>
+          )}
+        </Button>
+      </>}
+    >
           {/* Zone de drop */}
           <div
             className="media-drop-zone"
@@ -123,28 +134,15 @@ function MediaUploadModal({ onSave, onClose }) {
           </div>
 
           {/* Tags */}
-          <div className="form-group media-upload-tags">
-            <label>Tags (séparés par des virgules)</label>
-            <input
+          <FormField className="form-group media-upload-tags" label="Tags (séparés par des virgules)">
+            <Input
               type="text"
               value={tags}
               onChange={e => setTags(e.target.value)}
               placeholder="Ex: logo, corporate, vidéo promo"
             />
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Annuler</button>
-          <button className="btn-primary" onClick={handleUpload} disabled={uploading || !file}>
-            {uploading ? (
-              <><Loader size={14} className="spin" /> Upload en cours…</>
-            ) : (
-              <><Upload size={14} /> Uploader</>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
+          </FormField>
+    </ModalLayout>
   );
 }
 

@@ -10,6 +10,7 @@ import { fr } from 'date-fns/locale';
 import { capitalizeText } from '../../utils/dateUtils';
 import './AffaireDetailPanel.css';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
+import { Dialog, Input, Textarea, Select, Table, Avatar, Tooltip } from '@/design-system';
 
 const ReservationModal = lazy(() => import('../vehicles/ReservationModal'));
 const EventDetailsModal = lazy(() => import('../planning/EventDetailsModal'));
@@ -95,6 +96,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [planningOpen, setPlanningOpen] = useState(false);
   const [annotatingBL, setAnnotatingBL] = useState(null); // bl import object en cours d'annotation
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const fileInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
 
@@ -426,15 +428,22 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     }
   }, [affaire.id, loadLinkedAffaires, showFeedback]);
 
-  const handleRemoveLink = useCallback(async (linkId) => {
-    if (!window.confirm('Supprimer ce lien entre affaires ?')) return;
-    try {
-      await api.deleteAffaireLink(affaire.id, linkId);
-      loadLinkedAffaires();
-      showFeedback({ type: 'success', message: 'Lien supprimé' });
-    } catch (err) {
-      showFeedback({ type: 'error', message: err.message || 'Erreur' }, 4000);
-    }
+  const handleRemoveLink = useCallback((linkId) => {
+    setConfirmDialog({
+      title: 'Supprimer le lien',
+      message: 'Supprimer ce lien entre affaires ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteAffaireLink(affaire.id, linkId);
+          loadLinkedAffaires();
+          showFeedback({ type: 'success', message: 'Lien supprimé' });
+        } catch (err) {
+          showFeedback({ type: 'error', message: err.message || 'Erreur' }, 4000);
+        }
+      },
+    });
   }, [affaire.id, loadLinkedAffaires, showFeedback]);
 
   const allLinkedAffaires = useMemo(() => [
@@ -637,46 +646,56 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   }, [affaire.numeroAffaire, showArticles, linkedBLImports]);
 
   // ═══ Générer commandes depuis articles BL ═══
-  const handleGenerateOrders = async () => {
+  const handleGenerateOrders = () => {
     if (blArticles.length === 0 || generatingOrders) return;
     const fournisseurs = [...new Set(blArticles.map(a => a.fournisseur).filter(Boolean))];
     if (fournisseurs.length === 0) {
       showFeedback('⚠ Aucun fournisseur identifié dans les articles');
       return;
     }
-    if (!window.confirm(
-      `Générer ${fournisseurs.length} commande${fournisseurs.length > 1 ? 's' : ''} ` +
-      `(${fournisseurs.join(', ')}) pour ${blArticles.length} article${blArticles.length > 1 ? 's' : ''} ?`
-    )) return;
-
-    setGeneratingOrders(true);
-    try {
-      const result = await api.generateOrdersFromBL({
-        affaire_id: affaire.numeroAffaire,
-        affaire_reference: affaire.reference || affaire.numeroAffaire,
-        items: blArticles,
-      });
-      showFeedback(`✅ ${result.message} — ${result.orders.map(o => o.reference).join(', ')}`, 5000);
-      if (onDataChanged) onDataChanged();
-    } catch (err) {
-      showFeedback(`❌ Erreur : ${err.message || 'Erreur serveur'}`);
-    } finally {
-      setGeneratingOrders(false);
-    }
+    setConfirmDialog({
+      title: 'Générer les commandes',
+      message: `Générer ${fournisseurs.length} commande${fournisseurs.length > 1 ? 's' : ''} (${fournisseurs.join(', ')}) pour ${blArticles.length} article${blArticles.length > 1 ? 's' : ''} ?`,
+      variant: 'confirm',
+      confirmLabel: 'Générer',
+      onConfirm: async () => {
+        setGeneratingOrders(true);
+        try {
+          const result = await api.generateOrdersFromBL({
+            affaire_id: affaire.numeroAffaire,
+            affaire_reference: affaire.reference || affaire.numeroAffaire,
+            items: blArticles,
+          });
+          showFeedback(`✅ ${result.message} — ${result.orders.map(o => o.reference).join(', ')}`, 5000);
+          if (onDataChanged) onDataChanged();
+        } catch (err) {
+          showFeedback(`❌ Erreur : ${err.message || 'Erreur serveur'}`);
+        } finally {
+          setGeneratingOrders(false);
+        }
+      },
+    });
   };
 
   // ═══ Suppression d'un BL/BP importé ═══
-  const handleDeleteBL = async (bl) => {
+  const handleDeleteBL = (bl) => {
     const docLabel = (affaire.type === 'Location' || affaire.type === 'Prestation') ? 'BP' : 'BL';
-    if (!window.confirm(`Supprimer le ${docLabel} "${bl.filename}" ? Cette action est irréversible.`)) return;
-    try {
-      await api.deleteBLImport(bl.id);
-      setLinkedBLImports(prev => prev.filter(b => b.id !== bl.id));
-      showFeedback(`✅ ${docLabel} supprimé`);
-      if (onDataChanged) onDataChanged();
-    } catch (err) {
-      showFeedback(`❌ Erreur : ${err.message || 'Erreur serveur'}`);
-    }
+    setConfirmDialog({
+      title: `Supprimer le ${docLabel}`,
+      message: `Supprimer le ${docLabel} "${bl.filename}" ? Cette action est irréversible.`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteBLImport(bl.id);
+          setLinkedBLImports(prev => prev.filter(b => b.id !== bl.id));
+          showFeedback(`✅ ${docLabel} supprimé`);
+          if (onDataChanged) onDataChanged();
+        } catch (err) {
+          showFeedback(`❌ Erreur : ${err.message || 'Erreur serveur'}`);
+        }
+      },
+    });
   };
 
   // ═══ Articles BP (Location / Prestation) — liaison matériel ═══
@@ -768,23 +787,23 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           <div className="detail-grid edit-mode">
             <div className="detail-field full-width">
               <label>Nom</label>
-              <input type="text" value={editForm.nom} onChange={(e) => setEditForm(f => ({ ...f, nom: e.target.value }))} className="edit-input" placeholder="Nom de l'affaire" />
+              <Input type="text" value={editForm.nom} onChange={(e) => setEditForm(f => ({ ...f, nom: e.target.value }))} className="edit-input" placeholder="Nom de l'affaire" />
             </div>
             <div className="detail-field">
               <label>N° Affaire</label>
-              <input type="text" value={editForm.numeroAffaire} onChange={(e) => setEditForm(f => ({ ...f, numeroAffaire: e.target.value }))} className="edit-input" />
+              <Input type="text" value={editForm.numeroAffaire} onChange={(e) => setEditForm(f => ({ ...f, numeroAffaire: e.target.value }))} className="edit-input" />
             </div>
             <div className="detail-field">
               <label>Type</label>
-              <select value={editForm.type} onChange={(e) => setEditForm(f => ({ ...f, type: e.target.value }))} className="edit-input">
+              <Select value={editForm.type} onChange={(e) => setEditForm(f => ({ ...f, type: e.target.value }))} className="edit-input">
                 {AFFAIRE_TYPES.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="detail-field" ref={clientDropdownRef} style={{ position: 'relative' }}>
               <label>Client</label>
-              <input
+              <Input
                 type="text"
                 value={editForm.client}
                 onChange={(e) => {
@@ -815,7 +834,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             </div>
             <div className="detail-field" ref={contactDropdownRef} style={{ position: 'relative' }}>
               <label>Interlocuteur</label>
-              <input
+              <Input
                 type="text"
                 value={editForm.interlocuteur}
                 onChange={(e) => {
@@ -848,11 +867,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             </div>
             <div className="detail-field">
               <label><Phone size={12} /> Téléphone</label>
-              <input type="text" value={editForm.tel} onChange={(e) => setEditForm(f => ({ ...f, tel: e.target.value }))} className="edit-input" />
+              <Input type="text" value={editForm.tel} onChange={(e) => setEditForm(f => ({ ...f, tel: e.target.value }))} className="edit-input" />
             </div>
             <div className="detail-field">
               <label>Devis</label>
-              <input type="text" value={editForm.devis} onChange={(e) => setEditForm(f => ({ ...f, devis: e.target.value }))} className="edit-input" />
+              <Input type="text" value={editForm.devis} onChange={(e) => setEditForm(f => ({ ...f, devis: e.target.value }))} className="edit-input" />
             </div>
             <div className="detail-field">
               <label><Calendar size={12} /> Date début</label>
@@ -873,11 +892,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             </div>
             <div className="detail-field full-width">
               <label><FileText size={12} /> Titre / Événement</label>
-              <input type="text" value={editForm.titre} onChange={(e) => setEditForm(f => ({ ...f, titre: e.target.value }))} className="edit-input" />
+              <Input type="text" value={editForm.titre} onChange={(e) => setEditForm(f => ({ ...f, titre: e.target.value }))} className="edit-input" />
             </div>
             <div className="detail-field full-width">
               <label>Description</label>
-              <textarea value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} className="edit-input edit-textarea" rows={3} />
+              <Textarea value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} className="edit-input edit-textarea" rows={3} />
             </div>
           </div>
         ) : (
@@ -1118,7 +1137,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           </h3>
           {showLinkSearch && (
             <div className="link-search-wrapper">
-              <input
+              <Input
                 type="text"
                 className="link-search-input"
                 placeholder="Rechercher une affaire à lier…"
@@ -1213,10 +1232,10 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                         <input type="date" value={s.date} onChange={e => updateTaskStep(step.key, 'date', e.target.value)} />
                         <button type="button" className="tsf-today-btn" onClick={() => updateTaskStep(step.key, 'date', format(new Date(), 'yyyy-MM-dd'))} title="Aujourd'hui">Auj.</button>
                         <label>Période</label>
-                        <select value={s.period} onChange={e => updateTaskStep(step.key, 'period', e.target.value)}>
+                        <Select value={s.period} onChange={e => updateTaskStep(step.key, 'period', e.target.value)}>
                           <option value="AM">Matin</option>
                           <option value="PM">Après-midi</option>
-                        </select>
+                        </Select>
                       </div>
                       <div className="tsf-row">
                         <label>Début</label>
@@ -1226,7 +1245,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                       </div>
                       <div className="tsf-row">
                         <label>Notes</label>
-                        <input type="text" placeholder="Notes..." value={s.notes} onChange={e => updateTaskStep(step.key, 'notes', e.target.value)} className="tsf-notes" />
+                        <Input type="text" placeholder="Notes..." value={s.notes} onChange={e => updateTaskStep(step.key, 'notes', e.target.value)} className="tsf-notes" />
                       </div>
                     </div>
                   )}
@@ -1263,15 +1282,15 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         {showPersonnelForm && (
           <div className="inline-action-form">
             <div className="inline-form-row">
-              <select value={selectedPersonId} onChange={e => setSelectedPersonId(e.target.value)} className="inline-select">
+              <Select value={selectedPersonId} onChange={e => setSelectedPersonId(e.target.value)} className="inline-select">
                 <option value="">— Choisir une personne —</option>
                 {actionData.persons.map(p => (
                   <option key={p.id} value={p.id}>{p.firstName || p.first_name} {p.lastName || p.last_name}{p.type ? ` (${p.type})` : ''}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="inline-form-row">
-              <input type="text" placeholder="Titre de la mission (optionnel)" value={missionTitle} onChange={e => setMissionTitle(e.target.value)} className="inline-input" />
+              <Input type="text" placeholder="Titre de la mission (optionnel)" value={missionTitle} onChange={e => setMissionTitle(e.target.value)} className="inline-input" />
             </div>
             <div className="inline-form-actions">
               <button className="inline-btn confirm" onClick={handleAssignPersonnel} disabled={!selectedPersonId}>
@@ -1293,13 +1312,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                 title={onNavigateToEntity ? 'Voir dans le module Personnel' : undefined}
               >
                 <div className="person-header-row">
-                  <div className="person-avatar-small">
-                    {p.photo ? (
-                      <img src={`${API_BASE_URL.replace('/api', '')}/avatars/${p.photo}`} alt="" className="person-avatar-img" />
-                    ) : (
-                      <User size={16} />
-                    )}
-                  </div>
+                  <Avatar name={`${p.firstName} ${p.lastName}`} avatar={p.photo ? `/avatars/${p.photo}` : undefined} size="sm" />
                   <div className="person-identity">
                     <div className="person-name">
                       <strong>{p.firstName} {p.lastName}</strong>
@@ -1370,7 +1383,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           >
             <input ref={fileInputRef} type="file" multiple hidden onChange={e => handleFileUpload(e.target.files)} />
             {uploadProgress ? (
-              <><div className="upload-spinner" /> Import en cours...</>
+              <><Spinner size="sm" /> Import en cours...</>
             ) : (
               <><Upload size={20} /><span>Glissez des fichiers ici ou cliquez pour parcourir</span></>
             )}
@@ -1474,7 +1487,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             </>
           ) : (
             <div className="articles-table-wrapper">
-              <table className="articles-table">
+              <Table className="articles-table">
                 <thead>
                   <tr>
                     <th className="art-col-code">Réf.</th>
@@ -1496,7 +1509,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
               <div className="articles-summary">
                 <span>{blArticles.length} article{blArticles.length > 1 ? 's' : ''}</span>
                 {(() => {
@@ -1544,7 +1557,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                 }}>
                   {section} <span style={{ fontWeight: 400, opacity: 0.7 }}>({items.length})</span>
                 </div>
-                <table className="articles-table">
+                <Table className="articles-table">
                   <thead>
                     <tr>
                       <th className="art-col-code">Réf.</th>
@@ -1577,7 +1590,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               </div>
             ))}
             <div className="articles-summary">
@@ -1612,7 +1625,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                 }}>
                   {section} <span style={{ fontWeight: 400, opacity: 0.7 }}>({items.length})</span>
                 </div>
-                <table className="articles-table">
+                <Table className="articles-table">
                   <thead>
                     <tr>
                       <th className="art-col-code">Réf.</th>
@@ -1652,7 +1665,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               </div>
             ))}
             <div className="articles-summary">
@@ -1768,6 +1781,16 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           />
         </Suspense>
       )}
+
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title}
+        variant={confirmDialog?.variant}
+        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+        confirmLabel={confirmDialog?.confirmLabel}
+        cancelLabel="Annuler"
+      />
     </div>
   );
 };
@@ -1845,9 +1868,9 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
           <span className="slide-panel-numero">{currentAffaire.numeroAffaire}</span>
           <span className="slide-panel-type" style={{ background: typeInfo.color }}>{typeInfo.label}</span>
         </div>
-        <button className="slide-panel-close" onClick={handleClose} title="Fermer">
+        <Tooltip content="Fermer"><button className="slide-panel-close" onClick={handleClose}>
           <X size={18} />
-        </button>
+        </button></Tooltip>
       </div>
       <div className="slide-panel-body">
         <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={onRefresh} onNavigateToEntity={onNavigateToEntity} />
@@ -2073,9 +2096,9 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
                 </button>
               </>
             )}
-            <button className="dialog-close" onClick={handleClose} title={isEditing ? "Annuler" : "Fermer"}>
+            <Tooltip content={isEditing ? "Annuler" : "Fermer"}><button className="dialog-close" onClick={handleClose}>
               <X size={20} />
-            </button>
+            </button></Tooltip>
           </div>
         </div>
         <div className="dialog-body">

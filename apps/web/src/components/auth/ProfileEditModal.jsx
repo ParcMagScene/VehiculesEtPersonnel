@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera, User, Save, Trash2 } from 'lucide-react';
-import UserAvatar from '../UserAvatar';
 import api, { getApiUrl } from '../../utils/api';
+import { Button, Input, Avatar, InlineAlert } from '@/design-system';
 
 // targetUser: si fourni (mode admin), on édite cet utilisateur via les endpoints admin
 // sinon on édite currentUser via /users/me
@@ -152,7 +152,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
                   border: '3px solid var(--theme-primary)'
                 }} />
               ) : (
-                <UserAvatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
+                <Avatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
               )}
               
               <button
@@ -204,7 +204,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
             }}>
               Nom
             </label>
-            <input
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -236,12 +236,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
           </div>
 
           {error && (
-            <div style={{
-              padding: '10px 14px', background: 'var(--theme-danger-bg)', color: '#dc2626',
-              borderRadius: '8px', fontSize: '13px', marginBottom: '16px'
-            }}>
-              {error}
-            </div>
+            <InlineAlert style={{ marginBottom: '16px' }}>{error}</InlineAlert>
           )}
         </div>
 
@@ -250,24 +245,20 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
           padding: '16px 24px', borderTop: '1px solid var(--theme-border)',
           display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--theme-bg-page)'
         }}>
-          <button
+          <Button
+            variant="ghost"
             onClick={onClose}
-            className="theme-btn-secondary"
           >
             Fermer
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={handleSaveName}
             disabled={saving || name.trim() === editedUser.name || !name.trim()}
-            className="theme-btn-primary"
-            style={{
-              opacity: (saving || name.trim() === editedUser.name || !name.trim()) ? 0.5 : 1,
-              cursor: (saving || name.trim() === editedUser.name) ? 'default' : 'pointer'
-            }}
           >
             <Save size={16} />
             {saving ? 'Enregistrement...' : 'Enregistrer'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

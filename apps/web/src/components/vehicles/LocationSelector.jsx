@@ -7,6 +7,7 @@
 import React, { useMemo } from 'react';
 import { MapPin, Warehouse } from 'lucide-react';
 import './LocationSelector.css';
+import { Select } from '@/design-system';
 
 export default function LocationSelector({ zones, depots, value, onChange }) {
   // value = { location_depot, location_zone, location_code, location_floor }
@@ -118,7 +119,7 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
         {hasMultipleDepots && (
           <div className="location-form-group">
             <label><Warehouse size={12} /> Dépôt</label>
-            <select
+            <Select
               value={depot}
               onChange={(e) => handleDepotChange(e.target.value)}
             >
@@ -126,14 +127,14 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
               {depotList.map(d => (
                 <option key={d.id} value={d.id}>{d.name || `Dépôt ${d.id}`}</option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
 
         {/* Étage */}
         <div className="location-form-group">
           <label>Étage</label>
-          <select
+          <Select
             value={floor}
             onChange={(e) => handleFloorChange(e.target.value)}
             disabled={hasMultipleDepots && !depot}
@@ -142,13 +143,13 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
             {floors.map(f => (
               <option key={f.id} value={f.id}>{f.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Zone */}
         <div className="location-form-group">
           <label>Zone</label>
-          <select
+          <Select
             value={zone}
             onChange={(e) => handleZoneChange(e.target.value)}
           >
@@ -170,13 +171,13 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
                 </option>
               ))
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Code emplacement */}
         <div className="location-form-group">
           <label>Code emplacement</label>
-          <select
+          <Select
             value={code}
             onChange={(e) => handleCodeChange(e.target.value)}
             disabled={!zone || availableCodes.length === 0}
@@ -185,7 +186,7 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
             {availableCodes.map(c => (
               <option key={c} value={c}>{c}</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 

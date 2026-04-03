@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Film, Upload, Plus, Trash2, Save, X, Check } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api, { getApiUrl } from '../../utils/api';
+import { Button, Dialog, Select, Tooltip, SectionHeader } from '@/design-system';
 
 // Types de tâches (sections) disponibles pour l'association icône
 const TASK_SECTIONS = [
@@ -38,6 +39,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showMosaic, setShowMosaic] = useState(null); // index de la règle en cours
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const API_URL = getApiUrl();
 
@@ -76,15 +78,23 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
     }
   }, [toast]);
 
-  const handleDeleteGif = useCallback(async (filename) => {
-    if (!confirm(`Supprimer l'icône « ${filename} » ?`)) return;
-    try {
-      await api.deleteDisplayLocationGif(filename);
-      toast.success('Icône supprimée');
-      setGifs(prev => prev.filter(g => g !== filename));
-    } catch {
-      toast.error('Erreur suppression');
-    }
+  const handleDeleteGif = useCallback((filename) => {
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: `Supprimer l'ic\xF4ne \xAB ${filename} \xBB ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.deleteDisplayLocationGif(filename);
+          toast.success('Ic\xF4ne supprim\xE9e');
+          setGifs(prev => prev.filter(g => g !== filename));
+        } catch {
+          toast.error('Erreur suppression');
+        }
+      },
+    });
   }, [toast]);
 
   // ── Gestion règles d'icônes ──
@@ -135,9 +145,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
     <div className="dtv-location-icons">
       {/* Section Import */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Upload size={16} /> Importer des icônes
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Upload size={16} />} title="Importer des icônes" />
         <p className="dtv-hint">Uploadez des icônes GIF animés ou PNG avec transparence.</p>
         <div className="dtv-form-group">
           <input type="file" accept="image/gif,image/png" onChange={handleUploadGif} />
@@ -146,9 +154,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
 
       {/* Galerie GIF */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Film size={16} /> Galerie des icônes ({gifs.length})
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Film size={16} />} title={`Galerie des icônes (${gifs.length})`} />
         {gifs.length === 0 ? (
           <div className="dtv-empty-hint">Aucune icône disponible. Importez des fichiers GIF.</div>
         ) : (
@@ -157,9 +163,9 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
               <div key={gif} className="dtv-gif-item">
                 <img src={gifUrl(gif)} alt={gif} />
                 <span className="dtv-gif-name">{gif.replace(/\.(gif|png)$/i, '')}</span>
-                <button className="dtv-gif-delete" onClick={() => handleDeleteGif(gif)} title="Supprimer">
+                <Tooltip content="Supprimer"><button className="dtv-gif-delete" onClick={() => handleDeleteGif(gif)}>
                   <Trash2 size={12} />
-                </button>
+                </button></Tooltip>
               </div>
             ))}
           </div>
@@ -168,9 +174,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
 
       {/* Règles d'association type de tâche → icône */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Film size={16} /> Associer des icônes aux types de tâches
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Film size={16} />} title="Associer des icônes aux types de tâches" />
         <p className="dtv-hint">Définissez quelle icône afficher sur l'écran TV selon le type de tâche.</p>
 
         <div className="dtv-rules-list">
@@ -186,7 +190,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
                   <span className="dtv-icon-empty">➕</span>
                 )}
               </div>
-              <select
+              <Select
                 value={rule.keyword}
                 onChange={e => handleRuleChange(index, 'keyword', e.target.value)}
                 className="dtv-rule-keyword"
@@ -198,21 +202,21 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
                     <option key={s.key} value={s.key}>{s.label}</option>
                   ))
                 }
-              </select>
-              <button className="btn-icon-sm danger" onClick={() => handleRemoveRule(index)}>
+              </Select>
+              <Button variant="danger" size="sm" iconOnly onClick={() => handleRemoveRule(index)}>
                 <Trash2 size={14} />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
 
         <div className="dtv-actions">
-          <button className="btn-secondary-sm" onClick={handleAddRule}>
+          <Button variant="secondary" size="sm" onClick={handleAddRule}>
             <Plus size={14} /> Ajouter une règle
-          </button>
-          <button className="btn-primary-sm" onClick={handleSaveRules} disabled={saving}>
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleSaveRules} disabled={saving}>
             <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -232,12 +236,23 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
                 ))}
               </div>
             )}
-            <button className="btn-secondary-sm" onClick={() => setShowMosaic(null)} style={{ marginTop: 12, width: '100%' }}>
+            <Button variant="secondary" size="sm" onClick={() => setShowMosaic(null)} style={{ marginTop: 12, width: '100%' }}>
               <X size={14} /> Annuler
-            </button>
+            </Button>
           </div>
         </div>
       )}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }

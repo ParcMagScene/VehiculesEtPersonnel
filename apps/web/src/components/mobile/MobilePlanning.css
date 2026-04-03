@@ -118,7 +118,7 @@
   border-bottom: 2px solid var(--theme-border-medium);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .mobile-day-column {
@@ -173,7 +173,7 @@
   left: 0;
   right: 0;
   width: 100vw;
-  z-index: 5;
+  z-index: var(--z-base);
   pointer-events: none;
 }
 
@@ -236,9 +236,9 @@
   align-items: stretch;
   justify-content: center;
   height: 56px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   margin: 2px;
-  z-index: 1;
+  z-index: var(--z-base);
   color: var(--theme-text-inverse);
   position: relative;
   overflow: visible;
@@ -255,7 +255,7 @@
   justify-content: center;
   gap: 2px;
   pointer-events: none;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .mobile-reservation-inner {
@@ -307,7 +307,7 @@
 }
 
 .mobile-reservation .mobile-item-subtitle {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--theme-bg-card-translucent);
 }
 
 /* Items de maintenance */
@@ -321,7 +321,7 @@
   border-left: 3px solid;
   height: 56px;
   margin: 2px;
-  z-index: 2;
+  z-index: var(--z-base);
   position: relative;
   overflow: visible;
 }
@@ -337,7 +337,7 @@
   justify-content: center;
   gap: 2px;
   pointer-events: none;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .mobile-maintenance-inner {

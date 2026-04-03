@@ -1,0 +1,168 @@
+/* ═══════════════════════════════════════
+   Select — Design System Atoms
+   ═══════════════════════════════════════ */
+
+/* ─── Base select (mode bare — minimal, compatible CSS existant) ─── */
+.ui-select {
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+  cursor: pointer;
+}
+.ui-select:disabled {
+  cursor: not-allowed;
+}
+
+/* ─── Standalone styled (quand size est spécifié) ─── */
+.ui-select--sm,
+.ui-select--md,
+.ui-select--lg {
+  width: 100%;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  appearance: none;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.ui-select--sm:focus,
+.ui-select--md:focus,
+.ui-select--lg:focus {
+  border-color: var(--theme-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+/* ─── Error state (standalone) ─── */
+.ui-select--error {
+  border-color: var(--theme-danger);
+}
+.ui-select--error:focus {
+  border-color: var(--theme-danger);
+  box-shadow: 0 0 0 3px var(--theme-danger-border);
+}
+
+/* ─── Disabled state (standalone) ─── */
+.ui-select--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-disabled);
+  border-color: var(--theme-border-disabled);
+}
+
+/* ─── Full width (standalone) ─── */
+.ui-select--full {
+  width: 100%;
+}
+
+/* ─── Sizes (standalone) ─── */
+.ui-select--sm {
+  height: var(--btn-height-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--font-sm);
+}
+.ui-select--md {
+  height: var(--btn-height-md);
+  padding: 0 var(--space-3);
+  font-size: var(--font-base);
+}
+.ui-select--lg {
+  height: var(--btn-height-lg);
+  padding: 0 var(--space-4);
+  font-size: var(--font-md);
+}
+
+/* ═══════ Wrapper mode (options prop + chevron) ═══════ */
+
+/* ─── Wrapper ─── */
+.ui-select-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  background: var(--theme-bg-card);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.ui-select-wrapper:focus-within {
+  border-color: var(--theme-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+/* ─── Error state ─── */
+.ui-select-wrapper--error {
+  border-color: var(--theme-danger);
+}
+.ui-select-wrapper--error:focus-within {
+  border-color: var(--theme-danger);
+  box-shadow: 0 0 0 3px var(--theme-danger-border);
+}
+
+/* ─── Disabled state ─── */
+.ui-select-wrapper--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--theme-bg-tertiary);
+  border-color: var(--theme-border-disabled);
+}
+
+/* Reset select inside wrapper */
+.ui-select-wrapper .ui-select {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--theme-text-primary);
+  appearance: none;
+  padding-right: var(--space-8);
+}
+.ui-select-wrapper .ui-select:focus {
+  box-shadow: none;
+}
+
+.ui-select-wrapper .ui-select:disabled {
+  cursor: not-allowed;
+  color: var(--theme-text-disabled);
+}
+
+.ui-select-wrapper .ui-select option {
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-card);
+}
+
+/* ─── Placeholder (première option vide) ─── */
+.ui-select-wrapper .ui-select:invalid,
+.ui-select-wrapper .ui-select option[value=""] {
+  color: var(--theme-text-muted);
+}
+
+/* ─── Chevron ─── */
+.ui-select-chevron {
+  position: absolute;
+  right: var(--space-3);
+  pointer-events: none;
+  color: var(--theme-text-muted);
+  display: flex;
+  align-items: center;
+  font-size: var(--font-sm);
+  transition: color var(--duration-fast);
+}
+
+.ui-select-wrapper:focus-within .ui-select-chevron {
+  color: var(--theme-primary);
+}
+
+/* ─── Wrapper Sizes ─── */
+.ui-select-wrapper--sm { height: var(--btn-height-sm); }
+.ui-select-wrapper--sm .ui-select { padding: 0 var(--space-2); font-size: var(--font-sm); }
+
+.ui-select-wrapper--md { height: var(--btn-height-md); }
+.ui-select-wrapper--md .ui-select { padding: 0 var(--space-3); font-size: var(--font-base); }
+
+.ui-select-wrapper--lg { height: var(--btn-height-lg); }
+.ui-select-wrapper--lg .ui-select { padding: 0 var(--space-4); font-size: var(--font-md); }
+
+/* ─── Full width ─── */
+.ui-select-wrapper--full {
+  width: 100%;
+}

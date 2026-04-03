@@ -15,7 +15,7 @@
   background: var(--theme-bg-card);
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px var(--shadow-xs);
   margin-bottom: 1.5rem;
 }
 
@@ -43,7 +43,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   gap: 1rem;
 }
 
@@ -125,7 +125,7 @@
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .user-management-section h3 {
@@ -433,7 +433,7 @@
   border-radius: 16px;
   width: 90%;
   max-width: 480px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
 
@@ -599,7 +599,7 @@
   border-radius: 16px;
   width: 480px;
   max-width: 95vw;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
   animation: slideUp 0.2s ease;
 }
@@ -656,7 +656,7 @@
 }
 .create-personnel-field input:focus {
   border-color: var(--theme-success-alt);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 3px var(--success-tint-light);
 }
 
 .create-personnel-type-section {
@@ -694,7 +694,7 @@
 .personnel-type-card.active {
   border-color: var(--theme-success-alt);
   background: var(--theme-success-bg);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 3px var(--success-tint-light);
 }
 .personnel-type-icon {
   font-size: 22px;

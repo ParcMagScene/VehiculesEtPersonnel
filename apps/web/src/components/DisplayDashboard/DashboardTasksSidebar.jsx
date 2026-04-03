@@ -7,12 +7,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
   ClipboardList, Clock, Check, Music, Disc, RefreshCw,
-  ChevronDown, ChevronRight, Truck, Settings, Eye, EyeOff,
+  Truck, Settings, Eye, EyeOff,
   Save, Briefcase
 } from 'lucide-react';
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
+import { Accordion, Tooltip } from '@/design-system';
 
 // ─── Sections (mêmes que TaskPlanningPanel, sans rdv/evenements) ───
 const SECTIONS = {
@@ -339,13 +340,12 @@ function DashboardTasksSidebar({ refreshKey, style }) {
             const collapsed = collapsedSections[key];
             return (
               <div key={key} className="dash-section">
-                <button className="dash-section-header" onClick={() => toggleSection(key)}>
-                  {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-                  <span className="dash-section-emoji">{section.emoji}</span>
-                  <span className="dash-section-label" style={{ color: section.color }}>{section.label}</span>
-                  <span className="dash-section-count">{items.length}</span>
-                </button>
-                {!collapsed && (
+                <Accordion
+                  title={<><span className="dash-section-emoji">{section.emoji}</span> <span className="dash-section-label" style={{ color: section.color }}>{section.label}</span> <span className="dash-section-count">{items.length}</span></>}
+                  open={!collapsed}
+                  onToggle={() => toggleSection(key)}
+                  className="dash-section-accordion"
+                >
                   <div className="dash-section-items">
                     {items.map(task => {
                       const isDone = task.status === 'done';
@@ -403,7 +403,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                       );
                     })}
                   </div>
-                )}
+                </Accordion>
               </div>
             );
           })
@@ -415,9 +415,9 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         <div className="dash-sonos-header">
           <Music size={14} />
           <span>Sonos</span>
-          <button className="dash-sonos-refresh" onClick={loadNowPlaying} title="Rafraîchir">
+          <Tooltip content="Rafraîchir"><button className="dash-sonos-refresh" onClick={loadNowPlaying}>
             <RefreshCw size={10} />
-          </button>
+          </button></Tooltip>
         </div>
         {nowPlaying && nowPlaying.title ? (
           <div className={`dash-sonos-playing ${nowPlaying.playing ? '' : 'paused'}`}>

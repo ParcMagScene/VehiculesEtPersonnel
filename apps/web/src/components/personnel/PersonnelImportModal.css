@@ -36,7 +36,7 @@
   gap: 2px;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--border-light, #e0e0e0);
+  border: 1px solid var(--border-light, var(--theme-border));
   background: var(--theme-bg-card);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -46,12 +46,12 @@
 }
 
 .pi-collision-stat:hover {
-  background: var(--bg-hover, #f5f5f5);
+  background: var(--bg-hover, var(--theme-bg-secondary));
 }
 
 .pi-collision-stat.active {
   border-color: var(--theme-primary);
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--primary-tint-subtle);
 }
 
 .pi-collision-stat.info {
@@ -91,7 +91,7 @@
 }
 
 .pi-collision-header:hover {
-  background: var(--bg-hover, #f5f5f5);
+  background: var(--bg-hover, var(--theme-bg-secondary));
 }
 
 .pi-collision-list {
@@ -99,7 +99,7 @@
   overflow-y: auto;
   margin-top: 8px;
   border-radius: 8px;
-  border: 1px solid var(--border-light, #e0e0e0);
+  border: 1px solid var(--border-light, var(--theme-border));
 }
 
 /* ---------- TABLE ROWS PAR ACTION ---------- */
@@ -122,17 +122,17 @@
 }
 
 .pi-action-badge.create {
-  background: rgba(16, 185, 129, 0.12);
+  background: var(--success-tint);
   color: var(--btn-success-color);
 }
 
 .pi-action-badge.update {
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--warning-tint);
   color: var(--theme-warning-dark);
 }
 
 .pi-action-badge.conflict {
-  background: rgba(239, 68, 68, 0.12);
+  background: var(--danger-tint-light);
   color: var(--theme-danger-dark);
 }
 
@@ -147,7 +147,7 @@
 }
 
 .pi-type-salari {
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--primary-tint);
   color: var(--theme-info-dark);
 }
 
@@ -158,7 +158,7 @@
 
 .pi-type-autoentrepreneur {
   background: rgba(236, 72, 153, 0.12);
-  color: #db2777;
+  color: var(--theme-danger);
 }
 
 /* ---------- COLLISION MATCH ---------- */
@@ -199,7 +199,7 @@
 }
 
 [data-theme="dark"] .pi-collision-stat.active {
-  background: rgba(59, 130, 246, 0.15);
+  background: var(--primary-tint-medium);
 }
 
 [data-theme="dark"] .pi-collision-header {
@@ -219,7 +219,7 @@
 }
 
 [data-theme="dark"] .pi-action-badge.create {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--success-tint-vivid);
   color: #34d399;
 }
 
@@ -229,8 +229,8 @@
 }
 
 [data-theme="dark"] .pi-action-badge.conflict {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
+  background: var(--danger-tint);
+  color: var(--theme-danger);
 }
 
 [data-theme="dark"] .pi-type-salari {

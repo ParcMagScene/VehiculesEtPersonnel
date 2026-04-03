@@ -34,7 +34,7 @@
   border: 2px solid var(--theme-border-muted);
   border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
-  color: white;
+  color: var(--theme-text-inverse);
   transition: all var(--duration-fast);
   flex-shrink: 0;
 }
@@ -95,7 +95,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: white;
+  background: var(--theme-bg-card);
   box-shadow: var(--shadow-xs);
   transition: transform var(--duration-fast) var(--ease-spring);
 }

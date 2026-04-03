@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import './MailingPanel.css';
+import { Dialog, Input, Textarea, Select, Checkbox, Tabs, TabList, Tab, TabPanel, Tag, EmptyState, Tooltip } from '@/design-system';
 
 // Variables disponibles pour les templates
 const AVAILABLE_VARS = [
@@ -71,6 +72,7 @@ export default function MailingPanel({ isOpen, onClose }) {
   const [configForm, setConfigForm] = useState({});
   const [savingConfig, setSavingConfig] = useState(false);
   const [configTestResult, setConfigTestResult] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Charger les données
   const loadData = useCallback(async () => {
@@ -217,12 +219,20 @@ export default function MailingPanel({ isOpen, onClose }) {
     setSavingTpl(false);
   };
 
-  const deleteTemplate = async (id) => {
-    if (!confirm('Supprimer ce template ?')) return;
-    try {
-      await api.deleteMailTemplate(id);
-      setTemplates(prev => prev.filter(t => t.id !== id));
-    } catch { /* silent */ }
+  const deleteTemplate = (id) => {
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: 'Supprimer ce template ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.deleteMailTemplate(id);
+          setTemplates(prev => prev.filter(t => t.id !== id));
+        } catch { /* silent */ }
+      },
+    });
   };
 
   const insertVariable = (varKey) => {
@@ -269,30 +279,21 @@ export default function MailingPanel({ isOpen, onClose }) {
         </div>
 
         {/* Tabs */}
-        <div className="mailing-tabs">
-          {[
-            { id: 'compose', icon: Send, label: 'Composer' },
-            { id: 'templates', icon: FileText, label: 'Templates' },
-            { id: 'history', icon: Clock, label: 'Historique' },
-            { id: 'config', icon: Settings, label: 'Config SMTP' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              className={`mailing-tab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <tab.icon size={15} />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
+        <Tabs value={activeTab} onChange={setActiveTab}>
+          <TabList className="mailing-tabs">
+            <Tab value="compose" icon={<Send size={15} />}>Composer</Tab>
+            <Tab value="templates" icon={<FileText size={15} />}>Templates</Tab>
+            <Tab value="history" icon={<Clock size={15} />}>Historique</Tab>
+            <Tab value="config" icon={<Settings size={15} />}>Config SMTP</Tab>
+          </TabList>
 
         {/* Content */}
         <div className="mailing-content">
           {loading && <div className="mailing-loading">Chargement...</div>}
 
           {/* ═══ COMPOSER ═══ */}
-          {activeTab === 'compose' && !loading && (
+          <TabPanel value="compose">
+          {!loading && (
             <div className="mailing-compose">
               {!smtpConfigured && (
                 <div className="mailing-alert">
@@ -304,7 +305,7 @@ export default function MailingPanel({ isOpen, onClose }) {
               {/* Template selector */}
               <div className="mailing-form-group">
                 <label>Template (optionnel) :</label>
-                <select
+                <Select
                   value={selectedTemplate?.id || ''}
                   onChange={(e) => {
                     const tpl = templates.find(t => t.id === Number(e.target.value));
@@ -316,7 +317,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                   {templates.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               {/* Destinataires */}
@@ -324,14 +325,13 @@ export default function MailingPanel({ isOpen, onClose }) {
                 <label>Destinataires :</label>
                 <div className="mailing-recipients">
                   {selectedRecipients.map(email => (
-                    <span key={email} className="mailing-recipient-tag">
+                    <Tag key={email} color="primary" size="sm" closeable onClose={() => removeRecipient(email)}>
                       {email}
-                      <button onClick={() => removeRecipient(email)}>×</button>
-                    </span>
+                    </Tag>
                   ))}
                 </div>
                 <div className="mailing-add-recipient">
-                  <input
+                  <Input
                     type="email"
                     placeholder="Ajouter un email..."
                     value={manualEmail}
@@ -356,7 +356,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                   <div className="mailing-contacts-dropdown">
                     <div className="mailing-contacts-search">
                       <Search size={13} />
-                      <input
+                      <Input
                         placeholder="Rechercher un contact..."
                         value={contactSearch}
                         onChange={(e) => setContactSearch(e.target.value)}
@@ -383,7 +383,7 @@ export default function MailingPanel({ isOpen, onClose }) {
               {/* Sujet */}
               <div className="mailing-form-group">
                 <label>Sujet :</label>
-                <input
+                <Input
                   type="text"
                   value={composeSubject}
                   onChange={(e) => setComposeSubject(e.target.value)}
@@ -399,7 +399,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                     {Object.entries(composeVars).map(([key, val]) => (
                       <div key={key} className="mailing-var-field">
                         <span className="mailing-var-key">{`{{${key}}}`}</span>
-                        <input
+                        <Input
                           type="text"
                           value={val}
                           onChange={(e) => setComposeVars(prev => ({ ...prev, [key]: e.target.value }))}
@@ -414,7 +414,7 @@ export default function MailingPanel({ isOpen, onClose }) {
               {/* HTML Body */}
               <div className="mailing-form-group">
                 <label>Contenu HTML :</label>
-                <textarea
+                <Textarea
                   value={composeHtml}
                   onChange={(e) => setComposeHtml(e.target.value)}
                   rows={10}
@@ -461,9 +461,11 @@ export default function MailingPanel({ isOpen, onClose }) {
               )}
             </div>
           )}
+          </TabPanel>
 
           {/* ═══ TEMPLATES ═══ */}
-          {activeTab === 'templates' && !loading && (
+          <TabPanel value="templates">
+          {!loading && (
             <div className="mailing-templates">
               <div className="mailing-templates-header">
                 <h3>{templates.length} template{templates.length > 1 ? 's' : ''}</h3>
@@ -473,10 +475,7 @@ export default function MailingPanel({ isOpen, onClose }) {
               </div>
 
               {templates.length === 0 && !editingTemplate && (
-                <div className="mailing-empty">
-                  <FileText size={32} />
-                  <p>Aucun template. Créez-en un !</p>
-                </div>
+                <EmptyState icon={<FileText size={32} />} title="Aucun template. Créez-en un !" />
               )}
 
               {!editingTemplate && templates.map(tpl => (
@@ -489,12 +488,12 @@ export default function MailingPanel({ isOpen, onClose }) {
                     </span>
                   </div>
                   <div className="mailing-tpl-actions">
-                    <button onClick={() => openTemplateEditor(tpl)} title="Modifier"><Edit3 size={14} /></button>
-                    <button onClick={() => {
+                    <Tooltip content="Modifier"><button onClick={() => openTemplateEditor(tpl)}><Edit3 size={14} /></button></Tooltip>
+                    <Tooltip content="Utiliser"><button onClick={() => {
                       handleSelectTemplate(tpl);
                       setActiveTab('compose');
-                    }} title="Utiliser"><Send size={14} /></button>
-                    <button onClick={() => deleteTemplate(tpl.id)} title="Supprimer" className="danger"><Trash2 size={14} /></button>
+                    }}><Send size={14} /></button></Tooltip>
+                    <Tooltip content="Supprimer"><button onClick={() => deleteTemplate(tpl.id)} className="danger"><Trash2 size={14} /></button></Tooltip>
                   </div>
                 </div>
               ))}
@@ -506,21 +505,21 @@ export default function MailingPanel({ isOpen, onClose }) {
 
                   <div className="mailing-form-group">
                     <label>Nom :</label>
-                    <input value={tplName} onChange={e => setTplName(e.target.value)} placeholder="Nom du template" />
+                    <Input value={tplName} onChange={e => setTplName(e.target.value)} placeholder="Nom du template" />
                   </div>
 
                   <div className="mailing-form-group">
                     <label>Catégorie :</label>
-                    <select value={tplCategory} onChange={e => setTplCategory(e.target.value)}>
+                    <Select value={tplCategory} onChange={e => setTplCategory(e.target.value)}>
                       {TEMPLATE_CATEGORIES.map(c => (
                         <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
 
                   <div className="mailing-form-group">
                     <label>Sujet :</label>
-                    <input value={tplSubject} onChange={e => setTplSubject(e.target.value)} placeholder="Sujet de l'email" />
+                    <Input value={tplSubject} onChange={e => setTplSubject(e.target.value)} placeholder="Sujet de l'email" />
                   </div>
 
                   <div className="mailing-form-group">
@@ -541,7 +540,7 @@ export default function MailingPanel({ isOpen, onClose }) {
 
                   <div className="mailing-form-group">
                     <label>Contenu HTML :</label>
-                    <textarea
+                    <Textarea
                       value={tplHtml}
                       onChange={e => setTplHtml(e.target.value)}
                       rows={14}
@@ -559,9 +558,11 @@ export default function MailingPanel({ isOpen, onClose }) {
               )}
             </div>
           )}
+          </TabPanel>
 
           {/* ═══ HISTORIQUE ═══ */}
-          {activeTab === 'history' && !loading && (
+          <TabPanel value="history">
+          {!loading && (
             <div className="mailing-history">
               <div className="mailing-history-header">
                 <h3>{historyTotal} envoi{historyTotal > 1 ? 's' : ''}</h3>
@@ -571,10 +572,7 @@ export default function MailingPanel({ isOpen, onClose }) {
               </div>
 
               {history.length === 0 && (
-                <div className="mailing-empty">
-                  <Clock size={32} />
-                  <p>Aucun email envoyé.</p>
-                </div>
+                <EmptyState icon={<Clock size={32} />} title="Aucun email envoyé." />
               )}
 
               {history.map(h => (
@@ -600,16 +598,17 @@ export default function MailingPanel({ isOpen, onClose }) {
               ))}
             </div>
           )}
+          </TabPanel>
 
           {/* ═══ CONFIG SMTP ═══ */}
-          {activeTab === 'config' && !loading && (
+          <TabPanel value="config">
+          {!loading && (
             <div className="mailing-config">
               <h3>Configuration SMTP</h3>
 
               <div className="mailing-form-group">
                 <label className="mailing-toggle-label">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={configForm.enabled || false}
                     onChange={e => setConfigForm(prev => ({ ...prev, enabled: e.target.checked }))}
                   />
@@ -620,30 +619,29 @@ export default function MailingPanel({ isOpen, onClose }) {
               <div className="mailing-config-grid">
                 <div className="mailing-form-group">
                   <label>Hôte SMTP :</label>
-                  <input value={configForm.smtp_host || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_host: e.target.value }))} placeholder="smtp.example.com" />
+                  <Input value={configForm.smtp_host || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_host: e.target.value }))} placeholder="smtp.example.com" />
                 </div>
                 <div className="mailing-form-group">
                   <label>Port :</label>
-                  <input type="number" value={configForm.smtp_port || 587} onChange={e => setConfigForm(prev => ({ ...prev, smtp_port: Number(e.target.value) }))} />
+                  <Input type="number" value={configForm.smtp_port || 587} onChange={e => setConfigForm(prev => ({ ...prev, smtp_port: Number(e.target.value) }))} />
                 </div>
                 <div className="mailing-form-group">
                   <label>Utilisateur SMTP :</label>
-                  <input value={configForm.smtp_user || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_user: e.target.value }))} placeholder="user@example.com" />
+                  <Input value={configForm.smtp_user || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_user: e.target.value }))} placeholder="user@example.com" />
                 </div>
                 <div className="mailing-form-group">
                   <label>Mot de passe :</label>
-                  <input type="password" value={configForm.smtp_pass || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_pass: e.target.value }))} placeholder="••••••••" />
+                  <Input type="password" value={configForm.smtp_pass || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_pass: e.target.value }))} placeholder="••••••••" />
                 </div>
                 <div className="mailing-form-group">
                   <label>Nom expéditeur :</label>
-                  <input value={configForm.from_name || ''} onChange={e => setConfigForm(prev => ({ ...prev, from_name: e.target.value }))} placeholder="eM@g" />
+                  <Input value={configForm.from_name || ''} onChange={e => setConfigForm(prev => ({ ...prev, from_name: e.target.value }))} placeholder="eM@g" />
                 </div>
               </div>
 
               <div className="mailing-form-group">
                 <label className="mailing-toggle-label">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={configForm.smtp_secure || false}
                     onChange={e => setConfigForm(prev => ({ ...prev, smtp_secure: e.target.checked }))}
                   />
@@ -663,8 +661,7 @@ export default function MailingPanel({ isOpen, onClose }) {
               ].map(alert => (
                 <div key={alert.key} className="mailing-form-group">
                   <label className="mailing-toggle-label">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={configForm[alert.key] || false}
                       onChange={e => setConfigForm(prev => ({ ...prev, [alert.key]: e.target.checked }))}
                     />
@@ -690,8 +687,21 @@ export default function MailingPanel({ isOpen, onClose }) {
               )}
             </div>
           )}
+          </TabPanel>
         </div>
+        </Tabs>
       </div>
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }

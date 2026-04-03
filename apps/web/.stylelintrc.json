@@ -1,0 +1,33 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "comment-empty-line-before": null,
+    "rule-empty-line-before": null,
+    "no-descending-specificity": null,
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "property-no-vendor-prefix": true,
+    "alpha-value-notation": null,
+    "color-function-notation": null,
+    "color-function-alias-notation": null,
+
+    "color-named": "never",
+    "color-no-hex": true,
+    "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla"],
+
+    "declaration-property-value-disallowed-list": {
+      "z-index": ["/^\\d/"]
+    }
+  },
+
+  "overrides": [
+    {
+      "files": ["src/theme.css", "src/theme-*.css", "src/design/tokens.css"],
+      "rules": {
+        "color-no-hex": null,
+        "function-disallowed-list": null,
+        "declaration-property-value-disallowed-list": null
+      }
+    }
+  ]
+}

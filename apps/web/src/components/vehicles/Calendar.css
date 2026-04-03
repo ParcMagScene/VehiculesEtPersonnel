@@ -49,7 +49,7 @@
 .cal-nav-view-btn.active {
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%));
   color: var(--theme-text-inverse);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px var(--shadow-dropdown);
 }
 
 .cal-nav-date {
@@ -256,7 +256,7 @@
   letter-spacing: 0.05em;
   font-size: 0.85rem;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -279,7 +279,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--close-btn-border);
   color: var(--theme-text-inverse);
   font-size: 11px;
   font-weight: 700;
@@ -292,7 +292,7 @@
 }
 
 .vehicle-availability-badge.location {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
 }
 
 /* En-têtes de section véhicules */
@@ -304,7 +304,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -329,8 +329,8 @@
 }
 
 .section-toggle-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--glass-light);
+  border: 1px solid var(--glass);
   color: var(--theme-text-inverse);
   width: 24px;
   height: 24px;
@@ -345,7 +345,7 @@
 }
 
 .section-toggle-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--close-btn-hover-bg);
   transform: scale(1.05);
 }
 
@@ -358,7 +358,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -502,14 +502,14 @@
 .calendar-header-cell .week-number-small {
   font-size: 0.7rem;
   padding: 0.1rem 0.3rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border-radius: 0;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .calendar-header-cell .week-number-small:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-medium);
 }
 
 .calendar-subheader {
@@ -534,7 +534,7 @@
   padding: 0.5rem 0.5rem;
   font-weight: 600;
   text-align: center;
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid var(--glass-light);
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
@@ -573,7 +573,7 @@
   height: 2rem;
   position: static;
   left: auto;
-  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  border-right: 1px solid var(--close-btn-hover-bg);
 }
 
 .calendar-header-cell.clickable {
@@ -583,7 +583,7 @@
 
 .calendar-header-cell.clickable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px var(--shadow-xl);
   background: linear-gradient(135deg, var(--theme-purple-accent) 0%, var(--theme-accent) 100%);
 }
 
@@ -621,7 +621,7 @@
   align-items: center;
   min-height: 90px;
   height: auto;
-  z-index: 1;
+  z-index: var(--z-base);
   position: relative;
   transition: background-color 0.2s;
 }
@@ -652,7 +652,7 @@
   height: 45px;
   border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-sm);
   background: var(--theme-bg-tertiary);
   flex-shrink: 0;
   position: relative;
@@ -687,13 +687,13 @@
   top: -2px;
   right: -2px;
   font-size: 1.1rem;
-  z-index: 10;
+  z-index: var(--z-dropdown);
   width: 20px;
   height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 2px 4px var(--shadow-modal));
   animation: pulse-warning 2s ease-in-out infinite;
 }
 
@@ -736,7 +736,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  z-index: 10;
+  z-index: var(--z-dropdown);
   box-shadow: 0 2px 6px rgba(220, 38, 38, 0.5);
   animation: pulse-danger 1.5s ease-in-out infinite;
   cursor: help;
@@ -800,7 +800,7 @@
   position: relative;
   height: 80px;
   background-color: var(--theme-bg-card);
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .time-slot:hover:not(.reserved) {
@@ -810,16 +810,16 @@
 .time-slot.drag-selected {
   background-color: var(--theme-info-bg-strong) !important;
   border: 2px solid var(--theme-info) !important;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 /* Jour actuel - fond légèrement teinté, pas de bordure ni ombre */
 .time-slot.today-slot {
-  background-color: rgba(16, 185, 129, 0.06);
+  background-color: var(--success-tint-subtle);
 }
 
 .time-slot.today-slot:hover:not(.reserved) {
-  background-color: rgba(16, 185, 129, 0.12) !important;
+  background-color: var(--success-tint) !important;
 }
 
 .time-slot.reserved {
@@ -833,16 +833,16 @@
   min-height: 80px;
   display: block;
   position: relative;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), 
-              inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 4px var(--shadow-xl), 
+              inset 0 0 0 1px var(--shadow-modal);
   border-radius: 4px;
   transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .reservation.highlighted {
   box-shadow: 0 0 0 3px var(--theme-info), 
-              0 4px 12px rgba(59, 130, 246, 0.4),
-              inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+              0 4px 12px var(--primary-tint-bold),
+              inset 0 0 0 1px var(--shadow-modal);
   transform: scale(1.02);
   z-index: var(--z-dropdown);
 }
@@ -856,8 +856,8 @@
     45deg,
     transparent,
     transparent 10px,
-    rgba(0, 0, 0, 0.05) 10px,
-    rgba(0, 0, 0, 0.05) 20px
+    var(--shadow-xs) 10px,
+    var(--shadow-xs) 20px
   );
 }
 
@@ -911,7 +911,7 @@
   opacity: 0;
   transition: opacity 0.2s, width 0.2s;
   pointer-events: auto;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay-light);
   border-radius: 4px;
 }
 
@@ -930,7 +930,7 @@
 }
 
 .resize-handle:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--overlay-darker);
   width: 10px !important;
 }
 
@@ -980,7 +980,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  z-index: 1;
+  z-index: var(--z-base);
   padding: 0.5rem;
 }
 
@@ -1036,7 +1036,7 @@
   gap: 3px;
   pointer-events: auto;
   position: relative;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .reservation-affaire-text {
@@ -1079,7 +1079,7 @@
 
 /* Aperçu du redimensionnement */
 .time-slot.resize-preview {
-  background: rgba(59, 130, 246, 0.3) !important;
+  background: var(--primary-tint-strong) !important;
   border: 2px dashed var(--theme-info) !important;
   position: relative;
   z-index: 20;
@@ -1095,8 +1095,8 @@
   background: linear-gradient(
     135deg,
     transparent 40%,
-    rgba(59, 130, 246, 0.15) 40%,
-    rgba(59, 130, 246, 0.15) 60%,
+    var(--primary-tint-medium) 40%,
+    var(--primary-tint-medium) 60%,
     transparent 60%
   );
   background-size: 10px 10px;
@@ -1150,7 +1150,7 @@
   color: var(--theme-text-inverse);
   justify-self: center;
   align-self: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 3px var(--shadow-modal);
   transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
   pointer-events: auto;
   position: relative;
@@ -1160,7 +1160,7 @@
 .tournee-link-btn:hover {
   background: var(--theme-primary-dark);
   transform: scale(1.2);
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 2px 6px var(--accent-tint-heavy);
 }
 
 .tournee-link-btn:active {
@@ -1194,12 +1194,12 @@
   color: var(--theme-text-inverse);
   margin-left: 3px;
   flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px var(--shadow-xl);
   transition: background 0.15s, transform 0.1s;
 }
 
 .tournee-trip-btn:hover {
-  background: #047857;
+  background: var(--theme-success-text);
   transform: scale(1.2);
   box-shadow: 0 2px 6px rgba(5, 150, 105, 0.5);
 }
@@ -1218,7 +1218,7 @@
 }
 
 .tournee-trip-btn.combined:hover {
-  background: #6d28d9;
+  background: var(--theme-primary-dark);
   box-shadow: 0 2px 6px rgba(124, 58, 237, 0.5);
 }
 
@@ -1249,7 +1249,7 @@
   color: var(--theme-text-inverse);
   margin-left: 4px;
   vertical-align: middle;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px var(--shadow-xl);
   transition: background 0.15s, transform 0.1s;
   pointer-events: auto;
   position: relative;
@@ -1257,7 +1257,7 @@
 }
 
 .reservation-trip-btn:hover {
-  background: #047857;
+  background: var(--theme-success-text);
   transform: scale(1.2);
 }
 
@@ -1397,11 +1397,11 @@
   background: rgba(59, 130, 246, 0.2) !important;
   outline: 2px dashed var(--theme-info);
   outline-offset: -2px;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .time-slot.block-drag-preview.drag-conflict {
-  background: rgba(239, 68, 68, 0.2) !important;
+  background: var(--danger-tint) !important;
   outline: 2px dashed var(--theme-danger);
 }
 
@@ -1423,7 +1423,7 @@
 }
 
 [data-theme="dark"] .calendar-header-cell.period-cell {
-  background: linear-gradient(135deg, #4c1d95, #6d28d9);
+  background: linear-gradient(135deg, #4c1d95, var(--theme-primary-dark));
 }
 
 [data-theme="dark"] .calendar-header-cell.period-cell.weekend {
@@ -1431,7 +1431,7 @@
 }
 
 [data-theme="dark"] .calendar-header-cell.period-cell.today.today-left {
-  background: linear-gradient(135deg, var(--theme-success-text), #047857);
+  background: linear-gradient(135deg, var(--theme-success-text), var(--theme-success-text));
 }
 
 [data-theme="dark"] .vehicle-cell .vehicle-brand {
@@ -1447,7 +1447,7 @@
 }
 
 [data-theme="dark"] .reservation.maintenance-block.maintenance-status-scheduled {
-  background: rgba(59, 130, 246, 0.15);
+  background: var(--primary-tint-medium);
 }
 
 [data-theme="dark"] .reservation.maintenance-block.maintenance-status-completed {
@@ -1455,11 +1455,11 @@
 }
 
 [data-theme="dark"] .reservation.maintenance-block.maintenance-status-reported {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--theme-danger-border);
 }
 
 [data-theme="dark"] .reservation.maintenance-block.maintenance-status-pending {
-  background: rgba(139, 92, 246, 0.15);
+  background: var(--violet-tint);
 }
 
 [data-theme="dark"] .reservation.maintenance-block.maintenance-status-in_progress {
@@ -1472,7 +1472,7 @@
 }
 
 [data-theme="dark"] .reservation.maintenance-block.maintenance-conflict {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--theme-danger-border);
 }
 
 [data-theme="dark"] .reservation-affaire {

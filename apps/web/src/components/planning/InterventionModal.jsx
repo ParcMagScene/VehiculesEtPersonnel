@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, AlertTriangle, Calendar, CheckCircle, Clock } from 'lucide-react';
-import ConfirmDialog from '../ConfirmDialog';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Save, AlertTriangle, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select } from '@/design-system';
 import './InterventionModal.css';
 import { useToast } from '../../hooks/useToast';
 
@@ -237,21 +236,46 @@ const InterventionModal = ({
   const isTechnicalControl = formData.type === 'inspection' || formData.type === 'technical_inspection';
 
   return (
-    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
-      <div className="intervention-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div>
-            <h2>Éditer l'intervention</h2>
-            {vehicle && (
-              <span className="modal-header-subtitle">
-                {vehicle.name}{vehicle.kilometrage ? ` — ${Number(vehicle.kilometrage).toLocaleString('fr-FR')} km` : ''}
-              </span>
-            )}
-          </div>
-          <button className="close-button" onClick={handleSafeClose}>
-            <X size={24} />
-          </button>
+    <>
+    <ModalLayout
+      open
+      onClose={handleSafeClose}
+      title={
+        <div>
+          Éditer l'intervention
+          {vehicle && (
+            <span className="modal-header-subtitle">
+              {vehicle.name}{vehicle.kilometrage ? ` — ${Number(vehicle.kilometrage).toLocaleString('fr-FR')} km` : ''}
+            </span>
+          )}
         </div>
+      }
+      size="lg"
+      className="intervention-modal"
+      footer={
+        <>
+          {isAdmin && (
+            <Button variant="danger" onClick={handleDelete}>
+              Supprimer
+            </Button>
+          )}
+          <div className="right-actions">
+            <Button variant="secondary" onClick={handleReschedule}>
+              <Clock size={18} />
+              Reporter
+            </Button>
+            <Button variant="success" onClick={handleMarkCompleted}>
+              <CheckCircle size={18} />
+              Effectuée
+            </Button>
+            <Button variant="primary" type="submit" form="intervention-form">
+              <Save size={18} />
+              Enregistrer
+            </Button>
+          </div>
+        </>
+      }
+    >
 
         <form id="intervention-form" className="intervention-form" onSubmit={handleSubmit}>
           {deadlineWarning && (
@@ -261,8 +285,7 @@ const InterventionModal = ({
             </div>
           )}
 
-          <div className="form-group">
-            <label>Date de l'intervention *</label>
+          <FormField className="form-group" label="Date de l'intervention" required>
             <input
               ref={dateInputRef}
               type="date"
@@ -270,11 +293,10 @@ const InterventionModal = ({
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               required
             />
-          </div>
+          </FormField>
 
-          <div className="form-group">
-            <label>Type d'intervention *</label>
-            <select
+          <FormField className="form-group" label="Type d'intervention" required>
+            <Select
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               required
@@ -285,13 +307,12 @@ const InterventionModal = ({
                   {type.label}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
 
           {isTechnicalControl && (
-            <div className="form-group">
-              <label>Type de contrôle technique</label>
-              <select
+            <FormField className="form-group" label="Type de contrôle technique">
+              <Select
                 value={formData.technicalControlType || ''}
                 onChange={(e) => setFormData({ ...formData, technicalControlType: e.target.value || null })}
               >
@@ -301,7 +322,7 @@ const InterventionModal = ({
                     {type.label}
                   </option>
                 ))}
-              </select>
+              </Select>
               <small className="form-hint">
                 Sélectionnez le type de CT pour vérifier la deadline
               </small>
@@ -316,12 +337,11 @@ const InterventionModal = ({
                   </div>
                 ) : null;
               })()}
-            </div>
+            </FormField>
           )}
 
-          <div className="form-group">
-            <label>Statut *</label>
-            <select
+          <FormField className="form-group" label="Statut" required>
+            <Select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               required
@@ -332,78 +352,63 @@ const InterventionModal = ({
                   {status.label}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
 
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
+          <FormField className="form-group" label="Description">
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows="3"
               placeholder="Détails de l'intervention..."
             />
-          </div>
+          </FormField>
 
-          <div className="form-group">
-            <label>Garage / Prestataire</label>
-            <input
+          <FormField className="form-group" label="Garage / Prestataire">
+            <Input
               type="text"
               value={formData.garage}
               onChange={(e) => setFormData({ ...formData, garage: e.target.value })}
               placeholder="Nom du garage ou prestataire"
             />
-          </div>
+          </FormField>
 
-          <div className="form-group">
-            <label>Coût (€)</label>
-            <input
+          <FormField className="form-group" label="Coût (€)">
+            <Input
               type="number"
               step="0.01"
               value={formData.cost}
               onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
               placeholder="0.00"
             />
-          </div>
+          </FormField>
 
         </form>
-
-        <div className="form-actions">
-          {isAdmin && (
-            <button type="button" className="delete-button" onClick={handleDelete}>
-              Supprimer
-            </button>
-          )}
-          <div className="right-actions">
-            <button type="button" className="reschedule-button" onClick={handleReschedule}>
-              <Clock size={18} />
-              Reporter
-            </button>
-            <button type="button" className="completed-button" onClick={handleMarkCompleted}>
-              <CheckCircle size={18} />
-              Effectuée
-            </button>
-            <button type="submit" form="intervention-form" className="save-button">
-              <Save size={18} />
-              Enregistrer
-            </button>
-          </div>
-        </div>
-      </div>
-      {confirmDialog && (
-        <ConfirmDialog
-          message={confirmDialog.message}
-          onConfirm={confirmDialog.onConfirm}
-          onCancel={() => setConfirmDialog(null)}
-        />
-      )}
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-        />
-      )}
-    </div>
+    </ModalLayout>
+    <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm}
+        title="Confirmation"
+        variant="confirm"
+        confirmLabel="Oui"
+        cancelLabel="Non"
+      >
+        {confirmDialog?.message}
+      </Dialog>
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
+    </>
   );
 };
 

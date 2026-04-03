@@ -4,6 +4,7 @@ import {
   Calendar, ChevronDown, FileText, Send, Trash2, Filter, RefreshCw, X
 } from 'lucide-react';
 import api from '../../utils/api';
+import { Button, DetailRow, Textarea, InlineAlert} from '@/design-system';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import './MobileLeaves.css';
 
@@ -301,7 +302,7 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
 
   return (
     <div className="ml-form">
-      {error && <div className="ml-form-error"><AlertTriangle size={16} /> {error}</div>}
+      {error && <InlineAlert>{error}</InlineAlert>}
       
       {/* Type de congé */}
       <div className="ml-form-group">
@@ -357,7 +358,7 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
       {/* Motif */}
       <div className="ml-form-group">
         <label>Motif (optionnel)</label>
-        <textarea 
+        <Textarea 
           value={reason} 
           onChange={e => setReason(e.target.value)} 
           placeholder="Précisez le motif de votre demande..."
@@ -368,10 +369,10 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
 
       {/* Actions */}
       <div className="ml-form-actions">
-        <button className="ml-btn-secondary" onClick={onCancel}>Annuler</button>
-        <button className="ml-btn-primary" onClick={handleSubmit} disabled={submitting || !startDate || !endDate}>
+        <Button variant="ghost" onClick={onCancel}>Annuler</Button>
+        <Button variant="primary" onClick={handleSubmit} disabled={submitting || !startDate || !endDate}>
           {submitting ? 'Envoi...' : <><Send size={16} /> Envoyer</>}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -403,69 +404,53 @@ function LeaveDetail({ leave, isAdmin, onDecision, onCancel }) {
       </div>
 
       <div className="ml-detail-body">
-        <div className="ml-detail-row">
-          <span className="ml-detail-label">Demandeur</span>
-          <span className="ml-detail-value">{leave.person_name || leave.personName || '—'}</span>
-        </div>
-        <div className="ml-detail-row">
-          <span className="ml-detail-label">Du</span>
-          <span className="ml-detail-value">{formatDate(leave.start_date || leave.startDate)}</span>
-        </div>
-        <div className="ml-detail-row">
-          <span className="ml-detail-label">Au</span>
-          <span className="ml-detail-value">{formatDate(leave.end_date || leave.endDate)}</span>
-        </div>
-        <div className="ml-detail-row">
-          <span className="ml-detail-label">Jours ouvrés</span>
-          <span className="ml-detail-value">{leave.working_days || leave.workingDays || '—'} jour(s)</span>
-        </div>
+        <DetailRow className="ml-detail-row" label="Demandeur" value={leave.person_name || leave.personName || '—'} />
+        <DetailRow className="ml-detail-row" label="Du" value={formatDate(leave.start_date || leave.startDate)} />
+        <DetailRow className="ml-detail-row" label="Au" value={formatDate(leave.end_date || leave.endDate)} />
+        <DetailRow className="ml-detail-row" label="Jours ouvrés">
+          {leave.working_days || leave.workingDays || '—'} jour(s)
+        </DetailRow>
         {(leave.reason || leave.comment) && (
-          <div className="ml-detail-row">
-            <span className="ml-detail-label">Motif</span>
-            <span className="ml-detail-value">{leave.reason || leave.comment}</span>
-          </div>
+          <DetailRow className="ml-detail-row" label="Motif" value={leave.reason || leave.comment} />
         )}
         {leave.decision_comment && (
-          <div className="ml-detail-row">
-            <span className="ml-detail-label">Commentaire décision</span>
-            <span className="ml-detail-value">{leave.decision_comment}</span>
-          </div>
+          <DetailRow className="ml-detail-row" label="Commentaire décision" value={leave.decision_comment} />
         )}
       </div>
 
       {/* Actions admin */}
       {isAdmin && leave.status === 'pending' && (
         <div className="ml-detail-actions">
-          <button className="ml-btn-success" onClick={() => onDecision(leave.id, 'accepted')}>
+          <Button variant="success" onClick={() => onDecision(leave.id, 'accepted')}>
             <CheckCircle size={16} /> Accepter
-          </button>
-          <button className="ml-btn-danger" onClick={() => setShowReject(!showReject)}>
+          </Button>
+          <Button variant="danger" onClick={() => setShowReject(!showReject)}>
             <XCircle size={16} /> Refuser
-          </button>
+          </Button>
         </div>
       )}
 
       {showReject && (
         <div className="ml-reject-form">
-          <textarea 
+          <Textarea 
             value={rejectReason} 
             onChange={e => setRejectReason(e.target.value)}
             placeholder="Motif du refus..."
             className="ml-textarea"
             rows={2}
           />
-          <button className="ml-btn-danger" onClick={() => onDecision(leave.id, 'refused', rejectReason)}>
+          <Button variant="danger" onClick={() => onDecision(leave.id, 'refused', rejectReason)}>
             Confirmer le refus
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Annulation */}
       {leave.status === 'pending' && !isAdmin && (
         <div className="ml-detail-actions">
-          <button className="ml-btn-danger-outline" onClick={onCancel}>
+          <Button variant="danger" onClick={onCancel}>
             <Trash2 size={16} /> Annuler ma demande
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -480,7 +465,7 @@ function LeaveAdminList({ pendingLeaves, onDecision, onSelect, onRefresh }) {
         <div className="ml-empty">
           <CheckCircle size={40} />
           <p>Aucune demande en attente</p>
-          <button className="ml-btn-secondary" onClick={onRefresh}><RefreshCw size={16} /> Actualiser</button>
+          <Button variant="secondary" onClick={onRefresh}><RefreshCw size={16} /> Actualiser</Button>
         </div>
       </div>
     );

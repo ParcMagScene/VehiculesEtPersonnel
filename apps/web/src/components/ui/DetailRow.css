@@ -1,0 +1,26 @@
+.ui-detail-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.ui-detail-row__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-secondary, #888);
+}
+
+.ui-detail-row__label {
+  font-weight: 600;
+  color: var(--text-secondary, #888);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ui-detail-row__value {
+  flex: 1;
+  min-width: 0;
+}

@@ -5,6 +5,7 @@ import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../.
 import { useToast } from '../../hooks/useToast';
 import AddressAutocomplete from '../AddressAutocomplete';
 import './BLImportLocPrestaModal.css';
+import { Button, Input, ProgressBar, InlineAlert, Tooltip } from '@/design-system';
 
 // Seuls Location et Prestation sont autorisés ici
 const ALLOWED_TYPES = ['Location', 'Prestation'];
@@ -441,33 +442,28 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                     {getDocTypeLabel(docType)}
                   </span>
                 )}
-                <button className="bl-loc-file-remove" onClick={handleRemoveFile} title="Retirer">
+                <Tooltip content="Retirer"><button className="bl-loc-file-remove" onClick={handleRemoveFile}>
                   <X size={16} />
-                </button>
+                </button></Tooltip>
               </div>
 
               {/* Parsing progress */}
               {parsing && (
-                <div className="bl-loc-progress">
-                  <div className="bl-loc-progress-fill" style={{ width: '60%' }} />
-                </div>
+                <ProgressBar indeterminate color="warning" />
               )}
 
               {/* Warning si le doc n'est pas un BP */}
               {isWrongDocType && (
-                <div className="bl-loc-wrong-type-warning">
-                  <ShieldAlert size={16} />
-                  <span>
-                    Ce document est un <strong>{getDocTypeLabel(docType)}</strong>, pas un Bon de Préparation.
-                    Utilisez l'import BL Vente/Installation pour ce type de document.
-                  </span>
-                </div>
+                <InlineAlert variant="warning">
+                  Ce document est un <strong>{getDocTypeLabel(docType)}</strong>, pas un Bon de Préparation.
+                  Utilisez l'import BL Vente/Installation pour ce type de document.
+                </InlineAlert>
               )}
 
               {/* Association affaire */}
               <div className="bl-loc-field-section">
                 <label><Briefcase size={14} /> Associer à une affaire</label>
-                <input
+                <Input
                   type="text"
                   value={affaireId}
                   onChange={e => setAffaireId(e.target.value)}
@@ -533,7 +529,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                                 className="bl-loc-address-input"
                               />
                             ) : (
-                              <input
+                              <Input
                                 type="text"
                                 value={val}
                                 onChange={e => {
@@ -691,7 +687,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
             )}
           </div>
           <div className="bl-loc-footer-right">
-            <button className="bl-loc-btn-cancel" onClick={onClose}>Annuler</button>
+            <Button variant="ghost" onClick={onClose}>Annuler</Button>
             {parsedData && !isWrongDocType && (
               <button
                 className="bl-loc-btn-events"
@@ -703,14 +699,14 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                 {generating ? 'Génération...' : 'Importer + Événements'}
               </button>
             )}
-            <button
-              className="bl-loc-btn-save"
+            <Button
+              variant="primary"
               onClick={handleSave}
               disabled={!file || saving || generating || isWrongDocType || !affaireType}
             >
               <Save size={15} />
               {saving ? 'Import...' : 'Enregistrer'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

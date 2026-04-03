@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { Tag, Search, X, CheckSquare, Square, Printer, Download, ChevronDown, ChevronRight } from 'lucide-react';
+import { Tag, CheckSquare, Square, Printer, Download, ChevronDown, ChevronRight } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './EquipmentBatchLabels.css';
+import { Input, SearchBar } from '@/design-system';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -250,16 +251,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
     <div className="ebl-container">
       {/* Barre de sélection */}
       <div className="ebl-toolbar">
-        <div className="ebl-search">
-          <Search size={14} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher par référence, nom, UID..."
-          />
-          {search && <button className="ebl-search-clear" onClick={() => setSearch('')}><X size={12} /></button>}
-        </div>
+        <SearchBar value={search} onChange={setSearch} placeholder="Rechercher par référence, nom, UID..." size="sm" />
 
         <button className="ebl-select-all" onClick={selectAll}>
           {selectedIds.size === totalEquipment ? <CheckSquare size={14} /> : <Square size={14} />}

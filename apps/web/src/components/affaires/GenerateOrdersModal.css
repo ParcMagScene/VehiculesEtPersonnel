@@ -6,7 +6,7 @@
 }
 
 .gen-orders-modal {
-  background: var(--bg-primary, #fff);
+  background: var(--bg-primary, var(--theme-bg-card));
   border-radius: 16px;
   width: min(92vw, 680px);
   max-height: 85vh;
@@ -35,7 +35,7 @@
   justify-content: center;
   gap: 10px;
   padding: 48px 0;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--theme-text-muted));
 }
 
 .gen-orders-error {
@@ -44,15 +44,15 @@
   gap: 8px;
   padding: 14px 16px;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-danger, #dc3545) 10%, transparent);
-  color: var(--theme-danger, #dc3545);
+  background: color-mix(in srgb, var(--theme-danger, var(--theme-danger)) 10%, transparent);
+  color: var(--theme-danger, var(--theme-danger));
   font-weight: 500;
 }
 
 .gen-orders-empty {
   text-align: center;
   padding: 40px 20px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--theme-text-muted));
 }
 .gen-orders-empty svg {
   margin-bottom: 12px;
@@ -74,7 +74,7 @@
   gap: 12px;
   margin-bottom: 16px;
   font-size: .88rem;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--theme-text-muted));
 }
 .gen-orders-summary span {
   display: inline-flex;
@@ -97,13 +97,13 @@
 }
 
 .supplier-block {
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid var(--border-color, var(--theme-border));
   border-radius: 10px;
   overflow: hidden;
   transition: border-color .15s;
 }
 .supplier-block:hover {
-  border-color: var(--theme-color, #007bff);
+  border-color: var(--theme-color, var(--theme-info));
 }
 
 .supplier-header {
@@ -113,7 +113,7 @@
   padding: 12px 14px;
   cursor: pointer;
   user-select: none;
-  background: var(--bg-secondary, #f9f9f9);
+  background: var(--bg-secondary, var(--theme-bg-secondary));
   transition: background .15s;
 }
 .supplier-header:hover {
@@ -121,7 +121,7 @@
 }
 
 .supplier-expand {
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--theme-text-muted));
   flex-shrink: 0;
 }
 
@@ -135,17 +135,17 @@
 .supplier-name {
   font-weight: 600;
   font-size: .92rem;
-  color: var(--text-primary, #333);
+  color: var(--text-primary, var(--theme-text-body));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .supplier-count {
   font-size: .8rem;
-  color: var(--text-muted, #999);
+  color: var(--text-muted, var(--theme-text-muted));
   padding: 2px 8px;
   border-radius: 12px;
-  background: var(--bg-primary, #fff);
+  background: var(--bg-primary, var(--theme-bg-card));
   white-space: nowrap;
 }
 
@@ -153,9 +153,9 @@
 .supplier-action-select select {
   padding: 6px 28px 6px 10px;
   border-radius: var(--btn-radius, 8px);
-  border: 1px solid var(--border-color, #e0e0e0);
-  background: var(--bg-primary, #fff);
-  color: var(--text-primary, #333);
+  border: 1px solid var(--border-color, var(--theme-border));
+  background: var(--bg-primary, var(--theme-bg-card));
+  color: var(--text-primary, var(--theme-text-body));
   font-size: .82rem;
   cursor: pointer;
   appearance: none;
@@ -165,8 +165,8 @@
 }
 .supplier-action-select select:focus {
   outline: none;
-  border-color: var(--theme-color, #007bff);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-color, #007bff) 20%, transparent);
+  border-color: var(--theme-color, var(--theme-info));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-color, var(--theme-info)) 20%, transparent);
 }
 
 .supplier-new-badge {
@@ -177,8 +177,8 @@
   border-radius: 14px;
   font-size: .8rem;
   font-weight: 500;
-  color: var(--theme-color, #007bff);
-  background: color-mix(in srgb, var(--theme-color, #007bff) 10%, transparent);
+  color: var(--theme-color, var(--theme-info));
+  background: color-mix(in srgb, var(--theme-color, var(--theme-info)) 10%, transparent);
 }
 
 /* ── Tableau articles ── */
@@ -194,15 +194,15 @@
 .supplier-items-table thead th {
   text-align: left;
   padding: 6px 8px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--theme-text-muted));
   font-weight: 500;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  border-bottom: 1px solid var(--border-color, var(--theme-border));
   white-space: nowrap;
 }
 .supplier-items-table tbody td {
   padding: 5px 8px;
-  border-bottom: 1px solid var(--border-light, #f0f0f0);
-  color: var(--text-primary, #333);
+  border-bottom: 1px solid var(--border-light, var(--theme-bg-tertiary));
+  color: var(--text-primary, var(--theme-text-body));
 }
 .si-ref {
   font-family: monospace;
@@ -228,7 +228,7 @@
   margin-top: 16px;
   padding: 14px;
   border-radius: 10px;
-  background: var(--bg-secondary, #f9f9f9);
+  background: var(--bg-secondary, var(--theme-bg-secondary));
 }
 .gen-orders-results h4 {
   display: flex;
@@ -246,7 +246,7 @@
   font-size: .85rem;
 }
 .result-row.success { color: var(--theme-success, #28a745); }
-.result-row.error   { color: var(--theme-danger, #dc3545); }
+.result-row.error   { color: var(--theme-danger, var(--theme-danger)); }
 
 /* ── Footer ── */
 .gen-orders-footer {
@@ -254,8 +254,8 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-top: 1px solid var(--border-color, #e0e0e0);
-  background: var(--bg-secondary, #f9f9f9);
+  border-top: 1px solid var(--border-color, var(--theme-border));
+  background: var(--bg-secondary, var(--theme-bg-secondary));
 }
 
 /* ── Responsive ── */

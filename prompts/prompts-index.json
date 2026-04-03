@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Index centralisé de tous les prompts versionnés du projet eM@g",
+  "rules": {
+    "never_delete_version": true,
+    "always_update_latest": true,
+    "always_add_changelog_entry": true
+  },
+  "categories": {
+    "masters": "Prompts maîtres stables — workflows complets réutilisables",
+    "operations": "Prompts opérationnels sensibles — migrations, déploiements, synchronisation",
+    "design": "Prompts Design System — composants, thèmes, CSS",
+    "sync": "Prompts synchronisation dev ↔ prod",
+    "gui": "Prompts audit et génération d'interfaces",
+    "taxonomie": "Prompts taxonomie véhicules — marques, modèles, catégories"
+  },
+  "prompts": [
+    {
+      "name": "taxonomie",
+      "category": "taxonomie",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/taxonomie/taxonomie.v1.0.0.md"
+    },
+    {
+      "name": "fournisseurs_catalogue",
+      "category": "masters",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/masters/fournisseurs_catalogue.v1.0.0.md"
+    },
+    {
+      "name": "images_generiques",
+      "category": "masters",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/masters/images_generiques.v1.0.0.md"
+    },
+    {
+      "name": "design_system",
+      "category": "design",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/design/design_system.v1.0.0.md"
+    },
+    {
+      "name": "gui_conventions",
+      "category": "gui",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/gui/gui_conventions.v1.0.0.md"
+    },
+    {
+      "name": "sync_dev_prod",
+      "category": "sync",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/sync/sync_dev_prod.v1.0.0.md"
+    },
+    {
+      "name": "migrations",
+      "category": "operations",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/operations/migrations.v1.0.0.md"
+    },
+    {
+      "name": "refactors",
+      "category": "operations",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/operations/refactors.v1.0.0.md"
+    },
+    {
+      "name": "operations_sensibles",
+      "category": "operations",
+      "versions": ["1.0.0"],
+      "latest": "1.0.0",
+      "path": "prompts/operations/operations_sensibles.v1.0.0.md"
+    }
+  ]
+}

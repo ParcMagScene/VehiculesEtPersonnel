@@ -1,5 +1,6 @@
 import React from 'react';
 import { safeDate } from '../../utils/formatUtils';
+import { Table } from '@/design-system';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -173,7 +174,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
   <div class="sheet-section">
     <h2>👤 Historique des attributions (${assignments.length})</h2>
     ${assignments.length === 0 ? '<p class="sheet-empty">Aucune attribution enregistrée</p>' : `
-    <table>
+    <Table>
       <thead>
         <tr>
           <th>Personne</th>
@@ -193,13 +194,13 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
           <td>${esc(a.notes || '—')}</td>
         </tr>`).join('')}
       </tbody>
-    </table>`}
+    </Table>`}
   </div>
 
   <div class="sheet-section">
     <h2>🔧 Historique des interventions SAV (${tickets.length})</h2>
     ${tickets.length === 0 ? '<p class="sheet-empty">Aucune intervention enregistrée</p>' : `
-    <table>
+    <Table>
       <thead>
         <tr>
           <th>Titre</th>
@@ -227,7 +228,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
         </tr>`;
         }).join('')}
       </tbody>
-    </table>`}
+    </Table>`}
   </div>
 
   <div class="sheet-footer">

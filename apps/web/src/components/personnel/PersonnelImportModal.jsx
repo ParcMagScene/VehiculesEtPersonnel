@@ -6,9 +6,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   Upload, FileText, AlertTriangle, CheckCircle, X,
-  ChevronDown, ChevronRight, Eye, Download, Loader,
+  ChevronDown, ChevronRight, Eye, Download,
   Users, UserCheck, UserPlus, AlertCircle, RefreshCw,
 } from 'lucide-react';
+import { Button, ModalLayout, Table, Spinner, Tag, InlineAlert, Accordion } from '@/design-system';
 import api from '../../utils/api';
 import './PersonnelImportModal.css';
 
@@ -73,7 +74,6 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showCollisions, setShowCollisions] = useState(false);
   const [filterAction, setFilterAction] = useState('all'); // all | create | update | conflict
 
   // Stats par type dans le CSV
@@ -160,19 +160,40 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
   }, [preview, filterAction]);
 
   return (
-    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="eq-modal pi-import-modal">
-        <div className="eq-modal-header">
-          <h3><Upload size={18} /> Import CSV Personnel</h3>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-
-        <div className="eq-modal-body pi-import-body">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Import CSV Personnel"
+      icon={<Upload size={18} />}
+      size="lg"
+      className="pi-import-modal"
+      bodyClassName="pi-import-body"
+      footer={<>
+        {step === 'upload' && (
+          <Button variant="ghost" onClick={onClose}>Fermer</Button>
+        )}
+        {step === 'preview' && (
+          <>
+            <Button variant="ghost" onClick={() => { setStep('upload'); setCsvData(null); setFile(null); setPreview(null); setFilterAction('all'); }}>
+              ← Retour
+            </Button>
+            {preview && (
+              <Button variant="primary" onClick={handleImport} disabled={loading}>
+                <Download size={14} /> Importer {preview.toCreate + preview.toUpdate} personnes
+                {preview.conflicts > 0 && ` (${preview.conflicts} conflits ignorés)`}
+              </Button>
+            )}
+          </>
+        )}
+        {step === 'done' && (
+          <Button variant="primary" onClick={() => { onImportDone(); onClose(); }}>
+            <CheckCircle size={14} /> Terminé
+          </Button>
+        )}
+      </>}
+    >
           {error && (
-            <div className="eq-import-error">
-              <AlertTriangle size={16} /> {error}
-              <button onClick={() => setError(null)}><X size={14} /></button>
-            </div>
+            <InlineAlert dismissible onDismiss={() => setError(null)}>{error}</InlineAlert>
           )}
 
           {/* Étape 1 : Upload */}
@@ -194,9 +215,9 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
                   accept=".csv,text/csv"
                   onChange={handleFileSelect}
                 />
-                <button className="eq-btn-primary" onClick={() => document.getElementById('personnel-csv-file-input').click()}>
+                <Button variant="primary" onClick={() => document.getElementById('personnel-csv-file-input').click()}>
                   <Upload size={14} /> Choisir un fichier
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -222,7 +243,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
               <div className="eq-import-section">
                 <h4><Eye size={14} /> Aperçu des données (10 premières lignes)</h4>
                 <div className="eq-import-table-wrap">
-                  <table className="eq-import-table">
+                  <Table className="eq-import-table">
                     <thead>
                       <tr>
                         <th>#</th>
@@ -245,11 +266,11 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
                           <td>{row.cp}</td>
                           <td>{row.ville}</td>
                           <td>{row.portable}</td>
-                          <td><span className={`pi-type-tag pi-type-${(row.type_csv || '').toLowerCase().replace(/[^a-z]/g, '')}`}>{row.type_csv}</span></td>
+                          <td><Tag color="neutral" size="sm">{row.type_csv}</Tag></td>
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </Table>
                 </div>
                 {csvData.rows.length > 10 && (
                   <p className="eq-import-more">... et {csvData.rows.length - 10} lignes supplémentaires</p>
@@ -302,13 +323,9 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
 
                   {/* Détail des collisions */}
                   <div className="pi-collision-detail">
-                    <div className="pi-collision-header" onClick={() => setShowCollisions(!showCollisions)}>
-                      {showCollisions ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      <span>Détail ({filteredAnalysis.length} entrées)</span>
-                    </div>
-                    {showCollisions && (
+                    <Accordion title={`Détail (${filteredAnalysis.length} entrées)`}>
                       <div className="pi-collision-list">
-                        <table className="eq-import-table">
+                        <Table className="eq-import-table">
                           <thead>
                             <tr>
                               <th>Action</th>
@@ -323,16 +340,16 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
                             {filteredAnalysis.slice(0, 50).map((entry, i) => (
                               <tr key={i} className={`pi-row-${entry.action}`}>
                                 <td>
-                                  <span className={`pi-action-badge ${entry.action}`}>
+                                  <Tag color={entry.action === 'create' ? 'success' : entry.action === 'update' ? 'primary' : 'danger'} size="sm">
                                     {entry.action === 'create' && <><UserPlus size={12} /> Créer</>}
                                     {entry.action === 'update' && <><RefreshCw size={12} /> MAJ</>}
                                     {entry.action === 'conflict' && <><AlertTriangle size={12} /> Conflit</>}
-                                  </span>
+                                  </Tag>
                                 </td>
                                 <td><code>{entry.code_libre}</code></td>
                                 <td className="eq-import-name-cell">{entry.nom}</td>
                                 <td>{entry.prenom}</td>
-                                <td><span className={`pi-type-tag pi-type-${(entry.type_csv || '').toLowerCase().replace(/[^a-z]/g, '')}`}>{entry.type_csv}</span></td>
+                                <td><Tag color="neutral" size="sm">{entry.type_csv}</Tag></td>
                                 <td>
                                   {entry.collision ? (
                                     <span className="pi-collision-match">
@@ -344,12 +361,12 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
                               </tr>
                             ))}
                           </tbody>
-                        </table>
+                        </Table>
                         {filteredAnalysis.length > 50 && (
                           <p className="eq-import-more">... et {filteredAnalysis.length - 50} entrées supplémentaires</p>
                         )}
                       </div>
-                    )}
+                    </Accordion>
                   </div>
                 </div>
               )}
@@ -357,9 +374,9 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
               {/* Bouton Analyser si preview pas encore faite */}
               {!preview && (
                 <div className="pi-analyze-cta">
-                  <button className="eq-btn-primary" onClick={handlePreview} disabled={loading}>
-                    {loading ? <><Loader size={14} className="eq-spinner" /> Analyse...</> : <><AlertCircle size={14} /> Analyser les collisions</>}
-                  </button>
+                  <Button variant="primary" onClick={handlePreview} disabled={loading}>
+                    {loading ? <><Spinner size={14} /> Analyse...</> : <><AlertCircle size={14} /> Analyser les collisions</>}
+                  </Button>
                   <p className="pi-analyze-hint">Vérifie les doublons avant l'import</p>
                 </div>
               )}
@@ -369,7 +386,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
           {/* Étape 3 : Import en cours */}
           {step === 'importing' && (
             <div className="eq-import-progress">
-              <Loader size={48} className="eq-spinner" />
+              <Spinner size="xl" />
               <h4>Import en cours...</h4>
               <p>Création et mise à jour des fiches personnel...</p>
             </div>
@@ -398,33 +415,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
               </div>
             </div>
           )}
-        </div>
-
-        <div className="eq-modal-footer">
-          {step === 'upload' && (
-            <button className="eq-btn-cancel" onClick={onClose}>Fermer</button>
-          )}
-          {step === 'preview' && (
-            <>
-              <button className="eq-btn-cancel" onClick={() => { setStep('upload'); setCsvData(null); setFile(null); setPreview(null); setFilterAction('all'); }}>
-                ← Retour
-              </button>
-              {preview && (
-                <button className="eq-btn-save" onClick={handleImport} disabled={loading}>
-                  <Download size={14} /> Importer {preview.toCreate + preview.toUpdate} personnes
-                  {preview.conflicts > 0 && ` (${preview.conflicts} conflits ignorés)`}
-                </button>
-              )}
-            </>
-          )}
-          {step === 'done' && (
-            <button className="eq-btn-save" onClick={() => { onImportDone(); onClose(); }}>
-              <CheckCircle size={14} /> Terminé
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 };
 

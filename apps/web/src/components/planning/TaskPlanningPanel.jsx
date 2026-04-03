@@ -2556,19 +2556,17 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
       )}
 
-      {confirmDialog && (
-        <Dialog
-          open
-          onClose={() => setConfirmDialog(null)}
-          onConfirm={confirmDialog.onConfirm}
-          title={confirmDialog.title || 'Confirmation'}
-          variant={confirmDialog.variant || 'confirm'}
-          confirmLabel={confirmDialog.confirmLabel || 'Oui'}
-          cancelLabel={confirmDialog.cancelLabel || 'Non'}
-        >
-          {confirmDialog.message}
-        </Dialog>
-      )}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
+        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
+      >
+        {confirmDialog?.message}
+      </Dialog>
       {showPdfExport && (
         <Suspense fallback={null}>
           <TaskPDFExportModal

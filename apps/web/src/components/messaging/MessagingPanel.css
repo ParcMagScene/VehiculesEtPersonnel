@@ -10,7 +10,7 @@
   height: 100vh;
   height: 100dvh;
   background: var(--theme-bg-card);
-  box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+  box-shadow: -4px 0 24px var(--shadow-dropdown);
   z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
@@ -43,7 +43,7 @@
 }
 
 .msg-header-btn {
-  background: rgba(255,255,255,0.2);
+  background: var(--glass-light);
   border: none;
   color: var(--theme-text-inverse);
   width: 32px;
@@ -57,7 +57,7 @@
 }
 
 .msg-header-btn:hover {
-  background: rgba(255,255,255,0.3);
+  background: var(--close-btn-hover-bg);
 }
 
 .msg-header-actions {
@@ -272,7 +272,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: rgba(255,255,255,0.15);
+  background: var(--close-btn-bg);
   border-radius: 8px;
   margin-top: 4px;
   cursor: pointer;
@@ -282,7 +282,7 @@
 }
 
 .msg-bubble-wrapper.received .msg-attachment {
-  background: rgba(0,0,0,0.05);
+  background: var(--shadow-xs);
 }
 
 .msg-attachment-name {
@@ -476,7 +476,7 @@
 .msg-new-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.3);
+  background: var(--shadow-modal);
   z-index: 2100;
   display: flex;
   align-items: center;
@@ -489,7 +489,7 @@
   padding: 24px;
   width: 340px;
   max-width: 90vw;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 30px var(--shadow-xl);
 }
 
 .msg-new-modal h4 {
@@ -573,7 +573,7 @@
 .messaging-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.1);
+  background: var(--shadow-sm);
   z-index: 1999;
 }
 

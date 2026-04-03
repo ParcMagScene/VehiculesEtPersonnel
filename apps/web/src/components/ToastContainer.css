@@ -24,7 +24,7 @@
   font-weight: 500;
   pointer-events: auto;
   cursor: default;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 20px var(--shadow-xl);
   animation: toast-enter 0.35s cubic-bezier(0.22,1,0.36,1);
   transition: opacity 0.3s, transform 0.3s;
 }
@@ -57,7 +57,7 @@
   flex-shrink: 0;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.6);
+  color: var(--glass-strong);
   cursor: pointer;
   padding: 2px;
   line-height: 1;

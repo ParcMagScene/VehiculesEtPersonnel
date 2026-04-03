@@ -42,7 +42,7 @@
   font-size: 0.75rem;
   font-weight: 500;
   background: var(--theme-warning)20;
-  color: #fb923c;
+  color: var(--theme-warning);
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
 }
@@ -145,15 +145,15 @@
   border: 1px solid var(--theme-border);
   border-radius: 6px;
   background: transparent;
-  color: var(--theme-text-secondary, #94a3b8);
+  color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .depot-edit-btn:hover {
-  background: var(--theme-info, #3b82f6)20;
-  border-color: var(--theme-info, #3b82f6);
-  color: #60a5fa;
+  background: var(--theme-info, var(--theme-info))20;
+  border-color: var(--theme-info, var(--theme-info));
+  color: var(--theme-info);
 }
 
 /* Zoom controls */
@@ -221,7 +221,7 @@
   padding: 0;
   min-width: 220px;
   max-width: 280px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px var(--overlay-light);
   z-index: var(--z-dropdown);
   pointer-events: auto;
   animation: tooltip-in 0.15s ease-out;

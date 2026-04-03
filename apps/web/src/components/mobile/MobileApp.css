@@ -18,7 +18,7 @@
   position: sticky;
   top: 0;
   z-index: var(--z-dropdown);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-sm);
 }
 
 .mobile-header h1 {
@@ -35,7 +35,7 @@
 }
 
 .menu-toggle {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border: none;
   color: var(--theme-text-inverse);
   padding: 0.5rem;
@@ -54,7 +54,7 @@
 
 .header-msg-btn {
   position: relative;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border: none;
   color: var(--theme-text-inverse);
   padding: 6px;
@@ -67,15 +67,15 @@
 }
 
 .header-msg-btn:active {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-medium);
 }
 
 .header-msg-badge {
   position: absolute;
   top: -4px;
   right: -4px;
-  background: #ef4444;
-  color: #fff;
+  background: var(--theme-danger);
+  color: var(--theme-bg-card);
   font-size: 10px;
   font-weight: 700;
   min-width: 16px;
@@ -84,13 +84,13 @@
   text-align: center;
   border-radius: 8px;
   padding: 0 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 3px var(--shadow-modal);
 }
 
 .user-initial {
   width: 32px;
   height: 32px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--close-btn-hover-bg);
   border: none;
   color: inherit;
   border-radius: 50%;
@@ -108,8 +108,8 @@
 .mobile-sheet-overlay {
   position: fixed;
   inset: 0;
-  z-index: 500;
-  background: rgba(0, 0, 0, 0.45);
+  z-index: var(--z-overlay);
+  background: var(--overlay-medium);
   display: flex;
   align-items: flex-end;
   animation: sheet-fade-in 0.2s ease;
@@ -157,7 +157,7 @@
   width: 44px;
   height: 44px;
   background: var(--theme-gradient);
-  color: #fff;
+  color: var(--theme-bg-card);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -205,7 +205,7 @@
 }
 
 .mobile-sheet-actions button.danger {
-  color: #dc2626;
+  color: var(--theme-danger-dark);
   font-weight: 500;
 }
 
@@ -283,7 +283,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 200;
+  z-index: var(--z-sticky);
   pointer-events: none;
 }
 
@@ -318,7 +318,7 @@
   transition: transform 0.3s;
   display: flex;
   flex-direction: column;
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 4px 0 12px var(--shadow-sm);
 }
 
 .mobile-menu.open .menu-content {
@@ -337,7 +337,7 @@
 .menu-avatar {
   width: 48px;
   height: 48px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--close-btn-hover-bg);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -486,7 +486,7 @@
   bottom: 20px;
   left: 16px;
   right: 16px;
-  background: linear-gradient(135deg, var(--theme-purple-accent), #6d28d9);
+  background: linear-gradient(135deg, var(--theme-purple-accent), var(--theme-primary-dark));
   color: var(--theme-text-inverse);
   padding: 14px 18px;
   border-radius: 12px;
@@ -917,7 +917,7 @@
 
 .menu-theme-mode-btn.active {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-primary);
 }
 
@@ -960,7 +960,7 @@
   display: flex;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid rgba(0,0,0,0.1);
+  border: 1px solid var(--shadow-sm);
 }
 
 /* ═══════════════════════════════════════════════

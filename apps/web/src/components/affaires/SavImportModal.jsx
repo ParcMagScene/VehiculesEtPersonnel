@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle, X, Eye, Download, Loader, Link2, Search, AlertCircle as AlertInfo } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, CheckCircle, X, Eye, Download, Link2, Search, AlertCircle as AlertInfo } from 'lucide-react';
+import { Button, ModalLayout, Input, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
 import '../equipment/EquipmentImportModal.css'; // réutilise le même CSS
 
@@ -81,7 +82,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
   const [manualLinks, setManualLinks] = useState({}); // { rowIndex: equipmentId }
   const [linkSearch, setLinkSearch] = useState('');
   const [linkingIndex, setLinkingIndex] = useState(null); // index de l'intervention en cours de liaison
-  const [skipDuplicates, setSkipDuplicates] = useState(true); // ignorer doublons par défaut
+  const [duplicateAction, setDuplicateAction] = useState('update'); // 'update' | 'skip' | 'create'
 
   const handleFileSelect = useCallback((e) => {
     const f = e.target.files[0];
@@ -121,7 +122,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
     try {
       setLoading(true);
       setStep('importing');
-      const result = await api.importSavTicketsCsv(csvData.rows, 'import', Object.keys(manualLinks).length > 0 ? manualLinks : null, skipDuplicates);
+      const result = await api.importSavTicketsCsv(csvData.rows, 'import', Object.keys(manualLinks).length > 0 ? manualLinks : null, duplicateAction === 'skip', duplicateAction === 'update');
       setResult(result);
       setStep('done');
     } catch (err) {
@@ -150,19 +151,38 @@ const SavImportModal = ({ onClose, onImportDone }) => {
   }, [preview, manualLinks]);
 
   return (
-    <div className="eq-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="eq-modal eq-import-modal" style={{ maxWidth: 800 }}>
-        <div className="eq-modal-header">
-          <h3><Upload size={18} /> Import Interventions SAV</h3>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-
-        <div className="eq-modal-body eq-import-body">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title="Import Interventions SAV"
+      icon={<Upload size={18} />}
+      size="xl"
+      className="eq-import-modal"
+      bodyClassName="eq-import-body"
+      footer={<>
+        {step === 'upload' && (
+          <Button variant="ghost" onClick={onClose}>Fermer</Button>
+        )}
+        {step === 'preview' && (
+          <>
+            <Button variant="ghost" onClick={() => { setStep('upload'); setCsvData(null); setPreview(null); setManualLinks({}); }}>
+              ← Retour
+            </Button>
+            <Button variant="primary" onClick={handleImport} disabled={loading}>
+              <Download size={14} /> Importer {duplicateAction === 'skip' && preview?.duplicatesCount > 0 ? (preview.totalRows - preview.duplicatesCount) : preview?.totalRows} interventions
+              {duplicateAction === 'update' && preview?.duplicatesCount > 0 ? ` (+ ${preview.duplicatesCount} mises à jour)` : ''}
+            </Button>
+          </>
+        )}
+        {step === 'done' && (
+          <Button variant="primary" onClick={() => { onImportDone(); onClose(); }}>
+            <CheckCircle size={14} /> Terminé
+          </Button>
+        )}
+      </>}
+    >
           {error && (
-            <div className="eq-import-error">
-              <AlertTriangle size={16} /> {error}
-              <button onClick={() => setError(null)}><X size={14} /></button>
-            </div>
+            <InlineAlert dismissible onDismiss={() => setError(null)}>{error}</InlineAlert>
           )}
 
           {/* Étape 1 : Upload */}
@@ -175,16 +195,16 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                 <p className="eq-import-hint">Format Locmat : CSV séparé par <code>;</code></p>
                 <p className="eq-import-hint">Colonnes : Intervention, Code Article, Nom Article, N° de série, Début, Fin, Coût, Statut</p>
                 <input id="sav-csv-file-input" type="file" accept=".csv,text/csv" onChange={handleFileSelect} />
-                <button className="eq-btn-primary" onClick={() => document.getElementById('sav-csv-file-input').click()}>
+                <Button variant="primary" onClick={() => document.getElementById('sav-csv-file-input').click()}>
                   <Upload size={14} /> Choisir un fichier
-                </button>
+                </Button>
               </div>
             </div>
           )}
 
           {step === 'upload' && loading && (
             <div className="eq-import-progress">
-              <Loader size={48} className="eq-spinner" />
+              <Spinner size="xl" />
               <h4>Analyse en cours...</h4>
             </div>
           )}
@@ -221,14 +241,23 @@ const SavImportModal = ({ onClose, onImportDone }) => {
               {/* Option doublons */}
               {preview.duplicatesCount > 0 && (
                 <div className="eq-import-section" style={{ padding: '10px 14px', background: 'var(--theme-danger-bg)', borderRadius: 10, border: '1px solid var(--theme-danger-border, #fecaca)' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--theme-danger-text)' }}>
-                    <input type="checkbox" checked={skipDuplicates} onChange={(e) => setSkipDuplicates(e.target.checked)} />
-                    Ignorer les {preview.duplicatesCount} doublon(s) déjà présents en base
-                  </label>
-                  <p style={{ fontSize: 11, color: 'var(--theme-danger-text)', margin: '4px 0 0 26px' }}>
-                    {preview.duplicatesCount} intervention(s) existent déjà avec le même N° d’intervention.
-                    {skipDuplicates ? ' Elles seront ignorées.' : ' Elles seront importées en doublon.'}
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--theme-danger-text)', margin: '0 0 8px' }}>
+                    🔁 {preview.duplicatesCount} doublon(s) détecté(s) (même N° d’intervention)
                   </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--theme-danger-text)' }}>
+                      <input type="radio" name="dup-action" checked={duplicateAction === 'update'} onChange={() => setDuplicateAction('update')} />
+                      Mettre à jour les tickets existants (statut → en cours, coût, lien équipement)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--theme-danger-text)' }}>
+                      <input type="radio" name="dup-action" checked={duplicateAction === 'skip'} onChange={() => setDuplicateAction('skip')} />
+                      Ignorer les doublons
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--theme-danger-text)' }}>
+                      <input type="radio" name="dup-action" checked={duplicateAction === 'create'} onChange={() => setDuplicateAction('create')} />
+                      Créer quand même (doublons)
+                    </label>
+                  </div>
                 </div>
               )}
 
@@ -251,7 +280,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
               <div className="eq-import-section">
                 <h4><Eye size={14} /> Aperçu (10 premières lignes)</h4>
                 <div className="eq-import-table-wrap">
-                  <table className="eq-import-table">
+                  <Table className="eq-import-table">
                     <thead>
                       <tr>
                         <th>Lié</th>
@@ -259,6 +288,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                         <th>Code</th>
                         <th>Article</th>
                         <th>N° Série</th>
+                        <th>UID EMAG</th>
                         <th>Début</th>
                         <th>Fin</th>
                         <th>Coût</th>
@@ -272,7 +302,8 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                           <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{row.intervention} {row.isDuplicate && <span style={{ color: '#ef4444', fontSize: 10, fontWeight: 700 }}>🔁</span>}</td>
                           <td>{row.code_article}</td>
                           <td className="eq-import-name-cell">{row.nom_article}</td>
-                          <td style={{ fontSize: 11 }}>{row.serial}</td>
+                          <td style={{ fontSize: 11 }}>{row.parsedSerial || row.serial}</td>
+                          <td style={{ fontSize: 11, color: row.parsedUid ? '#3b82f6' : 'var(--theme-text-muted)', fontWeight: row.parsedUid ? 600 : 400 }}>{row.parsedUid || '—'}</td>
                           <td>{formatDate(row.startDate)}</td>
                           <td>{formatDate(row.endDate)}</td>
                           <td>{row.cost > 0 ? `${row.cost.toFixed(2)} €` : '—'}</td>
@@ -284,7 +315,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </Table>
                 </div>
               </div>
 
@@ -298,7 +329,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                     Ces interventions seront importées mais non liées à un équipement. Vous pouvez les lier manuellement ci-dessous ou plus tard depuis l'onglet SAV.
                   </p>
                   <div className="eq-import-table-wrap" style={{ maxHeight: 300 }}>
-                    <table className="eq-import-table">
+                    <Table className="eq-import-table">
                       <thead>
                         <tr>
                           <th>N° Intervention</th>
@@ -329,20 +360,21 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                                     ><X size={12} /></button>
                                   </div>
                                 ) : (
-                                  <button
-                                    className="eq-btn-sm"
+                                  <Button
+                                    variant="secondary"
+                                    size="xs"
                                     style={{ fontSize: 11, padding: '3px 8px' }}
                                     onClick={() => { setLinkingIndex(item.index); setLinkSearch(''); }}
                                   >
                                     <Link2 size={11} /> Lier
-                                  </button>
+                                  </Button>
                                 )}
                               </td>
                             </tr>
                           );
                         })}
                       </tbody>
-                    </table>
+                    </Table>
                   </div>
                 </div>
               )}
@@ -366,7 +398,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                     })()}
                     <div style={{ position: 'relative', marginBottom: 12 }}>
                       <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--theme-text-muted)' }} />
-                      <input
+                      <Input
                         type="text"
                         value={linkSearch}
                         onChange={(e) => setLinkSearch(e.target.value)}
@@ -409,7 +441,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
           {/* Étape 3 : Import en cours */}
           {step === 'importing' && (
             <div className="eq-import-progress">
-              <Loader size={48} className="eq-spinner" />
+              <Spinner size="xl" />
               <h4>Import en cours...</h4>
               <p>Création des tickets SAV et liaison avec les équipements...</p>
             </div>
@@ -435,6 +467,12 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                     <span>⚠️ Non liées (à traiter)</span>
                   </div>
                 )}
+                {result.updatedDuplicates > 0 && (
+                  <div className="eq-import-result-stat">
+                    <span className="eq-import-result-value" style={{ color: '#3b82f6' }}>{result.updatedDuplicates}</span>
+                    <span>🔄 Tickets mis à jour</span>
+                  </div>
+                )}
                 {result.skippedDuplicates > 0 && (
                   <div className="eq-import-result-stat">
                     <span className="eq-import-result-value" style={{ color: 'var(--theme-text-gray)' }}>{result.skippedDuplicates}</span>
@@ -449,30 +487,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
               )}
             </div>
           )}
-        </div>
-
-        <div className="eq-modal-footer">
-          {step === 'upload' && (
-            <button className="eq-btn-cancel" onClick={onClose}>Fermer</button>
-          )}
-          {step === 'preview' && (
-            <>
-              <button className="eq-btn-cancel" onClick={() => { setStep('upload'); setCsvData(null); setPreview(null); setManualLinks({}); }}>
-                ← Retour
-              </button>
-              <button className="eq-btn-save" onClick={handleImport} disabled={loading}>
-                <Download size={14} /> Importer {skipDuplicates && preview?.duplicatesCount > 0 ? (preview.totalRows - preview.duplicatesCount) : preview?.totalRows} interventions
-              </button>
-            </>
-          )}
-          {step === 'done' && (
-            <button className="eq-btn-save" onClick={() => { onImportDone(); onClose(); }}>
-              <CheckCircle size={14} /> Terminé
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 };
 

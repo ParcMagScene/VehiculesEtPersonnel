@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, MessageSquare, Send, Paperclip, ArrowLeft, Plus, File, Image, Download, Users, Smile } from 'lucide-react';
 import api, { getApiUrl } from '../../utils/api';
+import { Button, Textarea, EmptyState, Tooltip } from '@/design-system';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './MessagingPanel.css';
@@ -236,12 +237,16 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
         <div className="msg-header">
           <h3><MessageSquare size={18} /> Messages</h3>
           <div className="msg-header-actions">
-            <button className="msg-header-btn" onClick={openNewConvModal} title="Nouveau message">
-              <Plus size={16} />
-            </button>
-            <button className="msg-header-btn" onClick={onClose} title="Fermer">
-              <X size={16} />
-            </button>
+            <Tooltip content="Nouveau message">
+              <button className="msg-header-btn" onClick={openNewConvModal}>
+                <Plus size={16} />
+              </button>
+            </Tooltip>
+            <Tooltip content="Fermer">
+              <button className="msg-header-btn" onClick={onClose}>
+                <X size={16} />
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -249,11 +254,11 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
           /* ═══ Liste des conversations ═══ */
           <div className="msg-conversation-list">
             {conversations.length === 0 ? (
-              <div className="msg-empty">
-                <MessageSquare size={40} className="msg-empty-icon" />
-                <p>Aucune conversation</p>
-                <p>Cliquez sur + pour démarrer</p>
-              </div>
+              <EmptyState
+                icon={<MessageSquare size={40} />}
+                title="Aucune conversation"
+                description="Cliquez sur + pour démarrer"
+              />
             ) : (
               conversations.map(conv => (
                 <div
@@ -345,13 +350,17 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
             </div>
 
             <div className="msg-input-area">
-              <button className="msg-attach-btn" onClick={() => fileInputRef.current?.click()} title="Joindre un fichier">
-                <Paperclip size={18} />
-              </button>
+              <Tooltip content="Joindre un fichier">
+                <button className="msg-attach-btn" onClick={() => fileInputRef.current?.click()}>
+                  <Paperclip size={18} />
+                </button>
+              </Tooltip>
               <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
-              <button className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`} onClick={() => setShowEmojiPicker(v => !v)} title="Emojis">
-                <Smile size={18} />
-              </button>
+              <Tooltip content="Emojis">
+                <button className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`} onClick={() => setShowEmojiPicker(v => !v)}>
+                  <Smile size={18} />
+                </button>
+              </Tooltip>
               {showEmojiPicker && (
                 <div className="msg-emoji-picker">
                   <div className="msg-emoji-tabs">
@@ -381,7 +390,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                   </div>
                 </div>
               )}
-              <textarea
+              <Textarea
                 ref={textareaRef}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
@@ -389,9 +398,11 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 placeholder="Écrire un message…"
                 rows={1}
               />
-              <button className="msg-send-btn" onClick={handleSend} disabled={!inputText.trim()} title="Envoyer">
-                <Send size={16} />
-              </button>
+              <Tooltip content="Envoyer">
+                <button className="msg-send-btn" onClick={handleSend} disabled={!inputText.trim()}>
+                  <Send size={16} />
+                </button>
+              </Tooltip>
             </div>
           </div>
         )}
@@ -416,8 +427,8 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
               {allUsers.length === 0 && <p className="msg-empty">Aucun autre utilisateur</p>}
             </div>
             <div className="msg-new-actions">
-              <button className="msg-btn-cancel" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</button>
-              <button className="msg-btn-start" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</button>
+              <Button variant="ghost" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</Button>
+              <Button variant="primary" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</Button>
             </div>
           </div>
         </div>

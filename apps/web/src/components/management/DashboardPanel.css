@@ -66,12 +66,12 @@
 .kpi-reservations::before { background: var(--theme-secondary); }
 .kpi-maintenance::before { background: var(--theme-warning); }
 .kpi-personnel::before { background: var(--theme-success-alt); }
-.kpi-affaires::before { background: #06b6d4; }
+.kpi-affaires::before { background: var(--theme-cyan); }
 .kpi-orders::before { background: var(--theme-warning); }
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 16px var(--shadow-sm);
   border-color: var(--theme-border-medium);
 }
 
@@ -168,7 +168,7 @@
 }
 
 .section-link:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--primary-tint-subtle);
 }
 
 .section-body {
@@ -361,11 +361,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255,255,255,0.6);
+  background: var(--glass-strong);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 5;
+  z-index: var(--z-base);
   border-radius: 12px;
   pointer-events: none;
 }

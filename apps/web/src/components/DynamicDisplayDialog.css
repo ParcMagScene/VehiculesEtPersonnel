@@ -14,7 +14,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 48px var(--shadow-modal);
   animation: slideUp 0.2s ease;
 }
 
@@ -206,7 +206,7 @@
 
 .display-dialog .period-btn.selected {
   border-color: var(--theme-primary);
-  background: rgba(99, 102, 241, 0.08);
+  background: var(--accent-tint-light);
   color: var(--theme-primary);
 }
 
@@ -225,8 +225,8 @@
   border-radius: 8px;
   max-height: 160px;
   overflow-y: auto;
-  z-index: 10;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: var(--z-dropdown);
+  box-shadow: 0 4px 16px var(--shadow-sm);
 }
 
 .display-dialog .affaire-suggestion {

@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { X, Package, Briefcase, Plus, ChevronDown, ChevronRight, Check, AlertTriangle, Loader, ShoppingCart, Truck } from 'lucide-react';
 import api from '../../utils/api';
 import './GenerateOrdersModal.css';
+import { Button, Select, Table, EmptyState, InlineAlert } from '@/design-system';
 
 const STATUS_LABELS = {
   draft: 'Brouillon', sent: 'Envoyée', confirmed: 'Confirmée',
@@ -133,20 +134,17 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
           )}
 
           {error && (
-            <div className="gen-orders-error">
-              <AlertTriangle size={18} />
-              <span>{error}</span>
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
 
           {!loading && !error && data && (
             <>
               {data.suppliers.length === 0 ? (
-                <div className="gen-orders-empty">
-                  <Package size={32} />
-                  <p>Aucun fournisseur identifié dans les BL de cette affaire.</p>
-                  <p className="gen-orders-empty-hint">Importez un BL contenant des articles avec fournisseurs.</p>
-                </div>
+                <EmptyState
+                  icon={<Package size={32} />}
+                  title="Aucun fournisseur identifié dans les BL de cette affaire."
+                  description="Importez un BL contenant des articles avec fournisseurs."
+                />
               ) : (
                 <>
                   <div className="gen-orders-summary">
@@ -178,21 +176,21 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
         {/* Footer */}
         {!loading && !error && data && data.suppliers.length > 0 && !results && (
           <div className="gen-orders-footer">
-            <button className="theme-btn-secondary" onClick={handleClose}>Annuler</button>
-            <button
-              className="theme-btn-primary"
+            <Button variant="ghost" onClick={handleClose}>Annuler</Button>
+            <Button
+              variant="primary"
               onClick={handleSubmit}
               disabled={processing || totalArticles === 0}
             >
               <Briefcase size={15} />
               {processing ? 'Traitement…' : `Exécuter (${activeSuppliers.length} fournisseur${activeSuppliers.length > 1 ? 's' : ''})`}
-            </button>
+            </Button>
           </div>
         )}
 
         {results && (
           <div className="gen-orders-footer">
-            <button className="theme-btn-primary" onClick={handleClose}>Fermer</button>
+            <Button variant="primary" onClick={handleClose}>Fermer</Button>
           </div>
         )}
       </div>
@@ -216,7 +214,7 @@ function SupplierBlock({ supplier, config, onChangeAction }) {
         </div>
         <div className="supplier-action-select" onClick={e => e.stopPropagation()}>
           {supplier.existing_orders?.length > 0 ? (
-            <select
+            <Select
               value={config?.action === 'add' ? `add-${config.orderId}` : 'create'}
               onChange={e => {
                 const val = e.target.value;
@@ -234,7 +232,7 @@ function SupplierBlock({ supplier, config, onChangeAction }) {
                   Ajouter à {o.reference} ({STATUS_LABELS[o.status] || o.status} — {o.item_count} art.)
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
             <span className="supplier-new-badge"><Plus size={12} /> Nouvelle commande</span>
           )}
@@ -243,7 +241,7 @@ function SupplierBlock({ supplier, config, onChangeAction }) {
 
       {expanded && (
         <div className="supplier-items">
-          <table className="supplier-items-table">
+          <Table className="supplier-items-table">
             <thead>
               <tr>
                 <th>Réf.</th>
@@ -262,7 +260,7 @@ function SupplierBlock({ supplier, config, onChangeAction }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>

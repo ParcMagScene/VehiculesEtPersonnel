@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users, Briefcase } from 'lucide-react';
 import api from '../../utils/api';
-import UserAvatar from '../UserAvatar';
 import ProfileEditModal from '../auth/ProfileEditModal';
 import './UserManagement.css';
 import { useToast } from '../../hooks/useToast';
+import { Button, Dialog, ModalLayout, Input, Table, Checkbox, Tag, Card, Avatar } from '@/design-system';
 
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const toast = useToast();
@@ -17,6 +17,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const [approveModal, setApproveModal] = useState(null); // { id, email, name }
   const [personModal, setPersonModal] = useState(null); // { user } pour création de fiche personnel
   const [personsMap, setPersonsMap] = useState({}); // user_id -> person
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -70,28 +71,40 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     }
   };
 
-  const handleRemoveEmail = async (id) => {
-    if (!confirm('Supprimer cet email autorisé ?')) return;
-
-    try {
-      await api.removeAuthorizedEmail(id);
-      loadData();
-    } catch (error) {
-      toast.error(`Erreur: ${error.message}`);
-    }
+  const handleRemoveEmail = (id) => {
+    setConfirmDialog({
+      title: 'Supprimer cet email',
+      message: 'Supprimer cet email autorisé ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.removeAuthorizedEmail(id);
+          loadData();
+        } catch (error) {
+          toast.error(`Erreur: ${error.message}`);
+        }
+      },
+    });
   };
 
-  const handleToggleAdmin = async (userId, currentIsAdmin) => {
+  const handleToggleAdmin = (userId, currentIsAdmin) => {
     const action = currentIsAdmin ? 'retirer les droits admin' : 'donner les droits admin';
-    if (!confirm(`Voulez-vous vraiment ${action} à cet utilisateur ?`)) return;
-
-    try {
-      await api.updateUser(userId, { isAdmin: !currentIsAdmin });
-      toast.success('Droits modifiés avec succès');
-      loadData();
-    } catch (error) {
-      toast.error(`Erreur: ${error.message}`);
-    }
+    setConfirmDialog({
+      title: 'Modifier les droits',
+      message: `Voulez-vous vraiment ${action} à cet utilisateur ?`,
+      variant: 'warning',
+      confirmLabel: 'Confirmer',
+      onConfirm: async () => {
+        try {
+          await api.updateUser(userId, { isAdmin: !currentIsAdmin });
+          toast.success('Droits modifiés avec succès');
+          loadData();
+        } catch (error) {
+          toast.error(`Erreur: ${error.message}`);
+        }
+      },
+    });
   };
 
   const handleTogglePermission = async (userId, permissionKey, currentPermissions) => {
@@ -107,34 +120,44 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.')) return;
-
-    try {
-      await api.deleteUser(userId);
-      toast.success('Utilisateur supprimé avec succès');
-      loadData();
-    } catch (error) {
-      toast.error(`Erreur: ${error.message}`);
-    }
+  const handleDeleteUser = (userId) => {
+    setConfirmDialog({
+      title: 'Supprimer cet utilisateur',
+      message: 'Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteUser(userId);
+          toast.success('Utilisateur supprimé avec succès');
+          loadData();
+        } catch (error) {
+          toast.error(`Erreur: ${error.message}`);
+        }
+      },
+    });
   };
 
-  const handleResetPassword = async (userId) => {
-    if (!confirm('Marquer ce compte pour réinitialisation ? L\'utilisateur devra définir un nouveau mot de passe lors de sa prochaine connexion.')) {
-      return;
-    }
+  const handleResetPassword = (userId) => {
+    setConfirmDialog({
+      title: 'Réinitialiser le mot de passe',
+      message: 'Marquer ce compte pour réinitialisation ? L\'utilisateur devra définir un nouveau mot de passe lors de sa prochaine connexion.',
+      variant: 'confirm',
+      confirmLabel: 'Réinitialiser',
+      onConfirm: async () => {
+        try {
+          const response = await api.request(`/users/${userId}/reset-password`, {
+            method: 'POST',
+          });
 
-    try {
-      const response = await api.request(`/users/${userId}/reset-password`, {
-        method: 'POST',
-      });
-
-      const data = response;
-      toast.success(`Réinitialisation demandée L'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`);
-      loadData();
-    } catch (error) {
-      toast.error(`Erreur: ${error.message}`);
-    }
+          const data = response;
+          toast.success(`Réinitialisation demandée L'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`);
+          loadData();
+        } catch (error) {
+          toast.error(`Erreur: ${error.message}`);
+        }
+      },
+    });
   };
 
   const handleApproveRequest = async (requestId, requestEmail, requestName) => {
@@ -179,17 +202,23 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     }
   };
 
-  const handleRejectRequest = async (requestId) => {
-    if (!confirm('Rejeter cette demande d\'accès ?')) return;
-
-    try {
-      await api.updateAccessRequest(requestId, 'rejected');
-      toast.success('Demande rejetée');
-      loadData();
-      onAccessRequestChange?.();
-    } catch (error) {
-      toast.error(`Erreur: ${error.message}`);
-    }
+  const handleRejectRequest = (requestId) => {
+    setConfirmDialog({
+      title: 'Rejeter la demande',
+      message: 'Rejeter cette demande d\'accès ?',
+      variant: 'warning',
+      confirmLabel: 'Rejeter',
+      onConfirm: async () => {
+        try {
+          await api.updateAccessRequest(requestId, 'rejected');
+          toast.success('Demande rejetée');
+          loadData();
+          onAccessRequestChange?.();
+        } catch (error) {
+          toast.error(`Erreur: ${error.message}`);
+        }
+      },
+    });
   };
 
   if (isLoading) {
@@ -206,7 +235,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           {users.length === 0 ? (
             <p className="no-data">Aucun utilisateur</p>
           ) : (
-            <table>
+            <Table>
               <thead>
                 <tr>
                   <th>Nom</th>
@@ -222,15 +251,14 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                   <tr key={user.id}>
                     <td>
                       <div className="user-name-cell">
-                        <UserAvatar name={user.name} avatar={user.avatar} size={22} />
+                        <Avatar name={user.name} avatar={user.avatar} size={22} />
                         <span>{user.name}</span>
                       </div>
                     </td>
                     <td>{user.email}</td>
                     <td>
                       <label className="admin-checkbox">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={user.isAdmin || false}
                           onChange={() => handleToggleAdmin(user.id, user.isAdmin)}
                         />
@@ -247,8 +275,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                       {!user.isAdmin && (
                         <div className="permissions-group">
                           <label className="permission-checkbox" title="Autoriser la gestion des maintenances véhicules">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={user.permissions?.can_manage_vehicle_maintenance || user.permissions?.can_manage_maintenance || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_vehicle_maintenance', user.permissions)}
                             />
@@ -257,8 +284,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                             </span>
                           </label>
                           <label className="permission-checkbox" title="Autoriser la gestion des maintenances matériel (SAV)">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={user.permissions?.can_manage_equipment_maintenance || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_equipment_maintenance', user.permissions)}
                             />
@@ -267,8 +293,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                             </span>
                           </label>
                           <label className="permission-checkbox" title="Autoriser la gestion du catalogue d'équipements et flight-cases">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={user.permissions?.can_manage_catalog || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_catalog', user.permissions)}
                             />
@@ -277,8 +302,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                             </span>
                           </label>
                           <label className="permission-checkbox" title="Autoriser la gestion des modèles de camions">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={user.permissions?.can_manage_trucks || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_trucks', user.permissions)}
                             />
@@ -294,13 +318,13 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <button
+                        <Button
+                          variant="primary" size="sm" iconOnly
                           onClick={() => setEditingUser(user)}
-                          className="btn-icon btn-primary"
                           title="Modifier le profil"
                         >
                           <Pencil size={14} />
-                        </button>
+                        </Button>
                         <button
                           onClick={() => handleResetPassword(user.id)}
                           className="btn-icon btn-warning"
@@ -308,13 +332,13 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                         >
                           <RefreshCw size={14} />
                         </button>
-                        <button
+                        <Button
+                          variant="danger" size="sm" iconOnly
                           onClick={() => handleDeleteUser(user.id)}
-                          className="btn-icon btn-danger"
                           title="Supprimer l'utilisateur"
                         >
                           <Trash2 size={14} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                     <td>
@@ -341,7 +365,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           )}
         </div>
       </div>
@@ -351,7 +375,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         <h3><Mail size={20} /> Emails autorisés</h3>
         
         <form onSubmit={handleAddEmail} className="add-email-form">
-          <input
+          <Input
             type="email"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
@@ -367,7 +391,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           {authorizedEmails.length === 0 ? (
             <p className="no-data">Aucun email autorisé</p>
           ) : (
-            <table>
+            <Table>
               <thead>
                 <tr>
                   <th>Email</th>
@@ -381,28 +405,28 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                   <tr key={email.id}>
                     <td>{email.email}</td>
                     <td>
-                      <span className={`status-badge ${email.status}`}>
+                      <Tag color={email.status === 'activated' ? 'success' : 'warning'} size="sm">
                         {email.status === 'activated' ? (
                           <><Check size={14} /> Activé</>
                         ) : (
                           <><Clock size={14} /> En attente</>
                         )}
-                      </span>
+                      </Tag>
                     </td>
                     <td>{email.userName || '-'}</td>
                     <td>
-                      <button
+                      <Button
+                        variant="danger" size="sm" iconOnly
                         onClick={() => handleRemoveEmail(email.id)}
-                        className="btn-icon btn-danger"
                         title="Supprimer"
                       >
                         <Trash2 size={16} />
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           )}
         </div>
       </div>
@@ -412,7 +436,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         <div className="user-management-section">
           <h3>Historique des demandes</h3>
           <div className="requests-history">
-            <table>
+            <Table>
               <thead>
                 <tr>
                   <th>Nom</th>
@@ -432,9 +456,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                       {new Date(request.createdAt).toLocaleDateString('fr-FR')}
                     </td>
                     <td>
-                      <span className={`status-badge ${request.status}`}>
+                      <Tag color={request.status === 'approved' ? 'success' : 'danger'} size="sm">
                         {request.status === 'approved' ? '✓ Approuvée' : '✗ Rejetée'}
-                      </span>
+                      </Tag>
                     </td>
                     <td>{request.reviewedByName || '-'}</td>
                     <td>
@@ -446,7 +470,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </div>
         </div>
       )}
@@ -461,7 +485,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           
           <div className="requests-list">
             {accessRequests.filter(r => r.status === 'pending').map((request) => (
-              <div key={request.id} className="request-card">
+              <Card key={request.id} className="request-card">
                 <div className="request-info">
                   <div className="request-name">{request.name}</div>
                   <div className="request-email">{request.email}</div>
@@ -476,22 +500,22 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                   </div>
                 </div>
                 <div className="request-actions">
-                  <button 
-                    className="btn-approve"
+                  <Button 
+                    variant="success"
                     onClick={() => handleApproveRequest(request.id, request.email, request.name)}
                     title="Approuver"
                   >
                     <UserCheck size={18} /> Approuver
-                  </button>
-                  <button 
-                    className="btn-reject"
+                  </Button>
+                  <Button 
+                    variant="danger"
                     onClick={() => handleRejectRequest(request.id)}
                     title="Rejeter"
                   >
                     <UserX size={18} /> Rejeter
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
@@ -535,6 +559,16 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           onCancel={() => setPersonModal(null)}
         />
       )}
+
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title}
+        variant={confirmDialog?.variant}
+        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+        confirmLabel={confirmDialog?.confirmLabel}
+        cancelLabel="Annuler"
+      />
     </div>
   );
 };
@@ -552,13 +586,33 @@ function ApproveRequestModal({ request, onConfirm, onCancel }) {
   };
 
   return (
-    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
-      <div className="approve-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="approve-modal-header">
-          <UserCheck size={24} />
-          <h3>Approuver la demande</h3>
-        </div>
-        
+    <ModalLayout
+      open
+      onClose={onCancel}
+      title="Approuver la demande"
+      icon={<UserCheck size={24} />}
+      size="md"
+      className="approve-modal"
+      footer={
+        <>
+          <Button 
+            variant="ghost" 
+            onClick={onCancel} 
+            disabled={loading}
+          >
+            Annuler
+          </Button>
+          <Button 
+            variant="success" 
+            onClick={handleConfirm}
+            disabled={loading}
+          >
+            <UserCheck size={18} />
+            {loading ? 'Approbation...' : 'Approuver'}
+          </Button>
+        </>
+      }
+    >
         <div className="approve-modal-body">
           <div className="approve-modal-info">
             <div className="approve-modal-user">
@@ -569,8 +623,7 @@ function ApproveRequestModal({ request, onConfirm, onCancel }) {
 
           <div className="approve-modal-options">
             <label className="approve-checkbox-label">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={giveAdmin}
                 onChange={(e) => setGiveAdmin(e.target.checked)}
               />
@@ -579,8 +632,7 @@ function ApproveRequestModal({ request, onConfirm, onCancel }) {
             </label>
 
             <label className="approve-checkbox-label">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={sendEmail}
                 onChange={(e) => setSendEmail(e.target.checked)}
               />
@@ -595,26 +647,7 @@ function ApproveRequestModal({ request, onConfirm, onCancel }) {
             </label>
           </div>
         </div>
-
-        <div className="approve-modal-actions">
-          <button 
-            className="btn-secondary" 
-            onClick={onCancel} 
-            disabled={loading}
-          >
-            Annuler
-          </button>
-          <button 
-            className="btn-approve" 
-            onClick={handleConfirm}
-            disabled={loading}
-          >
-            <UserCheck size={18} />
-            {loading ? 'Approbation...' : 'Approuver'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 
@@ -676,13 +709,25 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
   };
 
   return (
-    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
-      <div className="create-personnel-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="create-personnel-modal-header">
-          <Users size={22} />
-          <h3>Créer une fiche personnel</h3>
-        </div>
-
+    <ModalLayout
+      open
+      onClose={onCancel}
+      title="Créer une fiche personnel"
+      icon={<Users size={22} />}
+      size="md"
+      className="create-personnel-modal"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onCancel} disabled={loading}>
+            Annuler
+          </Button>
+          <Button variant="success" onClick={handleSubmit} disabled={loading || !firstName.trim() || !lastName.trim()}>
+            <UserPlus size={16} />
+            {loading ? 'Création...' : 'Créer la fiche'}
+          </Button>
+        </>
+      }
+    >
         <div className="create-personnel-modal-body">
           <p className="create-personnel-subtitle">
             Créer une fiche personnel liée au compte de <strong>{user.name || user.email}</strong>
@@ -691,7 +736,7 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
           <div className="create-personnel-fields">
             <div className="create-personnel-field">
               <label>Prénom</label>
-              <input
+              <Input
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -700,7 +745,7 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
             </div>
             <div className="create-personnel-field">
               <label>Nom</label>
-              <input
+              <Input
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -745,17 +790,6 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
             </div>
           )}
         </div>
-
-        <div className="create-personnel-modal-actions">
-          <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-            Annuler
-          </button>
-          <button className="btn-approve" onClick={handleSubmit} disabled={loading || !firstName.trim() || !lastName.trim()}>
-            <UserPlus size={16} />
-            {loading ? 'Création...' : 'Créer la fiche'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }

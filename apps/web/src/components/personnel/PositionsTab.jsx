@@ -3,12 +3,14 @@ import { Plus, X, Save, Edit2, Trash2, Briefcase } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { POSITION_CATEGORIES } from './personnelConstants';
+import { Button, Dialog, Input, Select, Checkbox, EmptyState } from '@/design-system';
 
 const PositionsTab = ({ positions, setPositions, currentUser }) => {
   const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingPosition, setEditingPosition] = useState(null);
   const [form, setForm] = useState({ name: '', category: 'autre', is_common: false });
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const groupedPositions = POSITION_CATEGORIES.map(cat => ({
     ...cat,
@@ -37,14 +39,22 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Supprimer ce poste ?')) return;
-    try {
-      await api.deletePosition(id);
-      setPositions(prev => prev.filter(p => p.id !== id));
-    } catch (err) {
-      toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
-    }
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: 'Supprimer ce poste ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.deletePosition(id);
+          setPositions(prev => prev.filter(p => p.id !== id));
+        } catch (err) {
+          toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
+        }
+      },
+    });
   };
 
   return (
@@ -52,9 +62,9 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
       {currentUser?.isAdmin && (
         <div className="personnel-toolbar">
           <div style={{ flex: 1 }} />
-          <button className="personnel-add-btn" onClick={() => { resetForm(); setShowForm(true); }}>
+          <Button variant="primary" onClick={() => { resetForm(); setShowForm(true); }}>
             <Plus size={16} /> Ajouter un poste
-          </button>
+          </Button>
         </div>
       )}
 
@@ -68,21 +78,20 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
             <div className="personnel-form-grid">
               <div className="form-field">
                 <label>Nom du poste *</label>
-                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="form-field">
                 <label>Catégorie</label>
-                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
+                <Select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
                   {POSITION_CATEGORIES.map(c => (
                     <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
             <div className="form-field">
               <label className="checkbox-label">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={form.is_common}
                   onChange={e => setForm({ ...form, is_common: e.target.checked })}
                 />
@@ -90,8 +99,8 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
               </label>
             </div>
             <div className="personnel-form-actions">
-              <button type="button" className="cancel-btn" onClick={resetForm}>Annuler</button>
-              <button type="submit" className="save-btn"><Save size={16} /> Enregistrer</button>
+              <Button variant="ghost" type="button" onClick={resetForm}>Annuler</Button>
+              <Button variant="primary" type="submit"><Save size={16} /> Enregistrer</Button>
             </div>
           </form>
         </div>
@@ -113,16 +122,16 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
                   </span>
                   {currentUser?.isAdmin && (
                     <div className="skill-item-actions">
-                      <button className="icon-btn" onClick={() => {
+                      <Button variant="ghost" size="sm" iconOnly onClick={() => {
                         setForm({ name: pos.name, category: pos.category, is_common: !!pos.isCommon });
                         setEditingPosition(pos);
                         setShowForm(true);
                       }}>
                         <Edit2 size={12} />
-                      </button>
-                      <button className="icon-btn danger" onClick={() => handleDelete(pos.id)}>
+                      </Button>
+                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(pos.id)}>
                         <Trash2 size={12} />
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -131,12 +140,20 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
           </div>
         ))}
         {groupedPositions.length === 0 && (
-          <div className="personnel-empty">
-            <Briefcase size={48} />
-            <p>Aucun poste enregistré</p>
-          </div>
+          <EmptyState icon={<Briefcase size={48} />} title="Aucun poste enregistré" />
         )}
       </div>
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 };

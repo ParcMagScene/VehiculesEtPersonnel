@@ -6,6 +6,7 @@ import {
 import api from '../../utils/api';
 import { formatDateFr } from '../../utils/formatUtils';
 import './TaskPDFExportModal.css';
+import { Button, EmptyState } from '@/design-system';
 
 // ═══ Constantes sections (identiques au planning) ═══
 const SECTIONS = {
@@ -564,24 +565,21 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
             ) : pdfUrl ? (
               <iframe src={pdfUrl} className="pdf-preview-frame" title="Aperçu PDF" />
             ) : (
-              <div className="preview-empty">
-                <Eye size={40} />
-                <p>Sélectionnez au moins un élément<br />pour voir l'aperçu</p>
-              </div>
+              <EmptyState icon={<Eye size={40} />} title={<>Sélectionnez au moins un élément<br />pour voir l'aperçu</>} />
             )}
           </div>
         </div>
 
         {/* Footer */}
         <div className="pdf-export-footer">
-          <button className="btn-cancel" onClick={onClose}>Annuler</button>
-          <button className="btn-download" onClick={handleDownload} disabled={selectedIds.size === 0 || downloading}>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" onClick={handleDownload} disabled={selectedIds.size === 0 || downloading}>
             {downloading ? (
               <><Loader2 size={15} className="spin" /> Téléchargement…</>
             ) : (
               <><FileDown size={15} /> Télécharger le PDF ({selectedIds.size} élément{selectedIds.size > 1 ? 's' : ''})</>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

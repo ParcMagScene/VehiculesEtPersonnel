@@ -4,6 +4,7 @@ import api, { getApiUrl } from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
 import './MobileLogin.css';
 import { useToast } from '../../hooks/useToast';
+import { FormField, Input, Card, InlineAlert } from '@/design-system';
 
 function MobileLogin({ onLogin }) {
   const toast = useToast();
@@ -57,7 +58,7 @@ function MobileLogin({ onLogin }) {
 
   return (
     <div className="mobile-login">
-      <div className="login-card">
+      <Card className="login-card">
         <div className="login-header">
           <div className="login-icon">
             {mode === 'register' ? <UserPlus size={32} /> : <LogIn size={32} />}
@@ -73,9 +74,8 @@ function MobileLogin({ onLogin }) {
 
         <form onSubmit={handleSubmit} className="login-form">
           {mode === 'register' && (
-            <div className="form-group">
-              <label htmlFor="name">Nom complet</label>
-              <input
+            <FormField className="form-group" label="Nom complet" htmlFor="name">
+              <Input
                 id="name"
                 type="text"
                 value={name}
@@ -83,12 +83,11 @@ function MobileLogin({ onLogin }) {
                 placeholder="Votre nom"
                 required
               />
-            </div>
+            </FormField>
           )}
 
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
+          <FormField className="form-group" label="Email" htmlFor="email">
+            <Input
               id="email"
               type="email"
               value={email}
@@ -97,11 +96,10 @@ function MobileLogin({ onLogin }) {
               required
               autoComplete="email"
             />
-          </div>
+          </FormField>
 
-          <div className="form-group">
-            <label htmlFor="password">Mot de passe</label>
-            <input
+          <FormField className="form-group" label="Mot de passe" htmlFor="password">
+            <Input
               id="password"
               type="password"
               value={password}
@@ -111,12 +109,10 @@ function MobileLogin({ onLogin }) {
               minLength={6}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
             />
-          </div>
+          </FormField>
 
           {error && (
-            <div className="login-error">
-              {error}
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
 
           <button type="submit" className="login-button" disabled={isLoading}>
@@ -166,7 +162,7 @@ function MobileLogin({ onLogin }) {
         <div className="login-footer">
           <p>Interface mobile simplifiée</p>
         </div>
-      </div>
+      </Card>
 
       {showAccessRequest && (
         <AccessRequestModal
@@ -217,9 +213,8 @@ function MobileLogin({ onLogin }) {
                   setIsLoading(false);
                 }
               }}>
-                <div className="form-group">
-                  <label htmlFor="reset-email">Adresse email</label>
-                  <input
+                <FormField className="form-group" label="Adresse email" htmlFor="reset-email">
+                  <Input
                     id="reset-email"
                     type="email"
                     value={resetFormEmail}
@@ -228,11 +223,10 @@ function MobileLogin({ onLogin }) {
                     required
                     autoFocus
                   />
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label htmlFor="reset-name">Nom complet</label>
-                  <input
+                <FormField className="form-group" label="Nom complet" htmlFor="reset-name">
+                  <Input
                     id="reset-name"
                     type="text"
                     value={resetFormName}
@@ -240,11 +234,10 @@ function MobileLogin({ onLogin }) {
                     placeholder="Prénom Nom"
                     required
                   />
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label htmlFor="reset-password">Nouveau mot de passe</label>
-                  <input
+                <FormField className="form-group" label="Nouveau mot de passe" htmlFor="reset-password">
+                  <Input
                     id="reset-password"
                     type="password"
                     value={resetFormPassword}
@@ -253,11 +246,10 @@ function MobileLogin({ onLogin }) {
                     required
                     minLength={6}
                   />
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label htmlFor="reset-confirm">Confirmer le mot de passe</label>
-                  <input
+                <FormField className="form-group" label="Confirmer le mot de passe" htmlFor="reset-confirm">
+                  <Input
                     id="reset-confirm"
                     type="password"
                     value={resetFormConfirm}
@@ -266,9 +258,9 @@ function MobileLogin({ onLogin }) {
                     required
                     minLength={6}
                   />
-                </div>
+                </FormField>
 
-                {resetError && <div className="login-error">{resetError}</div>}
+                {resetError && <InlineAlert>{resetError}</InlineAlert>}
                 
                 <div className="mobile-sheet-form-actions">
                   <button

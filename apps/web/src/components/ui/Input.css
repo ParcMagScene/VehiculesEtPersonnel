@@ -2,7 +2,73 @@
    Input — Design System Atoms
    ═══════════════════════════════════════ */
 
-/* ─── Wrapper ─── */
+/* ─── Base input (mode bare — minimal, compatible CSS existant) ─── */
+.ui-input {
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+}
+.ui-input::placeholder {
+  color: var(--theme-text-muted);
+}
+.ui-input:disabled {
+  cursor: not-allowed;
+}
+
+/* ─── Standalone styled (quand size est spécifié) ─── */
+.ui-input--sm,
+.ui-input--md,
+.ui-input--lg {
+  width: 100%;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.ui-input--sm:focus,
+.ui-input--md:focus,
+.ui-input--lg:focus {
+  border-color: var(--theme-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+/* ─── Error state (standalone) ─── */
+.ui-input--error {
+  border-color: var(--theme-danger);
+}
+.ui-input--error:focus {
+  border-color: var(--theme-danger);
+  box-shadow: 0 0 0 3px var(--theme-danger-border);
+}
+
+/* ─── Disabled state (standalone) ─── */
+.ui-input--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-disabled);
+  border-color: var(--theme-border-disabled);
+}
+
+/* ─── Sizes (standalone) ─── */
+.ui-input--sm {
+  height: var(--btn-height-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--font-sm);
+}
+.ui-input--md {
+  height: var(--btn-height-md);
+  padding: 0 var(--space-3);
+  font-size: var(--font-base);
+}
+.ui-input--lg {
+  height: var(--btn-height-lg);
+  padding: 0 var(--space-4);
+  font-size: var(--font-md);
+}
+
+/* ═══════ Wrapper mode (prefix / suffix) ═══════ */
 .ui-input-wrapper {
   display: inline-flex;
   align-items: center;
@@ -12,22 +78,19 @@
   background: var(--theme-bg-card);
   transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
-
 .ui-input-wrapper:focus-within {
   border-color: var(--theme-border-focus);
   box-shadow: var(--focus-ring);
 }
 
-/* ─── Error state ─── */
 .ui-input-wrapper--error {
   border-color: var(--theme-danger);
 }
 .ui-input-wrapper--error:focus-within {
   border-color: var(--theme-danger);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  box-shadow: 0 0 0 3px var(--theme-danger-border);
 }
 
-/* ─── Disabled state ─── */
 .ui-input-wrapper--disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -35,47 +98,25 @@
   border-color: var(--theme-border-disabled);
 }
 
-/* ─── Input element ─── */
-.ui-input {
+/* Reset input inside wrapper */
+.ui-input-wrapper .ui-input {
   width: 100%;
   border: none;
   background: transparent;
   color: var(--theme-text-primary);
-  font-family: inherit;
-  outline: none;
 }
-.ui-input::placeholder {
-  color: var(--theme-text-muted);
-}
-.ui-input:disabled {
-  cursor: not-allowed;
-  color: var(--theme-text-disabled);
+.ui-input-wrapper .ui-input:focus {
+  box-shadow: none;
 }
 
-/* ─── Sizes ─── */
-.ui-input-wrapper--sm {
-  height: var(--btn-height-sm);
-}
-.ui-input-wrapper--sm .ui-input {
-  padding: 0 var(--space-2);
-  font-size: var(--font-sm);
-}
+.ui-input-wrapper--sm { height: var(--btn-height-sm); }
+.ui-input-wrapper--sm .ui-input { padding: 0 var(--space-2); font-size: var(--font-sm); }
 
-.ui-input-wrapper--md {
-  height: var(--btn-height-md);
-}
-.ui-input-wrapper--md .ui-input {
-  padding: 0 var(--space-3);
-  font-size: var(--font-base);
-}
+.ui-input-wrapper--md { height: var(--btn-height-md); }
+.ui-input-wrapper--md .ui-input { padding: 0 var(--space-3); font-size: var(--font-base); }
 
-.ui-input-wrapper--lg {
-  height: var(--btn-height-lg);
-}
-.ui-input-wrapper--lg .ui-input {
-  padding: 0 var(--space-4);
-  font-size: var(--font-md);
-}
+.ui-input-wrapper--lg { height: var(--btn-height-lg); }
+.ui-input-wrapper--lg .ui-input { padding: 0 var(--space-4); font-size: var(--font-md); }
 
 /* ─── Prefix / Suffix ─── */
 .ui-input__prefix,

@@ -5,7 +5,7 @@
 .csv-import-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,14 +14,14 @@
 }
 
 .csv-import-dialog {
-  background: var(--bg-primary, #fff);
+  background: var(--bg-primary, var(--theme-bg-card));
   border-radius: 12px;
   width: 680px;
   max-width: 95vw;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
   animation: csvDialogIn 0.2s ease-out;
 }
 
@@ -164,7 +164,7 @@
 .csv-preview-table thead {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .csv-preview-table th {
@@ -327,7 +327,7 @@
 
 .csv-import-footer .btn-primary {
   background: var(--color-primary, var(--theme-warning));
-  color: #fff;
+  color: var(--theme-bg-card);
   border: none;
   padding: 8px 18px;
   border-radius: 8px;

@@ -1,0 +1,67 @@
+/* ═══════════════════════════════════════
+   Textarea — Design System Atoms
+   ═══════════════════════════════════════ */
+
+/* ─── Base textarea (mode bare — minimal, compatible CSS existant) ─── */
+.ui-textarea {
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+  resize: vertical;
+}
+.ui-textarea::placeholder {
+  color: var(--theme-text-muted);
+}
+.ui-textarea:disabled {
+  cursor: not-allowed;
+}
+
+/* ─── Standalone styled (quand size est spécifié) ─── */
+.ui-textarea--sm,
+.ui-textarea--md,
+.ui-textarea--lg {
+  width: 100%;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.ui-textarea--sm:focus,
+.ui-textarea--md:focus,
+.ui-textarea--lg:focus {
+  border-color: var(--theme-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+/* ─── Error state ─── */
+.ui-textarea--error {
+  border-color: var(--theme-danger);
+}
+.ui-textarea--error:focus {
+  border-color: var(--theme-danger);
+  box-shadow: 0 0 0 3px var(--theme-danger-border);
+}
+
+/* ─── Disabled state ─── */
+.ui-textarea--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-disabled);
+  border-color: var(--theme-border-disabled);
+}
+
+/* ─── Sizes ─── */
+.ui-textarea--sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-sm);
+}
+.ui-textarea--md {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-base);
+}
+.ui-textarea--lg {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-lg);
+}

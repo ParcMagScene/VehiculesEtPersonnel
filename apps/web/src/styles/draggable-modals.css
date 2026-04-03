@@ -56,7 +56,7 @@
 
 .modal-resize-handle {
   position: absolute;
-  z-index: 10;
+  z-index: var(--z-dropdown);
   /* Invisible par défaut, visible au hover du modal */
   opacity: 0;
   transition: opacity 0.2s ease;
@@ -81,8 +81,8 @@
   right: 3px;
   width: 8px;
   height: 8px;
-  border-right: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
-  border-bottom: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-right: 2px solid var(--drag-handle-color, var(--gray-overlay));
+  border-bottom: 2px solid var(--drag-handle-color, var(--gray-overlay));
   border-radius: 0 0 2px 0;
 }
 
@@ -100,8 +100,8 @@
   left: 3px;
   width: 8px;
   height: 8px;
-  border-left: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
-  border-bottom: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-left: 2px solid var(--drag-handle-color, var(--gray-overlay));
+  border-bottom: 2px solid var(--drag-handle-color, var(--gray-overlay));
   border-radius: 0 0 0 2px;
 }
 
@@ -119,8 +119,8 @@
   right: 3px;
   width: 8px;
   height: 8px;
-  border-right: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
-  border-top: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-right: 2px solid var(--drag-handle-color, var(--gray-overlay));
+  border-top: 2px solid var(--drag-handle-color, var(--gray-overlay));
   border-radius: 0 2px 0 0;
 }
 
@@ -138,8 +138,8 @@
   left: 3px;
   width: 8px;
   height: 8px;
-  border-left: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
-  border-top: 2px solid var(--drag-handle-color, rgba(120, 120, 120, 0.6));
+  border-left: 2px solid var(--drag-handle-color, var(--gray-overlay));
+  border-top: 2px solid var(--drag-handle-color, var(--gray-overlay));
   border-radius: 2px 0 0 0;
 }
 

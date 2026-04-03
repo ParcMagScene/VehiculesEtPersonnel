@@ -6,7 +6,7 @@
 .ui-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--theme-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -41,7 +41,7 @@
   justify-content: space-between;
   padding: var(--space-4) var(--space-5);
   background: var(--modal-header-bg, var(--theme-gradient));
-  color: var(--modal-header-color, #fff);
+  color: var(--modal-header-color, var(--theme-bg-card));
   border-radius: var(--modal-header-border-radius, 16px 16px 0 0);
   gap: var(--space-3);
   flex-shrink: 0;
@@ -76,9 +76,9 @@
   width: var(--close-btn-size, 32px);
   height: var(--close-btn-size, 32px);
   border-radius: var(--close-btn-radius, 8px);
-  border: 1px solid var(--close-btn-border, rgba(255,255,255,0.25));
+  border: 1px solid var(--close-btn-border, var(--close-btn-border));
   background: var(--close-btn-bg, rgba(255,255,255,0.12));
-  color: var(--close-btn-color, #fff);
+  color: var(--close-btn-color, var(--theme-bg-card));
   cursor: pointer;
   transition: background var(--duration-fast), border-color var(--duration-fast);
   padding: 0;
@@ -87,7 +87,7 @@
 
 .ui-modal-close:hover {
   background: var(--close-btn-hover-bg, rgba(255,255,255,0.22));
-  border-color: var(--close-btn-hover-border, rgba(255,255,255,0.4));
+  border-color: var(--close-btn-hover-border, var(--glass));
 }
 
 /* ── Body ── */

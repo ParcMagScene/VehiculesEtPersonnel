@@ -161,6 +161,13 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/locations', authenticateToken, (req, res) => {
     try {
       const location = req.body;
+
+      // Vérifier les doublons (même nom + même adresse)
+      const existing = db.prepare('SELECT id FROM locations WHERE LOWER(name) = LOWER(?) AND LOWER(address) = LOWER(?)').get(location.name, location.address || '');
+      if (existing) {
+        return res.status(409).json({ error: 'Un lieu avec ce nom et cette adresse existe déjà' });
+      }
+
       const stmt = db.prepare(`
         INSERT INTO locations (name, address, lat, lng, place_id, type, created_by, modified_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -168,6 +175,7 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
       
       const result = stmt.run(location.name, location.address, location.lat, location.lng, location.place_id, location.type || 'Salle de spectacle', req.user.id, req.user.id);
       
+      listCache.invalidate('locations');
       addToHistory('location', result.lastInsertRowid, 'created', location, req.user.id, req.user.name);
       
       // Renvoyer l'objet complet
@@ -199,6 +207,7 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
       
       stmt.run(location.name, location.address, location.lat, location.lng, location.place_id, location.type || 'Salle de spectacle', req.user.id, req.params.id);
       
+      listCache.invalidate('locations');
       addToHistory('location', req.params.id, 'updated', location, req.user.id, req.user.name);
       
       // Renvoyer l'objet complet
@@ -224,6 +233,7 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
       const stmt = db.prepare('DELETE FROM locations WHERE id = ?');
       stmt.run(req.params.id);
       
+      listCache.invalidate('locations');
       addToHistory('location', req.params.id, 'deleted', null, req.user.id, req.user.name);
       
       res.json({ success: true });

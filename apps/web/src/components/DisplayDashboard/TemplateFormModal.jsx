@@ -1,6 +1,7 @@
 // TemplateFormModal — Création / édition d'un template d'affichage
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { X, Layout, Save, Plus, Trash2 } from 'lucide-react';
+import { Layout, Save, Plus, Trash2 } from 'lucide-react';
+import { Button, FormField, ModalLayout, Input, Textarea, Select, Tooltip } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 
@@ -85,92 +86,89 @@ function TemplateFormModal({ template, onSave, onClose }) {
   }, [form, template, toast, onSave]);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container modal-lg" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3><Layout size={18} /> {template ? 'Modifier le template' : 'Nouveau template'}</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
-        </div>
-        <div className="modal-body">
+    <ModalLayout
+      open
+      onClose={onClose}
+      title={template ? 'Modifier le template' : 'Nouveau template'}
+      icon={<Layout size={18} />}
+      size="lg"
+      footer={<>
+        <Button variant="ghost" onClick={onClose}>Annuler</Button>
+        <Button variant="primary" onClick={handleSave} disabled={saving}>
+          <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+        </Button>
+      </>}
+    >
           <div className="form-row">
-            <div className="form-group form-group-flex2">
-              <label>Nom *</label>
-              <input
+            <FormField className="form-group form-group-flex2" label="Nom" required>
+              <Input
                 type="text"
                 value={form.name}
                 onChange={e => handleChange('name', e.target.value)}
                 placeholder="Ex: Deux colonnes"
                 autoFocus
               />
-            </div>
-            <div className="form-group form-group-flex1">
-              <label>Catégorie</label>
-              <select value={form.category} onChange={e => handleChange('category', e.target.value)}>
+            </FormField>
+            <FormField className="form-group form-group-flex1" label="Catégorie">
+              <Select value={form.category} onChange={e => handleChange('category', e.target.value)}>
                 <option value="general">Général</option>
                 <option value="event">Événement</option>
                 <option value="info">Information</option>
                 <option value="alert">Alerte</option>
                 <option value="welcome">Accueil</option>
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
+          <FormField className="form-group" label="Description">
+            <Textarea
               value={form.description}
               onChange={e => handleChange('description', e.target.value)}
               rows={2}
               placeholder="Description du template…"
             />
-          </div>
+          </FormField>
 
           {/* Zones */}
           <div className="template-zones-editor">
             <div className="zones-header">
               <h4>Zones de contenu</h4>
-              <button className="btn-sm" onClick={addZone}>
+              <Button variant="primary" size="sm" onClick={addZone}>
                 <Plus size={12} /> Ajouter une zone
-              </button>
+              </Button>
             </div>
             {form.zones.map((zone, idx) => (
               <div key={idx} className="zone-row">
-                <input
+                <Input
                   type="text"
                   value={zone.name}
                   onChange={e => updateZone(idx, 'name', e.target.value)}
                   placeholder="Nom"
                   className="zone-name"
                 />
-                <select value={zone.type} onChange={e => updateZone(idx, 'type', e.target.value)} className="zone-type">
+                <Select value={zone.type} onChange={e => updateZone(idx, 'type', e.target.value)} className="zone-type">
                   <option value="content">Contenu</option>
                   <option value="header">En-tête</option>
                   <option value="footer">Pied</option>
                   <option value="sidebar">Barre latérale</option>
                   <option value="ticker">Bandeau défilant</option>
-                </select>
+                </Select>
                 <div className="zone-position">
-                  <input type="number" min="0" max="100" value={zone.x} onChange={e => updateZone(idx, 'x', parseInt(e.target.value) || 0)} title="X (%)" />
-                  <input type="number" min="0" max="100" value={zone.y} onChange={e => updateZone(idx, 'y', parseInt(e.target.value) || 0)} title="Y (%)" />
-                  <input type="number" min="1" max="100" value={zone.width} onChange={e => updateZone(idx, 'width', parseInt(e.target.value) || 1)} title="Largeur (%)" />
-                  <input type="number" min="1" max="100" value={zone.height} onChange={e => updateZone(idx, 'height', parseInt(e.target.value) || 1)} title="Hauteur (%)" />
+                  <Input type="number" min="0" max="100" value={zone.x} onChange={e => updateZone(idx, 'x', parseInt(e.target.value) || 0)} title="X (%)" />
+                  <Input type="number" min="0" max="100" value={zone.y} onChange={e => updateZone(idx, 'y', parseInt(e.target.value) || 0)} title="Y (%)" />
+                  <Input type="number" min="1" max="100" value={zone.width} onChange={e => updateZone(idx, 'width', parseInt(e.target.value) || 1)} title="Largeur (%)" />
+                  <Input type="number" min="1" max="100" value={zone.height} onChange={e => updateZone(idx, 'height', parseInt(e.target.value) || 1)} title="Hauteur (%)" />
                 </div>
                 {form.zones.length > 1 && (
-                  <button className="btn-icon-sm danger" onClick={() => removeZone(idx)} title="Supprimer">
-                    <Trash2 size={12} />
-                  </button>
+                  <Tooltip content="Supprimer">
+                    <Button variant="danger" size="sm" iconOnly onClick={() => removeZone(idx)}>
+                      <Trash2 size={12} />
+                    </Button>
+                  </Tooltip>
                 )}
               </div>
             ))}
           </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Annuler</button>
-          <button className="btn-primary" onClick={handleSave} disabled={saving}>
-            <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </ModalLayout>
   );
 }
 

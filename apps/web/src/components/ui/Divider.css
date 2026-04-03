@@ -1,0 +1,46 @@
+/* ─── Divider ─── */
+
+.ui-divider {
+  flex-shrink: 0;
+}
+
+/* Horizontal (default) */
+.ui-divider--horizontal {
+  height: 1px;
+  background: var(--theme-border);
+  margin: var(--space-2, 8px) 0;
+}
+
+/* Vertical — toolbar separators */
+.ui-divider--vertical {
+  width: 1px;
+  height: 20px;
+  background: var(--theme-border);
+  align-self: center;
+}
+
+/* Label between lines (horizontal only) */
+.ui-divider--label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: auto;
+  background: none;
+}
+
+.ui-divider--label::before,
+.ui-divider--label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--theme-border);
+}
+
+.ui-divider__label {
+  color: var(--theme-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}

@@ -7,11 +7,11 @@
   z-index: var(--z-tooltip);
   background: var(--theme-bg-card);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px var(--shadow-sm);
   min-width: 220px;
   padding: 6px;
   animation: contextMenuIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--shadow-sm);
 }
 
 @keyframes contextMenuIn {
@@ -76,12 +76,12 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--shadow-xs);
   flex-shrink: 0;
 }
 
 .pp-context-menu-item:hover .pp-context-menu-icon {
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--shadow-inner);
 }
 
 .pp-context-menu-label {

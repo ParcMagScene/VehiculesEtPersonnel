@@ -13,6 +13,7 @@ import {
 import api from '../../utils/api';
 import { useInventory } from '../../hooks/useInventory';
 import './InventoryPanel.css';
+import { Input, Select, Table, Tabs, TabList, Tab, TabPanel, Spinner, Card, Tooltip } from '@/design-system';
 
 // ═══════ SUB-VIEWS (inline pour éviter le surcoût de fichiers séparés) ═══════
 
@@ -25,48 +26,48 @@ function DashboardView({ stats, alerts, anomalies, onRefresh, onExportCSV, onRun
     <div className="inv-dashboard">
       {/* KPI Cards */}
       <div className="inv-kpi-grid">
-        <div className="inv-kpi-card">
+        <Card className="inv-kpi-card">
           <div className="inv-kpi-icon"><Package size={24} /></div>
           <div className="inv-kpi-data">
             <span className="inv-kpi-value">{summary.totalItems}</span>
             <span className="inv-kpi-label">Articles actifs</span>
           </div>
-        </div>
-        <div className="inv-kpi-card">
+        </Card>
+        <Card className="inv-kpi-card">
           <div className="inv-kpi-icon"><DollarSign size={24} /></div>
           <div className="inv-kpi-data">
             <span className="inv-kpi-value">{summary.totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
             <span className="inv-kpi-label">Valeur totale</span>
           </div>
-        </div>
-        <div className="inv-kpi-card warning">
+        </Card>
+        <Card className="inv-kpi-card warning">
           <div className="inv-kpi-icon"><AlertTriangle size={24} /></div>
           <div className="inv-kpi-data">
             <span className="inv-kpi-value">{summary.lowStock}</span>
             <span className="inv-kpi-label">Stock bas</span>
           </div>
-        </div>
-        <div className="inv-kpi-card danger">
+        </Card>
+        <Card className="inv-kpi-card danger">
           <div className="inv-kpi-icon"><AlertTriangle size={24} /></div>
           <div className="inv-kpi-data">
             <span className="inv-kpi-value">{summary.openAnomalies}</span>
             <span className="inv-kpi-label">Anomalies ouvertes</span>
           </div>
-        </div>
-        <div className="inv-kpi-card">
+        </Card>
+        <Card className="inv-kpi-card">
           <div className="inv-kpi-icon"><MapPin size={24} /></div>
           <div className="inv-kpi-data">
             <span className="inv-kpi-value">{summary.locations}</span>
             <span className="inv-kpi-label">Emplacements</span>
           </div>
-        </div>
-        <div className="inv-kpi-card">
+        </Card>
+        <Card className="inv-kpi-card">
           <div className="inv-kpi-icon"><DollarSign size={24} /></div>
           <div className="inv-kpi-data">
             <span className="inv-kpi-value">{summary.priceEntries}</span>
             <span className="inv-kpi-label">Historiques prix</span>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Actions rapides */}
@@ -112,7 +113,7 @@ function DashboardView({ stats, alerts, anomalies, onRefresh, onExportCSV, onRun
       {stats.topByValue?.length > 0 && (
         <div className="inv-section">
           <h3>Top 10 par valeur</h3>
-          <table className="inv-table">
+          <Table className="inv-table">
             <thead>
               <tr><th>Réf</th><th>Nom</th><th>PU HT</th><th>Qté</th><th>Valeur</th></tr>
             </thead>
@@ -127,7 +128,7 @@ function DashboardView({ stats, alerts, anomalies, onRefresh, onExportCSV, onRun
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
 
@@ -135,7 +136,7 @@ function DashboardView({ stats, alerts, anomalies, onRefresh, onExportCSV, onRun
       {alerts.length > 0 && (
         <div className="inv-section">
           <h3><AlertTriangle size={16} /> Alertes stock bas ({alerts.length})</h3>
-          <table className="inv-table">
+          <Table className="inv-table">
             <thead>
               <tr><th>Réf</th><th>Nom</th><th>Qté</th><th>Seuil</th><th>Emplacement</th></tr>
             </thead>
@@ -150,7 +151,7 @@ function DashboardView({ stats, alerts, anomalies, onRefresh, onExportCSV, onRun
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>
@@ -197,22 +198,22 @@ function LocationsView({ locations, onCreate, onUpdate, onDelete }) {
       {showForm && (
         <form className="inv-form" onSubmit={handleSubmit}>
           <div className="inv-form-grid">
-            <input placeholder="Nom *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
-            <input placeholder="Code *" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} required />
-            <select value={form.depot_number} onChange={e => setForm(f => ({ ...f, depot_number: Number(e.target.value) }))}>
+            <Input placeholder="Nom *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            <Input placeholder="Code *" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} required />
+            <Select value={form.depot_number} onChange={e => setForm(f => ({ ...f, depot_number: Number(e.target.value) }))}>
               <option value={1}>Dépôt 1</option>
               <option value={2}>Dépôt 2</option>
               <option value={0}>Camion</option>
               <option value={99}>Externe</option>
-            </select>
-            <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+            </Select>
+            <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
               <option value="storage">Stockage</option>
               <option value="workshop">Atelier</option>
               <option value="vehicle">Véhicule</option>
               <option value="external">Externe</option>
-            </select>
-            <input placeholder="Zone" value={form.zone} onChange={e => setForm(f => ({ ...f, zone: e.target.value }))} />
-            <input type="number" placeholder="Capacité" value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} />
+            </Select>
+            <Input placeholder="Zone" value={form.zone} onChange={e => setForm(f => ({ ...f, zone: e.target.value }))} />
+            <Input type="number" placeholder="Capacité" value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} />
           </div>
           <div className="inv-form-actions">
             <button type="submit" className="inv-btn primary">{editId ? 'Modifier' : 'Créer'}</button>
@@ -221,7 +222,7 @@ function LocationsView({ locations, onCreate, onUpdate, onDelete }) {
         </form>
       )}
 
-      <table className="inv-table">
+      <Table className="inv-table">
         <thead>
           <tr><th>Code</th><th>Nom</th><th>Dépôt</th><th>Type</th><th>Zone</th><th>Capacité</th><th>Actions</th></tr>
         </thead>
@@ -235,13 +236,13 @@ function LocationsView({ locations, onCreate, onUpdate, onDelete }) {
               <td>{loc.zone || '—'}</td>
               <td>{loc.capacity || '—'}</td>
               <td className="inv-actions">
-                <button className="inv-btn-icon" onClick={() => startEdit(loc)} title="Modifier"><Edit size={14} /></button>
-                <button className="inv-btn-icon danger" onClick={() => onDelete(loc.id)} title="Supprimer"><Trash2 size={14} /></button>
+                <Tooltip content="Modifier"><button className="inv-btn-icon" onClick={() => startEdit(loc)}><Edit size={14} /></button></Tooltip>
+                <Tooltip content="Supprimer"><button className="inv-btn-icon danger" onClick={() => onDelete(loc.id)}><Trash2 size={14} /></button></Tooltip>
               </td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 }
@@ -275,7 +276,7 @@ function PricesView() {
       <div className="inv-toolbar">
         <h3><DollarSign size={18} /> Analyse prix</h3>
         <div className="inv-search-group">
-          <input type="number" placeholder="ID article" value={itemId}
+          <Input type="number" placeholder="ID article" value={itemId}
             onChange={e => setItemId(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && searchPrice()} />
           <button className="inv-btn primary" onClick={searchPrice} disabled={loading}>
@@ -347,7 +348,7 @@ function PricesView() {
       {history.length > 0 && (
         <div className="inv-section">
           <h4>Historique des prix ({history.length} entrées)</h4>
-          <table className="inv-table">
+          <Table className="inv-table">
             <thead>
               <tr><th>Date</th><th>Source</th><th>Fournisseur</th><th>Prix HT</th><th>Réf.</th></tr>
             </thead>
@@ -362,7 +363,7 @@ function PricesView() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>
@@ -443,9 +444,9 @@ function CountView({ onSubmitCount }) {
       <div className="inv-count-grid">
         {items.map((item, i) => (
           <div key={i} className="inv-count-row">
-            <input type="number" placeholder="ID article" value={item.stock_item_id}
+            <Input type="number" placeholder="ID article" value={item.stock_item_id}
               onChange={e => updateRow(i, 'stock_item_id', e.target.value)} />
-            <input type="number" placeholder="Qté comptée" value={item.counted_qty}
+            <Input type="number" placeholder="Qté comptée" value={item.counted_qty}
               onChange={e => updateRow(i, 'counted_qty', e.target.value)} />
             <button className="inv-btn-icon danger" onClick={() => removeRow(i)}><Trash2 size={14} /></button>
           </div>
@@ -505,25 +506,25 @@ function MovementsView() {
     return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  if (loading) return <div className="inv-loading"><div className="loading-spinner" /><p>Chargement des mouvements…</p></div>;
+  if (loading) return <div className="inv-loading"><Spinner size="lg" /><p>Chargement des mouvements…</p></div>;
 
   return (
     <div className="inv-movements">
       <div className="inv-toolbar">
         <h3><TrendingUp size={18} /> Mouvements ({filtered.length})</h3>
-        <select className="inv-select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+        <Select className="inv-select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
           <option value="">Tous types</option>
           {Object.entries(MOVEMENT_TYPES).map(([k, v]) => (
             <option key={k} value={k}>{v.icon} {v.label}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {filtered.length === 0 ? (
         <div className="inv-empty"><TrendingUp size={48} /><p>Aucun mouvement enregistré</p></div>
       ) : (
         <div className="inv-table-container">
-          <table className="inv-table">
+          <Table className="inv-table">
             <thead>
               <tr>
                 <th>Date</th>
@@ -562,7 +563,7 @@ function MovementsView() {
                 );
               })}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>
@@ -584,7 +585,6 @@ const TABS = [
 ];
 
 export default function InventoryPanel({ currentUser }) {
-  const [activeTab, setActiveTab] = useState('dashboard');
   
   // Fabrication d'un toast minimaliste si pas injecté
   const toast = useMemo(() => ({
@@ -597,26 +597,21 @@ export default function InventoryPanel({ currentUser }) {
 
   return (
     <div className="inv-panel">
+      <Tabs defaultValue="dashboard">
       {/* Header avec onglets */}
       <div className="inv-header">
-        <div className="inv-tabs">
-          {TABS.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                className={`inv-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <Icon size={16} />
-                <span>{tab.label}</span>
-                {tab.id === 'anomalies' && inv.anomalies.length > 0 && (
-                  <span className="inv-tab-badge">{inv.anomalies.length}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <TabList className="inv-tabs">
+          {TABS.map(tab => (
+            <Tab
+              key={tab.id}
+              value={tab.id}
+              icon={<tab.icon size={16} />}
+              badge={tab.id === 'anomalies' && inv.anomalies.length > 0 ? inv.anomalies.length : undefined}
+            >
+              {tab.label}
+            </Tab>
+          ))}
+        </TabList>
         <div className="inv-header-stats">
           {inv.stats?.summary && (
             <>
@@ -633,12 +628,12 @@ export default function InventoryPanel({ currentUser }) {
       <div className="inv-content">
         {inv.isLoading ? (
           <div className="inv-loading">
-            <div className="loading-spinner" />
+            <Spinner size="lg" />
             <p>Chargement de l'inventaire…</p>
           </div>
         ) : (
           <>
-            {activeTab === 'dashboard' && (
+            <TabPanel value="dashboard">
               <DashboardView
                 stats={inv.stats}
                 alerts={inv.alerts}
@@ -647,30 +642,31 @@ export default function InventoryPanel({ currentUser }) {
                 onExportCSV={inv.exportCSV}
                 onRunAbc={inv.runAbcClassification}
               />
-            )}
-            {activeTab === 'movements' && <MovementsView />}
-            {activeTab === 'locations' && (
+            </TabPanel>
+            <TabPanel value="movements"><MovementsView /></TabPanel>
+            <TabPanel value="locations">
               <LocationsView
                 locations={inv.locations}
                 onCreate={inv.createLocation}
                 onUpdate={inv.updateLocation}
                 onDelete={inv.deleteLocation}
               />
-            )}
-            {activeTab === 'prices' && <PricesView />}
-            {activeTab === 'anomalies' && (
+            </TabPanel>
+            <TabPanel value="prices"><PricesView /></TabPanel>
+            <TabPanel value="anomalies">
               <AnomaliesView
                 anomalies={inv.anomalies}
                 onDetect={inv.detectAnomalies}
                 onResolve={inv.resolveAnomaly}
               />
-            )}
-            {activeTab === 'count' && (
+            </TabPanel>
+            <TabPanel value="count">
               <CountView onSubmitCount={inv.submitCount} />
-            )}
+            </TabPanel>
           </>
         )}
       </div>
+      </Tabs>
     </div>
   );
 }

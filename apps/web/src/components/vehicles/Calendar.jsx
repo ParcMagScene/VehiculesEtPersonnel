@@ -32,6 +32,7 @@ import YearSelector from '../YearSelector';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
+import { Dialog } from '@/design-system';
 
 // Fonction pour obtenir les initiales d'un utilisateur
 const getUserInitials = (userId, currentUser, users = []) => {
@@ -622,6 +623,7 @@ const Calendar = ({
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Fonctions de navigation (startTransition pour ne pas bloquer l'UI)
   const goToPrevious = useCallback(() => {
@@ -1613,7 +1615,7 @@ const Calendar = ({
     if (view === 'year' || e.button !== 0) return;
     if (!currentUser?.isAdmin) return;
     if (block.isMaintenance) return;
-    if (e.target.closest('.resize-handle, .tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn')) return;
+    if (e.target.closest('.resize-handle, .tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn, .reservation-delete-btn')) return;
     e.preventDefault();
     e.stopPropagation();
     // Calculer la position exacte (demi-journée) du clic dans le bloc
@@ -2282,7 +2284,7 @@ const Calendar = ({
                           cursor: block.isMaintenance ? 'pointer' : (currentUser?.isAdmin ? 'grab' : 'pointer')
                         }}
                         onMouseDown={(e) => {
-                          if (e.target.closest('.tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn, .resize-handle')) return;
+                          if (e.target.closest('.tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn, .resize-handle, .reservation-delete-btn')) return;
                           if (e.button === 2) return;
                           if (block.isMaintenance) {
                             e.preventDefault();
@@ -2346,15 +2348,14 @@ const Calendar = ({
                             <button
                               className="reservation-delete-btn"
                               title="Supprimer cette réservation"
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (window.confirm('Supprimer cette réservation ?')) onDeleteReservation(block.id); }}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDialog({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
+                              onMouseUp={(e) => e.stopPropagation()}
                             >
                               <Trash2 size={12} />
                             </button>
                           )}
-                          
-                        </div>
-                      {view !== 'year' && !isBeingResized && (
+                          {view !== 'year' && !isBeingResized && (
                             <>
                               <div
                                 className="resize-handle resize-handle-start"
@@ -2368,6 +2369,7 @@ const Calendar = ({
                               />
                             </>
                           )}
+                        </div>
                       </div>
                     );
                   }
@@ -2475,7 +2477,7 @@ const Calendar = ({
                           cursor: block.isMaintenance ? 'pointer' : (currentUser?.isAdmin ? 'grab' : 'pointer')
                         }}
                         onMouseDown={(e) => {
-                          if (e.target.closest('.tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn, .resize-handle')) return;
+                          if (e.target.closest('.tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn, .resize-handle, .reservation-delete-btn')) return;
                           if (e.button === 2) return;
                           if (block.isMaintenance) {
                             e.preventDefault();
@@ -2539,15 +2541,14 @@ const Calendar = ({
                             <button
                               className="reservation-delete-btn"
                               title="Supprimer cette réservation"
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (window.confirm('Supprimer cette réservation ?')) onDeleteReservation(block.id); }}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDialog({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
+                              onMouseUp={(e) => e.stopPropagation()}
                             >
                               <Trash2 size={12} />
                             </button>
                           )}
-                          
-                        </div>
-                      {view !== 'year' && !isBeingResized && (
+                          {view !== 'year' && !isBeingResized && (
                             <>
                               <div
                                 className="resize-handle resize-handle-start"
@@ -2561,6 +2562,7 @@ const Calendar = ({
                               />
                             </>
                           )}
+                        </div>
                       </div>
                     );
                   }
@@ -2745,6 +2747,16 @@ const Calendar = ({
           onClose={() => setShowYearSelector(false)}
         />
       )}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+        title={confirmDialog?.title}
+        variant={confirmDialog?.variant}
+        confirmLabel={confirmDialog?.confirmLabel}
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 };

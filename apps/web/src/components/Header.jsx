@@ -6,9 +6,9 @@ import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './planning/OverdueInterventionModal';
-import UserAvatar from './UserAvatar';
 import ProfileEditModal from './auth/ProfileEditModal';
 import { useToast } from '../hooks/useToast';
+import { Dialog, Textarea, Avatar } from '@/design-system';
 import './Header.css';
 
 const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
@@ -26,6 +26,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
   // (quick-create supprimé — les actions sont dans le header et la bannière)
 
   // Charger les demandes en attente (interventions + réservations) pour le badge admin
@@ -615,7 +616,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                               )}
                               {isRejecting ? (
                                 <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
-                                  <textarea
+                                  <Textarea
                                     className="reject-reason-input"
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
@@ -793,7 +794,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                               )}
                               {isRejecting ? (
                                 <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
-                                  <textarea
+                                  <Textarea
                                     className="reject-reason-input"
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
@@ -831,16 +832,23 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
                                   <button
                                     className="notif-action-btn approve"
-                                    onClick={async () => {
-                                      if (!confirm('Approuver cette demande et créer la réservation ?')) return;
-                                      try {
-                                        await api.approveReservationRequest(request.id);
-                                        setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                        setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                        toast.success('Demande approuvée ! La réservation a été créée.');
-                                      } catch (error) {
-                                        toast.error('Erreur lors de la validation');
-                                      }
+                                    onClick={() => {
+                                      setConfirmDialog({
+                                        title: 'Approuver la demande',
+                                        message: 'Approuver cette demande et créer la réservation ?',
+                                        variant: 'confirm',
+                                        confirmLabel: 'Approuver',
+                                        onConfirm: async () => {
+                                          try {
+                                            await api.approveReservationRequest(request.id);
+                                            setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
+                                            setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
+                                            toast.success('Demande approuvée ! La réservation a été créée.');
+                                          } catch (error) {
+                                            toast.error('Erreur lors de la validation');
+                                          }
+                                        },
+                                      });
                                     }}
                                   >
                                     <Check size={14} />
@@ -1040,7 +1048,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
                   }}
                 >
-                  <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size={36} />
+                  <Avatar name={currentUser.name} avatar={currentUser.avatar} size={36} />
                 </button>
 
                 {showUserMenu && (
@@ -1048,7 +1056,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     <div className="user-menu-overlay" onMouseDown={() => setShowUserMenu(false)} />
                     <div className="user-menu-dropdown">
                       <div className="user-menu-header">
-                        <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size={40} />
+                        <Avatar name={currentUser.name} avatar={currentUser.avatar} size="md" />
                         <div>
                           <div className="user-menu-name">{currentUser.name}</div>
                           <div className="user-menu-role">
@@ -1131,6 +1139,16 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         }}
       />
     )}
+
+    <Dialog
+      open={!!confirmDialog}
+      onClose={() => setConfirmDialog(null)}
+      title={confirmDialog?.title}
+      variant={confirmDialog?.variant}
+      onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+      confirmLabel={confirmDialog?.confirmLabel}
+      cancelLabel="Annuler"
+    />
   </>
   );
 };

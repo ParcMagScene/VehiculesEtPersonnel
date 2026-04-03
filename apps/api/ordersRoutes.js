@@ -1300,10 +1300,13 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       const suppliers = db.prepare(`
         SELECT s.*, 
           COUNT(DISTINCT o.id) as active_order_count,
-          SUM(o.total_ht) as total_ht,
-          GROUP_CONCAT(DISTINCT o.status) as order_statuses
+          COALESCE(SUM(o.total_ht), 0) as total_ht,
+          GROUP_CONCAT(DISTINCT o.status) as order_statuses,
+          (SELECT COUNT(*) FROM catalog_imports ci WHERE ci.supplier_id = s.id) as catalog_count
         FROM suppliers s
-        INNER JOIN orders o ON o.supplier_id = s.id ${statusFilter}
+        LEFT JOIN orders o ON o.supplier_id = s.id ${statusFilter}
+        WHERE EXISTS (SELECT 1 FROM orders o2 WHERE o2.supplier_id = s.id ${statusFilter})
+           OR EXISTS (SELECT 1 FROM catalog_imports ci WHERE ci.supplier_id = s.id)
         GROUP BY s.id
         ORDER BY active_order_count DESC, s.name ASC
       `).all();
@@ -1353,6 +1356,17 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
     }
   });
 
+  // ═══ Catalogues importés d'un fournisseur ═══
+  app.get('/api/suppliers/:id/catalogs', authenticateToken, (req, res) => {
+    try {
+      const catalogs = db.prepare('SELECT * FROM catalog_imports WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
+      res.json(catalogs);
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
   // ═══ Détail complet fournisseur (commandes + documents + BL correspondance) ═══
   app.get('/api/suppliers/:id/full-detail', authenticateToken, (req, res) => {
     try {
@@ -1386,6 +1400,9 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
 
       const documents = db.prepare('SELECT * FROM supplier_documents WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
 
+      // Catalog imports for this supplier
+      const catalogs = db.prepare('SELECT * FROM catalog_imports WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
+
       // BL correspondence: find affaires linked to this supplier's orders
       const affaireIds = [...new Set(orders.map(o => o.affaire_id).filter(Boolean))];
       const blCorrespondence = [];
@@ -1415,7 +1432,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
         };
       });
 
-      res.json({ supplier, orders, documents, blCorrespondence, workflow });
+      res.json({ supplier, orders, documents, catalogs, blCorrespondence, workflow });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });

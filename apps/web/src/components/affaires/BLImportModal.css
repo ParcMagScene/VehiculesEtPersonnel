@@ -89,7 +89,7 @@
 .bl-import-modal .drop-zone:hover,
 .bl-import-modal .drop-zone.drag-over {
   border-color: var(--theme-primary);
-  background: rgba(99, 102, 241, 0.04);
+  background: var(--accent-tint-subtle);
 }
 
 .bl-import-modal .drop-zone svg {
@@ -131,7 +131,7 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--theme-danger-bg);
   color: var(--theme-danger);
   flex-shrink: 0;
 }
@@ -169,7 +169,7 @@
 }
 
 .bl-import-modal .file-preview .file-remove:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--theme-danger-bg);
   color: var(--theme-danger);
 }
 
@@ -253,17 +253,17 @@
 }
 
 .bl-import-modal .status-badge.success {
-  background: rgba(16, 185, 129, 0.12);
+  background: var(--success-tint);
   color: var(--theme-success-alt);
 }
 
 .bl-import-modal .status-badge.warning {
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--warning-tint);
   color: var(--theme-warning);
 }
 
 .bl-import-modal .status-badge.error {
-  background: rgba(239, 68, 68, 0.12);
+  background: var(--danger-tint-light);
   color: var(--theme-danger);
 }
 

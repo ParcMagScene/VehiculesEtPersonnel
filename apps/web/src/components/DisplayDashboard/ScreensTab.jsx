@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense, memo } from 'r
 import { Monitor, Wifi, WifiOff, MapPin, Settings, Trash2, ToggleLeft, ToggleRight, Plus } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
 
 const ScreenFormModal = lazy(() => import('./ScreenFormModal'));
 
@@ -12,6 +13,7 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
   const [loading, setLoading] = useState(true);
   const [showScreenModal, setShowScreenModal] = useState(false);
   const [editingScreen, setEditingScreen] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadScreens = useCallback(async () => {
     try {
@@ -29,15 +31,23 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
     loadScreens();
   }, [loadScreens, refreshKey]);
 
-  const handleDelete = useCallback(async (screen) => {
-    if (!confirm(`Supprimer l'écran « ${screen.name} » ?`)) return;
-    try {
-      await api.deleteDisplayScreen(screen.id);
-      toast.success('Écran supprimé');
-      onRefresh();
-    } catch {
-      toast.error('Erreur suppression');
-    }
+  const handleDelete = useCallback((screen) => {
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: `Supprimer l'\xE9cran \xAB ${screen.name} \xBB ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.deleteDisplayScreen(screen.id);
+          toast.success('\xC9cran supprim\xE9');
+          onRefresh();
+        } catch {
+          toast.error('Erreur suppression');
+        }
+      },
+    });
   }, [toast, onRefresh]);
 
   const handleToggle = useCallback(async (screen) => {
@@ -63,11 +73,7 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
 
   if (screens.length === 0) {
     return (
-      <div className="display-empty">
-        <Monitor size={48} strokeWidth={1} />
-        <h3>Aucun écran configuré</h3>
-        <p>Ajoutez votre premier écran d'affichage dynamique pour commencer.</p>
-      </div>
+      <EmptyState icon={<Monitor size={48} strokeWidth={1} />} title="Aucun écran configuré" description="Ajoutez votre premier écran d'affichage dynamique pour commencer." />
     );
   }
 
@@ -75,9 +81,9 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
     <div className="display-screens-list">
       {isAdmin && (
         <div className="screens-toolbar">
-          <button className="btn-primary-sm" onClick={() => { setEditingScreen(null); setShowScreenModal(true); }}>
+          <Button variant="primary" size="sm" onClick={() => { setEditingScreen(null); setShowScreenModal(true); }}>
             <Plus size={14} /> Nouvel écran
-          </button>
+          </Button>
         </div>
       )}
       <div className="display-grid">
@@ -121,15 +127,21 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
 
           {isAdmin && (
             <div className="screen-actions">
-              <button className="btn-icon-sm" onClick={() => { setEditingScreen(screen); setShowScreenModal(true); }} title="Modifier">
-                <Settings size={14} />
-              </button>
-              <button className="btn-icon-sm" onClick={() => handleToggle(screen)} title={screen.is_active ? 'Désactiver' : 'Activer'}>
-                {screen.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-              </button>
-              <button className="btn-icon-sm danger" onClick={() => handleDelete(screen)} title="Supprimer">
-                <Trash2 size={14} />
-              </button>
+              <Tooltip content="Modifier">
+                <Button variant="ghost" size="sm" iconOnly onClick={() => { setEditingScreen(screen); setShowScreenModal(true); }}>
+                  <Settings size={14} />
+                </Button>
+              </Tooltip>
+              <Tooltip content={screen.is_active ? 'Désactiver' : 'Activer'}>
+                <Button variant="ghost" size="sm" iconOnly onClick={() => handleToggle(screen)}>
+                  {screen.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                </Button>
+              </Tooltip>
+              <Tooltip content="Supprimer">
+                <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(screen)}>
+                  <Trash2 size={14} />
+                </Button>
+              </Tooltip>
             </div>
           )}
         </div>
@@ -145,6 +157,17 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
           />
         </Suspense>
       )}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }

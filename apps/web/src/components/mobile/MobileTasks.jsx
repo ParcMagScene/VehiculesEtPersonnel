@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, CheckCircle, Clock, Circle, XCircle, RefreshCw, ChevronDown, ChevronRight, Briefcase, MapPin, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Circle, XCircle, RefreshCw, Briefcase, MapPin, User } from 'lucide-react';
 import api from '../../utils/api';
+import { Accordion, ProgressBar } from '@/design-system';
 import './MobileTasks.css';
 
 const SECTIONS = {
@@ -116,10 +117,7 @@ function MobileTasks({ currentUser, onBack }) {
 
       {/* Barre de progression */}
       <div className="mobile-tasks-progress">
-        <div className="mobile-tasks-progress-bar">
-          <div className="mobile-tasks-progress-fill" style={{ width: totalCount ? `${(doneCount / totalCount) * 100}%` : '0%' }} />
-        </div>
-        <span className="mobile-tasks-progress-text">{doneCount}/{totalCount} validée{doneCount > 1 ? 's' : ''}</span>
+        <ProgressBar value={doneCount} max={totalCount || 1} size="lg" color="success" label={`${doneCount}/${totalCount} validée${doneCount > 1 ? 's' : ''}`} />
       </div>
 
       {/* Toggle mes tâches / toutes (admin seulement) */}
@@ -156,16 +154,12 @@ function MobileTasks({ currentUser, onBack }) {
 
             return (
               <div key={sectionKey} className="mobile-tasks-section">
-                <button className="mobile-tasks-section-header" onClick={() => toggleSection(sectionKey)}>
-                  <span className="mobile-tasks-section-emoji">{info.emoji}</span>
-                  <span className="mobile-tasks-section-label">{info.label}</span>
-                  <span className="mobile-tasks-section-count" style={{ color: info.color }}>
-                    {sectionDone}/{sectionTasks.length}
-                  </span>
-                  {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                </button>
-
-                {!collapsed && (
+                <Accordion
+                  title={<><span className="mobile-tasks-section-emoji">{info.emoji}</span> <span className="mobile-tasks-section-label">{info.label}</span> <span className="mobile-tasks-section-count" style={{ color: info.color }}>{sectionDone}/{sectionTasks.length}</span></>}
+                  open={!collapsed}
+                  onToggle={() => toggleSection(sectionKey)}
+                  className="mobile-tasks-section-accordion"
+                >
                   <div className="mobile-tasks-section-items">
                     {sectionTasks.map(task => {
                       const st = STATUS_INFO[task.status] || STATUS_INFO.pending;
@@ -198,7 +192,7 @@ function MobileTasks({ currentUser, onBack }) {
                       );
                     })}
                   </div>
-                )}
+                </Accordion>
               </div>
             );
           })

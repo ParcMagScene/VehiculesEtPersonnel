@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 import { ArrowLeft, Car, Calendar, Users, MapPin, Plus, ChevronRight, Check } from 'lucide-react';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import api from '../../utils/api';
+import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';
 import './MobileReservations.css';
 import { useToast } from '../../hooks/useToast';
 
@@ -138,11 +139,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
         </div>
 
         <form onSubmit={handleSubmit} className="reservation-form">
-          <div className="form-group">
-            <label>
-              <Car size={18} />
-              Véhicule
-            </label>
+          <FormField className="form-group" label={<><Car size={18} /> Véhicule</>}>
             {/* Custom vehicle picker with photos */}
             <button
               type="button"
@@ -225,27 +222,19 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                 </div>
               </div>
             )}
-          </div>
+          </FormField>
 
           <div className="form-row">
-            <div className="form-group">
-              <label>
-                <Calendar size={18} />
-                Début
-              </label>
+            <FormField className="form-group" label={<><Calendar size={18} /> Début</>}>
               <input
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 required
               />
-            </div>
+            </FormField>
 
-            <div className="form-group">
-              <label>
-                <Calendar size={18} />
-                Fin
-              </label>
+            <FormField className="form-group" label={<><Calendar size={18} /> Fin</>}>
               <input
                 type="date"
                 value={formData.endDate}
@@ -253,15 +242,11 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                 min={formData.startDate}
                 required
               />
-            </div>
+            </FormField>
           </div>
 
-          <div className="form-group">
-            <label>
-              <Users size={18} />
-              Client
-            </label>
-            <select
+          <FormField className="form-group" label={<><Users size={18} /> Client</>}>
+            <Select
               value={formData.clientId}
               onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
             >
@@ -269,15 +254,11 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
               {clients.map(client => (
                 <option key={client.id} value={client.id}>{client.name}</option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
 
-          <div className="form-group">
-            <label>
-              <Users size={18} />
-              Conducteur
-            </label>
-            <select
+          <FormField className="form-group" label={<><Users size={18} /> Conducteur</>}>
+            <Select
               value={formData.driverId}
               onChange={(e) => setFormData({ ...formData, driverId: e.target.value })}
             >
@@ -285,28 +266,27 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
               {drivers.map(driver => (
                 <option key={driver.id} value={driver.id}>{driver.name}</option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
 
-          <div className="form-group">
-            <label>Notes (optionnel)</label>
-            <textarea
+          <FormField className="form-group" label="Notes (optionnel)">
+            <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows="3"
               placeholder="Informations complémentaires..."
             />
-          </div>
+          </FormField>
 
-          {error && <div className="form-error">{error}</div>}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           <div className="form-actions">
-            <button type="button" onClick={() => setShowForm(false)} className="btn-cancel">
+            <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>
               Annuler
-            </button>
-            <button type="submit" disabled={isSubmitting} className="btn-submit">
+            </Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Envoi...' : (currentUser?.isAdmin ? 'Créer' : 'Demander')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -330,9 +310,9 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
           <div className="empty-state">
             <Car size={48} />
             <p>Aucune réservation</p>
-            <button className="btn-primary" onClick={() => setShowForm(true)}>
+            <Button variant="primary" onClick={() => setShowForm(true)}>
               {currentUser?.isAdmin ? 'Créer une réservation' : 'Faire une demande'}
-            </button>
+            </Button>
           </div>
         ) : (
           myReservations.map(reservation => {

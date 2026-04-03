@@ -13,6 +13,7 @@ import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
+import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
 import './LeaveRequestsPanel.css';
 
 const LeaveRequestsPanel = ({
@@ -126,9 +127,9 @@ const LeaveRequestsPanel = ({
             <h2>Mes demandes de congés</h2>
           </div>
           <div className="lrp-header-actions">
-            <button className="lrp-btn-refresh" onClick={loadRequests} title="Rafraîchir">
+            <Tooltip content="Rafraîchir"><button className="lrp-btn-refresh" onClick={loadRequests}>
               <RefreshCw size={16} />
-            </button>
+            </button></Tooltip>
             {onNewRequest && (
               <button className="lrp-btn-new" onClick={onNewRequest}>
                 <Send size={14} /> Nouvelle demande
@@ -184,10 +185,7 @@ const LeaveRequestsPanel = ({
 
         {/* Erreur */}
         {error && (
-          <div className="lrp-error">
-            <AlertTriangle size={14} /> {error}
-            <button onClick={() => setError('')}>×</button>
-          </div>
+          <InlineAlert dismissible onDismiss={() => setError('')}>{error}</InlineAlert>
         )}
 
         {/* Liste */}
@@ -197,15 +195,15 @@ const LeaveRequestsPanel = ({
               <Clock size={20} /> Chargement...
             </div>
           ) : filteredRequests.length === 0 ? (
-            <div className="lrp-empty">
-              <Calendar size={32} />
-              <p>Aucune demande de congé</p>
-              {onNewRequest && (
+            <EmptyState
+              icon={<Calendar size={32} />}
+              title="Aucune demande de congé"
+              action={onNewRequest && (
                 <button className="lrp-btn-new-empty" onClick={onNewRequest}>
                   <Send size={14} /> Faire une demande
                 </button>
               )}
-            </div>
+            />
           ) : (
             filteredRequests.map(req => {
               const statusCfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
@@ -258,49 +256,32 @@ const LeaveRequestsPanel = ({
                   {isExpanded && (
                     <div className="lrp-card-details" onClick={e => e.stopPropagation()}>
                       {req.employee_comment && (
-                        <div className="lrp-detail-row">
-                          <span className="lrp-detail-label">Commentaire :</span>
-                          <span>{req.employee_comment || req.employeeComment}</span>
-                        </div>
+                        <DetailRow className="lrp-detail-row" label="Commentaire :" value={req.employee_comment || req.employeeComment} />
                       )}
                       {req.admin_comment && (
-                        <div className="lrp-detail-row">
-                          <span className="lrp-detail-label">Réponse :</span>
-                          <span>{req.admin_comment || req.adminComment}</span>
-                        </div>
+                        <DetailRow className="lrp-detail-row" label="Réponse :" value={req.admin_comment || req.adminComment} />
                       )}
                       {req.decision_date && (
-                        <div className="lrp-detail-row">
-                          <span className="lrp-detail-label">Décision le :</span>
-                          <span>{fmtDate(req.decision_date || req.decisionDate)}</span>
-                        </div>
+                        <DetailRow className="lrp-detail-row" label="Décision le :" value={fmtDate(req.decision_date || req.decisionDate)} />
                       )}
                       {req.decision_by_name && (
-                        <div className="lrp-detail-row">
-                          <span className="lrp-detail-label">Par :</span>
-                          <span>{req.decision_by_name || req.decisionByName}</span>
-                        </div>
+                        <DetailRow className="lrp-detail-row" label="Par :" value={req.decision_by_name || req.decisionByName} />
                       )}
                       {(req.modified_start_date || req.modifiedStartDate) && (
-                        <div className="lrp-detail-row modified">
-                          <span className="lrp-detail-label">Période modifiée :</span>
-                          <span>
-                            {fmtDate(req.modified_start_date || req.modifiedStartDate)} → {fmtDate(req.modified_end_date || req.modifiedEndDate)}
-                            {' '}({req.modified_working_days || req.modifiedWorkingDays} jours)
-                          </span>
-                        </div>
+                        <DetailRow className="lrp-detail-row modified" label="Période modifiée :">
+                          {fmtDate(req.modified_start_date || req.modifiedStartDate)} → {fmtDate(req.modified_end_date || req.modifiedEndDate)}
+                          {' '}({req.modified_working_days || req.modifiedWorkingDays} jours)
+                        </DetailRow>
                       )}
                       {req.signature_employee && (
-                        <div className="lrp-detail-row">
-                          <span className="lrp-detail-label">Signature salarié :</span>
+                        <DetailRow className="lrp-detail-row" label="Signature salarié :">
                           <span className="lrp-signature-ok"><CheckCircle size={12} /> Signé</span>
-                        </div>
+                        </DetailRow>
                       )}
                       {req.signature_admin && (
-                        <div className="lrp-detail-row">
-                          <span className="lrp-detail-label">Signature employeur :</span>
+                        <DetailRow className="lrp-detail-row" label="Signature employeur :">
                           <span className="lrp-signature-ok"><CheckCircle size={12} /> Signé</span>
-                        </div>
+                        </DetailRow>
                       )}
 
                       <div className="lrp-card-actions">

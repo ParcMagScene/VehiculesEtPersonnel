@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Camera, Trash2, Clock, Upload } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Select, SectionHeader } from '@/design-system';
 
 const DURATION_OPTIONS = [
   { value: '15', label: '15 minutes' },
@@ -79,9 +80,7 @@ function SneakyTab({ currentUser, refreshKey }) {
   return (
     <div className="dtv-sneaky-photo">
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Camera size={16} /> Photo furtive
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Camera size={16} />} title="Photo furtive" />
         <p className="dtv-hint">
           Uploadez une photo qui défilera en bas de l'écran TV pendant la durée choisie.
         </p>
@@ -101,20 +100,20 @@ function SneakyTab({ currentUser, refreshKey }) {
 
           <div className="dtv-form-group">
             <label>Durée d'affichage</label>
-            <select value={duration} onChange={e => setDuration(e.target.value)}>
+            <Select value={duration} onChange={e => setDuration(e.target.value)}>
               {DURATION_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-            </select>
+            </Select>
           </div>
 
-          <button className="btn-primary-sm" onClick={handleUpload} disabled={!selectedFile}>
+          <Button variant="primary" size="sm" onClick={handleUpload} disabled={!selectedFile}>
             <Upload size={14} /> Activer la photo furtive
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Statut */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">Photo furtive active</h3>
+        <SectionHeader className="dtv-section-title" title="Photo furtive active" />
 
         {status.active ? (
           <div className="dtv-sneaky-status">
@@ -129,9 +128,9 @@ function SneakyTab({ currentUser, refreshKey }) {
                 <img src={`${status.path}?t=${Date.now()}`} alt="Photo furtive active" />
               </div>
             )}
-            <button className="btn-danger-sm" onClick={handleDisable}>
+            <Button variant="danger" size="sm" onClick={handleDisable}>
               <Trash2 size={14} /> Désactiver la photo
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="dtv-empty-hint">❌ Aucune photo furtive active</div>

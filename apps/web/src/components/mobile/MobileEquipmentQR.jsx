@@ -3,6 +3,7 @@ import { Package, ArrowLeft, FileText, AlertTriangle, Wrench, Settings, Home, Lo
 import api from '../../utils/api';
 import './MobileEquipmentQR.css';
 import { useToast } from '../../hooks/useToast';
+import { Input, Textarea, Select, Spinner, InlineAlert } from '@/design-system';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX
@@ -131,7 +132,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-loading">
-          <Loader size={32} className="spin" />
+          <Spinner size="lg" />
           <p>Recherche de l'équipement...</p>
           <code>{uid}</code>
         </div>
@@ -232,14 +233,14 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           <h2>⚠️ Signaler un défaut</h2>
         </div>
         {submitSuccess ? (
-          <div className="m-eq-qr-success">✅ {submitSuccess}</div>
+          <InlineAlert variant="success">{submitSuccess}</InlineAlert>
         ) : (
           <div className="m-eq-qr-form">
             <p className="m-eq-qr-eq-label">{equipment.categoryIcon || '📦'} {equipment.name} — <code>{equipment.uid}</code></p>
             <label>Quel est le problème ? *</label>
-            <input type="text" value={defautForm.title} onChange={e => setDefautForm({...defautForm, title: e.target.value})} placeholder="Ex: Câble arraché, bouton cassé..." autoFocus />
+            <Input type="text" value={defautForm.title} onChange={e => setDefautForm({...defautForm, title: e.target.value})} placeholder="Ex: Câble arraché, bouton cassé..." autoFocus />
             <label>Détails (optionnel)</label>
-            <textarea value={defautForm.description} onChange={e => setDefautForm({...defautForm, description: e.target.value})} rows={4} placeholder="Quand est-ce arrivé ? Circonstances..." />
+            <Textarea value={defautForm.description} onChange={e => setDefautForm({...defautForm, description: e.target.value})} rows={4} placeholder="Quand est-ce arrivé ? Circonstances..." />
             <button className="m-eq-qr-submit warn" onClick={handleSubmitDefaut} disabled={submitting}>
               {submitting ? <Loader size={16} className="spin" /> : <AlertTriangle size={16} />}
               Envoyer le signalement
@@ -259,28 +260,28 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           <h2>🔧 Demande de SAV</h2>
         </div>
         {submitSuccess ? (
-          <div className="m-eq-qr-success">✅ {submitSuccess}</div>
+          <InlineAlert variant="success">{submitSuccess}</InlineAlert>
         ) : (
           <div className="m-eq-qr-form">
             <p className="m-eq-qr-eq-label">{equipment.categoryIcon || '📦'} {equipment.name} — <code>{equipment.uid}</code></p>
             <label>Type d'intervention</label>
-            <select value={savForm.type} onChange={e => setSavForm({...savForm, type: e.target.value})}>
+            <Select value={savForm.type} onChange={e => setSavForm({...savForm, type: e.target.value})}>
               <option value="panne">Panne</option>
               <option value="entretien">Entretien</option>
               <option value="reparation">Réparation</option>
               <option value="calibrage">Calibrage</option>
-            </select>
+            </Select>
             <label>Priorité</label>
-            <select value={savForm.priority} onChange={e => setSavForm({...savForm, priority: e.target.value})}>
+            <Select value={savForm.priority} onChange={e => setSavForm({...savForm, priority: e.target.value})}>
               <option value="low">Basse</option>
               <option value="medium">Moyenne</option>
               <option value="high">Haute</option>
               <option value="urgent">Urgente</option>
-            </select>
+            </Select>
             <label>Titre *</label>
-            <input type="text" value={savForm.title} onChange={e => setSavForm({...savForm, title: e.target.value})} placeholder="Ex: Batterie ne charge plus" />
+            <Input type="text" value={savForm.title} onChange={e => setSavForm({...savForm, title: e.target.value})} placeholder="Ex: Batterie ne charge plus" />
             <label>Description</label>
-            <textarea value={savForm.description} onChange={e => setSavForm({...savForm, description: e.target.value})} rows={4} placeholder="Détails du problème..." />
+            <Textarea value={savForm.description} onChange={e => setSavForm({...savForm, description: e.target.value})} rows={4} placeholder="Détails du problème..." />
             <button className="m-eq-qr-submit" onClick={handleSubmitSav} disabled={submitting}>
               {submitting ? <Loader size={16} className="spin" /> : <Wrench size={16} />}
               Créer la demande SAV
@@ -300,22 +301,22 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           <h2>⚙️ Intervention directe</h2>
         </div>
         {submitSuccess ? (
-          <div className="m-eq-qr-success">✅ {submitSuccess}</div>
+          <InlineAlert variant="success">{submitSuccess}</InlineAlert>
         ) : (
           <div className="m-eq-qr-form">
             <p className="m-eq-qr-eq-label">{equipment.categoryIcon || '📦'} {equipment.name} — <code>{equipment.uid}</code></p>
             <label>Type</label>
-            <select value={interventionForm.type} onChange={e => setInterventionForm({...interventionForm, type: e.target.value})}>
+            <Select value={interventionForm.type} onChange={e => setInterventionForm({...interventionForm, type: e.target.value})}>
               <option value="reparation">Réparation</option>
               <option value="entretien">Entretien</option>
               <option value="calibrage">Calibrage</option>
-            </select>
+            </Select>
             <label>Titre de l'intervention *</label>
-            <input type="text" value={interventionForm.title} onChange={e => setInterventionForm({...interventionForm, title: e.target.value})} placeholder="Ex: Remplacement fusible HP" />
+            <Input type="text" value={interventionForm.title} onChange={e => setInterventionForm({...interventionForm, title: e.target.value})} placeholder="Ex: Remplacement fusible HP" />
             <label>Description</label>
-            <textarea value={interventionForm.description} onChange={e => setInterventionForm({...interventionForm, description: e.target.value})} rows={3} placeholder="Actions effectuées..." />
+            <Textarea value={interventionForm.description} onChange={e => setInterventionForm({...interventionForm, description: e.target.value})} rows={3} placeholder="Actions effectuées..." />
             <label>Résolution</label>
-            <textarea value={interventionForm.resolution} onChange={e => setInterventionForm({...interventionForm, resolution: e.target.value})} rows={3} placeholder="Pièces changées, résultat..." />
+            <Textarea value={interventionForm.resolution} onChange={e => setInterventionForm({...interventionForm, resolution: e.target.value})} rows={3} placeholder="Pièces changées, résultat..." />
             <button className="m-eq-qr-submit ok" onClick={handleSubmitIntervention} disabled={submitting}>
               {submitting ? <Loader size={16} className="spin" /> : <Settings size={16} />}
               Enregistrer l'intervention

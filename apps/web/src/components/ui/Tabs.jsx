@@ -1,4 +1,6 @@
-import { useState, useId, Children, cloneElement, isValidElement } from 'react';
+import { useState, useId, createContext, useContext } from 'react';
+
+const TabsContext = createContext(null);
 
 /**
  * Tabs — Navigation par onglets
@@ -28,25 +30,25 @@ export function Tabs({
   };
 
   return (
-    <div className={`ui-tabs ${className}`} data-active={current}>
-      {Children.map(children, child => {
-        if (!isValidElement(child)) return child;
-        return cloneElement(child, { _active: current, _onChange: handleChange });
-      })}
-    </div>
+    <TabsContext.Provider value={{ active: current, onChange: handleChange }}>
+      <div className={`ui-tabs ${className}`} data-active={current}>
+        {children}
+      </div>
+    </TabsContext.Provider>
   );
+}
+
+function useTabsContext() {
+  return useContext(TabsContext);
 }
 
 /**
  * TabList — Conteneur des onglets
  */
-export function TabList({ children, _active, _onChange, className = '' }) {
+export function TabList({ children, className = '' }) {
   return (
     <div className={`ui-tab-list ${className}`} role="tablist">
-      {Children.map(children, child => {
-        if (!isValidElement(child)) return child;
-        return cloneElement(child, { _active, _onChange });
-      })}
+      {children}
     </div>
   );
 }
@@ -60,12 +62,11 @@ export function Tab({
   badge,
   disabled = false,
   children,
-  _active,
-  _onChange,
   className = '',
 }) {
   const id = useId();
-  const isActive = _active === value;
+  const ctx = useTabsContext();
+  const isActive = ctx?.active === value;
 
   return (
     <button
@@ -76,7 +77,7 @@ export function Tab({
       aria-controls={`panel-${id}`}
       className={`ui-tab ${isActive ? 'ui-tab--active' : ''} ${disabled ? 'ui-tab--disabled' : ''} ${className}`}
       disabled={disabled}
-      onClick={() => _onChange?.(value)}
+      onClick={() => ctx?.onChange?.(value)}
     >
       {icon && <span className="ui-tab__icon">{icon}</span>}
       <span>{children}</span>
@@ -88,8 +89,9 @@ export function Tab({
 /**
  * TabPanel — Contenu d'un onglet
  */
-export function TabPanel({ value, children, _active, className = '' }) {
-  if (_active !== value) return null;
+export function TabPanel({ value, children, className = '' }) {
+  const ctx = useTabsContext();
+  if (ctx?.active !== value) return null;
 
   return (
     <div

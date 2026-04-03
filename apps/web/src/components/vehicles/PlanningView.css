@@ -99,7 +99,7 @@
   border-bottom: 2px solid var(--theme-border-medium);
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .planning-day-header {
@@ -174,7 +174,7 @@
 
 .planning-reservation:hover {
   transform: translateX(2px);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px var(--primary-tint-strong);
 }
 
 .planning-reservation-icon {
@@ -218,7 +218,7 @@
 
 .planning-maintenance:hover {
   transform: translateX(2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--shadow-xl);
 }
 
 .planning-maintenance-reported {
@@ -333,13 +333,13 @@
 
 .planning-mode-btn:hover {
   color: var(--theme-text-heading);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--shadow-xs);
 }
 
 .planning-mode-btn.active {
   background: var(--theme-bg-card);
   color: var(--theme-info);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
 
@@ -374,12 +374,12 @@
   gap: 8px;
   border-left: 3px solid;
   min-height: 40px;
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, #e0f2fe 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
 }
 
 .planning-mission:hover {
   transform: translateX(2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-sm);
 }
 
 .planning-mission-icon {

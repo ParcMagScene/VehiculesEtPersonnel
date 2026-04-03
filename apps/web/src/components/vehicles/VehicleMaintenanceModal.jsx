@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Button, Dialog, FormField, Input, Select } from '@/design-system';
 import './VehicleMaintenanceModal.css';
 import { useToast } from '../../hooks/useToast';
 
@@ -219,9 +219,8 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
           {/* Kilométrage */}
           <div className="form-section">
             <h3><Gauge size={18} /> Kilométrage</h3>
-            <div className="form-group">
-              <label htmlFor="kilometrage">Kilométrage actuel (km)</label>
-              <input
+            <FormField className="form-group" label="Kilométrage actuel (km)" htmlFor="kilometrage">
+              <Input
                 id="kilometrage"
                 type="number"
                 value={kilometrage}
@@ -229,7 +228,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                 min="0"
                 step="1"
               />
-            </div>
+            </FormField>
           </div>
 
           {/* Contrôles techniques existants */}
@@ -288,9 +287,8 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
               </p>
             ) : (
               <>
-                <div className="form-group">
-                  <label htmlFor="ct-type">Type de contrôle</label>
-                  <select
+                <FormField className="form-group" label="Type de contrôle" htmlFor="ct-type">
+                  <Select
                     id="ct-type"
                     value={newControle.type}
                     onChange={(e) => setNewControle({ ...newControle, type: e.target.value })}
@@ -305,43 +303,40 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                         {type.label} {controles.some(c => c.type === type.value) ? '(déjà ajouté)' : ''}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   {selectedType && (
                     <p className="form-note">
                       📋 Périodicité : {selectedType.periodicDelay} mois - {selectedType.note}
                     </p>
                   )}
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label htmlFor="ct-date">Date du dernier contrôle</label>
+                <FormField className="form-group" label="Date du dernier contrôle" htmlFor="ct-date">
                   <input
                     id="ct-date"
                     type="date"
                     value={newControle.date}
                     onChange={(e) => setNewControle({ ...newControle, date: e.target.value })}
                   />
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label htmlFor="ct-deadline">Prochaine échéance</label>
+                <FormField className="form-group" label="Prochaine échéance" htmlFor="ct-deadline">
                   <input
                     id="ct-deadline"
                     type="date"
                     value={newControle.deadline}
                     onChange={(e) => setNewControle({ ...newControle, deadline: e.target.value })}
                   />
-                </div>
+                </FormField>
 
-                <button 
-                  type="button" 
-                  className="btn-add-controle"
+                <Button 
+                  variant="primary"
                   onClick={handleAddControle}
                   disabled={!newControle.type || !newControle.date || !newControle.deadline}
                 >
                   <Plus size={18} />
                   Ajouter ce contrôle
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -352,23 +347,29 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                 ✅ Sauvegardé avec succès !
               </div>
             )}
-            <button type="button" className="btn-secondary" onClick={handleSafeClose}>
+            <Button variant="ghost" onClick={handleSafeClose}>
               Annuler
-            </button>
-            <button type="submit" className="btn-primary">
+            </Button>
+            <Button variant="primary" type="submit">
               <Save size={18} />
               Enregistrer
-            </button>
+            </Button>
           </div>
         </form>
       </div>
 
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-        />
-      )}
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
     </div>
   );
 };

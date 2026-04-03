@@ -1,0 +1,20 @@
+/* ═══════════════════════════════════════
+   ModalLayout — Surcharge légère
+   ═══════════════════════════════════════
+   
+   Les styles principaux viennent de Modal.css.
+   Ce fichier ajoute uniquement des ajustements
+   spécifiques au wrapper ModalLayout.
+   ═══════════════════════════════════════ */
+
+/* Garantir que le body scroll correctement */
+.ui-modal-layout .ui-modal-body {
+  overflow-y: auto;
+  max-height: var(--modal-max-height, calc(100vh - var(--space-16)));
+}
+
+/* Footer sticky en bas */
+.ui-modal-layout .ui-modal-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--theme-border);
+}

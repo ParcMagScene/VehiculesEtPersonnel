@@ -7,10 +7,11 @@ import {
 import { fr } from 'date-fns/locale';
 import {
   ChevronLeft, ChevronRight, Calendar as CalIcon, Users, Briefcase,
-  Clock, MapPin, Ban, Palmtree, Search,
+  Clock, MapPin, Ban, Palmtree,
 } from 'lucide-react';
 import api from '../../utils/api';
 import './PersonnelAgenda.css';
+import { Input, Avatar, EmptyState, SearchBar } from '@/design-system';
 
 // Couleurs par type d'événement
 const EVENT_COLORS = {
@@ -236,15 +237,7 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
           <Users size={18} />
           <span>Personnel</span>
         </div>
-        <div className="agenda-search">
-          <Search size={14} />
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={searchPerson}
-            onChange={e => setSearchPerson(e.target.value)}
-          />
-        </div>
+        <SearchBar value={searchPerson} onChange={setSearchPerson} placeholder="Rechercher..." size="sm" />
         <div className="agenda-person-list">
           {filteredPersons.map(person => (
             <button
@@ -252,9 +245,7 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
               className={`agenda-person-item ${person.id === selectedPersonId ? 'active' : ''}`}
               onClick={() => setSelectedPersonId(person.id)}
             >
-              <div className="agenda-person-avatar">
-                {(person.first_name || '')[0]}{(person.last_name || '')[0]}
-              </div>
+              <Avatar name={`${person.first_name || ''} ${person.last_name || ''}`} size="sm" />
               <div className="agenda-person-info">
                 <div className="agenda-person-name">
                   {person.first_name} {person.last_name}
@@ -331,10 +322,7 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
             <span>Chargement...</span>
           </div>
         ) : !selectedPersonId ? (
-          <div className="agenda-empty">
-            <Users size={48} />
-            <p>Sélectionnez une personne pour voir son agenda</p>
-          </div>
+          <EmptyState icon={<Users size={48} />} title="Sélectionnez une personne pour voir son agenda" />
         ) : agendaView === 'week' ? (
           /* === VUE SEMAINE === */
           <div className="agenda-week">

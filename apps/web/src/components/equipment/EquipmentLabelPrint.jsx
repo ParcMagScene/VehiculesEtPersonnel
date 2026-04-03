@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Printer, Tag, Download } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Button, Input } from '@/design-system';
 import './EquipmentLabelPrint.css';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
@@ -224,11 +225,11 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <div className="elp-custom-size">
                 <div className="elp-field-inline">
                   <label>Largeur (mm) :</label>
-                  <input type="number" value={customWidth} onChange={(e) => setCustomWidth(Math.max(15, parseInt(e.target.value) || 15))} min={15} max={200} />
+                  <Input type="number" value={customWidth} onChange={(e) => setCustomWidth(Math.max(15, parseInt(e.target.value) || 15))} min={15} max={200} />
                 </div>
                 <div className="elp-field-inline">
                   <label>Hauteur (mm) :</label>
-                  <input type="number" value={customHeight} onChange={(e) => setCustomHeight(Math.max(10, parseInt(e.target.value) || 10))} min={10} max={100} />
+                  <Input type="number" value={customHeight} onChange={(e) => setCustomHeight(Math.max(10, parseInt(e.target.value) || 10))} min={10} max={100} />
                 </div>
               </div>
             )}
@@ -243,7 +244,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
 
             <div className="elp-field-inline">
               <label>Quantité :</label>
-              <input type="number" value={quantity} onChange={(e) => setQuantity(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))} min={1} max={100} />
+              <Input type="number" value={quantity} onChange={(e) => setQuantity(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))} min={1} max={100} />
             </div>
 
             <div className="elp-field-inline">
@@ -260,15 +261,15 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         </div>
 
         <div className="elp-footer">
-          <button className="elp-btn-cancel" onClick={onClose}>Annuler</button>
-          <button className="elp-btn-export" onClick={handleExport}>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="secondary" onClick={handleExport}>
             <Download size={16} />
             {exportFormat}
-          </button>
-          <button className="elp-btn-print" onClick={handlePrint}>
+          </Button>
+          <Button variant="primary" onClick={handlePrint}>
             <Printer size={16} />
             Imprimer {quantity > 1 ? '(' + quantity + ')' : ''}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

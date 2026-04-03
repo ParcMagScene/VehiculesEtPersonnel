@@ -29,7 +29,7 @@
   max-height: 750px;
   background: var(--theme-bg-card);
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
   animation: pdfSlideUp 0.25s ease;
 }
@@ -215,7 +215,7 @@
 }
 
 .task-checkbox-row.selected {
-  background: rgba(99, 102, 241, 0.04);
+  background: var(--accent-tint-subtle);
 }
 
 .task-cb {
@@ -292,7 +292,7 @@
   height: 20px;
   border-radius: 50%;
   background: var(--theme-primary, var(--theme-info));
-  color: #fff;
+  color: var(--theme-bg-card);
   font-size: 0.55rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -307,7 +307,7 @@
 .task-cb-affaire {
   font-size: 0.62rem;
   font-weight: 700;
-  color: var(--theme-purple-accent, #7c3aed);
+  color: var(--theme-purple-accent, var(--theme-primary-hover));
   background: rgba(124, 58, 237, 0.08);
   padding: 1px 5px;
   border-radius: 3px;

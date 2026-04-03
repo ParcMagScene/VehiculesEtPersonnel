@@ -5,7 +5,7 @@
 .user-menu-overlay {
   position: fixed;
   inset: 0;
-  z-index: 999;
+  z-index: var(--z-overlay);
 }
 
 .user-menu-dropdown {
@@ -14,7 +14,7 @@
   right: 0;
   background: var(--theme-bg-card, white);
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px var(--shadow-xl);
   overflow: hidden;
   min-width: 200px;
   z-index: var(--z-overlay);

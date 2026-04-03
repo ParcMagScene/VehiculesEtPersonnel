@@ -22,7 +22,7 @@
   max-width: 680px;
   max-height: 90dvh;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-modal);
   display: flex;
   flex-direction: column;
 }
@@ -34,12 +34,12 @@
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid var(--theme-border);
-  background: linear-gradient(135deg, #1e40af 0%, var(--theme-info) 100%);
+  background: linear-gradient(135deg, var(--theme-info-text) 0%, var(--theme-info) 100%);
   color: var(--theme-text-inverse);
   border-radius: 12px 12px 0 0;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .lrf-header-title {
@@ -61,7 +61,7 @@
 }
 
 .lrf-btn-info {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border: none;
   border-radius: 6px;
   padding: 6px;
@@ -72,11 +72,11 @@
 }
 
 .lrf-btn-info:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-medium);
 }
 
 .lrf-close-btn {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border: none;
   border-radius: 6px;
   padding: 6px;
@@ -87,7 +87,7 @@
 }
 
 .lrf-close-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-medium);
 }
 
 /* ─── LEGAL INFO BANNER ─── */
@@ -606,7 +606,7 @@
 }
 
 .lrf-btn-submit {
-  background: linear-gradient(135deg, #1e40af 0%, var(--theme-info) 100%);
+  background: linear-gradient(135deg, var(--theme-info-text) 0%, var(--theme-info) 100%);
   color: var(--theme-text-inverse);
   box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
 }

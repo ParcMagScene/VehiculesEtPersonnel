@@ -3,11 +3,13 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Layout, Trash2, Settings, ToggleLeft, ToggleRight, Eye } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
 
 function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -25,15 +27,23 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
     loadTemplates();
   }, [loadTemplates, refreshKey]);
 
-  const handleDelete = useCallback(async (tpl) => {
-    if (!confirm(`Supprimer le template « ${tpl.name} » ?`)) return;
-    try {
-      await api.deleteDisplayTemplate(tpl.id);
-      toast.success('Template supprimé');
-      onRefresh();
-    } catch {
-      toast.error('Erreur suppression');
-    }
+  const handleDelete = useCallback((tpl) => {
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: `Supprimer le template \xAB ${tpl.name} \xBB ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.deleteDisplayTemplate(tpl.id);
+          toast.success('Template supprim\xE9');
+          onRefresh();
+        } catch {
+          toast.error('Erreur suppression');
+        }
+      },
+    });
   }, [toast, onRefresh]);
 
   const isAdmin = currentUser?.isAdmin;
@@ -42,11 +52,7 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
 
   if (templates.length === 0) {
     return (
-      <div className="display-empty">
-        <Layout size={48} strokeWidth={1} />
-        <h3>Aucun template</h3>
-        <p>Les templates définissent la mise en page du contenu affiché sur les écrans.</p>
-      </div>
+      <EmptyState icon={<Layout size={48} strokeWidth={1} />} title="Aucun template" description="Les templates définissent la mise en page du contenu affiché sur les écrans." />
     );
   }
 
@@ -71,17 +77,32 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
             </div>
             {isAdmin && (
               <div className="template-actions">
-                <button className="btn-icon-sm" onClick={() => onEdit(tpl)} title="Modifier">
-                  <Settings size={14} />
-                </button>
-                <button className="btn-icon-sm danger" onClick={() => handleDelete(tpl)} title="Supprimer">
-                  <Trash2 size={14} />
-                </button>
+                <Tooltip content="Modifier">
+                  <Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(tpl)}>
+                    <Settings size={14} />
+                  </Button>
+                </Tooltip>
+                <Tooltip content="Supprimer">
+                  <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(tpl)}>
+                    <Trash2 size={14} />
+                  </Button>
+                </Tooltip>
               </div>
             )}
           </div>
         );
       })}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }

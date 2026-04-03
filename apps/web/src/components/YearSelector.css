@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--theme-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,10 +17,10 @@
 .year-selector-modal {
   background: var(--theme-bg-card);
   border-radius: 1rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
   max-width: 600px;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   width: 90%;
   max-height: 90vh;
   overflow: auto;
@@ -70,12 +70,12 @@
   border-color: var(--theme-primary);
   background: rgba(102, 126, 234, 0.05);
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 16px var(--shadow-hover);
 }
 
 .year-item.current {
   border-color: var(--theme-primary);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  background: linear-gradient(135deg, var(--accent-tint-alt) 0%, rgba(118, 75, 162, 0.1) 100%);
   font-weight: 700;
 }
 
@@ -87,7 +87,7 @@
 }
 
 .year-item.today:hover {
-  background: linear-gradient(135deg, var(--theme-info-dark) 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--theme-info-dark) 0%, var(--theme-info-text) 100%);
   border-color: var(--theme-info-dark);
 }
 
@@ -108,7 +108,7 @@
   height: 8px;
   background: var(--theme-success-alt);
   border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 0 2px var(--success-tint-vivid);
   animation: pulse 2s infinite;
 }
 

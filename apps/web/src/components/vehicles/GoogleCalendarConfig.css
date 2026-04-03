@@ -16,7 +16,7 @@
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .config-header h3 {
@@ -88,12 +88,12 @@
 }
 
 .env-prod {
-  color: #0891b2;
+  color: var(--theme-cyan-dark);
   font-size: 14px;
   padding: 8px 12px;
   background: var(--theme-info-bg);
   border-radius: 6px;
-  border: 1px solid #a5f3fc;
+  border: 1px solid var(--theme-cyan-border);
   display: inline-block;
 }
 
@@ -166,7 +166,7 @@
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .google-calendar-config .form-group {

@@ -11,6 +11,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
+import { Button, Select, Textarea, InlineAlert} from '@/design-system';
 import './LeaveRequestForm.css';
 
 // ═══════════════════════════════════════
@@ -386,18 +387,14 @@ const LeaveRequestForm = ({
         <form onSubmit={handleSubmit} className="lrf-form">
           {/* Erreur globale */}
           {error && (
-            <div className="lrf-error">
-              <AlertTriangle size={14} /> {error}
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
 
           {/* Avertissements légaux */}
           {warnings.length > 0 && (
             <div className="lrf-warnings">
               {warnings.map((w, i) => (
-                <div key={i} className="lrf-warning">
-                  <AlertTriangle size={12} /> {w}
-                </div>
+                <InlineAlert key={i} variant="warning">{w}</InlineAlert>
               ))}
             </div>
           )}
@@ -409,7 +406,7 @@ const LeaveRequestForm = ({
               Salarié
             </label>
             {isAdmin ? (
-              <select
+              <Select
                 value={selectedPersonId}
                 onChange={e => setSelectedPersonId(e.target.value)}
                 className="lrf-select"
@@ -421,7 +418,7 @@ const LeaveRequestForm = ({
                     {p.firstName || p.first_name} {p.lastName || p.last_name}
                   </option>
                 ))}
-              </select>
+              </Select>
             ) : (
               <div className="lrf-person-display">
                 {person ? `${person.firstName || person.first_name} ${person.lastName || person.last_name}` : '—'}
@@ -458,7 +455,7 @@ const LeaveRequestForm = ({
                 <Info size={14} />
                 Motif du congé exceptionnel
               </label>
-              <select
+              <Select
                 value={exceptionalType}
                 onChange={e => setExceptionalType(e.target.value)}
                 className="lrf-select"
@@ -470,7 +467,7 @@ const LeaveRequestForm = ({
                     {info.label} ({info.days} jour{info.days > 1 ? 's' : ''})
                   </option>
                 ))}
-              </select>
+              </Select>
               {exceptionalType && exceptionalTypes[exceptionalType] && (
                 <div className="lrf-exceptional-info">
                   <CheckCircle size={12} />
@@ -599,10 +596,9 @@ const LeaveRequestForm = ({
                 )}
               </div>
               {calculation && balance.remaining != null && calculation.workingDays > balance.remaining + (balance.carryOver || 0) && (
-                <div className="lrf-balance-warning">
-                  <AlertTriangle size={12} />
+                <InlineAlert variant="warning">
                   Solde insuffisant ({balance.remaining + (balance.carryOver || 0)} jours disponibles, {calculation.workingDays} demandés)
-                </div>
+                </InlineAlert>
               )}
             </div>
           )}
@@ -610,7 +606,7 @@ const LeaveRequestForm = ({
           {/* Commentaire */}
           <div className="lrf-field">
             <label className="lrf-label">Remarques (optionnel)</label>
-            <textarea
+            <Textarea
               value={comment}
               onChange={e => setComment(e.target.value)}
               className="lrf-textarea"
@@ -666,12 +662,12 @@ const LeaveRequestForm = ({
 
           {/* Actions */}
           <div className="lrf-actions">
-            <button type="button" className="lrf-btn lrf-btn-cancel" onClick={onClose}>
+            <Button variant="ghost" onClick={onClose}>
               Annuler
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               type="submit"
-              className="lrf-btn lrf-btn-submit"
               disabled={saving}
             >
               {saving ? (
@@ -683,7 +679,7 @@ const LeaveRequestForm = ({
                   <Send size={14} /> Soumettre la demande
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

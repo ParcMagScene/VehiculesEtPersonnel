@@ -6,8 +6,9 @@ import EventDetailsModal from '../planning/EventDetailsModal';
 import api from '../../utils/api';
 import logger, { oauthLogger } from '../../utils/logger';
 import { capitalizeText } from '../../utils/dateUtils';
-import { Search, X, RefreshCw, Plus, Truck, Users, CalendarPlus } from 'lucide-react';
+import { Search, RefreshCw, Plus, Truck, Users, CalendarPlus } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { Input, Spinner, InlineAlert, SearchBar, LoadingOverlay } from '@/design-system';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('../affaires/AffaireImportModal'));
@@ -953,9 +954,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
               {tokenClient ? 'Se connecter avec Google' : 'Chargement...'}
             </button>
             {error && (
-              <div className="error-message">
-                <p>{error}</p>
-              </div>
+              <InlineAlert>{error}</InlineAlert>
             )}
           </div>
         </div>
@@ -1034,21 +1033,14 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
             </div>
             {searchOpen && displayMode !== 'closed' && (
               <div className="banner-search-bar">
-                <Search size={13} className="banner-search-icon" />
-                <input
+                <SearchBar
                   ref={searchInputRef}
-                  type="text"
-                  className="banner-search-input"
-                  placeholder="Nom, n° affaire…"
                   value={searchFilter}
-                  onChange={e => setSearchFilter(e.target.value)}
+                  onChange={setSearchFilter}
+                  placeholder="Nom, n° affaire…"
+                  size="sm"
                   onKeyDown={e => { if (e.key === 'Escape') { setSearchFilter(''); setSearchOpen(false); } }}
                 />
-                {searchFilter && (
-                  <button className="banner-search-clear" onClick={() => { setSearchFilter(''); searchInputRef.current?.focus(); }}>
-                    <X size={12} />
-                  </button>
-                )}
                 <span className="banner-search-count">{eventBlocks.length}</span>
               </div>
             )}
@@ -1227,7 +1219,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
 
     {/* Modal de création / édition d'événement Google */}
     {eventFormOpen && (
-      <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div></div>}>
+      <Suspense fallback={<LoadingOverlay />}>
         <GoogleEventFormModal
           isOpen={eventFormOpen}
           onClose={handleCloseEventForm}
@@ -1241,7 +1233,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     
     {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}
     {modalOpen && (
-      <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div></div>}>
+      <Suspense fallback={<LoadingOverlay />}>
         <AffaireImportModal
           isOpen={modalOpen}
           onClose={handleCloseModal}

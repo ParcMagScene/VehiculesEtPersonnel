@@ -18,6 +18,7 @@ import api from '../../utils/api';
 import PersonnelPanel from '../personnel/PersonnelPanel';
 import './ManagementPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { Button, Dialog, Input, Select } from '@/design-system';
 
 const ManagementPanel = ({
   vehicles,
@@ -85,6 +86,7 @@ const ManagementPanel = ({
   const [depotZones, setDepotZones] = useState(null);
   const [locationStats, setLocationStats] = useState(null);
   const [activeDepot, setActiveDepot] = useState(1);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Charger le nombre de demandes d'accès en attente
   useEffect(() => {
@@ -169,7 +171,6 @@ const ManagementPanel = ({
   ] : [
     { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
     { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
-    { id: 'locations', label: 'Lieux', icon: Map, color: '#10b981' },
     ...(currentUser?.isAdmin ? [
       { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
     ] : []),
@@ -433,35 +434,41 @@ const ManagementPanel = ({
     setEditingItem(null);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
-      const currentList = getCurrentList();
-      const newList = currentList.filter(item => item.id !== id);
-      
-      // Appeler l'API backend pour supprimer
-      try {
-        if (activeTab === 'vehicles') {
-          await api.deleteVehicle(id);
-          setVehicles(newList);
-          saveToIndexedDB(STORES.vehicles, newList);
-        } else if (activeTab === 'clients') {
-          await api.deleteClient(id);
-          setClients(newList);
-          saveToIndexedDB(STORES.clients, newList);
-        } else if (activeTab === 'drivers') {
-          await api.deleteDriver(id);
-          setDrivers(newList);
-          saveToIndexedDB(STORES.drivers, newList);
-        } else if (activeTab === 'locations') {
-          await api.deleteLocation(id);
-          setLocations(newList);
-          saveToIndexedDB(STORES.locations, newList);
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      title: 'Supprimer cet élément',
+      message: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        const currentList = getCurrentList();
+        const newList = currentList.filter(item => item.id !== id);
+        
+        // Appeler l'API backend pour supprimer
+        try {
+          if (activeTab === 'vehicles') {
+            await api.deleteVehicle(id);
+            setVehicles(newList);
+            saveToIndexedDB(STORES.vehicles, newList);
+          } else if (activeTab === 'clients') {
+            await api.deleteClient(id);
+            setClients(newList);
+            saveToIndexedDB(STORES.clients, newList);
+          } else if (activeTab === 'drivers') {
+            await api.deleteDriver(id);
+            setDrivers(newList);
+            saveToIndexedDB(STORES.drivers, newList);
+          } else if (activeTab === 'locations') {
+            await api.deleteLocation(id);
+            setLocations(newList);
+            saveToIndexedDB(STORES.locations, newList);
+          }
+        } catch (error) {
+          console.error('❌ Erreur suppression:', error);
+          toast.error(`Erreur lors de la suppression: ${error.message}`);
         }
-      } catch (error) {
-        console.error('❌ Erreur suppression:', error);
-        toast.error(`Erreur lors de la suppression: ${error.message}`);
-      }
-    }
+      },
+    });
   };
 
   const handleMoveUp = async (index) => {
@@ -752,7 +759,7 @@ const ManagementPanel = ({
               </div>
             {showAddForm && activeTab !== 'locations' && activeTab !== 'clients' && (
               <div className="add-form">
-              <input
+              <Input
                 type="text"
                 placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : 'lieu'}`}
                 value={newItem.name}
@@ -781,32 +788,32 @@ const ManagementPanel = ({
               
               {activeTab === 'vehicles' && (
                 <>
-                  <input
+                  <Input
                     type="text"
                     placeholder="Type (VL 20m3, Porteur...)"
                     value={newItem.type}
                     onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
                   />
-                  <input
+                  <Input
                     type="text"
                     placeholder="Immatriculation"
                     value={newItem.immatriculation}
                     onChange={(e) => setNewItem({ ...newItem, immatriculation: e.target.value })}
                   />
-                  <input
+                  <Input
                     type="text"
                     placeholder="Marque"
                     value={newItem.marque}
                     onChange={(e) => setNewItem({ ...newItem, marque: e.target.value })}
                   />
-                  <input
+                  <Input
                     type="text"
                     placeholder="Couleur véhicule"
                     value={newItem.couleurVehicule}
                     onChange={(e) => setNewItem({ ...newItem, couleurVehicule: e.target.value })}
                   />
                   <div className="photo-select-wrapper">
-                    <select
+                    <Select
                       value={newItem.photo}
                       onChange={(e) => setNewItem({ ...newItem, photo: e.target.value })}
                     >
@@ -814,7 +821,7 @@ const ManagementPanel = ({
                       {availablePhotos.map(photo => (
                         <option key={photo} value={photo}>{photo}</option>
                       ))}
-                    </select>
+                    </Select>
                     <button
                       type="button"
                       className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
@@ -1011,7 +1018,7 @@ const ManagementPanel = ({
                       >
                         {editingItem?.id === item.id ? (
                     <div className="edit-form">
-                      <input
+                      <Input
                         type="text"
                         value={editingItem.name}
                         onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
@@ -1020,32 +1027,32 @@ const ManagementPanel = ({
                       />
                       {activeTab === 'vehicles' && (
                         <>
-                          <input
+                          <Input
                             type="text"
                             value={editingItem.type || ''}
                             onChange={(e) => setEditingItem({ ...editingItem, type: e.target.value })}
                             placeholder="Type"
                           />
-                          <input
+                          <Input
                             type="text"
                             value={editingItem.immatriculation || editingItem.registration || ''}
                             onChange={(e) => setEditingItem({ ...editingItem, immatriculation: e.target.value, registration: e.target.value })}
                             placeholder="Immatriculation"
                           />
-                          <input
+                          <Input
                             type="text"
                             value={editingItem.marque || editingItem.brand || ''}
                             onChange={(e) => setEditingItem({ ...editingItem, marque: e.target.value, brand: e.target.value })}
                             placeholder="Marque"
                           />
-                          <input
+                          <Input
                             type="text"
                             value={editingItem.couleurVehicule || editingItem.color || ''}
                             onChange={(e) => setEditingItem({ ...editingItem, couleurVehicule: e.target.value, color: e.target.value })}
                             placeholder="Couleur véhicule"
                           />
                           <div className="photo-select-wrapper">
-                            <select
+                            <Select
                               value={editingItem.photo || ''}
                               onChange={(e) => setEditingItem({ ...editingItem, photo: e.target.value })}
                             >
@@ -1053,7 +1060,7 @@ const ManagementPanel = ({
                               {availablePhotos.map(photo => (
                                 <option key={photo} value={photo}>{photo}</option>
                               ))}
-                            </select>
+                            </Select>
                             <button
                               type="button"
                               className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
@@ -1079,12 +1086,12 @@ const ManagementPanel = ({
                         </>
                       )}
                       <div className="edit-actions">
-                        <button className="save-button" onClick={handleSaveEdit}>
+                        <Button variant="primary" onClick={handleSaveEdit}>
                           Enregistrer
-                        </button>
-                        <button className="cancel-edit-button" onClick={() => setEditingItem(null)}>
+                        </Button>
+                        <Button variant="ghost" onClick={() => setEditingItem(null)}>
                           Annuler
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -1216,39 +1223,39 @@ const ManagementPanel = ({
                         {editingItem?.id === item.id ? (
                           <div className="edit-form">
                             {/* Contenu d'édition identique */}
-                            <input
+                            <Input
                               type="text"
                               value={editingItem.name}
                               onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
                               onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
                               placeholder="Nom"
                             />
-                            <input
+                            <Input
                               type="text"
                               value={editingItem.type || ''}
                               onChange={(e) => setEditingItem({ ...editingItem, type: e.target.value })}
                               placeholder="Type"
                             />
-                            <input
+                            <Input
                               type="text"
                               value={editingItem.immatriculation || editingItem.registration || ''}
                               onChange={(e) => setEditingItem({ ...editingItem, immatriculation: e.target.value, registration: e.target.value })}
                               placeholder="Immatriculation"
                             />
-                            <input
+                            <Input
                               type="text"
                               value={editingItem.marque || editingItem.brand || ''}
                               onChange={(e) => setEditingItem({ ...editingItem, marque: e.target.value, brand: e.target.value })}
                               placeholder="Marque"
                             />
-                            <input
+                            <Input
                               type="text"
                               value={editingItem.couleurVehicule || editingItem.color || ''}
                               onChange={(e) => setEditingItem({ ...editingItem, couleurVehicule: e.target.value, color: e.target.value })}
                               placeholder="Couleur véhicule"
                             />
                             <div className="photo-select-wrapper">
-                              <select
+                              <Select
                                 value={editingItem.photo || ''}
                                 onChange={(e) => setEditingItem({ ...editingItem, photo: e.target.value })}
                               >
@@ -1256,7 +1263,7 @@ const ManagementPanel = ({
                                 {availablePhotos.map(photo => (
                                   <option key={photo} value={photo}>{photo}</option>
                                 ))}
-                              </select>
+                              </Select>
                               <button
                                 type="button"
                                 className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
@@ -1280,12 +1287,12 @@ const ManagementPanel = ({
                               </div>
                             </div>
                             <div className="edit-actions">
-                              <button className="save-button" onClick={handleSaveEdit}>
+                              <Button variant="primary" onClick={handleSaveEdit}>
                                 Enregistrer
-                              </button>
-                              <button className="cancel-edit-button" onClick={() => setEditingItem(null)}>
+                              </Button>
+                              <Button variant="ghost" onClick={() => setEditingItem(null)}>
                                 Annuler
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         ) : (
@@ -1367,7 +1374,7 @@ const ManagementPanel = ({
                               <div key={item.id} className="item-card">
                                 {editingItem?.id === item.id ? (
                                   <div className="edit-form">
-                                    <input
+                                    <Input
                                       type="text"
                                       value={editingItem.name}
                                       onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
@@ -1375,12 +1382,12 @@ const ManagementPanel = ({
                                       placeholder="Nom"
                                     />
                                     <div className="edit-actions">
-                                      <button className="save-button" onClick={handleSaveEdit}>
+                                      <Button variant="primary" onClick={handleSaveEdit}>
                                         Enregistrer
-                                      </button>
-                                      <button className="cancel-edit-button" onClick={() => setEditingItem(null)}>
+                                      </Button>
+                                      <Button variant="ghost" onClick={() => setEditingItem(null)}>
                                         Annuler
-                                      </button>
+                                      </Button>
                                     </div>
                                   </div>
                                 ) : (
@@ -1435,7 +1442,7 @@ const ManagementPanel = ({
                     <div key={item.id} className="item-card">
                       {editingItem?.id === item.id ? (
                         <div className="edit-form">
-                          <input
+                          <Input
                             type="text"
                             value={editingItem.name}
                             onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
@@ -1443,12 +1450,12 @@ const ManagementPanel = ({
                             placeholder="Nom"
                           />
                           <div className="edit-actions">
-                            <button className="save-button" onClick={handleSaveEdit}>
+                            <Button variant="primary" onClick={handleSaveEdit}>
                               Enregistrer
-                            </button>
-                            <button className="cancel-edit-button" onClick={() => setEditingItem(null)}>
+                            </Button>
+                            <Button variant="ghost" onClick={() => setEditingItem(null)}>
                               Annuler
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ) : (
@@ -1549,6 +1556,16 @@ const ManagementPanel = ({
           }}
         />
       )}
+
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title}
+        variant={confirmDialog?.variant}
+        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
+        confirmLabel={confirmDialog?.confirmLabel}
+        cancelLabel="Annuler"
+      />
     </div>
   );
 };

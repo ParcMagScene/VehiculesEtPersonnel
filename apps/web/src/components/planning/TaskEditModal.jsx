@@ -5,8 +5,8 @@ import {
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import { useToast } from '../../hooks/useToast';
-import EntityCombobox from '../ui/EntityCombobox';
 import './TaskEditModal.css';
+import { Input, Textarea, Select, EntityCombobox } from '@/design-system';
 
 const SECTIONS = {
   rdv:                'Rendez-vous',
@@ -175,7 +175,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
           {/* Titre */}
           <div className="tem-field full">
             <label><FileText size={13} /> Titre</label>
-            <input
+            <Input
               type="text"
               value={form.title}
               onChange={e => update('title', e.target.value)}
@@ -202,10 +202,10 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
             </div>
             <div className="tem-field">
               <label>Période</label>
-              <select value={form.period} onChange={e => update('period', e.target.value)}>
+              <Select value={form.period} onChange={e => update('period', e.target.value)}>
                 <option value="AM">Matin (AM)</option>
                 <option value="PM">Après-midi (PM)</option>
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -260,7 +260,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               <div className="tem-affaire-picker">
                 <div className="tem-affaire-search-wrap">
                   <Search size={13} className="tem-affaire-search-icon" />
-                  <input
+                  <Input
                     type="text"
                     value={affaireSearch}
                     onChange={e => { setAffaireSearch(e.target.value); setAffaireDropdownOpen(true); }}
@@ -298,11 +298,11 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
           {/* Type de tâche */}
           <div className="tem-field full">
             <label><Briefcase size={13} /> Type</label>
-            <select value={form.section} onChange={e => update('section', e.target.value)}>
+            <Select value={form.section} onChange={e => update('section', e.target.value)}>
               {Object.entries(SECTIONS).map(([key, label]) => (
                 <option key={key} value={key}>{label}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {/* Lieu / Adresse (affiché pour les sections courses) */}
@@ -310,7 +310,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
             <div className="tem-field full">
               <label><MapPin size={13} /> Lieu</label>
               <div className="tem-location-row">
-                <input
+                <Input
                   type="text"
                   value={form.locationAddress}
                   onChange={e => update('locationAddress', e.target.value)}
@@ -335,18 +335,18 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
           {/* Statut */}
           <div className="tem-field full">
             <label>Statut</label>
-            <select value={form.status} onChange={e => update('status', e.target.value)}>
+            <Select value={form.status} onChange={e => update('status', e.target.value)}>
               <option value="pending">En attente</option>
               <option value="in_progress">En cours</option>
               <option value="done">Terminé</option>
               <option value="cancelled">Annulé</option>
-            </select>
+            </Select>
           </div>
 
           {/* Notes */}
           <div className="tem-field full">
             <label>Notes</label>
-            <textarea
+            <Textarea
               value={form.notes}
               onChange={e => update('notes', e.target.value)}
               placeholder="Notes..."

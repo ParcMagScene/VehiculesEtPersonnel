@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Calendar, GraduationCap, Building2, Wrench, FileCheck, Clock } from 'lucide-react';
+import { Tag, Divider } from '@/design-system';
 import './PersonnelContextMenu.css';
 
 // Types de périodes disponibles dans le menu contextuel
@@ -58,7 +59,7 @@ const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
         <span className="pp-context-menu-person">{person.firstName} {person.lastName || ''}</span>
         <span className="pp-context-menu-subtitle">Ajouter une période</span>
       </div>
-      <div className="pp-context-menu-divider" />
+      <Divider className="pp-context-menu-divider" />
       {menuItems.map(item => {
         const Icon = item.icon;
         return (
@@ -72,7 +73,7 @@ const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
             </span>
             <span className="pp-context-menu-label">{item.label}</span>
             {item.requiresApproval && (
-              <span className="pp-context-menu-badge">Validation requise</span>
+              <Tag color="warning" size="sm">Validation requise</Tag>
             )}
           </button>
         );

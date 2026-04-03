@@ -3,7 +3,7 @@ import { X, Plus, Trash2, MapPin, Clock, User, ArrowRight, ArrowDown } from 'luc
 import './TripDetailsModal.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded as checkGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import LocationDialog from './LocationDialog';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Button, Dialog, Input, FormField } from '@/design-system';
 import DriverSelect from './DriverSelect';
 import api from '../../utils/api';
 import AddressAutocomplete from '../AddressAutocomplete';
@@ -1040,11 +1040,7 @@ const TripDetailsModal = ({
 
           {/* Conducteur */}
           <div className="trip-row">
-            <div className="form-group">
-              <label>
-                <User size={18} style={{marginRight: '0.25rem'}} />
-                Conducteur pour ce trajet
-              </label>
+            <FormField className="form-group" label={<><User size={18} style={{marginRight: '0.25rem'}} /> Conducteur pour ce trajet</>}>
               {(() => {
                 const vehicleType = vehicle?.type?.toUpperCase() || '';
                 let requiredSkill = 'Conduite VL';
@@ -1066,7 +1062,7 @@ const TripDetailsModal = ({
                   />
                 );
               })()}
-            </div>
+            </FormField>
           </div>
 
           {/* TRAJET ALLER */}
@@ -1075,8 +1071,7 @@ const TripDetailsModal = ({
             
             {/* Départ ALLER */}
             <div className="trip-row">
-              <div className="form-group">
-                <label>Départ</label>
+              <FormField className="form-group" label="Départ">
                 <div className="location-input-wrapper">
                   <AddressAutocomplete
                     name="departureLocation"
@@ -1097,9 +1092,8 @@ const TripDetailsModal = ({
                   </button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
-              </div>
-              <div className="form-group">
-                <label>Date</label>
+              </FormField>
+              <FormField className="form-group" label="Date">
                 <input
                   type="date"
                   name="departureDate"
@@ -1108,9 +1102,8 @@ const TripDetailsModal = ({
                   required
                   style={savedFieldStyle}
                 />
-              </div>
-              <div className="form-group">
-                <label>Heure</label>
+              </FormField>
+              <FormField className="form-group" label="Heure">
                 <input
                   type="time"
                   name="departureTime"
@@ -1119,7 +1112,7 @@ const TripDetailsModal = ({
                   required
                   style={savedFieldStyle}
                 />
-              </div>
+              </FormField>
             </div>
 
             {/* Pauses ALLER */}
@@ -1132,9 +1125,8 @@ const TripDetailsModal = ({
               
               return (
                 <div key={pause.id} className="trip-row" style={{gridTemplateColumns: '2fr 1fr 1fr auto'}}>
-                  <div className="form-group">
-                    <label>Pause</label>
-                    <input
+                  <FormField className="form-group" label="Pause">
+                    <Input
                       id={`pause-location-${pause.id}`}
                       type="text"
                       placeholder="Lieu de la pause"
@@ -1143,19 +1135,17 @@ const TripDetailsModal = ({
                       list="locations-list"
                       style={pauseStyle}
                     />
-                  </div>
-                  <div className="form-group">
-                    <label>Heure</label>
+                  </FormField>
+                  <FormField className="form-group" label="Heure">
                     <input
                       type="time"
                       value={pause.startTime}
                       onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
                       style={pauseStyle}
                     />
-                  </div>
-                  <div className="form-group">
-                    <label>Durée (min)</label>
-                    <input
+                  </FormField>
+                  <FormField className="form-group" label="Durée (min)">
+                    <Input
                       type="number"
                       placeholder="30"
                       value={pause.duration}
@@ -1164,9 +1154,8 @@ const TripDetailsModal = ({
                       step="5"
                       style={pauseStyle}
                     />
-                  </div>
-                  <div className="form-group">
-                    <label style={{opacity: 0, height: '1.25rem'}}>-</label>
+                  </FormField>
+                  <FormField className="form-group" label="-">
                     <button
                       type="button"
                       onClick={() => removePause(pause.id)}
@@ -1174,7 +1163,7 @@ const TripDetailsModal = ({
                     >
                       <Trash2 size={16} />
                     </button>
-                  </div>
+                  </FormField>
                 </div>
               );
             })}
@@ -1193,8 +1182,7 @@ const TripDetailsModal = ({
 
             {/* Arrivée ALLER */}
             <div className="trip-row">
-              <div className="form-group">
-                <label>Arrivée</label>
+              <FormField className="form-group" label="Arrivée">
                 <div className="location-input-wrapper">
                   <AddressAutocomplete
                     name="arrivalLocation"
@@ -1215,9 +1203,8 @@ const TripDetailsModal = ({
                   </button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
-              </div>
-              <div className="form-group">
-                <label>Date</label>
+              </FormField>
+              <FormField className="form-group" label="Date">
                 <input
                   type="date"
                   name="arrivalDate"
@@ -1226,9 +1213,8 @@ const TripDetailsModal = ({
                   required
                   style={savedFieldStyle}
                 />
-              </div>
-              <div className="form-group">
-                <label>Heure</label>
+              </FormField>
+              <FormField className="form-group" label="Heure">
                 <input
                   type="time"
                   name="arrivalTime"
@@ -1237,7 +1223,7 @@ const TripDetailsModal = ({
                   required
                   style={savedFieldStyle}
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="duration-section">
@@ -1271,8 +1257,7 @@ const TripDetailsModal = ({
             
             {/* Départ RETOUR */}
             <div className="trip-row">
-              <div className="form-group">
-                <label>Départ</label>
+              <FormField className="form-group" label="Départ">
                 <div className="location-input-wrapper">
                   <AddressAutocomplete
                     name="returnDepartureLocation"
@@ -1293,9 +1278,8 @@ const TripDetailsModal = ({
                   </button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
-              </div>
-              <div className="form-group">
-                <label>Date</label>
+              </FormField>
+              <FormField className="form-group" label="Date">
                 <input
                   type="date"
                   name="returnDepartureDate"
@@ -1304,9 +1288,8 @@ const TripDetailsModal = ({
                   required
                   style={savedFieldStyle}
                 />
-              </div>
-              <div className="form-group">
-                <label>Heure</label>
+              </FormField>
+              <FormField className="form-group" label="Heure">
                 <input
                   type="time"
                   name="returnDepartureTime"
@@ -1315,7 +1298,7 @@ const TripDetailsModal = ({
                   required
                   style={savedFieldStyle}
                 />
-              </div>
+              </FormField>
             </div>
 
             {/* Pauses RETOUR */}
@@ -1328,9 +1311,8 @@ const TripDetailsModal = ({
               
               return (
                 <div key={pause.id} className="trip-row" style={{gridTemplateColumns: '2fr 1fr 1fr auto'}}>
-                  <div className="form-group">
-                    <label>Pause</label>
-                    <input
+                  <FormField className="form-group" label="Pause">
+                    <Input
                       id={`pause-location-${pause.id}`}
                       type="text"
                       placeholder="Lieu de la pause"
@@ -1339,19 +1321,17 @@ const TripDetailsModal = ({
                       list="locations-list"
                       style={pauseStyle}
                     />
-                  </div>
-                  <div className="form-group">
-                    <label>Heure</label>
+                  </FormField>
+                  <FormField className="form-group" label="Heure">
                     <input
                       type="time"
                       value={pause.startTime}
                       onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
                       style={pauseStyle}
                     />
-                  </div>
-                  <div className="form-group">
-                    <label>Durée (min)</label>
-                    <input
+                  </FormField>
+                  <FormField className="form-group" label="Durée (min)">
+                    <Input
                       type="number"
                       placeholder="30"
                       value={pause.duration}
@@ -1360,9 +1340,8 @@ const TripDetailsModal = ({
                       step="5"
                       style={pauseStyle}
                     />
-                  </div>
-                  <div className="form-group">
-                    <label style={{opacity: 0, height: '1.25rem'}}>-</label>
+                  </FormField>
+                  <FormField className="form-group" label="-">
                     <button
                       type="button"
                       onClick={() => removePause(pause.id)}
@@ -1370,7 +1349,7 @@ const TripDetailsModal = ({
                     >
                       <Trash2 size={16} />
                     </button>
-                  </div>
+                  </FormField>
                 </div>
               );
             })}
@@ -1389,8 +1368,7 @@ const TripDetailsModal = ({
 
             {/* Arrivée RETOUR */}
             <div className="trip-row">
-              <div className="form-group">
-                <label>Arrivée</label>
+              <FormField className="form-group" label="Arrivée">
                 <div className="location-input-wrapper">
                   <AddressAutocomplete
                     name="returnArrivalLocation"
@@ -1411,9 +1389,8 @@ const TripDetailsModal = ({
                   </button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
-              </div>
-              <div className="form-group">
-                <label>Date</label>
+              </FormField>
+              <FormField className="form-group" label="Date">
                 <input
                   type="date"
                   name="returnArrivalDate"
@@ -1422,9 +1399,8 @@ const TripDetailsModal = ({
                   required
                   style={savedFieldStyle}
                 />
-              </div>
-              <div className="form-group">
-                <label>Heure</label>
+              </FormField>
+              <FormField className="form-group" label="Heure">
                 <input
                   type="time"
                   name="returnArrivalTime"
@@ -1433,7 +1409,7 @@ const TripDetailsModal = ({
                   required
                   style={savedFieldStyle}
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="duration-section">
@@ -1462,12 +1438,12 @@ const TripDetailsModal = ({
           </div>
 
           <div className="modal-actions">
-            <button type="button" onClick={handleSafeClose} className="cancel-button">
+            <Button variant="ghost" onClick={handleSafeClose}>
               Annuler
-            </button>
-            <button type="submit" className="save-button">
+            </Button>
+            <Button variant="primary" type="submit">
               Enregistrer
-            </button>
+            </Button>
           </div>
 
           {/* Datalist pour suggestions de lieux */}
@@ -1490,12 +1466,18 @@ const TripDetailsModal = ({
         />
       )}
 
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-        />
-      )}
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
     </div>
   );
 };

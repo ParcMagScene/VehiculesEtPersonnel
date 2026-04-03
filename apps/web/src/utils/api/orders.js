@@ -108,6 +108,9 @@ export function registerOrdersMethods(ApiClient) {
     async getSupplierFullDetail(supplierId) {
       return this.request(`/suppliers/${supplierId}/full-detail`, { skipCamelCase: true });
     },
+    async getSupplierCatalogs(supplierId) {
+      return this.request(`/suppliers/${supplierId}/catalogs`, { skipCamelCase: true });
+    },
 
     // ── Articles fournisseurs (catalogues PDF) ──
     async getSupplierArticles(params = {}) {

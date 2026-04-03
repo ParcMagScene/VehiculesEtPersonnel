@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import logger from "../../utils/logger";
 import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
 import api from '../../utils/api';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Button, Dialog, FormField, Input, Select, InlineAlert } from '@/design-system';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import { useToast } from '../../hooks/useToast';
@@ -422,23 +422,17 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
 
         <form onSubmit={handleSubmit}>
           {error && (
-            <div className="error-banner">
-              <strong>⚠️ Erreur</strong>
-              <p>{error}</p>
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
           
           {successMessage && (
-            <div className="success-banner">
-              <strong>{successMessage}</strong>
-            </div>
+            <InlineAlert variant="success">{successMessage}</InlineAlert>
           )}
 
           <div className="location-dialog-content">
             <div className="form-section">
-              <div className="form-group">
-                <label htmlFor="location-name">Nom du lieu *</label>
-                <input
+              <FormField className="form-group" label="Nom du lieu" htmlFor="location-name" required>
+                <Input
                   id="location-name"
                   type="text"
                   value={formData.name}
@@ -446,11 +440,10 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                   placeholder="Ex: Théâtre de la Ville, Palais des Congrès..."
                   required
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="location-type">Type de lieu *</label>
-                <select
+              <FormField className="form-group" label="Type de lieu" htmlFor="location-type" required>
+                <Select
                   id="location-type"
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -461,28 +454,26 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                   <option value="Dépôt">Dépôt</option>
                   <option value="Garage">Garage</option>
                   <option value="Autre">Autre</option>
-                </select>
-              </div>
+                </Select>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="location-address">Rechercher une adresse</label>
+              <FormField className="form-group" label="Rechercher une adresse" htmlFor="location-address">
                 <div ref={addressAutocompleteContainerRef} className="autocomplete-container"></div>
                 <small className="help-text">
                   Utilisez l'autocomplétion pour trouver une adresse précise
                 </small>
-              </div>
+              </FormField>
 
               {formData.address && (
-                <div className="form-group">
-                  <label htmlFor="location-address-display">Adresse sélectionnée</label>
-                  <input
+                <FormField className="form-group" label="Adresse sélectionnée" htmlFor="location-address-display">
+                  <Input
                     id="location-address-display"
                     type="text"
                     value={formData.address}
                     readOnly
                     className="readonly-input"
                   />
-                </div>
+                </FormField>
               )}
 
               <div className="form-group">
@@ -544,22 +535,28 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           </div>
 
           <div className="location-dialog-footer">
-            <button type="button" className="btn-cancel" onClick={handleSafeClose}>
+            <Button variant="ghost" onClick={handleSafeClose}>
               Fermer
-            </button>
-            <button type="submit" className="btn-save" disabled={isSaving}>
+            </Button>
+            <Button variant="primary" type="submit" disabled={isSaving}>
               {isSaving ? 'Enregistrement...' : (location ? 'Mettre à jour' : 'Ajouter')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
 
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-        />
-      )}
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
     </div>
   );
 };

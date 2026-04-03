@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Clock, CheckCircle, AlertTriangle, FileText, Loader, X, User, Calendar, Gauge } from 'lucide-react';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Button, Dialog, FormField, Input, Textarea, Select, Checkbox, Tabs, TabList, Tab, TabPanel, StatusBadge } from '@/design-system';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
 import api from '../../utils/api';
-import ConfirmDialog from '../ConfirmDialog';
 import './MaintenanceDialog.css';
 import { useToast } from '../../hooks/useToast';
 
@@ -455,11 +454,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           <button className="close-button" onClick={handleSafeClose}>✕</button>
         </div>
 
-        <div className="maintenance-tabs">
-          <button 
-            className={`tab-button ${activeTab === 'new' ? 'active' : ''}`}
-            onClick={() => setActiveTab('new')}
-          >
+        <Tabs value={activeTab} onChange={setActiveTab}>
+        <TabList className="maintenance-tabs">
+          <Tab value="new">
             {editingId ? (
               isViewMode ? '📋 Détails' :
               maintenanceToEditData?.status === 'pending' ? '📝 Demande d\'intervention' :
@@ -467,23 +464,17 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               maintenanceToEditData?.status === 'scheduled' ? '📅 Intervention programmée' :
               '✏️ Modifier l\'intervention'
             ) : '➕ Nouvelle intervention'}
-          </button>
-          <button 
-            className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveTab('history')}
-          >
+          </Tab>
+          <Tab value="history">
             📋 Historique véhicule ({vehicleMaintenances.length})
-          </button>
-          <button 
-            className={`tab-button ${activeTab === 'km-history' ? 'active' : ''}`}
-            onClick={() => setActiveTab('km-history')}
-          >
+          </Tab>
+          <Tab value="km-history">
             🔢 Relevés km ({mileageHistory.length})
-          </button>
-        </div>
+          </Tab>
+        </TabList>
 
         <div className="maintenance-dialog-content">
-          {activeTab === 'new' ? (
+          <TabPanel value="new">
             <form id="maintenance-form" onSubmit={handleSubmit} className="maintenance-form">
             <fieldset disabled={isViewMode} style={{ border: 'none', margin: 0, padding: 0 }}>
               {/* Détails de l'intervention en mode édition */}
@@ -627,8 +618,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               {isQuickReport && (
                 <div className="immobilized-checkbox">
                   <label>
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={formData.isImmobilized}
                       onChange={(e) => handleChange('isImmobilized', e.target.checked)}
                     />
@@ -642,9 +632,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               <div className="form-row">
                 {(formData.status === 'scheduled' || formData.status === 'in_progress' || formData.status === 'completed' || formData.status === 'rescheduled') && (
                   <>
-                    <div className="form-group">
-                      <label>Type d'intervention *</label>
-                      <select
+                    <FormField className="form-group" label="Type d'intervention" required>
+                      <Select
                         value={formData.type}
                         onChange={(e) => handleChange('type', e.target.value)}
                         required
@@ -653,14 +642,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                         <option value="technical_inspection">Contrôle technique</option>
                         <option value="internal">Intervention interne</option>
                         <option value="external">Intervention externe</option>
-                      </select>
-                    </div>
+                      </Select>
+                    </FormField>
 
                     {/* Sélecteur de type de contrôle technique */}
                     {formData.type === 'technical_inspection' && (
-                      <div className="form-group">
-                        <label>Type de contrôle technique *</label>
-                        <select
+                      <FormField className="form-group" label="Type de contrôle technique" required>
+                        <Select
                           value={formData.technicalControlType}
                           onChange={(e) => handleChange('technicalControlType', e.target.value)}
                           required
@@ -671,7 +659,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                               {ct.label}
                             </option>
                           ))}
-                        </select>
+                        </Select>
                         {formData.technicalControlType && (() => {
                           const selectedCT = allControleTechniqueTypes.find(ct => ct.value === formData.technicalControlType);
                           return selectedCT?.periodicity ? (
@@ -688,15 +676,14 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                             ℹ️ Sélectionnez un type pour voir sa périodicité
                           </small>
                         )}
-                      </div>
+                      </FormField>
                     )}
                   </>
                 )}
 
                 {formData.status === 'pending' && !isQuickReport && (
-                  <div className="form-group full-width">
-                    <label>Type d'intervention</label>
-                    <select
+                  <FormField className="form-group full-width" label="Type d'intervention">
+                    <Select
                       value={formData.type}
                       onChange={(e) => handleChange('type', e.target.value)}
                     >
@@ -705,16 +692,15 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       <option value="technical_inspection">Contrôle technique</option>
                       <option value="internal">Intervention interne</option>
                       <option value="external">Intervention externe</option>
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 )}
               </div>
 
               {(formData.status === 'scheduled' || formData.status === 'in_progress' || formData.status === 'completed' || formData.status === 'rescheduled') && (
                 <>
                   <div className="form-row">
-                    <div className="form-group">
-                      <label>Date de début *</label>
+                    <FormField className="form-group" label="Date de début" required>
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <input
                           ref={startDateInputRef}
@@ -724,19 +710,18 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                           required
                           style={{ flex: 1 }}
                         />
-                        <select
+                        <Select
                           value={formData.startDatePeriod}
                           onChange={(e) => handleChange('startDatePeriod', e.target.value)}
                           style={{ width: '80px' }}
                         >
                           <option value="AM">🌅 AM</option>
                           <option value="PM">🌆 PM</option>
-                        </select>
+                        </Select>
                       </div>
-                    </div>
+                    </FormField>
 
-                    <div className="form-group">
-                      <label>Date de fin *</label>
+                    <FormField className="form-group" label="Date de fin" required>
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <input
                           type="date"
@@ -746,38 +731,36 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                           required
                           style={{ flex: 1 }}
                         />
-                        <select
+                        <Select
                           value={formData.endDatePeriod}
                           onChange={(e) => handleChange('endDatePeriod', e.target.value)}
                           style={{ width: '80px' }}
                         >
                           <option value="AM">🌅 AM</option>
                           <option value="PM">🌆 PM</option>
-                        </select>
+                        </Select>
                       </div>
-                    </div>
+                    </FormField>
                   </div>
                 </>
               )}
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Description *</label>
-                  <input
+                <FormField className="form-group" label="Description" required>
+                  <Input
                     type="text"
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     placeholder="Ex: Vidange + filtres"
                     required
                   />
-                </div>
+                </FormField>
               </div>
 
               {formData.type === 'external' && (
                 <div className="form-row">
-                  <div className="form-group">
-                    <label>Garage</label>
-                    <select
+                  <FormField className="form-group" label="Garage">
+                    <Select
                       value={formData.garageId}
                       onChange={(e) => handleChange('garageId', e.target.value)}
                     >
@@ -787,51 +770,48 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                           {garage.name}
                         </option>
                       ))}
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 </div>
               )}
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Kilométrage</label>
-                  <input
+                <FormField className="form-group" label="Kilométrage">
+                  <Input
                     type="number"
                     value={formData.mileage}
                     onChange={(e) => handleChange('mileage', e.target.value)}
                     placeholder="Ex: 125000"
                   />
-                </div>
+                </FormField>
 
-                <div className="form-group">
-                  <label>Coût (€)</label>
-                  <input
+                <FormField className="form-group" label="Coût (€)">
+                  <Input
                     type="number"
                     step="0.01"
                     value={formData.cost}
                     onChange={(e) => handleChange('cost', e.target.value)}
                     placeholder="Ex: 350.00"
                   />
-                </div>
+                </FormField>
               </div>
 
               <div className="form-row">
-                <div className="form-group full-width">
-                  <label>Notes</label>
-                  <textarea
+                <FormField className="form-group full-width" label="Notes">
+                  <Textarea
                     value={formData.notes}
                     onChange={(e) => handleChange('notes', e.target.value)}
                     rows={4}
                     placeholder="Remarques, pièces changées, prochaines échéances..."
                   />
-                </div>
+                </FormField>
               </div>
 
               {/* Formulaire motif d'annulation (affiché au-dessus des boutons) */}
               {editingId && canManageMaintenance && showCancelForm && formData.status !== 'cancelled' && (
                 <div className="status-reason-field" style={{ marginBottom: '12px' }}>
                   <label>❌ Motif d'annulation :</label>
-                  <textarea
+                  <Textarea
                     value={statusReason}
                     onChange={(e) => setStatusReason(e.target.value)}
                     rows={2}
@@ -839,33 +819,32 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                     autoFocus
                   />
                   <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
-                    <button
-                      type="button"
-                      className="cancel-button"
+                    <Button
+                      variant="ghost"
                       onClick={() => {
                         setShowCancelForm(false);
                         setStatusReason('');
                       }}
                     >
                       Retour
-                    </button>
-                    <button
-                      type="button"
-                      className="delete-button"
+                    </Button>
+                    <Button
+                      variant="danger"
                       onClick={() => {
                         handleChange('status', 'cancelled');
                         setShowCancelForm(false);
                       }}
                     >
                       ❌ Confirmer l'annulation
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
 
             </fieldset>
             </form>
-          ) : activeTab === 'km-history' ? (
+          </TabPanel>
+          <TabPanel value="km-history">
             <div className="maintenance-history">
               {/* En-tête avec immatriculation */}
               <div className="km-history-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '10px 14px', background: 'var(--theme-bg-tertiary)', borderRadius: '8px' }}>
@@ -939,7 +918,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 </div>
               )}
             </div>
-          ) : (
+          </TabPanel>
+          <TabPanel value="history">
             <div className="maintenance-history">
               {/* En-tête avec immatriculation */}
               {vehicle.registration && (
@@ -988,17 +968,10 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                             </span>
                           </div>
                           <div className="maintenance-card-actions">
-                            <span 
-                              className="status-badge"
-                              style={{ 
-                                backgroundColor: getStatusColor(maintenance.status) + '20',
-                                color: getStatusColor(maintenance.status),
-                                borderColor: getStatusColor(maintenance.status)
-                              }}
-                            >
+                            <StatusBadge color={getStatusColor(maintenance.status)}>
                               {getStatusIcon(maintenance.status)}
                               {getStatusLabel(maintenance.status)}
-                            </span>
+                            </StatusBadge>
                             <button
                               className="edit-maintenance-button"
                               onClick={() => startEditing(maintenance)}
@@ -1056,8 +1029,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 </div>
               )}
             </div>
-          )}
+          </TabPanel>
         </div>
+        </Tabs>
 
         {/* Footer boutons - fixé en bas */}
         {activeTab === 'new' && (
@@ -1217,20 +1191,30 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           </div>
         )}
       </div>
-      {confirmDialog && (
-        <ConfirmDialog
-          message={confirmDialog.message}
-          onConfirm={confirmDialog.onConfirm}
-          onCancel={() => setConfirmDialog(null)}
-        />
-      )}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm}
+        title="Confirmation"
+        variant="confirm"
+        confirmLabel="Oui"
+        cancelLabel="Non"
+      >
+        {confirmDialog?.message}
+      </Dialog>
 
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-        />
-      )}
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import api from '../../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import { useToast } from '../../hooks/useToast';
+import { Button, Input, ProgressBar } from '@/design-system';
 import './BLMultiImportModal.css';
 
 const AFFAIRE_TYPE_OPTIONS = AFFAIRE_TYPES;
@@ -290,10 +291,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
           {/* Progress bar */}
           {parsing && (
             <div className="batch-progress">
-              <div className="batch-progress-bar">
-                <div className="batch-progress-fill" style={{ width: `${(progress.current / progress.total) * 100}%` }} />
-              </div>
-              <span className="batch-progress-label">Analyse {progress.current}/{progress.total}...</span>
+              <ProgressBar value={progress.current} max={progress.total || 1} label={`Analyse ${progress.current}/${progress.total}...`} />
             </div>
           )}
 
@@ -399,7 +397,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                       {/* Affaire ID + Type */}
                       <div className="detail-row">
                         <label><Briefcase size={13} /> Affaire</label>
-                        <input
+                        <Input
                           type="text"
                           value={item.affaireId}
                           onChange={e => updateItem(idx, { affaireId: e.target.value, editedFields: { ...item.editedFields, numero: e.target.value } })}
@@ -446,7 +444,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                                 style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)' }}
                               >●</span>
                               <span className="field-label">{field.label}</span>
-                              <input
+                              <Input
                                 type="text"
                                 value={val}
                                 onChange={e => updateField(idx, field.key, e.target.value)}
@@ -579,18 +577,18 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
             )}
           </div>
           <div className="footer-right">
-            <button className="btn-secondary" onClick={onClose}>
+            <Button variant="ghost" onClick={onClose}>
               {importResults ? 'Fermer' : 'Annuler'}
-            </button>
+            </Button>
             {!importResults && (
-              <button
-                className="btn-primary"
+              <Button
+                variant="primary"
                 onClick={handleBatchImport}
                 disabled={parsedCount === 0 || importing}
               >
                 <PackagePlus size={15} />
                 {importing ? 'Import en cours...' : `Importer ${parsedCount} BL/BP`}
-              </button>
+              </Button>
             )}
           </div>
         </div>

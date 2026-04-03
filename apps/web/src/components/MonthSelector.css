@@ -17,14 +17,14 @@
 .month-selector-modal {
   background: var(--theme-bg-card);
   border-radius: 1rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
   max-width: 900px;
   width: 90%;
   max-height: 90vh;
   overflow: auto;
   animation: slideUp 0.3s ease-out;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .month-selector-header {
@@ -45,7 +45,7 @@
 }
 
 .close-button {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border: none;
   border-radius: 0.5rem;
   color: var(--theme-text-inverse);
@@ -58,7 +58,7 @@
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--close-btn-hover-bg);
 }
 
 .month-selector-grid {
@@ -79,13 +79,13 @@
 
 .month-selector-item:hover {
   border-color: var(--theme-primary);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px var(--shadow-hover);
   transform: translateY(-2px);
 }
 
 .month-selector-item.current {
   border-color: var(--theme-primary);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  background: linear-gradient(135deg, var(--accent-tint-alt) 0%, rgba(118, 75, 162, 0.1) 100%);
 }
 
 .month-selector-name {

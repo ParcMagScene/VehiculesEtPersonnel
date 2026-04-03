@@ -22,7 +22,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
 
@@ -56,7 +56,7 @@
 
 .lvp-btn-refresh,
 .lvp-close-btn {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border: none;
   border-radius: 6px;
   padding: 6px;
@@ -67,7 +67,7 @@
 
 .lvp-btn-refresh:hover,
 .lvp-close-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-medium);
 }
 
 /* ─── STATS BAR ─── */
@@ -130,7 +130,7 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--close-btn-hover-bg);
   font-size: 10px;
   font-weight: 700;
 }
@@ -203,7 +203,7 @@
   border-left: 4px solid var(--theme-border);
 }
 
-.lvp-card:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.lvp-card:hover { box-shadow: 0 2px 8px var(--shadow-sm); }
 .lvp-card.pending { border-left-color: var(--theme-warning); }
 .lvp-card.accepted { border-left-color: var(--theme-success-alt); }
 .lvp-card.refused { border-left-color: var(--theme-danger); }

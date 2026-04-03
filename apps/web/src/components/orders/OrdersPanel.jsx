@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
-import { ShoppingCart, FileText, Search, Plus, Filter, Edit2, Trash2, ArrowLeft, 
+import { ShoppingCart, FileText, Plus, Filter, Edit2, Trash2, ArrowLeft, 
   Users as UsersIcon, Package, Send, Check, X, ArrowRight, 
   Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck,
   ClipboardList, Bell, Eye, CheckCircle, Clock, Archive, 
@@ -8,12 +8,38 @@ import { ShoppingCart, FileText, Search, Plus, Filter, Edit2, Trash2, ArrowLeft,
 const SupplierCatalogPanel = lazy(() => import('./SupplierCatalogPanel'));
 import api from '../../utils/api';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
-import ConfirmDialog from '../ConfirmDialog';
+import { Button, Dialog, Input, Textarea, Select, Table, Checkbox, EntityCombobox, Spinner, Tag, StatusBadge, ProgressBar, SearchBar, Tooltip } from '@/design-system';
 import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
 import './OrdersPanel.css';
 import { useToast } from '../../hooks/useToast';
-import EntityCombobox from '../ui/EntityCombobox';
+import AffaireBadge from '../AffaireBadge';
+
+// Helper : grouper les articles par demandeur (affaire ou personne physique)
+function groupItemsByRequester(items) {
+  const groups = new Map();
+  for (const item of items) {
+    const key = item.source_affaire_id || item.source_requester_name || '_sans_demandeur';
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        isAffaire: !!item.source_affaire_id,
+        affaireId: item.source_affaire_id || null,
+        requesterName: item.source_requester_name || null,
+        items: [],
+        totalQty: 0,
+        receivedQty: 0,
+        totalHt: 0,
+      });
+    }
+    const g = groups.get(key);
+    g.items.push(item);
+    g.totalQty += item.quantity || 0;
+    g.receivedQty += item.received_qty || 0;
+    g.totalHt += item.total_ht || 0;
+  }
+  return [...groups.values()];
+}
 
 // ═══ Constantes ═══
 const ORDER_STATUS = {
@@ -93,6 +119,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   const [materialRequests, setMaterialRequests] = useState([]);
   const [requestStats, setRequestStats] = useState(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [editingRequest, setEditingRequest] = useState(null);
 
   // Fournisseurs enrichis
   const [suppliersWithOrders, setSuppliersWithOrders] = useState([]);
@@ -339,11 +366,22 @@ function OrdersPanel({ currentUser, isMobile }) {
   // ═══ Handlers Demandes de matériel ═══
   const handleSaveRequest = async (data) => {
     try {
-      await api.createMaterialRequest(data);
+      if (editingRequest) {
+        await api.updateMaterialRequest(editingRequest.id, data);
+        setEditingRequest(null);
+        toast.success('Demande modifiée');
+      } else {
+        await api.createMaterialRequest(data);
+        toast.success('Demande créée avec succès');
+      }
       setShowRequestModal(false);
-      toast.success('Demande créée avec succès');
       loadData();
     } catch (error) { toast.error('Erreur: ' + error.message); }
+  };
+
+  const handleEditRequest = (request) => {
+    setEditingRequest(request);
+    setShowRequestModal(true);
   };
 
   const handleValidateRequest = async (request, action, reason = null) => {
@@ -376,8 +414,11 @@ function OrdersPanel({ currentUser, isMobile }) {
   // ═══ Handlers Fournisseurs enrichis ═══
   const handleSupplierClick = async (supplier) => {
     try {
-      const orders = await api.getSupplierOrders(supplier.id, showArchivedSuppliers);
-      setSelectedSupplierPanel({ ...supplier, orders });
+      const [orders, catalogs] = await Promise.all([
+        api.getSupplierOrders(supplier.id, showArchivedSuppliers),
+        api.getSupplierCatalogs(supplier.id),
+      ]);
+      setSelectedSupplierPanel({ ...supplier, orders, catalogs });
     } catch (error) { toast.error('Erreur: ' + error.message); }
   };
 
@@ -482,6 +523,18 @@ function OrdersPanel({ currentUser, isMobile }) {
         </button>
           </>
         )}
+
+        {/* Stats inline dans les tabs */}
+        {!isSimpleUser && activeTab !== 'catalog' && stats && (
+          <div className="orders-header-stats">
+            <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
+            <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
+            <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
+            {completionAlerts.length > 0 && (
+              <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {activeTab === 'catalog' && (
@@ -492,38 +545,32 @@ function OrdersPanel({ currentUser, isMobile }) {
 
       {/* Toolbar */}
       {activeTab !== 'catalog' && activeTab !== 'tracking' && <div className="orders-toolbar">
-        <div className="orders-search">
-          <Search size={16} />
-          <input
-            type="text" placeholder="Rechercher..." value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher..." />
         {activeTab === 'requests' && (
           <div className="orders-filter">
             <Filter size={14} />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">Tous les statuts</option>
               {Object.entries(REQUEST_STATUS).map(([key, val]) => (
                 <option key={key} value={key}>{val.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
         {!isSimpleUser && activeTab !== 'suppliers' && activeTab !== 'requests' && (
           <div className="orders-filter">
             <Filter size={14} />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">Tous les statuts</option>
               {Object.entries(activeTab === 'orders' ? ORDER_STATUS : QUOTE_STATUS).map(([key, val]) => (
                 <option key={key} value={key}>{val.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
         {!isSimpleUser && activeTab === 'suppliers' && (
           <label className="archived-toggle">
-            <input type="checkbox" checked={showArchivedSuppliers} onChange={(e) => setShowArchivedSuppliers(e.target.checked)} />
+            <Checkbox checked={showArchivedSuppliers} onChange={(e) => setShowArchivedSuppliers(e.target.checked)} />
             <Archive size={14} /> Inclure archivées
           </label>
         )}
@@ -545,18 +592,6 @@ function OrdersPanel({ currentUser, isMobile }) {
         </button>
         )}
       </div>}
-
-      {/* Stats */}
-      {!isSimpleUser && activeTab !== 'catalog' && stats && (
-        <div className="orders-header-stats">
-          <span className="stat-badge"><ShoppingCart size={13} /> {stats.orders?.total || 0}</span>
-          <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
-          <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
-          {completionAlerts.length > 0 && (
-            <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
-          )}
-        </div>
-      )}
 
       {/* Body: table + slide panel côte à côte */}
       {activeTab !== 'catalog' && activeTab !== 'tracking' && <div className="orders-body">
@@ -642,6 +677,7 @@ function OrdersPanel({ currentUser, isMobile }) {
             onOpenDialog={(r) => { setSelectedRequest(null); setDialogRequest(r); }}
             isAdmin={currentUser?.isAdmin}
             onValidate={handleValidateRequest}
+            onEdit={(r) => { setSelectedRequest(null); handleEditRequest(r); }}
           />
         )}
         {activeTab === 'suppliers' && selectedSupplierPanel && (
@@ -700,6 +736,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           isAdmin={currentUser?.isAdmin}
           onValidate={handleValidateRequest}
           onDelete={handleDeleteRequest}
+          onEdit={(r) => { setDialogRequest(null); handleEditRequest(r); }}
         />
       )}
 
@@ -729,9 +766,10 @@ function OrdersPanel({ currentUser, isMobile }) {
       )}
       {showRequestModal && (
         <MaterialRequestModal 
+          request={editingRequest}
           suppliers={suppliers}
           onSave={handleSaveRequest}
-          onClose={() => setShowRequestModal(false)}
+          onClose={() => { setShowRequestModal(false); setEditingRequest(null); }}
         />
       )}
       {supplierDetailData && (
@@ -746,7 +784,17 @@ function OrdersPanel({ currentUser, isMobile }) {
           currentUser={currentUser}
         />
       )}
-      {confirmDialog && <ConfirmDialog {...confirmDialog} />}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
+        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }
@@ -756,7 +804,7 @@ const OrdersList = React.memo(({ orders, onView, onDoubleClick, onEdit, onDelete
   if (!orders.length) return <div className="orders-empty">Aucune commande</div>;
   return (
     <div className="orders-table-wrapper">
-      <table className="orders-table">
+      <Table className="orders-table">
         <thead>
           <tr>
             <th>Référence</th>
@@ -777,24 +825,24 @@ const OrdersList = React.memo(({ orders, onView, onDoubleClick, onEdit, onDelete
                 className={`clickable-row${selectedId === order.id ? ' selected' : ''}`}>
                 <td className="ref-cell"><Hash size={14} /> {order.reference}</td>
                 <td>{order.supplier_name || '—'}</td>
-                <td className="affaire-cell">{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</td>
+                <td className="affaire-cell">{order.affaire_id ? <AffaireBadge numero={order.affaire_id} size="sm" /> : '—'}</td>
                 <td>{formatDate(order.order_date)}</td>
                 <td>
-                  <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+                  <StatusBadge color={status.color}>
                     {status.icon} {status.label}
-                  </span>
+                  </StatusBadge>
                 </td>
                 <td className="center">{order.item_count || 0}</td>
                 <td className="amount">{formatCurrency(order.total_ht)}</td>
                 <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
-                  <button className="icon-btn" onClick={() => onEdit(order)} title="Modifier"><Edit2 size={14} /></button>
-                  <button className="icon-btn danger" onClick={() => onDelete(order)} title="Supprimer"><Trash2 size={14} /></button>
+                  <Tooltip content="Modifier"><Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(order)}><Edit2 size={14} /></Button></Tooltip>
+                  <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(order)}><Trash2 size={14} /></Button></Tooltip>
                 </td>
               </tr>
             );
           })}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 });
@@ -804,7 +852,7 @@ const QuotesList = React.memo(({ quotes, onView, onDoubleClick, onEdit, onDelete
   if (!quotes.length) return <div className="orders-empty">Aucun devis</div>;
   return (
     <div className="orders-table-wrapper">
-      <table className="orders-table">
+      <Table className="orders-table">
         <thead>
           <tr>
             <th>Référence</th>
@@ -827,23 +875,23 @@ const QuotesList = React.memo(({ quotes, onView, onDoubleClick, onEdit, onDelete
                 <td>{formatDate(quote.quote_date)}</td>
                 <td>{formatDate(quote.validity_date)}</td>
                 <td>
-                  <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+                  <StatusBadge color={status.color}>
                     {status.icon} {status.label}
-                  </span>
+                  </StatusBadge>
                 </td>
                 <td className="amount">{formatCurrency(quote.total_ht)}</td>
                 <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
                   {quote.status === 'accepted' && !quote.converted_to_order_id && (
-                    <button className="icon-btn success" onClick={() => onConvert(quote)} title="Convertir en commande"><ArrowRight size={14} /></button>
+                    <Tooltip content="Convertir en commande"><Button variant="success" size="sm" iconOnly onClick={() => onConvert(quote)}><ArrowRight size={14} /></Button></Tooltip>
                   )}
-                  <button className="icon-btn" onClick={() => onEdit(quote)} title="Modifier"><Edit2 size={14} /></button>
-                  <button className="icon-btn danger" onClick={() => onDelete(quote)} title="Supprimer"><Trash2 size={14} /></button>
+                  <Tooltip content="Modifier"><Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(quote)}><Edit2 size={14} /></Button></Tooltip>
+                  <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(quote)}><Trash2 size={14} /></Button></Tooltip>
                 </td>
               </tr>
             );
           })}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 });
@@ -859,8 +907,8 @@ const SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
             <Building2 size={18} />
             <h3>{supplier.name}</h3>
             <div className="supplier-actions">
-              <button className="icon-btn" onClick={() => onEdit(supplier)} title="Modifier"><Edit2 size={14} /></button>
-              <button className="icon-btn danger" onClick={() => onDelete(supplier)} title="Supprimer"><Trash2 size={14} /></button>
+              <Tooltip content="Modifier"><Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(supplier)}><Edit2 size={14} /></Button></Tooltip>
+              <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(supplier)}><Trash2 size={14} /></Button></Tooltip>
             </div>
           </div>
           <div className="supplier-card-body">
@@ -913,10 +961,10 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
         <button className="back-btn" onClick={onBack}><ArrowLeft size={18} /> Retour</button>
         <div className="order-detail-title">
           <h2>{order.reference}</h2>
-          <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+          <StatusBadge color={status.color}>
             {status.icon} {status.label}
-          </span>
-          {groupedItems && <span className="grouped-badge">Commande groupée</span>}
+          </StatusBadge>
+          {groupedItems && <Tag color="info" size="sm">Commande groupée</Tag>}
         </div>
         <div className="order-detail-actions">
           {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
@@ -960,7 +1008,7 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
               {Object.entries(groupedItems).map(([key, group]) => (
                 <div key={key} className="grouped-items-section">
                   <div className="grouped-items-header">{group.label} <span className="grouped-count">{group.items.length}</span></div>
-                  <table className="items-table">
+                  <Table className="items-table">
                     <thead>
                       <tr><th>Réf</th><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr>
                     </thead>
@@ -977,13 +1025,13 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </Table>
                 </div>
               ))}
             </div>
           ) : (
             /* ═══ Simple flat display ═══ */
-            <table className="items-table">
+            <Table className="items-table">
               <thead>
                 <tr><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr>
               </thead>
@@ -999,7 +1047,7 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           )
         ) : <p className="no-items">Aucune ligne</p>}
       </div>
@@ -1017,10 +1065,10 @@ const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, on
         <button className="back-btn" onClick={onBack}><ArrowLeft size={18} /> Retour</button>
         <div className="order-detail-title">
           <h2>{quote.reference}</h2>
-          <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+          <StatusBadge color={status.color}>
             {status.icon} {status.label}
-          </span>
-          {quote.converted_to_order_id && <span className="converted-badge"><FileCheck size={14} /> Converti en commande</span>}
+          </StatusBadge>
+          {quote.converted_to_order_id && <Tag color="success" size="sm"><FileCheck size={14} /> Converti en commande</Tag>}
         </div>
         <div className="order-detail-actions">
           {quote.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
@@ -1064,7 +1112,7 @@ const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, on
       <div className="detail-section">
         <h3>Lignes du devis ({items.length})</h3>
         {items.length > 0 ? (
-          <table className="items-table">
+          <Table className="items-table">
             <thead>
               <tr><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr>
             </thead>
@@ -1079,7 +1127,7 @@ const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, on
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         ) : <p className="no-items">Aucune ligne</p>}
       </div>
     </div>
@@ -1139,7 +1187,7 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
             </div>
             <div className="form-field">
               <label>Code affaire</label>
-              <input type="text" value={form.affaire_id} onChange={(e) => setForm(f => ({ ...f, affaire_id: e.target.value }))} placeholder="ex: AF32844" />
+              <Input type="text" value={form.affaire_id} onChange={(e) => setForm(f => ({ ...f, affaire_id: e.target.value }))} placeholder="ex: AF32844" />
             </div>
             <div className="form-field">
               <label>Date commande</label>
@@ -1151,14 +1199,14 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
             </div>
             <div className="form-field">
               <label>TVA (%)</label>
-              <input type="number" value={form.tva_rate} onChange={(e) => setForm(f => ({ ...f, tva_rate: parseFloat(e.target.value) || 0 }))} />
+              <Input type="number" value={form.tva_rate} onChange={(e) => setForm(f => ({ ...f, tva_rate: parseFloat(e.target.value) || 0 }))} />
             </div>
             {order && (
               <div className="form-field">
                 <label>Statut</label>
-                <select value={form.status} onChange={(e) => setForm(f => ({ ...f, status: e.target.value }))}>
+                <Select value={form.status} onChange={(e) => setForm(f => ({ ...f, status: e.target.value }))}>
                   {Object.entries(ORDER_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select>
+                </Select>
               </div>
             )}
           </div>
@@ -1170,14 +1218,14 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
             </div>
             {form.items.map((item, idx) => (
               <div key={item._key} className="item-row">
-                <input type="text" placeholder="Désignation" value={item.designation} onChange={(e) => updateItem(idx, 'designation', e.target.value)} className="item-designation" />
-                <input type="number" placeholder="Qté" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} className="item-qty" />
-                <select value={item.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} className="item-unit">
+                <Input type="text" placeholder="Désignation" value={item.designation} onChange={(e) => updateItem(idx, 'designation', e.target.value)} className="item-designation" />
+                <Input type="number" placeholder="Qté" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} className="item-qty" />
+                <Select value={item.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} className="item-unit">
                   {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
-                <input type="number" placeholder="P.U. HT" value={item.unit_price_ht} onChange={(e) => updateItem(idx, 'unit_price_ht', parseFloat(e.target.value) || 0)} step="0.01" className="item-price" />
+                </Select>
+                <Input type="number" placeholder="P.U. HT" value={item.unit_price_ht} onChange={(e) => updateItem(idx, 'unit_price_ht', parseFloat(e.target.value) || 0)} step="0.01" className="item-price" />
                 <span className="item-total">{formatCurrency((item.quantity || 0) * (item.unit_price_ht || 0))}</span>
-                <input type="text" placeholder="Affaire / Demandeur" value={item.source_affaire_id || ''} onChange={(e) => updateItem(idx, 'source_affaire_id', e.target.value)} className="item-source" title="Affaire ou demandeur source" />
+                <Input type="text" placeholder="Affaire / Demandeur" value={item.source_affaire_id || ''} onChange={(e) => updateItem(idx, 'source_affaire_id', e.target.value)} className="item-source" title="Affaire ou demandeur source" />
                 {form.items.length > 1 && (
                   <button type="button" className="remove-item-btn" onClick={() => removeItem(idx)}><X size={14} /></button>
                 )}
@@ -1192,14 +1240,14 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
 
           <div className="form-field full-width">
             <label>Notes</label>
-            <textarea value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} />
+            <Textarea value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} />
           </div>
         </div>
         <div className="modal-footer">
-          <button className="cancel-btn" onClick={onClose}>Annuler</button>
-          <button className="save-btn" onClick={() => onSave(form)} disabled={!form.items.some(i => i.designation)}>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" onClick={() => onSave(form)} disabled={!form.items.some(i => i.designation)}>
             <Check size={16} /> {order ? 'Enregistrer' : 'Créer la commande'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1251,14 +1299,14 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
           <div className="form-grid">
             <div className="form-field">
               <label>Nom client</label>
-              <input type="text" value={form.client_name} onChange={(e) => setForm(f => ({ ...f, client_name: e.target.value }))} list="quote-clients-autocomplete" />
+              <Input type="text" value={form.client_name} onChange={(e) => setForm(f => ({ ...f, client_name: e.target.value }))} list="quote-clients-autocomplete" />
               <datalist id="quote-clients-autocomplete">
                 {clients.map(c => <option key={c.id} value={c.name} />)}
               </datalist>
             </div>
             <div className="form-field">
               <label>Email client</label>
-              <input type="email" value={form.client_email} onChange={(e) => setForm(f => ({ ...f, client_email: e.target.value }))} />
+              <Input type="email" value={form.client_email} onChange={(e) => setForm(f => ({ ...f, client_email: e.target.value }))} />
             </div>
             <div className="form-field full-width">
               <label>Adresse client</label>
@@ -1266,7 +1314,7 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
             </div>
             <div className="form-field">
               <label>Code affaire</label>
-              <input type="text" value={form.affaire_id} onChange={(e) => setForm(f => ({ ...f, affaire_id: e.target.value }))} placeholder="ex: AF32844" />
+              <Input type="text" value={form.affaire_id} onChange={(e) => setForm(f => ({ ...f, affaire_id: e.target.value }))} placeholder="ex: AF32844" />
             </div>
             <div className="form-field">
               <label>Date devis</label>
@@ -1278,14 +1326,14 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
             </div>
             <div className="form-field">
               <label>TVA (%)</label>
-              <input type="number" value={form.tva_rate} onChange={(e) => setForm(f => ({ ...f, tva_rate: parseFloat(e.target.value) || 0 }))} />
+              <Input type="number" value={form.tva_rate} onChange={(e) => setForm(f => ({ ...f, tva_rate: parseFloat(e.target.value) || 0 }))} />
             </div>
             {quote && (
               <div className="form-field">
                 <label>Statut</label>
-                <select value={form.status} onChange={(e) => setForm(f => ({ ...f, status: e.target.value }))}>
+                <Select value={form.status} onChange={(e) => setForm(f => ({ ...f, status: e.target.value }))}>
                   {Object.entries(QUOTE_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select>
+                </Select>
               </div>
             )}
           </div>
@@ -1297,12 +1345,12 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
             </div>
             {form.items.map((item, idx) => (
               <div key={item._key} className="item-row">
-                <input type="text" placeholder="Désignation" value={item.designation} onChange={(e) => updateItem(idx, 'designation', e.target.value)} className="item-designation" />
-                <input type="number" placeholder="Qté" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} className="item-qty" />
-                <select value={item.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} className="item-unit">
+                <Input type="text" placeholder="Désignation" value={item.designation} onChange={(e) => updateItem(idx, 'designation', e.target.value)} className="item-designation" />
+                <Input type="number" placeholder="Qté" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} className="item-qty" />
+                <Select value={item.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} className="item-unit">
                   {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
-                <input type="number" placeholder="P.U. HT" value={item.unit_price_ht} onChange={(e) => updateItem(idx, 'unit_price_ht', parseFloat(e.target.value) || 0)} step="0.01" className="item-price" />
+                </Select>
+                <Input type="number" placeholder="P.U. HT" value={item.unit_price_ht} onChange={(e) => updateItem(idx, 'unit_price_ht', parseFloat(e.target.value) || 0)} step="0.01" className="item-price" />
                 <span className="item-total">{formatCurrency((item.quantity || 0) * (item.unit_price_ht || 0))}</span>
                 {form.items.length > 1 && (
                   <button type="button" className="remove-item-btn" onClick={() => removeItem(idx)}><X size={14} /></button>
@@ -1318,14 +1366,14 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
 
           <div className="form-field full-width">
             <label>Notes</label>
-            <textarea value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} />
+            <Textarea value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} />
           </div>
         </div>
         <div className="modal-footer">
-          <button className="cancel-btn" onClick={onClose}>Annuler</button>
-          <button className="save-btn" onClick={() => onSave(form)} disabled={!form.items.some(i => i.designation)}>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" onClick={() => onSave(form)} disabled={!form.items.some(i => i.designation)}>
             <Check size={16} /> {quote ? 'Enregistrer' : 'Créer le devis'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1354,15 +1402,15 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
           <div className="form-grid">
             <div className="form-field">
               <label>Nom *</label>
-              <input type="text" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} required />
+              <Input type="text" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} required />
             </div>
             <div className="form-field">
               <label>Contact</label>
-              <input type="text" value={form.contact_name} onChange={(e) => setForm(f => ({ ...f, contact_name: e.target.value }))} />
+              <Input type="text" value={form.contact_name} onChange={(e) => setForm(f => ({ ...f, contact_name: e.target.value }))} />
             </div>
             <div className="form-field">
               <label>Email</label>
-              <input type="email" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} />
+              <Input type="email" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} />
             </div>
             <div className="form-field">
               <label>Téléphone</label>
@@ -1374,15 +1422,15 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
             </div>
             <div className="form-field full-width">
               <label>Notes</label>
-              <textarea value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} />
+              <Textarea value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} />
             </div>
           </div>
         </div>
         <div className="modal-footer">
-          <button className="cancel-btn" onClick={onClose}>Annuler</button>
-          <button className="save-btn" onClick={() => onSave(form)} disabled={!form.name.trim()}>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" onClick={() => onSave(form)} disabled={!form.name.trim()}>
             <Check size={16} /> {supplier ? 'Enregistrer' : 'Créer'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1412,9 +1460,9 @@ const MyLinkedOrdersList = React.memo(({ orders, loading }) => {
               <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}>
                 <Hash size={14} style={{ verticalAlign: -2 }} /> {order.reference}
               </span>
-              <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color, fontSize: '0.7rem', padding: '2px 8px' }}>
+              <StatusBadge color={status.color} size="sm">
                 {status.icon} {status.label}
-              </span>
+              </StatusBadge>
             </div>
             {order.supplier_name && (
               <div style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)', marginBottom: '0.4rem' }}>
@@ -1461,9 +1509,9 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
                   <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}>{req.article}</div>
                   {req.ref_code && <div style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)' }}>Réf: {req.ref_code}</div>}
                 </div>
-                <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color, fontSize: '0.7rem', padding: '2px 8px', flexShrink: 0 }}>
+                <StatusBadge color={status.color} size="sm" style={{ flexShrink: 0 }}>
                   {status.icon} {status.label}
-                </span>
+                </StatusBadge>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
                 <span>Qté: {req.quantity}</span>
@@ -1486,7 +1534,7 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
 
   return (
     <div className="orders-table-wrapper">
-      <table className="orders-table requests-table">
+      <Table className="orders-table requests-table">
         <thead>
           <tr>
             <th>Article</th>
@@ -1520,29 +1568,29 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
                   <td>{req.supplier_name || '—'}</td>
                   <td>{req.requested_by_name || req.requested_by_name_db || '—'}</td>
                   <td>
-                    <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+                    <StatusBadge color={status.color}>
                       {status.icon} {status.label}
-                    </span>
+                    </StatusBadge>
                     {req.order_id && <span className="order-link-small">→ Cmd #{req.order_id}</span>}
                   </td>
                   <td className="actions-cell" onClick={e => e.stopPropagation()}>
                     {isAdmin && req.status === 'pending' && (
                       <>
-                        <button className="icon-btn success" onClick={() => onValidate(req, 'approve')} title="Approuver"><Check size={14} /></button>
-                        <button className="icon-btn danger" onClick={() => setRejectingId(req.id)} title="Refuser"><X size={14} /></button>
+                        <Tooltip content="Approuver"><Button variant="success" size="sm" iconOnly onClick={() => onValidate(req, 'approve')}><Check size={14} /></Button></Tooltip>
+                        <Tooltip content="Refuser"><Button variant="danger" size="sm" iconOnly onClick={() => setRejectingId(req.id)}><X size={14} /></Button></Tooltip>
                       </>
                     )}
-                    <button className="icon-btn danger" onClick={() => onDelete(req)} title="Supprimer"><Trash2 size={14} /></button>
+                    <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(req)}><Trash2 size={14} /></Button></Tooltip>
                   </td>
                 </tr>
                 {rejectingId === req.id && (
                   <tr className="reject-reason-row">
                     <td colSpan={8}>
                       <div className="reject-input-row">
-                        <input type="text" placeholder="Raison du refus (optionnel)" value={rejectReason}
+                        <Input type="text" placeholder="Raison du refus (optionnel)" value={rejectReason}
                           onChange={e => setRejectReason(e.target.value)} className="reject-reason-input" />
-                        <button className="save-btn small" onClick={() => { onValidate(req, 'reject', rejectReason); setRejectingId(null); setRejectReason(''); }}>Confirmer refus</button>
-                        <button className="cancel-btn small" onClick={() => { setRejectingId(null); setRejectReason(''); }}>Annuler</button>
+                        <Button variant="danger" size="sm" onClick={() => { onValidate(req, 'reject', rejectReason); setRejectingId(null); setRejectReason(''); }}>Confirmer refus</Button>
+                        <Button variant="ghost" size="sm" onClick={() => { setRejectingId(null); setRejectReason(''); }}>Annuler</Button>
                       </div>
                     </td>
                   </tr>
@@ -1551,7 +1599,7 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
             );
           })}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 });
@@ -1562,6 +1610,7 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [supplierFilter, setSupplierFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [familyFilter, setFamilyFilter] = useState('');
@@ -1609,6 +1658,7 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
   };
 
   const handleSearchInput = (val) => {
+    setSearchInput(val);
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => handleSearchChange(val), 300);
   };
@@ -1625,47 +1675,45 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
 
         <div className="catalog-picker-filters">
           <div className="catalog-picker-search">
-            <Search size={16} />
-            <input
-              type="text"
+            <SearchBar
+              value={searchInput}
+              onChange={handleSearchInput}
               placeholder="Rechercher par désignation, référence, marque, fournisseur…"
-              defaultValue={search}
-              onChange={e => handleSearchInput(e.target.value)}
               autoFocus
             />
           </div>
           <div className="catalog-picker-filter-row">
-            <select value={supplierFilter} onChange={e => { setSupplierFilter(e.target.value); setPage(0); }}>
+            <Select value={supplierFilter} onChange={e => { setSupplierFilter(e.target.value); setPage(0); }}>
               <option value="">Tous fournisseurs</option>
               {filterOptions.suppliers.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
-            </select>
-            <select value={brandFilter} onChange={e => { setBrandFilter(e.target.value); setPage(0); }}>
+            </Select>
+            <Select value={brandFilter} onChange={e => { setBrandFilter(e.target.value); setPage(0); }}>
               <option value="">Toutes marques</option>
               {filterOptions.brands.map(b => (
                 <option key={b.id || b} value={b.id || b}>{b.name || b}</option>
               ))}
-            </select>
-            <select value={familyFilter} onChange={e => { setFamilyFilter(e.target.value); setPage(0); }}>
+            </Select>
+            <Select value={familyFilter} onChange={e => { setFamilyFilter(e.target.value); setPage(0); }}>
               <option value="">Toutes familles</option>
               {filterOptions.families.map(f => (
                 <option key={f} value={f}>{f}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 
         <div className="catalog-picker-body">
           {loading ? (
-            <div className="catalog-picker-loading"><div className="loading-spinner" /><p>Recherche en cours…</p></div>
+            <div className="catalog-picker-loading"><Spinner size="lg" /><p>Recherche en cours…</p></div>
           ) : articles.length === 0 ? (
             <div className="catalog-picker-empty">
               <Package size={40} />
               <p>{search || supplierFilter || brandFilter || familyFilter ? 'Aucun article trouvé pour ces critères' : 'Aucun article dans les catalogues'}</p>
             </div>
           ) : (
-            <table className="catalog-picker-table">
+            <Table className="catalog-picker-table">
               <thead>
                 <tr>
                   <th>Désignation</th>
@@ -1707,7 +1755,7 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
                   return grouped;
                 })()}
               </tbody>
-            </table>
+            </Table>
           )}
         </div>
 
@@ -1724,12 +1772,13 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
 });
 
 // ═══ Modal demande de matériel ═══
-const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
+const MaterialRequestModal = React.memo(({ request, suppliers, onSave, onClose }) => {
   const [form, setForm] = useState({
-    article: '', supplier_id: '', supplier_name: '', quantity: 1,
-    priority: 'normal', affaire_id: '', destination: 'Stock Mag Scène',
-    destination_other: '', notes: '', ref_code: '',
+    article: request?.article || '', supplier_id: request?.supplier_id ? String(request.supplier_id) : '', supplier_name: request?.supplier_name || '', quantity: request?.quantity || 1,
+    priority: request?.priority || 'normal', affaire_id: request?.affaire_id || '', destination: request?.destination || 'Stock Mag Scène',
+    destination_other: request?.destination_other || '', notes: request?.notes || '', ref_code: request?.ref_code || '',
   });
+  const isEditing = !!request;
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
 
   const handleCatalogSelect = (item) => {
@@ -1752,7 +1801,7 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
       <div className="order-form-modal material-request-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2><ClipboardList size={20} /> Nouvelle demande de matériel</h2>
+          <h2><ClipboardList size={20} /> {isEditing ? 'Modifier la demande' : 'Nouvelle demande de matériel'}</h2>
           <button className="close-btn" onClick={onClose}><X size={20} /></button>
         </div>
         <div className="modal-body">
@@ -1760,7 +1809,7 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
             <div className="form-field full-width">
               <label>Article *</label>
               <div className="article-input-group">
-                <input type="text" value={form.article} onChange={e => setForm(f => ({ ...f, article: e.target.value }))} 
+                <Input type="text" value={form.article} onChange={e => setForm(f => ({ ...f, article: e.target.value }))} 
                   placeholder="Nom de l'article" />
                 <button type="button" className="catalog-search-btn" onClick={() => setShowCatalogPicker(true)} title="Chercher dans les catalogues fournisseurs">
                   <Layers size={14} /> Catalogue
@@ -1769,11 +1818,11 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
             </div>
             <div className="form-field">
               <label>Réf. article</label>
-              <input type="text" value={form.ref_code} onChange={e => setForm(f => ({ ...f, ref_code: e.target.value }))} placeholder="Référence" />
+              <Input type="text" value={form.ref_code} onChange={e => setForm(f => ({ ...f, ref_code: e.target.value }))} placeholder="Référence" />
             </div>
             <div className="form-field">
               <label>Quantité</label>
-              <input type="number" min="1" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) || 1 }))} />
+              <Input type="number" min="1" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) || 1 }))} />
             </div>
             <div className="form-field">
               <label>Fournisseur (optionnel)</label>
@@ -1786,37 +1835,37 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
             </div>
             <div className="form-field">
               <label>Priorité</label>
-              <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
+              <Select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
                 {Object.entries(REQUEST_PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="form-field">
               <label>Affaire (optionnel)</label>
-              <input type="text" value={form.affaire_id} onChange={e => setForm(f => ({ ...f, affaire_id: e.target.value }))} placeholder="ex: AF32844" />
+              <Input type="text" value={form.affaire_id} onChange={e => setForm(f => ({ ...f, affaire_id: e.target.value }))} placeholder="ex: AF32844" />
             </div>
             <div className="form-field">
               <label>Destination</label>
-              <select value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))}>
+              <Select value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))}>
                 {DESTINATIONS.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
+              </Select>
             </div>
             {form.destination === 'Autre' && (
               <div className="form-field">
                 <label>Préciser la destination</label>
-                <input type="text" value={form.destination_other} onChange={e => setForm(f => ({ ...f, destination_other: e.target.value }))} placeholder="Destination..." />
+                <Input type="text" value={form.destination_other} onChange={e => setForm(f => ({ ...f, destination_other: e.target.value }))} placeholder="Destination..." />
               </div>
             )}
             <div className="form-field full-width">
               <label>Notes / Commentaires</label>
-              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informations supplémentaires..." />
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informations supplémentaires..." />
             </div>
           </div>
         </div>
         <div className="modal-footer">
-          <button className="cancel-btn" onClick={onClose}>Annuler</button>
-          <button className="save-btn" onClick={() => onSave(form)} disabled={!form.article.trim()}>
-            <Check size={16} /> Créer la demande
-          </button>
+          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="primary" onClick={() => onSave(form)} disabled={!form.article.trim()}>
+            <Check size={16} /> {isEditing ? 'Enregistrer' : 'Créer la demande'}
+          </Button>
         </div>
       </div>
 
@@ -1832,16 +1881,17 @@ const MaterialRequestModal = React.memo(({ suppliers, onSave, onClose }) => {
 
 // ═══ Liste fournisseurs enrichie (tableau) ═══
 const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick, onDoubleClick, selectedId }) => {
-  if (!suppliers.length) return <div className="orders-empty"><Building2 size={24} /><p>Aucun fournisseur avec commandes en cours</p></div>;
+  if (!suppliers.length) return <div className="orders-empty"><Building2 size={24} /><p>Aucun fournisseur</p></div>;
   return (
     <div className="orders-table-wrapper">
-      <table className="orders-table suppliers-table">
+      <Table className="orders-table suppliers-table">
         <thead>
           <tr>
             <th>Fournisseur</th>
             <th>Contact</th>
             <th>Email</th>
             <th>Téléphone</th>
+            <th>Catalogues</th>
             <th>Commandes</th>
             <th>Total HT</th>
             <th>Statuts</th>
@@ -1858,6 +1908,7 @@ const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick
               <td>{supplier.contact_name || '—'}</td>
               <td>{supplier.email || '—'}</td>
               <td>{supplier.phone ? formatPhoneDisplay(supplier.phone) : '—'}</td>
+              <td className="center">{supplier.catalog_count > 0 ? <span className="catalog-badge" title={`${supplier.catalog_count} catalogue(s)`}><BookOpen size={12} /> {supplier.catalog_count}</span> : '—'}</td>
               <td className="center">{supplier.active_order_count || 0}</td>
               <td className="amount">{supplier.total_ht > 0 ? formatCurrency(supplier.total_ht) : '—'}</td>
               <td>
@@ -1867,13 +1918,13 @@ const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick
                 }) : '—'}
               </td>
               <td className="actions-cell" onClick={e => e.stopPropagation()}>
-                <button className="icon-btn" onClick={() => onEdit(supplier)} title="Modifier"><Edit2 size={14} /></button>
-                <button className="icon-btn danger" onClick={() => onDelete(supplier)} title="Supprimer"><Trash2 size={14} /></button>
+                <Tooltip content="Modifier"><Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(supplier)}><Edit2 size={14} /></Button></Tooltip>
+                <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(supplier)}><Trash2 size={14} /></Button></Tooltip>
               </td>
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </div>
   );
 });
@@ -1902,9 +1953,9 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
                 <div key={order.id} className="supplier-order-card" onClick={() => { onClose(); onViewOrder(order); }}>
                   <div className="order-card-top">
                     <span className="order-ref"><Hash size={14} /> {order.reference}</span>
-                    <span className="status-badge small" style={{ backgroundColor: status.color + '20', color: status.color }}>
+                    <StatusBadge color={status.color} size="sm">
                       {status.icon} {status.label}
-                    </span>
+                    </StatusBadge>
                   </div>
                   <div className="order-card-meta">
                     <span>{formatDate(order.order_date)}</span>
@@ -1915,7 +1966,7 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
                     <div className="order-card-affaire">📋 {order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : order.affaire_id}</div>
                   )}
                   {order.items?.length > 0 && (
-                    <table className="items-table compact">
+                    <Table className="items-table compact">
                       <thead><tr><th>Désignation</th><th>Qté</th><th>Reçu</th></tr></thead>
                       <tbody>
                         {order.items.map(item => (
@@ -1926,17 +1977,16 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </Table>
                   )}
                   <div className="order-progress">
-                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${completion}%` }} /></div>
-                    <span className="progress-text">{completion}% réceptionné</span>
+                    <ProgressBar value={completion} color="success" label={`${completion}% réceptionné`} />
                   </div>
                 </div>
               );
             })}
           </div>
-        )}
+        )}}
       </div>
     </div>
   );
@@ -1944,7 +1994,7 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
 
 // ═══ Modal détail fournisseur (double clic) ═══
 const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, currentUser }) => {
-  const { supplier, orders, documents, workflow } = data;
+  const { supplier, orders, documents, catalogs, workflow } = data;
   const [activeSection, setActiveSection] = useState('workflow');
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const toast = useToast();
@@ -1980,6 +2030,11 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
           <button className={activeSection === 'documents' ? 'active' : ''} onClick={() => setActiveSection('documents')}>
             <FileText size={14} /> Documents ({documents.length})
           </button>
+          {catalogs?.length > 0 && (
+            <button className={activeSection === 'catalogs' ? 'active' : ''} onClick={() => setActiveSection('catalogs')}>
+              <BookOpen size={14} /> Catalogues ({catalogs.length})
+            </button>
+          )}
         </div>
 
         <div className="modal-body supplier-detail-body">
@@ -1990,9 +2045,9 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                 <div key={w.order_id} className="workflow-card">
                   <div className="workflow-card-header">
                     <Hash size={14} /> {w.reference}
-                    <span className="status-badge small" style={{ backgroundColor: (ORDER_STATUS[w.status]?.color || '#666') + '20', color: ORDER_STATUS[w.status]?.color || '#666' }}>
+                    <StatusBadge color={ORDER_STATUS[w.status]?.color || '#666'} size="sm">
                       {ORDER_STATUS[w.status]?.icon} {ORDER_STATUS[w.status]?.label || w.status}
-                    </span>
+                    </StatusBadge>
                   </div>
                   <div className="workflow-steps">
                     <div className={`workflow-step ${w.steps.quote ? 'done' : ''}`}>
@@ -2021,8 +2076,7 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                     </div>
                   </div>
                   <div className="workflow-progress">
-                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${w.completion}%` }} /></div>
-                    <span>{w.completion}% réceptionné</span>
+                    <ProgressBar value={w.completion} color="success" label={`${w.completion}% réceptionné`} />
                   </div>
                   {/* Import buttons */}
                   {currentUser?.isAdmin && (
@@ -2050,9 +2104,9 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                       <span className="order-ref clickable" onClick={() => { onClose(); onViewOrder(order); }}>
                         <Hash size={14} /> {order.reference}
                       </span>
-                      <span className="status-badge small" style={{ backgroundColor: status.color + '20', color: status.color }}>
+                      <StatusBadge color={status.color} size="sm">
                         {status.icon} {status.label}
-                      </span>
+                      </StatusBadge>
                       <span>{formatDate(order.order_date)}</span>
                       <span className="amount">{formatCurrency(order.total_ht)} HT</span>
                     </div>
@@ -2060,7 +2114,7 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                       <div className="order-card-affaire">📋 {order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : order.affaire_id}</div>
                     )}
                     {order.items?.length > 0 && (
-                      <table className="items-table compact">
+                      <Table className="items-table compact">
                         <thead><tr><th>Désignation</th><th>Qté</th><th>Reçu</th><th>Source</th></tr></thead>
                         <tbody>
                           {order.items.map(item => (
@@ -2072,7 +2126,7 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                             </tr>
                           ))}
                         </tbody>
-                      </table>
+                      </Table>
                     )}
                   </div>
                 );
@@ -2106,6 +2160,25 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
               })}
             </div>
           )}
+
+          {/* ═══ Section Catalogues ═══ */}
+          {activeSection === 'catalogs' && catalogs?.length > 0 && (
+            <div className="supplier-catalogs-section">
+              {catalogs.map(cat => (
+                <a key={cat.id} className="catalog-detail-card" href={`/catalogues/${cat.filename}`} target="_blank" rel="noopener noreferrer">
+                  <div className="catalog-card-icon"><BookOpen size={24} /></div>
+                  <div className="catalog-card-info">
+                    <span className="catalog-card-name">{cat.filename}</span>
+                    <div className="catalog-card-meta">
+                      {cat.items_count > 0 && <span>{cat.items_count} article{cat.items_count > 1 ? 's' : ''}</span>}
+                      {cat.page_count > 0 && <span>{cat.page_count} page{cat.page_count > 1 ? 's' : ''}</span>}
+                      <span>{formatDate(cat.created_at)}</span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -2125,32 +2198,40 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
         <button className="action-btn small" onClick={() => onOpenDialog(order)} title="Ouvrir en détail"><Eye size={14} /></button>
       </div>
       <div className="slide-panel-body">
-        <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+        <StatusBadge color={status.color}>
           {status.icon} {status.label}
-        </span>
+        </StatusBadge>
         <div className="slide-fields">
           <div className="slide-field"><span>Fournisseur</span><strong>{order.supplier_name || '—'}</strong></div>
           <div className="slide-field"><span>Date</span><strong>{formatDate(order.order_date)}</strong></div>
           <div className="slide-field"><span>Date prévue</span><strong>{formatDate(order.expected_date)}</strong></div>
-          <div className="slide-field"><span>Affaire</span><strong>{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</strong></div>
+          <div className="slide-field"><span>Affaire</span><strong>{order.affaire_id ? <AffaireBadge numero={order.affaire_id} size="sm" /> : '—'}</strong></div>
           <div className="slide-field"><span>Total HT</span><strong className="amount">{formatCurrency(order.total_ht)}</strong></div>
           <div className="slide-field"><span>Total TTC</span><strong className="amount">{formatCurrency(order.total_ttc)}</strong></div>
         </div>
         {items.length > 0 && (
           <>
             <h4>Articles ({items.length})</h4>
-            <table className="items-table compact">
-              <thead><tr><th>Désignation</th><th>Qté</th><th>Reçu</th></tr></thead>
-              <tbody>
-                {items.map(item => (
-                  <tr key={item.id} className={item.received_qty >= item.quantity ? 'received-row' : ''}>
-                    <td>{item.designation}</td>
-                    <td className="center">{item.quantity}</td>
-                    <td className="center">{item.received_qty || 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="requester-groups">
+              {groupItemsByRequester(items).map(group => (
+                <div key={group.key} className="requester-group">
+                  <div className="requester-line">
+                    <span className="requester-label">
+                      {group.isAffaire ? (
+                        <AffaireBadge numero={group.affaireId} size="sm" />
+                      ) : group.requesterName ? (
+                        <><UsersIcon size={12} /> {group.requesterName}</>
+                      ) : (
+                        <span className="muted">Sans demandeur</span>
+                      )}
+                    </span>
+                    <span className="requester-summary">
+                      {group.items.length} art. — {group.receivedQty}/{group.totalQty} reçu{group.totalQty > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
         {order.notes && <div className="slide-notes"><h4>Notes</h4><p>{order.notes}</p></div>}
@@ -2160,6 +2241,7 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
           {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
           <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
           <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+          <button className="action-btn" onClick={onClose}><X size={14} /> Fermer</button>
         </div>
       </div>
     </div>
@@ -2179,10 +2261,10 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
         <button className="action-btn small" onClick={() => onOpenDialog(quote)} title="Ouvrir en détail"><Eye size={14} /></button>
       </div>
       <div className="slide-panel-body">
-        <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+        <StatusBadge color={status.color}>
           {status.icon} {status.label}
-        </span>
-        {quote.converted_to_order_id && <span className="converted-badge"><FileCheck size={14} /> Converti</span>}
+        </StatusBadge>
+        {quote.converted_to_order_id && <Tag color="success" size="sm"><FileCheck size={14} /> Converti</Tag>}
         <div className="slide-fields">
           <div className="slide-field"><span>Client</span><strong>{quote.client_name || '—'}</strong></div>
           <div className="slide-field"><span>Date</span><strong>{formatDate(quote.quote_date)}</strong></div>
@@ -2194,7 +2276,7 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
         {items.length > 0 && (
           <>
             <h4>Lignes ({items.length})</h4>
-            <table className="items-table compact">
+            <Table className="items-table compact">
               <thead><tr><th>Désignation</th><th>Qté</th><th>P.U. HT</th></tr></thead>
               <tbody>
                 {items.map(item => (
@@ -2205,7 +2287,7 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </>
         )}
         {quote.notes && <div className="slide-notes"><h4>Notes</h4><p>{quote.notes}</p></div>}
@@ -2222,7 +2304,7 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
 });
 
 // ═══ Volet latéral Demande (clic simple) ═══
-const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin, onValidate }) => {
+const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin, onValidate, onEdit }) => {
   if (!request) return <div className="orders-slide-panel" />;
   const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
   const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
@@ -2231,12 +2313,15 @@ const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin,
       <div className="slide-panel-header">
         <button className="back-btn" onClick={onClose}><X size={18} /></button>
         <h3>{request.article}</h3>
-        <button className="action-btn small" onClick={() => onOpenDialog(request)} title="Ouvrir en détail"><Eye size={14} /></button>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button className="action-btn small" onClick={() => onEdit(request)} title="Modifier"><Edit2 size={14} /></button>
+          <button className="action-btn small" onClick={() => onOpenDialog(request)} title="Ouvrir en détail"><Eye size={14} /></button>
+        </div>
       </div>
       <div className="slide-panel-body">
-        <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+        <StatusBadge color={status.color}>
           {status.icon} {status.label}
-        </span>
+        </StatusBadge>
         <span className="priority-badge" style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
         <div className="slide-fields">
           <div className="slide-field"><span>Quantité</span><strong>{request.quantity}</strong></div>
@@ -2275,6 +2360,20 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
           {supplier.email && <div className="slide-field"><span>Email</span><strong>{supplier.email}</strong></div>}
           {supplier.phone && <div className="slide-field"><span>Tél.</span><strong>{formatPhoneDisplay(supplier.phone)}</strong></div>}
         </div>
+        {supplier.catalogs?.length > 0 && (
+          <>
+            <h4><BookOpen size={14} /> Catalogues importés ({supplier.catalogs.length})</h4>
+            <div className="supplier-catalogs-list">
+              {supplier.catalogs.map(cat => (
+                <a key={cat.id} className="catalog-link-card" href={`/catalogues/${cat.filename}`} target="_blank" rel="noopener noreferrer">
+                  <FileText size={14} />
+                  <span className="catalog-name">{cat.filename}</span>
+                  <span className="catalog-meta">{cat.items_count || 0} article{(cat.items_count || 0) > 1 ? 's' : ''}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
         <h4>Commandes en cours ({supplier.orders?.length || 0})</h4>
         {!supplier.orders?.length ? (
           <p className="no-items">Aucune commande en cours</p>
@@ -2287,9 +2386,9 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
                 <div key={order.id} className="supplier-order-card" onClick={() => onViewOrder(order)}>
                   <div className="order-card-top">
                     <span className="order-ref"><Hash size={14} /> {order.reference}</span>
-                    <span className="status-badge small" style={{ backgroundColor: status.color + '20', color: status.color }}>
+                    <StatusBadge color={status.color} size="sm">
                       {status.icon} {status.label}
-                    </span>
+                    </StatusBadge>
                   </div>
                   <div className="order-card-meta">
                     <span>{formatDate(order.order_date)}</span>
@@ -2297,8 +2396,7 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
                     <span>{formatCurrency(order.total_ht)} HT</span>
                   </div>
                   <div className="order-progress">
-                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${completion}%` }} /></div>
-                    <span className="progress-text">{completion}% réceptionné</span>
+                    <ProgressBar value={completion} color="success" label={`${completion}% réceptionné`} />
                   </div>
                 </div>
               );
@@ -2320,9 +2418,9 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2>{order.reference}</h2>
-            <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+            <StatusBadge color={status.color}>
               {status.icon} {status.label}
-            </span>
+            </StatusBadge>
           </div>
           <div className="order-detail-actions">
             {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
@@ -2340,7 +2438,7 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
               <div className="detail-field"><span className="field-label">Fournisseur</span><span>{order.supplier_name || '—'}</span></div>
               <div className="detail-field"><span className="field-label">Date commande</span><span>{formatDate(order.order_date)}</span></div>
               <div className="detail-field"><span className="field-label">Date prévue</span><span>{formatDate(order.expected_date)}</span></div>
-              <div className="detail-field"><span className="field-label">Affaire</span><span>{order.affaire_name ? `${order.affaire_id} — ${order.affaire_name}` : (order.affaire_id || '—')}</span></div>
+              <div className="detail-field"><span className="field-label">Affaire</span><span>{order.affaire_id ? <AffaireBadge numero={order.affaire_id} size="sm" /> : '—'}</span></div>
               <div className="detail-field"><span className="field-label">Créé par</span><span>{order.created_by_name || '—'}</span></div>
             </div>
           </div>
@@ -2357,23 +2455,46 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
         <div className="detail-section">
           <h3>Lignes de commande ({items.length})</h3>
           {items.length > 0 ? (
-            <table className="items-table">
-              <thead><tr><th>Réf</th><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr></thead>
-              <tbody>
-                {items.map(item => (
-                  <tr key={item.id}>
-                    <td className="ref-code">{item.ref_code || '—'}</td>
-                    <td>{item.designation}</td>
-                    <td className="center">{item.quantity}</td>
-                    <td className="center">{item.unit}</td>
-                    <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
-                    <td className="amount">{formatCurrency(item.total_ht)}</td>
-                    <td className="center">{item.received_qty || 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="requester-groups detail">
+              {groupItemsByRequester(items).map(group => (
+                <div key={group.key} className="requester-group">
+                  <div className="requester-group-header">
+                    <span className="requester-label">
+                      {group.isAffaire ? (
+                        <AffaireBadge numero={group.affaireId} size="sm" />
+                      ) : group.requesterName ? (
+                        <><UsersIcon size={14} /> {group.requesterName}</>
+                      ) : (
+                        <span className="muted">Sans demandeur</span>
+                      )}
+                    </span>
+                    <span className="requester-summary">
+                      {group.items.length} article{group.items.length > 1 ? 's' : ''} — {formatCurrency(group.totalHt)} HT — {group.receivedQty}/{group.totalQty} reçu{group.totalQty > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <Table className="items-table compact">
+                    <thead><tr><th>Réf</th><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th><th>Reçu</th></tr></thead>
+                    <tbody>
+                      {group.items.map(item => (
+                        <tr key={item.id} className={item.received_qty >= item.quantity ? 'received-row' : ''}>
+                          <td className="ref-code">{item.ref_code || '—'}</td>
+                          <td>{item.designation}</td>
+                          <td className="center">{item.quantity}</td>
+                          <td className="center">{item.unit}</td>
+                          <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
+                          <td className="amount">{formatCurrency(item.total_ht)}</td>
+                          <td className="center">{item.received_qty || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              ))}
+            </div>
           ) : <p className="no-items">Aucune ligne</p>}
+        </div>
+        <div className="dialog-footer">
+          <button className="action-btn" onClick={onClose}><X size={14} /> Fermer</button>
         </div>
       </div>
     </div>
@@ -2390,10 +2511,10 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2>{quote.reference}</h2>
-            <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+            <StatusBadge color={status.color}>
               {status.icon} {status.label}
-            </span>
-            {quote.converted_to_order_id && <span className="converted-badge"><FileCheck size={14} /> Converti en commande</span>}
+            </StatusBadge>
+            {quote.converted_to_order_id && <Tag color="success" size="sm"><FileCheck size={14} /> Converti en commande</Tag>}
           </div>
           <div className="order-detail-actions">
             {quote.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
@@ -2435,7 +2556,7 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
         <div className="detail-section">
           <h3>Lignes du devis ({items.length})</h3>
           {items.length > 0 ? (
-            <table className="items-table">
+            <Table className="items-table">
               <thead><tr><th>Désignation</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead>
               <tbody>
                 {items.map(item => (
@@ -2448,7 +2569,7 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           ) : <p className="no-items">Aucune ligne</p>}
         </div>
       </div>
@@ -2457,7 +2578,7 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
 });
 
 // ═══ Dialog Demande (double-clic) ═══
-const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate, onDelete }) => {
+const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate, onDelete, onEdit }) => {
   const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
   const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
   return (
@@ -2466,9 +2587,9 @@ const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate,
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2><ClipboardList size={20} /> {request.article}</h2>
-            <span className="status-badge" style={{ backgroundColor: status.color + '20', color: status.color, borderColor: status.color }}>
+            <StatusBadge color={status.color}>
               {status.icon} {status.label}
-            </span>
+            </StatusBadge>
             <span className="priority-badge" style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
           </div>
           <div className="order-detail-actions">
@@ -2478,6 +2599,7 @@ const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate,
                 <button className="action-btn danger" onClick={() => { onValidate(request, 'reject'); onClose(); }}><X size={14} /> Refuser</button>
               </>
             )}
+            <button className="action-btn" onClick={() => onEdit(request)}><Edit2 size={14} /> Modifier</button>
             <button className="action-btn danger" onClick={() => { onDelete(request); onClose(); }}><Trash2 size={14} /> Supprimer</button>
             <button className="close-btn" onClick={onClose}><X size={20} /></button>
           </div>

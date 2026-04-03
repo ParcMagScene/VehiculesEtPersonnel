@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { X, HelpCircle, Download, Truck, Users, Briefcase, Calendar, MessageSquare, Mouse, Keyboard, 
-  Package, ShoppingCart, Search, ChevronDown, ChevronRight, Wrench, CalendarDays, Shield } from 'lucide-react';
+  Package, ShoppingCart, ChevronDown, ChevronRight, Wrench, CalendarDays, Shield } from 'lucide-react';
 import { SHORTCUTS, SHORTCUT_CATEGORIES } from '../hooks/useKeyboardShortcuts';
 import './HelpModal.css';
+import { Input, Tabs, TabList, Tab, TabPanel, Card, EmptyState, SearchBar, Accordion } from '@/design-system';
 
 // ═══ FAQ Data ═══
 const FAQ_ITEMS = [
@@ -77,15 +78,10 @@ const MODULE_GUIDES = [
 
 // ═══ Composant FAQ Accordion ═══
 const FaqItem = ({ item }) => {
-  const [open, setOpen] = useState(false);
   return (
-    <div className={`faq-item ${open ? 'open' : ''}`}>
-      <button className="faq-question" onClick={() => setOpen(!open)}>
-        <span>{item.q}</span>
-        {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button>
-      {open && <div className="faq-answer">{item.a}</div>}
-    </div>
+    <Accordion title={item.q} className="faq-item">
+      <div className="faq-answer">{item.a}</div>
+    </Accordion>
   );
 };
 
@@ -134,40 +130,28 @@ const HelpModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Tabs */}
-        <div className="help-tabs">
-          <button className={`help-tab ${activeTab === 'guides' ? 'active' : ''}`} onClick={() => setActiveTab('guides')}>
-            <HelpCircle size={14} /> Guides
-          </button>
-          <button className={`help-tab ${activeTab === 'shortcuts' ? 'active' : ''}`} onClick={() => setActiveTab('shortcuts')}>
-            <Keyboard size={14} /> Raccourcis
-          </button>
-          <button className={`help-tab ${activeTab === 'faq' ? 'active' : ''}`} onClick={() => setActiveTab('faq')}>
-            <MessageSquare size={14} /> FAQ
-          </button>
-        </div>
+        <Tabs value={activeTab} onChange={setActiveTab}>
+          <TabList className="help-tabs">
+            <Tab value="guides" icon={<HelpCircle size={14} />}>Guides</Tab>
+            <Tab value="shortcuts" icon={<Keyboard size={14} />}>Raccourcis</Tab>
+            <Tab value="faq" icon={<MessageSquare size={14} />}>FAQ</Tab>
+          </TabList>
 
         {/* Search */}
         {activeTab !== 'shortcuts' && (
-          <div className="help-search">
-            <Search size={14} />
-            <input
-              type="text"
-              placeholder={activeTab === 'guides' ? 'Rechercher dans les guides...' : 'Rechercher dans la FAQ...'}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button className="help-search-clear" onClick={() => setSearchTerm('')}><X size={14} /></button>
-            )}
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder={activeTab === 'guides' ? 'Rechercher dans les guides...' : 'Rechercher dans la FAQ...'}
+            size="sm"
+          />
         )}
 
         <div className="help-body">
-          {/* Tab: Guides */}
-          {activeTab === 'guides' && (
+          <TabPanel value="guides">
             <div className="help-guides">
               {filteredGuides.length === 0 && (
-                <div className="help-empty">Aucun résultat pour « {searchTerm} »</div>
+                <EmptyState size="sm" title={`Aucun résultat pour « ${searchTerm} »`} />
               )}
               {filteredGuides.map(guide => (
                 <div className="help-section" key={guide.id}>
@@ -175,18 +159,17 @@ const HelpModal = ({ isOpen, onClose }) => {
                     <guide.icon size={16} /> {guide.title}
                   </div>
                   {guide.tips.map((tip, idx) => (
-                    <div className="help-card" key={idx} style={{ '--card-accent': guide.color }}>
+                    <Card className="help-card" key={idx} style={{ '--card-accent': guide.color }}>
                       <h4>{tip.title}</h4>
                       <p>{tip.text}</p>
-                    </div>
+                    </Card>
                   ))}
                 </div>
               ))}
             </div>
-          )}
+          </TabPanel>
 
-          {/* Tab: Raccourcis */}
-          {activeTab === 'shortcuts' && (
+          <TabPanel value="shortcuts">
             <div className="help-shortcuts">
               {Object.entries(SHORTCUT_CATEGORIES).map(([catId, catLabel]) => {
                 const catShortcuts = SHORTCUTS.filter(s => s.category === catId);
@@ -213,24 +196,24 @@ const HelpModal = ({ isOpen, onClose }) => {
                 );
               })}
             </div>
-          )}
+          </TabPanel>
 
-          {/* Tab: FAQ */}
-          {activeTab === 'faq' && (
+          <TabPanel value="faq">
             <div className="help-faq">
               {filteredFaq.length === 0 && (
-                <div className="help-empty">Aucun résultat pour « {searchTerm} »</div>
+                <EmptyState size="sm" title={`Aucun résultat pour « ${searchTerm} »`} />
               )}
               {filteredFaq.map((item, idx) => (
                 <FaqItem key={idx} item={item} />
               ))}
             </div>
-          )}
+          </TabPanel>
 
           <div className="help-version">
             eM@g v2.1 — MagScene © {new Date().getFullYear()}
           </div>
         </div>
+        </Tabs>
       </div>
     </div>
   );

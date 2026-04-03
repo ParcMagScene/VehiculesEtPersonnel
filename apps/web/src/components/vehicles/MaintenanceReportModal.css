@@ -20,7 +20,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
 
@@ -29,7 +29,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #1e3a5f, var(--theme-info-dark));
+  background: linear-gradient(135deg, var(--theme-text-dark), var(--theme-info-dark));
   color: var(--theme-text-inverse);
 }
 
@@ -42,7 +42,7 @@
 }
 
 .mr-close {
-  background: rgba(255,255,255,0.15);
+  background: var(--close-btn-bg);
   border: none;
   color: var(--theme-text-inverse);
   cursor: pointer;
@@ -53,7 +53,7 @@
 }
 
 .mr-close:hover {
-  background: rgba(255,255,255,0.3);
+  background: var(--close-btn-hover-bg);
 }
 
 /* Toolbar */
@@ -90,7 +90,7 @@
 .mr-period-btn.active {
   background: var(--theme-bg-card);
   color: var(--theme-text-dark);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .mr-toolbar-center {
@@ -225,7 +225,7 @@
   white-space: nowrap;
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .mr-table td {
@@ -296,7 +296,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 10px;
-  border-top: 2px solid #1e3a5f;
+  border-top: 2px solid var(--theme-text-dark);
   margin-top: 8px;
   font-size: 13px;
   font-weight: 600;

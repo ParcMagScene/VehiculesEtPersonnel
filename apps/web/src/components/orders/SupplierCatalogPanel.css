@@ -140,7 +140,7 @@
   border-bottom: 2px solid var(--theme-border);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .catalog-table td {
@@ -151,7 +151,7 @@
 }
 
 .catalog-table tr:hover {
-  background: var(--bg-hover, rgba(99, 102, 241, 0.04));
+  background: var(--bg-hover, var(--accent-tint-subtle));
 }
 
 /* ─── Badge ─── */
@@ -193,7 +193,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
   animation: catalogSlideUp 0.25s ease;
 }
 
@@ -700,15 +700,15 @@
   bottom: 0;
   margin-top: 1.5rem;
   padding: 1rem 1.25rem;
-  background: var(--theme-bg-primary, #fff);
+  background: var(--theme-bg-primary, var(--theme-bg-card));
   border-top: 2px solid var(--theme-primary);
   border-radius: 10px 10px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
-  z-index: 10;
+  box-shadow: 0 -4px 12px var(--shadow-sm);
+  z-index: var(--z-dropdown);
 }
 
 .taxonomy-apply-bar span {

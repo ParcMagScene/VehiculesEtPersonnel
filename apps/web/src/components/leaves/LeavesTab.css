@@ -97,7 +97,7 @@
   border-color: var(--theme-info);
 }
 .lt-btn-primary:hover {
-  background: #2563eb;
+  background: var(--theme-info-dark);
 }
 .lt-btn-sm {
   padding: 4px 10px;
@@ -159,7 +159,7 @@
 }
 .lt-kpi-card.clickable:hover {
   border-color: var(--theme-info);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 2px 8px var(--primary-tint-medium);
 }
 .lt-kpi-icon {
   font-size: 1.3rem;
@@ -231,7 +231,7 @@
 .lt-nav-btn.active {
   background: var(--theme-bg-card, white);
   color: var(--theme-info);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Sections */
@@ -511,7 +511,7 @@
 }
 .lt-request-card:hover {
   border-color: var(--theme-border-medium);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px var(--shadow-xs);
 }
 .lt-request-card.pending { border-left: 3px solid var(--theme-warning); }
 .lt-request-card.accepted { border-left: 3px solid var(--theme-success-alt); }

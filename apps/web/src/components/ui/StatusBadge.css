@@ -1,0 +1,23 @@
+.ui-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.2em 0.7em;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.ui-status-badge--sm {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+}
+
+.ui-status-badge__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}

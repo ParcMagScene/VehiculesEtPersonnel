@@ -5,20 +5,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import './MobilePersonnel.css';
-
-const getInitials = (firstName, lastName) => {
-  const f = firstName?.[0] || '';
-  const l = lastName?.[0] || '';
-  return (f + l).toUpperCase() || '?';
-};
-
-const getAvatarColor = (name) => {
-  if (!name) return 'var(--theme-text-muted)';
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-  return colors[Math.abs(hash) % colors.length];
-};
+import { Spinner, Avatar } from '@/design-system';
 
 const skillIcon = (skillName) => {
   if (!skillName) return <Star size={12} />;
@@ -172,9 +159,7 @@ function MobilePersonnel({ onBack, currentUser }) {
             {p.photo ? (
               <img src={`/avatars/${p.photo}`} alt="" className="mpers-detail-photo" />
             ) : (
-              <div className="mpers-detail-avatar" style={{ background: getAvatarColor(fullName) }}>
-                {getInitials(p.firstName, p.lastName)}
-              </div>
+              <Avatar name={fullName} size="xl" />
             )}
             <h3>{fullName}</h3>
             <span className={`mpers-status-tag ${p.status === 'active' ? 'active' : 'inactive'}`}>
@@ -286,7 +271,7 @@ function MobilePersonnel({ onBack, currentUser }) {
 
       {loading ? (
         <div className="mpers-loading">
-          <div className="spinner"></div>
+          <Spinner size="lg" />
           <p>Chargement...</p>
         </div>
       ) : isSimpleUser ? (
@@ -316,9 +301,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                   {myPerson.photo ? (
                     <img src={`/avatars/${myPerson.photo}`} alt="" className="mpers-my-avatar-img" />
                   ) : (
-                    <div className="mpers-my-avatar" style={{ background: getAvatarColor(fullName) }}>
-                      {getInitials(myPerson.firstName, myPerson.lastName)}
-                    </div>
+                    <Avatar name={fullName} size={48} />
                   )}
                   <div className="mpers-my-name">{fullName}</div>
                 </div>
@@ -395,9 +378,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                 {myPerson.photo ? (
                   <img src={`/avatars/${myPerson.photo}`} alt="" className="mpers-my-avatar-img" />
                 ) : (
-                  <div className="mpers-my-avatar" style={{ background: getAvatarColor(fullName) }}>
-                    {getInitials(myPerson.firstName, myPerson.lastName)}
-                  </div>
+                  <Avatar name={fullName} size={48} />
                 )}
                 <div className="mpers-my-name">{fullName}</div>
               </div>
@@ -466,9 +447,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                 {p.photo ? (
                   <img src={`/avatars/${p.photo}`} alt="" className="mpers-avatar-img" loading="lazy" />
                 ) : (
-                  <div className="mpers-avatar" style={{ background: getAvatarColor(fullName) }}>
-                    {getInitials(p.firstName, p.lastName)}
-                  </div>
+                  <Avatar name={fullName} size="md" />
                 )}
                 <div className="mpers-day-info">
                   <div className="mpers-day-name">{fullName}</div>
@@ -515,9 +494,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                     {p.photo ? (
                       <img src={`/avatars/${p.photo}`} alt="" className="mpers-week-avatar-img" />
                     ) : (
-                      <div className="mpers-week-avatar" style={{ background: getAvatarColor(fullName) }}>
-                        {getInitials(p.firstName, p.lastName)}
-                      </div>
+                      <Avatar name={fullName} size={30} />
                     )}
                     <div className="mpers-week-person-info">
                       <span className="mpers-week-person-name">{p.firstName || ''}</span>

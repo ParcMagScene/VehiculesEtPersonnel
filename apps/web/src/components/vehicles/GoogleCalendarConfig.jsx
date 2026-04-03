@@ -4,6 +4,7 @@ import api from '../../utils/api';
 import { saveToIndexedDB, loadFromIndexedDB } from '../../utils/indexedDB';
 import './GoogleCalendarConfig.css';
 import { useToast } from '../../hooks/useToast';
+import { Button, Dialog, FormField, Input, InlineAlert } from '@/design-system';
 
 const GoogleCalendarConfig = () => {
   const toast = useToast();
@@ -12,6 +13,7 @@ const GoogleCalendarConfig = () => {
   const [mapsApiKey, setMapsApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadConfig();
@@ -65,27 +67,32 @@ const GoogleCalendarConfig = () => {
     }
   };
 
-  const handleRevokeOAuth = async () => {
-    if (!confirm('⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nVous devrez autoriser à nouveau l\'accès après cette action.')) {
-      return;
-    }
-
-    // Supprimer le token du backend
-    try {
-      await api.deleteGoogleToken();
-    } catch (err) {
-      console.warn('Erreur suppression token:', err.message);
-    }
-    // Supprimer les marqueurs UI locaux
-    localStorage.removeItem('google_auto_signin');
-    
-    // Révoquer l'accès sur le compte Google
-    toast.success('Déconnexion effectuée Veuillez : 1. Recharger la page (F5)\n2. Aller sur https://myaccount.google.com/permissions\n3. Révoquer l\'accès à cette application\n4. Revenir et vous reconnecter avec le nouveau Client ID');
-    
-    // Recharger après 2 secondes
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
+  const handleRevokeOAuth = () => {
+    setConfirmDialog({
+      title: 'Déconnexion Google',
+      message: '⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nVous devrez autoriser à nouveau l\'accès après cette action.',
+      variant: 'warning',
+      confirmLabel: 'Déconnecter',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        // Supprimer le token du backend
+        try {
+          await api.deleteGoogleToken();
+        } catch (err) {
+          console.warn('Erreur suppression token:', err.message);
+        }
+        // Supprimer les marqueurs UI locaux
+        localStorage.removeItem('google_auto_signin');
+        
+        // Révoquer l'accès sur le compte Google
+        toast.success('Déconnexion effectuée Veuillez : 1. Recharger la page (F5)\n2. Aller sur https://myaccount.google.com/permissions\n3. Révoquer l\'accès à cette application\n4. Revenir et vous reconnecter avec le nouveau Client ID');
+        
+        // Recharger après 2 secondes
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      },
+    });
   };
 
   const handleOpenGooglePermissions = () => {
@@ -133,7 +140,7 @@ const GoogleCalendarConfig = () => {
               </span>
             )}
           </div>
-          <div className="env-item env-warning">
+          <InlineAlert variant="warning">
             <strong>⚠️ URI à configurer dans Google Cloud Console :</strong>
             <div className="uri-list">
               <div className="uri-item">
@@ -168,17 +175,13 @@ const GoogleCalendarConfig = () => {
             <small>
               👆 Ajoutez cette URL exactement dans les deux sections de votre OAuth Client ID
             </small>
-          </div>
+          </InlineAlert>
         </div>
       </div>
 
       <form onSubmit={handleSave} className="config-form">
-        <div className="form-group">
-          <label htmlFor="clientId">
-            Client ID OAuth 2.0
-            <span className="required">*</span>
-          </label>
-          <input
+        <FormField className="form-group" label="Client ID OAuth 2.0" htmlFor="clientId" required>
+          <Input
             id="clientId"
             type="text"
             value={clientId}
@@ -208,14 +211,10 @@ const GoogleCalendarConfig = () => {
               </p>
             </div>
           </details>
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label htmlFor="calendarId">
-            ID du calendrier
-            <span className="required">*</span>
-          </label>
-          <input
+        <FormField className="form-group" label="ID du calendrier" htmlFor="calendarId" required>
+          <Input
             id="calendarId"
             type="text"
             value={calendarId}
@@ -227,14 +226,14 @@ const GoogleCalendarConfig = () => {
             <AlertCircle size={14} />
             Trouvé dans les paramètres du calendrier Google
           </p>
-        </div>
+        </FormField>
 
         <div className="form-group">
           <label htmlFor="mapsApiKey">
             Clé API Google Maps
             <span className="optional"> (optionnel)</span>
           </label>
-          <input
+          <Input
             id="mapsApiKey"
             type="text"
             value={mapsApiKey}
@@ -248,14 +247,14 @@ const GoogleCalendarConfig = () => {
         </div>
 
         <div className="form-actions">
-          <button 
-            type="submit" 
-            className="btn-save"
+          <Button 
+            variant="primary"
+            type="submit"
             disabled={isSaving}
           >
             <Save size={18} />
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -270,14 +269,13 @@ const GoogleCalendarConfig = () => {
             <LogOut size={18} />
             Déconnecter OAuth
           </button>
-          <button 
-            type="button"
-            className="btn-secondary"
+          <Button 
+            variant="secondary"
             onClick={handleOpenGooglePermissions}
           >
             <RefreshCw size={18} />
             Gérer les autorisations
-          </button>
+          </Button>
         </div>
         <p className="oauth-hint">
           <AlertCircle size={14} />
@@ -297,6 +295,17 @@ const GoogleCalendarConfig = () => {
           <li>Récupérez l'ID de votre calendrier dans Google Calendar (Paramètres → Calendrier)</li>
         </ol>
       </div>
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 };

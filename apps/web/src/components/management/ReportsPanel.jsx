@@ -14,6 +14,7 @@ import { format, parseISO, startOfMonth, endOfMonth, subMonths, startOfYear, end
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import './ReportsPanel.css';
+import { Table, InlineAlert, Tooltip, SectionHeader } from '@/design-system';
 
 // ═══════════════════════════════════════
 // Helpers
@@ -326,18 +327,18 @@ const ReportsPanel = ({ currentUser }) => {
         <div class="stat"><strong>${fleetReport.avgUtilization}j</strong>Utilisation moy.</div>
       </div>
       <h2>Répartition par type</h2>
-      <table><tr><th>Type</th><th>Nombre</th></tr>
+      <Table><tr><th>Type</th><th>Nombre</th></tr>
         ${Object.entries(fleetReport.byType).map(([t, n]) => `<tr><td>${t}</td><td>${n}</td></tr>`).join('')}
-      </table>
+      </Table>
       <h2>Réservations sur la période (${fleetReport.periodRes.length})</h2>
-      <table><tr><th>Véhicule</th><th>Client</th><th>Début</th><th>Fin</th></tr>
+      <Table><tr><th>Véhicule</th><th>Client</th><th>Début</th><th>Fin</th></tr>
         ${fleetReport.periodRes.slice(0, 50).map(r =>
           `<tr><td>${r.vehicleName || r.vehicle_name || '—'}</td>
            <td>${r.clientName || r.client_name || '—'}</td>
            <td>${fmtDate(r.startDate || r.start_date)}</td>
            <td>${fmtDate(r.endDate || r.end_date)}</td></tr>`
         ).join('')}
-      </table>
+      </Table>
     `;
     openPrintWindow('Rapport Parc Véhicules', html);
   };
@@ -353,11 +354,11 @@ const ReportsPanel = ({ currentUser }) => {
         <div class="stat"><strong>${fmtCurrency(maintReport.totalCost)}</strong>Coût total</div>
       </div>
       <h2>Par type</h2>
-      <table><tr><th>Type</th><th>Nombre</th></tr>
+      <Table><tr><th>Type</th><th>Nombre</th></tr>
         ${Object.entries(maintReport.byType).map(([t, n]) => `<tr><td>${t}</td><td>${n}</td></tr>`).join('')}
-      </table>
+      </Table>
       <h2>Détail interventions</h2>
-      <table><tr><th>Véhicule</th><th>Type</th><th>Date</th><th>Statut</th><th>Coût</th></tr>
+      <Table><tr><th>Véhicule</th><th>Type</th><th>Date</th><th>Statut</th><th>Coût</th></tr>
         ${maintReport.items.slice(0, 100).map(m =>
           `<tr><td>${m.vehicleName || m.vehicle_name || m.vehicleRegistration || '—'}</td>
            <td>${m.type || '—'}</td>
@@ -365,7 +366,7 @@ const ReportsPanel = ({ currentUser }) => {
            <td>${m.status || '—'}</td>
            <td>${fmtCurrency(m.cost || m.estimatedCost)}</td></tr>`
         ).join('')}
-      </table>
+      </Table>
     `;
     openPrintWindow('Rapport Maintenances', html);
   };
@@ -380,15 +381,15 @@ const ReportsPanel = ({ currentUser }) => {
         <div class="stat"><strong>${personnelReport.inactive}</strong>Inactifs</div>
       </div>
       <h2>Par type</h2>
-      <table><tr><th>Type</th><th>Nombre</th></tr>
+      <Table><tr><th>Type</th><th>Nombre</th></tr>
         ${Object.entries(personnelReport.byType).map(([t, n]) => `<tr><td>${t}</td><td>${n}</td></tr>`).join('')}
-      </table>
+      </Table>
       <h2>Par contrat</h2>
-      <table><tr><th>Contrat</th><th>Nombre</th></tr>
+      <Table><tr><th>Contrat</th><th>Nombre</th></tr>
         ${Object.entries(personnelReport.byContract).map(([c, n]) => `<tr><td>${c}</td><td>${n}</td></tr>`).join('')}
-      </table>
+      </Table>
       <h2>Liste complète</h2>
-      <table><tr><th>Nom</th><th>Type</th><th>Contrat</th><th>Email</th><th>Statut</th></tr>
+      <Table><tr><th>Nom</th><th>Type</th><th>Contrat</th><th>Email</th><th>Statut</th></tr>
         ${persons.map(p =>
           `<tr><td>${p.firstName || ''} ${p.lastName || ''}</td>
            <td>${p.type || '—'}</td>
@@ -396,7 +397,7 @@ const ReportsPanel = ({ currentUser }) => {
            <td>${p.email || '—'}</td>
            <td>${p.status || '—'}</td></tr>`
         ).join('')}
-      </table>
+      </Table>
     `;
     openPrintWindow('Rapport Personnel', html);
   };
@@ -414,17 +415,14 @@ const ReportsPanel = ({ currentUser }) => {
           <h2>Rapports & Exports</h2>
         </div>
         <div className="rp-header-actions">
-          <button className="rp-btn rp-btn-icon" onClick={loadData} title="Rafraîchir les données">
+          <Tooltip content="Rafraîchir les données"><button className="rp-btn rp-btn-icon" onClick={loadData}>
             <RefreshCw size={16} />
-          </button>
+          </button></Tooltip>
         </div>
       </div>
 
       {error && (
-        <div className="rp-error">
-          <AlertTriangle size={14} /> {error}
-          <button onClick={() => setError('')}>×</button>
-        </div>
+        <InlineAlert dismissible onDismiss={() => setError('')}>{error}</InlineAlert>
       )}
 
       {/* Period filter */}
@@ -472,8 +470,7 @@ const ReportsPanel = ({ currentUser }) => {
       {/* ═══ FLEET ═══ */}
       {section === 'fleet' && !loading && (
         <div className="rp-section">
-          <div className="rp-section-header">
-            <h3><Truck size={18} /> Synthèse Parc Véhicules</h3>
+          <SectionHeader className="rp-section-header" icon={<Truck size={18} />} title="Synthèse Parc Véhicules" actions={
             <div className="rp-section-actions">
               <button className="rp-btn rp-btn-sm" onClick={exportVehiclesCSV}>
                 <Download size={14} /> CSV véhicules
@@ -485,7 +482,7 @@ const ReportsPanel = ({ currentUser }) => {
                 <Printer size={14} /> Imprimer
               </button>
             </div>
-          </div>
+          } />
 
           <div className="rp-kpi-grid">
             <div className="rp-kpi" style={{ borderColor: '#3b82f6' }}>
@@ -538,8 +535,7 @@ const ReportsPanel = ({ currentUser }) => {
       {/* ═══ MAINTENANCE ═══ */}
       {section === 'maintenance' && !loading && (
         <div className="rp-section">
-          <div className="rp-section-header">
-            <h3><Wrench size={18} /> Synthèse Maintenances</h3>
+          <SectionHeader className="rp-section-header" icon={<Wrench size={18} />} title="Synthèse Maintenances" actions={
             <div className="rp-section-actions">
               <button className="rp-btn rp-btn-sm" onClick={exportMaintenancesCSV}>
                 <Download size={14} /> CSV
@@ -548,7 +544,7 @@ const ReportsPanel = ({ currentUser }) => {
                 <Printer size={14} /> Imprimer
               </button>
             </div>
-          </div>
+          } />
 
           <div className="rp-kpi-grid">
             <div className="rp-kpi" style={{ borderColor: '#3b82f6' }}>
@@ -596,7 +592,7 @@ const ReportsPanel = ({ currentUser }) => {
             <div className="rp-table-section">
               <h4>Dernières interventions</h4>
               <div className="rp-table-wrapper">
-                <table className="rp-table">
+                <Table className="rp-table">
                   <thead>
                     <tr>
                       <th>Véhicule</th>
@@ -617,7 +613,7 @@ const ReportsPanel = ({ currentUser }) => {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               </div>
             </div>
           )}
@@ -627,8 +623,7 @@ const ReportsPanel = ({ currentUser }) => {
       {/* ═══ PERSONNEL ═══ */}
       {section === 'personnel' && !loading && (
         <div className="rp-section">
-          <div className="rp-section-header">
-            <h3><Users size={18} /> Synthèse Personnel</h3>
+          <SectionHeader className="rp-section-header" icon={<Users size={18} />} title="Synthèse Personnel" actions={
             <div className="rp-section-actions">
               <button className="rp-btn rp-btn-sm" onClick={exportPersonnelCSV}>
                 <Download size={14} /> CSV
@@ -637,7 +632,7 @@ const ReportsPanel = ({ currentUser }) => {
                 <Printer size={14} /> Imprimer
               </button>
             </div>
-          </div>
+          } />
 
           <div className="rp-kpi-grid">
             <div className="rp-kpi" style={{ borderColor: '#10b981' }}>
@@ -696,14 +691,13 @@ const ReportsPanel = ({ currentUser }) => {
       {/* ═══ ORDERS ═══ */}
       {section === 'orders' && !loading && (
         <div className="rp-section">
-          <div className="rp-section-header">
-            <h3><ShoppingCart size={18} /> Synthèse Commandes</h3>
+          <SectionHeader className="rp-section-header" icon={<ShoppingCart size={18} />} title="Synthèse Commandes" actions={
             <div className="rp-section-actions">
               <button className="rp-btn rp-btn-sm" onClick={exportOrdersCSV}>
                 <Download size={14} /> CSV
               </button>
             </div>
-          </div>
+          } />
 
           <div className="rp-kpi-grid">
             <div className="rp-kpi" style={{ borderColor: '#8b5cf6' }}>
@@ -755,14 +749,13 @@ const ReportsPanel = ({ currentUser }) => {
       {/* ═══ AFFAIRES ═══ */}
       {section === 'affaires' && !loading && (
         <div className="rp-section">
-          <div className="rp-section-header">
-            <h3><Briefcase size={18} /> Synthèse Affaires</h3>
+          <SectionHeader className="rp-section-header" icon={<Briefcase size={18} />} title="Synthèse Affaires" actions={
             <div className="rp-section-actions">
               <button className="rp-btn rp-btn-sm" onClick={exportAffairesCSV}>
                 <Download size={14} /> CSV
               </button>
             </div>
-          </div>
+          } />
 
           <div className="rp-kpi-grid">
             <div className="rp-kpi" style={{ borderColor: '#f97316' }}>
@@ -800,9 +793,7 @@ const ReportsPanel = ({ currentUser }) => {
       {/* ═══ EXPORTS CSV ═══ */}
       {section === 'exports' && !loading && (
         <div className="rp-section">
-          <div className="rp-section-header">
-            <h3><FileSpreadsheet size={18} /> Exports CSV (Excel)</h3>
-          </div>
+          <SectionHeader className="rp-section-header" icon={<FileSpreadsheet size={18} />} title="Exports CSV (Excel)" />
           <p className="rp-export-desc">
             Exportez les données complètes au format CSV, compatible Excel et LibreOffice.
             Les fichiers incluent l'encodage UTF-8 avec BOM pour la prise en charge des accents.

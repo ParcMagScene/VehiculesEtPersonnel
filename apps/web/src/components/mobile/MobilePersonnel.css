@@ -117,7 +117,7 @@
   padding: 4px 16px;
   border: none;
   background: var(--theme-primary-main);
-  color: white;
+  color: var(--theme-text-inverse);
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: 0 0 12px 12px;
@@ -144,7 +144,7 @@
   background: var(--theme-bg-card);
   border-radius: 14px;
   margin-bottom: 6px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px var(--shadow-xs);
   border: 1px solid var(--theme-border);
   cursor: pointer;
   transition: transform 0.15s;
@@ -208,7 +208,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--mission-color, #3b82f6);
+  background: var(--mission-color, var(--theme-info));
   flex-shrink: 0;
 }
 
@@ -223,7 +223,7 @@
   width: 7px;
   height: 7px;
   border-radius: 2px;
-  background: var(--task-color, #f59e0b);
+  background: var(--task-color, var(--theme-warning));
   flex-shrink: 0;
 }
 
@@ -243,14 +243,14 @@
 
 .mpers-free-tag {
   font-size: 0.78rem;
-  color: var(--theme-success-alt, #10b981);
+  color: var(--theme-success-alt, var(--theme-success-alt));
   font-weight: 500;
 }
 
 .mpers-unavail-tag {
   font-size: 0.78rem;
-  color: var(--theme-danger-text, #ef4444);
-  background: var(--theme-danger-bg, #fef2f2);
+  color: var(--theme-danger-text, var(--theme-danger));
+  background: var(--theme-danger-bg, var(--theme-danger-bg));
   padding: 2px 8px;
   border-radius: 8px;
   font-weight: 500;
@@ -280,7 +280,7 @@
   flex-direction: column;
   border-right: 2px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
-  z-index: 2;
+  z-index: var(--z-base);
 }
 
 .mpers-week-names-header {
@@ -372,7 +372,7 @@
   display: flex;
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-base);
   background: var(--theme-bg-tertiary);
   border-bottom: 2px solid var(--theme-border-medium);
 }
@@ -390,7 +390,7 @@
 }
 
 .mpers-week-day-col.today {
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--primary-tint-subtle);
 }
 
 .mpers-week-day-col.today .mpers-week-day-num {
@@ -440,7 +440,7 @@
 }
 
 .mpers-week-cell.unavail {
-  background: var(--theme-danger-bg, #fef2f2);
+  background: var(--theme-danger-bg, var(--theme-danger-bg));
 }
 
 /* Mission card dans cellule semaine */
@@ -448,7 +448,7 @@
   border-left: 3px solid;
   border-radius: 4px;
   padding: 3px 6px;
-  background: linear-gradient(135deg, var(--theme-info-bg, #eff6ff) 0%, #e0f2fe 100%);
+  background: linear-gradient(135deg, var(--theme-info-bg, var(--theme-info-bg)) 0%, var(--theme-info-bg) 100%);
   min-height: 0;
   flex-shrink: 0;
 }
@@ -479,7 +479,7 @@
   justify-content: center;
   height: 100%;
   font-size: 0.65rem;
-  color: var(--theme-danger-text, #ef4444);
+  color: var(--theme-danger-text, var(--theme-danger));
   font-weight: 500;
 }
 
@@ -495,7 +495,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--theme-success-alt, #10b981);
+  background: var(--theme-success-alt, var(--theme-success-alt));
   opacity: 0.35;
 }
 
@@ -522,9 +522,9 @@
   display: inline-block;
 }
 
-.mpers-legend-dot.busy { background: #3b82f6; }
-.mpers-legend-dot.task { background: #f59e0b; border-radius: 2px; }
-.mpers-legend-dot.unavail { background: #ef4444; }
+.mpers-legend-dot.busy { background: var(--theme-info); }
+.mpers-legend-dot.task { background: var(--theme-warning); border-radius: 2px; }
+.mpers-legend-dot.unavail { background: var(--theme-danger); }
 .mpers-legend-dot.free { background: var(--theme-bg-tertiary); border: 1px solid var(--theme-border-muted); }
 
 /* Empty / Loading */
@@ -736,7 +736,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 600;
   font-size: 1.1rem;
   flex-shrink: 0;
@@ -789,11 +789,11 @@
 /* Carte mission */
 .mpers-my-mission-card {
   background: var(--theme-bg-card);
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid var(--theme-info);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .mpers-my-mission-title {
@@ -826,11 +826,11 @@
 /* Carte tâche */
 .mpers-my-task-card {
   background: var(--theme-bg-card);
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--theme-warning);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .mpers-my-task-title {

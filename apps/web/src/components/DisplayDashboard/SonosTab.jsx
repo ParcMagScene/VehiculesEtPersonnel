@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { Music, Wifi, RefreshCw, Disc } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Input, Checkbox, InlineAlert, SectionHeader } from '@/design-system';
 
 function SonosTab({ currentUser, refreshKey }) {
   const toast = useToast();
@@ -70,47 +71,40 @@ function SonosTab({ currentUser, refreshKey }) {
     <div className="dtv-sonos">
       {/* Configuration IP */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Wifi size={16} /> Configuration Sonos
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Wifi size={16} />} title="Configuration Sonos" />
         <p className="dtv-hint">Entrez l'adresse IP de votre enceinte Sonos sur le réseau local.</p>
 
         <div className="dtv-form-row">
           <div className="dtv-form-group" style={{ flex: 1 }}>
             <label>Adresse IP Sonos</label>
-            <input type="text" value={sonosIP} onChange={e => setSonosIP(e.target.value)}
+            <Input type="text" value={sonosIP} onChange={e => setSonosIP(e.target.value)}
               placeholder="192.168.1.xxx" />
           </div>
-          <button className="btn-primary-sm" onClick={handleSave} style={{ alignSelf: 'flex-end' }}>
+          <Button variant="primary" size="sm" onClick={handleSave} style={{ alignSelf: 'flex-end' }}>
             Enregistrer
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Monitoring */}
       <div className="dtv-section">
-        <h3 className="dtv-section-title">
-          <Music size={16} /> Lecture en cours
-        </h3>
+        <SectionHeader className="dtv-section-title" icon={<Music size={16} />} title="Lecture en cours" />
 
         <div className="dtv-form-group dtv-toggle-row">
           <label>
-            <input type="checkbox" checked={polling} onChange={e => setPolling(e.target.checked)} />
+            <Checkbox checked={polling} onChange={e => setPolling(e.target.checked)} />
             Activer le monitoring temps réel (polling 5s)
           </label>
         </div>
 
-        <button className="btn-secondary-sm" onClick={loadNowPlaying} style={{ marginBottom: 12 }}>
+        <Button variant="secondary" size="sm" onClick={loadNowPlaying} style={{ marginBottom: 12 }}>
           <RefreshCw size={14} /> Rafraîchir maintenant
-        </button>
+        </Button>
 
         {nowPlaying && (
           <div className="dtv-sonos-widget">
             {nowPlaying.error ? (
-              <div className="dtv-sonos-error">
-                <Wifi size={20} />
-                <span>{nowPlaying.error}</span>
-              </div>
+              <InlineAlert>{nowPlaying.error}</InlineAlert>
             ) : nowPlaying.playing ? (
               <div className="dtv-sonos-playing">
                 {nowPlaying.albumArtURI && (

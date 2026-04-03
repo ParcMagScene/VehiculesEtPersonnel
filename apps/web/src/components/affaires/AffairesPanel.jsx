@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, Search, X, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare, PackagePlus, DollarSign } from 'lucide-react';
+import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare, PackagePlus, DollarSign } from 'lucide-react';
 import api from '../../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -9,6 +9,7 @@ import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import './AffairesPanel.css';
+import { Input, Checkbox, Spinner, EmptyState, InlineAlert, SearchBar, Tooltip, Divider } from '@/design-system';
 
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));
@@ -726,7 +727,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     return (
       <div className="affaires-panel">
         <div className="affaires-loading">
-          <div className="loading-spinner"></div>
+          <Spinner size="lg" />
           <p>Chargement des affaires...</p>
         </div>
       </div>
@@ -736,15 +737,10 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   return (
     <div className="affaires-panel">
       {error && (
-        <div className="affaires-error">
-          <AlertCircle size={16} /> {error}
-          <button onClick={handleRefresh}>Réessayer</button>
-        </div>
+        <InlineAlert action={<button onClick={handleRefresh}>Réessayer</button>}>{error}</InlineAlert>
       )}
       {googleError && (
-        <div className="affaires-warning">
-          <AlertCircle size={16} /> {googleError}
-        </div>
+        <InlineAlert variant="warning">{googleError}</InlineAlert>
       )}
       {isLoadingGoogle && (
         <div className="affaires-google-loading">
@@ -791,16 +787,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       <div className="affaires-toolbar-bar">
         <div className="affaires-toolbar-actions">
           {/* Recherche */}
-          <div className="affaires-tb-search">
-            <Search size={14} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Rechercher affaire..."
-            />
-            {searchTerm && <button className="affaires-tb-search-clear" onClick={() => setSearchTerm('')}><X size={12} /></button>}
-          </div>
+          <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher affaire..." size="sm" />
 
           {/* Type — sélecteur horizontal */}
           <div className="affaires-type-selector">
@@ -825,7 +812,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             ))}
           </div>
 
-          <div className="affaires-tb-divider" />
+          <Divider orientation="vertical" />
 
           {/* Vue semaine / mois */}
           <div className="affaires-tb-view-selector">
@@ -834,9 +821,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           </div>
 
           {/* Navigation dates */}
-          <button className="affaires-tb-nav-btn" onClick={goToPrevious} title="Période précédente"><ChevronLeft size={16} /></button>
+          <Tooltip content="Période précédente"><button className="affaires-tb-nav-btn" onClick={goToPrevious}><ChevronLeft size={16} /></button></Tooltip>
           <button className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`} onClick={goToToday}>Aujourd'hui</button>
-          <button className="affaires-tb-nav-btn" onClick={goToNext} title="Période suivante"><ChevronRight size={16} /></button>
+          <Tooltip content="Période suivante"><button className="affaires-tb-nav-btn" onClick={goToNext}><ChevronRight size={16} /></button></Tooltip>
           <div
             className="affaires-tb-date-label"
             onClick={() => { viewMode === 'month' ? setShowMonthSelector(true) : setShowWeekSelector(true); }}
@@ -845,11 +832,11 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             {dateLabel}
           </div>
 
-          <div className="affaires-tb-divider" />
+          <Divider orientation="vertical" />
 
           {/* Glissant */}
           <label className="affaires-tb-toggle" title={slidingMode ? 'Mode glissant' : 'Mode calendaire'}>
-            <input type="checkbox" checked={slidingMode} onChange={e => {
+            <Checkbox checked={slidingMode} onChange={e => {
               const newSliding = e.target.checked;
               setSlidingMode(newSliding);
               if (filterDateStart) {
@@ -861,11 +848,11 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           {/* Archivées */}
           <label className="affaires-tb-toggle" title="Afficher les affaires terminées depuis plus d'une semaine">
-            <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
+            <Checkbox checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
             <span>Archivées</span>
           </label>
 
-          <div className="affaires-tb-divider" />
+          <Divider orientation="vertical" />
 
           {/* Boutons d'actions */}
           <button
@@ -916,7 +903,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             <BarChart2 size={14} /> Analyse batch
           </button>
 
-          <div className="affaires-tb-divider" />
+          <Divider orientation="vertical" />
 
           {/* Stats */}
           <button
@@ -942,10 +929,10 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         {/* Liste des affaires */}
         <div className="affaires-list" ref={listRef}>
         {filteredAffaires.length === 0 ? (
-          <div className="affaires-empty">
-            <Briefcase size={48} strokeWidth={1} />
-            <p>{hasActiveFilters ? 'Aucune affaire ne correspond aux critères' : 'Aucune affaire trouvée'}</p>
-          </div>
+          <EmptyState
+            icon={<Briefcase size={48} strokeWidth={1} />}
+            title={hasActiveFilters ? 'Aucune affaire ne correspond aux critères' : 'Aucune affaire trouvée'}
+          />
         ) : (
           <>
             {/* En-tête du tableau (cliquable pour trier) */}

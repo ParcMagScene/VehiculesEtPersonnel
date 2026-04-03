@@ -22,6 +22,7 @@ import { useTheme, PALETTES } from '../../hooks/useTheme';
 import api from '../../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../../utils/notificationSound';
 import './MobileApp.css';
+import { Spinner } from '@/design-system';
 
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -202,7 +203,7 @@ function MobileApp({ onSwitchToDesktop }) {
     return (
       <div className="mobile-app">
         <div className="mobile-loading">
-          <div className="spinner"></div>
+          <Spinner size="lg" />
           <p>Chargement...</p>
         </div>
       </div>

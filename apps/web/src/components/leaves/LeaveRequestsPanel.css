@@ -22,7 +22,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
 
@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  background: linear-gradient(135deg, #1e40af 0%, var(--theme-info) 100%);
+  background: linear-gradient(135deg, var(--theme-info-text) 0%, var(--theme-info) 100%);
   color: var(--theme-text-inverse);
 }
 
@@ -55,7 +55,7 @@
 }
 
 .lrp-btn-refresh {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border: none;
   border-radius: 6px;
   padding: 6px;
@@ -64,15 +64,15 @@
   display: flex;
 }
 
-.lrp-btn-refresh:hover { background: rgba(255, 255, 255, 0.35); }
+.lrp-btn-refresh:hover { background: var(--glass-medium); }
 
 .lrp-btn-new {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--glass-light);
+  border: 1px solid var(--glass);
   border-radius: 8px;
   color: var(--theme-text-inverse);
   cursor: pointer;
@@ -80,10 +80,10 @@
   font-weight: 500;
 }
 
-.lrp-btn-new:hover { background: rgba(255, 255, 255, 0.35); }
+.lrp-btn-new:hover { background: var(--glass-medium); }
 
 .lrp-close-btn {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-light);
   border: none;
   border-radius: 6px;
   padding: 6px;
@@ -92,7 +92,7 @@
   display: flex;
 }
 
-.lrp-close-btn:hover { background: rgba(255, 255, 255, 0.35); }
+.lrp-close-btn:hover { background: var(--glass-medium); }
 
 /* ─── BALANCE BAR ─── */
 .lrp-balance-bar {
@@ -218,7 +218,7 @@
   border-left: 4px solid var(--theme-border);
 }
 
-.lrp-card:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.lrp-card:hover { box-shadow: 0 2px 8px var(--shadow-sm); }
 .lrp-card.pending { border-left-color: var(--theme-warning); }
 .lrp-card.accepted { border-left-color: var(--theme-success-alt); }
 .lrp-card.refused { border-left-color: var(--theme-danger); }

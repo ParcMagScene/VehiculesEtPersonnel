@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
 import { Palette, MessageCircle, Tag, Film, Camera, Music, ExternalLink } from 'lucide-react';
 import './DisplayDashboardPanel.css';
+import { Tabs, TabList, Tab, TabPanel } from '@/design-system';
 
 // Lazy sub-tabs
 const AppearanceTab = lazy(() => import('./AppearanceTab'));
@@ -104,22 +105,15 @@ function DisplayDashboardPanel({ currentUser }) {
   return (
     <div className="display-dashboard">
       {/* Sous-onglets Configuration TV */}
+      <Tabs value={activeTab} onChange={setActiveTab}>
       <div className="display-tabs-container">
-        <div className="display-subtabs">
-          {CONFIG_TABS.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                className={`display-subtab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <Icon size={14} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <TabList className="display-subtabs">
+          {CONFIG_TABS.map(tab => (
+            <Tab key={tab.id} value={tab.id} icon={<tab.icon size={14} />}>
+              {tab.label}
+            </Tab>
+          ))}
+        </TabList>
         <a
           href={getTvUrl()}
           target="_blank"
@@ -148,24 +142,24 @@ function DisplayDashboardPanel({ currentUser }) {
 
       <div className="display-tab-content">
         <Suspense fallback={<div className="display-loading">Chargement…</div>}>
-          {activeTab === 'appearance' && (
+          <TabPanel value="appearance">
             <AppearanceTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
-          )}
-          {activeTab === 'welcomeMessages' && (
+          </TabPanel>
+          <TabPanel value="welcomeMessages">
             <WelcomeMessagesTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
-          )}
-          {activeTab === 'colorRules' && (
+          </TabPanel>
+          <TabPanel value="colorRules">
             <ColorRulesTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
-          )}
-          {activeTab === 'locationIcons' && (
+          </TabPanel>
+          <TabPanel value="locationIcons">
             <LocationIconsTab currentUser={currentUser} refreshKey={refreshKey} onPreviewChange={handlePreviewChange} />
-          )}
-          {activeTab === 'sneaky' && (
+          </TabPanel>
+          <TabPanel value="sneaky">
             <SneakyTab currentUser={currentUser} refreshKey={refreshKey} />
-          )}
-          {activeTab === 'sonos' && (
+          </TabPanel>
+          <TabPanel value="sonos">
             <SonosTab currentUser={currentUser} refreshKey={refreshKey} />
-          )}
+          </TabPanel>
         </Suspense>
       </div>
 
@@ -181,6 +175,7 @@ function DisplayDashboardPanel({ currentUser }) {
           <TVPreviewPanel previewOverrides={previewOverrides} refreshKey={refreshKey} style={{ width: previewWidth }} />
         </Suspense>
       </div>
+      </Tabs>
 
     </div>
   );

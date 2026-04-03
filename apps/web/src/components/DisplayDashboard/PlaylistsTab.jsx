@@ -3,11 +3,13 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { List, Play, Monitor, Clock, Trash2, Settings, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
 
 function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadPlaylists = useCallback(async () => {
     try {
@@ -25,15 +27,23 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
     loadPlaylists();
   }, [loadPlaylists, refreshKey]);
 
-  const handleDelete = useCallback(async (playlist) => {
-    if (!confirm(`Supprimer la playlist « ${playlist.name} » ?`)) return;
-    try {
-      await api.deleteDisplayPlaylist(playlist.id);
-      toast.success('Playlist supprimée');
-      onRefresh();
-    } catch {
-      toast.error('Erreur suppression');
-    }
+  const handleDelete = useCallback((playlist) => {
+    setConfirmDialog({
+      title: 'Supprimer',
+      message: `Supprimer la playlist \xAB ${playlist.name} \xBB ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await api.deleteDisplayPlaylist(playlist.id);
+          toast.success('Playlist supprim\xE9e');
+          onRefresh();
+        } catch {
+          toast.error('Erreur suppression');
+        }
+      },
+    });
   }, [toast, onRefresh]);
 
   const handleToggle = useCallback(async (playlist) => {
@@ -50,11 +60,7 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
 
   if (playlists.length === 0) {
     return (
-      <div className="display-empty">
-        <List size={48} strokeWidth={1} />
-        <h3>Aucune playlist</h3>
-        <p>Créez une playlist pour organiser vos contenus d'affichage.</p>
-      </div>
+      <EmptyState icon={<List size={48} strokeWidth={1} />} title="Aucune playlist" description="Créez une playlist pour organiser vos contenus d'affichage." />
     );
   }
 
@@ -76,20 +82,37 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
             </div>
           </div>
           <div className="list-item-actions">
-            <button className="btn-icon-sm" onClick={() => onEdit(pl)} title="Modifier">
-              <Settings size={14} />
-            </button>
-            <button className="btn-icon-sm" onClick={() => handleToggle(pl)} title={pl.is_active ? 'Désactiver' : 'Activer'}>
-              {pl.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-            </button>
+            <Tooltip content="Modifier">
+              <Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(pl)}>
+                <Settings size={14} />
+              </Button>
+            </Tooltip>
+            <Tooltip content={pl.is_active ? 'Désactiver' : 'Activer'}>
+              <Button variant="ghost" size="sm" iconOnly onClick={() => handleToggle(pl)}>
+                {pl.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+              </Button>
+            </Tooltip>
             {currentUser?.isAdmin && (
-              <button className="btn-icon-sm danger" onClick={() => handleDelete(pl)} title="Supprimer">
-                <Trash2 size={14} />
-              </button>
+              <Tooltip content="Supprimer">
+                <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(pl)}>
+                  <Trash2 size={14} />
+                </Button>
+              </Tooltip>
             )}
           </div>
         </div>
       ))}
+      <Dialog
+        open={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        title={confirmDialog?.title || 'Confirmation'}
+        variant={confirmDialog?.variant || 'confirm'}
+        onConfirm={confirmDialog?.onConfirm}
+        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
+        cancelLabel="Annuler"
+      >
+        {confirmDialog?.message}
+      </Dialog>
     </div>
   );
 }

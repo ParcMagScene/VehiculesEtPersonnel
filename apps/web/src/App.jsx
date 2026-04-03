@@ -19,6 +19,7 @@ import { useAppData } from './hooks/useAppData';
 import { useSilentRefresh } from './hooks/useSilentRefresh';
 import { useGoogleCalendar } from './hooks/useGoogleCalendar';
 import { useMessagingPolling } from './hooks/useMessagingPolling';
+import { LoadingOverlay } from './design-system';
 import './App.css';
 import './styles/draggable-modals.css';
 
@@ -309,7 +310,7 @@ function AppContent() {
   if (isMobile) {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div><p>Chargement...</p></div>}>
+        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
           <MobileApp onSwitchToDesktop={() => {
             sessionStorage.setItem('forceDesktop', 'true');
             window.location.hash = '';
@@ -502,7 +503,7 @@ function AppContent() {
           ) : (
             <div className="calendar-with-vehicle-panel">
               <ErrorBoundary moduleName="Calendrier">
-              <Suspense fallback={<div className="loading-overlay"><div className="loading-spinner"></div><p>Chargement du calendrier...</p></div>}>
+              <Suspense fallback={<LoadingOverlay label="Chargement du calendrier..." />}>
               <Calendar
                 view={view}
                 setView={setView}
@@ -562,12 +563,7 @@ function AppContent() {
 
       {activeModule === 'affaires' && (
         <ErrorBoundary moduleName="Affaires">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du module affaires...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement du module affaires..." />}>
           <AffairesPanel
             reservations={data.reservations}
             onNavigateToEntity={handleNavigateToEntity}
@@ -578,12 +574,7 @@ function AppContent() {
 
       {activeModule === 'equipment' && (
         <ErrorBoundary moduleName="Équipement">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du parc matériel...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement du parc matériel..." />}>
           <EquipmentPanel
             currentUser={currentUser}
             showManagement={showEquipmentManagement}
@@ -595,12 +586,7 @@ function AppContent() {
 
       {activeModule === 'orders' && (
         <ErrorBoundary moduleName="Commandes">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement des commandes...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement des commandes..." />}>
           <OrdersPanel
             currentUser={currentUser}
           />
@@ -623,12 +609,7 @@ function AppContent() {
               </button>
             </div>
             {(stockSubTab === 'vente' || stockSubTab === 'sav') && (
-              <Suspense fallback={
-                <div className="loading-overlay">
-                  <div className="loading-spinner"></div>
-                  <p>Chargement du stock...</p>
-                </div>
-              }>
+              <Suspense fallback={<LoadingOverlay label="Chargement du stock..." />}>
                 <StockPanel
                   currentUser={currentUser}
                   stockType={stockSubTab}
@@ -638,12 +619,7 @@ function AppContent() {
               </Suspense>
             )}
             {stockSubTab === 'inventory' && (
-              <Suspense fallback={
-                <div className="loading-overlay">
-                  <div className="loading-spinner"></div>
-                  <p>Chargement de l'inventaire...</p>
-                </div>
-              }>
+              <Suspense fallback={<LoadingOverlay label="Chargement de l'inventaire..." />}>
                 <InventoryPanel currentUser={currentUser} />
               </Suspense>
             )}
@@ -653,12 +629,7 @@ function AppContent() {
 
       {activeModule === 'planning' && (
         <ErrorBoundary moduleName="Planning">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du module Planning...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement du module Planning..." />}>
           <PlanningPanel
             currentUser={currentUser}
             googleEvents={allGoogleEvents}
@@ -679,12 +650,7 @@ function AppContent() {
 
       {activeModule === 'annuaire' && (
         <ErrorBoundary moduleName="Annuaire">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement de l'Annuaire...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement de l'Annuaire..." />}>
           <AnnuairePanel currentUser={currentUser} />
         </Suspense>
         </ErrorBoundary>
@@ -692,12 +658,7 @@ function AppContent() {
 
       {activeModule === 'video' && (
         <ErrorBoundary moduleName="Vidéo">
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement de la surveillance vidéo...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement de la surveillance vidéo..." />}>
           <VideoPanel currentUser={currentUser} />
         </Suspense>
         </ErrorBoundary>
@@ -706,12 +667,7 @@ function AppContent() {
 
 
       {showManagement && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement du panneau de gestion...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement du panneau de gestion..." />}>
           <ManagementPanel
             vehicles={data.vehicles}
             setVehicles={data.setVehicles}
@@ -743,12 +699,7 @@ function AppContent() {
       )}
 
       {showSettings && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement des paramètres...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement des paramètres..." />}>
           <ManagementPanel
             vehicles={data.vehicles}
             setVehicles={data.setVehicles}
@@ -778,12 +729,7 @@ function AppContent() {
       )}
 
       {selectedVehicleForMaintenance && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
           <MaintenanceDialog
             vehicle={selectedVehicleForMaintenance}
             maintenances={data.maintenances}
@@ -821,12 +767,7 @@ function AppContent() {
       )}
 
       {selectedVehicleForKilometrageControl && (
-        <Suspense fallback={
-          <div className="loading-overlay">
-            <div className="loading-spinner"></div>
-            <p>Chargement...</p>
-          </div>
-        }>
+        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
           <VehicleMaintenanceModal
             vehicle={selectedVehicleForKilometrageControl}
             onSave={async (updatedVehicle) => {

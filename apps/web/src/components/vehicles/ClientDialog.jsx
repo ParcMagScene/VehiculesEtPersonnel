@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import logger from "../../utils/logger";
 import { X, MapPin, Navigation, Clock, Route, Mail, Phone, User } from 'lucide-react';
 import api from '../../utils/api';
-import UnsavedChangesDialog from '../UnsavedChangesDialog';
+import { Button, Dialog, Input, InlineAlert, FormField } from '@/design-system';
 import PhoneInput from '../PhoneInput';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
@@ -349,16 +349,12 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         </div>
 
         {error && (
-          <div className="location-error" style={{ whiteSpace: 'pre-line' }}>
-            ⚠️ {error}
-          </div>
+          <InlineAlert>{error}</InlineAlert>
         )}
 
         <form onSubmit={handleSubmit} className="location-form">
           {error && (
-            <div className="location-error" style={{ whiteSpace: 'pre-line' }}>
-              ⚠️ {error}
-            </div>
+            <InlineAlert>{error}</InlineAlert>
           )}
 
           <div className="location-dialog-content">
@@ -368,9 +364,8 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 Informations du client
               </h3>
               
-              <div className="form-group">
-                <label htmlFor="client-name">Nom *</label>
-                <input
+              <FormField className="form-group" label="Nom" htmlFor="client-name" required>
+                <Input
                   id="client-name"
                   type="text"
                   value={formData.name}
@@ -378,42 +373,33 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                   placeholder="Nom du client"
                   required
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="client-email">
-                  <Mail size={16} />
-                  Email
-                </label>
-                <input
+              <FormField className="form-group" label={<><Mail size={16} /> Email</>} htmlFor="client-email">
+                <Input
                   id="client-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@exemple.com"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="client-phone">
-                  <Phone size={16} />
-                  Téléphone
-                </label>
+              <FormField className="form-group" label={<><Phone size={16} /> Téléphone</>} htmlFor="client-phone">
                 <PhoneInput
                   id="client-phone"
                   value={formData.phone}
                   onChange={(val) => setFormData({ ...formData, phone: val })}
                 />
-              </div>
+              </FormField>
 
               <h3 style={{ marginTop: '2rem' }}>
                 <MapPin size={18} />
                 Adresse
               </h3>
               
-              <div className="form-group">
-                <label htmlFor="client-address">Adresse complète</label>
-                <input
+              <FormField className="form-group" label="Adresse complète" htmlFor="client-address">
+                <Input
                   id="client-address"
                   ref={inputRef}
                   type="text"
@@ -424,7 +410,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 <small className="help-text">
                   Commencez à taper pour rechercher une adresse
                 </small>
-              </div>
+              </FormField>
 
               <button 
                 type="button" 
@@ -487,22 +473,28 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           </div>
 
           <div className="form-actions">
-            <button type="button" onClick={handleSafeClose} className="cancel-button">
+            <Button variant="ghost" onClick={handleSafeClose}>
               Annuler
-            </button>
-            <button type="submit" className="save-button">
+            </Button>
+            <Button variant="primary" type="submit">
               Enregistrer
-            </button>
+            </Button>
           </div>
         </form>
       </div>
 
-      {showUnsavedWarning && (
-        <UnsavedChangesDialog
-          onCancel={() => setShowUnsavedWarning(false)}
-          onDiscard={onClose}
-        />
-      )}
+      <Dialog
+        open={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        title="Modifications non enregistrées"
+        variant="warning"
+        confirmLabel="Ne pas enregistrer"
+        cancelLabel="Continuer l'édition"
+        confirmVariant="danger"
+      >
+        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
+      </Dialog>
     </div>
   );
 };

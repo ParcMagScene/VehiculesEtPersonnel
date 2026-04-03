@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, User, Phone, Mail, Briefcase, Award, Calendar, MapPin, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
+import { Tag, Avatar, SectionHeader } from '@/design-system';
 import './PersonnelDetailPanel.css';
 
 const CONTRACT_TYPES = [
@@ -69,21 +70,21 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
       <section className="pdp-section">
         <div className="pdp-identity">
           <div className="pdp-avatar-large">
-            <User size={36} />
+            <Avatar name={`${person.firstName} ${person.lastName}`} size="xl" />
           </div>
           <div className="pdp-identity-info">
             <div className="pdp-fullname">{person.firstName} {person.lastName}</div>
             <div className="pdp-type-row">
-              <span className={`pdp-type-badge type-${person.type}`}>
+              <Tag color={person.type === 'permanent' ? 'primary' : 'amber'} size="sm">
                 {person.type === 'permanent' ? 'Permanent' : 'Contractuel'}
-              </span>
+              </Tag>
               {person.type === 'contractuel' && person.contractType && (
-                <span className={`pdp-type-badge pdp-contract-badge type-${person.contractType}`}>
+                <Tag color="info" size="sm">
                   {CONTRACT_TYPES.find(c => c.value === person.contractType)?.label || person.contractType}
-                </span>
+                </Tag>
               )}
               {person.status === 'inactive' && (
-                <span className="pdp-type-badge pdp-inactive-badge">Inactif</span>
+                <Tag color="neutral" size="sm">Inactif</Tag>
               )}
             </div>
           </div>
@@ -93,7 +94,7 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
       {/* Coordonnées */}
       {(person.phone || person.email) && (
         <section className="pdp-section">
-          <h4 className="pdp-section-title"><Phone size={14} /> Coordonnées</h4>
+          <SectionHeader className="pdp-section-title" as="h4" icon={<Phone size={14} />} title="Coordonnées" />
           <div className="pdp-contact-grid">
             {person.phone && (
               <a href={`tel:${person.phone.replace(/[^\d+]/g, '')}`} className="pdp-contact-item">
@@ -114,7 +115,7 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
       {/* Postes habituels */}
       {defaultPositions.length > 0 && (
         <section className="pdp-section">
-          <h4 className="pdp-section-title"><Briefcase size={14} /> Postes habituels</h4>
+          <SectionHeader className="pdp-section-title" as="h4" icon={<Briefcase size={14} />} title="Postes habituels" />
           <div className="pdp-chips">
             {defaultPositions.map((name, i) => {
               const posObj = positions.find(p => p.name === name);
@@ -132,7 +133,7 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
       {/* Compétences */}
       {personSkills.length > 0 && (
         <section className="pdp-section">
-          <h4 className="pdp-section-title"><Award size={14} /> Compétences</h4>
+          <SectionHeader className="pdp-section-title" as="h4" icon={<Award size={14} />} title="Compétences" />
           <div className="pdp-chips">
             {personSkills.map((s, i) => (
               <span key={i} className="pdp-chip" style={{ '--chip-color': getCategoryColor(s.category) }}>
@@ -157,7 +158,7 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
       {/* Notes */}
       {person.notes && (
         <section className="pdp-section">
-          <h4 className="pdp-section-title"><Calendar size={14} /> Notes</h4>
+          <SectionHeader className="pdp-section-title" as="h4" icon={<Calendar size={14} />} title="Notes" />
           <div className="pdp-notes">{person.notes}</div>
         </section>
       )}
@@ -191,14 +192,13 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
 
   return (
     <section className="pdp-section">
-      <h4 className="pdp-section-title">
-        <Clock size={14} /> Absences
-        {onRequestLeave && (
+      <SectionHeader className="pdp-section-title" as="h4" icon={<Clock size={14} />} title="Absences" actions={
+        onRequestLeave && (
           <button className="pdp-absence-add-btn" onClick={() => onRequestLeave(personId)} title="Ajouter une absence">
             <Plus size={12} />
           </button>
-        )}
-      </h4>
+        )
+      } />
       {loading ? (
         <div className="pdp-absence-loading">Chargement...</div>
       ) : sorted.length === 0 ? (
@@ -284,17 +284,17 @@ const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onE
       {/* Header */}
       <div className="pdp-slide-header">
         <div className="pdp-slide-title-row">
-          <div className="pdp-slide-avatar"><User size={18} /></div>
+          <div className="pdp-slide-avatar"><Avatar name={`${currentPerson.firstName} ${currentPerson.lastName}`} size="xs" /></div>
           <div className="pdp-slide-title-info">
             <span className="pdp-slide-name">{currentPerson.firstName} {currentPerson.lastName}</span>
             <div className="pdp-slide-badges">
-              <span className={`pdp-slide-badge type-${currentPerson.type}`}>
+              <Tag color={currentPerson.type === 'permanent' ? 'primary' : 'amber'} size="sm">
                 {currentPerson.type === 'permanent' ? 'Permanent' : 'Contractuel'}
-              </span>
+              </Tag>
               {currentPerson.type === 'contractuel' && currentPerson.contractType && (
-                <span className="pdp-slide-badge pdp-contract-type">
+                <Tag color="info" size="sm">
                   {CONTRACT_TYPES.find(c => c.value === currentPerson.contractType)?.label || currentPerson.contractType}
-                </span>
+                </Tag>
               )}
             </div>
           </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Info, CheckCircle, HelpCircle } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter } from './Modal';
-import { Button } from './Button';
+import Button from './Button';
 import './Dialog.css';
 
 const VARIANT_CONFIG = {
@@ -28,6 +28,7 @@ function Dialog({
   confirmVariant,
   loading = false,
   hideCancel = false,
+  extraAction,
 }) {
   const cfg = VARIANT_CONFIG[variant] || VARIANT_CONFIG.confirm;
   const Icon = cfg.icon;
@@ -55,6 +56,11 @@ function Dialog({
         <Button variant={btnVariant} onClick={onConfirm} loading={loading}>
           {confirmLabel}
         </Button>
+        {extraAction && (
+          <Button variant={extraAction.variant || 'primary'} onClick={extraAction.onClick} disabled={loading}>
+            {extraAction.label}
+          </Button>
+        )}
       </ModalFooter>
     </Modal>
   );

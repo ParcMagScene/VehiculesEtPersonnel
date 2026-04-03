@@ -455,19 +455,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   const handleClearCompleted = async () => {
-    setConfirmDialog({
-      title: 'Effacer les tâches terminées',
-      message: `Supprimer toutes les tâches terminées du ${formatDateFr(selectedDate)} du planning et du dashboard ?`,
-      onConfirm: async () => {
-        try {
-          const res = await api.clearCompletedTasks(selectedDate);
-          toast.success(`${res.cleared || 0} tâche(s) terminée(s) effacée(s)`);
-          loadTasks(true);
-        } catch { toast.error('Erreur suppression'); }
-        setConfirmDialog(null);
-      },
-      onCancel: () => setConfirmDialog(null),
-    });
+    if (!window.confirm(`Supprimer toutes les tâches terminées du ${formatDateFr(selectedDate)} du planning et du dashboard ?`)) return;
+    try {
+      const res = await api.clearCompletedTasks(selectedDate);
+      toast.success(`${res.cleared || 0} tâche(s) terminée(s) effacée(s)`);
+      loadTasks(true);
+    } catch { toast.error('Erreur suppression'); }
   };
 
   // Normaliser les anciennes sections transport → courses

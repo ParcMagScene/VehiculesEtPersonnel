@@ -8,6 +8,23 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.3] — 2026-04-07
+
+### Changed
+- **Phase E (QUALITY)** : Validation formulaires, alignement password policy, constantes
+  - Créé `constants/index.js` : STATUS, ROLES, TIMING, VALIDATION centralisés
+  - Alignement password policy frontend ↔ backend (10 chars + complexité)
+    - ChangePassword.jsx : minLength 4→10, hints mis à jour
+    - LoginForm.jsx : reset password minLength 6→10
+    - AccessRequestModal.jsx : minLength 6→10, validation + disabled state
+  - Ajout maxLength sur 31 champs formulaires (3 fichiers)
+    - AnnuairePanel.jsx : 20 inputs (noms=100, emails=254, phones=20, SIRET=17, etc.)
+    - PersonnelPanel.jsx : 6 inputs (noms=100, emails=254)
+    - AccessRequestModal.jsx : 3 inputs (nom=100, email=254)
+  - InterventionModal.jsx : maxLength description=1000, garage=200, min=0 sur coût
+
+---
+
 ## [2.1.2] — 2026-04-07
 
 ### Changed

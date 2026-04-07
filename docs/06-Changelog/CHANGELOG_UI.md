@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.1.3] — 2026-04-07
+
+### Changed
+- **Phase E** : Validation formulaires + alignement password policy
+  - maxLength ajouté sur 31 champs : AnnuairePanel (20), PersonnelPanel (6), AccessRequestModal (3), InterventionModal (2)
+  - Password minLength aligné sur backend policy (10 chars + 1 maj + 1 chiffre + 1 spécial)
+  - InterventionModal : min="0" sur coût
+
+### Added
+- `constants/index.js` : constantes centralisées (STATUS, ROLES, TIMING, VALIDATION)
+
+---
+
 ## [2.1.2] — 2026-04-07
 
 ### Changed

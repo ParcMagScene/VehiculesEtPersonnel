@@ -8,6 +8,17 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.2] — 2026-04-07
+
+### Changed
+- **Phase D (QUALITY)** : Migration de 2 355 valeurs CSS hardcodées vers design tokens
+  - 1 298 border-radius → var(--radius-*) dans 109 fichiers
+  - 1 054 font-size → var(--font-*) (px et rem)
+  - 3 z-index → var(--z-modal), var(--z-popover)
+  - Nouveau token créé : --radius-md-lg: 10px (212 occurrences)
+
+---
+
 ## [2.1.1] — 2026-04-07
 
 ### Changed

@@ -5,6 +5,17 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.1.2] — 2026-04-07
+
+### Changed
+- **Phase D** : Migration de 2 355 valeurs CSS hardcodées → design tokens (109 fichiers)
+  - border-radius : 4/6/8/10/12/16/20px → var(--radius-*)
+  - font-size : 10-24px et 0.8-1rem → var(--font-*)
+  - z-index : 2000/3001 → var(--z-modal/popover)
+  - Nouveau token : --radius-md-lg: 10px
+
+---
+
 ## [2.1.1] — 2026-04-07
 
 ### Changed

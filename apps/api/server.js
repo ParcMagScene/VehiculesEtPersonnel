@@ -71,12 +71,20 @@ const PORT = process.env.PORT || 3002;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
 
-if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHANGEZ_CETTE_CLE') {
-  logger.warn('⚠️  ATTENTION: JWT_SECRET par défaut détecté ! Créez un fichier server/.env avec un secret sécurisé.');
+const KNOWN_DEFAULT_SECRETS = [
+  'your-secret-key-change-in-production',
+  'CHANGEZ_CETTE_CLE',
+  'dev-secret-key-not-for-production',
+  'secret',
+  'changeme',
+];
+
+if (KNOWN_DEFAULT_SECRETS.includes(JWT_SECRET) || JWT_SECRET.length < 32) {
   if (process.env.NODE_ENV === 'production') {
-    logger.error('❌ FATAL: JWT_SECRET par défaut interdit en production. Définissez JWT_SECRET dans server/.env');
+    logger.error('❌ FATAL: JWT_SECRET par défaut ou trop court (<32 chars) interdit en production. Définissez JWT_SECRET dans .env');
     process.exit(1);
   }
+  logger.warn('⚠️  ATTENTION: JWT_SECRET par défaut ou trop court ! Générez un secret d\'au moins 32 caractères.');
 }
 
 // ── Middlewares globaux (configs extraites) ──

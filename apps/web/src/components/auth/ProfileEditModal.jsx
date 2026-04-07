@@ -72,9 +72,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
 
       const response = await fetch(avatarUrl, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${api.token}`
-        },
+        credentials: 'include',
         body: formData
       });
 
@@ -105,9 +103,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
 
       const response = await fetch(avatarUrl, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${api.token}`
-        }
+        credentials: 'include'
       });
 
       if (!response.ok) throw new Error('Erreur suppression');

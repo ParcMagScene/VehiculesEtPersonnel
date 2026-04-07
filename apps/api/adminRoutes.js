@@ -5,6 +5,7 @@ import db from './database.js';
 import { alertAccessRequest, initEmailTransporter, getTransporter } from './emailService.js';
 import logger from './logger.js';
 import { getAllCacheStats, ALL_CACHES } from './cache.js';
+import { encryptPassword, decryptPassword } from './videoProxyService.js';
 
 export function setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS }) {
 
@@ -640,7 +641,9 @@ app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
     
     // Si le mot de passe est masqué, ne pas le mettre à jour
     const currentConfig = db.prepare('SELECT smtp_pass FROM email_config WHERE id = 1').get();
-    const finalPass = (smtp_pass && smtp_pass !== '••••••••') ? smtp_pass : (currentConfig?.smtp_pass || '');
+    const rawPass = (smtp_pass && smtp_pass !== '••••••••') ? smtp_pass : null;
+    // Si nouveau mot de passe fourni, le chiffrer ; sinon garder l'existant (déjà chiffré)
+    const finalPass = rawPass ? encryptPassword(rawPass) : (currentConfig?.smtp_pass || '');
 
     db.prepare(`
       UPDATE email_config SET
@@ -681,7 +684,7 @@ app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, 
       host: config.smtp_host,
       port: config.smtp_port || 587,
       secure: config.smtp_secure === 1,
-      auth: { user: config.smtp_user, pass: config.smtp_pass },
+      auth: { user: config.smtp_user, pass: decryptPassword(config.smtp_pass) || config.smtp_pass },
     });
 
     await testTransporter.sendMail({

@@ -159,6 +159,8 @@ function logAction(screenId, action, details, userId) {
   }
 }
 
+import { verifyTvToken } from './middleware/tvAuth.js';
+
 // ════════════════════════════════════════════════════════════════
 export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
 
@@ -1225,8 +1227,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
 
   // ──────────────────── MÉTÉO ───────────────────────────────────
 
-  // GET /api/display/weather — Proxy OpenWeatherMap
-  app.get('/api/display/weather', async (_req, res) => {
+  // GET /api/display/weather — Proxy OpenWeatherMap (auth TV ou admin)
+  app.get('/api/display/weather', verifyTvToken, async (_req, res) => {
     try {
       const apiKeyRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherApiKey'").get();
       const cityRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherCity'").get();
@@ -1459,7 +1461,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   }
 
   // GET /api/display/sonos-now-playing — Titre en cours sur Sonos
-  app.get('/api/display/sonos-now-playing', async (_req, res) => {
+  app.get('/api/display/sonos-now-playing', verifyTvToken, async (_req, res) => {
     try {
       const result = await getSonosNowPlaying();
       res.json(result);
@@ -1665,8 +1667,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // Accessible sans authentification pour les écrans TV
   // ═══════════════════════════════════════════════════════════════
 
-  // GET /api/display/tv-public-state — État complet sans auth pour l'écran TV
-  app.get('/api/display/tv-public-state', async (_req, res) => {
+  // GET /api/display/tv-public-state — État complet pour l'écran TV (authentifié par token TV)
+  app.get('/api/display/tv-public-state', verifyTvToken, async (_req, res) => {
     try {
       // Config apparence
       const configRows = db.prepare('SELECT key, value FROM display_config').all();
@@ -1840,7 +1842,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ── Completed events toggle (public pour écran TV) ──
 
   // GET /api/display/tv/completed-events — Liste des tâches terminées du jour
-  app.get('/api/display/tv/completed-events', (_req, res) => {
+  app.get('/api/display/tv/completed-events', verifyTvToken, (_req, res) => {
     try {
       const today = new Date();
       const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -1853,7 +1855,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/tv/complete-event — Marquer une tâche comme terminée
-  app.post('/api/display/tv/complete-event', tvWriteLimiter, (req, res) => {
+  app.post('/api/display/tv/complete-event', verifyTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
@@ -1868,7 +1870,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/tv/uncomplete-event — Démarquer une tâche
-  app.post('/api/display/tv/uncomplete-event', tvWriteLimiter, (req, res) => {
+  app.post('/api/display/tv/uncomplete-event', verifyTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
@@ -1890,7 +1892,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ══════════════════════════════════════════════════════════════════
 
   // /api/events → Tâches du jour au format { regular, recurrent }
-  app.get('/api/events', async (_req, res) => {
+  app.get('/api/events', verifyTvToken, async (_req, res) => {
     try {
       const now = new Date();
       const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -1947,7 +1949,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/config → config apparence
-  app.get('/api/config', (_req, res) => {
+  app.get('/api/config', verifyTvToken, (_req, res) => {
     try {
       const rows = db.prepare('SELECT key, value FROM display_config').all();
       const config = {};
@@ -1962,7 +1964,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/welcome-message → message d'accueil
-  app.get('/api/welcome-message', (_req, res) => {
+  app.get('/api/welcome-message', verifyTvToken, (_req, res) => {
     try {
       const sneakyFile = join(displayDataDir, 'sneaky-message.json');
       const sneaky = readJsonFile(sneakyFile, null);
@@ -1988,7 +1990,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/completed-events → événements terminés du jour
-  app.get('/api/completed-events', (_req, res) => {
+  app.get('/api/completed-events', verifyTvToken, (_req, res) => {
     try {
       const today = new Date().toISOString().split('T')[0];
       const rows = db.prepare('SELECT event_id FROM display_completed_events WHERE event_date = ?').all(today);
@@ -2000,7 +2002,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/complete-event → marquer terminé
-  app.post('/api/complete-event', tvWriteLimiter, (req, res) => {
+  app.post('/api/complete-event', verifyTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
@@ -2014,7 +2016,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/uncomplete-event → démarquer
-  app.post('/api/uncomplete-event', tvWriteLimiter, (req, res) => {
+  app.post('/api/uncomplete-event', verifyTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
@@ -2028,7 +2030,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/event-color-rules → règles de couleurs
-  app.get('/api/event-color-rules', (_req, res) => {
+  app.get('/api/event-color-rules', verifyTvToken, (_req, res) => {
     try {
       const rules = db.prepare('SELECT keyword, color, description FROM display_color_rules ORDER BY sort_order').all();
       res.json(rules);
@@ -2039,7 +2041,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/location-icons → icônes de lieux
-  app.get('/api/location-icons', (_req, res) => {
+  app.get('/api/location-icons', verifyTvToken, (_req, res) => {
     try {
       const rules = db.prepare('SELECT keyword, gif_filename FROM display_location_icon_rules ORDER BY sort_order').all();
       res.json(rules);
@@ -2050,7 +2052,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/weather → météo (proxy)
-  app.get('/api/weather', async (_req, res) => {
+  app.get('/api/weather', verifyTvToken, async (_req, res) => {
     try {
       const apiKeyRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherApiKey'").get();
       const cityRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherCity'").get();

@@ -642,6 +642,12 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       const existing = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+
+      // Empêcher un admin d'approuver/modifier sa propre demande
+      if (existing.user_id === req.user.id) {
+        return res.status(403).json({ error: 'Vous ne pouvez pas traiter votre propre demande de congé' });
+      }
+
       if (existing.status !== 'pending') {
         return res.status(400).json({ error: 'Seules les demandes en attente peuvent être traitées' });
       }

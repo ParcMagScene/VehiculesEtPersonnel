@@ -15,6 +15,7 @@ import {
   extractDahuaChannel, extractPasswordFromRtspUrl, searchNvrRecordings,
   buildPlaybackRtspUrl, registerPlaybackInProxy, whepPlaybackExchange,
 } from './videoProxyService.js';
+import { verifyTvToken } from './middleware/tvAuth.js';
 
 // Rate limiting simple pour les flux vidéo
 const streamRateMap = new Map();
@@ -544,12 +545,12 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ════════════════════════════════════════
-  // ROUTES TV PUBLIQUES (sans auth)
+  // ROUTES TV (authentifiées par token TV)
   // Pour l'écran TV : affichage passif
   // ════════════════════════════════════════
 
   // GET /api/video/tv/cameras — Caméras activées (pas de mot de passe)
-  app.get('/api/video/tv/cameras', (_req, res) => {
+  app.get('/api/video/tv/cameras', verifyTvToken, (_req, res) => {
     try {
       const cameras = db.prepare(
         `SELECT id, name, brand, model, location, zone, ptz_supported,
@@ -563,8 +564,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // POST /api/video/tv/cameras/:id/whep — WHEP public (TV)
-  app.post('/api/video/tv/cameras/:id/whep', (req, res) => {
+  // POST /api/video/tv/cameras/:id/whep — WHEP authentifié par token TV
+  app.post('/api/video/tv/cameras/:id/whep', verifyTvToken, (req, res) => {
     const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(req.params.id);
     if (!camera) return res.status(404).json({ error: 'Caméra introuvable' });
 

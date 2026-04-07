@@ -1,7 +1,7 @@
 // Charger le fichier .env AVANT tous les autres imports (ESM hoisting)
 import { isDev, envFile } from './env.js';
 import { fileURLToPath as _fileURLToPath } from 'url';
-import { dirname as _dirname, join as _join } from 'path';
+import { dirname as _dirname } from 'path';
 
 const __serverFile = _fileURLToPath(import.meta.url);
 const __serverDir = _dirname(__serverFile);
@@ -33,7 +33,7 @@ import { helmetConditional } from './config/helmet.js';
 import { corsMiddleware } from './config/cors.js';
 import { authLimiter, generalLimiter, sensitiveEndpointLimiter } from './config/rateLimiter.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
-import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess, requireTruckAccess } from './middleware/authorize.js';
+import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess } from './middleware/authorize.js';
 import { xssSanitize } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
 

@@ -1,7 +1,7 @@
 import db from './database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { basename } from 'path';
 import logger from './logger.js';
 

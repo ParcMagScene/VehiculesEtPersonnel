@@ -8,6 +8,19 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.9] — 2026-04-07
+
+### Changed
+- **Phase L (QUALITY)** : Audit backend — 7 imports inutilisés supprimés dans 5 fichiers
+  - `server.js` : suppression `_join` (path) et `requireTruckAccess` (non utilisé)
+  - `routes.js` : suppression `invalidateEntity` (cache)
+  - `messagingRoutes.js` : suppression `unlinkSync` (fs)
+  - `middleware/authenticate.js` : suppression import `logger`
+  - `supplierCatalogRoutes.js` : suppression `resolveUnifiedFamily`
+  - Backend validé : 0 console.log dans les fichiers de production, logger structuré utilisé partout
+
+---
+
 ## [2.1.8] — 2026-04-07
 
 ### Changed

@@ -5,6 +5,17 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.1.1] — 2026-04-07
+
+### Changed
+- **Phase C** : Extraction de 155 styles inline → classes CSS dans 6 composants
+  - 3 nouveaux fichiers CSS : BLBatchAnalysis.css, SavImportModal.css, ProfileEditModal.css
+  - 3 fichiers CSS enrichis : LoginForm.css (+17 classes), ReservationModal.css (+25), SupplierCatalogPanel.css (+8)
+  - Handlers hover JS (onMouseEnter/onMouseLeave) remplacés par CSS :hover
+  - Pseudo-classe :disabled utilisée pour remplacer les ternaires cursor/opacity
+
+---
+
 ## [2.0.0] — 2026-04-07
 
 ### Security

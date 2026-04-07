@@ -272,3 +272,131 @@
   transform: none;
 }
 
+/* ─── Styles extraits des inline (Phase C) ─── */
+.login-logo {
+  max-width: 200px;
+  height: auto;
+  margin: 0 auto 1rem;
+}
+
+.login-user-selector {
+  position: relative;
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  background: var(--theme-bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.login-user-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-user-name {
+  font-weight: 500;
+  color: var(--theme-text-heading);
+}
+
+.login-user-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--theme-text-muted);
+}
+
+.login-user-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.login-user-item {
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.2s;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.login-user-item:hover {
+  background: var(--theme-bg-secondary);
+}
+
+.login-user-item-info {
+  flex: 1;
+}
+
+.login-modal-text {
+  margin-bottom: 16px;
+  color: var(--theme-text-body);
+}
+
+.login-modal-text-secondary {
+  margin-bottom: 24px;
+  color: var(--theme-text-gray);
+  font-size: 14px;
+}
+
+.login-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.login-modal-alert {
+  margin-bottom: 16px;
+}
+
+.login-reset-header {
+  background: var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706));
+}
+
+.login-form-field-spacing {
+  margin-bottom: 12px;
+}
+
+.login-reset-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: 4px;
+}
+
+.login-resend-text {
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--theme-text-gray);
+}
+
+.login-resend-link {
+  color: var(--theme-link);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.login-form-field-spacing-last {
+  margin-bottom: 16px;
+}
+
+.login-chevron {
+  color: var(--theme-text-gray);
+}
+

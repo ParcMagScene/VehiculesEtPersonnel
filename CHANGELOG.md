@@ -8,6 +8,21 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.1] — 2026-04-07
+
+### Changed
+- **Phase C (QUALITY)** : Extraction des styles inline vers CSS — 6 composants, 155 styles extraits
+  - LoginForm.jsx : 30→0 inline styles, 17+ classes CSS ajoutées
+  - BLBatchAnalysis.jsx : 44→10 inline styles, 35+ classes CSS (nouveau fichier)
+  - SavImportModal.jsx : 46→15 inline styles, 26 classes CSS (nouveau fichier)
+  - CatalogSettingsPanel.jsx : 41→18 inline styles, 8 classes utilitaires
+  - ReservationModal.jsx : 37→8 inline styles, 25+ classes CSS
+  - ProfileEditModal.jsx : 20→2 inline styles, 18 classes CSS (nouveau fichier)
+  - Remplacement des handlers onMouseEnter/onMouseLeave par CSS :hover
+  - Styles dynamiques (couleurs conditionnelles, largeurs calculées) conservés inline
+
+---
+
 ## [2.1.0] — 2026-04-07
 
 ### Changed

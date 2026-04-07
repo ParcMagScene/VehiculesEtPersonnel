@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, Camera, User, Save, Trash2 } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Input, Avatar, InlineAlert } from '@/design-system';
+import './ProfileEditModal.css';
 
 // targetUser: si fourni (mode admin), on édite cet utilisateur via les endpoints admin
 // sinon on édite currentUser via /users/me
@@ -88,18 +89,11 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'var(--theme-overlay)', backdropFilter: 'blur(4px)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 10000
-    }}>
-      <div style={{
-        background: 'var(--theme-bg-card)', borderRadius: '16px', width: '400px', maxWidth: '95vw',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden'
-      }}>
+    <div className="profile-edit-overlay">
+      <div className="profile-edit-modal">
         {/* Header */}
-        <div className="theme-modal-header" style={{ borderRadius: '16px 16px 0 0' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--theme-text-inverse)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="theme-modal-header">
+          <h3 className="profile-edit-header-title">
             <User size={20} /> {isAdminMode ? `Modifier ${editedUser.name}` : 'Mon profil'}
           </h3>
           <button onClick={onClose} className="theme-close-btn">
@@ -108,15 +102,12 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
         </div>
 
         {/* Content */}
-        <div style={{ padding: '24px' }}>
+        <div className="profile-edit-content">
           {/* Avatar section */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
-            <div style={{ position: 'relative', marginBottom: '12px' }}>
+          <div className="profile-edit-avatar-section">
+            <div className="profile-edit-avatar-wrapper">
               {previewUrl ? (
-                <img src={previewUrl} alt="Preview" style={{
-                  width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover',
-                  border: '3px solid var(--theme-primary)'
-                }} />
+                <img src={previewUrl} alt="Preview" className="profile-edit-avatar-preview" />
               ) : (
                 <Avatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
               )}
@@ -124,13 +115,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                style={{
-                  position: 'absolute', bottom: '0', right: '0',
-                  width: '34px', height: '34px', borderRadius: '50%',
-                  background: 'var(--theme-primary)', color: 'var(--theme-text-inverse)', border: '3px solid var(--theme-bg-card)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: uploading ? 'wait' : 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
-                }}
+                className="profile-edit-avatar-btn"
               >
                 <Camera size={14} />
               </button>
@@ -145,29 +130,19 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
             />
 
             {uploading && (
-              <div style={{ fontSize: '13px', color: 'var(--theme-primary)' }}>Upload en cours...</div>
+              <div className="profile-edit-upload-status">Upload en cours...</div>
             )}
 
             {editedUser.avatar && !uploading && (
-              <button
-                onClick={handleDeleteAvatar}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#ef4444', fontSize: '13px', display: 'flex',
-                  alignItems: 'center', gap: '4px', marginTop: '4px'
-                }}
-              >
+              <button onClick={handleDeleteAvatar} className="profile-edit-delete-avatar">
                 <Trash2 size={14} /> Supprimer la photo
               </button>
             )}
           </div>
 
           {/* Name field */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block', fontSize: '14px', fontWeight: 600,
-              color: 'var(--theme-text-body)', marginBottom: '6px'
-            }}>
+          <div className="profile-edit-field">
+            <label className="profile-edit-label">
               Nom
             </label>
             <Input
@@ -175,28 +150,16 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Votre nom"
-              style={{
-                width: '100%', padding: '10px 14px', border: '1px solid var(--theme-border)',
-                borderRadius: '8px', fontSize: '15px', outline: 'none',
-                transition: 'border-color 0.2s', boxSizing: 'border-box'
-              }}
-              onFocus={(e) => e.target.style.borderColor = 'var(--theme-primary)'}
-              onBlur={(e) => e.target.style.borderColor = 'var(--theme-border-medium)'}
+              className="profile-edit-input"
             />
           </div>
 
           {/* Email (read-only) */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block', fontSize: '14px', fontWeight: 600,
-              color: 'var(--theme-text-body)', marginBottom: '6px'
-            }}>
+          <div className="profile-edit-field">
+            <label className="profile-edit-label">
               Email
             </label>
-            <div style={{
-              padding: '10px 14px', background: 'var(--theme-bg-tertiary)', borderRadius: '8px',
-              fontSize: '15px', color: 'var(--theme-text-gray)'
-            }}>
+            <div className="profile-edit-readonly">
               {editedUser.email}
             </div>
           </div>
@@ -207,10 +170,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
         </div>
 
         {/* Footer */}
-        <div style={{
-          padding: '16px 24px', borderTop: '1px solid var(--theme-border)',
-          display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--theme-bg-page)'
-        }}>
+        <div className="profile-edit-footer">
           <Button
             variant="ghost"
             onClick={onClose}

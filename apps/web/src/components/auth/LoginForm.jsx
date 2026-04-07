@@ -150,7 +150,7 @@ const LoginForm = ({ onLogin }) => {
     <div className="login-overlay">
       <div className="login-container">
         <div className="login-header">
-          <img src="/Logos/LogoEmag.png" alt="eM@g Scene" style={{ maxWidth: '200px', height: 'auto', margin: '0 auto 1rem' }} />
+          <img src="/Logos/LogoEmag.png" alt="eM@g Scene" className="login-logo" />
           <p>Connexion</p>
         </div>
 
@@ -158,72 +158,38 @@ const LoginForm = ({ onLogin }) => {
           {users.length > 0 && (
             <FormField className="form-group" label="Sélectionner un utilisateur">
               <div 
-                className="user-selector"
+                className="user-selector login-user-selector"
                 onClick={() => setShowUserList(!showUserList)}
-                style={{
-                  position: 'relative',
-                  border: '1px solid var(--theme-border)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  cursor: 'pointer',
-                  background: 'var(--theme-bg-card)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
               >
                 {selectedUser ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div className="login-user-selected">
                     <Avatar name={selectedUser.name} avatar={selectedUser.avatar} size="md" gradient={false} />
                     <div>
-                      <div style={{ fontWeight: '500', color: 'var(--theme-text-heading)' }}>{selectedUser.name}</div>
+                      <div className="login-user-name">{selectedUser.name}</div>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--theme-text-muted)' }}>
+                  <div className="login-user-placeholder">
                     <User size={24} />
                     <span>Choisir un utilisateur</span>
                   </div>
                 )}
-                <ChevronDown size={20} style={{ color: 'var(--theme-text-gray)' }} />
+                <ChevronDown size={20} className="login-chevron" />
 
                 {showUserList && (
                   <div 
-                    className="user-list"
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 4px)',
-                      left: 0,
-                      right: 0,
-                      background: 'var(--theme-bg-card)',
-                      border: '1px solid var(--theme-border)',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                      maxHeight: '300px',
-                      overflowY: 'auto',
-                      zIndex: 10
-                    }}
+                    className="user-list login-user-list"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {users.map(user => (
                       <div
                         key={user.id}
                         onClick={() => handleUserSelect(user)}
-                        style={{
-                          padding: '12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          transition: 'background 0.2s',
-                          borderBottom: '1px solid var(--theme-border)'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = 'var(--theme-bg-secondary)'}
-                        onMouseLeave={(e) => e.target.style.background = 'white'}
+                        className="login-user-item"
                       >
                         <Avatar name={user.name} avatar={user.avatar} size="md" gradient={false} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: '500', color: 'var(--theme-text-heading)' }}>{user.name}</div>
+                        <div className="login-user-item-info">
+                          <div className="login-user-name">{user.name}</div>
                         </div>
                       </div>
                     ))}
@@ -303,20 +269,20 @@ const LoginForm = ({ onLogin }) => {
                 <h3>⚠️ Session déjà active</h3>
               </div>
               <div className="modal-body">
-                <p style={{ marginBottom: '16px', color: 'var(--theme-text-body)' }}>
+                <p className="login-modal-text">
                   Une session est déjà ouverte avec ces identifiants sur un autre appareil ou navigateur.
                 </p>
-                <p style={{ marginBottom: '24px', color: 'var(--theme-text-gray)', fontSize: '14px' }}>
+                <p className="login-modal-text-secondary">
                   Vous pouvez :<br/>
                   • <strong>Fermer les autres sessions</strong> et vous connecter ici (recommandé)<br/>
                   • Annuler et vous déconnecter de l'autre appareil d'abord
                 </p>
                 
                 {error && (
-                  <InlineAlert style={{ marginBottom: '16px' }}>{error}</InlineAlert>
+                  <InlineAlert className="login-modal-alert">{error}</InlineAlert>
                 )}
                 
-                <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <div className="modal-actions login-modal-actions">
                   <Button
                     variant="ghost"
                     onClick={() => {
@@ -353,18 +319,18 @@ const LoginForm = ({ onLogin }) => {
             }}
           >
             <div className="login-modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header" style={{ background: 'var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706))' }}>
+              <div className="modal-header login-reset-header">
                 <h3>🔑 Réinitialiser le mot de passe</h3>
               </div>
               <div className="modal-body">
-                <p style={{ marginBottom: '16px', color: 'var(--theme-text-body)' }}>
+                <p className="login-modal-text">
                   {resetStep === 'request'
                     ? 'Entrez votre adresse email et votre nom complet pour recevoir un code de vérification par email.'
                     : 'Entrez le code de vérification reçu par email et choisissez un nouveau mot de passe.'}
                 </p>
                 
                 <form onSubmit={handleSelfResetPassword}>
-                  <FormField className="form-group" label="Adresse email" htmlFor="reset-email" style={{ marginBottom: '12px' }}>
+                  <FormField className="form-group login-form-field-spacing" label="Adresse email" htmlFor="reset-email">
                     <Input
                       id="reset-email"
                       type="email"
@@ -373,11 +339,11 @@ const LoginForm = ({ onLogin }) => {
                       placeholder="email@exemple.com"
                       required
                       autoFocus
-                      style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
+                      className="login-reset-input"
                     />
                   </FormField>
 
-                  <FormField className="form-group" label="Nom complet" htmlFor="reset-name" style={{ marginBottom: '12px' }}>
+                  <FormField className="form-group login-form-field-spacing" label="Nom complet" htmlFor="reset-name">
                     <Input
                       id="reset-name"
                       type="text"
@@ -385,12 +351,12 @@ const LoginForm = ({ onLogin }) => {
                       onChange={(e) => setResetFormName(e.target.value)}
                       placeholder="Prénom Nom"
                       required
-                      style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
+                      className="login-reset-input"
                     />
                   </FormField>
 
                   {resetStep === 'confirm' && (
-                    <FormField className="form-group" label="Code de vérification (OTP)" htmlFor="reset-token" style={{ marginBottom: '12px' }}>
+                    <FormField className="form-group login-form-field-spacing" label="Code de vérification (OTP)" htmlFor="reset-token">
                       <Input
                         id="reset-token"
                         type="text"
@@ -398,12 +364,12 @@ const LoginForm = ({ onLogin }) => {
                         onChange={(e) => setResetToken(e.target.value)}
                         placeholder="Entrez le code reçu par email"
                         required
-                        style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
+                        className="login-reset-input"
                       />
                     </FormField>
                   )}
 
-                  <FormField className="form-group" label="Nouveau mot de passe" htmlFor="new-password" style={{ marginBottom: '12px' }}>
+                  <FormField className="form-group login-form-field-spacing" label="Nouveau mot de passe" htmlFor="new-password">
                     <Input
                       id="new-password"
                       type="password"
@@ -412,11 +378,11 @@ const LoginForm = ({ onLogin }) => {
                       placeholder="Entrez votre nouveau mot de passe"
                       minLength={6}
                       required
-                      style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
+                      className="login-reset-input"
                     />
                   </FormField>
 
-                  <FormField className="form-group" label="Confirmer le mot de passe" htmlFor="confirm-password" style={{ marginBottom: '16px' }}>
+                  <FormField className="form-group login-form-field-spacing-last" label="Confirmer le mot de passe" htmlFor="confirm-password">
                     <Input
                       id="confirm-password"
                       type="password"
@@ -425,12 +391,12 @@ const LoginForm = ({ onLogin }) => {
                       placeholder="Confirmez votre nouveau mot de passe"
                       minLength={6}
                       required
-                      style={{ width: '100%', padding: '8px', border: '1px solid var(--theme-border)', borderRadius: '4px' }}
+                      className="login-reset-input"
                     />
                   </FormField>
 
                   {resetStep === 'confirm' && (
-                    <div style={{ marginBottom: '16px', fontSize: '13px', color: 'var(--theme-text-gray)' }}>
+                    <div className="login-resend-text">
                       <span>Vous n'avez pas reçu le code ? </span>
                       <button
                         type="button"
@@ -439,7 +405,7 @@ const LoginForm = ({ onLogin }) => {
                           setResetToken('');
                           setResetError('');
                         }}
-                        style={{ color: 'var(--theme-link)', textDecoration: 'underline', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                        className="login-resend-link"
                       >
                         Réessayer
                       </button>
@@ -447,10 +413,10 @@ const LoginForm = ({ onLogin }) => {
                   )}
 
                   {resetError && (
-                    <InlineAlert style={{ marginBottom: '16px' }}>{resetError}</InlineAlert>
+                    <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>
                   )}
                   
-                  <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <div className="modal-actions login-modal-actions">
                     <Button
                       variant="ghost"
                       onClick={() => {

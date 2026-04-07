@@ -1,0 +1,42 @@
+# MediaMTX — Configuration pour eM@g
+# ⚠️ Copiez ce fichier en mediamtx.yml et remplissez vos credentials
+#
+# API REST activée pour le proxy vidéo backend
+
+api: yes
+apiAddress: :9997
+
+# WebRTC (WHEP) — utilisé par le frontend
+webrtc: yes
+webrtcAddress: :8889
+
+# RTSP — sources caméras
+rtsp: yes
+rtspAddress: :8554
+
+# Désactiver les protocoles non utilisés
+rtmp: no
+hls: no
+srt: no
+
+# ── Paths caméras ──
+# Le backend utilise le format cam-{id} (id = cameras.id en BDD)
+#
+# Remplacez NVR_USER, NVR_PASS, NVR_IP par vos valeurs réelles
+# Remplacez EZVIZ_USER, EZVIZ_PASS, EZVIZ_IP par vos valeurs réelles
+paths:
+  # Exemple NVR Dahua — canal 1
+  cam-1:
+    source: rtsp://NVR_USER:NVR_PASS@NVR_IP:554/cam/realmonitor?channel=1&subtype=0
+    sourceOnDemand: yes
+    sourceOnDemandStartTimeout: 10s
+    sourceOnDemandCloseAfter: 30s
+
+  # Exemple caméra IP (EZVIZ/Hikvision) — canal 1
+  cam-2:
+    source: rtsp://EZVIZ_USER:EZVIZ_PASS@EZVIZ_IP:554/Streaming/Channels/101
+    sourceOnDemand: yes
+    sourceOnDemandStartTimeout: 10s
+    sourceOnDemandCloseAfter: 30s
+
+  # Ajoutez vos caméras ci-dessous en suivant le même format...

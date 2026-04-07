@@ -267,9 +267,11 @@ if (isDev) {
 // Middleware centralisé de gestion d'erreurs (doit être APRÈS toutes les routes)
 app.use(errorHandler);
 
+const SERVER_HOST = process.env.SERVER_HOST || '0.0.0.0';
+
 app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
-  logger.info(`📡 Accessible depuis le réseau sur http://192.168.205.75:${PORT}`);
+  logger.info(`📡 Accessible depuis le réseau sur http://${SERVER_HOST}:${PORT}`);
   // Initialiser le service email
   initEmailTransporter(db);
   // Lancer le nettoyage périodique des fichiers TEMP
@@ -283,17 +285,17 @@ app.listen(PORT, '0.0.0.0', () => {
 
 // ── Serveur secondaire sur port 3001 — Client TV standalone ──
 // Rétrocompatibilité avec les navigateurs des écrans TV (ex calendar-dashboard)
-// Sert la même app Express, les écrans existants sur http://192.168.205.75:3001/ continuent de fonctionner
+// Sert la même app Express, les écrans existants continuent de fonctionner
 // En DEV, on ne démarre PAS ce serveur pour laisser la production servir les écrans TV
 if (!isDev) {
 const TV_PORT = 3001;
 const tvServer = http.createServer(app);
 tvServer.listen(TV_PORT, '0.0.0.0', () => {
-  logger.info(`📺 Client TV accessible sur http://192.168.205.75:${TV_PORT}/tv-client/`);
+  logger.info(`📺 Client TV accessible sur http://${SERVER_HOST}:${TV_PORT}/tv-client/`);
 });
 tvServer.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    logger.warn(`⚠️  Port ${TV_PORT} déjà utilisé — le client TV reste accessible via http://192.168.205.75:${PORT}/tv`);
+    logger.warn(`⚠️  Port ${TV_PORT} déjà utilisé — le client TV reste accessible via http://${SERVER_HOST}:${PORT}/tv`);
   } else {
     logger.error('Erreur serveur TV:', err.message);
   }

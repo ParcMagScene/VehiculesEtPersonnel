@@ -1,22 +1,17 @@
 import cors from 'cors';
 import logger from '../logger.js';
 
-// Construire la liste d'origines autorisées en dev ou prod
-let defaults = [
-  'https://magsav.duckdns.org',
-  'http://magsav.duckdns.org:4173',
-  'http://magsav.duckdns.org',
-  'http://192.168.205.75:4173',
-  'http://192.168.205.56:4173',
+// Construire la liste d'origines autorisées à partir de ALLOWED_ORIGINS (env)
+// Fallback sur localhost uniquement si rien n'est configuré
+const fallbackOrigins = [
   'http://localhost:4173',
   'http://localhost:4174',
   'http://127.0.0.1:4173'
 ];
 if (process.env.NODE_ENV === 'development') {
-  // autoriser tous les localhost courants (ports Vite 5174/5175)
-  defaults.push('http://localhost:5174', 'http://localhost:5175', 'http://127.0.0.1:5174', 'http://127.0.0.1:5175');
+  fallbackOrigins.push('http://localhost:5174', 'http://localhost:5175', 'http://127.0.0.1:5174', 'http://127.0.0.1:5175');
 }
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || defaults.join(','))
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || fallbackOrigins.join(','))
   .split(',')
   .map(s => s.trim());
 

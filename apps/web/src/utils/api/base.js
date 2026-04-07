@@ -102,18 +102,30 @@ export class ApiClient {
       ...options.headers,
     };
 
+    // Timeout 30s pour éviter les requêtes bloquées indéfiniment
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     let response;
     try {
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers,
         credentials: 'include', // [AUDIT Phase 3] Envoie le cookie httpOnly automatiquement
+        signal: controller.signal,
       });
     } catch (networkError) {
+      clearTimeout(timeoutId);
+      if (networkError.name === 'AbortError') {
+        const error = new Error('Délai dépassé — le serveur ne répond pas');
+        error.isTimeoutError = true;
+        throw error;
+      }
       const error = new Error('Erreur réseau — vérifiez votre connexion');
       error.isNetworkError = true;
       throw error;
     }
+    clearTimeout(timeoutId);
 
     const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/force-login';
 

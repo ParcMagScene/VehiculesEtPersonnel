@@ -47,27 +47,33 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       try {
         setIsDataLoading(true);
 
-        const [
-          vehiclesData, reservationsData, clientsData, driversData,
-          locationsData, garagesData, maintenancesData, configData,
-          usersData, personsData
-        ] = await Promise.all([
+        const results = await Promise.allSettled([
           api.getVehicles(), api.getReservations(), api.getClients(),
           api.getDrivers(), api.getLocations(), api.getGarages(),
           api.getMaintenances(), api.getConfig('googleCalendar'),
           api.getUsersNames(), api.getPersons()
         ]);
 
-        setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
-        setReservations(reservationsData);
-        setClients(clientsData);
-        setDrivers(driversData);
-        setLocations(locationsData);
-        setGarages(garagesData);
-        setMaintenances(maintenancesData);
-        setUsers(usersData);
-        setPersons(personsData || []);
+        const get = (i, fallback = []) => results[i].status === 'fulfilled' ? results[i].value : fallback;
+        const failed = results.filter(r => r.status === 'rejected');
 
+        if (failed.length > 0) {
+          logger.warn(`${failed.length}/10 endpoints échoués au chargement initial`);
+          const authFail = failed.find(r => r.reason?.message?.includes('401') || r.reason?.message?.includes('authentification'));
+          if (authFail) { onAuthError(); return; }
+        }
+
+        setVehicles((get(0) || []).sort((a, b) => (a.order || 0) - (b.order || 0)));
+        setReservations(get(1));
+        setClients(get(2));
+        setDrivers(get(3));
+        setLocations(get(4));
+        setGarages(get(5));
+        setMaintenances(get(6));
+        setUsers(get(8));
+        setPersons(get(9) || []);
+
+        const configData = get(7, null);
         if (configData?.value) {
           try { setCalendarConfig(JSON.parse(configData.value)); }
           catch { setCalendarConfig({ apiKey: '', calendarId: '' }); }

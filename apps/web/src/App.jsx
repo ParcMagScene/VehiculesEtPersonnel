@@ -671,6 +671,7 @@ function AppContent() {
 
 
       {showManagement && (
+        <ErrorBoundary moduleName="Gestion">
         <Suspense fallback={<LoadingOverlay label="Chargement du panneau de gestion..." />}>
           <ManagementPanel
             vehicles={data.vehicles}
@@ -700,9 +701,11 @@ function AppContent() {
             }}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {showSettings && (
+        <ErrorBoundary moduleName="Paramètres">
         <Suspense fallback={<LoadingOverlay label="Chargement des paramètres..." />}>
           <ManagementPanel
             vehicles={data.vehicles}
@@ -730,9 +733,11 @@ function AppContent() {
             }}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {selectedVehicleForMaintenance && (
+        <ErrorBoundary moduleName="Maintenance">
         <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
           <MaintenanceDialog
             vehicle={selectedVehicleForMaintenance}
@@ -750,6 +755,7 @@ function AppContent() {
             }}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {vehicleForDialog && (
@@ -771,6 +777,7 @@ function AppContent() {
       )}
 
       {selectedVehicleForKilometrageControl && (
+        <ErrorBoundary moduleName="Kilométrage">
         <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
           <VehicleMaintenanceModal
             vehicle={selectedVehicleForKilometrageControl}
@@ -790,9 +797,11 @@ function AppContent() {
             onClose={() => setSelectedVehicleForKilometrageControl(null)}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {/* Messagerie interne */}
+      <ErrorBoundary moduleName="Messagerie">
       <Suspense fallback={null}>
         <MessagingPanel
           isOpen={showMessaging}
@@ -800,14 +809,17 @@ function AppContent() {
           currentUser={currentUser}
         />
       </Suspense>
+      </ErrorBoundary>
 
       {/* Mailing avancé */}
+      <ErrorBoundary moduleName="Mailing">
       <Suspense fallback={null}>
         <MailingPanel
           isOpen={showMailing}
           onClose={() => setShowMailing(false)}
         />
       </Suspense>
+      </ErrorBoundary>
 
       {/* Préférences utilisateur */}
       <Suspense fallback={null}>
@@ -837,6 +849,7 @@ function AppContent() {
 
       {/* Modal global de détail d'affaire (ouvert depuis n'importe quel badge) */}
       {globalAffaireDialog && (
+        <ErrorBoundary moduleName="Détail Affaire">
         <Suspense fallback={null}>
           <AffaireDetailDialog
             affaire={globalAffaireDialog}
@@ -846,6 +859,7 @@ function AppContent() {
             onNavigateToEntity={handleNavigateToEntity}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
       </main>
 

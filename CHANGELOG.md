@@ -8,6 +8,17 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.12] — 2026-04-07
+
+### Changed
+- **Phase O (ROBUSTESSE)** : Error boundaries + gestion d'erreurs, 4 fichiers
+  - ErrorBoundary ajouté sur 8 modules lazy manquants (ManagementPanel ×2, MaintenanceDialog, VehicleMaintenanceModal, MessagingPanel, MailingPanel, AffaireDetailDialog)
+  - `Promise.all` → `Promise.allSettled` dans useAppData : si 1 endpoint fail, les 9 autres chargent quand même
+  - Timeout fetch 30s (AbortController) dans api/base.js : plus de requêtes bloquées indéfiniment
+  - Handler global `unhandledrejection` dans main.jsx
+
+---
+
 ## [2.1.11] — 2026-04-07
 
 ### Changed

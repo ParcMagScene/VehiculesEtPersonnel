@@ -27,3 +27,16 @@ Toutes les modifications liées à la sécurité du projet.
 - Error handler centralisé (pas de leak de stack trace)
 
 ### À corriger — voir `SECURITY_AUDIT.md` pour le plan complet
+
+## Phase A — Qualité Code (2026-04-07)
+
+### Corrigé
+- `stockRoutes.js:168` — Template literal dans LIKE → requête paramétrisée
+- `displayRoutes.js:914` — authenticateToken ajouté sur GET /api/display/welcome-message
+
+### Reclassifié (faux positifs)
+- `supplierCatalogRoutes.js:86-88` — Fragments conditionnels contrôlés, valeurs via `?` → **sûr**
+- `planningRoutes.js:629` — Noms de colonnes hardcodés + valeurs via `?` → **sûr**
+- `ordersRoutes.js:1342,1391` — Pattern IN standard `ids.map(() => '?').join(',')` → **sûr**
+- `annuaireRoutes.js:618-643` — Table names issus d'un dict hardcodé → **sûr**
+- `equipmentRoutes.js:887` — Pattern IN standard → **sûr**

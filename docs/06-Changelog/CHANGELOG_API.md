@@ -13,3 +13,9 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 - Phase 2 (HIGH) : PII removal users-public, password policy, reservation conflicts, bcrypt 6.0
 - Phase 3 (MED) : DOMPurify, rate limiters, SAV state machine, double equipment assign, VIDEO_CIPHER_KEY
 - Phase 4 (LOW) : getHistory LIMIT, SVG blocked, messaging fileFilter (MIME allowlist + 25Mo + sanitize)
+
+## [1.0.1] — 2026-04-07
+
+### Security
+- `stockRoutes.js` : LIKE query paramétrisée (template literal → prepared statement)
+- `displayRoutes.js` : authenticateToken ajouté sur GET /api/display/welcome-message

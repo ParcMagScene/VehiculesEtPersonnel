@@ -31,6 +31,7 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 - **Phase 2 (HIGH)** : PII removal, password policy ≥10, reservation conflicts, bcrypt 6.0
 - **Phase 3 (MED)** : DOMPurify, IndexedDB cleanup, rate limiters, SAV state machine, double assign, VIDEO_CIPHER_KEY
 - **Phase 4 (LOW)** : getHistory LIMIT, SVG blocked, messaging fileFilter MIME allowlist
+- **Phase A (QUALITY)** : Paramétrage LIKE stockRoutes (template literal → prepared), auth ajoutée sur GET /api/display/welcome-message
 
 ### Modules impactés
 - auth, vehicles, personnel, equipment, affaires, orders, stock, planning

@@ -911,7 +911,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // GET /api/display/welcome-message — Message dynamique actuel (pour l'écran TV)
-  app.get('/api/display/welcome-message', (_req, res) => {
+  app.get('/api/display/welcome-message', authenticateToken, (_req, res) => {
     try {
       // Vérifier d'abord le message furtif
       const sneakyFile = join(displayDataDir, 'sneaky-message.json');

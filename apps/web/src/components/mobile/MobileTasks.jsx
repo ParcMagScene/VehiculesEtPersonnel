@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, CheckCircle, Clock, Circle, XCircle, RefreshCw, Briefcase, MapPin, User } from 'lucide-react';
 import api from '../../utils/api';
 import { Accordion, ProgressBar } from '@/design-system';
+import { ROLES, STATUS } from '../../constants';
+
 import './MobileTasks.css';
 
 const SECTIONS = {
@@ -73,7 +75,7 @@ function MobileTasks({ currentUser, onBack }) {
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
   const handleValidate = async (task) => {
-    const newStatus = task.status === 'done' ? 'pending' : 'done';
+    const newStatus = task.status === STATUS.DONE ? 'pending' : 'done';
     setUpdating(task.id);
     try {
       await api.updateTask(task.id, { status: newStatus });
@@ -101,9 +103,9 @@ function MobileTasks({ currentUser, onBack }) {
   });
 
   const activeSections = Object.keys(SECTIONS).filter(k => grouped[k]?.length > 0);
-  const doneCount = tasks.filter(t => t.status === 'done').length;
+  const doneCount = tasks.filter(t => t.status === STATUS.DONE).length;
   const totalCount = tasks.length;
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'manager';
+  const isAdmin = currentUser?.role === ROLES.ADMIN || currentUser?.role === ROLES.MANAGER;
 
   return (
     <div className="mobile-tasks">
@@ -150,7 +152,7 @@ function MobileTasks({ currentUser, onBack }) {
             const info = SECTIONS[sectionKey] || SECTIONS.manual;
             const sectionTasks = grouped[sectionKey];
             const collapsed = collapsedSections.has(sectionKey);
-            const sectionDone = sectionTasks.filter(t => t.status === 'done').length;
+            const sectionDone = sectionTasks.filter(t => t.status === STATUS.DONE).length;
 
             return (
               <div key={sectionKey} className="mobile-tasks-section">
@@ -163,7 +165,7 @@ function MobileTasks({ currentUser, onBack }) {
                   <div className="mobile-tasks-section-items">
                     {sectionTasks.map(task => {
                       const st = STATUS_INFO[task.status] || STATUS_INFO.pending;
-                      const isDone = task.status === 'done';
+                      const isDone = task.status === STATUS.DONE;
                       const isUpdating = updating === task.id;
 
                       return (

@@ -16,6 +16,8 @@ import api from '../../utils/api';
 import './ReportsPanel.css';
 import { Table, InlineAlert, Tooltip, SectionHeader } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // ═══════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════
@@ -147,8 +149,8 @@ const ReportsPanel = ({ currentUser }) => {
 
   const fleetReport = useMemo(() => {
     const total = vehicles.length;
-    const active = vehicles.filter(v => v.status === 'active' || v.status === 'disponible').length;
-    const inMaint = vehicles.filter(v => v.status === 'maintenance').length;
+    const active = vehicles.filter(v => v.status === STATUS.ACTIVE || v.status === STATUS.DISPONIBLE).length;
+    const inMaint = vehicles.filter(v => v.status === STATUS.MAINTENANCE).length;
     const byType = {};
     vehicles.forEach(v => {
       const t = v.type || v.category || 'Autre';
@@ -180,8 +182,8 @@ const ReportsPanel = ({ currentUser }) => {
       return d && d >= periodStart && d <= periodEnd;
     });
     const totalCost = periodMaint.reduce((sum, m) => sum + (m.cost || m.estimatedCost || 0), 0);
-    const completed = periodMaint.filter(m => m.status === 'completed' || m.status === 'done').length;
-    const pending = periodMaint.filter(m => m.status === 'pending' || m.status === 'scheduled').length;
+    const completed = periodMaint.filter(m => m.status === STATUS.COMPLETED || m.status === STATUS.DONE).length;
+    const pending = periodMaint.filter(m => m.status === STATUS.PENDING || m.status === STATUS.SCHEDULED).length;
     const reported = periodMaint.filter(m => m.status === 'reported').length;
     const byType = {};
     periodMaint.forEach(m => {
@@ -197,7 +199,7 @@ const ReportsPanel = ({ currentUser }) => {
 
   const personnelReport = useMemo(() => {
     const total = persons.length;
-    const active = persons.filter(p => p.status === 'active').length;
+    const active = persons.filter(p => p.status === STATUS.ACTIVE).length;
     const byType = {};
     persons.forEach(p => {
       const t = p.type || 'Autre';
@@ -533,7 +535,7 @@ const ReportsPanel = ({ currentUser }) => {
       )}
 
       {/* ═══ MAINTENANCE ═══ */}
-      {section === 'maintenance' && !loading && (
+      {section === STATUS.MAINTENANCE && !loading && (
         <div className="rp-section">
           <SectionHeader className="rp-section-header" icon={<Wrench size={18} />} title="Synthèse Maintenances" actions={
             <div className="rp-section-actions">

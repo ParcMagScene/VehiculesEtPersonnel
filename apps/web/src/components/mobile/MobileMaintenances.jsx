@@ -4,6 +4,8 @@ import { fr } from 'date-fns/locale';
 import { ArrowLeft, Settings, AlertTriangle, Calendar, Plus, MapPin } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './MobileMaintenances.css';
 
 const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, currentUser, onMaintenanceCreated, onBack }, ref) => {
@@ -26,7 +28,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
     endDate: '',
     garageId: '',
     description: '',
-    status: 'pending'
+    status: STATUS.PENDING
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -36,7 +38,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
     setFormData({
       ...formData,
       type,
-      status: type === 'breakdown' ? 'reported' : type === 'scheduled' ? 'scheduled' : 'pending'
+      status: type === 'breakdown' ? 'reported' : type === STATUS.SCHEDULED ? 'scheduled' : 'pending'
     });
   };
 
@@ -60,7 +62,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
         endDate: '',
         garageId: '',
         description: '',
-        status: 'pending'
+        status: STATUS.PENDING
       });
     } catch (err) {
       setError(err.message || 'Erreur lors de la création');
@@ -70,7 +72,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
   };
 
   const myMaintenances = maintenances
-    .filter(m => new Date(m.endDate || m.startDate) >= new Date() || m.status !== 'completed')
+    .filter(m => new Date(m.endDate || m.startDate) >= new Date() || m.status !== STATUS.COMPLETED)
     .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
   const getStatusBadge = (status) => {
@@ -143,7 +145,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
             <ArrowLeft size={24} />
           </button>
           <h2>
-            {formType === 'scheduled' && 'Programmer'}
+            {formType === STATUS.SCHEDULED && 'Programmer'}
             {formType === 'request' && 'Demander'}
             {formType === 'breakdown' && 'Signaler'}
           </h2>
@@ -165,7 +167,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
             </Select>
           </FormField>
 
-          {formType === 'scheduled' && (
+          {formType === STATUS.SCHEDULED && (
             <>
               <div className="form-row">
                 <FormField className="form-group" label={<><Calendar size={18} /> Début</>}>

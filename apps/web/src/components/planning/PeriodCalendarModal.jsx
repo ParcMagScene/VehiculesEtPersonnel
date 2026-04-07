@@ -9,6 +9,8 @@ import { ChevronLeft, ChevronRight, X, AlertTriangle, Check, Clock, CalendarPlus
 import api from '../../utils/api';
 import { Button, Input, Checkbox, InlineAlert } from '@/design-system';
 import { PERIOD_MENU_ITEMS } from '../personnel/PersonnelContextMenu';
+import { STATUS } from '../../constants';
+
 import './PeriodCalendarModal.css';
 
 // Jours ouvrés entre deux dates
@@ -106,7 +108,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
       const data = await api.getAvailabilities({ personId: person.id, startDate: startStr, endDate: endStr });
       const existing = Array.isArray(data) ? data : (data.availabilities || []);
       // Filtrer les conflits (pas les rejetés)
-      const activeConflicts = existing.filter(a => a.status !== 'rejected');
+      const activeConflicts = existing.filter(a => a.status !== STATUS.REJECTED);
       setConflicts(activeConflicts);
     } catch {
       // Pas bloquant

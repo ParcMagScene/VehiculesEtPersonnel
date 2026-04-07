@@ -20,6 +20,8 @@ import { useSilentRefresh } from './hooks/useSilentRefresh';
 import { useGoogleCalendar } from './hooks/useGoogleCalendar';
 import { useMessagingPolling } from './hooks/useMessagingPolling';
 import { LoadingOverlay } from './design-system';
+import { STATUS } from './constants';
+
 import './App.css';
 import './styles/draggable-modals.css';
 
@@ -159,7 +161,7 @@ function AppContent() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
+    if (outcome === STATUS.ACCEPTED) {
       setShowPwaInstall(false);
     }
     setDeferredPrompt(null);

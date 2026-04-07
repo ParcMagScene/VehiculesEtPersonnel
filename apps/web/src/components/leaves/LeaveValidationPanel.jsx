@@ -19,6 +19,8 @@ import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
 import './LeaveValidationPanel.css';
 import { DetailRow, Tabs, TabList, Tab, TabPanel, Textarea, Avatar, EmptyState, InlineAlert } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // ═══════════════════════════════════════
 // COMPOSANT SIGNATURE CANVAS (admin)
 // ═══════════════════════════════════════
@@ -118,7 +120,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
         api.getLeaveConflicts().catch(() => []),
         api.getLeaveStats(new Date().getFullYear()).catch(() => null),
       ]);
-      setRequests(tab === 'pending' ? pending : allLeaves);
+      setRequests(tab === STATUS.PENDING ? pending : allLeaves);
       setConflicts(conflictsData || []);
       setStats(statsData);
     } catch (err) {
@@ -392,7 +394,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
                         </div>
 
                         {/* ZONE DE DÉCISION (pending uniquement) */}
-                        {req.status === 'pending' && !isDeciding && (
+                        {req.status === STATUS.PENDING && !isDeciding && (
                           <div className="lvp-decision-btns">
                             <button
                               className="lvp-decision-btn accept"

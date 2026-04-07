@@ -2,6 +2,8 @@ import React from 'react';
 import { safeDate } from '../../utils/formatUtils';
 import { Table } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
 // Échappement HTML anti-XSS
@@ -186,7 +188,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
           <td>${esc(a.firstName || a.first_name || '')} ${esc(a.lastName || a.last_name || '')}</td>
           <td>${safeDate(a.startDate || a.start_date)}</td>
           <td>${(a.endDate || a.end_date) ? safeDate(a.endDate || a.end_date) : 'En cours'}</td>
-          <td><span class="sheet-badge ${a.status}">${a.status === 'active' ? 'Actif' : 'Retourné'}</span></td>
+          <td><span class="sheet-badge ${a.status}">${a.status === STATUS.ACTIVE ? 'Actif' : 'Retourné'}</span></td>
           <td>${esc(a.notes || '—')}</td>
         </tr>`).join('')}
       </tbody>

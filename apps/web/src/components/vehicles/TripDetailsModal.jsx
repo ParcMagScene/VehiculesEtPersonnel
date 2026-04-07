@@ -9,6 +9,8 @@ import api from '../../utils/api';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
 
+import { STATUS } from '../../constants';
+
 const TripDetailsModal = ({
   event,
   tripDetail,
@@ -1046,7 +1048,7 @@ const TripDetailsModal = ({
                 else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite SPL';
                 const hierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
                 const reqLevel = hierarchy.indexOf(requiredSkill);
-                const qualified = (persons || []).filter(p => p.status === 'active' && p.skills?.some(s => {
+                const qualified = (persons || []).filter(p => p.status === STATUS.ACTIVE && p.skills?.some(s => {
                   const sL = hierarchy.indexOf(s.name);
                   return sL >= 0 && sL >= reqLevel;
                 })).map(p => ({ id: p.id, name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`, photo: p.photo || null, skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));

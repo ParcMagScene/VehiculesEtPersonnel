@@ -1,3 +1,4 @@
+import { STATUS } from '../constants';
 // ═══════════════════════════════════════════════════════════════
 // bpAnnotationEngine.js — Moteur d'annotation des BP eM@g
 // Détection familles, kits, couleurs, bloc infos affaire
@@ -298,7 +299,7 @@ export function formatAffaireInfoBlock(data) {
   }
 
   // Tâches / Missions
-  const pending = tasks.filter(t => t.status !== 'done' && t.status !== 'completed' && t.status !== 'cancelled');
+  const pending = tasks.filter(t => t.status !== STATUS.DONE && t.status !== STATUS.COMPLETED && t.status !== STATUS.CANCELLED);
   lines.push({ type: 'header', text: `📋 Tâches (${pending.length}/${tasks.length})` });
   if (tasks.length > 0) {
     for (const t of pending.slice(0, 4)) {

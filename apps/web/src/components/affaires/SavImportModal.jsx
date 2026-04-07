@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Eye, Download, Link2, Search, AlertCircle as AlertInfo } from 'lucide-react';
 import { Button, ModalLayout, Input, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
+import { STATUS } from '../../constants';
+
 import '../equipment/EquipmentImportModal.css'; // réutilise le même CSS
 import './SavImportModal.css';
 
@@ -175,7 +177,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
             </Button>
           </>
         )}
-        {step === 'done' && (
+        {step === STATUS.DONE && (
           <Button variant="primary" onClick={() => { onImportDone(); onClose(); }}>
             <CheckCircle size={14} /> Terminé
           </Button>
@@ -446,7 +448,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
           )}
 
           {/* Étape 4 : Résultat */}
-          {step === 'done' && result && (
+          {step === STATUS.DONE && result && (
             <div className="eq-import-result">
               <CheckCircle size={48} className="eq-import-success-icon" />
               <h4>Import terminé !</h4>

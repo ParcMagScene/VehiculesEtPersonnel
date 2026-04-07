@@ -7,6 +7,8 @@ import { formatPhoneDisplay } from '../PhoneInput';
 import './MobilePersonnel.css';
 import { Spinner, Avatar } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 const skillIcon = (skillName) => {
   if (!skillName) return <Star size={12} />;
   const n = skillName.toLowerCase();
@@ -41,7 +43,7 @@ function MobilePersonnel({ onBack, currentUser }) {
 
   // Personnes permanentes actives uniquement
   const permanentPersons = useMemo(
-    () => persons.filter(p => p.status === 'active' && p.type === 'permanent'),
+    () => persons.filter(p => p.status === STATUS.ACTIVE && p.type === 'permanent'),
     [persons]
   );
 
@@ -106,7 +108,7 @@ function MobilePersonnel({ onBack, currentUser }) {
     return planning.missions.filter(m => {
       const hasAssignment = m.assignments?.some(a => a.personId === personId || a.person_id === personId);
       if (!hasAssignment) return false;
-      if (m.status === 'cancelled') return false;
+      if (m.status === STATUS.CANCELLED) return false;
       try {
         const mStart = startOfDay(parseISO(m.startDate || m.start_date));
         const mEnd = startOfDay(parseISO(m.endDate || m.end_date));
@@ -162,8 +164,8 @@ function MobilePersonnel({ onBack, currentUser }) {
               <Avatar name={fullName} size="xl" />
             )}
             <h3>{fullName}</h3>
-            <span className={`mpers-status-tag ${p.status === 'active' ? 'active' : 'inactive'}`}>
-              {p.status === 'active' ? 'Actif' : 'Inactif'}
+            <span className={`mpers-status-tag ${p.status === STATUS.ACTIVE ? 'active' : 'inactive'}`}>
+              {p.status === STATUS.ACTIVE ? 'Actif' : 'Inactif'}
             </span>
             {p.contractType && (
               <span className="mpers-contract">{p.contractType}</span>

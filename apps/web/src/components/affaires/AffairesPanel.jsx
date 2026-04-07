@@ -11,6 +11,8 @@ import WeekSelector from '../WeekSelector';
 import './AffairesPanel.css';
 import { Input, Checkbox, Spinner, EmptyState, InlineAlert, SearchBar, Tooltip, Divider } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));
 
@@ -671,7 +673,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   useEffect(() => {
     if (hasScrolledInitRef.current || isLoading || filteredAffaires.length === 0 || !listRef.current) return;
     hasScrolledInitRef.current = true;
-    const firstActive = filteredAffaires.find(a => getAffaireStatus(a, today) === 'active')
+    const firstActive = filteredAffaires.find(a => getAffaireStatus(a, today) === STATUS.ACTIVE)
       || filteredAffaires.find(a => getAffaireStatus(a, today) === 'upcoming');
     if (!firstActive) return;
     const key = firstActive.id || firstActive.numeroAffaire;
@@ -995,7 +997,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
                     {affaire.isArchived ? (
                       <span className="status-dot archived" title="Archivée" />
                     ) : (
-                      <span className={`status-dot ${status}`} title={status === 'active' ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminée'} />
+                      <span className={`status-dot ${status}`} title={status === STATUS.ACTIVE ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminée'} />
                     )}
                   </span>
                   <span className="ar-numero">{affaire.numeroAffaire || '—'}</span>
@@ -1052,7 +1054,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
                         const s = t.section || 'manual';
                         if (!groups[s]) groups[s] = { count: 0, done: 0 };
                         groups[s].count++;
-                        if (t.status === 'done') groups[s].done++;
+                        if (t.status === STATUS.DONE) groups[s].done++;
                       }
                       const SECTION_META = {
                         prep_locations: { e: '📦', c: '#f59e0b', l: 'Prép. Loc' },

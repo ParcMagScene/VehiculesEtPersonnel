@@ -5,6 +5,8 @@ import './ReservationRequestsPanel.css';
 import { useToast } from '../../hooks/useToast';
 import { DetailRow, Dialog, Textarea} from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 const ReservationRequestsPanel = ({ onRequestProcessed }) => {
   const toast = useToast();
   const [requests, setRequests] = useState([]);
@@ -129,22 +131,22 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
       <div className="requests-filters">
         <button 
-          className={filter === 'pending' ? 'active' : ''}
+          className={filter === STATUS.PENDING ? 'active' : ''}
           onClick={() => setFilter('pending')}
         >
-          En attente ({requests.filter(r => r.status === 'pending').length})
+          En attente ({requests.filter(r => r.status === STATUS.PENDING).length})
         </button>
         <button 
-          className={filter === 'approved' ? 'active' : ''}
+          className={filter === STATUS.APPROVED ? 'active' : ''}
           onClick={() => setFilter('approved')}
         >
-          Approuvées ({requests.filter(r => r.status === 'approved').length})
+          Approuvées ({requests.filter(r => r.status === STATUS.APPROVED).length})
         </button>
         <button 
-          className={filter === 'rejected' ? 'active' : ''}
+          className={filter === STATUS.REJECTED ? 'active' : ''}
           onClick={() => setFilter('rejected')}
         >
-          Rejetées ({requests.filter(r => r.status === 'rejected').length})
+          Rejetées ({requests.filter(r => r.status === STATUS.REJECTED).length})
         </button>
         <button 
           className={filter === 'all' ? 'active' : ''}
@@ -157,9 +159,9 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       <div className="requests-list">
         {filteredRequests.length === 0 ? (
           <div className="empty-requests">
-            {filter === 'pending' && 'Aucune demande en attente'}
-            {filter === 'approved' && 'Aucune demande approuvée'}
-            {filter === 'rejected' && 'Aucune demande rejetée'}
+            {filter === STATUS.PENDING && 'Aucune demande en attente'}
+            {filter === STATUS.APPROVED && 'Aucune demande approuvée'}
+            {filter === STATUS.REJECTED && 'Aucune demande rejetée'}
             {filter === 'all' && 'Aucune demande'}
           </div>
         ) : (
@@ -202,14 +204,14 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
                 </div>
               )}
 
-              {request.status === 'rejected' && request.rejectionReason && (
+              {request.status === STATUS.REJECTED && request.rejectionReason && (
                 <div className="rejection-reason">
                   <strong>Motif du rejet:</strong>
                   {request.rejectionReason}
                 </div>
               )}
 
-              {request.status === 'pending' && (
+              {request.status === STATUS.PENDING && (
                 <div className="request-actions">
                   <button 
                     className="approve-button"

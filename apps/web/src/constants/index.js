@@ -12,6 +12,11 @@ export const STATUS = {
   CANCELLED: 'cancelled',
   SCHEDULED: 'scheduled',
   MAINTENANCE: 'maintenance',
+  VALIDATED: 'validated',
+  CONFIRMED: 'confirmed',
+  ACCEPTED: 'accepted',
+  DONE: 'done',
+  DISPONIBLE: 'disponible',
 };
 
 // Rôles utilisateur

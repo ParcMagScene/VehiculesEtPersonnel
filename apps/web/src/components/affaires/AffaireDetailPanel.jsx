@@ -12,6 +12,8 @@ import './AffaireDetailPanel.css';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
 import { Dialog, Input, Textarea, Select, Table, Avatar, Tooltip } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 const ReservationModal = lazy(() => import('../vehicles/ReservationModal'));
 const EventDetailsModal = lazy(() => import('../planning/EventDetailsModal'));
 const BLImportModal = lazy(() => import('./BLImportModal'));
@@ -452,7 +454,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   // État des étapes — initialisé à partir des tâches existantes
   const [taskSteps, setTaskSteps] = useState(() => {
     const init = {};
-    TASK_STEPS.forEach(s => { init[s.key] = { enabled: false, date: '', time: '', endTime: '', period: '', notes: '', taskId: null, status: 'pending' }; });
+    TASK_STEPS.forEach(s => { init[s.key] = { enabled: false, date: '', time: '', endTime: '', period: '', notes: '', taskId: null, status: STATUS.PENDING }; });
     return init;
   });
 
@@ -484,7 +486,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           period: (step.key === 'preparation' || step.key === 'chargement') ? 'AM' : 'PM',
           notes: '',
           taskId: null,
-          status: 'pending',
+          status: STATUS.PENDING,
         };
       });
       setTaskSteps(updated);
@@ -1031,7 +1033,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                     </div>
                   </div>
                   <div className={`bl-import-status ${bl.status || 'pending'}`}>
-                    {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
+                    {bl.status === STATUS.VALIDATED ? 'Validé' : bl.status === STATUS.REJECTED ? 'Rejeté' : 'En attente'}
                   </div>
                   {editable && (
                     <button className="bl-import-delete-btn" onClick={e => { e.stopPropagation(); handleDeleteBL(bl); }} title="Supprimer ce BL/BP">
@@ -1101,7 +1103,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                 {r.comment && (
                   <div className="resa-comment">{r.comment}</div>
                 )}
-                <span className={`resa-status status-${r.status || 'confirmed'}`}>{r.status === 'confirmed' ? 'Confirmée' : r.status === 'pending' ? 'En attente' : r.status || 'Confirmée'}</span>
+                <span className={`resa-status status-${r.status || 'confirmed'}`}>{r.status === STATUS.CONFIRMED ? 'Confirmée' : r.status === STATUS.PENDING ? 'En attente' : r.status || 'Confirmée'}</span>
                 <ChevronRight size={14} className="resa-chevron" />
               </div>
             ))}
@@ -1319,7 +1321,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                     )}
                   </div>
                   <span className={`person-status status-${p.status}`}>
-                    {p.status === 'confirmed' ? 'Confirmé' : p.status === 'option' ? 'Option' : p.status === 'accepted' ? 'Accepté' : p.status === 'proposed' ? 'Proposé' : p.status === 'declined' ? 'Refusé' : p.status || '—'}
+                    {p.status === STATUS.CONFIRMED ? 'Confirmé' : p.status === 'option' ? 'Option' : p.status === STATUS.ACCEPTED ? 'Accepté' : p.status === 'proposed' ? 'Proposé' : p.status === 'declined' ? 'Refusé' : p.status || '—'}
                   </span>
                 </div>
                 {/* Postes habituels */}

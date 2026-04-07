@@ -15,6 +15,8 @@ import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
 import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './LeaveRequestsPanel.css';
 
 const LeaveRequestsPanel = ({
@@ -112,9 +114,9 @@ const LeaveRequestsPanel = ({
   // Stats rapides
   const stats = {
     total: requests.length,
-    pending: requests.filter(r => r.status === 'pending').length,
-    accepted: requests.filter(r => r.status === 'accepted' || r.status === 'modified').length,
-    refused: requests.filter(r => r.status === 'refused').length,
+    pending: requests.filter(r => r.status === STATUS.PENDING).length,
+    accepted: requests.filter(r => r.status === STATUS.ACCEPTED || r.status === 'modified').length,
+    refused: requests.filter(r => r.status === STATUS.REFUSED).length,
   };
 
   return (
@@ -172,13 +174,13 @@ const LeaveRequestsPanel = ({
           <span className="lrp-stat" data-active={filter === 'all'} onClick={() => setFilter('all')}>
             Toutes ({stats.total})
           </span>
-          <span className="lrp-stat pending" data-active={filter === 'pending'} onClick={() => setFilter('pending')}>
+          <span className="lrp-stat pending" data-active={filter === STATUS.PENDING} onClick={() => setFilter('pending')}>
             En attente ({stats.pending})
           </span>
-          <span className="lrp-stat accepted" data-active={filter === 'accepted'} onClick={() => setFilter('accepted')}>
+          <span className="lrp-stat accepted" data-active={filter === STATUS.ACCEPTED} onClick={() => setFilter('accepted')}>
             Acceptées ({stats.accepted})
           </span>
-          <span className="lrp-stat refused" data-active={filter === 'refused'} onClick={() => setFilter('refused')}>
+          <span className="lrp-stat refused" data-active={filter === STATUS.REFUSED} onClick={() => setFilter('refused')}>
             Refusées ({stats.refused})
           </span>
         </div>
@@ -292,7 +294,7 @@ const LeaveRequestsPanel = ({
                         >
                           <Download size={14} /> PDF
                         </button>
-                        {(req.status === 'pending' || req.status === 'accepted') && (
+                        {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) && (
                           cancellingId === req.id ? (
                             <div className="lrp-cancel-confirm">
                               <span>Confirmer l'annulation ?</span>

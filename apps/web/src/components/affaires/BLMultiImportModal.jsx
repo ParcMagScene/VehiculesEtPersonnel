@@ -14,6 +14,8 @@ import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../.
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import { useToast } from '../../hooks/useToast';
 import { Button, Input, ProgressBar } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './BLMultiImportModal.css';
 
 const AFFAIRE_TYPE_OPTIONS = AFFAIRE_TYPES;
@@ -107,7 +109,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
 
     const newItems = filesToAdd.map(f => ({
       file: f,
-      status: 'pending',
+      status: STATUS.PENDING,
       parsedData: null,
       rawText: '',
       docType: null,
@@ -217,7 +219,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
           affaire_type: effectiveType,
           parsed_data: merged,
           raw_text: item.rawText,
-          status: 'validated',
+          status: STATUS.VALIDATED,
           force_type: !!effectiveType,
         });
       });

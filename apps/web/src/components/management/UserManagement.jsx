@@ -6,6 +6,8 @@ import './UserManagement.css';
 import { useToast } from '../../hooks/useToast';
 import { Button, Dialog, ModalLayout, Input, Table, Checkbox, Tag, Card, Avatar } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const toast = useToast();
   const [authorizedEmails, setAuthorizedEmails] = useState([]);
@@ -432,7 +434,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       </div>
 
       {/* Historique des demandes traitées */}
-      {accessRequests.filter(r => r.status !== 'pending').length > 0 && (
+      {accessRequests.filter(r => r.status !== STATUS.PENDING).length > 0 && (
         <div className="user-management-section">
           <h3>Historique des demandes</h3>
           <div className="requests-history">
@@ -448,7 +450,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                 </tr>
               </thead>
               <tbody>
-                {accessRequests.filter(r => r.status !== 'pending').map((request) => (
+                {accessRequests.filter(r => r.status !== STATUS.PENDING).map((request) => (
                   <tr key={request.id}>
                     <td>{request.name}</td>
                     <td>{request.email}</td>
@@ -456,8 +458,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                       {new Date(request.createdAt).toLocaleDateString('fr-FR')}
                     </td>
                     <td>
-                      <Tag color={request.status === 'approved' ? 'success' : 'danger'} size="sm">
-                        {request.status === 'approved' ? '✓ Approuvée' : '✗ Rejetée'}
+                      <Tag color={request.status === STATUS.APPROVED ? 'success' : 'danger'} size="sm">
+                        {request.status === STATUS.APPROVED ? '✓ Approuvée' : '✗ Rejetée'}
                       </Tag>
                     </td>
                     <td>{request.reviewedByName || '-'}</td>
@@ -476,15 +478,15 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       )}
 
       {/* Demandes d'accès en attente */}
-      {accessRequests.filter(r => r.status === 'pending').length > 0 && (
+      {accessRequests.filter(r => r.status === STATUS.PENDING).length > 0 && (
         <div className="user-management-section access-requests-section">
           <h3>
             <Bell size={20} className="notification-icon" />
-            Demandes d'accès en attente ({accessRequests.filter(r => r.status === 'pending').length})
+            Demandes d'accès en attente ({accessRequests.filter(r => r.status === STATUS.PENDING).length})
           </h3>
           
           <div className="requests-list">
-            {accessRequests.filter(r => r.status === 'pending').map((request) => (
+            {accessRequests.filter(r => r.status === STATUS.PENDING).map((request) => (
               <Card key={request.id} className="request-card">
                 <div className="request-info">
                   <div className="request-name">{request.name}</div>
@@ -694,7 +696,7 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
         last_name: lastName.trim(),
         email: user.email || '',
         type: personType,
-        status: 'active',
+        status: STATUS.ACTIVE,
         user_id: user.id,
       };
       if (personType === 'contractuel') {

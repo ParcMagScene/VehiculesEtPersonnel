@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { Button, ModalLayout, Table, Spinner, Tag, InlineAlert, Accordion } from '@/design-system';
 import api from '../../utils/api';
+import { STATUS } from '../../constants';
+
 import './PersonnelImportModal.css';
 
 // Colonnes CSV attendues (séparateur ;)
@@ -185,7 +187,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
             )}
           </>
         )}
-        {step === 'done' && (
+        {step === STATUS.DONE && (
           <Button variant="primary" onClick={() => { onImportDone(); onClose(); }}>
             <CheckCircle size={14} /> Terminé
           </Button>
@@ -393,7 +395,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
           )}
 
           {/* Étape 4 : Résultat */}
-          {step === 'done' && result && (
+          {step === STATUS.DONE && result && (
             <div className="eq-import-result">
               <CheckCircle size={48} className="eq-import-success-icon" />
               <h4>Import terminé avec succès !</h4>

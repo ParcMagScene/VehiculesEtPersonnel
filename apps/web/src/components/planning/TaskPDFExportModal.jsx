@@ -8,6 +8,8 @@ import { formatDateFr } from '../../utils/formatUtils';
 import './TaskPDFExportModal.css';
 import { Button, EmptyState } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // ═══ Constantes sections (identiques au planning) ═══
 const SECTIONS = {
   rdv:                 { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
@@ -107,8 +109,8 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     Object.keys(SECTIONS).forEach(k => { groups[k] = []; });
 
     // 1) Tâches manuelles (exclure les tâches terminées et celles dont l'événement lié est terminé)
-    const doneEventIds = new Set((displayEvents || []).filter(ev => ev.status === 'done').map(ev => ev.id));
-    (tasks || []).filter(t => t.status !== 'done' && !(t.displayEventId && doneEventIds.has(t.displayEventId))).forEach(t => {
+    const doneEventIds = new Set((displayEvents || []).filter(ev => ev.status === STATUS.DONE).map(ev => ev.id));
+    (tasks || []).filter(t => t.status !== STATUS.DONE && !(t.displayEventId && doneEventIds.has(t.displayEventId))).forEach(t => {
       const sec = t.section || 'manual';
       const item = { uid: `task-${t.id}`, type: 'task', section: sec, data: t };
       items.push(item);
@@ -120,7 +122,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
     // 3) Événements d'affichage non liés à des tâches (exclure les terminés)
     const linkedEventIds = new Set((tasks || []).filter(t => t.displayEventId).map(t => t.displayEventId));
-    (displayEvents || []).filter(ev => !linkedEventIds.has(ev.id) && ev.status !== 'done').forEach(ev => {
+    (displayEvents || []).filter(ev => !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE).forEach(ev => {
       const sec = mapEventToSection(ev);
       const item = { uid: `event-${ev.id}`, type: 'event', section: sec, data: ev };
       items.push(item);
@@ -344,7 +346,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
     if (item.type === 'task') {
       const task = item.data;
-      const isDone = task.status === 'done';
+      const isDone = task.status === STATUS.DONE;
       const taskSection = normalizeSection(task.section || 'manual');
       const affaireNum = task.affaireNum || '';
       const linkedAffaire = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;

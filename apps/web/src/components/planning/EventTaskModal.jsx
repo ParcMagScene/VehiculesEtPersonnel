@@ -10,6 +10,8 @@ import { useToast } from '../../hooks/useToast';
 import './EventTaskModal.css';
 import { Input, Select } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // ═══ Définition des étapes opérationnelles ═══
 const TASK_STEPS = [
   { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: '#6366f1', defaultSection: 'prep_locations' },
@@ -199,7 +201,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
           source_id: event.id,
           google_event_title: eventInfo.cleanSummary || eventInfo.summary,
           affaire_num: eventInfo.affaireNum || null,
-          status: 'pending',
+          status: STATUS.PENDING,
           location_address: s.locationAddress || null,
         };
       });

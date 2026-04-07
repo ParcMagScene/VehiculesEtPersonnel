@@ -35,6 +35,8 @@ import PersonnelAgenda from './PersonnelAgenda';
 import LeavesTab from '../leaves/LeavesTab';
 import SkillsTab from './SkillsTab';
 import PositionsTab from './PositionsTab';
+import { STATUS } from '../../constants';
+
 import {
   PERSON_TYPES, CONTRACT_TYPES, SKILL_CATEGORIES, SKILL_LEVELS,
   POSITION_CATEGORIES, PERMANENT_TYPES, NON_PERMANENT_TYPES,
@@ -62,7 +64,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
   const [editForm, setEditForm] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     type: 'permanent', contractType: '', userId: null,
-    status: 'active', notes: '',
+    status: STATUS.ACTIVE, notes: '',
     skills: [],
     defaultPositions: [],
   });
@@ -97,7 +99,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     setEditForm({
       firstName: '', lastName: '', email: '', phone: '',
       type: 'permanent', contractType: '', userId: null,
-      status: 'active', notes: '',
+      status: STATUS.ACTIVE, notes: '',
       skills: [],
       defaultPositions: [],
     });
@@ -110,7 +112,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     setEditForm({
       firstName: '', lastName: '', email: '', phone: '',
       type: 'permanent', contractType: '', userId: null,
-      status: 'active', notes: '',
+      status: STATUS.ACTIVE, notes: '',
       skills: [],
       defaultPositions: [],
     });
@@ -451,10 +453,10 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
   // Stats
   const stats = useMemo(() => {
     const total = persons.length;
-    const active = persons.filter(p => p.status === 'active').length;
+    const active = persons.filter(p => p.status === STATUS.ACTIVE).length;
     const permanent = persons.filter(p => PERMANENT_TYPES.includes(p.type)).length;
     const nonPermanent = persons.filter(p => NON_PERMANENT_TYPES.includes(p.type)).length;
-    const inactive = persons.filter(p => p.status === 'inactive').length;
+    const inactive = persons.filter(p => p.status === STATUS.INACTIVE).length;
     return { total, active, permanent, nonPermanent, inactive };
   }, [persons]);
 
@@ -554,7 +556,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
             <span className="eq-stat-value">{stats.total}</span>
             <span className="eq-stat-label">Total</span>
           </div>
-          <div role="button" tabIndex={0} className={`eq-stat eq-stat-available ${filterStatus === 'active' ? 'active' : ''}`} onClick={() => { setFilterStatus(filterStatus === 'active' ? '' : 'active'); setFilterType(''); }}>
+          <div role="button" tabIndex={0} className={`eq-stat eq-stat-available ${filterStatus === STATUS.ACTIVE ? 'active' : ''}`} onClick={() => { setFilterStatus(filterStatus === STATUS.ACTIVE ? '' : 'active'); setFilterType(''); }}>
             <CheckCircle size={16} />
             <span className="eq-stat-value">{stats.active}</span>
             <span className="eq-stat-label">Actifs</span>
@@ -570,7 +572,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
             <span className="eq-stat-label">Non-permanents</span>
           </div>
           {stats.inactive > 0 && (
-            <div role="button" tabIndex={0} className={`eq-stat eq-stat-tickets ${filterStatus === 'inactive' ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === 'inactive' ? '' : 'inactive')}>
+            <div role="button" tabIndex={0} className={`eq-stat eq-stat-tickets ${filterStatus === STATUS.INACTIVE ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === STATUS.INACTIVE ? '' : 'inactive')}>
               <AlertTriangle size={16} />
               <span className="eq-stat-value">{stats.inactive}</span>
               <span className="eq-stat-label">Inactifs</span>
@@ -618,7 +620,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                     return (
                       <tr
                         key={person.id}
-                        className={`eq-table-row${selectedPerson?.id === person.id ? ' selected' : ''}${person.status === 'inactive' ? ' pp-row-inactive' : ''}`}
+                        className={`eq-table-row${selectedPerson?.id === person.id ? ' selected' : ''}${person.status === STATUS.INACTIVE ? ' pp-row-inactive' : ''}`}
                         onClick={() => setSelectedPerson(selectedPerson?.id === person.id ? null : person)}
                         onDoubleClick={() => openEdit(person)}
                       >
@@ -646,7 +648,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                         </td>
                         <td>
                           <span className={`pp-status-dot ${person.status}`}>
-                            {person.status === 'active' ? '● Actif' : '○ Inactif'}
+                            {person.status === STATUS.ACTIVE ? '● Actif' : '○ Inactif'}
                           </span>
                         </td>
                         <td className="pp-actions-cell">
@@ -1218,7 +1220,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
     const viewEnd = days[days.length - 1];
 
     (planningData.availabilities || []).forEach(avail => {
-      if (avail.status === 'rejected') return; // ignorer les refusées
+      if (avail.status === STATUS.REJECTED) return; // ignorer les refusées
       try {
         const aStart = parseISO(avail.start_date || avail.startDate);
         const aEnd = parseISO(avail.end_date || avail.endDate);
@@ -1591,7 +1593,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           const absenceColor = hasAbsence ? LEAVE_TYPE_COLORS[absence.type] || 'var(--theme-text-muted)' : null;
           const absenceLabel = hasAbsence ? LEAVE_TYPE_LABELS[absence.type] || '' : '';
           const absenceTooltip = hasAbsence
-            ? `${absenceLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === 'pending' ? ' (en attente)' : ''}`
+            ? `${absenceLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === STATUS.PENDING ? ' (en attente)' : ''}`
             : '';
 
           // Tâches assignées sur ce slot ?
@@ -1617,8 +1619,8 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               style={{
                 cursor: view !== 'year' && !isCovered && !hasAbsence ? 'crosshair' : 'default',
                 ...(hasAbsence ? {
-                  backgroundColor: absenceColor + (absence.status === 'pending' ? '30' : '40'),
-                  backgroundImage: absence.status === 'pending' ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)` : 'none',
+                  backgroundColor: absenceColor + (absence.status === STATUS.PENDING ? '30' : '40'),
+                  backgroundImage: absence.status === STATUS.PENDING ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)` : 'none',
                 } : {}),
               }}
             >

@@ -6,6 +6,8 @@ import { saveToIndexedDB, STORES } from '../utils/indexedDB';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import logger from '../utils/logger';
 
+import { STATUS } from '../constants';
+
 /**
  * Hook centralisant les données métier (véhicules, réservations, maintenances, etc.)
  * et les opérations CRUD associées. Extrait d'App.jsx.
@@ -134,7 +136,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       setMaintenances(prev => {
         let hasChanges = false;
         const updated = prev.map(maintenance => {
-          if (maintenance.status === 'reported' || maintenance.status === 'completed' || !maintenance.startDate) {
+          if (maintenance.status === 'reported' || maintenance.status === STATUS.COMPLETED || !maintenance.startDate) {
             return maintenance;
           }
           const startDate = new Date(maintenance.startDate);

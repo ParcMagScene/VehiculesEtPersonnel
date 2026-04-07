@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Mail, User, Send, Lock, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
 import { Button, ModalLayout, Input, InlineAlert, FormField } from '@/design-system';
 import api from '../../utils/api';
+import { STATUS } from '../../constants';
+
 import './AccessRequestModal.css';
 
 function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
@@ -250,7 +252,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   }
 
   // ===== ÉTAPE 2B : DEMANDE EN ATTENTE DE VALIDATION =====
-  if (step === 'pending') {
+  if (step === STATUS.PENDING) {
     return (
       <ModalLayout
         open

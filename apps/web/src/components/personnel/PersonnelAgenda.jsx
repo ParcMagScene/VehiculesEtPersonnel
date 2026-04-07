@@ -13,6 +13,8 @@ import api from '../../utils/api';
 import './PersonnelAgenda.css';
 import { Input, Avatar, EmptyState, SearchBar } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // Couleurs par type d'événement
 const EVENT_COLORS = {
   mission: { bg: 'var(--theme-info-bg-strong)', border: '#3b82f6', text: 'var(--theme-info-text)' },
@@ -158,7 +160,7 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
           id: `leave-${l.id}`,
           type: 'leave',
           title: LEAVE_TYPE_LABELS[l.leave_type || l.leaveType] || l.leave_type || 'Congé',
-          subtitle: l.status === 'approved' ? 'Validé' : l.status === 'pending' ? 'En attente' : l.status,
+          subtitle: l.status === STATUS.APPROVED ? 'Validé' : l.status === STATUS.PENDING ? 'En attente' : l.status,
           raw: l,
         });
       }

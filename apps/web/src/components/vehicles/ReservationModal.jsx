@@ -15,6 +15,8 @@ import { loadFromIndexedDB } from '../../utils/indexedDB';
 import './ReservationModal.css';
 import { useToast } from '../../hooks/useToast';
 
+import { STATUS } from '../../constants';
+
 const ReservationEquipment = lazy(() => import('./ReservationEquipment'));
 
 const ReservationModal = ({
@@ -179,7 +181,7 @@ const ReservationModal = ({
     const requiredLevel = skillHierarchy.indexOf(requiredSkill);
     
     return persons
-      .filter(p => p.status === 'active' && p.skills?.some(s => {
+      .filter(p => p.status === STATUS.ACTIVE && p.skills?.some(s => {
         const sLevel = skillHierarchy.indexOf(s.name);
         return sLevel >= 0 && sLevel >= requiredLevel;
       }))

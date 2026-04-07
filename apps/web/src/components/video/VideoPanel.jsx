@@ -13,6 +13,8 @@ import api from '../../utils/api';
 import './VideoPanel.css';
 import { Button, Dialog, Table, Spinner, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
 
+import { ROLES } from '../../constants';
+
 const GRID_LAYOUTS = [
   { id: 1, label: '1', cols: 1 },
   { id: 4, label: '4', cols: 2 },
@@ -50,7 +52,7 @@ const VideoPanel = ({ currentUser }) => {
       .catch(() => setProxyAvailable(false));
   }, []);
 
-  const isAdmin = currentUser?.role === 'admin';
+  const isAdmin = currentUser?.role === ROLES.ADMIN;
   const enabledCameras = cameras.filter(c => c.enabled);
   const totalPages = Math.ceil(enabledCameras.length / gridSize);
 
@@ -170,7 +172,7 @@ const VideoPanel = ({ currentUser }) => {
               <Film size={18} />
             </button>
             {isAdmin && (
-              <button className={viewMode === 'admin' ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
+              <button className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
                 <Settings size={18} />
               </button>
             )}
@@ -323,7 +325,7 @@ const VideoPanel = ({ currentUser }) => {
         </div>
       )}
 
-      {viewMode === 'admin' && isAdmin && (
+      {viewMode === ROLES.ADMIN && isAdmin && (
         <div className="video-panel__admin">
           <div className="video-panel__admin-section">
             <h3><Shield size={18} /> Administration des caméras</h3>

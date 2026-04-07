@@ -5,6 +5,8 @@ import './MobileEquipmentQR.css';
 import { useToast } from '../../hooks/useToast';
 import { Input, Textarea, Select, Spinner, InlineAlert } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX
 // Affiche un menu multi-choix pour l'équipement scanné
@@ -188,10 +190,10 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           {equipment.notes && <div className="m-eq-qr-notes"><p>{equipment.notes}</p></div>}
           
           {/* Attributions actives */}
-          {equipment.assignments?.filter(a => a.status === 'active').length > 0 && (
+          {equipment.assignments?.filter(a => a.status === STATUS.ACTIVE).length > 0 && (
             <div className="m-eq-qr-section">
               <h4>👤 Attribué à</h4>
-              {equipment.assignments.filter(a => a.status === 'active').map(a => (
+              {equipment.assignments.filter(a => a.status === STATUS.ACTIVE).map(a => (
                 <div key={a.id} className="m-eq-qr-assign">
                   <strong>{a.firstName || a.first_name} {a.lastName || a.last_name}</strong>
                   <span>depuis le {safeDate(a.startDate || a.start_date)}</span>

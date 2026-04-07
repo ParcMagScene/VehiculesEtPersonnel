@@ -15,6 +15,8 @@ import './OrdersPanel.css';
 import { useToast } from '../../hooks/useToast';
 import AffaireBadge from '../AffaireBadge';
 
+import { STATUS } from '../../constants';
+
 // Helper : grouper les articles par demandeur (affaire ou personne physique)
 function groupItemsByRequester(items) {
   const groups = new Map();
@@ -387,7 +389,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   const handleValidateRequest = async (request, action, reason = null) => {
     try {
       const result = await api.validateMaterialRequest(request.id, action, reason);
-      if (result.action === 'approved') {
+      if (result.action === STATUS.APPROVED) {
         toast.success(`Demande approuvée → commande ${result.order?.orderRef || ''}`);
       } else {
         toast.success('Demande refusée');
@@ -881,7 +883,7 @@ const QuotesList = React.memo(({ quotes, onView, onDoubleClick, onEdit, onDelete
                 </td>
                 <td className="amount">{formatCurrency(quote.total_ht)}</td>
                 <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
-                  {quote.status === 'accepted' && !quote.converted_to_order_id && (
+                  {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
                     <Tooltip content="Convertir en commande"><Button variant="success" size="sm" iconOnly onClick={() => onConvert(quote)}><ArrowRight size={14} /></Button></Tooltip>
                   )}
                   <Tooltip content="Modifier"><Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(quote)}><Edit2 size={14} /></Button></Tooltip>
@@ -969,7 +971,7 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
         <div className="order-detail-actions">
           {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
           {order.status === 'sent' && <button className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</button>}
-          {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
+          {order.status === STATUS.CONFIRMED && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
           <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
           <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
         </div>
@@ -1078,7 +1080,7 @@ const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, on
               <button className="action-btn danger" onClick={() => onStatusChange('refused')}><X size={14} /> Refuser</button>
             </>
           )}
-          {quote.status === 'accepted' && !quote.converted_to_order_id && (
+          {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
             <button className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir en commande</button>
           )}
           <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
@@ -1574,7 +1576,7 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
                     {req.order_id && <span className="order-link-small">→ Cmd #{req.order_id}</span>}
                   </td>
                   <td className="actions-cell" onClick={e => e.stopPropagation()}>
-                    {isAdmin && req.status === 'pending' && (
+                    {isAdmin && req.status === STATUS.PENDING && (
                       <>
                         <Tooltip content="Approuver"><Button variant="success" size="sm" iconOnly onClick={() => onValidate(req, 'approve')}><Check size={14} /></Button></Tooltip>
                         <Tooltip content="Refuser"><Button variant="danger" size="sm" iconOnly onClick={() => setRejectingId(req.id)}><X size={14} /></Button></Tooltip>
@@ -2238,7 +2240,7 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
         <div className="slide-actions">
           {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
           {order.status === 'sent' && <button className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</button>}
-          {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
+          {order.status === STATUS.CONFIRMED && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
           <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
           <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
           <button className="action-btn" onClick={onClose}><X size={14} /> Fermer</button>
@@ -2292,7 +2294,7 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
         )}
         {quote.notes && <div className="slide-notes"><h4>Notes</h4><p>{quote.notes}</p></div>}
         <div className="slide-actions">
-          {quote.status === 'accepted' && !quote.converted_to_order_id && (
+          {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
             <button className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir</button>
           )}
           <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
@@ -2333,7 +2335,7 @@ const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin,
           {request.order_id && <div className="slide-field"><span>Commande</span><strong>#{request.order_id}</strong></div>}
         </div>
         {request.notes && <div className="slide-notes"><h4>Notes</h4><p>{request.notes}</p></div>}
-        {isAdmin && request.status === 'pending' && (
+        {isAdmin && request.status === STATUS.PENDING && (
           <div className="slide-actions">
             <button className="action-btn success" onClick={() => onValidate(request, 'approve')}><Check size={14} /> Approuver</button>
             <button className="action-btn danger" onClick={() => onValidate(request, 'reject')}><X size={14} /> Refuser</button>
@@ -2425,7 +2427,7 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
           <div className="order-detail-actions">
             {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
             {order.status === 'sent' && <button className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</button>}
-            {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
+            {order.status === STATUS.CONFIRMED && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
             <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
             <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
             <button className="close-btn" onClick={onClose}><X size={20} /></button>
@@ -2524,7 +2526,7 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
                 <button className="action-btn danger" onClick={() => onStatusChange('refused')}><X size={14} /> Refuser</button>
               </>
             )}
-            {quote.status === 'accepted' && !quote.converted_to_order_id && (
+            {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
               <button className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir</button>
             )}
             <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
@@ -2593,7 +2595,7 @@ const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate,
             <span className="priority-badge" style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
           </div>
           <div className="order-detail-actions">
-            {isAdmin && request.status === 'pending' && (
+            {isAdmin && request.status === STATUS.PENDING && (
               <>
                 <button className="action-btn success" onClick={() => { onValidate(request, 'approve'); onClose(); }}><Check size={14} /> Approuver</button>
                 <button className="action-btn danger" onClick={() => { onValidate(request, 'reject'); onClose(); }}><X size={14} /> Refuser</button>

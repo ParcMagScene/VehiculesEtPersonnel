@@ -4,6 +4,8 @@ import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select } from 
 import './InterventionModal.css';
 import { useToast } from '../../hooks/useToast';
 
+import { STATUS } from '../../constants';
+
 const InterventionModal = ({ 
   intervention, 
   vehicle,
@@ -179,7 +181,7 @@ const InterventionModal = ({
           await onSave({
             ...intervention,
             ...formData,
-            status: 'completed',
+            status: STATUS.COMPLETED,
             cost: formData.cost ? parseFloat(formData.cost) : null,
             updatedAt: new Date().toISOString()
           });

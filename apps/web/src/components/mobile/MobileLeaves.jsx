@@ -6,6 +6,8 @@ import {
 import api from '../../utils/api';
 import { Button, DetailRow, Textarea, InlineAlert} from '@/design-system';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
+import { ROLES, STATUS } from '../../constants';
+
 import './MobileLeaves.css';
 
 // ─── Composant principal ────────────────────────────────
@@ -18,7 +20,7 @@ function MobileLeaves({ currentUser, onBack }) {
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all | pending | accepted | refused
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'manager';
+  const isAdmin = currentUser?.role === ROLES.ADMIN || currentUser?.role === ROLES.MANAGER;
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -113,7 +115,7 @@ function MobileLeaves({ currentUser, onBack }) {
   }
 
   // ─── Vue admin (validation) ───
-  if (view === 'admin' && isAdmin) {
+  if (view === ROLES.ADMIN && isAdmin) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
@@ -419,7 +421,7 @@ function LeaveDetail({ leave, isAdmin, onDecision, onCancel }) {
       </div>
 
       {/* Actions admin */}
-      {isAdmin && leave.status === 'pending' && (
+      {isAdmin && leave.status === STATUS.PENDING && (
         <div className="ml-detail-actions">
           <Button variant="success" onClick={() => onDecision(leave.id, 'accepted')}>
             <CheckCircle size={16} /> Accepter
@@ -446,7 +448,7 @@ function LeaveDetail({ leave, isAdmin, onDecision, onCancel }) {
       )}
 
       {/* Annulation */}
-      {leave.status === 'pending' && !isAdmin && (
+      {leave.status === STATUS.PENDING && !isAdmin && (
         <div className="ml-detail-actions">
           <Button variant="danger" onClick={onCancel}>
             <Trash2 size={16} /> Annuler ma demande

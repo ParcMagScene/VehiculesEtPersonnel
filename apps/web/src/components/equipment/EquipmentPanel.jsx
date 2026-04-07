@@ -16,6 +16,8 @@ import { useToast } from '../../hooks/useToast';
 import { Button, Dialog, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, EmptyState, SearchBar, Tooltip } from '@/design-system';
 import { resolveGenericImage, getAllGenericImages, GENERIC_IMAGES } from '../../utils/genericImages';
 
+import { STATUS } from '../../constants';
+
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1", "A3" → "A1")
 const findZone = (zoneList, zid) => {
   if (!zoneList || !zid) return null;
@@ -759,7 +761,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
     total: equipment.length,
     available: equipment.filter(e => e.status === 'available').length,
     in_use: equipment.filter(e => e.status === 'in_use').length,
-    maintenance: equipment.filter(e => e.status === 'maintenance').length,
+    maintenance: equipment.filter(e => e.status === STATUS.MAINTENANCE).length,
     openTickets: savTickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').length,
   }), [equipment, savTickets]);
 
@@ -972,7 +974,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
             <Clock size={13} />
             <span className="eq-stat-value">{stats.in_use}</span>
           </button>
-          <button className={`eq-stat-btn eq-stat-maint ${filterStatus === 'maintenance' ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }} title="Maintenance">
+          <button className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }} title="Maintenance">
             <Wrench size={13} />
             <span className="eq-stat-value">{stats.maintenance}</span>
           </button>
@@ -1315,7 +1317,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                     <div className="eq-mgmt-stat"><strong>{subfamilies.length}</strong><span>Catégories</span></div>
                     <div className="eq-mgmt-stat"><strong>{leafCategories.length}</strong><span>Types</span></div>
                     <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'available').length}</strong><span>Disponibles</span></div>
-                    <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'maintenance').length}</strong><span>En maintenance</span></div>
+                    <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === STATUS.MAINTENANCE).length}</strong><span>En maintenance</span></div>
                   </div>
                 </div>
               )}

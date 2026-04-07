@@ -15,6 +15,8 @@ import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import { Accordion, Tooltip } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // ─── Sections (mêmes que TaskPlanningPanel, sans rdv/evenements) ───
 const SECTIONS = {
   taches_prioritaires: { label: 'Prioritaires',        emoji: '🔴', color: '#ef4444' },
@@ -220,7 +222,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   const doneTasks = useMemo(() => {
     let count = 0;
     filteredOrder.forEach(k => {
-      (grouped[k] || []).forEach(t => { if (t.status === 'done') count++; });
+      (grouped[k] || []).forEach(t => { if (t.status === STATUS.DONE) count++; });
     });
     return count;
   }, [grouped, filteredOrder]);
@@ -348,7 +350,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                 >
                   <div className="dash-section-items">
                     {items.map(task => {
-                      const isDone = task.status === 'done';
+                      const isDone = task.status === STATUS.DONE;
                       const isProgress = task.status === 'in_progress';
                       const isHidden = task.visible === 0;
                       const taskColor = getTaskColor(task);

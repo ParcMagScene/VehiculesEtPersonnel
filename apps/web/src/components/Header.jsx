@@ -9,6 +9,8 @@ import OverdueInterventionModal from './planning/OverdueInterventionModal';
 import ProfileEditModal from './auth/ProfileEditModal';
 import { useToast } from '../hooks/useToast';
 import { Dialog, Textarea, Avatar } from '@/design-system';
+import { STATUS } from '../constants';
+
 import './Header.css';
 
 const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
@@ -125,8 +127,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
 
   // Compter les pannes signalées, interventions programmées et demandes d'intervention
   const reportedMaintenances = maintenances.filter(m => m.status === 'reported');
-  const scheduledMaintenances = maintenances.filter(m => m.status === 'scheduled');
-  const pendingMaintenances = maintenances.filter(m => m.status === 'pending');
+  const scheduledMaintenances = maintenances.filter(m => m.status === STATUS.SCHEDULED);
+  const pendingMaintenances = maintenances.filter(m => m.status === STATUS.PENDING);
   const inProgressMaintenances = maintenances.filter(m => m.status === 'in_progress');
   const immobilizedVehicles = reportedMaintenances.filter(m => m.isImmobilized);
   
@@ -154,7 +156,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     try {
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
-        status: 'completed'
+        status: STATUS.COMPLETED
       });
       if (onRefreshMaintenances) {
         await onRefreshMaintenances();
@@ -169,7 +171,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     try {
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
-        status: 'cancelled',
+        status: STATUS.CANCELLED,
         notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[Annulée] ${reason}`
       });
       if (onRefreshMaintenances) {
@@ -185,7 +187,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     try {
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
-        status: 'pending',
+        status: STATUS.PENDING,
         notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[En attente] ${reason}`
       });
       if (onRefreshMaintenances) {
@@ -284,8 +286,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <div className="notifications-popup-header">
                 <h3><Bell size={20} strokeWidth={2.5} className="popup-icon" /> {
                   notificationFilter === 'reported' ? 'Pannes signalées' :
-                  notificationFilter === 'pending' ? "Demandes d'intervention / CT" :
-                  notificationFilter === 'active' ? 'Interventions actives' :
+                  notificationFilter === STATUS.PENDING ? "Demandes d'intervention / CT" :
+                  notificationFilter === STATUS.ACTIVE ? 'Interventions actives' :
                   notificationFilter === 'reservations' ? 'Demandes de réservation' :
                   'Notifications'
                 }</h3>
@@ -293,13 +295,13 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               </div>
               <div className="notifications-popup-content">
                 {((notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
-                  (notificationFilter === 'pending' && pendingMaintenances.length === 0) ||
-                  (notificationFilter === 'active' && activeInterventions.length === 0)) ? (
+                  (notificationFilter === STATUS.PENDING && pendingMaintenances.length === 0) ||
+                  (notificationFilter === STATUS.ACTIVE && activeInterventions.length === 0)) ? (
                   <p className="no-notifications">Aucune notification</p>
                 ) : (
                   <>
                     {/* Section Interventions en retard */}
-                    {(notificationFilter === 'all' || notificationFilter === 'active' || notificationFilter === 'overdue') && overdueInterventions.length > 0 && (
+                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === 'overdue') && overdueInterventions.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title"><Clock size={18} strokeWidth={2.5} /> Interventions en retard</h4>
                         <div className="notifications-list">
@@ -340,7 +342,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     )}
 
                     {/* Section Interventions programmées */}
-                    {(notificationFilter === 'all' || notificationFilter === 'active' || notificationFilter === 'scheduled') && scheduledMaintenances.length > 0 && (
+                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === STATUS.SCHEDULED) && scheduledMaintenances.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions programmées</h4>
                         <div className="notifications-list">
@@ -387,7 +389,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     )}
 
                     {/* Section Interventions en cours */}
-                    {(notificationFilter === 'all' || notificationFilter === 'active' || notificationFilter === 'in_progress') && inProgressMaintenances.length > 0 && (
+                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === 'in_progress') && inProgressMaintenances.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions en cours</h4>
                         <div className="notifications-list">
@@ -434,7 +436,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     )}
 
                     {/* Section Demandes d'intervention */}
-                    {(notificationFilter === 'all' || notificationFilter === 'pending') && pendingMaintenances.length > 0 && (
+                    {(notificationFilter === 'all' || notificationFilter === STATUS.PENDING) && pendingMaintenances.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title"><ClipboardList size={18} strokeWidth={2.5} /> Demandes d'intervention</h4>
                         <div className="notifications-list">

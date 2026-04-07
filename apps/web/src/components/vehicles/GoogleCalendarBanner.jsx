@@ -10,6 +10,8 @@ import { Search, RefreshCw, Plus, Truck, Users, CalendarPlus } from 'lucide-reac
 import { useToast } from '../../hooks/useToast';
 import { Input, Spinner, InlineAlert, SearchBar, LoadingOverlay } from '@/design-system';
 
+import { TIMING } from '../../constants';
+
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('../affaires/AffaireImportModal'));
 const GoogleEventFormModal = lazy(() => import('./GoogleEventFormModal'));
@@ -122,8 +124,8 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     // Attendre que le DOM soit complètement rendu après changement de vue
     const timer1 = setTimeout(syncWidths, 50);
     const timer2 = setTimeout(syncWidths, 150);
-    const timer3 = setTimeout(syncWidths, 300);
-    const timer4 = setTimeout(syncWidths, 500);
+    const timer3 = setTimeout(syncWidths, TIMING.DEBOUNCE_SEARCH);
+    const timer4 = setTimeout(syncWidths, TIMING.PRINT_DELAY);
 
     // Observer les changements de taille du calendrier ou du planning personnel
     const calendarGrid = document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
@@ -218,7 +220,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
       timeouts.push(setTimeout(syncScroll, 60));
       timeouts.push(setTimeout(syncScroll, 160));
       timeouts.push(setTimeout(syncScroll, 310));
-      timeouts.push(setTimeout(syncScroll, 500));
+      timeouts.push(setTimeout(syncScroll, TIMING.PRINT_DELAY));
 
       return () => {
         timeouts.forEach(timeout => clearTimeout(timeout));

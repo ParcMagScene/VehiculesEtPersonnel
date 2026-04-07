@@ -35,6 +35,8 @@ import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
 import { Dialog } from '@/design-system';
 
+import { STATUS, TIMING } from '../../constants';
+
 // Fonction pour obtenir les initiales d'un utilisateur
 const getUserInitials = (userId, currentUser, users = []) => {
   if (currentUser && userId === currentUser.id && currentUser.name) {
@@ -535,7 +537,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
 // Couleurs des interventions selon le statut
 const getMaintenanceStatusStyle = (status, hasConflict) => {
   // Les interventions terminées ou annulées ne montrent pas les conflits
-  if (hasConflict && status !== 'completed' && status !== 'cancelled') {
+  if (hasConflict && status !== STATUS.COMPLETED && status !== STATUS.CANCELLED) {
     return { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger-dark)', icon: '⚠️' };
   }
   const styles = {
@@ -925,7 +927,7 @@ const Calendar = ({
       // Essayer plusieurs fois pour s'assurer que le DOM est prêt
       timeouts.push(setTimeout(scrollToPosition, 50));
       timeouts.push(setTimeout(scrollToPosition, 150));
-      timeouts.push(setTimeout(scrollToPosition, 300));
+      timeouts.push(setTimeout(scrollToPosition, TIMING.DEBOUNCE_SEARCH));
 
       return () => {
         timeouts.forEach(timeout => clearTimeout(timeout));
@@ -1002,8 +1004,8 @@ const Calendar = ({
 
     // Exécuter la synchronisation plusieurs fois pour s'assurer qu'elle prend effet
     const timer1 = setTimeout(syncRowHeights, 50);
-    const timer2 = setTimeout(syncRowHeights, 200);
-    const timer3 = setTimeout(syncRowHeights, 500);
+    const timer2 = setTimeout(syncRowHeights, TIMING.DOUBLE_CLICK);
+    const timer3 = setTimeout(syncRowHeights, TIMING.PRINT_DELAY);
     
     window.addEventListener('resize', syncRowHeights);
 
@@ -1171,7 +1173,7 @@ const Calendar = ({
       // Vérifier s'il y a une maintenance active aujourd'hui
       const hasMaintenance = maintenances.some(m => {
         if (m.vehicleId !== vehicleId) return false;
-        if (m.status === 'completed') return false;
+        if (m.status === STATUS.COMPLETED) return false;
         const start = m.startDate?.slice(0, 10) || m.date?.slice(0, 10) || '';
         const end = m.endDate?.slice(0, 10) || start;
         return start <= today && today <= end;
@@ -2064,7 +2066,7 @@ const Calendar = ({
                   const hasBreakdown = maintenances.some(m => 
                     m.vehicleId === vehicle.id && 
                     (m.status === 'reported' || m.type === 'breakdown') &&
-                    m.status !== 'completed'
+                    m.status !== STATUS.COMPLETED
                   );
 
                   // Vérifier si le véhicule a un contrôle technique expiré
@@ -2135,7 +2137,7 @@ const Calendar = ({
                   const hasBreakdown = maintenances.some(m => 
                     m.vehicleId === vehicle.id && 
                     (m.status === 'reported' || m.type === 'breakdown') &&
-                    m.status !== 'completed'
+                    m.status !== STATUS.COMPLETED
                   );
 
                   // Vérifier si le véhicule a un contrôle technique expiré

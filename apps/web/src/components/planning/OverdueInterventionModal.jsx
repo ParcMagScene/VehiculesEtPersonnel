@@ -4,6 +4,8 @@ import { Button, Dialog, ModalLayout, Textarea} from '@/design-system';
 import './OverdueInterventionModal.css';
 import { useToast } from '../../hooks/useToast';
 
+import { STATUS } from '../../constants';
+
 const OverdueInterventionModal = ({ 
   intervention, 
   vehicle,
@@ -21,9 +23,9 @@ const OverdueInterventionModal = ({
 
   const handleAction = async (actionType) => {
     setAction(actionType);
-    if (actionType === 'cancelled' || actionType === 'pending') {
+    if (actionType === STATUS.CANCELLED || actionType === STATUS.PENDING) {
       setShowReasonInput(true);
-    } else if (actionType === 'completed') {
+    } else if (actionType === STATUS.COMPLETED) {
       setConfirmDialog({
         message: 'Confirmer que l\'intervention a été réalisée ?',
         onConfirm: async () => {
@@ -40,9 +42,9 @@ const OverdueInterventionModal = ({
 
   const handleSubmitWithReason = async () => {
     if (reason.trim()) {
-      if (action === 'cancelled') {
+      if (action === STATUS.CANCELLED) {
         await onMarkNotCompleted(intervention, reason);
-      } else if (action === 'pending') {
+      } else if (action === STATUS.PENDING) {
         await onMarkPending(intervention, reason);
       }
       onClose();
@@ -93,13 +95,13 @@ const OverdueInterventionModal = ({
           {showReasonInput && (
             <div className="reason-input-container">
               <label htmlFor="reason">
-                {action === 'cancelled' ? 'Motif d\'annulation :' : 'Motif de mise en attente :'}
+                {action === STATUS.CANCELLED ? 'Motif d\'annulation :' : 'Motif de mise en attente :'}
               </label>
               <Textarea
                 id="reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder={action === 'cancelled' ? 'Pourquoi annuler cette intervention ?' : 'Pourquoi mettre en attente ?'}
+                placeholder={action === STATUS.CANCELLED ? 'Pourquoi annuler cette intervention ?' : 'Pourquoi mettre en attente ?'}
                 rows={4}
                 autoFocus
               />

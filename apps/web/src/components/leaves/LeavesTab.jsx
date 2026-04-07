@@ -23,6 +23,8 @@ import LeaveValidationPanel from './LeaveValidationPanel';
 import './LeavesTab.css';
 import { Button, Card, DetailRow, EmptyState, InlineAlert, Tooltip, SectionHeader } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // ═══════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════
@@ -130,9 +132,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
 
   const myStats = useMemo(() => ({
     total: myRequests.length,
-    pending: myRequests.filter(r => r.status === 'pending').length,
-    accepted: myRequests.filter(r => r.status === 'accepted' || r.status === 'modified').length,
-    refused: myRequests.filter(r => r.status === 'refused').length,
+    pending: myRequests.filter(r => r.status === STATUS.PENDING).length,
+    accepted: myRequests.filter(r => r.status === STATUS.ACCEPTED || r.status === 'modified').length,
+    refused: myRequests.filter(r => r.status === STATUS.REFUSED).length,
   }), [myRequests]);
 
   const filteredRequests = useMemo(() => {
@@ -150,7 +152,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
 
     return allRequests
       .filter(r => {
-        if (r.status !== 'accepted' && r.status !== 'modified') return false;
+        if (r.status !== STATUS.ACCEPTED && r.status !== 'modified') return false;
         const start = parseISO(r.start_date || r.startDate);
         const end = parseISO(r.end_date || r.endDate);
         return start <= monthEnd && end >= monthStart;
@@ -463,19 +465,19 @@ const LeavesTab = ({ persons = [], currentUser }) => {
               Toutes ({adminView === 'all' ? allRequests.length : myRequests.length})
             </button>
             <button
-              className={`lt-filter-btn pending ${requestFilter === 'pending' ? 'active' : ''}`}
+              className={`lt-filter-btn pending ${requestFilter === STATUS.PENDING ? 'active' : ''}`}
               onClick={() => setRequestFilter('pending')}
             >
               <Clock size={12} /> En attente
             </button>
             <button
-              className={`lt-filter-btn accepted ${requestFilter === 'accepted' ? 'active' : ''}`}
+              className={`lt-filter-btn accepted ${requestFilter === STATUS.ACCEPTED ? 'active' : ''}`}
               onClick={() => setRequestFilter('accepted')}
             >
               <CheckCircle size={12} /> Acceptées
             </button>
             <button
-              className={`lt-filter-btn refused ${requestFilter === 'refused' ? 'active' : ''}`}
+              className={`lt-filter-btn refused ${requestFilter === STATUS.REFUSED ? 'active' : ''}`}
               onClick={() => setRequestFilter('refused')}
             >
               <XCircle size={12} /> Refusées
@@ -568,7 +570,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                           <button className="lt-action-btn pdf" onClick={() => handleDownloadPdf(req.id)}>
                             <Download size={14} /> PDF
                           </button>
-                          {(req.status === 'pending' || req.status === 'accepted') && (
+                          {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) && (
                             cancellingId === req.id ? (
                               <div className="lt-cancel-confirm">
                                 <span>Confirmer ?</span>
@@ -614,7 +616,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       {showRequestForm && (
         <LeaveRequestForm
           person={null}
-          persons={persons.filter(p => p.status === 'active')}
+          persons={persons.filter(p => p.status === STATUS.ACTIVE)}
           isAdmin={isAdmin}
           currentUser={currentUser}
           onClose={() => setShowRequestForm(false)}

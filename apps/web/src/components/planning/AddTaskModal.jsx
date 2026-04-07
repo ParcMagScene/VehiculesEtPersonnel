@@ -7,6 +7,8 @@ import AffaireBadge from '../AffaireBadge';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
 import { Button, Input, Select } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './AddTaskModal.css';
 
 // ═══ Constantes (miroir de TaskPlanningPanel) ═══
@@ -238,7 +240,7 @@ export default function AddTaskModal({
         section: effectiveSection,
         title: finalTitle,
         person_id: personId || null,
-        status: 'pending',
+        status: STATUS.PENDING,
         source_type: sourceType,
         source_id: selectedGoogEvent?.id || null,
         google_event_title: selectedGoogEvent?.summary || selectedGoogEvent?.title || null,

@@ -3,6 +3,8 @@ import { X, User, Phone, Mail, Briefcase, Award, Calendar, MapPin, ExternalLink,
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import { Tag, Avatar, SectionHeader } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './PersonnelDetailPanel.css';
 
 const CONTRACT_TYPES = [
@@ -83,7 +85,7 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
                   {CONTRACT_TYPES.find(c => c.value === person.contractType)?.label || person.contractType}
                 </Tag>
               )}
-              {person.status === 'inactive' && (
+              {person.status === STATUS.INACTIVE && (
                 <Tag color="neutral" size="sm">Inactif</Tag>
               )}
             </div>
@@ -217,9 +219,9 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
                 <div className="pdp-absence-row">
                   <span className="pdp-absence-type" style={{ color: leaveColor }}>{leaveLabel}</span>
                   <span className="pdp-absence-status" style={{ color: statusColor }}>
-                    {a.status === 'pending' && <Clock size={10} />}
-                    {a.status === 'approved' && <Check size={10} />}
-                    {a.status === 'rejected' && <XCircle size={10} />}
+                    {a.status === STATUS.PENDING && <Clock size={10} />}
+                    {a.status === STATUS.APPROVED && <Check size={10} />}
+                    {a.status === STATUS.REJECTED && <XCircle size={10} />}
                     {statusLabel}
                   </span>
                 </div>

@@ -2,6 +2,8 @@ import React from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ArrowLeft, Car, Calendar, Settings, AlertCircle, ChevronRight, LayoutGrid, CheckCircle } from 'lucide-react';
+import { STATUS } from '../../constants';
+
 import './MobileParcDashboard.css';
 
 function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate, onBack, onCreateReservation, onCreateMaintenance }) {
@@ -13,13 +15,13 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
       r.vehicleId === v.id && new Date(r.endDate) >= now && new Date(r.date) <= now
     );
     const hasMaintenance = maintenances.some(m =>
-      m.vehicleId === v.id && m.status !== 'completed' && m.startDate && new Date(m.endDate || m.startDate) >= now
+      m.vehicleId === v.id && m.status !== STATUS.COMPLETED && m.startDate && new Date(m.endDate || m.startDate) >= now
     );
     return !hasReservation && !hasMaintenance;
   }).length;
 
   const activeReservations = reservations.filter(r => new Date(r.endDate) >= now).length;
-  const pendingMaintenances = maintenances.filter(m => m.status === 'pending').length;
+  const pendingMaintenances = maintenances.filter(m => m.status === STATUS.PENDING).length;
   const inProgressMaintenances = maintenances.filter(m => m.status === 'in_progress').length;
 
   return (

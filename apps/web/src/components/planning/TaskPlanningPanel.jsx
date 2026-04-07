@@ -14,6 +14,8 @@ import { useToast } from '../../hooks/useToast';
 import EventTaskModal from './EventTaskModal';
 import TaskEditModal from './TaskEditModal';
 import AddTaskModal from './AddTaskModal';
+import { STATUS } from '../../constants';
+
 import './TaskPlanningPanel.css';
 
 const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
@@ -238,7 +240,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       const data = await api.getPersons();
       // Filtrer pour ne garder que les permanents actifs
       const permanents = (Array.isArray(data) ? data : []).filter(
-        p => p.type === 'permanent' && p.status !== 'inactive'
+        p => p.type === 'permanent' && p.status !== STATUS.INACTIVE
       );
       setPersons(permanents);
     } catch {
@@ -983,7 +985,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         section: effectiveSection,
         title: finalTitle,
         person_id: newTaskPerson || null,
-        status: 'pending',
+        status: STATUS.PENDING,
         source_type: selectedGoogEvent ? (selectedGoogEvent._source === 'ical' ? 'ical_event' : 'google_event') : selectedAffaire ? 'affaire' : 'manual',
         source_id: selectedGoogEvent?.id || null,
         google_event_title: selectedGoogEvent?.summary || selectedGoogEvent?.title || null,
@@ -1023,7 +1025,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   const renderTaskRow = (task) => {
-    const isDone = task.status === 'done';
+    const isDone = task.status === STATUS.DONE;
     const isProgress = task.status === 'in_progress';
     const isGoogle = task.sourceType === 'google_event';
     const isHidden = task.visible === 0;
@@ -1327,7 +1329,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       : `${typeInfo.label}${event.affaireId && !affaireNum ? ' (' + event.affaireId + ')' : ''}`;
     const displayName = affaireNom || fallbackName;
 
-    const isDone = event.status === 'done';
+    const isDone = event.status === STATUS.DONE;
     const isProgress = event.status === 'in_progress';
 
     return (
@@ -1402,7 +1404,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
     const isExpanded = expandedRdv === affaire.numeroAffaire;
     const planningStatus = affaire.planningStatus || eventStatuses.get(`rdv:${affaire.numeroAffaire}`) || 'pending';
-    const isDone = planningStatus === 'done';
+    const isDone = planningStatus === STATUS.DONE;
     const isProgress = planningStatus === 'in_progress';
     const displayNom = affaire.nom || affaire.event_name || affaire.titre || affaire.client || typeInfo.label;
     const displayClient = affaire.client || '';
@@ -1549,7 +1551,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         {linkedTasks.length > 0 && (
           <div className="event-linked-tasks">
             {linkedTasks.map(t => {
-              const isDone = t.status === 'done';
+              const isDone = t.status === STATUS.DONE;
               const label = (t.title || '').replace(/\s*—.*$/, '').replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '').trim();
               const emoji = (t.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+/u)?.[0] || '📋';
               return (
@@ -1764,7 +1766,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         {linkedTasks.length > 0 && (
           <div className="event-linked-tasks">
             {linkedTasks.map(t => {
-              const isDone = t.status === 'done';
+              const isDone = t.status === STATUS.DONE;
               const label = (t.title || '').replace(/\s*—.*$/, '').replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '').trim();
               const emoji = (t.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+/u)?.[0] || '📋';
               return (
@@ -1830,7 +1832,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   // ── Rendu compact d'une mini-carte pour la vue semaine ──
   const renderWeekMiniCard = (item, type) => {
     if (type === 'task') {
-      const isDone = item.status === 'done';
+      const isDone = item.status === STATUS.DONE;
       const isProgress = item.status === 'in_progress';
       const sectionInfo = SECTIONS[normalizeSection(item.section || 'manual')] || SECTIONS.manual;
       return (
@@ -2154,7 +2156,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   const totalTasks = tasks.length;
-  const doneTasks = tasks.filter(t => t.status === 'done').length;
+  const doneTasks = tasks.filter(t => t.status === STATUS.DONE).length;
 
   // Toggle la visibilité d'une tâche sur l'affichage dynamique
   const handleToggleTaskVisible = async (task) => {

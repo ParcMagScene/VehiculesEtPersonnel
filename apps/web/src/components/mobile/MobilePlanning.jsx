@@ -2,6 +2,8 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { format, addDays, startOfMonth, endOfMonth, startOfDay, addMonths, subMonths, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { STATUS } from '../../constants';
+
 import './MobilePlanning.css';
 
 function MobilePlanning({ 
@@ -287,7 +289,7 @@ function MobilePlanning({
                 // Calculer les rows pour ce véhicule
                 const vehicleElements = calculateRows(vehicle.id, monthDays);
                 const reservationsWithRows = vehicleElements.filter(e => e.type === 'reservation');
-                const maintenancesWithRows = vehicleElements.filter(e => e.type === 'maintenance');
+                const maintenancesWithRows = vehicleElements.filter(e => e.type === STATUS.MAINTENANCE);
                 
                 return (
                 <div key={vehicle.id} className="mobile-vehicle-row">

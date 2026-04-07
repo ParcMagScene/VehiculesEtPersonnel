@@ -11,6 +11,8 @@ import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import './MobileAffaires.css';
 import { Input, Spinner, Avatar, SearchBar } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 // Statut temporel
 const getAffaireStatus = (a, todayStr) => {
   const debut = a.dateDebut || '';
@@ -79,8 +81,8 @@ function MobileAffaires({ onBack }) {
       .sort((a, b) => {
         const sa = getAffaireStatus(a, currentStr);
         const sb = getAffaireStatus(b, currentStr);
-        if (sa === 'active' && sb !== 'active') return -1;
-        if (sb === 'active' && sa !== 'active') return 1;
+        if (sa === STATUS.ACTIVE && sb !== STATUS.ACTIVE) return -1;
+        if (sb === STATUS.ACTIVE && sa !== STATUS.ACTIVE) return 1;
         return (a.dateDebut || '').localeCompare(b.dateDebut || '');
       });
   }, [affaires, currentDate, searchTerm, filterType]);
@@ -139,7 +141,7 @@ function MobileAffaires({ onBack }) {
     const a = selectedAffaire;
     const typeInfo = getTypeInfo(a.type);
     const status = getAffaireStatus(a, todayStr);
-    const statusLabel = status === 'active' ? 'En cours' : status === 'upcoming' ? 'À venir' : status === 'past' ? 'Terminée' : '';
+    const statusLabel = status === STATUS.ACTIVE ? 'En cours' : status === 'upcoming' ? 'À venir' : status === 'past' ? 'Terminée' : '';
 
     return (
       <div className="mobile-affaires">
@@ -284,8 +286,8 @@ function MobileAffaires({ onBack }) {
               <div className="maff-tasks-list">
                 {detailData.tasks.map((t, i) => (
                   <div key={t.id || i} className="maff-task-card">
-                    <span className={`maff-task-status-icon ${t.status === 'done' ? 'done' : t.status === 'in_progress' ? 'progress' : ''}`}>
-                      {t.status === 'done' ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+                    <span className={`maff-task-status-icon ${t.status === STATUS.DONE ? 'done' : t.status === 'in_progress' ? 'progress' : ''}`}>
+                      {t.status === STATUS.DONE ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
                     </span>
                     <div className="maff-task-info">
                       <div className="maff-task-title">{t.title || t.description || 'Tâche'}</div>
@@ -428,7 +430,7 @@ function MobileAffaires({ onBack }) {
             const currentStr = format(currentDate, 'yyyy-MM-dd');
             const status = getAffaireStatus(a, currentStr);
             const typeInfo = getTypeInfo(a.type);
-            const isActive = status === 'active';
+            const isActive = status === STATUS.ACTIVE;
             return (
               <div
                 key={a.id || a.numeroAffaire}

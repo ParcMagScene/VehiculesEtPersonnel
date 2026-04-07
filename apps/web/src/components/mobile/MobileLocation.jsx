@@ -8,6 +8,8 @@ import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from '../vehi
 import './MobileLocation.css';
 import { Input, SearchBar } from '@/design-system';
 
+import { STATUS } from '../../constants';
+
 function MobileLocation({ onBack }) {
   const [zones, setZones] = useState(null);
   const [stats, setStats] = useState([]);
@@ -381,7 +383,7 @@ function MobileLocation({ onBack }) {
                   </div>
                 </div>
                 <div className={`mloc-eq-status ${eq.status || 'unknown'}`}>
-                  {eq.status === 'available' ? 'Dispo' : eq.status === 'in_use' ? 'En cours' : eq.status === 'maintenance' ? 'SAV' : eq.status || '—'}
+                  {eq.status === 'available' ? 'Dispo' : eq.status === 'in_use' ? 'En cours' : eq.status === STATUS.MAINTENANCE ? 'SAV' : eq.status || '—'}
                 </div>
               </div>
             ))}

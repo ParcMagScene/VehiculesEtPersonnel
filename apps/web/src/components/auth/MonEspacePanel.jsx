@@ -16,6 +16,8 @@ import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
 import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './MonEspacePanel.css';
 
 const MonEspacePanel = ({ currentUser, onClose }) => {
@@ -120,9 +122,9 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
   // ─── Stats rapides
   const stats = {
     total: leaves.length,
-    pending: leaves.filter(r => r.status === 'pending').length,
-    accepted: leaves.filter(r => r.status === 'accepted' || r.status === 'modified').length,
-    refused: leaves.filter(r => r.status === 'refused').length,
+    pending: leaves.filter(r => r.status === STATUS.PENDING).length,
+    accepted: leaves.filter(r => r.status === STATUS.ACCEPTED || r.status === 'modified').length,
+    refused: leaves.filter(r => r.status === STATUS.REFUSED).length,
   };
 
   return (
@@ -286,7 +288,7 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
 
                         {/* ─── Actions PDF / Impression / Modifier ─── */}
                         <div className="mep-card-actions">
-                          {leave.status === 'pending' && (
+                          {leave.status === STATUS.PENDING && (
                             <button
                               className="mep-action-btn edit"
                               onClick={(e) => { e.stopPropagation(); setEditingLeave(leave); }}

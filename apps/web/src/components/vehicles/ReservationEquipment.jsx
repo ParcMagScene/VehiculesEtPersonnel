@@ -11,6 +11,8 @@ import { formatDimensions, buildChargementUrlForReservation, openInChargement } 
 import './ReservationEquipment.css';
 import { useToast } from '../../hooks/useToast';
 
+import { TIMING } from '../../constants';
+
 export default function ReservationEquipment({ reservationId, currentUser }) {
   const toast = useToast();
   const [data, setData] = useState({ items: [], summary: { count: 0, totalQuantity: 0, totalWeight: 0, totalVolume: 0 } });
@@ -173,7 +175,7 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
         setLoading(false);
       }
     };
-    const timer = setTimeout(load, 300);
+    const timer = setTimeout(load, TIMING.DEBOUNCE_SEARCH);
     return () => clearTimeout(timer);
   }, [search]);
 

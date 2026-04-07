@@ -6,6 +6,8 @@ import logger from '../../utils/logger';
 import './DashboardPanel.css';
 import { Spinner, Card, SectionHeader } from '@/design-system';
 
+import { ROLES, STATUS } from '../../constants';
+
 // ═══════════════════════════════════════════════════
 // Point 1 — Dashboard global desktop
 // Tableau de bord synthétique avec KPIs + activité récente
@@ -55,7 +57,7 @@ const DashboardPanel = ({
         const ordersData = results[2].status === 'fulfilled' ? results[2].value : [];
         if (Array.isArray(ordersData)) {
           setOrdersCount({
-            pending: ordersData.filter(o => o.status === 'pending' || o.status === 'en_attente').length,
+            pending: ordersData.filter(o => o.status === STATUS.PENDING || o.status === 'en_attente').length,
             total: ordersData.length,
           });
         }
@@ -80,7 +82,7 @@ const DashboardPanel = ({
   const vehicleStats = useMemo(() => {
     const total = vehicles.length;
     const inMaintenance = maintenances.filter(m =>
-      m.status === 'in_progress' || m.status === 'scheduled'
+      m.status === 'in_progress' || m.status === STATUS.SCHEDULED
     ).length;
     const immobilized = maintenances.filter(m => m.isImmobilized).length;
     
@@ -97,13 +99,13 @@ const DashboardPanel = ({
 
   const maintenanceStats = useMemo(() => {
     const overdue = maintenances.filter(m => {
-      if (m.status === 'completed' || m.status === 'cancelled') return false;
+      if (m.status === STATUS.COMPLETED || m.status === STATUS.CANCELLED) return false;
       const dueDate = m.scheduledDate || m.dueDate;
       return dueDate && isPast(new Date(dueDate)) && !isToday(new Date(dueDate));
     }).length;
 
     const upcoming7d = maintenances.filter(m => {
-      if (m.status === 'completed' || m.status === 'cancelled') return false;
+      if (m.status === STATUS.COMPLETED || m.status === STATUS.CANCELLED) return false;
       const dueDate = m.scheduledDate || m.dueDate;
       if (!dueDate) return false;
       const d = new Date(dueDate);
@@ -118,7 +120,7 @@ const DashboardPanel = ({
   const personnelStats = useMemo(() => {
     return {
       total: persons.length,
-      active: persons.filter(p => p.status === 'active' || !p.status).length,
+      active: persons.filter(p => p.status === STATUS.ACTIVE || !p.status).length,
     };
   }, [persons]);
 
@@ -163,7 +165,7 @@ const DashboardPanel = ({
 
   const upcomingMaintenances = useMemo(() => {
     return maintenances
-      .filter(m => m.status !== 'completed' && m.status !== 'cancelled')
+      .filter(m => m.status !== STATUS.COMPLETED && m.status !== STATUS.CANCELLED)
       .sort((a, b) => {
         const da = a.scheduledDate || a.dueDate || '9999';
         const db = b.scheduledDate || b.dueDate || '9999';
@@ -396,7 +398,7 @@ const DashboardPanel = ({
         )}
 
         {/* Demandes en attente (admin) */}
-        {currentUser?.role === 'admin' && pendingRequests > 0 && (
+        {currentUser?.role === ROLES.ADMIN && pendingRequests > 0 && (
           <div className="dashboard-section section-pending">
             <SectionHeader className="section-header" title="📬 Demandes en attente" />
             <div className="section-body">

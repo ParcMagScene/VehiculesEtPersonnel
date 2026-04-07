@@ -6,12 +6,14 @@
 
 import React, { useState, useEffect, useRef, memo } from 'react';
 
+import { STATUS } from '../../constants';
+
 const SAMPLE_TASKS = [
-  { time: '07:00', period: 'AM', title: 'Prépa sono festival Dupont', section: 'prep_locations', sectionLabel: 'Prépa Location', status: 'pending', affaireNum: 'AF32887', affaireType: 'Location' },
-  { time: '08:30', period: 'AM', title: 'Chargement camion 3T', section: 'chargement', sectionLabel: 'Chargement', status: 'pending', affaireNum: '' },
-  { time: '09:00', period: 'AM', title: 'Départ livraison Mairie', section: 'depart', sectionLabel: 'Départ', status: 'done', affaireNum: 'AF32899', affaireType: 'Prestation' },
-  { time: '', period: 'PM', title: 'Récup du barnum Legrand', section: 'recuperation', sectionLabel: 'Récupération', status: 'pending', affaireNum: '' },
-  { time: '15:30', period: 'PM', title: 'Courses visserie + câbles', section: 'courses', sectionLabel: 'Courses', status: 'pending', affaireNum: '' },
+  { time: '07:00', period: 'AM', title: 'Prépa sono festival Dupont', section: 'prep_locations', sectionLabel: 'Prépa Location', status: STATUS.PENDING, affaireNum: 'AF32887', affaireType: 'Location' },
+  { time: '08:30', period: 'AM', title: 'Chargement camion 3T', section: 'chargement', sectionLabel: 'Chargement', status: STATUS.PENDING, affaireNum: '' },
+  { time: '09:00', period: 'AM', title: 'Départ livraison Mairie', section: 'depart', sectionLabel: 'Départ', status: STATUS.DONE, affaireNum: 'AF32899', affaireType: 'Prestation' },
+  { time: '', period: 'PM', title: 'Récup du barnum Legrand', section: 'recuperation', sectionLabel: 'Récupération', status: STATUS.PENDING, affaireNum: '' },
+  { time: '15:30', period: 'PM', title: 'Courses visserie + câbles', section: 'courses', sectionLabel: 'Courses', status: STATUS.PENDING, affaireNum: '' },
 ];
 
 function TVScreenMini({ state = {} }) {
@@ -98,7 +100,7 @@ function TVScreenMini({ state = {} }) {
     const color = getTaskColor(task);
     const iconFile = getTaskIcon(task);
     const eventId = String(task.id || i);
-    const isDone = task.status === 'done' || completed.includes(eventId);
+    const isDone = task.status === STATUS.DONE || completed.includes(eventId);
     // Plage horaire : "07:00 → 08:30" comme le vrai TV
     const endTime = task.end_time || task.endTime || '';
     const timeDisplay = task.time

@@ -3,6 +3,8 @@ import { format, addDays, startOfDay, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Car, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
+import { STATUS } from '../../constants';
+
 import './MobileAvailability.css';
 
 function MobileAvailability({ vehicles, reservations, maintenances, onClose, onCreateReservation }) {
@@ -30,7 +32,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
     // Vérifier interventions
     const hasMaintenance = maintenances.some(m => {
       if (m.vehicleId !== vehicleId) return false;
-      if (!m.startDate || m.status === 'completed') return false;
+      if (!m.startDate || m.status === STATUS.COMPLETED) return false;
       const maintStart = parseISO(m.startDate);
       const maintEnd = m.endDate ? parseISO(m.endDate) : maintStart;
       return dayStart <= maintEnd && dayEnd >= maintStart;
@@ -168,7 +170,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
 
                 const maintenance = maintenances.find(m => {
                   if (m.vehicleId !== vehicle.id) return false;
-                  if (!m.startDate || m.status === 'completed') return false;
+                  if (!m.startDate || m.status === STATUS.COMPLETED) return false;
                   const dayStart = startOfDay(currentDay);
                   const dayEnd = new Date(dayStart);
                   dayEnd.setHours(23, 59, 59, 999);

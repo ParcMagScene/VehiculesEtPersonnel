@@ -68,11 +68,12 @@
       "files": [
         "docs/06-Changelog/CHANGELOG_API.md",
         "docs/06-Changelog/CHANGELOG_DB.md",
+        "docs/06-Changelog/CHANGELOG_UI.md",
         "docs/06-Changelog/CHANGELOG_DOCS.md"
       ]
     }
   },
-  "totalFiles": 40,
+  "totalFiles": 41,
   "totalEndpoints": 243,
   "totalTables": 87,
   "totalModules": 16

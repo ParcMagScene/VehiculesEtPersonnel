@@ -54,6 +54,7 @@
 - [SilentRefresh.md](06-Changelog/SilentRefresh.md) — Spec du Silent JWT Refresh (✅ implémenté)
 - [CHANGELOG_API.md](06-Changelog/CHANGELOG_API.md) — Changelog des endpoints API
 - [CHANGELOG_DB.md](06-Changelog/CHANGELOG_DB.md) — Changelog du schéma DB
+- [CHANGELOG_UI.md](06-Changelog/CHANGELOG_UI.md) — Changelog frontend/UI
 - [CHANGELOG_DOCS.md](06-Changelog/CHANGELOG_DOCS.md) — Changelog de la documentation
 
 ---

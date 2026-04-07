@@ -22,7 +22,7 @@
 
 | Version | Date | Description |
 |---------|------|-------------|
-| 2.0.0 | 2026-04-07 | Migration monorepo, audit sécurité (Phases 1-4), Documentation Continue, Versioning Continu |
+| 2.0.0 | 2026-04-07 | Migration monorepo, audit sécurité (Phases 1-4), Documentation Continue, Versioning Continu, Gouvernance Open-Source |
 | 1.0.0 | 2025 | Version initiale — gestion véhicules, personnel, matériel |
 
 ---

@@ -11,8 +11,10 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 ## [2.0.0] — 2026-04-07
 
 ### Added
+- **Gouvernance Open-Source** — GOVERNANCE.md, CODE_OF_CONDUCT.md, CODING_STANDARDS.md, ROADMAP.md
+- **Templates GitHub** — Bug report, feature request, security report, PR template, CODEOWNERS
 - **Versioning Continu** — Protocole 9 étapes pour suivi automatique des versions
-- **Documentation Continue** — 40 fichiers de documentation technique (API, DB, modules, workflows, règles métier)
+- **Documentation Continue** — 41 fichiers de documentation technique (API, DB, modules, workflows, règles métier)
 - **Audit sécurité** — 88 vulnérabilités identifiées, 19 corrigées (Phases 1-4)
 - VERSION.md — Fichier de version globale
 - versions.json — Index centralisé des versions

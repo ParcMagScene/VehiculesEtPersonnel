@@ -1,0 +1,34 @@
+# CODEOWNERS — eM@g
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global — mainteneur principal review tout
+* @ParcMagScene
+
+# Backend API
+apps/api/ @ParcMagScene
+
+# Frontend Web
+apps/web/ @ParcMagScene
+
+# Client TV
+apps/tv-client/ @ParcMagScene
+
+# Documentation
+docs/ @ParcMagScene
+
+# Sécurité — attention particulière
+SECURITY.md @ParcMagScene
+.github/workflows/ @ParcMagScene
+
+# Gouvernance
+GOVERNANCE.md @ParcMagScene
+CONTRIBUTING.md @ParcMagScene
+CODE_OF_CONDUCT.md @ParcMagScene
+
+# Versioning
+VERSION.md @ParcMagScene
+CHANGELOG.md @ParcMagScene
+versions.json @ParcMagScene
+
+# Prompts maîtres
+prompts/ @ParcMagScene

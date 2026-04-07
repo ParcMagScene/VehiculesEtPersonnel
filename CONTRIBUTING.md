@@ -11,8 +11,8 @@ Merci de votre intérêt pour eM@g ! Ce document explique comment contribuer au 
 ## Installation locale
 
 ```bash
-git clone https://github.com/your-org/emag.git
-cd emag
+git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
+cd VehiculesEtPersonnel
 npm install
 cp apps/api/.env.example apps/api/.env
 # Éditez apps/api/.env avec vos valeurs
@@ -70,12 +70,20 @@ Suivez le format [Conventional Commits](https://www.conventionalcommits.org/) :
 
 ## Signaler un bug
 
-Ouvrez une [issue](https://github.com/your-org/emag/issues) avec :
+Ouvrez une [issue](https://github.com/ParcMagScene/VehiculesEtPersonnel/issues) avec :
 
 - Description du problème
 - Étapes pour reproduire
 - Comportement attendu vs observé
 - Version de Node.js et navigateur utilisé
+
+## Documents associés
+
+- [GOVERNANCE.md](GOVERNANCE.md) — Modèle de gouvernance, rôles, processus
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — Code de conduite
+- [CODING_STANDARDS.md](CODING_STANDARDS.md) — Conventions de développement
+- [ROADMAP.md](ROADMAP.md) — Feuille de route
+- [SECURITY.md](SECURITY.md) — Politique de sécurité
 
 ## Licence
 

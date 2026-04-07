@@ -59,7 +59,7 @@
 .weekday-name {
   text-align: center;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   padding: 0.5rem;
 }
@@ -132,7 +132,7 @@
 }
 
 .day-number {
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--theme-bg-dark);
 }
@@ -160,7 +160,7 @@
 .week-selector-list h4 {
   margin: 0 0 1rem 0;
   color: var(--theme-bg-dark);
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 700;
 }
 
@@ -202,7 +202,7 @@
 }
 
 .week-dates {
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 

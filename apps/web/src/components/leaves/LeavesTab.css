@@ -57,7 +57,7 @@
   font-weight: 700;
   min-width: 20px;
   height: 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -79,7 +79,7 @@
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border, var(--theme-border));
   background: var(--theme-bg-card, white);
   color: var(--theme-text-primary, var(--theme-text-dark));
@@ -125,7 +125,7 @@
   padding: 10px 14px;
   background: var(--theme-danger-bg);
   color: var(--theme-danger-dark);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
 }
 .lt-error button {
@@ -146,7 +146,7 @@
 .lt-kpi-card {
   background: var(--theme-bg-card, white);
   border: 1px solid var(--theme-border, var(--theme-border));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -207,7 +207,7 @@
   display: flex;
   gap: 4px;
   background: var(--theme-bg-secondary, var(--theme-border-light));
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 3px;
 }
 .lt-nav-btn {
@@ -217,7 +217,7 @@
   padding: 7px 14px;
   border: none;
   background: transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--theme-text-secondary, var(--theme-text-secondary));
   font-size: 0.82rem;
   font-weight: 500;
@@ -238,7 +238,7 @@
 .lt-section {
   background: var(--theme-bg-card, white);
   border: 1px solid var(--theme-border, var(--theme-border));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 16px;
 }
 .lt-section-header {
@@ -277,7 +277,7 @@
   gap: 12px;
   padding: 10px 12px;
   background: var(--theme-bg-secondary, var(--theme-bg-page));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border, var(--theme-border));
 }
 .lt-pending-person {
@@ -291,7 +291,7 @@
   align-items: center;
   gap: 12px;
   flex: 1;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 .lt-pending-type {
   display: flex;
@@ -312,7 +312,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 /* Team calendar (admin) */
@@ -327,7 +327,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.82rem;
 }
 .lt-team-row:nth-child(odd) {
@@ -366,11 +366,11 @@
   gap: 6px;
   padding: 8px 12px;
   background: var(--theme-bg-secondary, var(--theme-bg-page));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border, var(--theme-border));
 }
 .lt-stat-icon {
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 .lt-stat-count {
   font-weight: 700;
@@ -438,7 +438,7 @@
   grid-template-columns: 1fr 80px 80px 80px;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.82rem;
 }
 .lt-balances-row:nth-child(odd) {
@@ -477,7 +477,7 @@
   padding: 6px 12px;
   border: 1px solid var(--theme-border, var(--theme-border));
   background: var(--theme-bg-card, white);
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   font-size: 0.78rem;
   color: var(--theme-text-secondary, var(--theme-text-secondary));
   cursor: pointer;
@@ -504,7 +504,7 @@
 .lt-request-card {
   background: var(--theme-bg-card, white);
   border: 1px solid var(--theme-border, var(--theme-border));
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.15s;
@@ -547,7 +547,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary, var(--theme-text-secondary));
 }
 .lt-card-days {
@@ -564,7 +564,7 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
@@ -582,7 +582,7 @@
 .lt-detail-row {
   display: flex;
   gap: 8px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 .lt-detail-row.modified {
   color: var(--theme-info);
@@ -616,7 +616,7 @@
   padding: 5px 12px;
   border: 1px solid var(--theme-border, var(--theme-border));
   background: var(--theme-bg-card, white);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.15s;

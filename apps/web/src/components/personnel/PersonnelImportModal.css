@@ -35,12 +35,12 @@
   align-items: center;
   gap: 2px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-light, var(--theme-border));
   background: var(--theme-bg-card);
   cursor: pointer;
   transition: all 0.15s ease;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   min-width: 80px;
 }
@@ -86,7 +86,7 @@
   font-size: 0.85rem;
   color: var(--theme-text-secondary);
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s ease;
 }
 
@@ -98,7 +98,7 @@
   max-height: 300px;
   overflow-y: auto;
   margin-top: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-light, var(--theme-border));
 }
 
@@ -113,7 +113,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -140,7 +140,7 @@
 .pi-type-tag {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.72rem;
   font-weight: 500;
   white-space: nowrap;
@@ -183,7 +183,7 @@
 }
 
 .pi-analyze-hint {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 

@@ -34,7 +34,7 @@
   font-weight: 700;
   min-width: 20px;
   height: 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -48,7 +48,7 @@
   padding: 6px;
   cursor: pointer;
   display: flex;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .mmsg-back:active {
@@ -90,7 +90,7 @@
   color: var(--theme-text-inverse);
   border: none;
   padding: 10px 24px;
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -217,7 +217,7 @@
 
 .mmsg-chat-name {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: var(--font-md);
   color: var(--theme-bg-dark);
 }
 
@@ -241,7 +241,7 @@
   color: var(--theme-text-secondary);
   font-size: 0.72rem;
   padding: 4px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-weight: 500;
 }
 
@@ -271,7 +271,7 @@
 
 .mmsg-bubble {
   padding: 10px 14px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   font-size: 0.9rem;
   line-height: 1.4;
   word-wrap: break-word;
@@ -298,7 +298,7 @@
 
 .mmsg-img {
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 
@@ -338,7 +338,7 @@
 .mmsg-input {
   flex: 1;
   border: 1px solid var(--theme-border-medium);
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   padding: 10px 16px;
   font-size: 0.9rem;
   outline: none;
@@ -408,7 +408,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -431,7 +431,7 @@
   justify-content: center;
   color: var(--theme-text-inverse);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 .mmsg-no-users {
@@ -449,7 +449,7 @@
   flex: 1;
   padding: 12px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   font-size: 0.9rem;
   cursor: pointer;
@@ -459,7 +459,7 @@
   flex: 1;
   padding: 12px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: var(--theme-text-inverse);
   font-size: 0.9rem;

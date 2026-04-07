@@ -71,7 +71,7 @@
   text-transform: capitalize;
   cursor: pointer;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .maff-date-label.today {
@@ -90,7 +90,7 @@
   border: none;
   background: var(--theme-primary-main);
   color: var(--theme-text-inverse);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   border-radius: 0 0 12px 12px;
   cursor: pointer;
@@ -109,7 +109,7 @@
   padding: 8px 12px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .maff-search-icon {
@@ -161,7 +161,7 @@
   gap: 4px;
   white-space: nowrap;
   padding: 5px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
   color: var(--theme-text-body);
@@ -198,7 +198,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   padding: 1px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   min-width: 20px;
   text-align: center;
 }
@@ -236,7 +236,7 @@
 /* ── Carte Affaire ── */
 .maff-card {
   background: var(--theme-bg-card);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 12px;
   box-shadow: 0 1px 3px var(--shadow-inner);
   border-left: 4px solid transparent;
@@ -267,7 +267,7 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
   color: var(--theme-text-inverse);
   flex-shrink: 0;
@@ -284,7 +284,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -319,7 +319,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
 }
 
@@ -350,7 +350,7 @@
   gap: 3px;
   font-size: 0.72rem;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-muted);
 }
@@ -377,7 +377,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   color: var(--theme-text-inverse);
   font-size: 0.82rem;
   font-weight: 600;
@@ -385,7 +385,7 @@
 
 .maff-status-badge {
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -474,7 +474,7 @@
   color: var(--theme-text-body);
   padding: 6px 10px;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .maff-counter.muted {
@@ -490,7 +490,7 @@
   gap: 8px;
   padding: 8px 10px;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 6px;
   cursor: pointer;
 }
@@ -502,7 +502,7 @@
 .maff-linked-label {
   font-size: 0.72rem;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--theme-primary-main);
   color: var(--theme-text-inverse);
   font-weight: 600;
@@ -540,7 +540,7 @@
   gap: 8px;
   padding: 8px 10px;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   flex-wrap: wrap;
 }
 
@@ -563,7 +563,7 @@
   font-size: 0.7rem;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-muted);
   text-transform: capitalize;
@@ -587,7 +587,7 @@
   gap: 8px;
   padding: 8px 10px;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .maff-task-status-icon {
@@ -637,7 +637,7 @@
   gap: 10px;
   padding: 8px 10px;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .maff-person-avatar {

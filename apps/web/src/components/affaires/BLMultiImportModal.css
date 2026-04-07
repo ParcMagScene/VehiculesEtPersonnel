@@ -2,7 +2,7 @@
 
 .bl-multi-import-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 780px;
   max-width: 95vw;
   max-height: 90vh;
@@ -77,7 +77,7 @@
   justify-content: center;
   padding: 40px 20px;
   border: 2px dashed var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--theme-bg-tertiary);
   cursor: pointer;
   transition: all 0.2s;
@@ -150,7 +150,7 @@
   padding: 10px 14px;
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 .batch-global-type-label {
   display: flex;
@@ -187,7 +187,7 @@
   gap: 10px;
   padding: 8px 12px;
   background: var(--theme-bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
   color: var(--theme-text-secondary);
   flex-wrap: wrap;
@@ -197,7 +197,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -210,7 +210,7 @@
   padding: 14px 16px;
   background: var(--success-tint-subtle);
   border: 1px solid var(--success-tint-vivid);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 .batch-results-summary h4 {
   display: flex;
@@ -255,7 +255,7 @@
 
 .batch-file-item {
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   transition: border-color 0.15s;
 }
@@ -307,7 +307,7 @@
 .doc-type-badge {
   font-size: 0.68rem;
   padding: 2px 7px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -331,7 +331,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .confidence-badge.high { background: var(--success-tint); color: var(--theme-success-alt, var(--theme-success-alt)); }
@@ -344,7 +344,7 @@
   color: var(--theme-text-muted);
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
   transition: all 0.15s;
 }
@@ -424,7 +424,7 @@
 /* ─── Full parsed fields grid ─── */
 .detail-fields-grid {
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px 10px;
   background: var(--theme-bg-card);
   display: flex;
@@ -466,7 +466,7 @@
 .detail-parsed-field .field-input {
   flex: 1;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-secondary);
   color: var(--theme-text-primary);
@@ -483,7 +483,7 @@
 /* ─── Sections for BP documents ─── */
 .detail-sections {
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px 10px;
   background: var(--theme-bg-card);
 }
@@ -504,7 +504,7 @@
 }
 .detail-section {
   border: 1px solid var(--sec-border, var(--theme-border));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--sec-bg, transparent);
   margin-bottom: 4px;
   overflow: hidden;
@@ -525,7 +525,7 @@
   color: var(--theme-text-muted);
   background: var(--theme-bg-secondary);
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .detail-section-dates {
   margin-left: auto;
@@ -576,7 +576,7 @@
 /* ─── Flat articles (non-section docs) ─── */
 .detail-articles {
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .detail-articles-toggle {
@@ -647,7 +647,7 @@
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-primary);
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--theme-border);
   font-size: 0.68rem;
 }
@@ -668,7 +668,7 @@
 .detail-raw-text {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px;
   font-family: monospace;
   font-size: 0.68rem;
@@ -723,7 +723,7 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-size: 0.75rem;
   font-weight: 600;
 }

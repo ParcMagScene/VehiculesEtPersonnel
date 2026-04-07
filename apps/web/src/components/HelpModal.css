@@ -14,7 +14,7 @@
 
 .help-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 90%;
   max-width: 720px;
   max-height: 85vh;
@@ -64,7 +64,7 @@
   padding: 6px 12px;
   border-radius: var(--close-btn-radius);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -104,7 +104,7 @@
   padding: 8px 16px;
   border: none;
   background: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 500;
@@ -133,7 +133,7 @@
   margin: 12px 24px;
   padding: 8px 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   transition: border-color 0.15s;
   flex-shrink: 0;
@@ -221,7 +221,7 @@
 /* ═══ Cards ═══ */
 .help-card {
   background: var(--theme-bg-page);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 12px 16px;
   margin-bottom: 6px;
   border-left: 3px solid var(--theme-border);
@@ -242,7 +242,7 @@
 }
 
 .help-card p {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   line-height: 1.5;
   margin: 0;
@@ -281,7 +281,7 @@
   align-items: center;
   gap: 12px;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: background 0.15s;
 }
 
@@ -309,7 +309,7 @@
 
 .faq-item {
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   overflow: hidden;
   transition: all 0.2s;
 }
@@ -376,7 +376,7 @@
   .help-modal {
     width: 95%;
     max-height: 90vh;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
   .help-body { padding: 16px; }
   .help-tabs { padding: 6px 16px; }

@@ -7,7 +7,7 @@
 
 .gen-orders-modal {
   background: var(--bg-primary, var(--theme-bg-card));
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: min(92vw, 680px);
   max-height: 85vh;
   display: flex;
@@ -43,7 +43,7 @@
   align-items: center;
   gap: 8px;
   padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--theme-danger, var(--theme-danger)) 10%, transparent);
   color: var(--theme-danger, var(--theme-danger));
   font-weight: 500;
@@ -81,7 +81,7 @@
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   background: var(--bg-tertiary, #f3f3f3);
 }
 .gen-orders-warn {
@@ -98,7 +98,7 @@
 
 .supplier-block {
   border: 1px solid var(--border-color, var(--theme-border));
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   overflow: hidden;
   transition: border-color .15s;
 }
@@ -144,7 +144,7 @@
   font-size: .8rem;
   color: var(--text-muted, var(--theme-text-muted));
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--bg-primary, var(--theme-bg-card));
   white-space: nowrap;
 }
@@ -227,7 +227,7 @@
 .gen-orders-results {
   margin-top: 16px;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--bg-secondary, var(--theme-bg-secondary));
 }
 .gen-orders-results h4 {
@@ -263,7 +263,7 @@
   .gen-orders-modal {
     width: 98vw;
     max-height: 92vh;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
   .supplier-header {
     flex-wrap: wrap;

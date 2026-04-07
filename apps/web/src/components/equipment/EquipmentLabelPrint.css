@@ -21,7 +21,7 @@
 
 .elp-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 480px;
   max-width: 95vw;
   max-height: 90vh;
@@ -61,7 +61,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--close-btn-hover-bg);
   background: var(--close-btn-bg);
   color: var(--theme-text-inverse);
@@ -90,7 +90,7 @@
 }
 
 .elp-preview-container h4 {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-muted);
   text-transform: uppercase;
@@ -100,7 +100,7 @@
 
 .elp-label-preview {
   border: 2px dashed var(--theme-border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 6px;
   background: var(--theme-bg-secondary);
   display: flex;
@@ -130,7 +130,7 @@
 
 .elp-label-ref {
   font-weight: 800;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-primary);
   white-space: nowrap;
 }
@@ -158,7 +158,7 @@
 }
 
 .elp-dimensions {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
   font-weight: 500;
 }
@@ -177,7 +177,7 @@
 }
 
 .elp-field > label {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-secondary);
 }
@@ -192,8 +192,8 @@
   padding: 6px 12px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -223,7 +223,7 @@
 }
 
 .elp-field-inline label {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-secondary);
   white-space: nowrap;
@@ -233,8 +233,8 @@
   width: 70px;
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   text-align: center;
   outline: none;
   transition: border-color 0.15s;
@@ -259,8 +259,8 @@
   padding: 8px 16px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -278,8 +278,8 @@
   padding: 8px 20px;
   border: none;
   background: var(--theme-primary);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-text-inverse);
   cursor: pointer;
@@ -295,7 +295,7 @@
   display: flex;
   gap: 0;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -303,7 +303,7 @@
   padding: 5px 14px;
   border: none;
   background: var(--theme-bg-card);
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -332,8 +332,8 @@
   padding: 8px 18px;
   border: 1px solid var(--theme-primary);
   background: var(--theme-bg-card);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-primary);
   cursor: pointer;
@@ -349,7 +349,7 @@
   .elp-modal {
     width: 95vw;
     max-height: 95vh;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
 
   .elp-header {

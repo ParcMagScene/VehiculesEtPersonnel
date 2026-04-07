@@ -4,12 +4,12 @@
 .sav-import-dup-box {
   padding: 10px 14px;
   background: var(--theme-danger-bg);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   border: 1px solid var(--theme-danger-border, #fecaca);
 }
 
 .sav-import-dup-title {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-danger-text);
   margin: 0 0 8px;
@@ -26,7 +26,7 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-danger-text);
 }
 
@@ -46,7 +46,7 @@
 }
 
 .sav-import-unmatched-desc {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   margin-bottom: 12px;
 }
@@ -54,17 +54,17 @@
 /* --- Cellules tableau --- */
 .sav-import-mono {
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--font-xs);
 }
 
 .sav-import-dup-badge {
   color: #ef4444;
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
 }
 
 .sav-import-small {
-  font-size: 11px;
+  font-size: var(--font-xs);
 }
 
 /* --- Équipement lié --- */
@@ -75,7 +75,7 @@
 }
 
 .sav-import-linked-name {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #10b981;
   font-weight: 600;
 }
@@ -91,13 +91,13 @@
 /* --- Modal de liaison manuelle --- */
 .sav-import-link-overlay {
   top: 0;
-  z-index: 2000;
+  z-index: var(--z-modal);
   background: var(--theme-overlay);
 }
 
 .sav-import-link-modal {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   max-width: 500px;
   width: 90%;
@@ -128,8 +128,8 @@
   margin-bottom: 12px;
   padding: 8px;
   background: var(--theme-bg-page);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
 }
 
 .sav-import-link-search-wrap {
@@ -148,8 +148,8 @@
   width: 100%;
   padding: 8px 8px 8px 32px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   box-sizing: border-box;
 }
 
@@ -157,14 +157,14 @@
   flex: 1;
   overflow-y: auto;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .sav-import-link-item {
   padding: 8px 12px;
   cursor: pointer;
   border-bottom: 1px solid var(--theme-border);
-  font-size: 13px;
+  font-size: var(--font-base);
   transition: background 0.1s;
 }
 
@@ -174,7 +174,7 @@
 
 .sav-import-link-ref {
   margin-left: 8px;
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 
@@ -182,12 +182,12 @@
   padding: 20px;
   text-align: center;
   color: var(--theme-text-muted);
-  font-size: 13px;
+  font-size: var(--font-base);
 }
 
 /* --- Note de résultat --- */
 .sav-import-note {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   margin-top: 12px;
 }

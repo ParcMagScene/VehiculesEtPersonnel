@@ -51,14 +51,14 @@
 }
 
 .mep-title {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   margin: 0;
   line-height: 1.2;
 }
 
 .mep-subtitle {
-  font-size: 12px;
+  font-size: var(--font-sm);
   opacity: 0.8;
 }
 
@@ -68,7 +68,7 @@
   color: var(--theme-text-inverse);
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,7 +94,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-secondary);
   display: flex;
@@ -147,8 +147,8 @@
   padding: 10px 14px;
   background: var(--theme-danger-bg);
   color: var(--theme-danger-dark);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
 }
 
 .mep-error button {
@@ -157,7 +157,7 @@
   border: none;
   color: var(--theme-danger-dark);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 [data-theme="dark"] .mep-error {
@@ -169,7 +169,7 @@
 .mep-balance-card {
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 14px 16px;
 }
 
@@ -177,7 +177,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-secondary);
   margin-bottom: 10px;
@@ -195,7 +195,7 @@
   flex: 1;
   padding: 8px;
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .mep-balance-value {
@@ -209,7 +209,7 @@
 .mep-balance-value.success { color: var(--theme-success-alt); }
 
 .mep-balance-label {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   margin-top: 2px;
 }
@@ -226,7 +226,7 @@
 .mep-stats-row {
   display: flex;
   gap: 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 
@@ -244,8 +244,8 @@
   padding: 4px 10px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.15s;
@@ -277,7 +277,7 @@
   gap: 10px;
   padding: 40px;
   color: var(--theme-text-tertiary);
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .mep-spin {
@@ -299,7 +299,7 @@
 /* ─── Carte congé ─── */
 .mep-card {
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   overflow: hidden;
   transition: box-shadow 0.15s;
@@ -336,19 +336,19 @@
 }
 
 .mep-type-icon {
-  font-size: 20px;
+  font-size: var(--font-xl);
   width: 32px;
   text-align: center;
 }
 
 .mep-card-type {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
 }
 
 .mep-card-dates {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   margin-top: 1px;
 }
@@ -360,15 +360,15 @@
 }
 
 .mep-card-days {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-text-primary);
 }
 
 .mep-status-badge {
   padding: 3px 10px;
-  border-radius: 10px;
-  font-size: 11px;
+  border-radius: var(--radius-md-lg);
+  font-size: var(--font-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -395,7 +395,7 @@
 .mep-detail-row {
   display: flex;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--font-base);
   line-height: 1.4;
 }
 
@@ -421,8 +421,8 @@
   gap: 6px;
   padding: 7px 14px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;

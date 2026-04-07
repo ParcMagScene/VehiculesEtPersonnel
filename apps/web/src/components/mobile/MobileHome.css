@@ -17,7 +17,7 @@
   padding: 12px 4px;
   background: none;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: opacity 0.15s;
 }
@@ -47,7 +47,7 @@
 
 .module-card {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 20px;
   display: flex;
   flex-wrap: wrap;
@@ -203,7 +203,7 @@
   color: var(--theme-text-secondary);
   background: var(--theme-bg-secondary);
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-weight: 500;
 }
 

@@ -35,7 +35,7 @@
 
 .loading-container p {
   color: var(--theme-text-gray);
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 500;
 }
 
@@ -216,8 +216,8 @@
 
 .notification-badge {
   padding: 0.625rem 1.125rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-base);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -449,7 +449,7 @@
 
 .notifications-popup {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 600px;
   max-height: 70vh;
@@ -494,7 +494,7 @@
 .close-popup-button {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: var(--font-2xl);
   cursor: pointer;
   color: var(--theme-text-gray);
   padding: 4px 8px;
@@ -529,7 +529,7 @@
 }
 
 .notification-section-title {
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-heading);
   margin: 0 0 12px 0;
@@ -547,7 +547,7 @@
   font-weight: 700;
   min-width: 20px;
   height: 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -564,7 +564,7 @@
 .notification-item {
   background: var(--theme-bg-secondary);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 16px;
   cursor: pointer;
   transition: all 0.2s;
@@ -585,7 +585,7 @@
 
 .notification-vehicle-name {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--font-md);
   color: var(--theme-text-heading);
   display: flex;
   align-items: center;
@@ -600,7 +600,7 @@
 .notification-status {
   font-size: 0.75rem;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-weight: 600;
 }
 
@@ -699,8 +699,8 @@
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   resize: none;
   font-family: inherit;
 }
@@ -722,7 +722,7 @@
   gap: 4px;
   padding: 6px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -932,7 +932,7 @@
 .conflict-warning-text {
   margin: 8px 0;
   color: var(--theme-danger-text-alt);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -942,7 +942,7 @@
 .notification-description {
   margin: 8px 0;
   color: var(--theme-text-body);
-  font-size: 0.875rem;
+  font-size: var(--font-base);
 }
 
 .notification-date {
@@ -952,7 +952,7 @@
   font-weight: 600;
   background: var(--theme-info-bg);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   margin-right: 8px;
 }
 
@@ -970,7 +970,7 @@
   font-weight: 600;
   background: var(--theme-bg-tertiary);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .header-controls {
@@ -987,7 +987,7 @@
   gap: 4px;
   background: var(--theme-border-light);
   padding: 3px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
 }
 
@@ -997,10 +997,10 @@
   gap: 4px;
   padding: 5px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary);
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -1079,7 +1079,7 @@
   color: var(--theme-bg-dark);
   min-width: 200px;
   text-align: center;
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .current-date.clickable {
@@ -1119,7 +1119,7 @@
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   transition: all 0.2s;
   white-space: nowrap;
@@ -1191,7 +1191,7 @@
   background: var(--theme-gradient-alt);
   color: var(--theme-text-inverse);
   padding: 12px 18px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1269,8 +1269,8 @@
   color: var(--theme-indigo);
   border: none;
   padding: 4px 14px;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -1285,7 +1285,7 @@
   border: none;
   color: var(--glass-opaque);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: var(--font-md);
   padding: 2px;
 }
 
@@ -1482,7 +1482,7 @@
   transform: translateY(-50%);
   width: 18px;
   height: 18px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--theme-danger-border);
   color: var(--theme-danger);
   border: none;
@@ -1575,7 +1575,7 @@
 
   .current-date {
     min-width: 150px;
-    font-size: 0.875rem;
+    font-size: var(--font-base);
   }
 
   .date-navigation {
@@ -1662,7 +1662,7 @@
 
   .management-button,
   .settings-button {
-    font-size: 0.875rem;
+    font-size: var(--font-base);
   }
 
   .module-tabs {
@@ -1718,7 +1718,7 @@
   }
 
   .header-title-container .module-tab {
-    font-size: 0.8rem;
+    font-size: var(--font-sm);
     padding: 0.4rem 0.75rem;
   }
 
@@ -1742,7 +1742,7 @@
 
   .view-button {
     padding: 4px 8px;
-    font-size: 11px;
+    font-size: var(--font-xs);
   }
 
   .current-date {
@@ -1881,7 +1881,7 @@
   color: var(--theme-text-secondary);
   font-size: 0.85rem;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;

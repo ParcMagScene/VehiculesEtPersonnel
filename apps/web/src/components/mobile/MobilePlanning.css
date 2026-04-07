@@ -29,7 +29,7 @@
 .month-nav-btn {
   background: var(--theme-bg-tertiary);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   width: 36px;
   height: 36px;
   display: flex;
@@ -48,14 +48,14 @@
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   transition: background 0.2s;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   margin-left: auto;
 }
@@ -66,7 +66,7 @@
 
 .mobile-planning-header h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--theme-text-heading);
   text-transform: capitalize;
@@ -83,7 +83,7 @@
   justify-content: center;
   color: var(--theme-text-gray);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: background 0.2s;
 }
 
@@ -144,14 +144,14 @@
 }
 
 .mobile-day-name {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-gray);
   text-transform: uppercase;
 }
 
 .mobile-day-date {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-heading);
   margin-top: 2px;
@@ -191,13 +191,13 @@
 }
 
 .mobile-vehicle-name {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-heading);
 }
 
 .mobile-vehicle-registration {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-gray);
   font-family: 'Monaco', monospace;
   background: var(--theme-bg-card);
@@ -229,7 +229,7 @@
 
 /* Items de réservation */
 .mobile-reservation {
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -289,7 +289,7 @@
 }
 
 .mobile-item-title {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--theme-text-heading);
   white-space: normal;
@@ -297,7 +297,7 @@
 }
 
 .mobile-item-subtitle {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   margin-top: 2px;
   font-weight: 500;
 }
@@ -312,7 +312,7 @@
 
 /* Items de maintenance */
 .mobile-maintenance {
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0;
   display: flex;
   flex-direction: column;

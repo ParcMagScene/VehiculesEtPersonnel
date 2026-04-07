@@ -28,7 +28,7 @@
   height: 85vh;
   max-height: 750px;
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-modal);
   overflow: hidden;
   animation: pdfSlideUp 0.25s ease;
@@ -58,7 +58,7 @@
 
 .pdf-export-header-left h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-primary);
 }
@@ -76,7 +76,7 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -121,7 +121,7 @@
   gap: 6px;
   padding: 5px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.78rem;
@@ -169,7 +169,7 @@
   width: 18px;
   height: 18px;
   border: 2px solid var(--theme-border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -206,7 +206,7 @@
   cursor: pointer;
   transition: background 0.1s;
   user-select: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   margin: 1px 8px;
 }
 
@@ -428,7 +428,7 @@
 .pdf-export-footer .btn-cancel {
   padding: 8px 18px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.82rem;
@@ -447,7 +447,7 @@
   gap: 6px;
   padding: 8px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   font-size: 0.82rem;

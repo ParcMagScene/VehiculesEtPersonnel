@@ -14,7 +14,7 @@
 
 .profile-edit-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 400px;
   max-width: 95vw;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -27,7 +27,7 @@
 
 .profile-edit-header-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--font-lg);
   color: var(--theme-text-inverse);
   display: flex;
   align-items: center;
@@ -80,7 +80,7 @@
 }
 
 .profile-edit-upload-status {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-primary);
 }
 
@@ -89,7 +89,7 @@
   border: none;
   cursor: pointer;
   color: #ef4444;
-  font-size: 13px;
+  font-size: var(--font-base);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -106,7 +106,7 @@
 
 .profile-edit-label {
   display: block;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-body);
   margin-bottom: 6px;
@@ -116,7 +116,7 @@
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 15px;
   outline: none;
   transition: border-color 0.2s;
@@ -130,7 +130,7 @@
 .profile-edit-readonly {
   padding: 10px 14px;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 15px;
   color: var(--theme-text-gray);
 }

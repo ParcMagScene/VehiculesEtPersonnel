@@ -14,7 +14,7 @@
   gap: 6px;
   padding: 8px 16px;
   border: 2px dashed var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 0.85rem;
   color: var(--theme-text-secondary);
@@ -24,7 +24,7 @@
 
 .bl-batch-analyze-btn {
   padding: 8px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: none;
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
@@ -95,7 +95,7 @@
 
 .bl-batch-tag {
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.78rem;
   font-weight: 500;
   background: var(--theme-bg-secondary);
@@ -145,7 +145,7 @@
 
 .bl-batch-result-card {
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 6px;
 }
 
@@ -181,7 +181,7 @@
 
 .bl-batch-result-doctype {
   padding: 2px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.7rem;
   font-weight: 500;
   background: var(--theme-primary-light);
@@ -255,7 +255,7 @@
 /* --- KPI Card --- */
 .bl-batch-kpi-card {
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border);
   text-align: center;
 }

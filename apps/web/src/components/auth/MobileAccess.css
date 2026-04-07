@@ -73,7 +73,7 @@
   justify-content: center;
   gap: 0.5rem;
   color: var(--theme-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   margin: 0;
 }
 
@@ -104,7 +104,7 @@
   padding: 0.75rem;
   border: 2px solid var(--theme-border);
   border-radius: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   font-family: monospace;
   background: var(--theme-bg-secondary);
   color: var(--theme-text-primary);
@@ -169,7 +169,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
   transition: background 0.15s;
@@ -258,7 +258,7 @@
   padding: 6px 14px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
   font-weight: 500;
   color: var(--theme-text-secondary);
@@ -281,7 +281,7 @@
   width: 60px;
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
   text-align: center;
   background: var(--theme-bg-card);
@@ -303,7 +303,7 @@
   background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -330,7 +330,7 @@
 .access-info p {
   margin: 0;
   color: var(--theme-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   line-height: 1.5;
 }
 

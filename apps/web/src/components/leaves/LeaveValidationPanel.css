@@ -16,7 +16,7 @@
 
 .lvp-panel {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 860px;
   max-height: 90vh;
@@ -44,7 +44,7 @@
 
 .lvp-header-title h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
 }
 
@@ -58,7 +58,7 @@
 .lvp-close-btn {
   background: var(--glass-light);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px;
   cursor: pointer;
   color: var(--theme-text-inverse);
@@ -85,7 +85,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 
@@ -106,10 +106,10 @@
   gap: 6px;
   padding: 6px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   transition: all 0.2s;
 }
@@ -129,9 +129,9 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--close-btn-hover-bg);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
 }
 
@@ -158,9 +158,9 @@
   padding: 10px 14px;
   background: var(--theme-danger-bg);
   border: 1px solid var(--btn-danger-hover-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--theme-danger-text-alt);
-  font-size: 13px;
+  font-size: var(--font-base);
 }
 
 .lvp-error button {
@@ -169,7 +169,7 @@
   border: none;
   cursor: pointer;
   color: var(--theme-danger-text-alt);
-  font-size: 18px;
+  font-size: var(--font-lg);
 }
 
 /* ─── CONTENT ─── */
@@ -197,7 +197,7 @@
 .lvp-card {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   overflow: hidden;
   transition: box-shadow 0.2s;
   border-left: 4px solid var(--theme-border);
@@ -245,13 +245,13 @@
 }
 
 .lvp-person-name {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
 }
 
 .lvp-person-meta {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
 }
 
@@ -264,17 +264,17 @@
 }
 
 .lvp-card-type {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
 }
 
 .lvp-card-dates {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-subtle);
 }
 
 .lvp-card-days {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-primary);
 }
@@ -291,14 +291,14 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 11px;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-xs);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .lvp-card-priority {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-warning);
   font-weight: 600;
 }
@@ -322,7 +322,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-subtle);
 }
 
@@ -362,9 +362,9 @@
   gap: 6px;
   padding: 8px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   transition: all 0.2s;
 }
@@ -396,7 +396,7 @@
   padding: 14px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -406,7 +406,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
 }
@@ -418,7 +418,7 @@
 }
 
 .lvp-decision-field label {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-subtle);
 }
@@ -427,8 +427,8 @@
 .lvp-decision-field input {
   padding: 8px 10px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   font-family: inherit;
   color: var(--theme-text-primary);
 }
@@ -460,7 +460,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-subtle);
 }
@@ -469,7 +469,7 @@
   width: 100%;
   height: 80px;
   border: 2px solid var(--theme-border-muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: crosshair;
   background: var(--theme-bg-card);
   touch-action: none;
@@ -481,10 +481,10 @@
   align-self: flex-start;
   padding: 3px 10px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--theme-bg-card);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 
@@ -508,10 +508,10 @@
   gap: 5px;
   padding: 7px 14px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-subtle);
   transition: all 0.2s;
 }
@@ -546,7 +546,7 @@
 /* ─── CONFLICTS ─── */
 .lvp-conflict-card {
   border: 1px solid var(--btn-warning-hover-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-warning-bg);
   overflow: hidden;
 }
@@ -557,7 +557,7 @@
   gap: 8px;
   padding: 10px 14px;
   background: var(--theme-warning-bg);
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-warning-text);
 }
@@ -565,7 +565,7 @@
 .lvp-conflict-overlap {
   margin-left: auto;
   font-weight: 400;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .lvp-conflict-requests {
@@ -579,20 +579,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-subtle);
 }
 
 .lvp-conflict-score {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-warning);
   font-weight: 600;
 }
 
 .lvp-conflict-vs {
   text-align: center;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--theme-warning-dark);
 }

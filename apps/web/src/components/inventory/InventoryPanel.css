@@ -39,7 +39,7 @@
   color: var(--theme-text-secondary, var(--theme-neutral));
   cursor: pointer;
   font-size: 0.85rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.15s;
   position: relative;
 }
@@ -58,7 +58,7 @@
   font-size: 0.65rem;
   min-width: 16px;
   height: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,7 +73,7 @@
 
 .inv-stat-badge {
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.75rem;
   font-weight: 600;
   background: var(--theme-bg-hover, var(--shadow-inner));
@@ -121,7 +121,7 @@
   color: var(--theme-text-primary, var(--theme-text-body));
   cursor: pointer;
   font-size: 0.82rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
 .inv-btn:hover { background: var(--theme-bg-hover, var(--theme-bg-tertiary)); }
@@ -144,7 +144,7 @@
   background: transparent;
   color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .inv-btn-icon:hover { background: var(--theme-bg-hover, var(--theme-bg-tertiary)); }
 .inv-btn-icon.danger:hover { background: rgba(220, 53, 69, 0.1); color: var(--theme-danger); }
@@ -173,7 +173,7 @@
 .inv-search-group input {
   padding: 6px 10px;
   border: 1px solid var(--theme-border, var(--theme-border-muted));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
   background: var(--theme-bg-secondary, var(--theme-bg-card));
   color: var(--theme-text-primary, var(--theme-text-body));
@@ -222,7 +222,7 @@
 .inv-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -249,7 +249,7 @@
   gap: 12px;
   padding: 16px;
   background: var(--theme-bg-secondary, var(--theme-bg-card));
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   border: 1px solid var(--theme-border, var(--theme-border));
 }
 .inv-kpi-card.warning { border-left: 3px solid #ff9800; }
@@ -261,7 +261,7 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-hover, var(--shadow-xs));
   color: var(--theme-primary, var(--theme-info));
   flex-shrink: 0;
@@ -307,7 +307,7 @@
   gap: 4px;
   padding: 14px;
   background: var(--theme-bg-secondary, var(--theme-bg-card));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border, var(--theme-border));
   font-size: 0.85rem;
 }
@@ -324,7 +324,7 @@
   align-items: center;
   gap: 4px;
   padding: 16px 24px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-size: 0.85rem;
   flex: 1;
   text-align: center;
@@ -343,7 +343,7 @@
 /* ── Price analysis ── */
 .inv-price-result {
   background: var(--theme-bg-secondary, var(--theme-bg-card));
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   border: 1px solid var(--theme-border, var(--theme-border));
   padding: 20px;
   margin-bottom: 20px;
@@ -371,7 +371,7 @@
   flex-direction: column;
   align-items: center;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-hover, var(--overlay-subtle));
 }
 .inv-kpi-mini .label { font-size: 0.72rem; color: var(--theme-text-muted, var(--theme-text-muted)); text-transform: uppercase; }
@@ -394,7 +394,7 @@
   flex: 1;
   height: 8px;
   background: var(--theme-bg-hover, var(--theme-border));
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   position: relative;
   overflow: hidden;
 }
@@ -403,7 +403,7 @@
   top: 0;
   height: 100%;
   background: var(--theme-primary, var(--theme-info));
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   opacity: 0.7;
 }
 
@@ -415,7 +415,7 @@
 }
 .inv-anomaly-card {
   background: var(--theme-bg-secondary, var(--theme-bg-card));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border, var(--theme-border));
   padding: 14px;
   border-left: 3px solid #6c757d;
@@ -436,7 +436,7 @@
 .inv-anomaly-values {
   display: flex;
   gap: 16px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   margin-top: 4px;
   color: var(--theme-text-muted, var(--theme-text-muted));
 }
@@ -451,7 +451,7 @@
 .inv-form {
   background: var(--theme-bg-secondary, var(--theme-bg-card));
   border: 1px solid var(--theme-border, var(--theme-border));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 16px;
   margin-bottom: 16px;
 }
@@ -465,7 +465,7 @@
 .inv-form-grid select {
   padding: 8px 10px;
   border: 1px solid var(--theme-border, var(--theme-border-muted));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
   background: var(--theme-bg-primary, var(--theme-bg-card));
   color: var(--theme-text-primary, var(--theme-text-body));
@@ -490,7 +490,7 @@
 .inv-count-row input {
   padding: 6px 10px;
   border: 1px solid var(--theme-border, var(--theme-border-muted));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
   background: var(--theme-bg-secondary, var(--theme-bg-card));
   color: var(--theme-text-primary, var(--theme-text-body));
@@ -501,7 +501,7 @@
   margin-top: 16px;
   padding: 16px;
   background: var(--theme-bg-secondary, var(--theme-bg-card));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border, var(--theme-border));
 }
 .inv-count-result h4 { margin: 0 0 10px; }
@@ -510,7 +510,7 @@
   display: flex;
   gap: 16px;
   padding: 6px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 0.85rem;
   margin-bottom: 4px;
 }
@@ -525,7 +525,7 @@
 .inv-select {
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text);
   font-size: 0.85rem;
@@ -535,7 +535,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.82rem;
   font-weight: 500;
 }

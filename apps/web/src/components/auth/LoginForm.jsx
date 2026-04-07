@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, User } from 'lucide-react';
-import api, { getApiUrl } from '../../utils/api';
+import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
 import './LoginForm.css';
 import { Button, FormField, Input, Avatar, InlineAlert } from '@/design-system';
@@ -42,11 +42,8 @@ const LoginForm = ({ onLogin }) => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const response = await fetch(`${getApiUrl()}/auth/users-public`);
-        if (response.ok) {
-          const data = await response.json();
-          setUsers(data);
-        }
+        const data = await api.getUsersPublic();
+        setUsers(data);
       } catch (err) {
         console.error('Erreur chargement utilisateurs:', err);
       }
@@ -99,25 +96,7 @@ const LoginForm = ({ onLogin }) => {
     setError('');
     
     try {
-      const response = await fetch(`${getApiUrl()}/auth/force-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          email: conflictUser.email, 
-          password: conflictUser.password 
-        })
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la connexion forcée');
-      }
-
-      const data = await response.json();
-      
-      // [AUDIT Phase 3] Le token est dans le cookie httpOnly
-      api.setAuth(data.user);
+      const data = await api.forceLogin(conflictUser.email, conflictUser.password);
       
       // Fermer le modal et informer le parent
       setShowSessionConflict(false);
@@ -135,17 +114,7 @@ const LoginForm = ({ onLogin }) => {
     // Étape 1 : Demander un code de vérification (OTP) par email
     if (resetStep === 'request') {
       try {
-        const response = await fetch(`${getApiUrl()}/auth/self-reset-password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: resetFormEmail, name: resetFormName })
-        });
-
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          throw new Error(data.error || 'Erreur lors de la demande de code');
-        }
-
+        await api.selfResetPassword(resetFormEmail, resetFormName);
         setResetStep('confirm');
         setResetError('Un code de vérification a été envoyé à votre email.');
       } catch (err) {
@@ -168,24 +137,7 @@ const LoginForm = ({ onLogin }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${getApiUrl()}/auth/set-new-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          email: resetFormEmail,
-          resetToken,
-          newPassword,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Erreur lors de la réinitialisation');
-      }
-
-      const data = await response.json();
-      api.setAuth(data.user);
+      const data = await api.setNewPassword(resetFormEmail, resetToken, newPassword);
       setShowResetPassword(false);
       window.location.reload();
     } catch (err) {

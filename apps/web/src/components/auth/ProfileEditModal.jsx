@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera, User, Save, Trash2 } from 'lucide-react';
-import api, { getApiUrl } from '../../utils/api';
+import api from '../../utils/api';
 import { Button, Input, Avatar, InlineAlert } from '@/design-system';
 
 // targetUser: si fourni (mode admin), on édite cet utilisateur via les endpoints admin
@@ -62,26 +62,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
     setUploading(true);
     setError('');
     try {
-      const baseUrl = getApiUrl();
-      const formData = new FormData();
-      formData.append('avatar', file);
-
-      const avatarUrl = isAdminMode
-        ? `${baseUrl}/users/${editedUser.id}/avatar`
-        : `${baseUrl}/users/me/avatar`;
-
-      const response = await fetch(avatarUrl, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur upload');
-      }
-
-      const data = await response.json();
+      const data = await api.uploadAvatar(file, isAdminMode ? editedUser.id : null);
       onUserUpdate(data.user);
       setPreviewUrl(null);
     } catch (err) {
@@ -96,18 +77,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
     setUploading(true);
     setError('');
     try {
-      const baseUrl = getApiUrl();
-      const avatarUrl = isAdminMode
-        ? `${baseUrl}/users/${editedUser.id}/avatar`
-        : `${baseUrl}/users/me/avatar`;
-
-      const response = await fetch(avatarUrl, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (!response.ok) throw new Error('Erreur suppression');
-
+      await api.deleteAvatar(isAdminMode ? editedUser.id : null);
       onUserUpdate({ ...editedUser, avatar: null });
       setPreviewUrl(null);
     } catch (err) {

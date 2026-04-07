@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import logger from "../../utils/logger";
-import api, { getApiUrl } from '../../utils/api';
+import api from '../../utils/api';
 import './AffaireImportModal.css';
 import { extractTextFromPDF, parseBonLivraison, parseDate, smartParse, batchParsePDFs, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../../utils/indexedDB';
@@ -421,22 +421,8 @@ const AffaireImportModal = ({
             
             // Sauvegarder aussi le PDF physiquement sur le serveur
             try {
-              const formData = new FormData();
-              formData.append('pdf', file);
-              formData.append('affaireId', affaireId);
-              
-              const response = await fetch(`${getApiUrl()}/upload-bl`, {
-                method: 'POST',
-                credentials: 'include',
-                body: formData
-              });
-              
-              if (response.ok) {
-                const result = await response.json();
-                pdfData.serverPath = result.path;
-              } else {
-                console.warn('⚠️ Échec sauvegarde serveur, PDF uniquement dans IndexedDB');
-              }
+              const result = await api.uploadBL(file, affaireId);
+              pdfData.serverPath = result.path;
             } catch (serverError) {
               console.warn('⚠️ Erreur sauvegarde serveur:', serverError);
             }

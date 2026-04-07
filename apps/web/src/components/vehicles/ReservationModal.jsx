@@ -293,12 +293,8 @@ const ReservationModal = ({
     const loadTripDetails = async () => {
       if (isEdit && reservation?.id) {
         try {
-          const response = await fetch(`/api/trip-details/${reservation.id}`, {
-            credentials: 'include'
-          });
-          
-          if (response.ok) {
-            const details = await response.json();
+          const details = await api.getTripDetails(reservation.id);
+          if (details) {
             const detailsMap = {};
             details.forEach(detail => {
               // Transformer les noms snake_case en camelCase
@@ -479,28 +475,12 @@ const ReservationModal = ({
         return null;
       }
       
-      const response = await fetch('/api/trip-details', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          reservationId: reservation?.id,
-          eventId: selectedEventForTrip.event.id,
-          eventOrder: selectedEventForTrip.eventIndex,
-          ...tripData
-        })
+      const savedData = await api.saveTripDetails({
+        reservationId: reservation?.id,
+        eventId: selectedEventForTrip.event.id,
+        eventOrder: selectedEventForTrip.eventIndex,
+        ...tripData
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur serveur:', response.status, errorText);
-        toast.error(`Erreur lors de l'enregistrement: ${response.status} - ${errorText}`);
-        return null;
-      }
-      
-      const savedData = await response.json();
       
       // Transformer les noms snake_case en camelCase pour cohérence
       const transformedData = {
@@ -577,30 +557,17 @@ const ReservationModal = ({
     }
     
     try {
-      const response = await fetch('/api/trip-details/link', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          reservationId: reservation.id,
-          eventId1,
-          eventId2
-        })
+      const data = await api.linkTrips({
+        reservationId: reservation.id,
+        eventId1,
+        eventId2
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        // Mettre à jour tripDetails avec les données retournées
-        const detailsMap = {};
-        data.tripDetails.forEach(detail => {
-          detailsMap[detail.event_id] = transformTripDetail(detail);
-        });
-        setTripDetails(detailsMap);
-      } else {
-        toast.error('Erreur lors de la liaison des trajets');
-      }
+      // Mettre à jour tripDetails avec les données retournées
+      const detailsMap = {};
+      data.tripDetails.forEach(detail => {
+        detailsMap[detail.event_id] = transformTripDetail(detail);
+      });
+      setTripDetails(detailsMap);
     } catch (error) {
       console.error('Erreur liaison trajets:', error);
     }
@@ -611,26 +578,15 @@ const ReservationModal = ({
     if (!reservation?.id) return;
     
     try {
-      const response = await fetch('/api/trip-details/unlink', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          reservationId: reservation.id,
-          eventId
-        })
+      const data = await api.unlinkTrip({
+        reservationId: reservation.id,
+        eventId
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const detailsMap = {};
-        data.tripDetails.forEach(detail => {
-          detailsMap[detail.event_id] = transformTripDetail(detail);
-        });
-        setTripDetails(detailsMap);
-      }
+      const detailsMap = {};
+      data.tripDetails.forEach(detail => {
+        detailsMap[detail.event_id] = transformTripDetail(detail);
+      });
+      setTripDetails(detailsMap);
     } catch (error) {
       console.error('Erreur déliaison trajet:', error);
     }

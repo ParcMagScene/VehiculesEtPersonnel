@@ -198,6 +198,63 @@ export class ApiClient {
     this.clearAuth();
   }
 
+  async getUsersPublic() {
+    return this.request('/auth/users-public');
+  }
+
+  async forceLogin(email, password) {
+    const data = await this.request('/auth/force-login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    this.setAuth(data.user);
+    return data;
+  }
+
+  async selfResetPassword(email, name) {
+    return this.request('/auth/self-reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, name }),
+    });
+  }
+
+  async selfResetPasswordWithNewPassword(email, name, newPassword) {
+    return this.request('/auth/self-reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, name, newPassword }),
+    });
+  }
+
+  async setNewPassword(email, resetToken, newPassword) {
+    const data = await this.request('/auth/set-new-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, resetToken, newPassword }),
+    });
+    this.setAuth(data.user);
+    return data;
+  }
+
+  async uploadAvatar(file, userId = null) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const endpoint = userId ? `/users/${userId}/avatar` : '/users/me/avatar';
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Erreur upload');
+    }
+    return response.json();
+  }
+
+  async deleteAvatar(userId = null) {
+    const endpoint = userId ? `/users/${userId}/avatar` : '/users/me/avatar';
+    return this.request(endpoint, { method: 'DELETE' });
+  }
+
   isAuthenticated() {
     // [AUDIT Phase 3] On vérifie la présence de l'info user (le token est dans le cookie httpOnly)
     return !!this.user;

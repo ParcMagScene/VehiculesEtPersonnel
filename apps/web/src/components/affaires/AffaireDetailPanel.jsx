@@ -236,15 +236,8 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     let successCount = 0;
     for (const file of files) {
       try {
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('affaireId', affaire.numeroAffaire);
-        const resp = await fetch(`${API_BASE_URL}/upload-attachment`, {
-          method: 'POST',
-          credentials: 'include',
-          body: fd,
-        });
-        if (resp.ok) successCount++;
+        await api.uploadAttachment(file, affaire.numeroAffaire);
+        successCount++;
       } catch (err) {
         console.error('Erreur upload:', err);
       }
@@ -746,15 +739,8 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     if (!affaire.numeroAffaire) { setAttachmentFiles([]); return; }
     const loadAttachments = async () => {
       try {
-        const resp = await fetch(`${API_BASE_URL}/attachments/${encodeURIComponent(affaire.numeroAffaire)}`, {
-          credentials: 'include'
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          setAttachmentFiles(data.files || []);
-        } else {
-          setAttachmentFiles([]);
-        }
+        const data = await api.getAttachments(affaire.numeroAffaire);
+        setAttachmentFiles(data.files || []);
       } catch {
         setAttachmentFiles([]);
       }

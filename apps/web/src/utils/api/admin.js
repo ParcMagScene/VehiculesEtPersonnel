@@ -98,6 +98,12 @@ export function registerAdminMethods(ApiClient) {
     async getAccessRequests() {
       return this.request('/access-requests');
     },
+    async checkEmailAccessRequest(email) {
+      return this.request('/access-requests/check-email', { method: 'POST', body: JSON.stringify({ email }) });
+    },
+    async createAccessRequest(data) {
+      return this.request('/access-requests', { method: 'POST', body: JSON.stringify(data) });
+    },
     async updateAccessRequest(requestId, status, isAdmin = false) {
       return this.request(`/access-requests/${requestId}`, { method: 'PATCH', body: JSON.stringify({ status, is_admin: isAdmin }) });
     },

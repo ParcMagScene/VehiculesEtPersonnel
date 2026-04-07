@@ -22,6 +22,7 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Link, Link2, MapPin, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import api from '../../utils/api';
 import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../../utils/dateUtils';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../../utils/vehicleUtils';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
@@ -136,19 +137,9 @@ const unlinkTripDirectly = async (reservationId, eventId, btn, onLinked) => {
   try {
     if (!reservationId) return;
     if (btn) btn.classList.add('linking');
-    const response = await fetch('/api/trip-details/unlink', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ reservationId, eventId })
-    });
-    if (response.ok) {
-      if (btn) btn.classList.remove('linking');
-      if (onLinked) onLinked();
-    } else {
-      if (btn) btn.classList.remove('linking');
-      console.error('Erreur déliaison trajet');
-    }
+    await api.unlinkTrip({ reservationId, eventId });
+    if (btn) btn.classList.remove('linking');
+    if (onLinked) onLinked();
   } catch (err) {
     if (btn) btn.classList.remove('linking');
     console.error('Erreur déliaison trajet:', err);
@@ -159,19 +150,9 @@ const linkTripsDirectly = async (reservationId, eventId1, eventId2, btn, onLinke
   try {
     if (!reservationId) return;
     if (btn) btn.classList.add('linking');
-    const response = await fetch('/api/trip-details/link', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ reservationId, eventId1, eventId2 })
-    });
-    if (response.ok) {
-      if (btn) { btn.classList.remove('linking'); btn.classList.add('linked'); }
-      if (onLinked) onLinked();
-    } else {
-      if (btn) btn.classList.remove('linking');
-      console.error('Erreur liaison trajets');
-    }
+    await api.linkTrips({ reservationId, eventId1, eventId2 });
+    if (btn) { btn.classList.remove('linking'); btn.classList.add('linked'); }
+    if (onLinked) onLinked();
   } catch (err) {
     if (btn) btn.classList.remove('linking');
     console.error('Erreur liaison trajets:', err);
@@ -693,15 +674,10 @@ const Calendar = ({
   const fetchTripData = useCallback(async (reservationId) => {
     if (calendarTripCache[reservationId]) return calendarTripCache[reservationId];
     try {
-      const response = await fetch(`/api/trip-details/${reservationId}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const trips = Array.isArray(data) ? data : (data.tripDetails || []);
-        setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
-        return trips;
-      }
+      const data = await api.getTripDetails(reservationId);
+      const trips = Array.isArray(data) ? data : (data.tripDetails || []);
+      setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
+      return trips;
     } catch (err) {
       console.error('Erreur fetch trip data:', err);
     }
@@ -765,27 +741,19 @@ const Calendar = ({
   const handleSaveTripFromCalendar = useCallback(async (tripFormData) => {
     if (!calendarTripModal) return null;
     try {
-      const response = await fetch('/api/trip-details', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          reservationId: calendarTripModal.reservation.id,
-          eventId: calendarTripModal.event.id,
-          eventOrder: 0,
-          ...tripFormData
-        })
+      const savedData = await api.saveTripDetails({
+        reservationId: calendarTripModal.reservation.id,
+        eventId: calendarTripModal.event.id,
+        eventOrder: 0,
+        ...tripFormData
       });
-      if (response.ok) {
-        const savedData = await response.json();
-        // Invalider le cache pour cette réservation
-        setCalendarTripCache(prev => {
-          const updated = { ...prev };
-          delete updated[calendarTripModal.reservation.id];
-          return updated;
-        });
-        return savedData;
-      }
+      // Invalider le cache pour cette réservation
+      setCalendarTripCache(prev => {
+        const updated = { ...prev };
+        delete updated[calendarTripModal.reservation.id];
+        return updated;
+      });
+      return savedData;
     } catch (err) {
       console.error('Erreur sauvegarde trip:', err);
     }
@@ -801,9 +769,7 @@ const Calendar = ({
       return u;
     });
     // Re-fetcher immédiatement
-    fetch(`/api/trip-details/${reservationId}`, {
-      credentials: 'include'
-    }).then(r => r.ok ? r.json() : []).then(data => {
+    api.getTripDetails(reservationId).then(data => {
       const trips = Array.isArray(data) ? data : (data.tripDetails || []);
       setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
     }).catch(() => {});
@@ -819,7 +785,7 @@ const Calendar = ({
   // Pré-charger les trip data pour les réservations tournée visibles
   useEffect(() => {
     if (!reservations || !Array.isArray(reservations)) return;
-    const controller = new AbortController();
+    let aborted = false;
     const tourneeIds = reservations
       .filter(r => (r.isTournee || r.is_tournee) && r.id && !calendarTripCache[r.id])
       .map(r => r.id);
@@ -832,13 +798,12 @@ const Calendar = ({
     const loadBatch = async (ids) => {
       const BATCH_SIZE = 5;
       for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-        if (controller.signal.aborted) return;
+        if (aborted) return;
         const batch = ids.slice(i, i + BATCH_SIZE);
         await Promise.allSettled(batch.map(id =>
-          fetch(`/api/trip-details/${id}`, { credentials: 'include', signal: controller.signal })
-            .then(r => r.ok ? r.json() : [])
+          api.getTripDetails(id)
             .then(data => {
-              if (controller.signal.aborted) return;
+              if (aborted) return;
               const trips = Array.isArray(data) ? data : (data.tripDetails || []);
               setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
             })
@@ -848,7 +813,7 @@ const Calendar = ({
       }
     };
     if (allIds.length > 0) loadBatch(allIds);
-    return () => controller.abort();
+    return () => { aborted = true; };
   }, [reservations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ouvrir le modal automatiquement quand une réservation doit être éditée depuis l'extérieur

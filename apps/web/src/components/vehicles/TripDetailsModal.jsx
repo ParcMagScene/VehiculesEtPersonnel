@@ -184,13 +184,11 @@ const TripDetailsModal = ({
         // Utiliser companyAddress si fourni, sinon charger depuis l'API
         let address = companyAddress;
         if (!address) {
-          const response = await fetch('/api/config/calendarConfig', {
-            credentials: 'include'
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
+          try {
+            const data = await api.getConfig('calendarConfig');
             address = data?.companyAddress || '';
+          } catch {
+            // ignore
           }
         }
         

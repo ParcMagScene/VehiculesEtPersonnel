@@ -31,6 +31,9 @@ export function registerVehicleMethods(ApiClient) {
     async deleteReservation(id) {
       return this.request(`/reservations/${id}`, { method: 'DELETE' });
     },
+    async patchReservation(id, data) {
+      return this.request(`/reservations/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    },
 
     // Demandes de réservation (pour non-admins)
     async getReservationRequests() {
@@ -111,6 +114,20 @@ export function registerVehicleMethods(ApiClient) {
     // Garages
     async getGarages() {
       return this.request('/garages');
+    },
+
+    // Trip Details (détails de trajet)
+    async getTripDetails(reservationId) {
+      return this.request(`/trip-details/${reservationId}`, { skipCamelCase: true });
+    },
+    async saveTripDetails(data) {
+      return this.request('/trip-details', { method: 'POST', body: JSON.stringify(data), skipCamelCase: true });
+    },
+    async linkTrips(data) {
+      return this.request('/trip-details/link', { method: 'POST', body: JSON.stringify(data), skipCamelCase: true });
+    },
+    async unlinkTrip(data) {
+      return this.request('/trip-details/unlink', { method: 'POST', body: JSON.stringify(data), skipCamelCase: true });
     },
   });
 }

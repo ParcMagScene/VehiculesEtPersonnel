@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, User, Send, Lock, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
 import { Button, ModalLayout, Input, InlineAlert, FormField } from '@/design-system';
-import { getApiUrl } from '../../utils/api';
 import api from '../../utils/api';
 import './AccessRequestModal.css';
 
@@ -25,13 +24,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
 
   const checkEmailAuthorization = async (email) => {
     try {
-      const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/access-requests/check-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
+      const data = await api.checkEmailAccessRequest(email);
       if (data.authorized) {
         if (data.name) {
           setFormData(prev => ({ ...prev, name: prev.name || data.name }));
@@ -58,18 +51,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
     setError('');
 
     try {
-      const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/access-requests`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la demande');
-      }
+      const data = await api.createAccessRequest(formData);
 
       if (data.autoApproved) {
         setStep('create-password');

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LogIn, UserPlus, Mail, Key } from 'lucide-react';
-import api, { getApiUrl } from '../../utils/api';
+import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
 import './MobileLogin.css';
 import { useToast } from '../../hooks/useToast';
@@ -193,20 +193,9 @@ function MobileLogin({ onLogin }) {
                 setIsLoading(true);
                 setResetError('');
                 try {
-                  const response = await fetch(`${getApiUrl()}/auth/self-reset-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ email: resetFormEmail, name: resetFormName, newPassword: resetFormPassword })
-                  });
-                  if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Erreur lors de la réinitialisation');
-                  }
-                  const data = await response.json();
-                  api.setAuth(data.user);
-                  setShowResetPassword(false);
+                  const data = await api.selfResetPasswordWithNewPassword(resetFormEmail, resetFormName, resetFormPassword);
                   onLogin(data.user);
+                  setShowResetPassword(false);
                 } catch (err) {
                   setResetError(err.message);
                 } finally {

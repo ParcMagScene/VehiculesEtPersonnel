@@ -2,7 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil, Briefcase } from 'lucide-react';
-import api, { getApiUrl } from '../../utils/api';
+import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import './EventDetailsModal.css';
 import { useToast } from '../../hooks/useToast';
@@ -10,8 +10,6 @@ import { Button, Dialog, ModalLayout, Input, SectionHeader } from '@/design-syst
 
 const BLImportModal = lazy(() => import('../affaires/BLImportModal'));
 const DynamicDisplayDialog = lazy(() => import('../DynamicDisplayDialog'));
-
-const API_BASE_URL = getApiUrl();
 
 function EventDetailsModal({ 
   isOpen, 
@@ -109,15 +107,8 @@ function EventDetailsModal({
 
   const scanAttachmentFolder = async (affaire) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/attachments/${affaire}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAttachmentFiles(data.files || []);
-      } else {
-        setAttachmentFiles([]);
-      }
+      const data = await api.getAttachments(affaire);
+      setAttachmentFiles(data.files || []);
     } catch (error) {
       console.error('Erreur chargement fichiers:', error);
       setAttachmentFiles([]);
@@ -141,19 +132,7 @@ function EventDetailsModal({
     
     try {
       for (const file of files) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('affaireId', event.affaire);
-
-        const response = await fetch(`${API_BASE_URL}/upload-attachment`, {
-          method: 'POST',
-          credentials: 'include',
-          body: formData
-        });
-
-        if (!response.ok) {
-          throw new Error(`Échec de l'upload de ${file.name}`);
-        }
+        await api.uploadAttachment(file, event.affaire);
       }
       
       // Recharger la liste des fichiers
@@ -177,16 +156,8 @@ function EventDetailsModal({
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
         try {
-          const response = await fetch(`${API_BASE_URL}/attachments/${encodeURIComponent(event.affaire)}/${encodeURIComponent(file.name)}`, {
-            method: 'DELETE',
-            credentials: 'include'
-          });
-          
-          if (response.ok) {
-            await scanAttachmentFolder(event.affaire);
-          } else {
-            toast.error('Erreur lors de la suppression');
-          }
+          await api.deleteAttachment(event.affaire, file.name);
+          await scanAttachmentFolder(event.affaire);
         } catch (error) {
           console.error('Erreur suppression pièce jointe:', error);
           toast.error('Erreur lors de la suppression');
@@ -276,26 +247,13 @@ function EventDetailsModal({
         currentLinks[index] = { url: url.trim(), label: label.trim() };
       }
       
-      const response = await fetch(`${API_BASE_URL}/reservations/${reservationId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ google_drive_links: currentLinks })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setLinkedReservations(prev => prev.map(r => 
-          r.id === reservationId ? { ...r, googleDriveLinks: data.googleDriveLinks, googleDriveLink: data.googleDriveLink } : r
-        ));
-        setEditingDriveLink(null);
-        // Rafraîchir les réservations du parent pour que les liens soient à jour partout
-        if (onReservationsRefresh) onReservationsRefresh();
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        toast.error(`Erreur lors de la sauvegarde: ${errorData.error || response.statusText || 'Erreur inconnue'}`);
-      }
+      const data = await api.patchReservation(reservationId, { google_drive_links: currentLinks });
+      setLinkedReservations(prev => prev.map(r => 
+        r.id === reservationId ? { ...r, googleDriveLinks: data.googleDriveLinks, googleDriveLink: data.googleDriveLink } : r
+      ));
+      setEditingDriveLink(null);
+      // Rafraîchir les réservations du parent pour que les liens soient à jour partout
+      if (onReservationsRefresh) onReservationsRefresh();
     } catch (error) {
       console.error('Erreur sauvegarde lien Drive:', error);
       toast.error('Erreur lors de la sauvegarde');
@@ -317,25 +275,12 @@ function EventDetailsModal({
           const currentLinks = reservation ? [...parseDriveLinks(reservation)] : [];
           currentLinks.splice(linkIndex, 1);
           
-          const response = await fetch(`${API_BASE_URL}/reservations/${reservationId}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify({ google_drive_links: currentLinks })
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setLinkedReservations(prev => prev.map(r => 
-              r.id === reservationId ? { ...r, googleDriveLinks: data.googleDriveLinks, googleDriveLink: data.googleDriveLink } : r
-            ));
-            // Rafraîchir les réservations du parent
-            if (onReservationsRefresh) onReservationsRefresh();
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            toast.error(`Erreur: ${errorData.error || response.statusText || 'Erreur inconnue'}`);
-          }
+          const data = await api.patchReservation(reservationId, { google_drive_links: currentLinks });
+          setLinkedReservations(prev => prev.map(r => 
+            r.id === reservationId ? { ...r, googleDriveLinks: data.googleDriveLinks, googleDriveLink: data.googleDriveLink } : r
+          ));
+          // Rafraîchir les réservations du parent
+          if (onReservationsRefresh) onReservationsRefresh();
         } catch (error) {
           console.error('Erreur suppression lien Drive:', error);
           toast.error('Erreur lors de la suppression');

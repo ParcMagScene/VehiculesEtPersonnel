@@ -8,6 +8,17 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.0] — 2026-04-07
+
+### Changed
+- **Phase B (QUALITY)** : Migration de 28 appels `fetch()` directs vers la couche de service API centralisée
+  - 10 composants migrés : Calendar, ReservationModal, EventDetailsModal, LoginForm, AccessRequestModal, ProfileEditModal, AffaireDetailPanel, AffaireImportModal, MobileLogin, TripDetailsModal
+  - 14 nouvelles méthodes API ajoutées (vehicles, affaires, admin, base)
+  - Suppression des imports `getApiUrl` inutilisés dans 5 fichiers
+  - Gestion d'erreurs unifiée via le client API (auth, 401/403, camelCase)
+
+---
+
 ## [2.0.0] — 2026-04-07
 
 ### Added

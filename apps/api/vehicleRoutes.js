@@ -509,6 +509,27 @@ app.put('/api/reservation-requests/:id/approve', authenticateToken, (req, res) =
       return res.status(404).json({ error: 'Demande introuvable' });
     }
 
+    // [AUDIT FIX HIGH-3] Vérifier les chevauchements avec les réservations existantes
+    const overlapStmt = db.prepare(`
+      SELECT id, start_date, end_date, client_name 
+      FROM reservations 
+      WHERE vehicle_id = ? 
+        AND start_date <= ? AND end_date >= ?
+    `);
+    const conflicts = overlapStmt.all(request.vehicle_id, request.end_date, request.start_date);
+    
+    if (conflicts.length > 0) {
+      return res.status(409).json({
+        error: 'Ce véhicule est déjà réservé sur cette période',
+        conflicts: conflicts.map(c => ({
+          id: c.id,
+          start_date: c.start_date,
+          end_date: c.end_date,
+          client_name: c.client_name
+        }))
+      });
+    }
+
     // Créer la réservation
     const insertStmt = db.prepare(`
       INSERT INTO reservations (id, vehicle_id, start_date, start_period, end_date, end_period,

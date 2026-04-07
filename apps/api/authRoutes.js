@@ -5,6 +5,7 @@ import db from './database.js';
 import { getTransporter } from './emailService.js';
 import logger from './logger.js';
 import { authCache } from './cache.js';
+import { validatePassword } from './passwordPolicy.js';
 
 export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev }) {
 
@@ -21,6 +22,12 @@ const cookieOptions = {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, name, password } = req.body;
+    
+    // [AUDIT FIX HIGH-2] Validation mot de passe renforcée
+    const pwError = validatePassword(password);
+    if (pwError) {
+      return res.status(400).json({ error: pwError });
+    }
     
     // Vérifier si l'email est autorisé
     const authStmt = db.prepare('SELECT * FROM authorized_emails WHERE email = ? AND status = ?');
@@ -344,15 +351,14 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 });
 
 // Liste publique des utilisateurs (pour le sélecteur de connexion)
-// Renvoie nom, email et avatar — sans authentification (réseau interne uniquement)
+// Renvoie nom et avatar — sans email pour éviter l'exposition de PII
 app.get('/api/auth/users-public', (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, name, email, avatar FROM users ORDER BY name');
+    const stmt = db.prepare('SELECT id, name, avatar FROM users ORDER BY name');
     const users = stmt.all();
     res.json(users.map(u => ({
       id: u.id,
       name: u.name,
-      email: u.email,
       avatar: u.avatar || null
     })));
   } catch (error) {

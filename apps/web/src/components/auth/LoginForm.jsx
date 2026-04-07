@@ -56,7 +56,8 @@ const LoginForm = ({ onLogin }) => {
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
-    setEmail(user.email);
+    // [AUDIT FIX HIGH-1] Email n'est plus exposé dans users-public
+    // L'utilisateur doit saisir son email manuellement
     setShowUserList(false);
   };
 
@@ -224,7 +225,6 @@ const LoginForm = ({ onLogin }) => {
                     <Avatar name={selectedUser.name} avatar={selectedUser.avatar} size="md" gradient={false} />
                     <div>
                       <div style={{ fontWeight: '500', color: 'var(--theme-text-heading)' }}>{selectedUser.name}</div>
-                      <div style={{ fontSize: '13px', color: 'var(--theme-text-gray)' }}>{selectedUser.email}</div>
                     </div>
                   </div>
                 ) : (
@@ -272,7 +272,6 @@ const LoginForm = ({ onLogin }) => {
                         <Avatar name={user.name} avatar={user.avatar} size="md" gradient={false} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: '500', color: 'var(--theme-text-heading)' }}>{user.name}</div>
-                          <div style={{ fontSize: '13px', color: 'var(--theme-text-gray)' }}>{user.email}</div>
                         </div>
                       </div>
                     ))}
@@ -317,7 +316,7 @@ const LoginForm = ({ onLogin }) => {
             onClick={() => {
               setShowResetPassword(true);
               setResetStep('request');
-              setResetFormEmail(email || (selectedUser ? selectedUser.email : ''));
+              setResetFormEmail(email || '');
               setResetFormName('');
               setResetToken('');
               setNewPassword('');

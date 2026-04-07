@@ -5,6 +5,16 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.1.6] — 2026-04-08
+
+### Changed
+- **Phase H** : 3 `<input>` natifs → `<Input>` DS dans ChangePassword.jsx (champs password avec toggle show/hide)
+  - 60 `<input>` natifs restants sont date/time/file/color/radio/range (pas d'équivalent DS)
+- **Phase I** : Nettoyage console.log — 2 `console.log` de debug supprimés dans EquipmentPanel.jsx
+  - 213 `console.error` + 16 `console.warn` conservés (gestion d'erreurs légitime)
+
+---
+
 ## [2.1.5] — 2026-04-07
 
 ### Changed

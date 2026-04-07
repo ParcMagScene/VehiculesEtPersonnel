@@ -81,7 +81,7 @@ const ChangePassword = ({ currentUser }) => {
           <div className="admin-password-form">
             <FormField className="form-group" label="Nouveau mot de passe" htmlFor="adminNewPassword">
               <div className="password-input-wrapper">
-                <input
+                <Input
                   id="adminNewPassword"
                   type={showAdminPassword ? 'text' : 'password'}
                   value={adminNewPassword}
@@ -131,7 +131,7 @@ const ChangePassword = ({ currentUser }) => {
 
         <FormField className="form-group" label="Nouveau mot de passe" htmlFor="newPassword" required>
           <div className="password-input-wrapper">
-          <input
+          <Input
             id="newPassword"
             type={showNewPassword ? 'text' : 'password'}
             value={newPassword}
@@ -153,7 +153,7 @@ const ChangePassword = ({ currentUser }) => {
 
         <FormField className="form-group" label="Confirmer le nouveau mot de passe" htmlFor="confirmPassword" required>
           <div className="password-input-wrapper">
-          <input
+          <Input
             id="confirmPassword"
             type={showConfirmPassword ? 'text' : 'password'}
             value={confirmPassword}

@@ -768,7 +768,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   // ═══ HANDLERS ═══
   const handleSaveEquipment = async (data) => {
     try {
-      console.log('[EquipmentPanel] handleSaveEquipment — photo:', data.photo, '| editing:', !!editingEquipment);
       if (editingEquipment) {
         await api.updateEquipment(editingEquipment.id, data);
       } else {
@@ -2378,7 +2377,6 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
       location_floor: form.location_floor || null,
       photo: form.photo || null,
     };
-    console.log('[EquipmentForm] Submit — photo:', data.photo, '| form.photo:', form.photo);
     onSave(data);
   };
 

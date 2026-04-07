@@ -5,6 +5,15 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.1.5] — 2026-04-07
+
+### Changed
+- **Phase G** : 902 `<button>` natifs → `<Button variant="ghost">` dans 112 fichiers
+  - Adoption DS Button : 26% → 100%
+  - Vérification visuelle recommandée (les styles CSS existants via className sont préservés)
+
+---
+
 ## [2.1.4] — 2026-04-07
 
 ### Changed

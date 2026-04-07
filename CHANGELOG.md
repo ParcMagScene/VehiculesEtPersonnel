@@ -8,6 +8,17 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.5] — 2026-04-07
+
+### Changed
+- **Phase G (QUALITY)** : Migration de 902 `<button>` natifs → `<Button>` Design System (112 fichiers)
+  - Adoption DS Button : 26% → 100% (zéro `<button>` natif restant hors DS)
+  - `variant="ghost"` appliqué pour préserver les styles existants via className
+  - Import `Button` ajouté à 61 fichiers, fusionné dans 51 imports existants
+  - Script `migrate-buttons.mjs` inclus
+
+---
+
 ## [2.1.4] — 2026-04-07
 
 ### Changed

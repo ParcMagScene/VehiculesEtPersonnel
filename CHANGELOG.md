@@ -8,6 +8,18 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.4] — 2026-04-07
+
+### Changed
+- **Phase F (QUALITY)** : Migration de 252 magic strings → constantes centralisées (57 fichiers)
+  - 196 comparaisons de statuts (`=== 'pending'` etc.) → `STATUS.*`
+  - 12 vérifications de rôles → `ROLES.*`
+  - 16 valeurs setTimeout → `TIMING.*`
+  - 5 nouveaux statuts ajoutés : VALIDATED, CONFIRMED, ACCEPTED, DONE, DISPONIBLE
+  - Script `migrate-magic-strings.mjs` inclus pour reproductibilité
+
+---
+
 ## [2.1.3] — 2026-04-07
 
 ### Changed

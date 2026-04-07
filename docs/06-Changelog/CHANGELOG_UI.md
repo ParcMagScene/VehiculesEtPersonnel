@@ -5,6 +5,16 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.1.4] — 2026-04-07
+
+### Changed
+- **Phase F** : 252 magic strings → constantes centralisées dans 57 fichiers
+  - `=== 'pending'` / `'active'` / `'completed'` etc. → `STATUS.PENDING` / `STATUS.ACTIVE` / `STATUS.COMPLETED`
+  - `=== 'admin'` / `'manager'` → `ROLES.ADMIN` / `ROLES.MANAGER`
+  - `setTimeout(fn, 350)` → `setTimeout(fn, TIMING.PANEL_CLOSE)`
+
+---
+
 ## [2.1.3] — 2026-04-07
 
 ### Changed

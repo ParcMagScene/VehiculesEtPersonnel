@@ -53,3 +53,46 @@ test_*.js
 analyze.js
 server/_tmp_*.mjs
 backups/
+
+# ═══════════════════════════════════════════════
+# Données sensibles — ajouté lors de l'audit sécurité
+# ═══════════════════════════════════════════════
+
+# Fichier .env.development (contient VIDEO_CIPHER_KEY)
+apps/api/.env.development
+
+# Configuration mediamtx (contient credentials RTSP caméras)
+mediamtx.yml
+
+# Backup avec credentials Google et données métier
+apps/api/backup-restore.json
+
+# Backups de base de données (toutes)
+apps/api/backups/
+
+# Fichiers CSV d'import (données personnelles — RGPD)
+public/imports/*.csv
+equipements-liste.csv
+
+# Scans réseau (cartographie interne)
+public/NMAP*
+public/Scan.sh
+
+# Scripts de diagnostic avec credentials caméras
+_diag-playback*.mjs
+
+# Scripts utilitaires internes
+apps/api/test-api.mjs
+apps/api/import-backup.js
+apps/api/_audit-output.txt
+apps/api/_taxonomy-state.txt
+apps/api/_brand-analysis-results.json
+_fix-delete-btn.cjs
+_taxonomy-simulator.html
+
+# Scripts NVR avec IPs et credentials hardcodés
+scripts/_*-nvr-*.py
+scripts/_enable-nvr-*.py
+scripts/_test-nvr-*.py
+scripts/_search-nvr-*.py
+scripts/parse-nmap-cameras.py

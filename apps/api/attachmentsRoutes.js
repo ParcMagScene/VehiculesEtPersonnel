@@ -62,7 +62,8 @@ const uploadAttachment = multer({
   fileFilter: function (req, file, cb) {
     const allowedMimes = [
       'application/pdf',
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff',
+      // [AUDIT FIX] SVG retiré — vecteur XSS potentiel (scripts embarqués)
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff',
       'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',

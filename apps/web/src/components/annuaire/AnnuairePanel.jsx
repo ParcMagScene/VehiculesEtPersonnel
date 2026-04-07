@@ -832,15 +832,15 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
             <>
               <div className="form-row">
                 <FormField className="form-group" label="Prénom">
-                  <Input value={form.first_name || ''} onChange={e => handleChange('first_name', e.target.value)} />
+                  <Input maxLength={100} value={form.first_name || ''} onChange={e => handleChange('first_name', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Nom" required>
-                  <Input value={form.last_name || ''} onChange={e => handleChange('last_name', e.target.value)} required />
+                  <Input maxLength={100} value={form.last_name || ''} onChange={e => handleChange('last_name', e.target.value)} required />
                 </FormField>
               </div>
               <div className="form-row">
                 <FormField className="form-group" label="Fonction">
-                  <Input value={form.job_title || ''} onChange={e => handleChange('job_title', e.target.value)} />
+                  <Input maxLength={100} value={form.job_title || ''} onChange={e => handleChange('job_title', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Catégorie">
                   <Select value={form.category || ''} onChange={e => handleChange('category', e.target.value)}>
@@ -851,14 +851,14 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
               </div>
               <div className="form-row">
                 <FormField className="form-group" label="Téléphone">
-                  <Input value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
+                  <Input maxLength={20} value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Tél. 2">
-                  <Input value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
+                  <Input maxLength={20} value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
                 </FormField>
               </div>
               <FormField className="form-group" label="Email">
-                <Input type="email" value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
+                <Input type="email" maxLength={254} value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
               </FormField>
               <div className="form-group">
                 <label className="checkbox-label">
@@ -875,10 +875,10 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
             <>
               <div className="form-row">
                 <FormField className="form-group flex-2" label="Nom" required>
-                  <Input value={form.name} onChange={e => handleChange('name', e.target.value)} required />
+                  <Input maxLength={200} value={form.name} onChange={e => handleChange('name', e.target.value)} required />
                 </FormField>
                 <FormField className="form-group" label="Code libre">
-                  <Input value={form.code_libre || ''} onChange={e => handleChange('code_libre', e.target.value)} />
+                  <Input maxLength={50} value={form.code_libre || ''} onChange={e => handleChange('code_libre', e.target.value)} />
                 </FormField>
               </div>
 
@@ -910,47 +910,47 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
 
               <div className="form-row">
                 <FormField className="form-group" label="SIRET">
-                  <Input value={form.siret || ''} onChange={e => handleChange('siret', e.target.value)} />
+                  <Input maxLength={17} value={form.siret || ''} onChange={e => handleChange('siret', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="TVA Intra.">
-                  <Input value={form.tva_intra || ''} onChange={e => handleChange('tva_intra', e.target.value)} />
+                  <Input maxLength={20} value={form.tva_intra || ''} onChange={e => handleChange('tva_intra', e.target.value)} />
                 </FormField>
               </div>
 
               <FormField className="form-group" label="Adresse">
-                <Input value={form.address || ''} onChange={e => handleChange('address', e.target.value)} />
+                <Input maxLength={500} value={form.address || ''} onChange={e => handleChange('address', e.target.value)} />
               </FormField>
 
               <div className="form-row">
                 <FormField className="form-group" label="Code postal">
-                  <Input value={form.postal_code || ''} onChange={e => handleChange('postal_code', e.target.value)} />
+                  <Input maxLength={10} value={form.postal_code || ''} onChange={e => handleChange('postal_code', e.target.value)} />
                 </FormField>
                 <FormField className="form-group flex-2" label="Ville">
-                  <Input value={form.city || ''} onChange={e => handleChange('city', e.target.value)} />
+                  <Input maxLength={100} value={form.city || ''} onChange={e => handleChange('city', e.target.value)} />
                 </FormField>
               </div>
 
               <div className="form-row">
                 <FormField className="form-group" label="Téléphone">
-                  <Input value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
+                  <Input maxLength={20} value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Tél. 2">
-                  <Input value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
+                  <Input maxLength={20} value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
                 </FormField>
               </div>
 
               <div className="form-row">
                 <FormField className="form-group" label="Email">
-                  <Input type="email" value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
+                  <Input type="email" maxLength={254} value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Site web">
-                  <Input value={form.website || ''} onChange={e => handleChange('website', e.target.value)} />
+                  <Input maxLength={500} value={form.website || ''} onChange={e => handleChange('website', e.target.value)} />
                 </FormField>
               </div>
 
               {entityType === 'suppliers' && (
                 <FormField className="form-group" label="Nom du contact">
-                  <Input value={form.contact_name || ''} onChange={e => handleChange('contact_name', e.target.value)} />
+                  <Input maxLength={100} value={form.contact_name || ''} onChange={e => handleChange('contact_name', e.target.value)} />
                 </FormField>
               )}
 
@@ -1074,10 +1074,10 @@ function RefFormModal({ item, onSave, onClose }) {
         <form id="ref-form" onSubmit={handleSubmit} className="annuaire-form">
           <div className="form-row">
             <FormField className="form-group" label="Code" required>
-              <Input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} required />
+              <Input maxLength={50} value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} required />
             </FormField>
             <FormField className="form-group flex-2" label="Libellé" required>
-              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+              <Input maxLength={200} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
             </FormField>
           </div>
           <div className="form-row">

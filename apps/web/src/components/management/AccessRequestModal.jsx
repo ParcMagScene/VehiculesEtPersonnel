@@ -74,8 +74,8 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
+    if (password.length < 10) {
+      setError('Le mot de passe doit contenir au moins 10 caractères (1 majuscule, 1 chiffre, 1 spécial)');
       return;
     }
 
@@ -134,6 +134,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   required
                   placeholder="Votre nom et prénom"
                   autoComplete="name"
+                  maxLength={100}
                 />
               </FormField>
 
@@ -147,6 +148,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   required
                   placeholder="votre.email@example.com"
                   autoComplete="email"
+                  maxLength={254}
                 />
               </FormField>
 
@@ -172,7 +174,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
               <ArrowLeft size={18} />
               Retour
             </Button>
-            <Button variant="primary" type="submit" form="ar-create-form" disabled={loading || password.length < 6}>
+            <Button variant="primary" type="submit" form="ar-create-form" disabled={loading || password.length < 10}>
               <CheckCircle size={18} />
               {loading ? 'Création...' : 'Créer mon compte'}
             </Button>
@@ -201,6 +203,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   required
                   placeholder="Votre nom et prénom"
                   autoComplete="name"
+                  maxLength={100}
                 />
               </FormField>
 
@@ -220,8 +223,8 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   required
-                  placeholder="Minimum 6 caractères"
-                  minLength={6}
+                  placeholder="Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial"
+                  minLength={10}
                   autoFocus
                   autoComplete="new-password"
                 />
@@ -235,7 +238,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
                   required
                   placeholder="Retapez votre mot de passe"
-                  minLength={6}
+                  minLength={10}
                   autoComplete="new-password"
                 />
               </FormField>

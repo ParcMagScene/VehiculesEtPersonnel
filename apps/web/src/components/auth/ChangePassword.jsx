@@ -24,8 +24,8 @@ const ChangePassword = ({ currentUser }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (newPassword.length < 4) {
-      toast.info('Le nouveau mot de passe doit contenir au moins 4 caractères');
+    if (newPassword.length < 10) {
+      toast.info('Le nouveau mot de passe doit contenir au moins 10 caractères');
       return;
     }
 
@@ -49,8 +49,8 @@ const ChangePassword = ({ currentUser }) => {
   };
 
   const handleAdminSetPassword = async () => {
-    if (adminNewPassword.length < 4) {
-      toast.info('Le mot de passe doit contenir au moins 4 caractères');
+    if (adminNewPassword.length < 10) {
+      toast.info('Le mot de passe doit contenir au moins 10 caractères');
       return;
     }
     try {
@@ -98,13 +98,13 @@ const ChangePassword = ({ currentUser }) => {
                   {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <p className="field-hint">Minimum 4 caractères</p>
+              <p className="field-hint">Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial</p>
             </FormField>
             <div className="form-actions">
               <Button
                 variant="primary"
                 onClick={handleAdminSetPassword}
-                disabled={isSavingAdmin || adminNewPassword.length < 4}
+                disabled={isSavingAdmin || adminNewPassword.length < 10}
               >
                 <KeyRound size={16} />
                 {isSavingAdmin ? 'Application...' : 'Appliquer le mot de passe'}
@@ -138,7 +138,7 @@ const ChangePassword = ({ currentUser }) => {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
-            minLength={4}
+            minLength={10}
             autoComplete="new-password"
           />
           <button
@@ -150,7 +150,7 @@ const ChangePassword = ({ currentUser }) => {
             {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
           </div>
-          <p className="field-hint">Minimum 4 caractères</p>
+          <p className="field-hint">Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial</p>
         </FormField>
 
         <FormField className="form-group" label="Confirmer le nouveau mot de passe" htmlFor="confirmPassword" required>
@@ -161,7 +161,7 @@ const ChangePassword = ({ currentUser }) => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            minLength={4}
+            minLength={10}
             autoComplete="new-password"
           />
           <button

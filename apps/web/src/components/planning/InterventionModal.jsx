@@ -361,6 +361,7 @@ const InterventionModal = ({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows="3"
               placeholder="Détails de l'intervention..."
+              maxLength={1000}
             />
           </FormField>
 
@@ -370,6 +371,7 @@ const InterventionModal = ({
               value={formData.garage}
               onChange={(e) => setFormData({ ...formData, garage: e.target.value })}
               placeholder="Nom du garage ou prestataire"
+              maxLength={200}
             />
           </FormField>
 
@@ -377,6 +379,7 @@ const InterventionModal = ({
             <Input
               type="number"
               step="0.01"
+              min="0"
               value={formData.cost}
               onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
               placeholder="0.00"

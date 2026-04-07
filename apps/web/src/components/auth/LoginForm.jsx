@@ -376,7 +376,7 @@ const LoginForm = ({ onLogin }) => {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Entrez votre nouveau mot de passe"
-                      minLength={6}
+                      minLength={10}
                       required
                       className="login-reset-input"
                     />
@@ -389,7 +389,7 @@ const LoginForm = ({ onLogin }) => {
                       value={newPasswordConfirm}
                       onChange={(e) => setNewPasswordConfirm(e.target.value)}
                       placeholder="Confirmez votre nouveau mot de passe"
-                      minLength={6}
+                      minLength={10}
                       required
                       className="login-reset-input"
                     />

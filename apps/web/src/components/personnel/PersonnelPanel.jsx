@@ -247,15 +247,15 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
               <form id="personnel-edit-form" className="personnel-edit-form-body" onSubmit={handleEditSubmit}>
                 <div className="form-row">
                   <FormField className="form-group" label="Prénom" required>
-                    <Input required value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} />
+                    <Input required maxLength={100} value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} />
                   </FormField>
                   <FormField className="form-group" label="Nom" required>
-                    <Input required value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} />
+                    <Input required maxLength={100} value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} />
                   </FormField>
                 </div>
                 <div className="form-row">
                   <FormField className="form-group" label="Email">
-                    <Input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
+                    <Input type="email" maxLength={254} value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
                   </FormField>
                   <FormField className="form-group" label="Téléphone">
                     <PhoneInput value={editForm.phone} onChange={(val) => setEditForm({ ...editForm, phone: val })} />
@@ -827,15 +827,15 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
           <div className="eq-form-grid">
             <div className="eq-form-field">
               <label>Prénom *</label>
-              <Input type="text" required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} autoFocus />
+              <Input type="text" required maxLength={100} value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} autoFocus />
             </div>
             <div className="eq-form-field">
               <label>Nom *</label>
-              <Input type="text" required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
+              <Input type="text" required maxLength={100} value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
             </div>
             <div className="eq-form-field">
               <label>Email</label>
-              <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              <Input type="email" maxLength={254} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
             </div>
             <div className="eq-form-field">
               <label>Téléphone</label>

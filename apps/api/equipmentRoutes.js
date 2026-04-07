@@ -614,6 +614,17 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       const { equipment_id, assigned_to, start_date, end_date, affaire_id, notes } = req.body;
       if (!equipment_id || !start_date) return res.status(400).json({ error: 'Équipement et date de début requis' });
       
+      // [AUDIT FIX MED-W4] Empêcher la double affectation active
+      const existing = db.prepare(
+        "SELECT id, assigned_to, start_date FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'"
+      ).get(equipment_id);
+      if (existing) {
+        return res.status(409).json({
+          error: 'Cet équipement est déjà affecté',
+          existing: { id: existing.id, assigned_to: existing.assigned_to, start_date: existing.start_date }
+        });
+      }
+      
       const result = db.prepare(`
         INSERT INTO equipment_assignments (equipment_id, assigned_to, assigned_by, start_date, end_date, affaire_id, notes, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
@@ -812,12 +823,32 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
   });
 
   // PUT /api/sav-tickets/:id
+  // [AUDIT FIX MED-W1] Transitions d'état SAV autorisées
+  const VALID_SAV_TRANSITIONS = {
+    open: ['in_progress', 'waiting_parts', 'closed'],
+    in_progress: ['waiting_parts', 'resolved', 'closed'],
+    waiting_parts: ['in_progress', 'resolved', 'closed'],
+    resolved: ['closed', 'open'], // réouverture possible
+    closed: ['open'], // réouverture uniquement
+  };
+
   app.put('/api/sav-tickets/:id', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { assigned_to, type, priority, status, title, description, resolution, cost } = req.body;
       
       const oldTicket = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
       if (!oldTicket) return res.status(404).json({ error: 'Ticket non trouvé' });
+      
+      // [AUDIT FIX MED-W1] Valider la transition d'état
+      if (status && status !== oldTicket.status) {
+        const allowed = VALID_SAV_TRANSITIONS[oldTicket.status];
+        if (!allowed || !allowed.includes(status)) {
+          return res.status(400).json({
+            error: `Transition de statut invalide : ${oldTicket.status} → ${status}`,
+            allowed: allowed || []
+          });
+        }
+      }
       
       const resolvedAt = (status === 'resolved' || status === 'closed') && oldTicket.status !== 'resolved' && oldTicket.status !== 'closed'
         ? new Date().toISOString()

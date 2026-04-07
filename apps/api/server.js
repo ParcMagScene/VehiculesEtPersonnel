@@ -31,7 +31,7 @@ import logger from './logger.js';
 // ── Configs & Middlewares extraits ──
 import { helmetConditional } from './config/helmet.js';
 import { corsMiddleware } from './config/cors.js';
-import { authLimiter, generalLimiter } from './config/rateLimiter.js';
+import { authLimiter, generalLimiter, sensitiveEndpointLimiter } from './config/rateLimiter.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
 import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess, requireTruckAccess } from './middleware/authorize.js';
 import { xssSanitize } from './middleware/sanitize.js';
@@ -103,6 +103,9 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/set-new-password', authLimiter);
 app.use('/api/auth/self-reset-password', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
+// [AUDIT FIX MED-B4/B6] Rate limiters sur endpoints sensibles
+app.use('/api/access-requests', sensitiveEndpointLimiter);
+app.use('/api/admin/reset-password', sensitiveEndpointLimiter);
 
 // Créer le middleware d'authentification avec le secret JWT
 const authenticateToken = createAuthenticateToken(JWT_SECRET);

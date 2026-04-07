@@ -12,6 +12,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
+import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
 import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
@@ -73,13 +74,11 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = window.open('', '_blank');
+        const win = openSanitizedPrintWindow(data.html);
         if (!win) {
           setError('Popup bloquée — autorisez les popups pour ce site');
           return;
         }
-        win.document.write(data.html);
-        win.document.close();
       }
     } catch (err) {
       setError('Erreur lors de la génération du PDF');
@@ -94,13 +93,11 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = window.open('', '_blank');
+        const win = openSanitizedPrintWindow(data.html);
         if (!win) {
           setError('Popup bloquée — autorisez les popups pour ce site');
           return;
         }
-        win.document.write(data.html);
-        win.document.close();
         // Attendre le chargement complet puis déclencher l'impression
         win.onload = () => win.print();
         // Fallback si onload ne se déclenche pas

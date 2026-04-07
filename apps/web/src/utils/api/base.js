@@ -1,7 +1,7 @@
 // API Client — Base class + auth methods
 // Détection automatique de l'URL du backend
 
-import { saveAuthToIDB, loadAuthFromIDB, clearAuthFromIDB } from '../indexedDB.js';
+import { saveAuthToIDB, loadAuthFromIDB, clearAllIndexedDB } from '../indexedDB.js';
 
 export const getApiUrl = () => {
   const port = window.location.port;
@@ -89,7 +89,8 @@ export class ApiClient {
     this.user = null;
     localStorage.removeItem('auth_user');
     localStorage.removeItem('auth_token'); // nettoyage migration
-    clearAuthFromIDB().catch(() => {});
+    // [AUDIT FIX MED-F4] Vider tous les stores IndexedDB (PII)
+    clearAllIndexedDB().catch(() => {});
   }
 
   async request(endpoint, options = {}) {

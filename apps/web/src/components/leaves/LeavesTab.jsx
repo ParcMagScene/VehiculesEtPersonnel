@@ -15,6 +15,7 @@ import {
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
+import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
 import LeaveRequestForm from './LeaveRequestForm';
 import LeaveRequestsPanel from './LeaveRequestsPanel';
@@ -175,9 +176,8 @@ const LeavesTab = ({ persons = [], currentUser }) => {
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = window.open('', '_blank');
-        win.document.write(data.html);
-        win.document.close();
+        const win = openSanitizedPrintWindow(data.html);
+        if (!win) { setError('Popup bloquée'); return; }
         setTimeout(() => win.print(), 500);
       }
     } catch {

@@ -12,6 +12,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
+import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
 import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
 import './LeaveRequestsPanel.css';
@@ -86,9 +87,8 @@ const LeaveRequestsPanel = ({
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = window.open('', '_blank');
-        win.document.write(data.html);
-        win.document.close();
+        const win = openSanitizedPrintWindow(data.html);
+        if (!win) { setError('Popup bloquée'); return; }
         setTimeout(() => win.print(), 500);
       }
     } catch (err) {

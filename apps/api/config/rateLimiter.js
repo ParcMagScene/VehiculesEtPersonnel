@@ -13,6 +13,18 @@ export const authLimiter = rateLimit({
 });
 
 /**
+ * [AUDIT FIX MED-B4/B6] Rate limiter pour endpoints sensibles non-auth
+ * (access-requests, reset-password, forgot-password)
+ */
+export const sensitiveEndpointLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'development' ? 30 : 10,
+  message: { error: 'Trop de requêtes. Réessayez dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
  * Rate limiter général pour toutes les API
  */
 export const generalLimiter = rateLimit({

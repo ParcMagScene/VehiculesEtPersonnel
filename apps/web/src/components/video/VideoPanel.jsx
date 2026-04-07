@@ -11,7 +11,8 @@ import PlaybackPanel from './PlaybackPanel';
 import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight, Film } from 'lucide-react';
 import api from '../../utils/api';
 import './VideoPanel.css';
-import { Button, Dialog, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
+import { Button, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 import { ROLES } from '../../constants';
 
@@ -38,7 +39,7 @@ const VideoPanel = ({ currentUser }) => {
   const [gridSize, setGridSize] = useState(4);
   const [gridPage, setGridPage] = useState(0);
   const [isRotating, setIsRotating] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const rotateTimer = useRef(null);
 
   // PTZ clavier
@@ -123,13 +124,12 @@ const VideoPanel = ({ currentUser }) => {
   }, [editingCamera, updateCamera, createCamera]);
 
   const handleDeleteCamera = useCallback((id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: 'Supprimer cette caméra ?',
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         await deleteCamera(id);
         setEditingCamera(null);
         setShowSettings(false);
@@ -395,17 +395,7 @@ const VideoPanel = ({ currentUser }) => {
           />
         </Suspense>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

@@ -13,7 +13,8 @@ import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
 import './EquipmentPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, EmptyState, SearchBar, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { Button, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, EmptyState, SearchBar, Tooltip } from '@/design-system';
 import { resolveGenericImage, getAllGenericImages, GENERIC_IMAGES } from '../../utils/genericImages';
 
 import { STATUS } from '../../constants';
@@ -626,7 +627,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [filterSerialized, setFilterSerialized] = useState(false);
   const [showDepotMap, setShowDepotMap] = useState(false);
   const [depotMapModalZone, setDepotMapModalZone] = useState(null); // { zoneId, equipmentName } or null
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Trouver le bon dépôt pour la zone cliquée (dépôt 1 ou 2)
   const modalDepotData = useMemo(() => {
@@ -1355,17 +1356,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
         </ModalLayout>
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };
@@ -1382,7 +1373,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
   const [renameValue, setRenameValue] = useState('');
   const [linkingPhoto, setLinkingPhoto] = useState(null);
   const [linkSearch, setLinkSearch] = useState('');
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm: confirmMedia, ConfirmDialogRenderer: MediaConfirmRenderer } = useConfirmDialog();
 
   // Filtrer les photos par recherche
   const filteredPhotos = useMemo(() => {
@@ -1420,7 +1411,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
 
   // Delete handler
   const handleDelete = (filename) => {
-    setConfirmDialog({
+    confirmMedia({
       title: 'Supprimer la photo',
       message: `Supprimer la photo "${filename}" ?\nCette action est irréversible.`,
       variant: 'danger',
@@ -1666,17 +1657,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
         </div>
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {MediaConfirmRenderer}
     </div>
   );
 };

@@ -3,6 +3,8 @@ import { Save, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select } from '@/design-system';
 import './InterventionModal.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
 
@@ -16,7 +18,7 @@ const InterventionModal = ({
 }) => {
   const isAdmin = currentUser?.isAdmin === true;
   const toast = useToast();
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [formData, setFormData] = useState({
     date: intervention?.date || '',
@@ -92,7 +94,7 @@ const InterventionModal = ({
           
           setDeadlineWarning({
             type: 'error',
-            message: `⚠️ Cette intervention est programmée ${diffDays} jour(s) après la deadline du contrôle technique ${formData.technicalControlType} (${new Date(controle.deadline).toLocaleDateString('fr-FR')})`,
+            message: `⚠️ Cette intervention est programmée ${diffDays} jour(s) après la deadline du contrôle technique ${formData.technicalControlType} (${formatDateSimple(controle.deadline)})`,
             controleType: formData.technicalControlType
           });
         } else {
@@ -141,10 +143,9 @@ const InterventionModal = ({
     e.preventDefault();
     
     if (deadlineWarning && deadlineWarning.type === 'error') {
-      setConfirmDialog({
+      confirm({
         message: `⚠️ ATTENTION : Cette intervention dépasse la deadline du contrôle technique.\n\n${deadlineWarning.message}\n\nVoulez-vous continuer quand même ?`,
         onConfirm: () => {
-          setConfirmDialog(null);
           onSave({
             ...intervention,
             ...formData,
@@ -163,20 +164,18 @@ const InterventionModal = ({
   };
 
   const handleDelete = () => {
-    setConfirmDialog({
+    confirm({
       message: 'Êtes-vous sûr de vouloir supprimer cette intervention ?',
       onConfirm: () => {
-        setConfirmDialog(null);
         onDelete(intervention.id);
       }
     });
   };
 
   const handleMarkCompleted = async () => {
-    setConfirmDialog({
+    confirm({
       message: 'Marquer cette intervention comme effectuée ?',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await onSave({
             ...intervention,
@@ -390,17 +389,7 @@ const InterventionModal = ({
 
         </form>
     </ModalLayout>
-    <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title="Confirmation"
-        variant="confirm"
-        confirmLabel="Oui"
-        cancelLabel="Non"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+    {ConfirmDialogRenderer}
       <Dialog
         open={showUnsavedWarning}
         onClose={() => setShowUnsavedWarning(false)}

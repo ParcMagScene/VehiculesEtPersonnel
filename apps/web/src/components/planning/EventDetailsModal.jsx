@@ -6,7 +6,8 @@ import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import './EventDetailsModal.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, ModalLayout, Input, SectionHeader } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { Button, ModalLayout, Input, SectionHeader } from '@/design-system';
 
 const BLImportModal = lazy(() => import('../affaires/BLImportModal'));
 const DynamicDisplayDialog = lazy(() => import('../DynamicDisplayDialog'));
@@ -28,6 +29,7 @@ function EventDetailsModal({
   activeModule
 }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [linkedReservations, setLinkedReservations] = useState([]);
   const [linkedAffaires, setLinkedAffaires] = useState([]);
   const [attachmentFiles, setAttachmentFiles] = useState([]);
@@ -38,7 +40,6 @@ function EventDetailsModal({
   const [uploading, setUploading] = useState(false);
   const [editingDriveLink, setEditingDriveLink] = useState(null); // { reservationId, index, url, label } (index = -1 pour nouveau)
   const [savingDriveLink, setSavingDriveLink] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Parser les liens Drive (rétrocompatible avec ancien format string simple)
   const parseDriveLinks = (reservation) => {
@@ -148,7 +149,7 @@ function EventDetailsModal({
 
   const handleDeleteAttachment = (file) => {
     if (!event.affaire) return;
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la pièce jointe',
       message: `Supprimer "${file.name}" ?`,
       variant: 'danger',
@@ -262,7 +263,7 @@ function EventDetailsModal({
   };
 
   const handleDeleteDriveLink = (reservationId, linkIndex) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le lien',
       message: 'Supprimer ce lien Google Drive ?',
       variant: 'danger',
@@ -687,7 +688,7 @@ function EventDetailsModal({
               <Button
                 variant="danger"
                 onClick={() => {
-                  setConfirmDialog({
+                  confirm({
                     title: 'Supprimer l\'événement',
                     message: 'Supprimer cet événement du Google Calendar ?',
                     variant: 'danger',
@@ -860,15 +861,7 @@ function EventDetailsModal({
         </ModalLayout>
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </>
   );
 }

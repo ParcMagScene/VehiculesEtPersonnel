@@ -8,11 +8,12 @@ import { ShoppingCart, FileText, Plus, Filter, Edit2, Trash2, ArrowLeft,
 const SupplierCatalogPanel = lazy(() => import('./SupplierCatalogPanel'));
 import api from '../../utils/api';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
-import { Button, Dialog, Input, Textarea, Select, Table, Checkbox, EntityCombobox, Spinner, Tag, StatusBadge, ProgressBar, SearchBar, Tooltip } from '@/design-system';
+import { Button, Input, Textarea, Select, Table, Checkbox, EntityCombobox, Spinner, Tag, StatusBadge, ProgressBar, SearchBar, Tooltip } from '@/design-system';
 import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
 import './OrdersPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import AffaireBadge from '../AffaireBadge';
 
 import { STATUS } from '../../constants';
@@ -89,6 +90,7 @@ const DOC_TYPES = {
 // ═══ Composant Principal ═══
 function OrdersPanel({ currentUser, isMobile }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const isSimpleUser = isMobile && !currentUser?.isAdmin;
   const [activeTab, setActiveTab] = useState(isSimpleUser ? 'requests' : 'orders');
   const [orders, setOrders] = useState([]);
@@ -114,7 +116,6 @@ function OrdersPanel({ currentUser, isMobile }) {
   const [editingOrder, setEditingOrder] = useState(null);
   const [editingQuote, setEditingQuote] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
   const clickTimerRef = useRef(null);
 
   // Demandes de matériel
@@ -227,7 +228,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleDeleteOrder = (order) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la commande',
       message: `Supprimer la commande ${order.reference} ? Cette action est irréversible.`,
       onConfirm: async () => {
@@ -236,9 +237,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedOrder(null);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -281,7 +280,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleDeleteQuote = (quote) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le devis',
       message: `Supprimer le devis ${quote.reference} ? Cette action est irréversible.`,
       onConfirm: async () => {
@@ -290,9 +289,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedQuote(null);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -319,7 +316,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleConvertQuote = (quote) => {
-    setConfirmDialog({
+    confirm({
       title: 'Convertir en commande',
       message: `Convertir le devis ${quote.reference} en bon de commande ?`,
       onConfirm: async () => {
@@ -328,9 +325,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedQuote(null);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -351,7 +346,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleDeleteSupplier = (supplier) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le fournisseur',
       message: `Supprimer ${supplier.name} ? ${supplier.order_count > 0 ? `Attention: ${supplier.order_count} commande(s) liée(s).` : ''}`,
       onConfirm: async () => {
@@ -359,9 +354,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           await api.deleteSupplier(supplier.id);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -399,7 +392,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleDeleteRequest = (request) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la demande',
       message: `Supprimer la demande "${request.article}" ?`,
       onConfirm: async () => {
@@ -407,9 +400,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           await api.deleteMaterialRequest(request.id);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -786,17 +777,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           currentUser={currentUser}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

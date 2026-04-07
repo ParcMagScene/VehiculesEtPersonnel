@@ -3,19 +3,21 @@ import { Calendar, Check, X, Clock, User } from 'lucide-react';
 import api from '../../utils/api';
 import './ReservationRequestsPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, DetailRow, Dialog, Textarea } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { Button, DetailRow, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { formatDateFr } from '../../utils/formatUtils';
 
 const ReservationRequestsPanel = ({ onRequestProcessed }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending'); // 'pending', 'approved', 'rejected', 'all'
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadRequests();
@@ -32,13 +34,12 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
   };
 
   const handleApprove = (requestId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Approuver',
       message: 'Approuver cette demande et cr\xE9er la r\xE9servation ?',
       variant: 'confirm',
       confirmLabel: 'Approuver',
       onConfirm: async () => {
-        setConfirmDialog(null);
         setLoading(true);
         try {
           await api.approveReservationRequest(requestId);
@@ -92,17 +93,6 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
     if (filter === 'all') return true;
     return req.status === filter;
   });
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return 'N/A';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
 
   const formatPeriod = (period) => {
     const periods = {
@@ -179,10 +169,10 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
               <div className="request-details">
                 <DetailRow className="request-detail-item" label="Début">
-                  {formatDate(request.startDate)} - {formatPeriod(request.startPeriod)}
+                  {formatDateFr(request.startDate, 'N/A')} - {formatPeriod(request.startPeriod)}
                 </DetailRow>
                 <DetailRow className="request-detail-item" label="Fin">
-                  {formatDate(request.endDate)} - {formatPeriod(request.endPeriod)}
+                  {formatDateFr(request.endDate, 'N/A')} - {formatPeriod(request.endPeriod)}
                 </DetailRow>
                 {request.clientName && (
                   <DetailRow className="request-detail-item" label="Client" value={request.clientName} />
@@ -274,17 +264,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
           </div>
         </div>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

@@ -2,14 +2,15 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { List, Play, Monitor, Clock, Trash2, Settings, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
-import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
+import { Button, EmptyState, Tooltip } from '@/design-system';
 
 function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadPlaylists = useCallback(async () => {
     try {
@@ -28,13 +29,12 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   }, [loadPlaylists, refreshKey]);
 
   const handleDelete = useCallback((playlist) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer la playlist \xAB ${playlist.name} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayPlaylist(playlist.id);
           toast.success('Playlist supprim\xE9e');
@@ -44,7 +44,7 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
         }
       },
     });
-  }, [toast, onRefresh]);
+  }, [confirm, toast, onRefresh]);
 
   const handleToggle = useCallback(async (playlist) => {
     try {
@@ -102,17 +102,7 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
           </div>
         </div>
       ))}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

@@ -2,18 +2,19 @@
 import { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
 import { Monitor, Wifi, WifiOff, MapPin, Settings, Trash2, ToggleLeft, ToggleRight, Plus } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
-import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
+import { Button, EmptyState, Tooltip } from '@/design-system';
 
 const ScreenFormModal = lazy(() => import('./ScreenFormModal'));
 
 function ScreensTab({ currentUser, refreshKey, onRefresh }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [screens, setScreens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showScreenModal, setShowScreenModal] = useState(false);
   const [editingScreen, setEditingScreen] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadScreens = useCallback(async () => {
     try {
@@ -32,13 +33,12 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
   }, [loadScreens, refreshKey]);
 
   const handleDelete = useCallback((screen) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer l'\xE9cran \xAB ${screen.name} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayScreen(screen.id);
           toast.success('\xC9cran supprim\xE9');
@@ -48,7 +48,7 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
         }
       },
     });
-  }, [toast, onRefresh]);
+  }, [confirm, toast, onRefresh]);
 
   const handleToggle = useCallback(async (screen) => {
     try {
@@ -157,17 +157,7 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
           />
         </Suspense>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

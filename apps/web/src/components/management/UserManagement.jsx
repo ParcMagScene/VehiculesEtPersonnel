@@ -4,7 +4,9 @@ import api from '../../utils/api';
 import ProfileEditModal from '../auth/ProfileEditModal';
 import './UserManagement.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, ModalLayout, Input, Table, Checkbox, Tag, Card, Avatar } from '@/design-system';
+import { Button, ModalLayout, Input, Table, Checkbox, Tag, Card, Avatar } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
 
@@ -19,7 +21,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const [approveModal, setApproveModal] = useState(null); // { id, email, name }
   const [personModal, setPersonModal] = useState(null); // { user } pour création de fiche personnel
   const [personsMap, setPersonsMap] = useState({}); // user_id -> person
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   useEffect(() => {
     loadData();
@@ -74,7 +76,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   };
 
   const handleRemoveEmail = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer cet email',
       message: 'Supprimer cet email autorisé ?',
       variant: 'danger',
@@ -92,7 +94,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
   const handleToggleAdmin = (userId, currentIsAdmin) => {
     const action = currentIsAdmin ? 'retirer les droits admin' : 'donner les droits admin';
-    setConfirmDialog({
+    confirm({
       title: 'Modifier les droits',
       message: `Voulez-vous vraiment ${action} à cet utilisateur ?`,
       variant: 'warning',
@@ -123,7 +125,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   };
 
   const handleDeleteUser = (userId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer cet utilisateur',
       message: 'Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.',
       variant: 'danger',
@@ -141,7 +143,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   };
 
   const handleResetPassword = (userId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Réinitialiser le mot de passe',
       message: 'Marquer ce compte pour réinitialisation ? L\'utilisateur devra définir un nouveau mot de passe lors de sa prochaine connexion.',
       variant: 'confirm',
@@ -205,7 +207,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   };
 
   const handleRejectRequest = (requestId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Rejeter la demande',
       message: 'Rejeter cette demande d\'accès ?',
       variant: 'warning',
@@ -452,7 +454,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     <td>{request.name}</td>
                     <td>{request.email}</td>
                     <td>
-                      {new Date(request.createdAt).toLocaleDateString('fr-FR')}
+                      {formatDateSimple(request.createdAt)}
                     </td>
                     <td>
                       <Tag color={request.status === STATUS.APPROVED ? 'success' : 'danger'} size="sm">
@@ -462,7 +464,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     <td>{request.reviewedByName || '-'}</td>
                     <td>
                       {request.reviewedAt 
-                        ? new Date(request.reviewedAt).toLocaleDateString('fr-FR')
+                        ? formatDateSimple(request.reviewedAt)
                         : '-'
                       }
                     </td>
@@ -559,15 +561,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </div>
   );
 };

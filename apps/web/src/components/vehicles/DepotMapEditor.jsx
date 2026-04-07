@@ -8,7 +8,8 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Save, X, Undo2, Redo2, Maximize2, Plus, Trash2, RotateCcw, Eye, EyeOff, Grid3X3, Copy, ZoomIn, ZoomOut, Scissors } from 'lucide-react';
 import api from '../../utils/api';
 import './DepotMapEditor.css';
-import { Button, Dialog, Input, Select, Tooltip } from '@/design-system';
+import { Button, Input, Select, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 const HANDLE_SIZE = 8;
 const SNAP_GRID = 5;
@@ -256,7 +257,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [spaceHeld, setSpaceHeld] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const EDITOR_MIN_ZOOM = 0.3;
   const EDITOR_MAX_ZOOM = 6;
@@ -633,13 +634,12 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   // Delete selected zone
   const handleDeleteZone = () => {
     if (!selectedZoneId) return;
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer la zone "${selectedZoneId}" ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: () => {
-        setConfirmDialog(null);
         pushHistory();
         setZonesData(prev => ({
           ...prev,
@@ -1357,17 +1357,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
           </div>
         </div>
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

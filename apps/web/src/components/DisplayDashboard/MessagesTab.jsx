@@ -2,8 +2,10 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { MessageSquare, Trash2, Settings, ToggleLeft, ToggleRight, AlertTriangle, Clock } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
-import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
+import { Button, EmptyState, Tooltip } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 const PRIORITY_CONFIG = {
   low: { label: 'Basse', color: 'var(--theme-text-muted)', icon: null },
@@ -14,9 +16,9 @@ const PRIORITY_CONFIG = {
 
 function MessagesTab({ _currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -35,13 +37,12 @@ function MessagesTab({ _currentUser, refreshKey, onEdit, onRefresh }) {
   }, [loadMessages, refreshKey]);
 
   const handleDelete = useCallback((msg) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer le message \xAB ${msg.title} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayMessage(msg.id);
           toast.success('Message supprim\xE9');
@@ -51,7 +52,7 @@ function MessagesTab({ _currentUser, refreshKey, onEdit, onRefresh }) {
         }
       },
     });
-  }, [toast, onRefresh]);
+  }, [confirm, toast, onRefresh]);
 
   const handleToggle = useCallback(async (msg) => {
     try {
@@ -93,10 +94,10 @@ function MessagesTab({ _currentUser, refreshKey, onEdit, onRefresh }) {
               {msg.body && <p className="list-item-desc">{msg.body.substring(0, 120)}{msg.body.length > 120 ? '…' : ''}</p>}
               <div className="list-item-meta">
                 {msg.date_start && (
-                  <span><Clock size={12} /> Du {new Date(msg.date_start).toLocaleDateString('fr-FR')}</span>
+                  <span><Clock size={12} /> Du {formatDateSimple(msg.date_start)}</span>
                 )}
                 {msg.date_end && (
-                  <span>au {new Date(msg.date_end).toLocaleDateString('fr-FR')}</span>
+                  <span>au {formatDateSimple(msg.date_end)}</span>
                 )}
                 {isExpired && <span className="badge-expired">Expiré</span>}
                 {!msg.is_active && <span className="badge-inactive">Inactif</span>}
@@ -122,17 +123,7 @@ function MessagesTab({ _currentUser, refreshKey, onEdit, onRefresh }) {
           </div>
         );
       })}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

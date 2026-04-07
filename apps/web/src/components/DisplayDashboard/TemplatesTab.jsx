@@ -2,14 +2,15 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { Layout, Trash2, Settings } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
-import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
+import { Button, EmptyState, Tooltip } from '@/design-system';
 
 function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -28,13 +29,12 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   }, [loadTemplates, refreshKey]);
 
   const handleDelete = useCallback((tpl) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer le template \xAB ${tpl.name} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayTemplate(tpl.id);
           toast.success('Template supprim\xE9');
@@ -44,7 +44,7 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
         }
       },
     });
-  }, [toast, onRefresh]);
+  }, [confirm, toast, onRefresh]);
 
   const isAdmin = currentUser?.isAdmin;
 
@@ -92,17 +92,7 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
           </div>
         );
       })}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

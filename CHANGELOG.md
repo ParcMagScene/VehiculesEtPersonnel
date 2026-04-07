@@ -8,6 +8,17 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.10] — 2026-04-07
+
+### Changed
+- **Phase M (DRY)** : Élimination des duplications de code — 39 fichiers, −307 lignes nettes
+  - **useConfirmDialog hook** : nouveau hook `useConfirmDialog()` extrait du boilerplate confirmDialog
+    - 22 composants migrés, ~40 appels `setConfirmDialog` remplacés, ~22 blocs `<Dialog>` JSX supprimés
+  - **formatDate → formatUtils** : 6 fichiers, 8 fonctions locales `formatDate`/`formatDateShort` supprimées → import centralisé
+  - **Dates inline → formatUtils** : 11 fichiers, 18 occurrences `toLocaleDateString('fr-FR')` → `formatDateSimple()`/`formatDateTime()`
+
+---
+
 ## [2.1.9] — 2026-04-07
 
 ### Changed

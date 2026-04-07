@@ -5,20 +5,21 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Package, Plus, Trash2, Box, Search } from 'lucide-react';
-import { Button, Dialog, ModalLayout, Input, Tooltip } from '@/design-system';
+import { Button, ModalLayout, Input, Tooltip } from '@/design-system';
 import api from '../../utils/api';
 import { formatDimensions, buildChargementUrlForReservation, openInChargement } from '../../utils/deepLinking';
 import './ReservationEquipment.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 import { TIMING } from '../../constants';
 
 export default function ReservationEquipment({ reservationId, _currentUser }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [data, setData] = useState({ items: [], summary: { count: 0, totalQuantity: 0, totalWeight: 0, totalVolume: 0 } });
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadEquipment = useCallback(async () => {
     if (!reservationId) return;
@@ -36,13 +37,12 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
   useEffect(() => { loadEquipment(); }, [loadEquipment]);
 
   const handleRemove = (linkId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Retirer',
       message: 'Retirer cet \xE9quipement de la r\xE9servation ?',
       variant: 'danger',
       confirmLabel: 'Retirer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.removeEquipmentFromReservation(reservationId, linkId);
           loadEquipment();
@@ -139,17 +139,7 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
           onClose={() => setShowAddDialog(false)}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

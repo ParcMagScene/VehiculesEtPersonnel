@@ -8,7 +8,9 @@ import { FileText, Upload, Trash2, X, ChevronLeft, ChevronRight, Package, Histor
 import api from '../../utils/api';
 import './SupplierCatalogPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, ModalLayout, Select, Table, EntityCombobox, Spinner, Tag, InlineAlert, SearchBar, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { formatDateTime } from '../../utils/formatUtils';
+import { Button, ModalLayout, Select, Table, EntityCombobox, Spinner, Tag, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import { extractPDFMeta } from '../../utils/pdfParser';
 import { parseCatalog, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
 import CatalogSettingsPanel from './CatalogSettingsPanel';
@@ -40,7 +42,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // Modal import
   const [showImport, setShowImport] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const isAdmin = currentUser?.isAdmin;
   const canWrite = isAdmin || currentUser?.permissions?.can_manage_catalog === true;
@@ -104,7 +106,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // ── Suppression d'un article ──
   const handleDeleteArticle = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer l\'article',
       message: 'Supprimer cet article ?',
       variant: 'danger',
@@ -123,7 +125,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // ── Suppression d'un import (+ ses articles) ──
   const handleDeleteImport = (imp) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer l\'import',
       message: `Supprimer l'import "${imp.filename}" et ses ${imp.items_count} articles ?`,
       variant: 'danger',
@@ -143,7 +145,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // ── Purge totale ──
   const handlePurge = () => {
-    setConfirmDialog({
+    confirm({
       title: 'Purger la base',
       message: `⚠️ Supprimer TOUS les ${total} articles fournisseurs et l'historique d'imports ?\n\nCette action est irréversible.`,
       variant: 'danger',
@@ -380,7 +382,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
               <tbody>
                 {imports.map(imp => (
                   <tr key={imp.id}>
-                    <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{new Date(imp.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{formatDateTime(imp.created_at)}</td>
                     <td><FileText size={14} style={{ marginRight: 4, verticalAlign: 'text-bottom' }} />{imp.filename}</td>
                     <td>{imp.supplier_name || '—'}</td>
                     <td style={{ textAlign: 'center' }}>{imp.page_count || '?'}</td>
@@ -447,15 +449,8 @@ export default function SupplierCatalogPanel({ currentUser }) {
           onClose={() => setShowImport(false)}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />    </div>
+      {ConfirmDialogRenderer}
+    </div>
   );
 }
 

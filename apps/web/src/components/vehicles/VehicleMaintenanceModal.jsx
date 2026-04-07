@@ -3,6 +3,7 @@ import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
 import { Button, Dialog, FormField, Input, Select } from '@/design-system';
 import './VehicleMaintenanceModal.css';
 import { useToast } from '../../hooks/useToast';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   const toast = useToast();
@@ -255,11 +256,11 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                       <div className="controle-details">
                         <div>
                           <span className="label">Dernier contrôle :</span>
-                          <span>{new Date(controle.date).toLocaleDateString('fr-FR')}</span>
+                          <span>{formatDateSimple(controle.date)}</span>
                         </div>
                         <div>
                           <span className="label">Prochaine échéance :</span>
-                          <span>{new Date(controle.deadline).toLocaleDateString('fr-FR')}</span>
+                          <span>{formatDateSimple(controle.deadline)}</span>
                         </div>
                         {status && (
                           <div className="controle-status" style={{ color: status.color }}>

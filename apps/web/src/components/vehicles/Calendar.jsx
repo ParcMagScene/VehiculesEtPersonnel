@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react';
 import useWindowWidth from '../../hooks/useWindowWidth';
+import { formatDateSimple } from '../../utils/formatUtils';
 import {
   startOfWeek,
   endOfWeek,
@@ -33,7 +34,8 @@ import YearSelector from '../YearSelector';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
-import { Button, Dialog } from '@/design-system';
+import { Button } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 import { STATUS, TIMING } from '../../constants';
 
@@ -111,11 +113,11 @@ const _ReservationTooltip = ({ block, currentUser, users = [] }) => {
           </div>
           <div className="tooltip-row">
             <span className="tooltip-label">Début:</span>
-            <span className="tooltip-value">{block.startDate || block.date ? `${new Date(block.startDate || block.date).toLocaleDateString('fr-FR')} ${(block.startPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
+            <span className="tooltip-value">{block.startDate || block.date ? `${formatDateSimple(block.startDate || block.date)} ${(block.startPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
           </div>
           <div className="tooltip-row">
             <span className="tooltip-label">Fin:</span>
-            <span className="tooltip-value">{block.endDate || block.date ? `${new Date(block.endDate || block.date).toLocaleDateString('fr-FR')} ${(block.endPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
+            <span className="tooltip-value">{block.endDate || block.date ? `${formatDateSimple(block.endDate || block.date)} ${(block.endPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
           </div>
         </>
       )}
@@ -600,7 +602,7 @@ const Calendar = ({
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Fonctions de navigation (startTransition pour ne pas bloquer l'UI)
   const goToPrevious = useCallback(() => {
@@ -2308,7 +2310,7 @@ const Calendar = ({
                           {!block.isMaintenance && onDeleteReservation && (
                             <Button variant="ghost"                               className="reservation-delete-btn"
                               title="Supprimer cette réservation"
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDialog({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); confirm({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                             >
@@ -2500,7 +2502,7 @@ const Calendar = ({
                           {!block.isMaintenance && onDeleteReservation && (
                             <Button variant="ghost"                               className="reservation-delete-btn"
                               title="Supprimer cette réservation"
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDialog({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); confirm({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                             >
@@ -2650,11 +2652,11 @@ const Calendar = ({
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Début:</span>
-                <span className="tooltip-value">{tooltipState.block.startDate || tooltipState.block.date ? `${new Date(tooltipState.block.startDate || tooltipState.block.date).toLocaleDateString('fr-FR')} ${(tooltipState.block.startPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
+                <span className="tooltip-value">{tooltipState.block.startDate || tooltipState.block.date ? `${formatDateSimple(tooltipState.block.startDate || tooltipState.block.date)} ${(tooltipState.block.startPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Fin:</span>
-                <span className="tooltip-value">{tooltipState.block.endDate || tooltipState.block.date ? `${new Date(tooltipState.block.endDate || tooltipState.block.date).toLocaleDateString('fr-FR')} ${(tooltipState.block.endPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
+                <span className="tooltip-value">{tooltipState.block.endDate || tooltipState.block.date ? `${formatDateSimple(tooltipState.block.endDate || tooltipState.block.date)} ${(tooltipState.block.endPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
               </div>
             </>
           )}
@@ -2706,16 +2708,7 @@ const Calendar = ({
           onClose={() => setShowYearSelector(false)}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        confirmLabel={confirmDialog?.confirmLabel}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

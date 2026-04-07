@@ -5,6 +5,7 @@ import { X, Printer, FileText, ChevronLeft, ChevronRight, Download } from 'lucid
 import api from '../../utils/api';
 import './MaintenanceReportModal.css';
 import { Button, Select, Table } from '@/design-system';
+import { formatDateTime, formatDateSimple } from '../../utils/formatUtils';
 
 const PERIOD_MODES = [
   { value: 'day', label: 'Journalier' },
@@ -17,26 +18,6 @@ const REPORT_TYPES = [
   { value: 'entries', label: 'Entrées uniquement' },
   { value: 'exits', label: 'Sorties uniquement' },
 ];
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    return format(d, 'dd/MM/yyyy HH:mm', { locale: fr });
-  } catch {
-    return dateStr;
-  }
-};
-
-const formatDateShort = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    return format(d, 'dd/MM/yyyy', { locale: fr });
-  } catch {
-    return dateStr;
-  }
-};
 
 const formatCost = (cost) => {
   if (cost === null || cost === undefined) return '—';
@@ -271,8 +252,8 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                       <td className="mr-mono">{row.equipmentUid || '—'}</td>
                       <td className="mr-mono">{row.equipmentSerialNumber || '—'}</td>
                       <td className="mr-desc">{row.title}{row.description ? ` — ${row.description}` : ''}</td>
-                      <td>{row.entryDate ? formatDate(row.entryDate) : (row.createdAt ? formatDateShort(row.createdAt) : '—')}</td>
-                      <td>{row.exitDate ? formatDate(row.exitDate) : '—'}</td>
+                      <td>{row.entryDate ? formatDateTime(row.entryDate) : (row.createdAt ? formatDateSimple(row.createdAt) : '—')}</td>
+                      <td>{row.exitDate ? formatDateTime(row.exitDate) : '—'}</td>
                       <td>{row.reportedByName || '—'}</td>
                       <td className="mr-cost">{formatCost(row.cost)}</td>
                     </tr>
@@ -325,8 +306,8 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                     <td>{row.equipmentUid || '—'}</td>
                     <td>{row.equipmentSerialNumber || '—'}</td>
                     <td>{row.title}{row.description ? ` — ${row.description}` : ''}</td>
-                    <td>{row.entryDate ? formatDate(row.entryDate) : (row.createdAt ? formatDateShort(row.createdAt) : '—')}</td>
-                    <td>{row.exitDate ? formatDate(row.exitDate) : '—'}</td>
+                    <td>{row.entryDate ? formatDateTime(row.entryDate) : (row.createdAt ? formatDateSimple(row.createdAt) : '—')}</td>
+                    <td>{row.exitDate ? formatDateTime(row.exitDate) : '—'}</td>
                     <td>{row.reportedByName || '—'}</td>
                     <td>{formatCost(row.cost)}</td>
                   </tr>

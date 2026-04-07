@@ -3,6 +3,7 @@ import { Upload, FileText, CheckCircle, X, Eye, Download, Link2, Search, AlertCi
 import { Button, ModalLayout, Input, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
 import { STATUS } from '../../constants';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 import '../equipment/EquipmentImportModal.css'; // réutilise le même CSS
 import './SavImportModal.css';
@@ -66,13 +67,6 @@ const STATUS_MAP = {
   closed: { label: 'Clôturée', color: 'var(--theme-text-gray)', icon: '✅' },
   in_progress: { label: 'En cours', color: '#f59e0b', icon: '🔧' },
   open: { label: 'Ouverte', color: '#ef4444', icon: '🔴' },
-};
-
-const formatDate = (d) => {
-  if (!d) return '—';
-  try {
-    return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR');
-  } catch { return d; }
 };
 
 const SavImportModal = ({ onClose, onImportDone }) => {
@@ -307,8 +301,8 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                           <td className="eq-import-name-cell">{row.nom_article}</td>
                           <td className="sav-import-small">{row.parsedSerial || row.serial}</td>
                           <td style={{ fontSize: 11, color: row.parsedUid ? '#3b82f6' : 'var(--theme-text-muted)', fontWeight: row.parsedUid ? 600 : 400 }}>{row.parsedUid || '—'}</td>
-                          <td>{formatDate(row.startDate)}</td>
-                          <td>{formatDate(row.endDate)}</td>
+                          <td>{formatDateSimple(row.startDate)}</td>
+                          <td>{formatDateSimple(row.endDate)}</td>
                           <td>{row.cost > 0 ? `${row.cost.toFixed(2)} €` : '—'}</td>
                           <td>
                             <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 10, fontWeight: 600, background: (STATUS_MAP[row.status]?.color || 'var(--theme-text-gray)') + '20', color: STATUS_MAP[row.status]?.color || 'var(--theme-text-gray)' }}>

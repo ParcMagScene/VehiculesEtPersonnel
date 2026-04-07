@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Plus, X, Save, Edit2, Trash2, Briefcase } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
 import { POSITION_CATEGORIES } from './personnelConstants';
-import { Button, Dialog, Input, Select, Checkbox, EmptyState } from '@/design-system';
+import { Button, Input, Select, Checkbox, EmptyState } from '@/design-system';
 
 const PositionsTab = ({ positions, setPositions, currentUser }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showForm, setShowForm] = useState(false);
   const [editingPosition, setEditingPosition] = useState(null);
   const [form, setForm] = useState({ name: '', category: 'autre', is_common: false });
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const groupedPositions = POSITION_CATEGORIES.map(cat => ({
     ...cat,
@@ -40,13 +41,12 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
   };
 
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: 'Supprimer ce poste ?',
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deletePosition(id);
           setPositions(prev => prev.filter(p => p.id !== id));
@@ -143,17 +143,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
           <EmptyState icon={<Briefcase size={48} />} title="Aucun poste enregistré" />
         )}
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

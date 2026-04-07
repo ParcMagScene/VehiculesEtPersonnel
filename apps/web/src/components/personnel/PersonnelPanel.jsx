@@ -28,9 +28,10 @@ import WeekSelector from '../WeekSelector';
 import YearSelector from '../YearSelector';
 import './PersonnelPanel.css';
 import '../equipment/EquipmentPanel.css';
-import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select, Table, Spinner, Avatar, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
+import { Button, FormField, ModalLayout, Input, Textarea, Select, Table, Spinner, Avatar, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import '../vehicles/Calendar.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import PersonnelAgenda from './PersonnelAgenda';
 import LeavesTab from '../leaves/LeavesTab';
 import SkillsTab from './SkillsTab';
@@ -435,7 +436,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
   const [editingPerson, setEditingPerson] = useState(null);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const filteredPersons = useMemo(() => persons.filter(p => {
     const matchSearch = `${p.firstName} ${p.lastName} ${p.email || ''} ${p.phone || ''}`
@@ -493,7 +494,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
   };
 
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer cette personne',
       message: 'Supprimer cette personne ?',
       variant: 'danger',
@@ -732,15 +733,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </div>
   );
 };

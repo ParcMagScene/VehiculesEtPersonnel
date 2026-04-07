@@ -9,8 +9,9 @@ import api from '../../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 import AffaireBadge from '../AffaireBadge';
 import { formatDateFr } from '../../utils/formatUtils';
-import { Accordion, Button, DetailRow, Dialog, Divider, Input, Select, Tooltip } from '@/design-system';
+import { Accordion, Button, DetailRow, Divider, Input, Select, Tooltip } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import EventTaskModal from './EventTaskModal';
 import TaskEditModal from './TaskEditModal';
 import AddTaskModal from './AddTaskModal';
@@ -122,6 +123,7 @@ const getWeekDays = (dateStr) => {
 // ═══ Composant Principal ═══
 function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavigateToEntity }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [tasks, setTasks] = useState([]);
   const [persons, setPersons] = useState([]);
   const [affaires, setAffaires] = useState([]);
@@ -132,7 +134,6 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   const [wkSplitRatio, setWkSplitRatio] = useState(50); // % height for events section
   const wkSplitDragging = useRef(false);
   const wkSplitContentRef = useRef(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Inline add form
   const [_addingSection, setAddingSection] = useState(null);
@@ -386,15 +387,13 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   };
 
   const handleDeleteRecurring = async (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la tâche récurrente',
       message: 'Supprimer cette tâche récurrente ?',
       onConfirm: async () => {
         try { await api.deleteRecurringTask(id); toast.success('Supprimée'); loadRecurringTasks(); }
         catch { toast.error('Erreur suppression'); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -416,7 +415,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   };
 
   const handleDeleteIcal = async (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le calendrier',
       message: 'Supprimer ce calendrier iCal ?',
       onConfirm: async () => {
@@ -426,9 +425,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           await loadIcalCalendars();
           loadIcalEvents();
         } catch { toast.error('Erreur suppression'); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -441,7 +438,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   };
 
   const handleRollover = async () => {
-    setConfirmDialog({
+    confirm({
       title: 'Reporter les tâches',
       message: `Reporter les tâches non terminées du ${formatDateFr(selectedDate)} au lendemain ?`,
       onConfirm: async () => {
@@ -450,9 +447,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           toast.success(`${res.rolled || 0} tâche(s) reportée(s)`);
           loadTasks(true);
         } catch { toast.error('Erreur report'); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -879,7 +874,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
 
   // Delete task
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la tâche',
       message: 'Voulez-vous supprimer cette tâche ?',
       onConfirm: async () => {
@@ -890,15 +885,13 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         } catch (err) {
           toast.error('Erreur suppression');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
   // Retirer un événement d'affichage de la planification
   const handleDeleteDisplayEvent = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Retirer de la planification',
       message: 'Supprimer cet événement d\'affichage ?',
       onConfirm: async () => {
@@ -909,9 +902,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         } catch (err) {
           toast.error('Erreur suppression');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -1372,7 +1363,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
 
   // Masquer une affaire de la planification
   const handleHideAffaire = (affaire) => {
-    setConfirmDialog({
+    confirm({
       title: 'Retirer de la planification',
       message: `Masquer l'affaire ${affaire.numeroAffaire} de la planification ?`,
       onConfirm: async () => {
@@ -1383,9 +1374,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         } catch (err) {
           toast.error('Erreur masquage affaire');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -2531,17 +2520,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         </div>
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
       {showPdfExport && (
         <Suspense fallback={null}>
           <TaskPDFExportModal

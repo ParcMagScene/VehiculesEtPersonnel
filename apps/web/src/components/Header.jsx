@@ -8,13 +8,15 @@ import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './planning/OverdueInterventionModal';
 import ProfileEditModal from './auth/ProfileEditModal';
 import { useToast } from '../hooks/useToast';
-import { Avatar, Button, Dialog, Textarea } from '@/design-system';
+import { useConfirmDialog } from '../hooks/useConfirmDialog';
+import { Avatar, Button, Textarea } from '@/design-system';
 import { STATUS } from '../constants';
 
 import './Header.css';
 
 const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], _onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
@@ -28,7 +30,6 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenManageme
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
   // (quick-create supprimé — les actions sont dans le header et la bannière)
 
   // Charger les demandes en attente (interventions + réservations) pour le badge admin
@@ -828,7 +829,7 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenManageme
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
                                   <Button variant="ghost"                                     className="notif-action-btn approve"
                                     onClick={() => {
-                                      setConfirmDialog({
+                                      confirm({
                                         title: 'Approuver la demande',
                                         message: 'Approuver cette demande et créer la réservation ?',
                                         variant: 'confirm',
@@ -1128,15 +1129,7 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenManageme
       />
     )}
 
-    <Dialog
-      open={!!confirmDialog}
-      onClose={() => setConfirmDialog(null)}
-      title={confirmDialog?.title}
-      variant={confirmDialog?.variant}
-      onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-      confirmLabel={confirmDialog?.confirmLabel}
-      cancelLabel="Annuler"
-    />
+    {ConfirmDialogRenderer}
   </>
   );
 };

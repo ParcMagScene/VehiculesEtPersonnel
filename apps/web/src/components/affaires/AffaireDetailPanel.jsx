@@ -10,7 +10,9 @@ import { fr } from 'date-fns/locale';
 import { capitalizeText } from '../../utils/dateUtils';
 import './AffaireDetailPanel.css';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
-import { Avatar, Button, Dialog, Input, Select, Table, Textarea, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { Avatar, Button, Input, Select, Table, Textarea, Tooltip } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
 
@@ -98,7 +100,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
   const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [planningOpen, setPlanningOpen] = useState(false);
   const [annotatingBL, setAnnotatingBL] = useState(null); // bl import object en cours d'annotation
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const fileInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
 
@@ -424,7 +426,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
   }, [affaire.id, loadLinkedAffaires, showFeedback]);
 
   const handleRemoveLink = useCallback((linkId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le lien',
       message: 'Supprimer ce lien entre affaires ?',
       variant: 'danger',
@@ -648,7 +650,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
       showFeedback('⚠ Aucun fournisseur identifié dans les articles');
       return;
     }
-    setConfirmDialog({
+    confirm({
       title: 'Générer les commandes',
       message: `Générer ${fournisseurs.length} commande${fournisseurs.length > 1 ? 's' : ''} (${fournisseurs.join(', ')}) pour ${blArticles.length} article${blArticles.length > 1 ? 's' : ''} ?`,
       variant: 'confirm',
@@ -675,7 +677,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
   // ═══ Suppression d'un BL/BP importé ═══
   const handleDeleteBL = (bl) => {
     const docLabel = (affaire.type === 'Location' || affaire.type === 'Prestation') ? 'BP' : 'BL';
-    setConfirmDialog({
+    confirm({
       title: `Supprimer le ${docLabel}`,
       message: `Supprimer le ${docLabel} "${bl.filename}" ? Cette action est irréversible.`,
       variant: 'danger',
@@ -1029,7 +1031,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
                       <span className="bl-import-type-badge">{docLabel}</span>
                       {sectionsCount > 0 && <span>{sectionsCount} section{sectionsCount > 1 ? 's' : ''}</span>}
                       {itemsCount > 0 && <span>{itemsCount} article{itemsCount > 1 ? 's' : ''}</span>}
-                      {bl.createdAt && <span><Clock size={11} /> {new Date(bl.createdAt).toLocaleDateString('fr-FR')}</span>}
+                      {bl.createdAt && <span><Clock size={11} /> {formatDateSimple(bl.createdAt)}</span>}
                     </div>
                   </div>
                   <div className={`bl-import-status ${bl.status || 'pending'}`}>
@@ -1767,15 +1769,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
         </Suspense>
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </div>
   );
 };

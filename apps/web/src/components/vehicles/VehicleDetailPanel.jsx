@@ -3,6 +3,7 @@ import { X, Wrench, AlertTriangle, Calendar, Gauge, User, ExternalLink } from 'l
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import { Button, Tag } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 import './VehicleDetailPanel.css';
 
 /* ═══════════════════════════════════════════════
@@ -34,11 +35,6 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
         ? JSON.parse(vehicle.controlesTechniques)
         : vehicle.controlesTechniques)
     : [];
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
 
   const getDeadlineStatus = (deadline) => {
     if (!deadline) return null;
@@ -138,7 +134,7 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
             <div className="vdp-km-label"><Gauge size={13} /> Kilométrage</div>
             <div className="vdp-km-value">{lastKm.toLocaleString('fr-FR')} km</div>
             <div className="vdp-km-meta">
-              {lastMileageEntry?.timestamp && <span><Calendar size={11} /> {formatDate(lastMileageEntry.timestamp)}</span>}
+              {lastMileageEntry?.timestamp && <span><Calendar size={11} /> {formatDateSimple(lastMileageEntry.timestamp)}</span>}
               {(lastMileageEntry?.userName || lastMileageEntry?.user_name) && (
                 <span><User size={11} /> {lastMileageEntry.userName || lastMileageEntry.user_name}</span>
               )}
@@ -183,8 +179,8 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
                     {deadline && <span className={`vdp-ct-badge ${deadline.className}`}>{deadline.label}</span>}
                   </div>
                   <div className="vdp-ct-dates">
-                    <span>Dernier : {formatDate(ct.date)}</span>
-                    {ct.deadline && <span>Échéance : {formatDate(ct.deadline)}</span>}
+                    <span>Dernier : {formatDateSimple(ct.date)}</span>
+                    {ct.deadline && <span>Échéance : {formatDateSimple(ct.deadline)}</span>}
                   </div>
                 </div>
               );
@@ -206,7 +202,7 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
                   <span className="vdp-intervention-type">{getTypeLabel(m.type)}</span>
                   {getStatusBadge(m.status)}
                 </div>
-                <div className="vdp-intervention-date">{formatDate(m.date)}</div>
+                <div className="vdp-intervention-date">{formatDateSimple(m.date)}</div>
                 {m.description && <div className="vdp-intervention-desc">{m.description}</div>}
                 <div className="vdp-intervention-tags">
                   {m.mileage && parseInt(m.mileage) > 0 && (

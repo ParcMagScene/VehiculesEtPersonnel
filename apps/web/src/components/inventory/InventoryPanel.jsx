@@ -11,8 +11,10 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import { useInventory } from '../../hooks/useInventory';
+import { formatDateSimple } from '../../utils/formatUtils';
 import './InventoryPanel.css';
 import { Button, Card, Input, Select, Spinner, Tab, TabList, TabPanel, Table, Tabs, Tooltip } from '@/design-system';
+import { formatDateTime } from '../../utils/formatUtils';
 
 // ═══════ SUB-VIEWS (inline pour éviter le surcoût de fichiers séparés) ═══════
 
@@ -354,7 +356,7 @@ function PricesView() {
             <tbody>
               {history.map(h => (
                 <tr key={h.id}>
-                  <td>{new Date(h.created_at).toLocaleDateString('fr-FR')}</td>
+                  <td>{formatDateSimple(h.created_at)}</td>
                   <td><span className={`inv-badge ${h.source}`}>{h.source}</span></td>
                   <td>{h.supplier_name || '—'}</td>
                   <td><strong>{h.price_ht?.toFixed(2)} €</strong></td>
@@ -499,12 +501,6 @@ function MovementsView() {
     return movements.filter(m => m.type === typeFilter);
   }, [movements, typeFilter]);
 
-  const formatDate = (d) => {
-    if (!d) return '—';
-    const dt = new Date(d);
-    return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
-
   if (loading) return <div className="inv-loading"><Spinner size="lg" /><p>Chargement des mouvements…</p></div>;
 
   return (
@@ -540,7 +536,7 @@ function MovementsView() {
                 const mt = MOVEMENT_TYPES[m.type] || {};
                 return (
                   <tr key={m.id}>
-                    <td>{formatDate(m.created_at)}</td>
+                    <td>{formatDateTime(m.created_at)}</td>
                     <td>
                       <span className="inv-movement-badge" style={{ background: (mt.color || '#888') + '20', color: mt.color }}>
                         {mt.icon} {mt.label || m.type}

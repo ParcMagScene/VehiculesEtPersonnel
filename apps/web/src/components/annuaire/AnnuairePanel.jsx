@@ -3,7 +3,8 @@ import {
   Plus, Edit2, Trash2, Filter, X, Check, Building2, UserCheck, Phone, Mail, Globe, MapPin, Upload, BookOpen, Contact, Eye, Building, ArrowLeft, Star
 } from 'lucide-react';
 import api from '../../utils/api';
-import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, SearchBar, Tooltip, SectionHeader } from '@/design-system';
+import { Button, FormField, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, SearchBar, Tooltip, SectionHeader } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import './AnnuairePanel.css';
 import { useToast } from '../../hooks/useToast';
@@ -51,7 +52,7 @@ function AnnuairePanel({ currentUser }) {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [typeFilter, setTypeFilter] = useState('');
   const [sectorFilter, setSectorFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -204,7 +205,7 @@ function AnnuairePanel({ currentUser }) {
   };
 
   const handleDelete = (item) => {
-    setConfirmDialog({
+    confirm({
       title: 'Confirmer la suppression',
       message: `Supprimer ${item.name || item.last_name} ?`,
       onConfirm: async () => {
@@ -221,9 +222,7 @@ function AnnuairePanel({ currentUser }) {
         } catch (e) {
           toast?.error(e.message || 'Erreur');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -256,7 +255,7 @@ function AnnuairePanel({ currentUser }) {
   };
 
   const handleRefDelete = (item) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer « ${item.name} » ?`,
       onConfirm: async () => {
@@ -268,9 +267,7 @@ function AnnuairePanel({ currentUser }) {
         } catch (e) {
           toast?.error('Erreur');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -455,17 +452,7 @@ function AnnuairePanel({ currentUser }) {
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
 
       {showContactsImport && (
         <ContactsCSVImportDialog

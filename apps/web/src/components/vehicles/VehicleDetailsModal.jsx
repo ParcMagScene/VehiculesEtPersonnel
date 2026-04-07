@@ -4,6 +4,7 @@ import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import InterventionModal from '../planning/InterventionModal';
 import { Button } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 import './VehicleDetailsModal.css';
 
 const VehicleDetailsModal = ({ 
@@ -51,17 +52,6 @@ const VehicleDetailsModal = ({
         ? JSON.parse(vehicle.controlesTechniques) 
         : vehicle.controlesTechniques)
     : [];
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Non renseigné';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Non renseigné';
-    return date.toLocaleDateString('fr-FR', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    });
-  };
 
   const getDeadlineStatus = (deadline) => {
     if (!deadline) return null;
@@ -262,7 +252,7 @@ const VehicleDetailsModal = ({
                       <span className="info-value info-value-km">{lastKm.toLocaleString('fr-FR')} km</span>
                       {(kmDate || kmUser) && (
                         <span className="info-km-meta">
-                          {kmDate && <span className="km-meta-item"><Calendar size={12} /> {formatDate(kmDate)}</span>}
+                          {kmDate && <span className="km-meta-item"><Calendar size={12} /> {formatDateSimple(kmDate, 'Non renseigné')}</span>}
                           {kmUser && <span className="km-meta-item"><User size={12} /> {kmUser}</span>}
                         </span>
                       )}
@@ -354,12 +344,12 @@ const VehicleDetailsModal = ({
                       <div className="deadline-dates">
                         <div className="deadline-date-item">
                           <span className="deadline-date-label">Dernier contrôle :</span>
-                          <span className="deadline-date-value">{formatDate(controle.date)}</span>
+                          <span className="deadline-date-value">{formatDateSimple(controle.date, 'Non renseigné')}</span>
                         </div>
                         {controle.deadline && (
                           <div className="deadline-date-item">
                             <span className="deadline-date-label">Échéance :</span>
-                            <span className="deadline-date-value">{formatDate(controle.deadline)}</span>
+                            <span className="deadline-date-value">{formatDateSimple(controle.deadline, 'Non renseigné')}</span>
                           </div>
                         )}
                       </div>
@@ -408,7 +398,7 @@ const VehicleDetailsModal = ({
                         <span className="maintenance-type">{getTypeLabel(maintenance.type)}</span>
                         {getStatusBadge(maintenance.status)}
                       </div>
-                      <span className="maintenance-date">{formatDate(maintenance.date)}</span>
+                      <span className="maintenance-date">{formatDateSimple(maintenance.date, 'Non renseigné')}</span>
                     </div>
                     {maintenance.description && (
                       <div className="maintenance-description">{maintenance.description}</div>

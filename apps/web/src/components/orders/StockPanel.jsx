@@ -3,9 +3,10 @@ import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, TrendingUp, AlertTrian
   RotateCcw, Layers, Tag as TagIcon, MapPin, Euro, Hash, X, Check, Archive, Upload, ExternalLink, Map } from 'lucide-react';
 import api from '../../utils/api';
 import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
-import { Button, Dialog, ModalLayout, Input, Textarea, Select, Table, EntityCombobox, Spinner, Tag, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
+import { Button, ModalLayout, Input, Textarea, Select, Table, EntityCombobox, Spinner, Tag, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import './StockPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { extractTextFromPDF } from '../../utils/pdfParser';
 import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
@@ -29,6 +30,7 @@ const CATEGORY_ICONS = ['📦', '🔧', '⚡', '🔩', '🛠️', '📐', '🧰'
 // ═══ Composant Principal ═══
 function StockPanel({ currentUser, stockType = 'vente', showManagement = false, onCloseManagement }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState(null);
@@ -45,7 +47,6 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   const [editingCategory, setEditingCategory] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [dialogItem, setDialogItem] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
   const [showImport, setShowImport] = useState(false);
   const [depotZones, setDepotZones] = useState(null);
   const [allDepotZones, setAllDepotZones] = useState(null);
@@ -120,7 +121,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   };
 
   const handleDeleteItem = (item) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer l\'article',
       message: `Supprimer "${item.name}" (${item.reference}) ? L'historique des mouvements sera aussi supprimé.`,
       onConfirm: async () => {
@@ -129,9 +130,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           setSelectedItem(null);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -152,7 +151,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   };
 
   const handleDeleteCategory = (cat) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la catégorie',
       message: `Supprimer la catégorie "${cat.name}" ? Elle ne doit contenir aucun article.`,
       onConfirm: async () => {
@@ -160,9 +159,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           await api.deleteStockCategory(cat.id);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -304,17 +301,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           onClose={() => setShowMovementForm(false)}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
       {showImport && (
         <ImportStockModal
           onDone={() => { setShowImport(false); loadData(); }}

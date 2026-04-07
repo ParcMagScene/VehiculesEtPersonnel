@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Clock, CheckCircle, AlertTriangle, FileText, Loader, X, User, Calendar, Gauge } from 'lucide-react';
 import { Button, Dialog, FormField, Input, Textarea, Select, Checkbox, Tabs, TabList, Tab, TabPanel, StatusBadge } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
 import api from '../../utils/api';
 import './MaintenanceDialog.css';
@@ -86,7 +87,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     onClose();
   };
   const [statusReason, setStatusReason] = useState(''); // Motif pour pending/cancelled/rescheduled
-  const [confirmDialog, setConfirmDialog] = useState(null); // { message, onConfirm }
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showCancelForm, setShowCancelForm] = useState(false);
   const startDateInputRef = useRef(null);
   const [formData, setFormData] = useState(
@@ -401,10 +402,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
 
   const deleteMaintenance = (maintenanceId) => {
-    setConfirmDialog({
+    confirm({
       message: 'Attention, si vous supprimez cette intervention, elle n\'apparaîtra plus dans l\'historique du véhicule. Cette action est irréversible.\n\nSupprimer quand même ?',
       onConfirm: () => {
-        setConfirmDialog(null);
         onSave({ id: maintenanceId, _deleted: true });
       }
     });
@@ -1189,17 +1189,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           </div>
         )}
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title="Confirmation"
-        variant="confirm"
-        confirmLabel="Oui"
-        cancelLabel="Non"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
 
       <Dialog
         open={showUnsavedWarning}

@@ -7,13 +7,15 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import './MailingPanel.css';
-import { Button, Checkbox, Dialog, EmptyState, Input, Select, Tab, TabList, TabPanel, Tabs, Tag, Textarea, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { Button, Checkbox, EmptyState, Input, Select, Tab, TabList, TabPanel, Tabs, Tag, Textarea, Tooltip } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 // Variables disponibles pour les templates
 const AVAILABLE_VARS = [
   { key: 'nom', label: 'Nom du destinataire', example: 'Jean Dupont' },
   { key: 'email', label: 'Email du destinataire', example: 'jean@example.com' },
-  { key: 'date', label: "Date du jour", example: new Date().toLocaleDateString('fr-FR') },
+  { key: 'date', label: "Date du jour", example: formatDateSimple(new Date().toISOString()) },
   { key: 'entreprise', label: "Nom de l'entreprise", example: 'eM@g' },
   { key: 'objet', label: 'Objet personnalisé', example: 'Votre commande' },
 ];
@@ -72,7 +74,7 @@ export default function MailingPanel({ isOpen, onClose }) {
   const [configForm, setConfigForm] = useState({});
   const [savingConfig, setSavingConfig] = useState(false);
   const [configTestResult, setConfigTestResult] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Charger les données
   const loadData = useCallback(async () => {
@@ -220,13 +222,12 @@ export default function MailingPanel({ isOpen, onClose }) {
   };
 
   const deleteTemplate = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: 'Supprimer ce template ?',
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteMailTemplate(id);
           setTemplates(prev => prev.filter(t => t.id !== id));
@@ -687,17 +688,7 @@ export default function MailingPanel({ isOpen, onClose }) {
         </div>
         </Tabs>
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

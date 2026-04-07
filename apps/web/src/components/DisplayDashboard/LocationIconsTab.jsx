@@ -6,8 +6,9 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { Film, Upload, Plus, Trash2, Save, X } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api, { getApiUrl } from '../../utils/api';
-import { Button, Dialog, Select, Tooltip, SectionHeader } from '@/design-system';
+import { Button, Select, Tooltip, SectionHeader } from '@/design-system';
 
 // Types de tâches (sections) disponibles pour l'association icône
 const TASK_SECTIONS = [
@@ -34,12 +35,12 @@ const TASK_SECTIONS = [
 
 function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [gifs, setGifs] = useState([]);
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showMosaic, setShowMosaic] = useState(null); // index de la règle en cours
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const _API_URL = getApiUrl();
 
@@ -79,13 +80,12 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
   }, [toast]);
 
   const handleDeleteGif = useCallback((filename) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer l'ic\xF4ne \xAB ${filename} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayLocationGif(filename);
           toast.success('Ic\xF4ne supprim\xE9e');
@@ -95,7 +95,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
         }
       },
     });
-  }, [toast]);
+  }, [confirm, toast]);
 
   // ── Gestion règles d'icônes ──
   const handleAddRule = () => {
@@ -242,17 +242,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
           </div>
         </div>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

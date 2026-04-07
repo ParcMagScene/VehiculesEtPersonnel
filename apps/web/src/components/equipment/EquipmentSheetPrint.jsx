@@ -1,4 +1,4 @@
-import { safeDate } from '../../utils/formatUtils';
+import { safeDate, formatDateSimple } from '../../utils/formatUtils';
 import { STATUS } from '../../constants';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
@@ -75,7 +75,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
   const assignments = eq.assignments || [];
   const tickets = eq.savTickets || [];
 
-  const today = new Date().toLocaleDateString('fr-FR');
+  const today = formatDateSimple(new Date().toISOString());
 
   const html = `<!DOCTYPE html>
 <html lang="fr">

@@ -18,7 +18,8 @@ import api from '../../utils/api';
 import PersonnelPanel from '../personnel/PersonnelPanel';
 import './ManagementPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, Input, Select } from '@/design-system';
+import { Button, Input, Select } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 const ManagementPanel = ({
   vehicles,
@@ -86,7 +87,7 @@ const ManagementPanel = ({
   const [depotZones, setDepotZones] = useState(null);
   const [locationStats, setLocationStats] = useState(null);
   const [activeDepot, setActiveDepot] = useState(1);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Charger le nombre de demandes d'accès en attente
   useEffect(() => {
@@ -433,7 +434,7 @@ const ManagementPanel = ({
   };
 
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer cet élément',
       message: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
       variant: 'danger',
@@ -1546,15 +1547,7 @@ const ManagementPanel = ({
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </div>
   );
 };

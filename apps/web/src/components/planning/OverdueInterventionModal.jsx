@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { CheckCircle, XCircle, Calendar, Clock } from 'lucide-react';
-import { Button, Dialog, ModalLayout, Textarea} from '@/design-system';
+import { Button, ModalLayout, Textarea} from '@/design-system';
 import './OverdueInterventionModal.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
 
@@ -16,20 +18,19 @@ const OverdueInterventionModal = ({
   onReschedule 
 }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [reason, setReason] = useState('');
   const [showReasonInput, setShowReasonInput] = useState(false);
   const [action, setAction] = useState(null); // 'completed', 'cancelled', 'pending', 'reschedule'
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const handleAction = async (actionType) => {
     setAction(actionType);
     if (actionType === STATUS.CANCELLED || actionType === STATUS.PENDING) {
       setShowReasonInput(true);
     } else if (actionType === STATUS.COMPLETED) {
-      setConfirmDialog({
+      confirm({
         message: 'Confirmer que l\'intervention a été réalisée ?',
         onConfirm: async () => {
-          setConfirmDialog(null);
           await onMarkCompleted(intervention);
           onClose();
         }
@@ -87,8 +88,8 @@ const OverdueInterventionModal = ({
             <h3>{vehicle?.name || 'Véhicule inconnu'}{vehicle?.kilometrage ? ` — ${Number(vehicle.kilometrage).toLocaleString('fr-FR')} km` : ''}</h3>
             <p className="intervention-description">{intervention.description}</p>
             <p className="intervention-dates">
-              Prévu du {new Date(intervention.startDate).toLocaleDateString('fr-FR')} au{' '}
-              {new Date(intervention.endDate).toLocaleDateString('fr-FR')}
+              Prévu du {formatDateSimple(intervention.startDate)} au{' '}
+              {formatDateSimple(intervention.endDate)}
             </p>
           </div>
 
@@ -108,17 +109,7 @@ const OverdueInterventionModal = ({
             </div>
           )}
     </ModalLayout>
-    <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title="Confirmation"
-        variant="confirm"
-        confirmLabel="Oui"
-        cancelLabel="Non"
-      >
-        {confirmDialog?.message}
-    </Dialog>
+    {ConfirmDialogRenderer}
     </>
   );
 };

@@ -16,11 +16,7 @@ const LABEL_FORMATS = [
 
 const EXPORT_FORMATS = ['SVG', 'PNG', 'JPG'];
 
-const APP_BASE_URL = (() => {
-  const origin = window.location.origin;
-  if (origin.includes('magsav.duckdns.org')) return origin;
-  return 'http://magsav.duckdns.org:4173';
-})();
+const APP_BASE_URL = window.location.origin;
 
 const escSvg = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -110,7 +106,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
       labels.push(
         '<div class="label" style="width: ' + format.width + 'mm; height: ' + format.height + 'mm;">' +
           '<div class="label-content">' +
-            (showLogo ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" /></div>' : '') +
+            (showLogo ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Logo" /></div>' : '') +
             '<div class="label-info">' +
               '<div class="label-ref">' + escSvg(eq.reference || '') + '</div>' +
               (eq.uid ? '<div class="label-uid"><b>UID: ' + escSvg(eq.uid) + '</b></div>' : '') +
@@ -191,7 +187,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <div className="elp-label-content" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                 {showLogo && (
                   <div className="elp-label-logo">
-                    <img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" style={{ height: qrPreviewSize + 'px', width: 'auto' }} />
+                    <img src="/Logos/logo_Noir_Transp.png" alt="Logo" style={{ height: qrPreviewSize + 'px', width: 'auto' }} />
                   </div>
                 )}
                 <div className="elp-label-info">
@@ -235,7 +231,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             )}
 
             <div className="elp-field-inline">
-              <label>Logo Mag Scène :</label>
+              <label>Logo entreprise :</label>
               <div className="elp-toggle-group">
                 <button className={'elp-toggle-btn ' + (showLogo ? 'active' : '')} onClick={() => setShowLogo(true)}>Avec</button>
                 <button className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')} onClick={() => setShowLogo(false)}>Sans</button>

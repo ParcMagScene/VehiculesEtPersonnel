@@ -9,11 +9,7 @@ const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"'
 const PAGE_SIZE_MM = 200; // 200×200 mm
 const LABEL_GAP_MM = 2;
 
-const APP_BASE_URL = (() => {
-  const origin = window.location.origin;
-  if (origin.includes('magsav.duckdns.org')) return origin;
-  return 'http://magsav.duckdns.org:4173';
-})();
+const APP_BASE_URL = window.location.origin;
 
 const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -211,7 +207,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
       let textY = showLogo ? 30 : 15;
       
       if (showLogo) {
-        labelSvg += '<text x="' + (lw/2) + '" y="12" text-anchor="middle" font-size="8" fill="#333">MAG SCÈNE</text>';
+        labelSvg += '<text x="' + (lw/2) + '" y="12" text-anchor="middle" font-size="8" fill="#333">' + (window.__COMPANY_LABEL || 'eM@g') + '</text>';
       }
       
       // Reference
@@ -259,7 +255,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
         </button>
 
         <div className="ebl-logo-toggle">
-          <span>Logo Mag Scène :</span>
+          <span>Logo entreprise :</span>
           <button className={`ebl-toggle-btn ${showLogo ? 'active' : ''}`} onClick={() => setShowLogo(true)}>Avec</button>
           <button className={`ebl-toggle-btn ${!showLogo ? 'active' : ''}`} onClick={() => setShowLogo(false)}>Sans</button>
         </div>

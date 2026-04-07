@@ -292,7 +292,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     }
   }, [formData.lat, formData.lng, formData.name]);
 
-  // Calculer la distance et le temps depuis Mag Scène
+  // Calculer la distance et le temps depuis le siège
   useEffect(() => {
     if (!formData.lat || !formData.lng || !companyAddress) return;
 
@@ -496,7 +496,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                 <div className="route-info">
                   <h3>
                     <Navigation size={18} />
-                    Depuis Mag Scène
+                    Depuis le siège
                   </h3>
                   {isLoadingRoute ? (
                     <div className="loading">Calcul en cours...</div>

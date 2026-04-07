@@ -157,7 +157,7 @@
 | Vulnérabilités connues | xlsx (HIGH — Prototype Pollution, ReDoS), esbuild/vite (MODERATE — SSRF dev) |
 | Pratiques implémentées | Prepared statements, JWT httpOnly, bcrypt, rate limiting, CORS, Helmet, permissions granulaires |
 | Procédure mises à jour | `npm audit`, cycle 6 étapes sécurisé |
-| Signalement | Email admin@magsav.com, 30 jours divulgation coordonnée |
+| Signalement | Email admin@example.com, 30 jours divulgation coordonnée |
 
 ### 6.2 Audit technique
 

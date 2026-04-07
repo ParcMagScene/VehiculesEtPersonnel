@@ -105,7 +105,7 @@ npm audit
 | Cookie secure | Vérifier `authRoutes.js` | `secure: true` en production |
 | Rate limiting | Vérifier `server.js` | Tous endpoints auth protégés |
 | CORS origins | Vérifier `config/cors.js` | Pas d'origine `*` ou localhost en prod |
-| Helmet actif | `curl -sI https://magsav.duckdns.org/api/ \| grep -i 'x-content-type\|x-frame'` | Headers présents |
+| Helmet actif | `curl -sI https://votre-serveur/api/ \| grep -i 'x-content-type\|x-frame'` | Headers présents |
 
 ### C. Revue des uploads
 

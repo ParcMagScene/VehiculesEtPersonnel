@@ -39,7 +39,7 @@ function LocationsTab({ currentUser }) {
   }, [loadLocations]);
 
   const allLocations = companyAddress
-    ? [{ id: 'mag-scene', name: 'Mag Scène', address: companyAddress, type: 'Dépôt', isCompanyLocation: true }, ...locations]
+    ? [{ id: 'company-hq', name: 'Siège', address: companyAddress, type: 'Dépôt', isCompanyLocation: true }, ...locations]
     : locations;
 
   const filtered = allLocations.filter(loc =>

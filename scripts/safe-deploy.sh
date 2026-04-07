@@ -70,6 +70,6 @@ rm -rf "$BACKUP_DIR"
 
 echo ""
 echo "✅ Déploiement terminé avec succès !"
-echo "   Frontend: http://magsav.duckdns.org:4173/"
-echo "   Backend:  http://magsav.duckdns.org:3002/"
+echo "   Frontend: http://localhost:4173/"
+echo "   Backend:  http://localhost:3002/"
 pm2 list

@@ -90,7 +90,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5174,
     open: true,
-    allowedHosts: ['localhost', '192.168.205.75', 'magsav.duckdns.org'],
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3003',
@@ -102,7 +102,7 @@ export default defineConfig({
     // MODE PROD — proxy vers le backend PROD sur port 3002
     host: '0.0.0.0',
     port: 4173,
-    allowedHosts: ['localhost', '192.168.205.75', 'magsav.duckdns.org'],
+    allowedHosts: true,
     headers: {
       'Pragma': 'no-cache',
       'Expires': '0',

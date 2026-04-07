@@ -1310,7 +1310,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         margins: { top: 25, bottom: 20, left: 25, right: 25 },
         info: {
           Title: `Fiche du jour - ${dateFr}`,
-          Author: 'eM@g - Mag Scène',
+          Author: 'eM@g',
           Subject: 'Planification journalière',
         }
       });

@@ -102,7 +102,7 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 ### Réseau
 
 ✅ **Configuration CORS**
-- Whitelist stricte : `magsav.duckdns.org`, `localhost:5174`, `localhost:4173`, IP locale
+- Whitelist stricte via `ALLOWED_ORIGINS` (.env) : localhost, IP locale, domaine production
 - Headers sécurisés
 
 ⚠️ **HTTPS**
@@ -164,7 +164,7 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 **Ne créez PAS d'issue publique** pour les vulnérabilités.
 
-- **Email :** admin@magsav.com
+- **Email :** admin@example.com (remplacer par votre contact sécurité)
 - **Délai de réponse :** 48 heures maximum
 
 ### Informations à Fournir
@@ -254,7 +254,7 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ## 📞 Support
 
-- 📧 Email : admin@magsav.com
+- 📧 Email : admin@example.com (remplacer par votre contact sécurité)
 - 📖 Documentation : [ARCHITECTURE.md](../01-Architecture/ARCHITECTURE.md) (section sécurité)
 - 🔍 Audit complet : [AUDIT.md](AUDIT.md)
 - 🔧 Issues : GitHub (questions non-sensibles uniquement)

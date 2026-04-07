@@ -70,7 +70,7 @@ const openPrintWindow = (title, htmlContent) => {
       @page { margin: 10mm; }
     </style>
   </head><body>${htmlContent}
-    <div class="footer">Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })} — eM@g · Mag Scène</div>
+    <div class="footer">Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })} — eM@g</div>
   </body></html>`);
   win.document.close();
   setTimeout(() => { win.focus(); win.print(); }, 400);

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   Composant Desktop — Module Inventaire Mag Scène
+   Composant Desktop — Module Inventaire eM@g
    Onglets : Dashboard · Articles · Emplacements · Prix · Anomalies
    ═══════════════════════════════════════════════════════════════ */
 

@@ -52,7 +52,7 @@
 
 ## 7. Post-déploiement
 
-- [ ] Vérifier l'accès depuis le domaine public (`magsav.duckdns.org`)
+- [ ] Vérifier l'accès depuis le domaine public (configuré dans .env)
 - [ ] Tester le login d'au moins 2 utilisateurs
 - [ ] Vérifier que les zones dépôt en `server/data/` persistent correctement après redémarrage
 - [ ] Monitorer les logs pendant 30 min pour détecter des erreurs silencieuses

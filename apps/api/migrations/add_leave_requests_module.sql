@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════
 -- Migration: Module complet de gestion des congés
--- Conforme Code du travail, IDCC 3252, Politique Mag Scène
+-- Conforme Code du travail, IDCC 3252
 -- ═══════════════════════════════════════════════════════════════
 
 -- Table principale des demandes de congés
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS leave_requests (
   -- PDF généré
   pdf_path TEXT,
 
-  -- Critères de validation Mag Scène
+  -- Critères de validation internes
   priority_score INTEGER DEFAULT 0,     -- Score pour arbitrage
   -- Composé de : ancienneté + situation familiale + charge événementielle
 

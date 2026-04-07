@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // PANNEAU HISTORIQUE DES DEMANDES DE CONGÉS — Salarié
-// Conforme Code du travail, IDCC 3252, Politique Mag Scène
+// Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback } from 'react';

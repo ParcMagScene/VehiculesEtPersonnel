@@ -141,7 +141,7 @@ FRONTEND REACT : App.jsx → Header + 14 modules lazy-loaded
 | Base de données | SQLite (better-sqlite3) | WAL mode |
 | Authentification | JWT + bcrypt | SHA-256 hash en DB |
 | Déploiement | PM2 | Cron restart 6h |
-| Domaine | DuckDNS | magsav.duckdns.org |
+| Domaine | DuckDNS | (configurable via .env) |
 | Reverse proxy | Non documenté | HTTP → HTTPS supposé |
 
 ---

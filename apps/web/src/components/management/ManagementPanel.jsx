@@ -102,7 +102,7 @@ const ManagementPanel = ({
     return () => clearInterval(interval);
   }, [currentUser]);
 
-  // Charger l'adresse de Mag Scène depuis la config
+  // Charger l'adresse du siège depuis la config
   useEffect(() => {
     const loadCompanyAddress = async () => {
       try {
@@ -182,16 +182,16 @@ const ManagementPanel = ({
       case 'clients': return clients;
       case 'drivers': return drivers;
       case 'locations': {
-        // Ajouter Mag Scène comme premier lieu si une adresse est configurée
+        // Ajouter le siège comme premier lieu si une adresse est configurée
         if (companyAddress) {
-          const magSceneLocation = {
-            id: 'mag-scene',
-            name: 'Mag Scène',
+          const companyLocation = {
+            id: 'company-hq',
+            name: 'Siège',
             address: companyAddress,
             type: 'Dépôt',
             isCompanyLocation: true
           };
-          return [magSceneLocation, ...locations];
+          return [companyLocation, ...locations];
         }
         return locations;
       }
@@ -548,7 +548,7 @@ const ManagementPanel = ({
     if (activeTab === 'vehicles') {
       const allVehicles = [...vehicles];
       const sectionVehicles = allVehicles.filter(v => 
-        dropSection === 'magscene' ? !v.isLocation : v.isLocation
+        dropSection === 'company' ? !v.isLocation : v.isLocation
       );
       
       if (draggedIndex === dropIndex) return;
@@ -558,10 +558,10 @@ const ManagementPanel = ({
       
       // Reconstruire la liste complète en conservant l'ordre des deux sections
       const otherVehicles = allVehicles.filter(v => 
-        dropSection === 'magscene' ? v.isLocation : !v.isLocation
+        dropSection === 'company' ? v.isLocation : !v.isLocation
       );
       
-      const newList = dropSection === 'magscene' 
+      const newList = dropSection === 'company' 
         ? [...sectionVehicles, ...otherVehicles]
         : [...otherVehicles, ...sectionVehicles];
       
@@ -576,7 +576,7 @@ const ManagementPanel = ({
       try {
         // Ne mettre à jour que les véhicules de la section qui a été réorganisée
         const vehiclesToUpdate = newList.filter(v => 
-          dropSection === 'magscene' ? !v.isLocation : v.isLocation
+          dropSection === 'company' ? !v.isLocation : v.isLocation
         );
         
         await Promise.all(
@@ -1003,18 +1003,18 @@ const ManagementPanel = ({
           <div className="items-section">
             {activeTab === 'vehicles' ? (
               <>
-                {/* Véhicules Mag Scène */}
+                {/* Véhicules entreprise */}
                 <div className="vehicles-subsection">
-                  <h3>Véhicules Mag Scène ({vehicles.filter(v => !v.isLocation).length})</h3>
+                  <h3>Véhicules entreprise ({vehicles.filter(v => !v.isLocation).length})</h3>
                   <div className="items-list">
                     {vehicles.filter(v => !v.isLocation).map((item, index) => (
                       <div 
                         key={item.id} 
-                        className={`item-card ${draggedSection === 'magscene' && draggedIndex === index ? 'dragging' : ''}`}
+                        className={`item-card ${draggedSection === 'company' && draggedIndex === index ? 'dragging' : ''}`}
                         draggable={!editingItem}
-                        onDragStart={() => handleDragStart(index, 'magscene')}
+                        onDragStart={() => handleDragStart(index, 'company')}
                         onDragOver={handleDragOver}
-                        onDrop={() => handleDrop(index, 'magscene')}
+                        onDrop={() => handleDrop(index, 'company')}
                       >
                         {editingItem?.id === item.id ? (
                     <div className="edit-form">
@@ -1201,7 +1201,7 @@ const ManagementPanel = ({
               
               {vehicles.filter(v => !v.isLocation).length === 0 && (
                 <div className="empty-state">
-                  <p>Aucun véhicule Mag Scène</p>
+                  <p>Aucun véhicule entreprise</p>
                 </div>
               )}
             </div>

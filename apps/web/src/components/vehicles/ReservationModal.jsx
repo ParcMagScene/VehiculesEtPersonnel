@@ -141,7 +141,7 @@ const ReservationModal = ({
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   
-  // État pour l'adresse de Mag Scène
+  // État pour l'adresse du siège
   const [companyAddress, setCompanyAddress] = useState('');
   const [allLocations, setAllLocations] = useState(locations);
 
@@ -220,7 +220,7 @@ const ReservationModal = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Charger l'adresse de Mag Scène et créer la liste complète des lieux
+  // Charger l'adresse du siège et créer la liste complète des lieux
   useEffect(() => {
     const fetchCompanyAddress = async () => {
       try {
@@ -231,19 +231,19 @@ const ReservationModal = ({
         
         setCompanyAddress(address);
         
-        // Créer un lieu virtuel pour Mag Scène si une adresse existe
+        // Créer un lieu virtuel pour le siège si une adresse existe
         if (address) {
-          // Vérifier si Mag Scène n'est pas déjà dans la liste
-          const hasMagScene = locations.some(l => l.id === 'mag-scene' || l.name === 'Mag Scène');
+          // Vérifier si le siège n'est pas déjà dans la liste
+          const hasCompanyHQ = locations.some(l => l.id === 'company-hq' || l.id === 'mag-scene');
           
-          if (!hasMagScene) {
-            const magSceneLocation = {
-              id: 'mag-scene',
-              name: 'Mag Scène',
+          if (!hasCompanyHQ) {
+            const companyLocation = {
+              id: 'company-hq',
+              name: 'Siège',
               address: address,
               type: 'Dépôt'
             };
-            setAllLocations([magSceneLocation, ...locations]);
+            setAllLocations([companyLocation, ...locations]);
           } else {
             setAllLocations(locations);
           }

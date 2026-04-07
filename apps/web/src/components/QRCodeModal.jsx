@@ -5,7 +5,7 @@ import './QRCodeModal.css';
 
 function QRCodeModal({ onClose }) {
   const canvasRef = useRef(null);
-  const mobileUrl = 'http://magsav.duckdns.org:4173/#/mobile';
+  const mobileUrl = `${window.location.origin}/#/mobile`;
 
   useEffect(() => {
     generateQRCode();
@@ -39,7 +39,7 @@ function QRCodeModal({ onClose }) {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>QR Codes - Accès Mobile MagScene</title>
+          <title>QR Codes - Accès Mobile eM@g</title>
           <style>
             @page {
               size: A4 portrait;
@@ -225,7 +225,7 @@ function QRCodeModal({ onClose }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'qrcode-magscene-mobile.jpg';
+      link.download = 'qrcode-emag-mobile.jpg';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

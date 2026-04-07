@@ -214,8 +214,8 @@ eM@g/
 ## 🌐 Accès
 
 ### Production
-- **Frontend** : http://magsav.duckdns.org:4173
-- **Backend** : http://magsav.duckdns.org:3002
+- **Frontend** : http://votre-serveur:4173
+- **Backend** : http://votre-serveur:3002
 
 ### Développement
 - **Frontend** : http://localhost:5174

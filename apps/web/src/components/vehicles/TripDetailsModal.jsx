@@ -164,7 +164,7 @@ const TripDetailsModal = ({
     }
   }, []);
 
-  // Charger les lieux et l'adresse de Mag Scène
+  // Charger les lieux et l'adresse du siège
   useEffect(() => {
     
     // Si on a déjà les lieux depuis le parent, les utiliser directement
@@ -195,15 +195,15 @@ const TripDetailsModal = ({
         }
         
         
-        // Créer un lieu virtuel pour Mag Scène si une adresse existe
+        // Créer un lieu virtuel pour le siège si une adresse existe
         if (address) {
-          const magSceneLocation = {
-            id: 'mag-scene',
-            name: 'Mag Scène',
+          const companyLocation = {
+            id: 'company-hq',
+            name: 'Siège',
             address: address,
             type: 'Dépôt'
           };
-          setAllLocations([magSceneLocation, ...locationsData]);
+          setAllLocations([companyLocation, ...locationsData]);
         } else {
           setAllLocations(locationsData);
         }

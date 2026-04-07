@@ -25,7 +25,7 @@ function MobileAccess() {
   const [posterFormat, setPosterFormat] = useState('A4');
   
   // URL de l'interface mobile
-  const mobileUrl = `http://magsav.duckdns.org:4173/#/mobile`;
+  const mobileUrl = `${window.location.origin}/#/mobile`;
   
   // Générer le QR code au chargement
   useEffect(() => {

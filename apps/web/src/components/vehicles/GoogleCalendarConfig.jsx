@@ -136,7 +136,7 @@ const GoogleCalendarConfig = () => {
               </span>
             ) : (
               <span className="env-prod">
-                🌐 Utilisez le Client ID de <strong>ParcMagScene</strong>
+                🌐 Utilisez le Client ID de <strong>Production</strong>
               </span>
             )}
           </div>
@@ -201,10 +201,10 @@ const GoogleCalendarConfig = () => {
                 <li>Pour développement local : http://localhost:4173</li>
                 <li>Origines autorisées : localhost uniquement</li>
               </ul>
-              <p><strong>ParcMagScene</strong> (production)</p>
+              <p><strong>Production</strong> (production)</p>
               <ul>
-                <li>Pour accès réseau/internet : http://magsav.duckdns.org:4173</li>
-                <li>Origines autorisées : votre domaine ou IP publique</li>
+              <li>Pour accès réseau/internet : votre domaine ou IP publique, port 4173</li>
+              <li>Origines autorisées : ajoutez votre domaine dans la console Google</li>
               </ul>
               <p className="warning-note">
                 ⚠️ Si vous changez de Client ID, utilisez le bouton "Déconnecter OAuth" ci-dessous puis reconnectez-vous.
@@ -290,7 +290,7 @@ const GoogleCalendarConfig = () => {
           <li>Activez les API : Google Calendar, Maps JavaScript API, Places API, Distance Matrix API</li>
           <li>Créez des identifiants OAuth 2.0 (Client ID)</li>
           <li>Créez une clé API pour Google Maps</li>
-          <li>Ajoutez l'origine autorisée : <code>http://192.168.205.75:4173</code></li>
+          <li>Ajoutez l'origine autorisée : <code>{window.location.origin}</code></li>
           <li>Copiez le Client ID et la clé API ici</li>
           <li>Récupérez l'ID de votre calendrier dans Google Calendar (Paramètres → Calendrier)</li>
         </ol>

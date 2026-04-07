@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // MODULE GESTION DES CONGÉS — Routes API Express
-// Conforme Code du travail, IDCC 3252, Politique Mag Scène
+// Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
 import db, { addToHistory } from './database.js';
@@ -197,7 +197,7 @@ function canModify(startDate) {
 
 /**
  * Calcule le score de priorité pour l'arbitrage des demandes simultanées.
- * Critères Mag Scène : ancienneté, situation familiale, charge événementielle.
+ * Critères entreprise : ancienneté, situation familiale, charge événementielle.
  */
 function calculatePriorityScore(personId) {
   let score = 0;
@@ -1241,7 +1241,7 @@ function generateLeaveRequestPdfHtml(request) {
 <body>
   <div class="header">
     <div>
-      <div class="company">Mag Scène</div>
+      <div class="company">${process.env.COMPANY_NAME || 'Mon Entreprise'}</div>
       <div class="company-sub">Convention collective IDCC 3252<br>Prestataires de services du spectacle vivant</div>
     </div>
     <div style="text-align:right">
@@ -1327,7 +1327,7 @@ function generateLeaveRequestPdfHtml(request) {
     <p>
       • Code du travail — Articles L3141-1 à L3141-33 (Congés payés)<br>
       • Convention collective IDCC 3252 — Prestataires de services du spectacle vivant<br>
-      • Politique de gestion des congés Mag Scène<br>
+      • Politique de gestion des congés de l'entreprise<br>
       • Acquisition : 2,5 jours ouvrables par mois travaillé (30 jours/an)<br>
       • Période de référence : 1er juin → 31 mai<br>
       • Congé principal : minimum 12 jours ouvrables consécutifs entre le 1er mai et le 31 octobre<br>
@@ -1337,7 +1337,7 @@ function generateLeaveRequestPdfHtml(request) {
   </div>
 
   <div class="footer">
-    Mag Scène — eM@g — Document confidentiel — ${new Date().getFullYear()}
+    ${process.env.COMPANY_NAME || 'Mon Entreprise'} — eM@g — Document confidentiel — ${new Date().getFullYear()}
   </div>
 </body>
 </html>`;

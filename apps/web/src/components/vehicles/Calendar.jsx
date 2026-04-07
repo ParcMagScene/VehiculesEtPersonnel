@@ -614,7 +614,7 @@ const Calendar = ({
   const [blockDragPreview, setBlockDragPreview] = useState(null); // { vehicleId, startDate, startPeriod, endDate, endPeriod }
   const pendingBlockDragRef = React.useRef(null); // { block, vehicle, startDay, startPeriod }
 
-  const [collapsedSections, setCollapsedSections] = useState({ magScene: false, location: false });
+  const [collapsedSections, setCollapsedSections] = useState({ company: false, location: false });
   
   // État pour le tooltip global
   const [tooltipState, setTooltipState] = useState({ visible: false, block: null, x: 0, y: 0 });
@@ -1187,9 +1187,9 @@ const Calendar = ({
 
   // Séparer les véhicules en deux groupes
   const vehicleGroups = useMemo(() => {
-    const magSceneVehicles = vehicles.filter(v => !v.isLocation);
+    const companyVehicles = vehicles.filter(v => !v.isLocation);
     const locationVehicles = vehicles.filter(v => v.isLocation);
-    return { magSceneVehicles, locationVehicles };
+    return { companyVehicles, locationVehicles };
   }, [vehicles]);
 
   // Compteur de disponibilité (véhicules non occupés aujourd'hui)
@@ -1213,20 +1213,20 @@ const Calendar = ({
       });
       return hasReservation || hasMaintenance;
     };
-    const magSceneAvail = vehicleGroups.magSceneVehicles.filter(v => !isOccupied(v.id)).length;
+    const companyAvail = vehicleGroups.companyVehicles.filter(v => !isOccupied(v.id)).length;
     const locationAvail = vehicleGroups.locationVehicles.filter(v => !isOccupied(v.id)).length;
     return {
-      magScene: { available: magSceneAvail, total: vehicleGroups.magSceneVehicles.length },
+      company: { available: companyAvail, total: vehicleGroups.companyVehicles.length },
       location: { available: locationAvail, total: vehicleGroups.locationVehicles.length },
-      allAvailable: magSceneAvail,
-      allTotal: vehicleGroups.magSceneVehicles.length,
+      allAvailable: companyAvail,
+      allTotal: vehicleGroups.companyVehicles.length,
     };
   }, [vehicleGroups, reservations, maintenances]);
 
   // Pré-calcul de tous les blocs pour chaque véhicule (élimine le calcul inline dans le render)
   const allVehicleBlocks = useMemo(() => {
     const result = new Map();
-    const allVehicles = [...vehicleGroups.magSceneVehicles, ...vehicleGroups.locationVehicles];
+    const allVehicles = [...vehicleGroups.companyVehicles, ...vehicleGroups.locationVehicles];
 
     // Construire les timeSlots une seule fois
     const timeSlots = [];
@@ -1973,16 +1973,16 @@ const Calendar = ({
         {/* Ligne des headers - fixe, non scrollable */}
         <div className="calendar-headers-row">
           <div className="vehicle-column-header">
-            <span>Véhicules Mag Scène</span>
+            <span>Véhicules entreprise</span>
             <span className="vehicle-availability-badge" title="Véhicules disponibles aujourd'hui (hors locations)">
-              {availabilityCount.magScene.available}/{availabilityCount.magScene.total}
+              {availabilityCount.company.available}/{availabilityCount.company.total}
             </span>
             <button 
               className="section-toggle-button" 
-              onClick={() => setCollapsedSections(prev => ({ ...prev, magScene: !prev.magScene }))}
-              title={collapsedSections.magScene ? 'Développer' : 'Rétracter'}
+              onClick={() => setCollapsedSections(prev => ({ ...prev, company: !prev.company }))}
+              title={collapsedSections.company ? 'Développer' : 'Rétracter'}
             >
-              {collapsedSections.magScene ? '▼' : '▲'}
+              {collapsedSections.company ? '▼' : '▲'}
             </button>
           </div>
           <div className="calendar-headers-scroll-area">
@@ -2091,10 +2091,10 @@ const Calendar = ({
         <div className="calendar-content-row">
           {/* Colonne véhicules fixe à gauche */}
           <div className="vehicle-column">
-            {/* Section Véhicules Mag Scène */}
-            {vehicleGroups.magSceneVehicles.length > 0 && (
+            {/* Section Véhicules entreprise */}
+            {vehicleGroups.companyVehicles.length > 0 && (
               <>
-                {!collapsedSections.magScene && vehicleGroups.magSceneVehicles.map((vehicle) => {
+                {!collapsedSections.company && vehicleGroups.companyVehicles.map((vehicle) => {
                   // Vérifier si le véhicule a une panne signalée
                   const hasBreakdown = maintenances.some(m => 
                     m.vehicleId === vehicle.id && 
@@ -2223,8 +2223,8 @@ const Calendar = ({
           {/* Grille scrollable à droite */}
           <div className="calendar-scroll-area" onScroll={handleScroll}>
             <div className={`calendar-grid ${view}-view`} style={{ gridTemplateColumns: gridColumns, position: 'relative' }}>
-              {/* Lignes véhicules - Section Mag Scène */}
-              {!collapsedSections.magScene && vehicleGroups.magSceneVehicles.map((vehicle) => {
+              {/* Lignes véhicules - Section entreprise */}
+              {!collapsedSections.company && vehicleGroups.companyVehicles.map((vehicle) => {
             // Utiliser les blocs pré-calculés au lieu de recalculer à chaque render
             const precomputed = allVehicleBlocks.get(vehicle.id) || { blocks: [], timeSlots: [] };
             const { blocks, timeSlots } = precomputed;

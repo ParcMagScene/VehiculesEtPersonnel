@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // server/migrations/inventory-v1.js
-// Migration idempotente: Module Inventaire Unifié Mag Scène
+// Migration idempotente: Module Inventaire Unifié eM@g
 // Tables: inventory_locations, inventory_movements_ext, inventory_price_history,
 //         inventory_anomalies, inventory_stats_cache
 // Extensions: stock_items (depot, zone, barcode, etc.)

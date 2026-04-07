@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// bpAnnotationEngine.js — Moteur d'annotation des BP Mag Scène
+// bpAnnotationEngine.js — Moteur d'annotation des BP eM@g
 // Détection familles, kits, couleurs, bloc infos affaire
 // ═══════════════════════════════════════════════════════════════
 

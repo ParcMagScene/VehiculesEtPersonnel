@@ -9,6 +9,11 @@ if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 }
 
+// ─── Identifiants entreprise pour le parsing PDF ───
+// Adapter ces valeurs si les PDFs proviennent d'un autre émetteur
+const COMPANY_EMAIL_PATTERN = /contact@mag-scene/i;
+const COMPANY_NAME_PATTERN = /mag-scene/i;
+
 // ─── Types de documents détectables ───
 export const DOC_TYPES = {
   BON_LIVRAISON: 'bon_livraison',
@@ -169,7 +174,7 @@ export const detectDocumentType = (text) => {
   if (/bon\s+de\s+livraison\s+vente/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 60;
   if (/notre\s+r[eé]f\s*:/i.test(t) && /objet\s*:/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 20;
   if (/conditions\s+g[eé]n[eé]rales/i.test(t) && /bon\s+de\s+livraison/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 15;
-  if (/votre\s+interlocuteur/i.test(t) && /mag-scene/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 10;
+  if (/votre\s+interlocuteur/i.test(t) && COMPANY_NAME_PATTERN.test(t)) scores[DOC_TYPES.BL_VENTE] += 10;
   if (/\bVTE\b/.test(text)) scores[DOC_TYPES.BL_VENTE] += 10;
 
   // ─── Bon de Préparation (Format B — "Bon de préparation") ───
@@ -375,8 +380,8 @@ export const parseBLVente = (text) => {
       if (info.numeroAffaire) info.fieldsFound++;
     }
 
-    // Client : bloc entre "contact@mag-scene.com" et "Votre Réf."
-    const clientBlockMatch = text.match(/contact@mag-scene\.com\s*\n([\s\S]*?)(?=Votre\s+R[eé]f)/i);
+    // Client : bloc entre l'email entreprise et "Votre Réf."
+    const clientBlockMatch = text.match(new RegExp(COMPANY_EMAIL_PATTERN.source + '\\.com\\s*\\n([\\s\\S]*?)(?=Votre\\s+R[eé]f)', 'i'));
     if (clientBlockMatch) {
       const clientLines = clientBlockMatch[1].split('\n').map(l => l.trim()).filter(l => l && !/^p\.\d+$/.test(l));
       if (clientLines.length > 0) {
@@ -460,7 +465,7 @@ export const parseBLVente = (text) => {
       };
 
       // Skip page headers dans BL multi-pages
-      const isPageHeader = (line) => /^(Votre interlocuteur|Sarl au capital|Parc d'activit|Tel\.|p\.\d+$)/i.test(line) || /contact@mag-scene/i.test(line);
+      const isPageHeader = (line) => /^(Votre interlocuteur|Sarl au capital|Parc d'activit|Tel\.|p\.\d+$)/i.test(line) || COMPANY_EMAIL_PATTERN.test(line);
 
       if (isJoinedHeader) {
         // ─── Mode lignes jointes (pdfjs-dist) ───

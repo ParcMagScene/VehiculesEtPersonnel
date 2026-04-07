@@ -4,18 +4,15 @@
 import { saveAuthToIDB, loadAuthFromIDB, clearAuthFromIDB } from '../indexedDB.js';
 
 export const getApiUrl = () => {
-  const hostname = window.location.hostname;
   const port = window.location.port;
 
+  // En dev (Vite) ou preview (Vite preview), le proxy gère /api
   if (port === '5174' || port === '5175' || port === '4173') {
     return '/api';
   }
 
-  if (hostname === 'magsav.duckdns.org') {
-    return 'http://magsav.duckdns.org:3002/api';
-  }
-
-  return `http://${hostname}:3002/api`;
+  // Sinon, construire l'URL du backend à partir du hostname courant
+  return `http://${window.location.hostname}:3002/api`;
 };
 
 export const API_URL = getApiUrl();

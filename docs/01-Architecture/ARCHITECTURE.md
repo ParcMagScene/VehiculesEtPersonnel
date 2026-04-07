@@ -2,7 +2,7 @@
 
 > **Dernière mise à jour** : 11 mars 2026 (Phase 4 — Performance)
 > **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
-> **Domaine** : `magsav.duckdns.org`
+> **Domaine** : (configurable via .env)
 
 ---
 
@@ -32,7 +32,7 @@
 
 ## 1. Vue d'ensemble
 
-Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour Mag Scène (entreprise de prestations événementielles à La Réunion). Elle permet de :
+Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour une entreprise de prestations événementielles. Elle permet de :
 
 - **Réserver** des véhicules sur un calendrier interactif (vue semaine/mois/année/planning)
 - **Gérer l'entretien** : maintenances programmées, signalements de pannes, contrôles techniques
@@ -1095,10 +1095,10 @@ node scripts/sync_inventory_to_catalog.js chemin/vers/inventaire.xlsx
 | Composant | Détails |
 |-----------|---------|
 | **Machine** | macOS, utilisateur `reunion` |
-| **Domaine** | `magsav.duckdns.org` (DynDNS) |
+| **Domaine** | Configurable via `ALLOWED_ORIGINS` (.env) |
 | **Frontend** | `vite preview` sur port **4173** (PM2 : `vehicules`) |
 | **Backend** | `node server.js` sur port **3002** (PM2 : `vehicules-backend`) |
-| **Base de données** | `/Users/reunion/eM@g/apps/api/db.sqlite3` |
+| **Base de données** | `apps/api/db.sqlite3` |
 
 ### PM2 — Process Manager
 

@@ -75,7 +75,7 @@ const REQUEST_PRIORITY = {
   urgent: { label: 'Urgente', color: '#ef4444', icon: '🔴' },
 };
 
-const DESTINATIONS = ['SAV', 'Pièces', 'Stock Mag Scène', 'Autre'];
+const DESTINATIONS = ['SAV', 'Pièces', 'Stock', 'Autre'];
 
 const DOC_TYPES = {
   acknowledgment: { label: 'Accusé de commande', icon: '📋' },
@@ -1775,7 +1775,7 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
 const MaterialRequestModal = React.memo(({ request, suppliers, onSave, onClose }) => {
   const [form, setForm] = useState({
     article: request?.article || '', supplier_id: request?.supplier_id ? String(request.supplier_id) : '', supplier_name: request?.supplier_name || '', quantity: request?.quantity || 1,
-    priority: request?.priority || 'normal', affaire_id: request?.affaire_id || '', destination: request?.destination || 'Stock Mag Scène',
+    priority: request?.priority || 'normal', affaire_id: request?.affaire_id || '', destination: request?.destination || 'Stock',
     destination_other: request?.destination_other || '', notes: request?.notes || '', ref_code: request?.ref_code || '',
   });
   const isEditing = !!request;

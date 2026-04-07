@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // PANNEAU DE VALIDATION DES CONGÉS — Admin / Responsable
-// Conforme Code du travail, IDCC 3252, Politique Mag Scène
+// Conforme Code du travail, IDCC 3252
 // Workflow : consultation → décision → signature → notification
 // ═══════════════════════════════════════════════════════════════
 

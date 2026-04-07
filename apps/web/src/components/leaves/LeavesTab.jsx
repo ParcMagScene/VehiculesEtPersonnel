@@ -2,7 +2,7 @@
 // ONGLET CONGÉS & ABSENCES — Module complet
 // Vue salarié: solde + historique + nouvelle demande
 // Vue admin: validations en attente + team overview + stats + soldes
-// Conforme Code du travail, IDCC 3252, Politique Mag Scène
+// Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';

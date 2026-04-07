@@ -8,11 +8,7 @@ const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"'
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 // URL de base pour les QR codes
-const APP_BASE_URL = (() => {
-  const origin = window.location.origin;
-  if (origin.includes('magsav.duckdns.org')) return origin;
-  return 'http://magsav.duckdns.org:4173';
-})();
+const APP_BASE_URL = window.location.origin;
 
 const SAV_STATUS = {
   open: { label: 'Ouvert', color: '#3b82f6' },

@@ -29,7 +29,7 @@
 | **Base de données** | SQLite | via better-sqlite3 (WAL mode) |
 | **Authentification** | JWT | httpOnly cookie + silent refresh |
 | **Process manager** | PM2 | — |
-| **Domaine** | DuckDNS | magsav.duckdns.org |
+| **Domaine** | DuckDNS | (configurable via .env) |
 
 ---
 
@@ -139,8 +139,8 @@ eM@g/                           # Monorepo
 ## URLs d'accès
 
 ### Production
-- **Frontend** : http://magsav.duckdns.org:4173
-- **Backend** : http://magsav.duckdns.org:3002
+- **Frontend** : http://votre-serveur:4173
+- **Backend** : http://votre-serveur:3002
 
 ### Développement
 - **Frontend** : http://localhost:5174

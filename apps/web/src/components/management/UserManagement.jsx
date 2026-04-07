@@ -178,7 +178,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         const setupLink = `${appUrl}?setup=${encodeURIComponent(reqEmail)}`;
         
         // Construire le mail type
-        const subject = encodeURIComponent('Votre accès à MagSav - Réservation Véhicules');
+        const subject = encodeURIComponent('Votre accès eM@g - Réservation Véhicules');
         const body = encodeURIComponent(
           `Bonjour ${reqName},\n\n` +
           `Votre demande d'accès à l'application de réservation de véhicules a été approuvée !\n\n` +
@@ -186,7 +186,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           `${setupLink}\n\n` +
           `Ce lien vous amènera directement à la page de création de votre compte.\n\n` +
           `Cordialement,\n` +
-          `L'équipe Mag Scène`
+          `L'équipe eM@g`
         );
         
         // Ouvrir Gmail compose dans un nouvel onglet

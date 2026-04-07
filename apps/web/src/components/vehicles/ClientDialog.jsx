@@ -432,7 +432,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 <div className="route-info">
                   <h3>
                     <Route size={18} />
-                    Distance depuis Mag Scène
+                    Distance depuis le siège
                   </h3>
                   <div className="route-info">
                     {distance && (

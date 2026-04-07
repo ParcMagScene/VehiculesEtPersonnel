@@ -9,7 +9,7 @@
  *   node --test tests/api-integration.test.js
  *
  * Avec credentials (pour tests authentifiés) :
- *   TEST_EMAIL=admin@magsav.com TEST_PASSWORD=xxx node --test tests/api-integration.test.js
+ *   TEST_EMAIL=admin@example.com TEST_PASSWORD=xxx node --test tests/api-integration.test.js
  */
 
 import { describe, it, before, after } from 'node:test';

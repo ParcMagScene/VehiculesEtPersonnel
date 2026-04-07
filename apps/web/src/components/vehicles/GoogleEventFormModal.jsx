@@ -132,7 +132,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
 
   return (
     <div className="event-form-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="event-form-modal" onClick={e => e.stopPropagation()}>
+      <div className="event-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="event-form-header">
           <Calendar size={20} />
           <h2>{mode === 'edit' ? 'Modifier l\'événement' : 'Nouvel événement Google'}</h2>

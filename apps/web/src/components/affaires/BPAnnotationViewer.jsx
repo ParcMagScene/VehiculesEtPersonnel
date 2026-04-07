@@ -512,7 +512,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
     const win = window.open('', '_blank');
     if (win) {
       const imgsHtml = images.map((src, i) =>
-        '<img src="' + src + '" style="width:100%;height:auto;display:block;' +
+        '<img src="' + src + '" alt="BP annoté page ' + (i + 1) + '" style="width:100%;height:auto;display:block;' +
         (i < images.length - 1 ? 'page-break-after:always;' : '') + '" />'
       ).join('');
 

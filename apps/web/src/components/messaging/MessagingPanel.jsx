@@ -233,7 +233,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   return (
     <>
       <div className="messaging-backdrop" onClick={onClose} />
-      <div className={`messaging-panel ${isOpen ? 'open' : ''}`}>
+      <div className={`messaging-panel ${isOpen ? 'open' : ''}`} role="dialog" aria-modal="true" aria-label="Messages">
         <div className="msg-header">
           <h3><MessageSquare size={18} /> Messages</h3>
           <div className="msg-header-actions">
@@ -264,10 +264,13 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 <div
                   key={conv.id}
                   className="msg-conv-item"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     setActiveConversation(conv);
                     loadMessages(conv.id);
                   }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveConversation(conv); loadMessages(conv.id); } }}
                 >
                   <div className="msg-conv-avatar">
                     {conv.type === 'group' ? <Users size={16} /> : getInitials(getConversationName(conv))}
@@ -394,6 +397,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Écrire un message…"
+                aria-label="Écrire un message"
                 rows={1}
               />
               <Tooltip content="Envoyer">

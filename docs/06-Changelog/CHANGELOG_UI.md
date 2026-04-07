@@ -5,6 +5,20 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.1.7] — 2026-04-07
+
+### Changed
+- **Phase J** : Audit accessibilité (a11y) — ~90 corrections dans 36 fichiers
+  - 1 `<img>` sans `alt` corrigé (BPAnnotationViewer)
+  - 6 `aria-label` ajoutés sur champs formulaire (Textarea/Input sans label)
+  - 20 boutons fermer : `aria-label="Fermer"` ajouté
+  - ~30 modals custom : `role="dialog" aria-modal="true"` ajouté
+  - DropdownMenu DS : `role="button" tabIndex={0} aria-haspopup aria-expanded` + navigation clavier
+  - MessagingPanel : conversations navigables au clavier (`role="button" tabIndex={0} onKeyDown`)
+  - 2 bugs JSX corrigés (OrdersPanel, MobileMaintenances — accolade en trop)
+
+---
+
 ## [2.1.6] — 2026-04-08
 
 ### Changed

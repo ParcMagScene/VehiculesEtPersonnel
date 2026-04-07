@@ -687,10 +687,10 @@ const ManagementPanel = ({
   if (panelType === 'management' && activeModule === 'personnel') {
     return (
       <div className="management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-        <div className="management-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="management-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
           <div className="management-header">
             <h2>{panelTitle}</h2>
-            <Button variant="ghost" className="close-button" onClick={onClose}>
+            <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer">
               <X size={24} />
             </Button>
           </div>
@@ -702,10 +702,10 @@ const ManagementPanel = ({
 
   return (
     <div className="management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="management-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="management-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="management-header">
           <h2>{panelTitle}</h2>
-          <Button variant="ghost" className="close-button" onClick={onClose}>
+          <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer">
             <X size={24} />
           </Button>
         </div>

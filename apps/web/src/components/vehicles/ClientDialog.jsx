@@ -340,7 +340,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         handleSafeClose();
       }
     }}>
-      <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="location-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="location-dialog-header">
           <h2>{client ? 'Modifier le client' : 'Nouveau client'}</h2>
           <Button variant="ghost" className="close-button" onClick={handleSafeClose}>

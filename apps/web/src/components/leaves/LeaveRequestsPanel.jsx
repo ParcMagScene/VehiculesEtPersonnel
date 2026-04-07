@@ -121,7 +121,7 @@ const LeaveRequestsPanel = ({
 
   return (
     <div className="lrp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="lrp-panel" onClick={e => e.stopPropagation()}>
+      <div className="lrp-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Mes demandes de congés">
         {/* En-tête */}
         <div className="lrp-header">
           <div className="lrp-header-title">
@@ -137,7 +137,7 @@ const LeaveRequestsPanel = ({
                 <Send size={14} /> Nouvelle demande
               </Button>
             )}
-            <Button variant="ghost" className="lrp-close-btn" onClick={onClose}>
+            <Button variant="ghost" className="lrp-close-btn" onClick={onClose} aria-label="Fermer">
               <X size={20} />
             </Button>
           </div>

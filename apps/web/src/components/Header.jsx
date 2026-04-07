@@ -290,7 +290,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   notificationFilter === 'reservations' ? 'Demandes de réservation' :
                   'Notifications'
                 }</h3>
-                <Button variant="ghost" className="close-popup-button" onClick={() => setShowNotificationsPopup(false)}>✕</Button>
+                <Button variant="ghost" className="close-popup-button" onClick={() => setShowNotificationsPopup(false)} aria-label="Fermer les notifications">✕</Button>
               </div>
               <div className="notifications-popup-content">
                 {((notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
@@ -621,6 +621,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                     placeholder="Motif du refus..."
+                                    aria-label="Motif du refus"
                                     rows={2}
                                     autoFocus
                                   />
@@ -697,7 +698,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
               <div className="notifications-popup-header">
                 <h3><CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" /> Demandes de réservation</h3>
-                <Button variant="ghost" className="close-popup-button" onClick={() => setShowRequestsPopup(false)}>✕</Button>
+                <Button variant="ghost" className="close-popup-button" onClick={() => setShowRequestsPopup(false)} aria-label="Fermer les demandes">✕</Button>
               </div>
               <div className="notifications-popup-content">
                 {pendingReservationRequests.length === 0 ? (
@@ -795,6 +796,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                     placeholder="Motif du refus..."
+                                    aria-label="Motif du refus"
                                     rows={2}
                                     autoFocus
                                   />

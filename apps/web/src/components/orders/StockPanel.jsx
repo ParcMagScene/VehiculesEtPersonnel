@@ -328,7 +328,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
       {/* Panneau Gestion Catégories (via bouton Gestion du header) */}
       {showManagement && (
         <div className="stock-management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement?.()}>
-          <div className="stock-management-panel" onClick={e => e.stopPropagation()}>
+          <div className="stock-management-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
             <div className="stock-management-header">
               <h2><Layers size={20} /> Gestion des catégories</h2>
               <Button variant="ghost" onClick={onCloseManagement}><X size={20} /></Button>
@@ -408,7 +408,7 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
           <span className="stock-slide-ref">{current.reference}</span>
         </div>
         <Tooltip content="Fermer">
-          <Button variant="ghost" className="stock-slide-close" onClick={handleClose}><X size={18} /></Button>
+          <Button variant="ghost" className="stock-slide-close" onClick={handleClose} aria-label="Fermer"><X size={18} /></Button>
         </Tooltip>
       </div>
       <div className="stock-slide-body">
@@ -1659,6 +1659,7 @@ function ImportStockModal({ onDone, onClose }) {
                     rows={8}
                     value={pasteText}
                     onChange={e => { setPasteText(e.target.value); setFile(null); }}
+                    aria-label="Coller les données CSV"
                     placeholder={"Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17"}
                     style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
                   />

@@ -201,7 +201,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
                 </Select>
               </FormField>
             </>
-          )}}
+          )}
 
           <FormField className="form-group" label="Description">
             <Textarea

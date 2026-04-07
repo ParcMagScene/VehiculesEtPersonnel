@@ -903,7 +903,7 @@ const TripDetailsModal = ({
         handleSafeClose();
       }
     }}>
-      <div className="trip-details-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="trip-details-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <div style={{ flex: 1 }}>
             <h2>📍 {isCombinedMode ? 'Trajets liés' : 'Détails du trajet'}</h2>

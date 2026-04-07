@@ -199,7 +199,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
 
   return (
     <div className="vm-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
-      <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <div className="modal-header-title">
             <h2>🔧 Maintenance - {vehicle?.name}</h2>

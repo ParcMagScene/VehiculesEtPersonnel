@@ -1171,10 +1171,10 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
 
   return (
     <div className="orders-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="order-form-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="order-form-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2>{order ? `Modifier ${order.reference}` : 'Nouvelle commande'}</h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="modal-body">
           <div className="form-grid">
@@ -1292,10 +1292,10 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
 
   return (
     <div className="orders-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="order-form-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="order-form-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2>{quote ? `Modifier ${quote.reference}` : 'Nouveau devis'}</h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="modal-body">
           <div className="form-grid">
@@ -1395,10 +1395,10 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
 
   return (
     <div className="orders-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="supplier-form-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="supplier-form-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2>{supplier ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="modal-body">
           <div className="form-grid">
@@ -1589,7 +1589,7 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
                   <tr className="reject-reason-row">
                     <td colSpan={8}>
                       <div className="reject-input-row">
-                        <Input type="text" placeholder="Raison du refus (optionnel)" value={rejectReason}
+                        <Input type="text" placeholder="Raison du refus (optionnel)" aria-label="Raison du refus" value={rejectReason}
                           onChange={e => setRejectReason(e.target.value)} className="reject-reason-input" />
                         <Button variant="danger" size="sm" onClick={() => { onValidate(req, 'reject', rejectReason); setRejectingId(null); setRejectReason(''); }}>Confirmer refus</Button>
                         <Button variant="ghost" size="sm" onClick={() => { setRejectingId(null); setRejectReason(''); }}>Annuler</Button>
@@ -1669,10 +1669,10 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
 
   return (
     <div className="catalog-picker-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="catalog-picker-modal" onClick={e => e.stopPropagation()}>
+      <div className="catalog-picker-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="catalog-picker-header">
           <h2><BookOpen size={20} /> Sélection depuis les catalogues</h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         <div className="catalog-picker-filters">
@@ -1801,10 +1801,10 @@ const MaterialRequestModal = React.memo(({ request, suppliers, onSave, onClose }
 
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="order-form-modal material-request-modal" onClick={e => e.stopPropagation()}>
+      <div className="order-form-modal material-request-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2><ClipboardList size={20} /> {isEditing ? 'Modifier la demande' : 'Nouvelle demande de matériel'}</h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="modal-body">
           <div className="form-grid">
@@ -1988,7 +1988,7 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
               );
             })}
           </div>
-        )}}
+        )}
       </div>
     </div>
   );
@@ -2017,10 +2017,10 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
 
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="supplier-detail-modal" onClick={e => e.stopPropagation()}>
+      <div className="supplier-detail-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2><Building2 size={20} /> {supplier.name} — Détail complet</h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="supplier-detail-tabs">
           <Button variant="ghost" className={activeSection === 'workflow' ? 'active' : ''} onClick={() => setActiveSection('workflow')}>
@@ -2416,7 +2416,7 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
   const items = order.items || [];
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="order-detail-dialog" onClick={e => e.stopPropagation()}>
+      <div className="order-detail-dialog" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2>{order.reference}</h2>
@@ -2430,7 +2430,7 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
             {order.status === STATUS.CONFIRMED && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</Button>}
             <Button variant="ghost" className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</Button>
             <Button variant="ghost" className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</Button>
-            <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+            <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
           </div>
         </div>
         <div className="order-detail-grid">
@@ -2509,7 +2509,7 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
   const items = quote.items || [];
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="order-detail-dialog" onClick={e => e.stopPropagation()}>
+      <div className="order-detail-dialog" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2>{quote.reference}</h2>
@@ -2531,7 +2531,7 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
             )}
             <Button variant="ghost" className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</Button>
             <Button variant="ghost" className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</Button>
-            <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+            <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
           </div>
         </div>
         <div className="order-detail-grid">
@@ -2585,7 +2585,7 @@ const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate,
   const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="order-detail-dialog request-detail-dialog" onClick={e => e.stopPropagation()}>
+      <div className="order-detail-dialog request-detail-dialog" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2><ClipboardList size={20} /> {request.article}</h2>
@@ -2603,7 +2603,7 @@ const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate,
             )}
             <Button variant="ghost" className="action-btn" onClick={() => onEdit(request)}><Edit2 size={14} /> Modifier</Button>
             <Button variant="ghost" className="action-btn danger" onClick={() => { onDelete(request); onClose(); }}><Trash2 size={14} /> Supprimer</Button>
-            <Button variant="ghost" className="close-btn" onClick={onClose}><X size={20} /></Button>
+            <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
           </div>
         </div>
         <div className="order-detail-grid">

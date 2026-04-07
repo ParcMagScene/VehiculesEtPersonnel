@@ -301,7 +301,7 @@ const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onE
             </div>
           </div>
         </div>
-        <Button variant="ghost" className="slide-panel-close" onClick={handleClose}>
+        <Button variant="ghost" className="slide-panel-close" onClick={handleClose} aria-label="Fermer">
           <X size={18} />
         </Button>
       </div>

@@ -403,7 +403,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         handleSafeClose();
       }
     }}>
-      <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="location-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="location-dialog-header">
           <h2>
             <MapPin size={24} />

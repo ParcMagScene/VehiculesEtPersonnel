@@ -1240,7 +1240,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
       {/* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */}
       {showManagement && (
         <div className="eq-management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement()}>
-          <div className="eq-management-panel" onClick={(e) => e.stopPropagation()}>
+          <div className="eq-management-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Gestion du Matériel">
             <div className="eq-management-header">
               <h2><Package size={22} /> Gestion du Matériel</h2>
               <Button variant="ghost" className="eq-management-close" onClick={onCloseManagement}><X size={20} /></Button>

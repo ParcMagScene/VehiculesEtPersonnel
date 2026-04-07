@@ -275,7 +275,7 @@ export default function MailingPanel({ isOpen, onClose }) {
             <Mail size={20} />
             <h2>Mailing</h2>
           </div>
-          <Button variant="ghost" className="mailing-close" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="mailing-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Tabs */}

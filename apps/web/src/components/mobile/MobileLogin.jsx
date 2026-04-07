@@ -175,7 +175,7 @@ function MobileLogin({ onLogin }) {
       {/* Modal Réinitialisation directe du mot de passe */}
       {showResetPassword && (
         <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowResetPassword(false); }}>
-          <div className="mobile-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="mobile-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
             <div className="mobile-sheet-handle" />
             <h3 className="mobile-sheet-title">🔑 Réinitialiser le mot de passe</h3>
             <div className="mobile-sheet-form">

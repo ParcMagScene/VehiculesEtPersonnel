@@ -244,7 +244,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
             <h3><Calendar size={18} /> Définir les tâches</h3>
             <p className="etm-event-title">{eventInfo.summary}</p>
           </div>
-          <Button variant="ghost" className="etm-close" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="etm-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Event summary */}

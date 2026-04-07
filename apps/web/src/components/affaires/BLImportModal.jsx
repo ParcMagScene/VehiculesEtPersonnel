@@ -265,7 +265,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
 
   return (
     <div className="bl-import-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bl-import-modal" onClick={e => e.stopPropagation()}>
+      <div className="bl-import-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         {/* Header */}
         <div className="modal-header">
           <h3><FileText size={20} /> Import Bon de Livraison</h3>

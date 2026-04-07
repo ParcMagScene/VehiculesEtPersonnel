@@ -73,7 +73,7 @@ const SkillsTab = ({ skills, setSkills, currentUser }) => {
           <form className="personnel-form compact" onSubmit={handleSubmit}>
             <div className="personnel-form-header">
               <h3>{editingSkill ? 'Modifier' : 'Nouvelle compétence'}</h3>
-              <Button variant="ghost" type="button" className="close-btn" onClick={resetForm}><X size={18} /></Button>
+              <Button variant="ghost" type="button" className="close-btn" onClick={resetForm} aria-label="Fermer"><X size={18} /></Button>
             </div>
             <div className="personnel-form-grid">
               <div className="form-field">

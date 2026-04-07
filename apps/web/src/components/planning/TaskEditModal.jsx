@@ -159,7 +159,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         {/* Header */}
         <div className="tem-header">
           <h3><FileText size={18} /> Modifier la tâche</h3>
-          <Button variant="ghost" className="tem-close" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="tem-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Badges info */}

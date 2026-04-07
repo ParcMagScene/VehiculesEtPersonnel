@@ -491,7 +491,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
   return (
     <div className="pdf-export-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="pdf-export-modal" onClick={e => e.stopPropagation()}>
+      <div className="pdf-export-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         {/* Header */}
         <div className="pdf-export-header">
           <div className="pdf-export-header-left">
@@ -501,7 +501,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
               <span className="pdf-export-date">{dateFr}</span>
             </div>
           </div>
-          <Button variant="ghost" className="pdf-export-close" onClick={onClose}>
+          <Button variant="ghost" className="pdf-export-close" onClick={onClose} aria-label="Fermer">
             <X size={18} />
           </Button>
         </div>

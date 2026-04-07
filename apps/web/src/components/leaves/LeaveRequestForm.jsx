@@ -345,7 +345,7 @@ const LeaveRequestForm = ({
 
   return (
     <div className="lrf-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="lrf-modal" onClick={e => e.stopPropagation()}>
+      <div className="lrf-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Demande de congé">
         {/* En-tête */}
         <div className="lrf-header">
           <div className="lrf-header-title">
@@ -360,7 +360,7 @@ const LeaveRequestForm = ({
             >
               <Info size={16} />
             </Button>
-            <Button variant="ghost" className="lrf-close-btn" onClick={onClose}>
+            <Button variant="ghost" className="lrf-close-btn" onClick={onClose} aria-label="Fermer">
               <X size={20} />
             </Button>
           </div>

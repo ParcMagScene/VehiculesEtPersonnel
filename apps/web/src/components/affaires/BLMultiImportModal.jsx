@@ -251,7 +251,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
 
   return (
     <div className="bl-import-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bl-multi-import-modal" onClick={e => e.stopPropagation()}>
+      <div className="bl-multi-import-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         {/* Header */}
         <div className="modal-header">
           <h3><PackagePlus size={20} /> Import BL / BP</h3>

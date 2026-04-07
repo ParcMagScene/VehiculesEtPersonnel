@@ -284,11 +284,11 @@ export default function AddTaskModal({
 
   return (
     <div className="atm-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="atm-modal">
+      <div className="atm-modal" role="dialog" aria-modal="true">
         {/* Header */}
         <div className="atm-header">
           <h3><Plus size={18} /> Nouvelle tâche</h3>
-          <Button variant="ghost" className="atm-close" onClick={onClose}><X size={18} /></Button>
+          <Button variant="ghost" className="atm-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}

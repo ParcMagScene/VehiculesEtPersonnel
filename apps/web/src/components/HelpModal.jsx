@@ -123,7 +123,7 @@ const HelpModal = ({ isOpen, onClose }) => {
             <Button variant="ghost" onClick={handleDownloadPDF} title="Ouvrir le guide complet">
               <Download size={14} /> Guide PDF
             </Button>
-            <Button variant="ghost" className="help-close-btn" onClick={onClose}>
+            <Button variant="ghost" className="help-close-btn" onClick={onClose} aria-label="Fermer l'aide">
               <X size={18} />
             </Button>
           </div>

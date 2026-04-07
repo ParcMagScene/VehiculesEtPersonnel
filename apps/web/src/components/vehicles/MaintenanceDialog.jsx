@@ -439,7 +439,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
 
   return (
     <div className="maintenance-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
-      <div className="maintenance-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="maintenance-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div 
           className="maintenance-dialog-header"
           style={editingId ? {
@@ -1105,7 +1105,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
         {/* Dialogue d'avertissement de conflit */}
         {conflictWarning && conflictWarning.length > 0 && (
           <div className="conflict-warning-overlay" onMouseDown={(e) => e.target === e.currentTarget && setConflictWarning(null)}>
-            <div className="conflict-warning-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="conflict-warning-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
               <div className="conflict-warning-header">
                 <h3>⚠️ Conflit détecté</h3>
               </div>

@@ -200,7 +200,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
 
   return (
     <div className="lvp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="lvp-panel" onClick={e => e.stopPropagation()}>
+      <div className="lvp-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Validation des congés">
         {/* En-tête */}
         <div className="lvp-header">
           <div className="lvp-header-title">
@@ -209,7 +209,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
           </div>
           <div className="lvp-header-actions">
             <Button variant="ghost" className="lvp-btn-refresh" onClick={loadData}><RefreshCw size={16} /></Button>
-            <Button variant="ghost" className="lvp-close-btn" onClick={onClose}><X size={20} /></Button>
+            <Button variant="ghost" className="lvp-close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
           </div>
         </div>
 

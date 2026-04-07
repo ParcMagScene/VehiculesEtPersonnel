@@ -227,7 +227,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
               <div className="pcm-header-person">{person.firstName} {person.lastName || ''}</div>
             </div>
           </div>
-          <Button variant="ghost" className="pcm-close" onClick={onClose}>
+          <Button variant="ghost" className="pcm-close" onClick={onClose} aria-label="Fermer">
             <X size={18} />
           </Button>
         </div>

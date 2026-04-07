@@ -198,7 +198,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
 
   return (
     <div className="mr-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="mr-modal" onClick={e => e.stopPropagation()}>
+      <div className="mr-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="mr-header">
           <h2><FileText size={20} /> Rapport Maintenance Matériel</h2>
           <Button variant="ghost" className="mr-close" onClick={onClose}><X size={20} /></Button>

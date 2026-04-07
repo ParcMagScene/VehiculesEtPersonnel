@@ -690,7 +690,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
   const dialogContent = (
     <div className="assignment-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
-      <div className="assignment-dialog" onClick={e => e.stopPropagation()}>
+      <div className="assignment-dialog" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Affectation">
         {/* Header */}
         <div className="assignment-dialog-header">
           <div className="assignment-dialog-title">
@@ -706,7 +706,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 <Trash2 size={16} />
               </Button>
             )}
-            <Button variant="ghost" className="assignment-dialog-close" onClick={handleSafeClose}>
+            <Button variant="ghost" className="assignment-dialog-close" onClick={handleSafeClose} aria-label="Fermer">
               <X size={18} />
             </Button>
           </div>

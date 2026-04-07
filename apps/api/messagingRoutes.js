@@ -1,8 +1,7 @@
 import db from './database.js';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, basename, extname } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { basename } from 'path';
 import logger from './logger.js';
 
 // [AUDIT Phase 4] Types MIME autorisés pour les uploads messagerie
@@ -251,6 +250,13 @@ export function setupMessagingRoutes(app, authenticateToken) {
       // [AUDIT Phase 4] Valider le type MIME
       if (!mimeType || !MESSAGING_ALLOWED_MIMES.has(mimeType)) {
         return res.status(400).json({ error: `Type de fichier non autorisé: ${mimeType || 'inconnu'}` });
+      }
+
+      // [SECURITY] Vérifier aussi l'extension du fichier (le MIME client est spoofable)
+      const ALLOWED_MSG_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt', '.mp4', '.webm', '.mov'];
+      const fileExt = extname(filename).toLowerCase();
+      if (!ALLOWED_MSG_EXTS.includes(fileExt)) {
+        return res.status(400).json({ error: `Extension de fichier non autorisée: ${fileExt || 'aucune'}` });
       }
 
       // [AUDIT Phase 4] Décoder et vérifier la taille

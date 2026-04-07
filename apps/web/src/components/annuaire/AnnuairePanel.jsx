@@ -295,14 +295,13 @@ function AnnuairePanel({ currentUser }) {
           {ENTITY_TABS.map(tab => {
             const Icon = tab.icon;
             return (
-              <button
-                key={tab.id}
+              <Button variant="ghost"                 key={tab.id}
                 className={`annuaire-tab ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => handleTabChange(tab.id)}
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -428,9 +427,9 @@ function AnnuairePanel({ currentUser }) {
             />
             {totalPages > 1 && (
               <div className="annuaire-pagination">
-                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Précédent</button>
+                <Button variant="ghost" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Précédent</Button>
                 <span>Page {page} / {totalPages} ({total} résultats)</span>
-                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Suivant →</button>
+                <Button variant="ghost" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Suivant →</Button>
               </div>
             )}
           </>
@@ -523,7 +522,7 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
                 <td>{c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : '—'}</td>
                 <td>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : '—'}</td>
                 <td className="actions-cell">
-                  <Tooltip content="Modifier"><button onClick={() => onEdit(c)}><Edit2 size={14} /></button></Tooltip>
+                  <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(c)}><Edit2 size={14} /></Button></Tooltip>
                   {currentUser?.isAdmin && <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(c)}><Trash2 size={14} /></Button></Tooltip>}
                 </td>
               </tr>
@@ -570,8 +569,8 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
               )}
               <td className="count-cell">{item.contact_count || 0}</td>
               <td className="actions-cell">
-                <Tooltip content="Voir"><button onClick={() => onSelect(item)}><Eye size={14} /></button></Tooltip>
-                <Tooltip content="Modifier"><button onClick={() => onEdit(item)}><Edit2 size={14} /></button></Tooltip>
+                <Tooltip content="Voir"><Button variant="ghost" onClick={() => onSelect(item)}><Eye size={14} /></Button></Tooltip>
+                <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(item)}><Edit2 size={14} /></Button></Tooltip>
                 {currentUser?.isAdmin && <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(item)}><Trash2 size={14} /></Button></Tooltip>}
               </td>
             </tr>
@@ -993,9 +992,9 @@ function ReferentielsView({ refTab, setRefTab, refData, loading, currentUser, on
     <div className="referentiels-view">
       <div className="ref-tabs">
         {REFERENTIEL_TABS.map(t => (
-          <button key={t.slug} className={`ref-tab ${refTab === t.slug ? 'active' : ''}`} onClick={() => setRefTab(t.slug)}>
+          <Button variant="ghost" key={t.slug} className={`ref-tab ${refTab === t.slug ? 'active' : ''}`} onClick={() => setRefTab(t.slug)}>
             {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -1025,7 +1024,7 @@ function ReferentielsView({ refTab, setRefTab, refData, loading, currentUser, on
                 <td>{item.is_active ? <Check size={14} className="text-success" /> : <X size={14} className="text-muted" />}</td>
                 {currentUser?.isAdmin && (
                   <td className="actions-cell">
-                    <Tooltip content="Modifier"><button onClick={() => onEdit(item)}><Edit2 size={14} /></button></Tooltip>
+                    <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(item)}><Edit2 size={14} /></Button></Tooltip>
                     <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(item)}><Trash2 size={14} /></Button></Tooltip>
                   </td>
                 )}

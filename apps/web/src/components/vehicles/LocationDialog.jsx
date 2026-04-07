@@ -415,9 +415,9 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
               </span>
             )}
           </h2>
-          <button className="close-button" onClick={handleSafeClose}>
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit}>

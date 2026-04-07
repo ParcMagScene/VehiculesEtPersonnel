@@ -163,9 +163,9 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
               <div key={gif} className="dtv-gif-item">
                 <img src={gifUrl(gif)} alt={gif} />
                 <span className="dtv-gif-name">{gif.replace(/\.(gif|png)$/i, '')}</span>
-                <Tooltip content="Supprimer"><button className="dtv-gif-delete" onClick={() => handleDeleteGif(gif)}>
+                <Tooltip content="Supprimer"><Button variant="ghost" className="dtv-gif-delete" onClick={() => handleDeleteGif(gif)}>
                   <Trash2 size={12} />
-                </button></Tooltip>
+                </Button></Tooltip>
               </div>
             ))}
           </div>

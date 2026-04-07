@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { STATUS } from '../../constants';
 
+import { Button } from '@/design-system';
 import './MobilePlanning.css';
 
 function MobilePlanning({ 
@@ -241,23 +242,23 @@ function MobilePlanning({
     <div className="mobile-planning">
       <div className="mobile-planning-header">
         <div className="month-navigation">
-          <button className="month-nav-btn" onClick={goToPreviousMonth}>
+          <Button variant="ghost" className="month-nav-btn" onClick={goToPreviousMonth}>
             <ChevronLeft size={20} />
-          </button>
+          </Button>
           <h2 onClick={goToCurrentMonth} style={{ cursor: 'pointer' }}>
             {format(selectedMonth, 'MMMM yyyy', { locale: fr })}
           </h2>
-          <button className="month-nav-btn" onClick={goToNextMonth}>
+          <Button variant="ghost" className="month-nav-btn" onClick={goToNextMonth}>
             <ChevronRight size={20} />
-          </button>
-          <button className="today-btn" onClick={scrollToToday} title="Aller à aujourd'hui">
+          </Button>
+          <Button variant="ghost" className="today-btn" onClick={scrollToToday} title="Aller à aujourd'hui">
             <CalendarDays size={18} />
             <span>Aujourd'hui</span>
-          </button>
+          </Button>
         </div>
-        <button className="close-button" onClick={onClose}>
+        <Button variant="ghost" className="close-button" onClick={onClose}>
           <X size={24} />
-        </button>
+        </Button>
       </div>
 
       <div className="mobile-planning-container">

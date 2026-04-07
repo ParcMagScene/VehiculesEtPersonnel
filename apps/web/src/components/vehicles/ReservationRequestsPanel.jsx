@@ -3,7 +3,7 @@ import { Calendar, Check, X, Clock, User } from 'lucide-react';
 import api from '../../utils/api';
 import './ReservationRequestsPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { DetailRow, Dialog, Textarea} from '@/design-system';
+import { Button, DetailRow, Dialog, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -130,30 +130,30 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       </h2>
 
       <div className="requests-filters">
-        <button 
+        <Button variant="ghost" 
           className={filter === STATUS.PENDING ? 'active' : ''}
           onClick={() => setFilter('pending')}
         >
           En attente ({requests.filter(r => r.status === STATUS.PENDING).length})
-        </button>
-        <button 
+        </Button>
+        <Button variant="ghost" 
           className={filter === STATUS.APPROVED ? 'active' : ''}
           onClick={() => setFilter('approved')}
         >
           Approuvées ({requests.filter(r => r.status === STATUS.APPROVED).length})
-        </button>
-        <button 
+        </Button>
+        <Button variant="ghost" 
           className={filter === STATUS.REJECTED ? 'active' : ''}
           onClick={() => setFilter('rejected')}
         >
           Rejetées ({requests.filter(r => r.status === STATUS.REJECTED).length})
-        </button>
-        <button 
+        </Button>
+        <Button variant="ghost" 
           className={filter === 'all' ? 'active' : ''}
           onClick={() => setFilter('all')}
         >
           Toutes ({requests.length})
-        </button>
+        </Button>
       </div>
 
       <div className="requests-list">
@@ -213,22 +213,22 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
               {request.status === STATUS.PENDING && (
                 <div className="request-actions">
-                  <button 
+                  <Button variant="ghost" 
                     className="approve-button"
                     onClick={() => handleApprove(request.id)}
                     disabled={loading}
                   >
                     <Check size={18} />
                     Approuver
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className="reject-button"
                     onClick={() => handleRejectClick(request)}
                     disabled={loading}
                   >
                     <X size={18} />
                     Rejeter
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -257,19 +257,19 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
               onChange={(e) => setRejectionReason(e.target.value)}
             />
             <div className="reject-dialog-actions">
-              <button 
+              <Button variant="ghost" 
                 className="cancel"
                 onClick={() => setRejectDialogOpen(false)}
               >
                 Annuler
-              </button>
-              <button 
+              </Button>
+              <Button variant="ghost" 
                 className="confirm"
                 onClick={handleRejectConfirm}
                 disabled={loading}
               >
                 Confirmer le rejet
-              </button>
+              </Button>
             </div>
           </div>
         </div>

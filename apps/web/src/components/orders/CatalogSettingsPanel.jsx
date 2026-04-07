@@ -7,7 +7,7 @@ import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
 import { extractPDFMeta } from '../../utils/pdfParser';
 import { parseCatalog, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
-import { Select, Table, Checkbox, Tabs, TabList, Tab, TabPanel, Spinner, Tag, Accordion } from '@/design-system';
+import { Accordion, Button, Checkbox, Select, Spinner, Tab, TabList, TabPanel, Table, Tabs, Tag } from '@/design-system';
 
 // ═══════════════════════════════════════════════════════════
 // COMPOSANT PRINCIPAL — Onglets Parsers / Taxonomie
@@ -120,14 +120,13 @@ function ParserLearningTab() {
         </div>
       </div>
 
-      <button
-        className="catalog-btn catalog-btn-primary"
+      <Button variant="ghost"         className="catalog-btn catalog-btn-primary"
         onClick={handleAnalyze}
         disabled={!file || analyzing}
         style={{ marginTop: '0.5rem' }}
       >
         {analyzing ? <><RefreshCw size={16} className="spin" /> Analyse en cours…</> : <><BarChart3 size={16} /> Lancer l'analyse</>}
-      </button>
+      </Button>
 
       {/* ── Résultat mono-parser ── */}
       {report && <SingleParserReport report={report} />}
@@ -292,13 +291,12 @@ function MultiParserComparison({ reports }) {
                     </div>
                   </td>
                   <td>
-                    <button
-                      className="catalog-btn catalog-btn-secondary"
+                    <Button variant="ghost"                       className="catalog-btn catalog-btn-secondary"
                       style={{ padding: '2px 8px', fontSize: '0.75rem' }}
                       onClick={() => setExpandedParser(expandedParser === i ? null : i)}
                     >
                       {expandedParser === i ? 'Masquer' : 'Détails'}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
                 {expandedParser === i && (
@@ -393,18 +391,16 @@ function TaxonomyTab() {
 
       {/* Onglets famille/catégorie */}
       <div className="catalog-toggle-tabs">
-        <button
-          className={`catalog-btn ${activeSection === 'families' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+        <Button variant="ghost"           className={`catalog-btn ${activeSection === 'families' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
           onClick={() => setActiveSection('families')}
         >
           Familles ({taxonomy.families?.length || 0})
-        </button>
-        <button
-          className={`catalog-btn ${activeSection === 'categories' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+        </Button>
+        <Button variant="ghost"           className={`catalog-btn ${activeSection === 'categories' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
           onClick={() => setActiveSection('categories')}
         >
           Catégories ({taxonomy.categories?.length || 0})
-        </button>
+        </Button>
       </div>
 
       {/* Suggestions de regroupement */}
@@ -454,13 +450,12 @@ function TaxonomyTab() {
       {selectedRules.length > 0 && (
         <div className="taxonomy-apply-bar">
           <span>{selectedRules.length} règle{selectedRules.length > 1 ? 's' : ''} sélectionnée{selectedRules.length > 1 ? 's' : ''}</span>
-          <button
-            className="catalog-btn catalog-btn-primary"
+          <Button variant="ghost"             className="catalog-btn catalog-btn-primary"
             onClick={handleApply}
             disabled={applying}
           >
             {applying ? <><RefreshCw size={16} className="spin" /> Application…</> : <><CheckCircle2 size={16} /> Appliquer les regroupements</>}
-          </button>
+          </Button>
         </div>
       )}
     </div>

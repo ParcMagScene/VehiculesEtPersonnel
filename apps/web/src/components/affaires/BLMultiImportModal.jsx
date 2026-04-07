@@ -255,7 +255,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
         {/* Header */}
         <div className="modal-header">
           <h3><PackagePlus size={20} /> Import BL / BP</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="modal-close" onClick={onClose}><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -307,8 +307,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
               </div>
               <div className="type-pills global">
                 {AFFAIRE_TYPE_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
+                  <Button variant="ghost"                     key={opt.value}
                     type="button"
                     className={globalType === opt.value ? 'active' : ''}
                     style={globalType === opt.value ? { borderColor: opt.color, background: `${opt.color}18`, color: opt.color } : {}}
@@ -317,7 +316,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                     }}
                   >
                     {opt.icon} {opt.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -384,13 +383,12 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                         {item.parsedData.confidence}%
                       </span>
                     )}
-                    <button
-                      className="batch-file-remove"
+                    <Button variant="ghost"                       className="batch-file-remove"
                       onClick={(e) => { e.stopPropagation(); removeItem(idx); }}
                       title="Retirer"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
 
                   {/* ─── Expanded details ─── */}
@@ -411,15 +409,14 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                         <label><Tag size={13} /> Type</label>
                         <div className="type-pills">
                           {AFFAIRE_TYPE_OPTIONS.map(opt => (
-                            <button
-                              key={opt.value}
+                            <Button variant="ghost"                               key={opt.value}
                               type="button"
                               className={item.affaireType === opt.value ? 'active' : ''}
                               style={item.affaireType === opt.value ? { borderColor: opt.color, background: `${opt.color}18`, color: opt.color } : {}}
                               onClick={(e) => { e.stopPropagation(); updateItem(idx, { affaireType: opt.value }); }}
                             >
                               {opt.icon} {opt.label}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       </div>
@@ -502,15 +499,14 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                       {/* ─── Articles (flat, for non-section docs) ─── */}
                       {(!item.parsedData.sections || item.parsedData.sections.length === 0) && item.parsedData.items && item.parsedData.items.length > 0 && (
                         <div className="detail-articles">
-                          <button
-                            type="button"
+                          <Button variant="ghost"                             type="button"
                             className="detail-articles-toggle"
                             onClick={(e) => { e.stopPropagation(); updateItem(idx, { showArticles: !item.showArticles }); }}
                           >
                             <Package size={13} />
                             Articles ({item.parsedData.items.length})
                             {item.showArticles ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                          </button>
+                          </Button>
                           {item.showArticles && (
                             <div className="detail-articles-list">
                               {item.parsedData.items.slice(0, 30).map((art, aIdx) => (
@@ -543,14 +539,13 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                       )}
 
                       {/* ─── Raw text toggle ─── */}
-                      <button
-                        type="button"
+                      <Button variant="ghost"                         type="button"
                         className="detail-raw-toggle"
                         onClick={(e) => { e.stopPropagation(); updateItem(idx, { showRaw: !item.showRaw }); }}
                       >
                         {item.showRaw ? <EyeOff size={13} /> : <Eye size={13} />}
                         {item.showRaw ? 'Masquer texte brut' : 'Voir texte brut'}
-                      </button>
+                      </Button>
                       {item.showRaw && (
                         <div className="detail-raw-text">{item.rawText}</div>
                       )}

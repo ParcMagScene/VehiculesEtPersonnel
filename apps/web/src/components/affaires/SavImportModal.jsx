@@ -356,11 +356,10 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                                 {linkedEquip ? (
                                   <div className="sav-import-linked">
                                     <span className="sav-import-linked-name">✅ {linkedEquip.name}</span>
-                                    <button
-                                      className="sav-import-unlink-btn"
+                                    <Button variant="ghost"                                       className="sav-import-unlink-btn"
                                       onClick={() => { const next = { ...manualLinks }; delete next[item.index]; setManualLinks(next); }}
                                       title="Retirer le lien"
-                                    ><X size={12} /></button>
+                                    ><X size={12} /></Button>
                                   </div>
                                 ) : (
                                   <Button
@@ -389,7 +388,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                   <div className="sav-import-link-modal">
                     <div className="sav-import-link-header">
                       <h4>🔗 Lier à un équipement</h4>
-                      <button className="sav-import-link-close" onClick={() => setLinkingIndex(null)}><X size={18} /></button>
+                      <Button variant="ghost" className="sav-import-link-close" onClick={() => setLinkingIndex(null)}><X size={18} /></Button>
                     </div>
                     {(() => {
                       const item = preview.unmatchedItems?.find(u => u.index === linkingIndex);

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { format, eachMonthOfInterval, startOfYear, endOfYear, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X } from 'lucide-react';
+import { Button } from '@/design-system';
 import './MonthSelector.css';
 
 function MonthSelector({ currentDate, onSelectMonth, onClose, reservations = [], vehicles = [] }) {
@@ -91,9 +92,9 @@ function MonthSelector({ currentDate, onSelectMonth, onClose, reservations = [],
       <div className="month-selector-modal" onClick={(e) => e.stopPropagation()}>
         <div className="month-selector-header">
           <h3>Sélectionner un mois - {format(currentDate, 'yyyy', { locale: fr })}</h3>
-          <button className="close-button" onClick={onClose}>
+          <Button variant="ghost" className="close-button" onClick={onClose}>
             <X size={20} />
-          </button>
+          </Button>
         </div>
         <div className="month-selector-grid">
           {months.map((monthDate, index) => (

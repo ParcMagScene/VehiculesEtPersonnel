@@ -14,7 +14,7 @@ import { format, parseISO, startOfMonth, endOfMonth, subMonths, startOfYear, end
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import './ReportsPanel.css';
-import { Table, InlineAlert, Tooltip, SectionHeader } from '@/design-system';
+import { Button, InlineAlert, SectionHeader, Table, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -417,9 +417,9 @@ const ReportsPanel = ({ currentUser }) => {
           <h2>Rapports & Exports</h2>
         </div>
         <div className="rp-header-actions">
-          <Tooltip content="Rafraîchir les données"><button className="rp-btn rp-btn-icon" onClick={loadData}>
+          <Tooltip content="Rafraîchir les données"><Button variant="ghost" className="rp-btn rp-btn-icon" onClick={loadData}>
             <RefreshCw size={16} />
-          </button></Tooltip>
+          </Button></Tooltip>
         </div>
       </div>
 
@@ -435,30 +435,29 @@ const ReportsPanel = ({ currentUser }) => {
         <span>→</span>
         <input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} />
         <div className="rp-period-presets">
-          <button onClick={() => { setPeriodStart(format(startOfMonth(new Date()), 'yyyy-MM-dd')); setPeriodEnd(format(new Date(), 'yyyy-MM-dd')); }}>
+          <Button variant="ghost" onClick={() => { setPeriodStart(format(startOfMonth(new Date()), 'yyyy-MM-dd')); setPeriodEnd(format(new Date(), 'yyyy-MM-dd')); }}>
             Ce mois
-          </button>
-          <button onClick={() => { const prev = subMonths(new Date(), 1); setPeriodStart(format(startOfMonth(prev), 'yyyy-MM-dd')); setPeriodEnd(format(endOfMonth(prev), 'yyyy-MM-dd')); }}>
+          </Button>
+          <Button variant="ghost" onClick={() => { const prev = subMonths(new Date(), 1); setPeriodStart(format(startOfMonth(prev), 'yyyy-MM-dd')); setPeriodEnd(format(endOfMonth(prev), 'yyyy-MM-dd')); }}>
             Mois précédent
-          </button>
-          <button onClick={() => { setPeriodStart(format(startOfYear(new Date()), 'yyyy-MM-dd')); setPeriodEnd(format(new Date(), 'yyyy-MM-dd')); }}>
+          </Button>
+          <Button variant="ghost" onClick={() => { setPeriodStart(format(startOfYear(new Date()), 'yyyy-MM-dd')); setPeriodEnd(format(new Date(), 'yyyy-MM-dd')); }}>
             Cette année
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Navigation */}
       <div className="rp-nav">
         {REPORT_SECTIONS.map(s => (
-          <button
-            key={s.id}
+          <Button variant="ghost"             key={s.id}
             className={`rp-nav-btn ${section === s.id ? 'active' : ''}`}
             onClick={() => setSection(s.id)}
             style={{ '--sec-color': s.color }}
           >
             <s.icon size={16} />
             <span>{s.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -474,15 +473,15 @@ const ReportsPanel = ({ currentUser }) => {
         <div className="rp-section">
           <SectionHeader className="rp-section-header" icon={<Truck size={18} />} title="Synthèse Parc Véhicules" actions={
             <div className="rp-section-actions">
-              <button className="rp-btn rp-btn-sm" onClick={exportVehiclesCSV}>
+              <Button variant="ghost" className="rp-btn rp-btn-sm" onClick={exportVehiclesCSV}>
                 <Download size={14} /> CSV véhicules
-              </button>
-              <button className="rp-btn rp-btn-sm" onClick={exportReservationsCSV}>
+              </Button>
+              <Button variant="ghost" className="rp-btn rp-btn-sm" onClick={exportReservationsCSV}>
                 <Download size={14} /> CSV réservations
-              </button>
-              <button className="rp-btn rp-btn-sm rp-btn-print" onClick={printFleetReport}>
+              </Button>
+              <Button variant="ghost" className="rp-btn rp-btn-sm rp-btn-print" onClick={printFleetReport}>
                 <Printer size={14} /> Imprimer
-              </button>
+              </Button>
             </div>
           } />
 
@@ -539,12 +538,12 @@ const ReportsPanel = ({ currentUser }) => {
         <div className="rp-section">
           <SectionHeader className="rp-section-header" icon={<Wrench size={18} />} title="Synthèse Maintenances" actions={
             <div className="rp-section-actions">
-              <button className="rp-btn rp-btn-sm" onClick={exportMaintenancesCSV}>
+              <Button variant="ghost" className="rp-btn rp-btn-sm" onClick={exportMaintenancesCSV}>
                 <Download size={14} /> CSV
-              </button>
-              <button className="rp-btn rp-btn-sm rp-btn-print" onClick={printMaintenanceReport}>
+              </Button>
+              <Button variant="ghost" className="rp-btn rp-btn-sm rp-btn-print" onClick={printMaintenanceReport}>
                 <Printer size={14} /> Imprimer
-              </button>
+              </Button>
             </div>
           } />
 
@@ -627,12 +626,12 @@ const ReportsPanel = ({ currentUser }) => {
         <div className="rp-section">
           <SectionHeader className="rp-section-header" icon={<Users size={18} />} title="Synthèse Personnel" actions={
             <div className="rp-section-actions">
-              <button className="rp-btn rp-btn-sm" onClick={exportPersonnelCSV}>
+              <Button variant="ghost" className="rp-btn rp-btn-sm" onClick={exportPersonnelCSV}>
                 <Download size={14} /> CSV
-              </button>
-              <button className="rp-btn rp-btn-sm rp-btn-print" onClick={printPersonnelReport}>
+              </Button>
+              <Button variant="ghost" className="rp-btn rp-btn-sm rp-btn-print" onClick={printPersonnelReport}>
                 <Printer size={14} /> Imprimer
-              </button>
+              </Button>
             </div>
           } />
 
@@ -695,9 +694,9 @@ const ReportsPanel = ({ currentUser }) => {
         <div className="rp-section">
           <SectionHeader className="rp-section-header" icon={<ShoppingCart size={18} />} title="Synthèse Commandes" actions={
             <div className="rp-section-actions">
-              <button className="rp-btn rp-btn-sm" onClick={exportOrdersCSV}>
+              <Button variant="ghost" className="rp-btn rp-btn-sm" onClick={exportOrdersCSV}>
                 <Download size={14} /> CSV
-              </button>
+              </Button>
             </div>
           } />
 
@@ -753,9 +752,9 @@ const ReportsPanel = ({ currentUser }) => {
         <div className="rp-section">
           <SectionHeader className="rp-section-header" icon={<Briefcase size={18} />} title="Synthèse Affaires" actions={
             <div className="rp-section-actions">
-              <button className="rp-btn rp-btn-sm" onClick={exportAffairesCSV}>
+              <Button variant="ghost" className="rp-btn rp-btn-sm" onClick={exportAffairesCSV}>
                 <Download size={14} /> CSV
-              </button>
+              </Button>
             </div>
           } />
 
@@ -801,36 +800,36 @@ const ReportsPanel = ({ currentUser }) => {
             Les fichiers incluent l'encodage UTF-8 avec BOM pour la prise en charge des accents.
           </p>
           <div className="rp-export-grid">
-            <button className="rp-export-card" onClick={exportVehiclesCSV}>
+            <Button variant="ghost" className="rp-export-card" onClick={exportVehiclesCSV}>
               <Truck size={24} />
               <span className="rp-export-title">Véhicules</span>
               <span className="rp-export-count">{vehicles.length} enregistrements</span>
-            </button>
-            <button className="rp-export-card" onClick={exportReservationsCSV}>
+            </Button>
+            <Button variant="ghost" className="rp-export-card" onClick={exportReservationsCSV}>
               <Calendar size={24} />
               <span className="rp-export-title">Réservations</span>
               <span className="rp-export-count">{reservations.length} enregistrements</span>
-            </button>
-            <button className="rp-export-card" onClick={exportMaintenancesCSV}>
+            </Button>
+            <Button variant="ghost" className="rp-export-card" onClick={exportMaintenancesCSV}>
               <Wrench size={24} />
               <span className="rp-export-title">Maintenances</span>
               <span className="rp-export-count">{maintenances.length} enregistrements</span>
-            </button>
-            <button className="rp-export-card" onClick={exportPersonnelCSV}>
+            </Button>
+            <Button variant="ghost" className="rp-export-card" onClick={exportPersonnelCSV}>
               <Users size={24} />
               <span className="rp-export-title">Personnel</span>
               <span className="rp-export-count">{persons.length} enregistrements</span>
-            </button>
-            <button className="rp-export-card" onClick={exportOrdersCSV}>
+            </Button>
+            <Button variant="ghost" className="rp-export-card" onClick={exportOrdersCSV}>
               <ShoppingCart size={24} />
               <span className="rp-export-title">Commandes</span>
               <span className="rp-export-count">{orders.length} enregistrements</span>
-            </button>
-            <button className="rp-export-card" onClick={exportAffairesCSV}>
+            </Button>
+            <Button variant="ghost" className="rp-export-card" onClick={exportAffairesCSV}>
               <Briefcase size={24} />
               <span className="rp-export-title">Affaires</span>
               <span className="rp-export-count">{affaires.length} enregistrements</span>
-            </button>
+            </Button>
           </div>
         </div>
       )}

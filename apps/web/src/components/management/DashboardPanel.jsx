@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import logger from '../../utils/logger';
 import './DashboardPanel.css';
-import { Spinner, Card, SectionHeader } from '@/design-system';
+import { Button, Card, SectionHeader, Spinner } from '@/design-system';
 
 import { ROLES, STATUS } from '../../constants';
 
@@ -310,9 +310,9 @@ const DashboardPanel = ({
         {/* Prochaines réservations */}
         <div className="dashboard-section">
           <SectionHeader className="section-header" title="📅 Prochaines réservations" actions={
-            <button className="section-link" onClick={() => onNavigateToModule?.('vehicles')}>
+            <Button variant="ghost" className="section-link" onClick={() => onNavigateToModule?.('vehicles')}>
               Voir tout →
-            </button>
+            </Button>
           } />
           <div className="section-body">
             {upcomingReservations.length === 0 ? (
@@ -344,9 +344,9 @@ const DashboardPanel = ({
         {/* Maintenances en cours / à venir */}
         <div className="dashboard-section">
           <SectionHeader className="section-header" title="🔧 Maintenances" actions={
-            <button className="section-link" onClick={() => onNavigateToModule?.('vehicles')}>
+            <Button variant="ghost" className="section-link" onClick={() => onNavigateToModule?.('vehicles')}>
               Voir tout →
-            </button>
+            </Button>
           } />
           <div className="section-body">
             {upcomingMaintenances.length === 0 ? (
@@ -379,9 +379,9 @@ const DashboardPanel = ({
         {stockAlerts.length > 0 && (
           <div className="dashboard-section section-alerts">
             <SectionHeader className="section-header" title="⚠️ Alertes stock bas" actions={
-              <button className="section-link" onClick={() => onNavigateToModule?.('stock')}>
+              <Button variant="ghost" className="section-link" onClick={() => onNavigateToModule?.('stock')}>
                 Voir le stock →
-              </button>
+              </Button>
             } />
             <div className="section-body">
               <div className="stock-alert-list">

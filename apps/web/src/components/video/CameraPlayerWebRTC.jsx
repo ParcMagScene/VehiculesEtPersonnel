@@ -6,7 +6,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useWebRTCStream } from '../../hooks/useWebRTCStream';
 import { Maximize, Minimize, Camera, RefreshCw, WifiOff, Film } from 'lucide-react';
 import api from '../../utils/api';
-import { Spinner, Tooltip } from '@/design-system';
+import { Button, Spinner, Tooltip } from '@/design-system';
 
 const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFullscreen, isFullscreen = false, onSelect, isSelected = false, onPlayback }) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
@@ -82,22 +82,22 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
         </div>
         <div className="camera-player__actions">
           {camera?.supportsPlayback && onPlayback && (
-            <Tooltip content="Enregistrements"><button onClick={(e) => { e.stopPropagation(); onPlayback(camera); }} className="camera-player__btn">
+            <Tooltip content="Enregistrements"><Button variant="ghost" onClick={(e) => { e.stopPropagation(); onPlayback(camera); }} className="camera-player__btn">
               <Film size={16} />
-            </button></Tooltip>
+            </Button></Tooltip>
           )}
-          <Tooltip content="Snapshot"><button onClick={handleSnapshot} disabled={status !== 'streaming' || snapshotLoading} className="camera-player__btn">
+          <Tooltip content="Snapshot"><Button variant="ghost" onClick={handleSnapshot} disabled={status !== 'streaming' || snapshotLoading} className="camera-player__btn">
             <Camera size={16} />
-          </button></Tooltip>
+          </Button></Tooltip>
           {status === 'error' || status === 'idle' ? (
-            <Tooltip content="Reconnecter"><button onClick={connect} className="camera-player__btn">
+            <Tooltip content="Reconnecter"><Button variant="ghost" onClick={connect} className="camera-player__btn">
               <RefreshCw size={16} />
-            </button></Tooltip>
+            </Button></Tooltip>
           ) : null}
           {onFullscreen && (
-            <Tooltip content={isFullscreen ? 'Réduire' : 'Plein écran'}><button onClick={() => onFullscreen(camera)} className="camera-player__btn">
+            <Tooltip content={isFullscreen ? 'Réduire' : 'Plein écran'}><Button variant="ghost" onClick={() => onFullscreen(camera)} className="camera-player__btn">
               {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-            </button></Tooltip>
+            </Button></Tooltip>
           )}
         </div>
       </div>
@@ -112,7 +112,7 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
           <div className="camera-player__overlay camera-player__overlay--error">
             <WifiOff size={32} />
             <span>{error || 'Flux indisponible'}</span>
-            <button onClick={connect} className="camera-player__retry-btn">Réessayer</button>
+            <Button variant="ghost" onClick={connect} className="camera-player__retry-btn">Réessayer</Button>
           </div>
         )}
         {status === 'idle' && !autoConnect && (

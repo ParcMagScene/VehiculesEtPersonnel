@@ -4,7 +4,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, CheckCircle, AlertTriangle, BarChart2, ChevronDown, ChevronRight } from 'lucide-react';
-import { ModalLayout } from '@/design-system';
+import { Button, ModalLayout } from '@/design-system';
 import { batchParsePDFs, getDocTypeLabel } from '../../utils/pdfParser';
 import './BLBatchAnalysis.css';
 
@@ -110,13 +110,12 @@ export default function BLBatchAnalysis({ onClose }) {
                 onChange={handleFiles}
               />
             </label>
-            <button
-              onClick={handleAnalyze}
+            <Button variant="ghost"               onClick={handleAnalyze}
               disabled={files.length === 0 || running}
               className="bl-batch-analyze-btn"
             >
               {running ? `Analyse… ${progress.current}/${progress.total}` : 'Analyser'}
-            </button>
+            </Button>
           </div>
 
           {/* Barre de progression */}

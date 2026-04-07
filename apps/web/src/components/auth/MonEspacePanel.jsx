@@ -15,7 +15,7 @@ import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
-import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
 import { STATUS } from '../../constants';
 
 import './MonEspacePanel.css';
@@ -139,21 +139,21 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
               <span className="mep-subtitle">{currentUser?.name}</span>
             </div>
           </div>
-          <Tooltip content="Fermer"><button className="mep-close" onClick={onClose}>
+          <Tooltip content="Fermer"><Button variant="ghost" className="mep-close" onClick={onClose}>
             <X size={18} />
-          </button></Tooltip>
+          </Button></Tooltip>
         </div>
 
         {/* ─── Navigation espace ─── */}
         <div className="mep-nav">
-          <button className="mep-nav-btn active">
+          <Button variant="ghost" className="mep-nav-btn active">
             <CalendarOff size={16} />
             Mes congés
-          </button>
-          <button className="mep-nav-btn new-request" onClick={() => setShowNewForm(true)}>
+          </Button>
+          <Button variant="ghost" className="mep-nav-btn new-request" onClick={() => setShowNewForm(true)}>
             <Plus size={16} />
             Nouvelle demande
-          </button>
+          </Button>
         </div>
 
         {/* ─── Contenu ─── */}
@@ -200,13 +200,12 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
             <div className="mep-filters">
               <Filter size={13} />
               {['all', 'pending', 'accepted', 'refused', 'cancelled'].map(f => (
-                <button
-                  key={f}
+                <Button variant="ghost"                   key={f}
                   className={`mep-filter-btn ${filter === f ? 'active' : ''}`}
                   onClick={() => setFilter(f)}
                 >
                   {f === 'all' ? 'Toutes' : STATUS_CONFIG[f]?.label || f}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -289,42 +288,38 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                         {/* ─── Actions PDF / Impression / Modifier ─── */}
                         <div className="mep-card-actions">
                           {leave.status === STATUS.PENDING && (
-                            <button
-                              className="mep-action-btn edit"
+                            <Button variant="ghost"                               className="mep-action-btn edit"
                               onClick={(e) => { e.stopPropagation(); setEditingLeave(leave); }}
                               title="Modifier cette demande"
                             >
                               <Edit3 size={14} />
                               Modifier
-                            </button>
+                            </Button>
                           )}
-                          <button
-                            className="mep-action-btn pdf"
+                          <Button variant="ghost"                             className="mep-action-btn pdf"
                             onClick={(e) => { e.stopPropagation(); handleExportPdf(leave.id); }}
                             disabled={isPdfLoading}
                             title="Visualiser le document officiel (PDF)"
                           >
                             {isPdfLoading ? <RefreshCw size={14} className="mep-spin" /> : <FileText size={14} />}
                             Voir le document
-                          </button>
-                          <button
-                            className="mep-action-btn print"
+                          </Button>
+                          <Button variant="ghost"                             className="mep-action-btn print"
                             onClick={(e) => { e.stopPropagation(); handlePrint(leave.id); }}
                             disabled={isPdfLoading}
                             title="Imprimer la demande de congé"
                           >
                             <Printer size={14} />
                             Imprimer
-                          </button>
-                          <button
-                            className="mep-action-btn download"
+                          </Button>
+                          <Button variant="ghost"                             className="mep-action-btn download"
                             onClick={(e) => { e.stopPropagation(); handleExportPdf(leave.id); }}
                             disabled={isPdfLoading}
                             title="Télécharger le document (Ctrl+S dans le nouvel onglet)"
                           >
                             <Download size={14} />
                             Télécharger
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )}

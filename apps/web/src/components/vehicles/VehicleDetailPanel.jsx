@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader, User, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
-import { Tag } from '@/design-system';
+import { Button, Tag } from '@/design-system';
 import './VehicleDetailPanel.css';
 
 /* ═══════════════════════════════════════════════
@@ -152,20 +152,20 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
         <div className="vdp-actions">
           {isAdmin && (
             <>
-              <button className="vdp-action-btn vdp-schedule" onClick={() => onAction?.('schedule')}>
+              <Button variant="ghost" className="vdp-action-btn vdp-schedule" onClick={() => onAction?.('schedule')}>
                 <Calendar size={14} /> Programmer
-              </button>
-              <button className="vdp-action-btn vdp-request" onClick={() => onAction?.('request')}>
+              </Button>
+              <Button variant="ghost" className="vdp-action-btn vdp-request" onClick={() => onAction?.('request')}>
                 <Wrench size={14} /> Demander
-              </button>
-              <button className="vdp-action-btn vdp-km-ctrl" onClick={() => onAction?.('km')}>
+              </Button>
+              <Button variant="ghost" className="vdp-action-btn vdp-km-ctrl" onClick={() => onAction?.('km')}>
                 <Gauge size={14} /> KM & CT
-              </button>
+              </Button>
             </>
           )}
-          <button className="vdp-action-btn vdp-breakdown" onClick={() => onAction?.('breakdown')}>
+          <Button variant="ghost" className="vdp-action-btn vdp-breakdown" onClick={() => onAction?.('breakdown')}>
             <AlertTriangle size={14} /> Panne
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -288,9 +288,9 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
             </div>
           </div>
         </div>
-        <button className="slide-panel-close" onClick={handleClose}>
+        <Button variant="ghost" className="slide-panel-close" onClick={handleClose}>
           <X size={18} />
-        </button>
+        </Button>
       </div>
 
       {/* Body */}
@@ -305,9 +305,9 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
 
       {/* Footer */}
       <div className="vdp-slide-footer">
-        <button className="vdp-slide-open-btn" onClick={() => onOpenDialog?.(currentVehicle)}>
+        <Button variant="ghost" className="vdp-slide-open-btn" onClick={() => onOpenDialog?.(currentVehicle)}>
           <ExternalLink size={14} /> Ouvrir la fiche complète
-        </button>
+        </Button>
       </div>
     </div>
   );

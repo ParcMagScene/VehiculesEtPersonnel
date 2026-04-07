@@ -235,15 +235,14 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
             {recordings.map((rec, i) => {
               const isActive = currentSegment?.startTime === rec.startTime;
               return (
-                <button
-                  key={i}
+                <Button variant="ghost"                   key={i}
                   className={`playback-panel__segment-btn ${isActive ? 'active' : ''}`}
                   onClick={() => startPlayback(rec.startTime, rec.endTime)}
                 >
                   <Play size={12} />
                   <span>{rec.startTime.slice(11, 16)} → {rec.endTime.slice(11, 16)}</span>
                   <span className="playback-panel__segment-size">{formatSize(rec.size)}</span>
-                </button>
+                </Button>
               );
             })}
           </div>

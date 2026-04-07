@@ -68,7 +68,7 @@ function MobileLeaves({ currentUser, onBack }) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
-          <button className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></Button>
           <h2>🏖️ Congés</h2>
         </div>
         <div className="mobile-module-loading">Chargement...</div>
@@ -81,7 +81,7 @@ function MobileLeaves({ currentUser, onBack }) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
-          <button className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></Button>
           <h2>Détail demande</h2>
         </div>
         <LeaveDetail 
@@ -102,7 +102,7 @@ function MobileLeaves({ currentUser, onBack }) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
-          <button className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></Button>
           <h2>Nouvelle demande</h2>
         </div>
         <LeaveForm 
@@ -119,7 +119,7 @@ function MobileLeaves({ currentUser, onBack }) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
-          <button className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></Button>
           <h2>Validations ({pendingCount})</h2>
         </div>
         <LeaveAdminList 
@@ -136,16 +136,16 @@ function MobileLeaves({ currentUser, onBack }) {
   return (
     <div className="mobile-leaves">
       <div className="mobile-module-header">
-        <button className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></button>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></Button>
         <h2>🏖️ Congés</h2>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           {isAdmin && pendingCount > 0 && (
-            <button className="ml-admin-btn" onClick={() => setView('admin')}>
+            <Button variant="ghost" className="ml-admin-btn" onClick={() => setView('admin')}>
               <Clock size={16} />
               <span className="ml-admin-badge">{pendingCount}</span>
-            </button>
+            </Button>
           )}
-          <button className="ml-refresh-btn" onClick={loadData}><RefreshCw size={16} /></button>
+          <Button variant="ghost" className="ml-refresh-btn" onClick={loadData}><RefreshCw size={16} /></Button>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ function MobileLeaves({ currentUser, onBack }) {
         {/* Filtres */}
         <div className="ml-filters">
           {['all', 'pending', 'accepted', 'refused'].map(f => (
-            <button 
+            <Button variant="ghost" 
               key={f} 
               className={`ml-filter-btn ${filter === f ? 'active' : ''}`} 
               onClick={() => setFilter(f)}
@@ -185,7 +185,7 @@ function MobileLeaves({ currentUser, onBack }) {
                   {leaves.filter(l => l.status === f).length}
                 </span>
               )}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -207,9 +207,9 @@ function MobileLeaves({ currentUser, onBack }) {
       </div>
 
       {/* FAB pour nouvelle demande */}
-      <button className="ml-fab" onClick={() => setView('form')}>
+      <Button variant="ghost" className="ml-fab" onClick={() => setView('form')}>
         <Plus size={24} />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -311,15 +311,14 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
         <label>Type de congé</label>
         <div className="ml-type-grid">
           {Object.entries(LEAVE_TYPE_LABELS).map(([key, info]) => (
-            <button
-              key={key}
+            <Button variant="ghost"               key={key}
               className={`ml-type-btn ${leaveType === key ? 'active' : ''}`}
               style={leaveType === key ? { borderColor: info.color, background: info.color + '15' } : {}}
               onClick={() => setLeaveType(key)}
             >
               <span>{info.icon}</span>
               <span>{info.label}</span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -330,9 +329,9 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="ml-input" />
         <div className="ml-half-day">
           {['full', 'morning', 'afternoon'].map(h => (
-            <button key={h} className={`ml-half-btn ${startHalf === h ? 'active' : ''}`} onClick={() => setStartHalf(h)}>
+            <Button variant="ghost" key={h} className={`ml-half-btn ${startHalf === h ? 'active' : ''}`} onClick={() => setStartHalf(h)}>
               {h === 'full' ? 'Journée' : h === 'morning' ? 'Matin' : 'Après-midi'}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -342,9 +341,9 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="ml-input" />
         <div className="ml-half-day">
           {['full', 'morning', 'afternoon'].map(h => (
-            <button key={h} className={`ml-half-btn ${endHalf === h ? 'active' : ''}`} onClick={() => setEndHalf(h)}>
+            <Button variant="ghost" key={h} className={`ml-half-btn ${endHalf === h ? 'active' : ''}`} onClick={() => setEndHalf(h)}>
               {h === 'full' ? 'Journée' : h === 'morning' ? 'Matin' : 'Après-midi'}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -496,12 +495,12 @@ function LeaveAdminList({ pendingLeaves, onDecision, onSelect, onRefresh }) {
                 </div>
               </div>
               <div className="ml-admin-actions">
-                <button className="ml-quick-accept" onClick={() => onDecision(leave.id, 'accepted')}>
+                <Button variant="ghost" className="ml-quick-accept" onClick={() => onDecision(leave.id, 'accepted')}>
                   <CheckCircle size={18} /> Accepter
-                </button>
-                <button className="ml-quick-reject" onClick={() => onDecision(leave.id, 'refused')}>
+                </Button>
+                <Button variant="ghost" className="ml-quick-reject" onClick={() => onDecision(leave.id, 'refused')}>
                   <XCircle size={18} /> Refuser
-                </button>
+                </Button>
               </div>
             </div>
           );

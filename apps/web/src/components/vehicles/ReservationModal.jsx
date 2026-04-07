@@ -855,9 +855,9 @@ const ReservationModal = ({
             />
             <span className="reservation-tournee-label">🚐 Tournée</span>
           </label>
-          <button className="close-button" onClick={handleSafeClose} aria-label="Fermer la fenêtre">
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose} aria-label="Fermer la fenêtre">
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         <form id="reservation-form" onSubmit={handleSubmit} className="modal-form">
@@ -1020,15 +1020,14 @@ const ReservationModal = ({
                         </div>
                       )}
                     </div>
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       onClick={handleOpenLocationDialog}
                       className="add-location-button reservation-add-location-btn"
                       title="Créer ou rechercher un lieu avec Google Maps"
                     >
                       <MapPin size={16} />
                       Nouveau lieu
-                    </button>
+                    </Button>
                   </div>
                   {formData.locationName && (() => {
                     const location = locations.find(l => l.name === formData.locationName);
@@ -1288,13 +1287,13 @@ const ReservationModal = ({
                       })}
                       
                       <div className="dropdown-footer">
-                        <button 
+                        <Button variant="ghost" 
                           type="button"
                           className="dropdown-close-button"
                           onClick={() => setIsEventDropdownOpen(false)}
                         >
                           Terminé
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -1420,8 +1419,7 @@ const ReservationModal = ({
                     </div>
                     {/* Bouton trajet solo (seulement si pas dans un groupe) */}
                     {!isInGroup && (
-                      <button
-                        type="button"
+                      <Button variant="ghost"                         type="button"
                         className="trip-details-btn"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1430,14 +1428,13 @@ const ReservationModal = ({
                       >
                         <MapPin size={16} />
                         Détails du trajet
-                      </button>
+                      </Button>
                     )}
                     {/* Boutons de liaison (seulement si solo et en mode édition) */}
                     {!isInGroup && isEdit && (
                       <div className="trip-link-actions">
                         {originalIndex < sortedEventIds.length - 1 && (
-                          <button
-                            type="button"
+                          <Button variant="ghost"                             type="button"
                             className="link-next-btn"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1448,10 +1445,9 @@ const ReservationModal = ({
                           >
                             <Link2 size={14} />
                             Lier au suivant
-                          </button>
+                          </Button>
                         )}
-                        <button
-                          type="button"
+                        <Button variant="ghost"                           type="button"
                           className="link-event-btn"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1461,7 +1457,7 @@ const ReservationModal = ({
                         >
                           <Link2 size={14} />
                           Lier à un événement
-                        </button>
+                        </Button>
                         {linkEventComboboxOpen === eventId && (
                           <div className="link-event-combobox" onClick={(e) => e.stopPropagation()}>
                             <div className="combobox-header">Choisir un événement à lier</div>
@@ -1518,9 +1514,9 @@ const ReservationModal = ({
                                   );
                                 })}
                             </div>
-                            <button type="button" className="combobox-close" onClick={() => setLinkEventComboboxOpen(null)}>
+                            <Button variant="ghost" type="button" className="combobox-close" onClick={() => setLinkEventComboboxOpen(null)}>
                               Fermer
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -1540,19 +1536,19 @@ const ReservationModal = ({
                 return (
                   <div key={key} className="trip-link-separator">
                     {areLinked ? (
-                      <button type="button" className="unlink-btn"
+                      <Button variant="ghost" type="button" className="unlink-btn"
                         onClick={(e) => { e.stopPropagation(); handleUnlinkTrip(firstEventId); }}
                         title="Délier ces événements">
                         <Unlink size={14} />
                         <span className="link-label">Liés</span>
-                      </button>
+                      </Button>
                     ) : isEdit ? (
-                      <button type="button" className="link-btn"
+                      <Button variant="ghost" type="button" className="link-btn"
                         onClick={(e) => { e.stopPropagation(); handleLinkTrips(lastEventId, firstEventId); }}
                         title="Lier les trajets de ces événements">
                         <Link2 size={14} />
                         <span className="link-label">Lier</span>
-                      </button>
+                      </Button>
                     ) : (
                       <div className="link-separator-line" />
                     )}
@@ -1594,19 +1590,18 @@ const ReservationModal = ({
                                   {itemIdx > 0 && (
                                     <div className="group-inner-separator">
                                       <Unlink size={12} />
-                                      <button type="button" className="unlink-inner-btn"
+                                      <Button variant="ghost" type="button" className="unlink-inner-btn"
                                         onClick={(e) => { e.stopPropagation(); handleUnlinkTrip(item.eventId); }}
                                         title="Délier cet événement du groupe">
                                         Délier
-                                      </button>
+                                      </Button>
                                     </div>
                                   )}
                                   {renderEventCard(item, true)}
                                 </React.Fragment>
                               ))}
                             </div>
-                            <button
-                              type="button"
+                            <Button variant="ghost"                               type="button"
                               className="trip-details-btn combined-trip-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1615,7 +1610,7 @@ const ReservationModal = ({
                             >
                               <MapPin size={16} />
                               Détails du trajet combiné ({segment.items.length} événements)
-                            </button>
+                            </Button>
                           </div>
                         );
                       } else {
@@ -1661,27 +1656,26 @@ const ReservationModal = ({
 
         <div className="modal-actions">
           {isEdit && currentUser?.isAdmin && (
-            <button
-              type="button"
+            <Button variant="ghost"               type="button"
               className="delete-button"
               onClick={onDelete}
             >
               <Trash2 size={18} />
               Supprimer
-            </button>
+            </Button>
           )}
           <Button variant="ghost" onClick={isReadOnly ? onClose : handleSafeClose}>
             {isReadOnly ? 'Fermer' : 'Annuler'}
           </Button>
           {!isEdit && (
-            <button type="submit" form="reservation-form" className="submit-button">
+            <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
               {currentUser?.isAdmin ? 'Créer' : 'Demander'}
-            </button>
+            </Button>
           )}
           {isEdit && !isReadOnly && (hasChanges || formData.isTournee) && (
-            <button type="submit" form="reservation-form" className="submit-button">
+            <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
               Valider les modifications
-            </button>
+            </Button>
           )}
         </div>
       </div>

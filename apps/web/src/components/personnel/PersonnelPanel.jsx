@@ -225,7 +225,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     return (
       <div className="personnel-panel personnel-panel--main">
         {error && (
-          <InlineAlert action={<button onClick={loadData}>Réessayer</button>}>{error}</InlineAlert>
+          <InlineAlert action={<Button variant="ghost" onClick={loadData}>Réessayer</Button>}>{error}</InlineAlert>
         )}
         <PlanningTab persons={persons} skills={skills} positions={positions} view={view} setView={setView} currentDate={currentDate} setCurrentDate={setCurrentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} currentUser={currentUser} />
         {editFormVisible && (
@@ -302,9 +302,9 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
                       const selected = editForm.skills.find(s => s.skillId === skill.id);
                       return (
                         <div key={skill.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                          <button type="button" className="skill-toggle" onClick={() => toggleEditSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
+                          <Button variant="ghost" type="button" className="skill-toggle" onClick={() => toggleEditSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
                             {selected && <Check size={12} />} {skill.name}
-                          </button>
+                          </Button>
                           {selected && (
                             <Select className="skill-level-select" value={selected.level} onChange={e => updateEditSkillLevel(skill.id, e.target.value)}>
                               {SKILL_LEVELS.map(l => (<option key={l.value} value={l.value}>{l.label}</option>))}
@@ -322,9 +322,9 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
                       const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || 'var(--theme-text-gray)';
                       return (
                         <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                          <button type="button" className="skill-toggle" onClick={() => setEditForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
+                          <Button variant="ghost" type="button" className="skill-toggle" onClick={() => setEditForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
                             {selected && <Check size={12} />} {pos.name}
-                          </button>
+                          </Button>
                         </div>
                       );
                     })}
@@ -341,22 +341,21 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
   return (
     <div className="personnel-panel">
       {error && (
-        <InlineAlert action={<button onClick={loadData}>Réessayer</button>}>{error}</InlineAlert>
+        <InlineAlert action={<Button variant="ghost" onClick={loadData}>Réessayer</Button>}>{error}</InlineAlert>
       )}
 
       {/* Sous-onglets */}
       {subTabs.length > 0 && (
       <div className="personnel-subtabs">
         {subTabs.map(tab => (
-          <button
-            key={tab.id}
+          <Button variant="ghost"             key={tab.id}
             className={`personnel-subtab ${subTab === tab.id ? 'active' : ''}`}
             onClick={() => setSubTab(tab.id)}
             style={{ '--tab-color': tab.color }}
           >
             <tab.icon size={16} />
             <span>{tab.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
       )}
@@ -890,9 +889,9 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
                   const selected = form.skills.find(s => s.skillId === skill.id);
                   return (
                     <div key={skill.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                      <button type="button" className="skill-toggle" onClick={() => toggleSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
+                      <Button variant="ghost" type="button" className="skill-toggle" onClick={() => toggleSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
                         {selected && <Check size={12} />} {skill.name}
-                      </button>
+                      </Button>
                       {selected && (
                         <Select className="skill-level-select" value={selected.level} onChange={e => updateSkillLevel(skill.id, e.target.value)}>
                           {SKILL_LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
@@ -913,9 +912,9 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
                   const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || 'var(--theme-text-gray)';
                   return (
                     <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                      <button type="button" className="skill-toggle" onClick={() => setForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
+                      <Button variant="ghost" type="button" className="skill-toggle" onClick={() => setForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
                         {selected && <Check size={12} />} {pos.name}
-                      </button>
+                      </Button>
                     </div>
                   );
                 })}
@@ -1716,8 +1715,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         </div>
         {!isGhost && (
           <>
-            <button
-              className="pp-assignment-delete"
+            <Button variant="ghost"               className="pp-assignment-delete"
               onClick={(e) => {
                 e.stopPropagation();
                 setDeleteMission({ mission: spanHere.mission, person });
@@ -1725,7 +1723,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               title="Supprimer cette mission"
             >
               <Trash2 size={12} />
-            </button>
+            </Button>
             {/* Poignées de resize */}
             {view !== 'year' && !spanHere.clippedLeft && (
               <div className="pp-resize-handle pp-resize-handle-start"
@@ -1780,14 +1778,14 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         {setView && setCurrentDate && (
           <div className="cal-nav-toolbar pp-nav-toolbar">
             <div className="cal-nav-views">
-              <button className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</button>
-              <button className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</button>
-              <button className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</button>
+              <Button variant="ghost" className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</Button>
+              <Button variant="ghost" className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</Button>
+              <Button variant="ghost" className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</Button>
             </div>
             <div className="cal-nav-date">
-              <button className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></button>
-              <button className={`cal-nav-btn cal-nav-today ${ppShowTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</button>
-              <button className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></button>
+              <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></Button>
+              <Button variant="ghost" className={`cal-nav-btn cal-nav-today ${ppShowTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
+              <Button variant="ghost" className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></Button>
               <span 
                 className="cal-nav-label clickable"
                 onClick={() => {
@@ -1814,14 +1812,13 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
             {PERSON_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </Select>
         </div>
-        <button
-          className={`pp-planning-fav-btn${sortByFavorites ? ' active' : ''}`}
+        <Button variant="ghost"           className={`pp-planning-fav-btn${sortByFavorites ? ' active' : ''}`}
           onClick={() => setSortByFavorites(v => !v)}
           title={sortByFavorites ? 'Tri par favoris actif' : 'Activer le tri par favoris'}
         >
           <Star size={14} fill={sortByFavorites ? 'currentColor' : 'none'} />
           Favoris
-        </button>
+        </Button>
       </div>
 
       {activePersons.length === 0 ? (
@@ -1829,9 +1826,9 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           icon={<CalendarDays size={48} />}
           title="Ajoutez du personnel pour afficher le planning"
           action={onPersonCreate && (
-            <button className="personnel-add-btn" onClick={onPersonCreate} style={{ marginTop: 12 }}>
+            <Button variant="ghost" className="personnel-add-btn" onClick={onPersonCreate} style={{ marginTop: 12 }}>
               <Plus size={16} /> Ajouter une personne
-            </button>
+            </Button>
           )}
         />
       ) : (
@@ -1843,22 +1840,20 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               <span>Permanents</span>
               <div className="pp-column-header-actions">
                 {pendingLeaveCount > 0 && (
-                  <button
-                    className="pp-leave-badge-btn"
+                  <Button variant="ghost"                     className="pp-leave-badge-btn"
                     onClick={() => setShowLeaveApproval(true)}
                     title="Demandes de congés en attente"
                   >
                     <Clock size={12} />
                     <span className="pp-leave-badge-count">{pendingLeaveCount}</span>
-                  </button>
+                  </Button>
                 )}
-                <button
-                  className="pp-section-toggle"
+                <Button variant="ghost"                   className="pp-section-toggle"
                   onClick={() => setCollapsedSections(prev => ({ ...prev, permanents: !prev.permanents }))}
                   title={collapsedSections.permanents ? 'Développer' : 'Rétracter'}
                 >
                   {collapsedSections.permanents ? '▼' : '▲'}
-                </button>
+                </Button>
               </div>
             </div>
             <div className="pp-headers-scroll" ref={headerScrollRef}>
@@ -1926,12 +1921,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               {nonPermanents.length > 0 && (
                 <div className="pp-section-header">
                   <span>Non-permanents</span>
-                  <button
-                    className="pp-section-toggle"
+                  <Button variant="ghost"                     className="pp-section-toggle"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, nonPermanents: !prev.nonPermanents }))}
                   >
                     {collapsedSections.nonPermanents ? '▼' : '▲'}
-                  </button>
+                  </Button>
                 </div>
               )}
               {!collapsedSections.nonPermanents && nonPermanents.map(person => (
@@ -1954,13 +1948,12 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                   }}
                   style={{ cursor: 'pointer' }}
                 >
-                  <button
-                    className={`pp-fav-star${favoriteIds.includes(person.id) ? ' active' : ''}`}
+                  <Button variant="ghost"                     className={`pp-fav-star${favoriteIds.includes(person.id) ? ' active' : ''}`}
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(person.id); }}
                     title={favoriteIds.includes(person.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                   >
                     <Star size={12} fill={favoriteIds.includes(person.id) ? 'currentColor' : 'none'} />
-                  </button>
+                  </Button>
                   <span className="pp-person-name">{person.firstName} {person.lastName || ''}</span>
                   <span className={`person-type-badge mini type-${person.type}`}>
                     {person.type === 'contractuel'
@@ -1980,12 +1973,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                 {nonPermanents.length > 0 && (
                   <div className="pp-section-separator" style={{ gridColumn: '1 / -1' }}>
                     <span>Non-permanents</span>
-                    <button
-                      className="pp-section-toggle"
+                    <Button variant="ghost"                       className="pp-section-toggle"
                       onClick={() => setCollapsedSections(prev => ({ ...prev, nonPermanents: !prev.nonPermanents }))}
                     >
                       {collapsedSections.nonPermanents ? '▼' : '▲'}
-                    </button>
+                    </Button>
                   </div>
                 )}
 

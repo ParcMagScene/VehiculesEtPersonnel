@@ -13,7 +13,7 @@ import {
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
-import { Accordion, Tooltip } from '@/design-system';
+import { Accordion, Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -280,13 +280,12 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         <ClipboardList size={16} />
         <span className="dash-tasks-title">Tâches du jour</span>
         <span className="dash-tasks-count">{doneTasks}/{totalTasks}</span>
-        <button
-          className={`dash-filter-btn ${showFilterPanel ? 'active' : ''}`}
+        <Button variant="ghost"           className={`dash-filter-btn ${showFilterPanel ? 'active' : ''}`}
           onClick={() => setShowFilterPanel(p => !p)}
           title="Filtrer les sections"
         >
           <Settings size={13} />
-        </button>
+        </Button>
       </div>
 
       {/* ─── Panneau filtre sections ─── */}
@@ -294,7 +293,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         <div className="dash-filter-panel">
           <div className="dash-filter-top">
             <span className="dash-filter-label">Sections affichées</span>
-            <button className="dash-filter-all" onClick={selectAllSections}>Toutes</button>
+            <Button variant="ghost" className="dash-filter-all" onClick={selectAllSections}>Toutes</Button>
           </div>
           <div className="dash-filter-grid">
             {SECTION_ORDER.map(key => {
@@ -302,8 +301,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
               const isVisible = !visibleSections || visibleSections.includes(key);
               const count = (grouped[key] || []).length;
               return (
-                <button
-                  key={key}
+                <Button variant="ghost"                   key={key}
                   className={`dash-filter-chip ${isVisible ? 'on' : 'off'}`}
                   onClick={() => toggleSectionFilter(key)}
                   style={isVisible ? { borderColor: sec.color, color: sec.color } : {}}
@@ -311,14 +309,14 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                   {isVisible ? <Eye size={10} /> : <EyeOff size={10} />}
                   <span>{sec.emoji} {sec.label}</span>
                   {count > 0 && <span className="dash-filter-chip-count">{count}</span>}
-                </button>
+                </Button>
               );
             })}
           </div>
           {filterDirty && (
-            <button className="dash-filter-save" onClick={saveSidebarConfig}>
+            <Button variant="ghost" className="dash-filter-save" onClick={saveSidebarConfig}>
               <Save size={12} /> Enregistrer
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -361,13 +359,12 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                           className={`dash-task-item ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''} ${isHidden ? 'hidden-task' : ''}`}
                           style={{ borderLeftColor: taskColor }}
                         >
-                          <button
-                            className={`dash-task-visible-btn ${isHidden ? 'off' : ''}`}
+                          <Button variant="ghost"                             className={`dash-task-visible-btn ${isHidden ? 'off' : ''}`}
                             onClick={() => handleToggleVisible(task)}
                             title={isHidden ? 'Afficher sur l\'écran TV' : 'Masquer de l\'écran TV'}
                           >
                             {isHidden ? <EyeOff size={11} /> : <Eye size={11} />}
-                          </button>
+                          </Button>
                           <span className={`dash-task-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}>
                             {isDone ? <Check size={10} /> : isProgress ? <Clock size={10} /> : null}
                           </span>
@@ -417,9 +414,9 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         <div className="dash-sonos-header">
           <Music size={14} />
           <span>Sonos</span>
-          <Tooltip content="Rafraîchir"><button className="dash-sonos-refresh" onClick={loadNowPlaying}>
+          <Tooltip content="Rafraîchir"><Button variant="ghost" className="dash-sonos-refresh" onClick={loadNowPlaying}>
             <RefreshCw size={10} />
-          </button></Tooltip>
+          </Button></Tooltip>
         </div>
         {nowPlaying && nowPlaying.title ? (
           <div className={`dash-sonos-playing ${nowPlaying.playing ? '' : 'paused'}`}>

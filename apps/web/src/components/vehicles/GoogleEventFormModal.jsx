@@ -136,7 +136,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         <div className="event-form-header">
           <Calendar size={20} />
           <h2>{mode === 'edit' ? 'Modifier l\'événement' : 'Nouvel événement Google'}</h2>
-          <button className="event-form-close" onClick={onClose}>×</button>
+          <Button variant="ghost" className="event-form-close" onClick={onClose}>×</Button>
         </div>
 
         <form onSubmit={handleSubmit}>

@@ -224,12 +224,11 @@ const LoginForm = ({ onLogin }) => {
 
           {error && <InlineAlert>{error}</InlineAlert>}
 
-          <button type="submit" className="login-button" disabled={loading}>
+          <Button variant="ghost" type="submit" className="login-button" disabled={loading}>
             {loading ? 'Chargement...' : 'Se connecter'}
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button variant="ghost"             type="button"
             className="forgot-password-link"
             onClick={() => {
               setShowResetPassword(true);
@@ -243,15 +242,14 @@ const LoginForm = ({ onLogin }) => {
             }}
           >
             Mot de passe oublié ?
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button variant="ghost"             type="button"
             className="access-request-button"
             onClick={() => setShowAccessRequest(true)}
           >
             Pas encore de compte ? Demander un accès
-          </button>
+          </Button>
         </form>
 
         {showAccessRequest && (
@@ -398,8 +396,7 @@ const LoginForm = ({ onLogin }) => {
                   {resetStep === 'confirm' && (
                     <div className="login-resend-text">
                       <span>Vous n'avez pas reçu le code ? </span>
-                      <button
-                        type="button"
+                      <Button variant="ghost"                         type="button"
                         onClick={() => {
                           setResetStep('request');
                           setResetToken('');
@@ -408,7 +405,7 @@ const LoginForm = ({ onLogin }) => {
                         className="login-resend-link"
                       >
                         Réessayer
-                      </button>
+                      </Button>
                     </div>
                   )}
 

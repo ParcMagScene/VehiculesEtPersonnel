@@ -8,7 +8,7 @@ import {
   X, Download, Printer, ZoomIn, ZoomOut,
   ChevronLeft, ChevronRight, Layers, Info
 } from 'lucide-react';
-import { Tooltip } from '@/design-system';
+import { Button, Tooltip } from '@/design-system';
 import { FAMILY_COLORS } from '../../utils/bpAnnotationEngine';
 import './BPAnnotationViewer.css';
 
@@ -574,34 +574,34 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
             {blImport?.filename && <span className="bp-filename">{blImport.filename}</span>}
           </div>
           <div className="bp-annotation-toolbar">
-            <Tooltip content="Zoom -"><button onClick={zoomOut}><ZoomOut size={16} /></button></Tooltip>
+            <Tooltip content="Zoom -"><Button variant="ghost" onClick={zoomOut}><ZoomOut size={16} /></Button></Tooltip>
             <span className="bp-zoom-label">{Math.round(displayScale * 100)}%</span>
-            <Tooltip content="Zoom +"><button onClick={zoomIn}><ZoomIn size={16} /></button></Tooltip>
-            <Tooltip content="Ajuster"><button onClick={zoomFit}>🔍</button></Tooltip>
+            <Tooltip content="Zoom +"><Button variant="ghost" onClick={zoomIn}><ZoomIn size={16} /></Button></Tooltip>
+            <Tooltip content="Ajuster"><Button variant="ghost" onClick={zoomFit}>🔍</Button></Tooltip>
             <div className="bp-toolbar-sep" />
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+            <Button variant="ghost" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
               <ChevronLeft size={16} />
-            </button>
+            </Button>
             <span className="bp-page-label">{currentPage} / {numPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} disabled={currentPage >= numPages}>
+            <Button variant="ghost" onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} disabled={currentPage >= numPages}>
               <ChevronRight size={16} />
-            </button>
+            </Button>
             <div className="bp-toolbar-sep" />
             <Tooltip content="Légende">
-              <button className={showLegend ? 'active' : ''} onClick={() => setShowLegend(v => !v)}>
+              <Button variant="ghost" className={showLegend ? 'active' : ''} onClick={() => setShowLegend(v => !v)}>
                 <Layers size={16} />
-              </button>
+              </Button>
             </Tooltip>
             <Tooltip content="Infos affaire">
-              <button className={showInfo ? 'active' : ''} onClick={() => setShowInfo(v => !v)}>
+              <Button variant="ghost" className={showInfo ? 'active' : ''} onClick={() => setShowInfo(v => !v)}>
                 <Info size={16} />
-              </button>
+              </Button>
             </Tooltip>
             <div className="bp-toolbar-sep" />
-            <Tooltip content="Imprimer"><button onClick={handlePrint}><Printer size={16} /></button></Tooltip>
-            <Tooltip content="Télécharger"><button onClick={handleDownload}><Download size={16} /></button></Tooltip>
+            <Tooltip content="Imprimer"><Button variant="ghost" onClick={handlePrint}><Printer size={16} /></Button></Tooltip>
+            <Tooltip content="Télécharger"><Button variant="ghost" onClick={handleDownload}><Download size={16} /></Button></Tooltip>
           </div>
-          <button className="bp-annotation-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="bp-annotation-close" onClick={onClose}><X size={18} /></Button>
         </div>
 
         {/* Body */}

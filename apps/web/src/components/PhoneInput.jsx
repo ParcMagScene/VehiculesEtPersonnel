@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './PhoneInput.css';
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 const COUNTRY_CODES = [
   { code: '+262', flag: '🇷🇪', label: 'Réunion', format: '0692 XX XX XX', maxDigits: 10 },
@@ -152,8 +152,7 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
   return (
     <div className={`phone-input-container ${className || ''}`}>
       <div className="phone-input-wrapper" ref={dropdownRef}>
-        <button
-          type="button"
+        <Button variant="ghost"           type="button"
           className="phone-prefix-btn"
           onClick={() => !disabled && setShowDropdown(!showDropdown)}
           disabled={disabled}
@@ -162,7 +161,7 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
           <span className="phone-prefix-flag">{selectedCountry.flag}</span>
           <span className="phone-prefix-code">{selectedCountry.code}</span>
           <span className="phone-prefix-arrow">▾</span>
-        </button>
+        </Button>
 
         {showDropdown && (
           <div className="phone-dropdown">
@@ -176,8 +175,7 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
             />
             <div className="phone-dropdown-list">
               {filteredCountries.map(c => (
-                <button
-                  key={c.code}
+                <Button variant="ghost"                   key={c.code}
                   type="button"
                   className={`phone-dropdown-item ${c.code === selectedPrefix ? 'active' : ''}`}
                   onClick={() => handlePrefixChange(c.code)}
@@ -185,7 +183,7 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
                   <span className="phone-dropdown-flag">{c.flag}</span>
                   <span className="phone-dropdown-label">{c.label}</span>
                   <span className="phone-dropdown-code">{c.code}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>

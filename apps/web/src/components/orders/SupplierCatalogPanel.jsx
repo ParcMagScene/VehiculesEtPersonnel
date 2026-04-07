@@ -206,30 +206,26 @@ export default function SupplierCatalogPanel({ currentUser }) {
         <h2><FileText size={24} /> Articles Fournisseurs</h2>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {/* Sous-navigation */}
-          <button
-            className={`catalog-btn ${view === 'articles' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+          <Button variant="ghost"             className={`catalog-btn ${view === 'articles' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('articles')}
           >
             <Package size={16} /> Articles
-          </button>
-          <button
-            className={`catalog-btn ${view === 'imports' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+          </Button>
+          <Button variant="ghost"             className={`catalog-btn ${view === 'imports' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('imports')}
           >
             <History size={16} /> Imports
-          </button>
-          <button
-            className={`catalog-btn ${view === 'stats' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+          </Button>
+          <Button variant="ghost"             className={`catalog-btn ${view === 'stats' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('stats')}
           >
             <BarChart3 size={16} /> Stats
-          </button>
-          <button
-            className={`catalog-btn ${view === 'settings' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+          </Button>
+          <Button variant="ghost"             className={`catalog-btn ${view === 'settings' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('settings')}
           >
             <Settings size={16} /> Paramètres
-          </button>
+          </Button>
           {canWrite && (
             <Button variant="primary" onClick={() => setShowImport(true)}>
               <Upload size={16} /> Importer PDF

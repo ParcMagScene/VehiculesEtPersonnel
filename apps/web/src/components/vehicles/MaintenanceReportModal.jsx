@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import { X, Printer, FileText, ChevronLeft, ChevronRight, Calendar, Download, Filter } from 'lucide-react';
 import api from '../../utils/api';
 import './MaintenanceReportModal.css';
-import { Select, Table } from '@/design-system';
+import { Button, Select, Table } from '@/design-system';
 
 const PERIOD_MODES = [
   { value: 'day', label: 'Journalier' },
@@ -201,38 +201,37 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
       <div className="mr-modal" onClick={e => e.stopPropagation()}>
         <div className="mr-header">
           <h2><FileText size={20} /> Rapport Maintenance Matériel</h2>
-          <button className="mr-close" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="mr-close" onClick={onClose}><X size={20} /></Button>
         </div>
 
         {/* Toolbar */}
         <div className="mr-toolbar">
           <div className="mr-toolbar-left">
             {PERIOD_MODES.map(m => (
-              <button
-                key={m.value}
+              <Button variant="ghost"                 key={m.value}
                 className={`mr-period-btn ${periodMode === m.value ? 'active' : ''}`}
                 onClick={() => setPeriodMode(m.value)}
               >
                 {m.label}
-              </button>
+              </Button>
             ))}
           </div>
           <div className="mr-toolbar-center">
-            <button className="mr-nav-btn" onClick={goPrev}><ChevronLeft size={18} /></button>
-            <button className="mr-today-btn" onClick={goToday}>Aujourd'hui</button>
-            <button className="mr-nav-btn" onClick={goNext}><ChevronRight size={18} /></button>
+            <Button variant="ghost" className="mr-nav-btn" onClick={goPrev}><ChevronLeft size={18} /></Button>
+            <Button variant="ghost" className="mr-today-btn" onClick={goToday}>Aujourd'hui</Button>
+            <Button variant="ghost" className="mr-nav-btn" onClick={goNext}><ChevronRight size={18} /></Button>
             <span className="mr-date-label">{label}</span>
           </div>
           <div className="mr-toolbar-right">
             <Select className="mr-type-select" value={reportType} onChange={e => setReportType(e.target.value)}>
               {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </Select>
-            <button className="mr-action-btn" onClick={handlePrint} title="Imprimer">
+            <Button variant="ghost" className="mr-action-btn" onClick={handlePrint} title="Imprimer">
               <Printer size={16} /> Imprimer
-            </button>
-            <button className="mr-action-btn export" onClick={handleExportPDF} title="Télécharger en PDF" disabled={exporting}>
+            </Button>
+            <Button variant="ghost" className="mr-action-btn export" onClick={handleExportPDF} title="Télécharger en PDF" disabled={exporting}>
               <Download size={16} /> {exporting ? 'Export...' : 'PDF'}
-            </button>
+            </Button>
           </div>
         </div>
 

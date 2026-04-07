@@ -5,6 +5,7 @@ import { Car, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import { STATUS } from '../../constants';
 
+import { Button } from '@/design-system';
 import './MobileAvailability.css';
 
 function MobileAvailability({ vehicles, reservations, maintenances, onClose, onCreateReservation }) {
@@ -61,17 +62,17 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
   return (
     <div className="mobile-availability">
       <div className="availability-header">
-        <button className="back-button" onClick={onClose}>
+        <Button variant="ghost" className="back-button" onClick={onClose}>
           <ChevronLeft size={24} />
-        </button>
+        </Button>
         <h2>Disponibilités</h2>
       </div>
 
       {/* Navigation par jour */}
       <div className="day-navigation">
-        <button className="nav-button" onClick={goToPreviousDay}>
+        <Button variant="ghost" className="nav-button" onClick={goToPreviousDay}>
           <ChevronLeft size={20} />
-        </button>
+        </Button>
         
         <div className="current-day">
           <div className="day-name">
@@ -82,15 +83,15 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
           </div>
         </div>
 
-        <button className="nav-button" onClick={goToNextDay}>
+        <Button variant="ghost" className="nav-button" onClick={goToNextDay}>
           <ChevronRight size={20} />
-        </button>
+        </Button>
       </div>
 
       {!isToday && (
-        <button className="today-button" onClick={goToToday}>
+        <Button variant="ghost" className="today-button" onClick={goToToday}>
           Aujourd'hui
-        </button>
+        </Button>
       )}
 
       {/* Statistiques */}
@@ -136,13 +137,13 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
               </div>
               
               {onCreateReservation && (
-                <button 
+                <Button variant="ghost" 
                   className="reserve-button"
                   onClick={() => onCreateReservation(vehicle.id, currentDay)}
                 >
                   <Calendar size={18} />
                   Réserver
-                </button>
+                </Button>
               )}
             </div>
           ))

@@ -173,7 +173,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             <Tag size={18} />
             <span>Étiquette — {eq.reference || cleanName(eq.name)}</span>
           </div>
-          <button className="elp-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="elp-close" onClick={onClose}><X size={18} /></Button>
         </div>
 
         <div className="elp-body">
@@ -210,9 +210,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <label>Format :</label>
               <div className="elp-format-options">
                 {LABEL_FORMATS.map((f, i) => (
-                  <button key={i} className={'elp-format-btn ' + (selectedPreset === i ? 'active' : '')} onClick={() => setSelectedPreset(i)}>
+                  <Button variant="ghost" key={i} className={'elp-format-btn ' + (selectedPreset === i ? 'active' : '')} onClick={() => setSelectedPreset(i)}>
                     {f.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -233,8 +233,8 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             <div className="elp-field-inline">
               <label>Logo entreprise :</label>
               <div className="elp-toggle-group">
-                <button className={'elp-toggle-btn ' + (showLogo ? 'active' : '')} onClick={() => setShowLogo(true)}>Avec</button>
-                <button className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')} onClick={() => setShowLogo(false)}>Sans</button>
+                <Button variant="ghost" className={'elp-toggle-btn ' + (showLogo ? 'active' : '')} onClick={() => setShowLogo(true)}>Avec</Button>
+                <Button variant="ghost" className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')} onClick={() => setShowLogo(false)}>Sans</Button>
               </div>
             </div>
 
@@ -247,9 +247,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <label>Export :</label>
               <div className="elp-toggle-group">
                 {EXPORT_FORMATS.map(f => (
-                  <button key={f} className={'elp-toggle-btn ' + (exportFormat === f ? 'active' : '')} onClick={() => setExportFormat(f)}>
+                  <Button variant="ghost" key={f} className={'elp-toggle-btn ' + (exportFormat === f ? 'active' : '')} onClick={() => setExportFormat(f)}>
                     {f}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

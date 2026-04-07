@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { X } from 'lucide-react';
+import { Button } from '@/design-system';
 import './YearSelector.css';
 
 function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] }) {
@@ -40,9 +41,9 @@ function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] })
       <div className="year-selector-modal" onClick={(e) => e.stopPropagation()}>
         <div className="year-selector-header">
           <h3>Sélectionner une année</h3>
-          <button className="close-button" onClick={onClose}>
+          <Button variant="ghost" className="close-button" onClick={onClose}>
             <X size={20} />
-          </button>
+          </Button>
         </div>
         
         <div className="year-selector-grid">
@@ -52,8 +53,7 @@ function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] })
             const hasRes = hasReservations(year);
             
             return (
-              <button
-                key={year}
+              <Button variant="ghost"                 key={year}
                 className={`year-item ${isCurrent ? 'current' : ''} ${isToday ? 'today' : ''}`}
                 onClick={() => handleYearClick(year)}
               >
@@ -63,7 +63,7 @@ function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] })
                     <div className="indicator-dot" />
                   </div>
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>

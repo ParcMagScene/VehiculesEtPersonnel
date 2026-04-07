@@ -158,11 +158,11 @@ function WelcomeMessagesTab({ currentUser, refreshKey, onPreviewChange }) {
         {/* Onglets jours */}
         <div className="dtv-day-tabs">
           {DAYS.map(day => (
-            <button key={day}
+            <Button variant="ghost" key={day}
               className={`dtv-day-tab ${activeDay === day ? 'active' : ''}`}
               onClick={() => setActiveDay(day)}>
               {DAY_LABELS[day]}
-            </button>
+            </Button>
           ))}
         </div>
 

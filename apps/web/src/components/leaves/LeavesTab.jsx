@@ -212,9 +212,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           )}
         </div>
         <div className="lt-header-actions">
-          <Tooltip content="Rafraîchir"><button className="lt-btn lt-btn-refresh" onClick={loadData}>
+          <Tooltip content="Rafraîchir"><Button variant="ghost" className="lt-btn lt-btn-refresh" onClick={loadData}>
             <RefreshCw size={16} />
-          </button></Tooltip>
+          </Button></Tooltip>
           <Button variant="primary" onClick={() => setShowRequestForm(true)}>
             <Plus size={16} /> Nouvelle demande
           </Button>
@@ -284,24 +284,21 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       {/* Navigation admin */}
       {isAdmin && (
         <div className="lt-admin-nav">
-          <button
-            className={`lt-nav-btn ${adminView === 'overview' ? 'active' : ''}`}
+          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'overview' ? 'active' : ''}`}
             onClick={() => setAdminView('overview')}
           >
             <BarChart3 size={14} /> Vue d'ensemble
-          </button>
-          <button
-            className={`lt-nav-btn ${adminView === 'mine' ? 'active' : ''}`}
+          </Button>
+          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'mine' ? 'active' : ''}`}
             onClick={() => setAdminView('mine')}
           >
             <Calendar size={14} /> Mes congés
-          </button>
-          <button
-            className={`lt-nav-btn ${adminView === 'all' ? 'active' : ''}`}
+          </Button>
+          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'all' ? 'active' : ''}`}
             onClick={() => setAdminView('all')}
           >
             <Users size={14} /> Toutes les demandes
-          </button>
+          </Button>
         </div>
       )}
 
@@ -342,9 +339,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                   );
                 })}
                 {pendingRequests.length > 5 && (
-                  <button className="lt-btn lt-btn-link" onClick={() => setShowValidationPanel(true)}>
+                  <Button variant="ghost" className="lt-btn lt-btn-link" onClick={() => setShowValidationPanel(true)}>
                     Voir les {pendingRequests.length - 5} autres…
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -458,30 +455,26 @@ const LeavesTab = ({ persons = [], currentUser }) => {
         <div className="lt-requests">
           {/* Filtres */}
           <div className="lt-filters">
-            <button
-              className={`lt-filter-btn ${requestFilter === 'all' ? 'active' : ''}`}
+            <Button variant="ghost"               className={`lt-filter-btn ${requestFilter === 'all' ? 'active' : ''}`}
               onClick={() => setRequestFilter('all')}
             >
               Toutes ({adminView === 'all' ? allRequests.length : myRequests.length})
-            </button>
-            <button
-              className={`lt-filter-btn pending ${requestFilter === STATUS.PENDING ? 'active' : ''}`}
+            </Button>
+            <Button variant="ghost"               className={`lt-filter-btn pending ${requestFilter === STATUS.PENDING ? 'active' : ''}`}
               onClick={() => setRequestFilter('pending')}
             >
               <Clock size={12} /> En attente
-            </button>
-            <button
-              className={`lt-filter-btn accepted ${requestFilter === STATUS.ACCEPTED ? 'active' : ''}`}
+            </Button>
+            <Button variant="ghost"               className={`lt-filter-btn accepted ${requestFilter === STATUS.ACCEPTED ? 'active' : ''}`}
               onClick={() => setRequestFilter('accepted')}
             >
               <CheckCircle size={12} /> Acceptées
-            </button>
-            <button
-              className={`lt-filter-btn refused ${requestFilter === STATUS.REFUSED ? 'active' : ''}`}
+            </Button>
+            <Button variant="ghost"               className={`lt-filter-btn refused ${requestFilter === STATUS.REFUSED ? 'active' : ''}`}
               onClick={() => setRequestFilter('refused')}
             >
               <XCircle size={12} /> Refusées
-            </button>
+            </Button>
           </div>
 
           {/* Liste */}
@@ -567,23 +560,22 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                           </DetailRow>
                         )}
                         <div className="lt-card-actions">
-                          <button className="lt-action-btn pdf" onClick={() => handleDownloadPdf(req.id)}>
+                          <Button variant="ghost" className="lt-action-btn pdf" onClick={() => handleDownloadPdf(req.id)}>
                             <Download size={14} /> PDF
-                          </button>
+                          </Button>
                           {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) && (
                             cancellingId === req.id ? (
                               <div className="lt-cancel-confirm">
                                 <span>Confirmer ?</span>
-                                <button className="lt-action-btn yes" onClick={() => handleCancel(req.id)}>Oui</button>
-                                <button className="lt-action-btn no" onClick={() => setCancellingId(null)}>Non</button>
+                                <Button variant="ghost" className="lt-action-btn yes" onClick={() => handleCancel(req.id)}>Oui</Button>
+                                <Button variant="ghost" className="lt-action-btn no" onClick={() => setCancellingId(null)}>Non</Button>
                               </div>
                             ) : (
-                              <button
-                                className="lt-action-btn cancel"
+                              <Button variant="ghost"                                 className="lt-action-btn cancel"
                                 onClick={() => setCancellingId(req.id)}
                               >
                                 <Trash2 size={14} /> Annuler
-                              </button>
+                              </Button>
                             )
                           )}
                         </div>

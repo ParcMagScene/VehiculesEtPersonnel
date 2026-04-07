@@ -327,13 +327,12 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                         >
                           <Pencil size={14} />
                         </Button>
-                        <button
-                          onClick={() => handleResetPassword(user.id)}
+                        <Button variant="ghost"                           onClick={() => handleResetPassword(user.id)}
                           className="btn-icon btn-warning"
                           title="Réinitialiser - l'utilisateur devra définir un nouveau mot de passe"
                         >
                           <RefreshCw size={14} />
-                        </button>
+                        </Button>
                         <Button
                           variant="danger" size="sm" iconOnly
                           onClick={() => handleDeleteUser(user.id)}
@@ -345,23 +344,21 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     </td>
                     <td>
                       {personsMap[user.id] ? (
-                        <button
-                          className="personnel-linked-badge clickable"
+                        <Button variant="ghost"                           className="personnel-linked-badge clickable"
                           title={`Voir la fiche de ${personsMap[user.id].firstName} ${personsMap[user.id].lastName}`}
                           onClick={() => onNavigateToPersonnel && onNavigateToPersonnel(personsMap[user.id])}
                         >
                           <UserCheck size={13} />
                           <span>{personsMap[user.id].type === 'contractuel' ? 'Contractuel' : 'Permanent'}</span>
                           <ExternalLink size={11} />
-                        </button>
+                        </Button>
                       ) : (
-                        <button
-                          onClick={() => setPersonModal({ user })}
+                        <Button variant="ghost"                           onClick={() => setPersonModal({ user })}
                           className="btn-create-personnel"
                           title="Créer une fiche personnel pour cet utilisateur"
                         >
                           <Users size={13} /> Créer
-                        </button>
+                        </Button>
                       )}
                     </td>
                   </tr>
@@ -384,9 +381,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
             placeholder="email@example.com"
             required
           />
-          <button type="submit">
+          <Button variant="ghost" type="submit">
             <UserPlus size={18} /> Autoriser
-          </button>
+          </Button>
         </form>
 
         <div className="emails-list">
@@ -760,14 +757,13 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
             <label className="create-personnel-section-label">Type de personnel</label>
             <div className="create-personnel-type-cards">
               {PERSON_TYPES.map((t) => (
-                <button
-                  key={t.value}
+                <Button variant="ghost"                   key={t.value}
                   className={`personnel-type-card ${personType === t.value ? 'active' : ''}`}
                   onClick={() => setPersonType(t.value)}
                 >
                   <span className="personnel-type-icon">{t.icon}</span>
                   <span className="personnel-type-label">{t.label}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, ChevronDown, Check } from 'lucide-react';
-import { Avatar } from '@/design-system';
+import { Avatar, Button } from '@/design-system';
 import './DriverSelect.css';
 
 /**
@@ -59,8 +59,7 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
   return (
     <div className={`driver-select ${disabled ? 'disabled' : ''}`} ref={containerRef}>
       {/* Bouton trigger */}
-      <button
-        type="button"
+      <Button variant="ghost"         type="button"
         className={`driver-select-trigger ${isOpen ? 'open' : ''} ${value ? 'has-value' : ''}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
@@ -77,7 +76,7 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
           <span className="driver-select-placeholder">{placeholder}</span>
         )}
         <ChevronDown size={16} className={`driver-select-chevron ${isOpen ? 'rotated' : ''}`} />
-      </button>
+      </Button>
 
       {/* Dropdown */}
       {isOpen && (

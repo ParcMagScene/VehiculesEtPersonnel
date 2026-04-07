@@ -8,6 +8,7 @@ import { Monitor, Eye, RefreshCw, Radio, Bell } from 'lucide-react';
 import api from '../../utils/api';
 import TVScreenMini from './TVScreenMini';
 
+import { Button } from '@/design-system';
 function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
   const [liveState, setLiveState] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,22 +79,20 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
         <div className="tv-preview-label">
           <Radio size={12} />
           <span>Direct</span>
-          <button
-            className="tv-preview-refresh"
+          <Button variant="ghost"             className="tv-preview-refresh"
             onClick={fetchLiveState}
             title="Rafraîchir"
           >
             <RefreshCw size={10} />
-          </button>
-          <button
-            className={`tv-preview-alarm-test${alarmSending ? ' sending' : ''}`}
+          </Button>
+          <Button variant="ghost"             className={`tv-preview-alarm-test${alarmSending ? ' sending' : ''}`}
             onClick={handleTestAlarm}
             title="Tester le signal sonore sur l'écran distant"
             disabled={alarmSending}
           >
             <Bell size={10} />
             <span>{alarmSending ? 'Envoyé !' : 'Test son'}</span>
-          </button>
+          </Button>
         </div>
         <div className="tv-preview-frame">
           {liveState ? (

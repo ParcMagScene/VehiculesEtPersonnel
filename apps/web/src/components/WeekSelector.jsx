@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameWeek, getWeek, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X } from 'lucide-react';
+import { Button } from '@/design-system';
 import './WeekSelector.css';
 
 function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], vehicles = [] }) {
@@ -59,9 +60,9 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
       <div className="week-selector-modal" onClick={(e) => e.stopPropagation()}>
         <div className="week-selector-header">
           <h3>Sélectionner une semaine - {format(currentDate, 'MMMM yyyy', { locale: fr })}</h3>
-          <button className="close-button" onClick={onClose}>
+          <Button variant="ghost" className="close-button" onClick={onClose}>
             <X size={20} />
-          </button>
+          </Button>
         </div>
         
         <div className="week-selector-calendar">
@@ -136,8 +137,7 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
                 const isCurrentWeek = isSameWeek(weekStart, currentDate, { weekStartsOn: 1 });
                 
                 return (
-                  <button
-                    key={index}
+                  <Button variant="ghost"                     key={index}
                     className={`week-item ${isCurrentWeek ? 'current' : ''}`}
                     onClick={() => handleWeekClick(weekStart)}
                   >
@@ -145,7 +145,7 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
                     <span className="week-dates">
                       {format(weekStart, 'd MMM', { locale: fr })} - {format(weekEnd, 'd MMM', { locale: fr })}
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

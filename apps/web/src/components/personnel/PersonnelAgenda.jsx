@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import './PersonnelAgenda.css';
-import { Input, Avatar, EmptyState, SearchBar } from '@/design-system';
+import { Avatar, Button, EmptyState, Input, SearchBar } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -242,8 +242,7 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
         <SearchBar value={searchPerson} onChange={setSearchPerson} placeholder="Rechercher..." size="sm" />
         <div className="agenda-person-list">
           {filteredPersons.map(person => (
-            <button
-              key={person.id}
+            <Button variant="ghost"               key={person.id}
               className={`agenda-person-item ${person.id === selectedPersonId ? 'active' : ''}`}
               onClick={() => setSelectedPersonId(person.id)}
             >
@@ -256,7 +255,7 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
                   {person.role || person.position || person.type || ''}
                 </div>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
         {/* Légende */}
@@ -292,27 +291,25 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
             </h2>
           </div>
           <div className="agenda-toolbar-center">
-            <button className="agenda-nav-btn" onClick={() => navigate('prev')}>
+            <Button variant="ghost" className="agenda-nav-btn" onClick={() => navigate('prev')}>
               <ChevronLeft size={18} />
-            </button>
+            </Button>
             <span className="agenda-period-title">{periodTitle}</span>
-            <button className="agenda-nav-btn" onClick={() => navigate('next')}>
+            <Button variant="ghost" className="agenda-nav-btn" onClick={() => navigate('next')}>
               <ChevronRight size={18} />
-            </button>
-            <button className="agenda-today-btn" onClick={goToday}>
+            </Button>
+            <Button variant="ghost" className="agenda-today-btn" onClick={goToday}>
               Aujourd'hui
-            </button>
+            </Button>
           </div>
           <div className="agenda-toolbar-right">
             <div className="agenda-view-toggle">
-              <button
-                className={agendaView === 'week' ? 'active' : ''}
+              <Button variant="ghost"                 className={agendaView === 'week' ? 'active' : ''}
                 onClick={() => setAgendaView('week')}
-              >Semaine</button>
-              <button
-                className={agendaView === 'month' ? 'active' : ''}
+              >Semaine</Button>
+              <Button variant="ghost"                 className={agendaView === 'month' ? 'active' : ''}
                 onClick={() => setAgendaView('month')}
-              >Mois</button>
+              >Mois</Button>
             </div>
           </div>
         </div>

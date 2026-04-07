@@ -78,9 +78,9 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
             <span className="summary-label">Volume total</span>
           </div>
           <div style={{ marginLeft: 'auto' }}>
-            <button className="catalog-btn catalog-btn-3d" onClick={handleOpenChargement}>
+            <Button variant="ghost" className="catalog-btn catalog-btn-3d" onClick={handleOpenChargement}>
               <Box size={16} /> Ouvrir dans Chargement 3D
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -91,9 +91,9 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
           <Plus size={14} /> Ajouter du matériel
         </Button>
         {items.length > 0 && (
-          <button className="catalog-btn catalog-btn-3d catalog-btn-sm" onClick={handleOpenChargement}>
+          <Button variant="ghost" className="catalog-btn catalog-btn-3d catalog-btn-sm" onClick={handleOpenChargement}>
             <Box size={14} /> Charger dans 3D
-          </button>
+          </Button>
         )}
       </div>
 

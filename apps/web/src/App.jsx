@@ -22,6 +22,7 @@ import { useMessagingPolling } from './hooks/useMessagingPolling';
 import { LoadingOverlay } from './design-system';
 import { STATUS } from './constants';
 
+import { Button } from '@/design-system';
 import './App.css';
 import './styles/draggable-modals.css';
 
@@ -409,8 +410,8 @@ function AppContent() {
       {showPwaInstall && (
         <div className="pwa-install-banner">
           <span>📱 Installer eM@g sur votre appareil pour un accès rapide</span>
-          <button className="pwa-install-btn" onClick={handlePwaInstall}>Installer</button>
-          <button className="pwa-dismiss-btn" onClick={() => setShowPwaInstall(false)}>✕</button>
+          <Button variant="ghost" className="pwa-install-btn" onClick={handlePwaInstall}>Installer</Button>
+          <Button variant="ghost" className="pwa-dismiss-btn" onClick={() => setShowPwaInstall(false)}>✕</Button>
         </div>
       )}
       
@@ -600,15 +601,15 @@ function AppContent() {
         <ErrorBoundary moduleName="Stocks">
           <div className="stocks-container">
             <div className="sub-tabs">
-              <button className={`sub-tab ${stockSubTab === 'vente' ? 'active' : ''}`} onClick={() => setStockSubTab('vente')}>
+              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'vente' ? 'active' : ''}`} onClick={() => setStockSubTab('vente')}>
                 📦 Stock Vente
-              </button>
-              <button className={`sub-tab ${stockSubTab === 'sav' ? 'active' : ''}`} onClick={() => setStockSubTab('sav')}>
+              </Button>
+              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'sav' ? 'active' : ''}`} onClick={() => setStockSubTab('sav')}>
                 🔧 SAV (Pièces)
-              </button>
-              <button className={`sub-tab ${stockSubTab === 'inventory' ? 'active' : ''}`} onClick={() => setStockSubTab('inventory')}>
+              </Button>
+              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'inventory' ? 'active' : ''}`} onClick={() => setStockSubTab('inventory')}>
                 📋 Inventaire
-              </button>
+              </Button>
             </div>
             {(stockSubTab === 'vente' || stockSubTab === 'sav') && (
               <Suspense fallback={<LoadingOverlay label="Chargement du stock..." />}>

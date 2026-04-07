@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, CheckCircle, Clock, Circle, XCircle, RefreshCw, Briefcase, MapPin, User } from 'lucide-react';
 import api from '../../utils/api';
-import { Accordion, ProgressBar } from '@/design-system';
+import { Accordion, Button, ProgressBar } from '@/design-system';
 import { ROLES, STATUS } from '../../constants';
 
 import './MobileTasks.css';
@@ -110,11 +110,11 @@ function MobileTasks({ currentUser, onBack }) {
   return (
     <div className="mobile-tasks">
       <div className="mobile-tasks-header">
-        <button className="mobile-back-btn" onClick={onBack}><ArrowLeft size={20} /></button>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack}><ArrowLeft size={20} /></Button>
         <h2>Tâches du jour</h2>
-        <button className="mobile-tasks-refresh" onClick={loadTasks} disabled={loading}>
+        <Button variant="ghost" className="mobile-tasks-refresh" onClick={loadTasks} disabled={loading}>
           <RefreshCw size={18} className={loading ? 'spin' : ''} />
-        </button>
+        </Button>
       </div>
 
       {/* Barre de progression */}
@@ -125,12 +125,12 @@ function MobileTasks({ currentUser, onBack }) {
       {/* Toggle mes tâches / toutes (admin seulement) */}
       {isAdmin && personId && (
         <div className="mobile-tasks-toggle">
-          <button className={!showAllTasks ? 'active' : ''} onClick={() => setShowAllTasks(false)}>
+          <Button variant="ghost" className={!showAllTasks ? 'active' : ''} onClick={() => setShowAllTasks(false)}>
             <User size={14} /> Mes tâches
-          </button>
-          <button className={showAllTasks ? 'active' : ''} onClick={() => setShowAllTasks(true)}>
+          </Button>
+          <Button variant="ghost" className={showAllTasks ? 'active' : ''} onClick={() => setShowAllTasks(true)}>
             Toutes
-          </button>
+          </Button>
         </div>
       )}
 
@@ -170,14 +170,13 @@ function MobileTasks({ currentUser, onBack }) {
 
                       return (
                         <div key={task.id} className={`mobile-task-card ${isDone ? 'done' : ''} ${isUpdating ? 'updating' : ''}`}>
-                          <button
-                            className={`mobile-task-status-btn ${task.status}`}
+                          <Button variant="ghost"                             className={`mobile-task-status-btn ${task.status}`}
                             onClick={() => handleValidate(task)}
                             disabled={isUpdating}
                             title={isDone ? 'Remettre à faire' : 'Valider'}
                           >
                             <st.icon size={22} />
-                          </button>
+                          </Button>
                           <div className="mobile-task-content">
                             <span className={`mobile-task-title ${isDone ? 'done' : ''}`}>{task.title || '—'}</span>
                             <div className="mobile-task-meta">

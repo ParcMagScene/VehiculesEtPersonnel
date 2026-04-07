@@ -1149,14 +1149,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
     return (
       <div key={task.id} className={`task-row event-row-cols ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
-        <button
-          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+        <Button variant="ghost"           className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           onClick={() => cycleStatus(task)}
           title={`Statut: ${task.status} — cliquer pour changer`}
         >
           {isDone && <Check size={14} />}
           {isProgress && <Clock size={12} />}
-        </button>
+        </Button>
 
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAffaire?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
@@ -1198,34 +1197,31 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {renderMultiAssign('task', task.id)}
           {/* Lier à une affaire (seulement si pas déjà liée) */}
           {!affaireNum && (
-            <button
-              className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
+            <Button variant="ghost"               className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
               title="Lier à une affaire"
               onClick={(e) => { e.stopPropagation(); setLinkingTaskId(linkingTaskId === task.id ? null : task.id); setLinkTaskSearchQuery(''); }}
             >
               <Link size={13} />
-            </button>
+            </Button>
           )}
           <Tooltip content={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}>
-            <button
-              className={`toggle-visible ${isHidden ? 'off' : ''}`}
+            <Button variant="ghost"               className={`toggle-visible ${isHidden ? 'off' : ''}`}
               onClick={() => handleToggleTaskVisible(task)}
             >
               {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Modifier cette tâche">
-            <button
-              className="edit"
+            <Button variant="ghost"               className="edit"
               onClick={() => setEditingTask(task)}
             >
               <Edit2 size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Supprimer">
-            <button className="delete" onClick={() => handleDelete(task.id)}>
+            <Button variant="ghost" className="delete" onClick={() => handleDelete(task.id)}>
               <Trash2 size={14} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
         {/* Popover de liaison manuelle tâche → affaire */}
@@ -1256,9 +1252,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
               <div className="link-popover-header">
                 <span>🔗 Lier à une affaire</span>
-                <button className="link-popover-close" onClick={() => { setLinkingTaskId(null); setLinkTaskSearchQuery(''); }}>
+                <Button variant="ghost" className="link-popover-close" onClick={() => { setLinkingTaskId(null); setLinkTaskSearchQuery(''); }}>
                   <X size={14} />
-                </button>
+                </Button>
               </div>
               <Input
                 type="text"
@@ -1270,27 +1266,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                 onKeyDown={(e) => { if (e.key === 'Escape') { setLinkingTaskId(null); setLinkTaskSearchQuery(''); } }}
               />
               {linkTaskSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && !affaires.some(a => (a.numeroAffaire || '').toUpperCase() === linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim()) && (
-                <button
-                  className="link-option link-option-create"
+                <Button variant="ghost"                   className="link-option link-option-create"
                   onClick={() => {
                     const num = linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
                     handleLinkTaskToAffaire(task.id, num);
                   }}
                 >
                   ➕ Lier à <strong>{linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
-                </button>
+                </Button>
               )}
               {linkableAff.length > 0 ? (
                 <div className="link-options-list">
                   {linkableAff.map(a => (
-                    <button
-                      key={a.id || a.numeroAffaire}
+                    <Button variant="ghost"                       key={a.id || a.numeroAffaire}
                       className="link-option"
                       onClick={() => handleLinkTaskToAffaire(task.id, a.numeroAffaire)}
                     >
                       <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                       <span className="link-option-client">{a.client || a.titre || 'Sans client'}</span>
-                    </button>
+                    </Button>
                   ))}
                   {filtered.length > 10 && <div className="link-no-results" style={{ fontSize: '0.7rem', opacity: 0.6 }}>+{filtered.length - 10} autres…</div>}
                 </div>
@@ -1334,14 +1328,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
     return (
       <div key={`de-${event.id}`} className={`task-row event-row-cols display-event-row ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
-        <button
-          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+        <Button variant="ghost"           className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           onClick={() => handleCycleDisplayEventStatus(event)}
           title={`Statut: ${event.status || 'pending'} — cliquer pour changer`}
         >
           {isDone && <Check size={14} />}
           {isProgress && <Clock size={12} />}
-        </button>
+        </Button>
 
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={affaireTypeResolved} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
@@ -1363,17 +1356,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {/* Multi-affectation personnel */}
           {renderMultiAssign('display_event', event.id)}
           <Tooltip content={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}>
-            <button
-              className={`toggle-visible ${isHidden ? 'off' : ''}`}
+            <Button variant="ghost"               className={`toggle-visible ${isHidden ? 'off' : ''}`}
               onClick={() => handleToggleDisplayEventVisible(event)}
             >
               {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Retirer">
-            <button className="delete" onClick={() => handleDeleteDisplayEvent(event.id)}>
+            <Button variant="ghost" className="delete" onClick={() => handleDeleteDisplayEvent(event.id)}>
               <Trash2 size={14} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>
@@ -1426,14 +1418,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         className={`task-row event-row-cols affaire-row ${isDone ? 'task-done-row' : ''} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
         style={{ flexWrap: 'wrap' }}
       >
-        <button
-          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+        <Button variant="ghost"           className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           title={`Statut: ${planningStatus} — cliquer pour changer`}
           onClick={(e) => { e.stopPropagation(); handleCycleAffaireStatus(affaire.numeroAffaire); }}
         >
           {isDone && <Check size={14} />}
           {isProgress && <Clock size={12} />}
-        </button>
+        </Button>
 
         <span className="ev-col ev-col-affaire">
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { onNavigateToEntity('affaire', { numero: num }); } : undefined} />
@@ -1455,19 +1446,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {/* Multi-affectation personnel directe sur l'affaire */}
           {renderMultiAssign('affaire', affaire.numeroAffaire)}
           <Tooltip content="Voir détails">
-            <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
+            <Button variant="ghost" className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
               <Eye size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Définir les tâches pour cette affaire">
-            <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
+            <Button variant="ghost" className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
               <Plus size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Retirer de la planification">
-            <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
+            <Button variant="ghost" className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
               <X size={14} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
 
@@ -1538,14 +1529,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
             {isProcessed ? '✓' : '⚙'}
           </span>
-          <button
-            className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+          <Button variant="ghost"             className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
             title="Lier à une affaire"
             style={affaireNum ? { visibility: 'hidden' } : {}}
             onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
           >
             <Link size={13} />
-          </button>
+          </Button>
         </div>
         {/* Mini-badges des tâches créées depuis cet événement */}
         {linkedTasks.length > 0 && (
@@ -1568,9 +1558,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
             <div className="link-popover-header">
               <span>🔗 Lier à une affaire</span>
-              <button className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
+              <Button variant="ghost" className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
                 <X size={14} />
-              </button>
+              </Button>
             </div>
             <Input
               type="text"
@@ -1583,27 +1573,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             />
             {/* Saisie directe d'un numéro AF */}
             {linkSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
-              <button
-                className="link-option link-option-create"
+              <Button variant="ghost"                 className="link-option link-option-create"
                 onClick={() => {
                   const num = linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
                   handleManualLink(event, num);
                 }}
               >
                 ➕ Créer & lier <strong>{linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
-              </button>
+              </Button>
             )}
             {linkableAffaires.length > 0 && (
               <div className="link-options-list">
                 {linkableAffaires.map(a => (
-                  <button
-                    key={a.id || a.numeroAffaire}
+                  <Button variant="ghost"                     key={a.id || a.numeroAffaire}
                     className="link-option"
                     onClick={() => handleManualLink(event, a.numeroAffaire)}
                   >
                     <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                     <span className="link-option-client">{a.client || 'Sans client'}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -1654,19 +1642,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
         <div className="task-actions rdv-actions">
           <Tooltip content="Voir détails">
-            <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
+            <Button variant="ghost" className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
               <Eye size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Définir les tâches pour cette affaire">
-            <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
+            <Button variant="ghost" className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
               <Plus size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Retirer de la planification">
-            <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
+            <Button variant="ghost" className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
               <X size={14} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
 
@@ -1753,14 +1741,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
             {isProcessed ? '✓' : '⚙'}
           </span>
-          <button
-            className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+          <Button variant="ghost"             className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
             title="Lier à une affaire"
             style={affaireNum ? { visibility: 'hidden' } : {}}
             onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
           >
             <Link size={13} />
-          </button>
+          </Button>
         </div>
         {/* Mini-badges des tâches créées depuis cet événement iCal */}
         {linkedTasks.length > 0 && (
@@ -1782,9 +1769,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
             <div className="link-popover-header">
               <span>🔗 Lier à une affaire</span>
-              <button className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
+              <Button variant="ghost" className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
                 <X size={14} />
-              </button>
+              </Button>
             </div>
             <Input
               type="text"
@@ -1796,27 +1783,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               onKeyDown={(e) => { if (e.key === 'Escape') { setLinkingEvent(null); setLinkSearchQuery(''); } }}
             />
             {linkSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
-              <button
-                className="link-option link-option-create"
+              <Button variant="ghost"                 className="link-option link-option-create"
                 onClick={() => {
                   const num = linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
                   handleManualLink(event, num);
                 }}
               >
                 ➕ Créer & lier <strong>{linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
-              </button>
+              </Button>
             )}
             {linkableAffaires.length > 0 && (
               <div className="link-options-list">
                 {linkableAffaires.map(a => (
-                  <button
-                    key={a.id || a.numeroAffaire}
+                  <Button variant="ghost"                     key={a.id || a.numeroAffaire}
                     className="link-option"
                     onClick={() => handleManualLink(event, a.numeroAffaire)}
                   >
                     <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                     <span className="link-option-client">{a.client || 'Sans client'}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -1841,13 +1826,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           className={`wk-card wk-task ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''} ${item.visible === 0 ? 'hidden-display' : ''}`}
           style={{ borderLeftColor: sectionInfo.color }}
         >
-          <button
-            className={`wk-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+          <Button variant="ghost"             className={`wk-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
             onClick={() => cycleStatus(item)}
           >
             {isDone && <Check size={10} />}
             {isProgress && <Clock size={10} />}
-          </button>
+          </Button>
           {(() => {
             const an = item.affaireNum || extractAffaireNum(item.title) || extractAffaireNum(item.googleEventTitle);
             return an ? <AffaireBadge numero={an} type={affaireByNum.get(an.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null;
@@ -1874,15 +1858,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <span className="wk-person">{item.personFirstName?.charAt(0)}{item.personLastName?.charAt(0)}</span>
           )}
           <div className="wk-actions">
-            <button onClick={() => setEditingTask(item)} title="Modifier">
+            <Button variant="ghost" onClick={() => setEditingTask(item)} title="Modifier">
               <Edit2 size={10} />
-            </button>
-            <button onClick={() => handleToggleTaskVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
+            </Button>
+            <Button variant="ghost" onClick={() => handleToggleTaskVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
               {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
-            </button>
-            <button className="del" onClick={() => handleDelete(item.id)} title="Supprimer">
+            </Button>
+            <Button variant="ghost" className="del" onClick={() => handleDelete(item.id)} title="Supprimer">
               <Trash2 size={10} />
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -1900,12 +1884,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             {typeInfo.emoji} {item.client || typeInfo.label}
           </span>
           <div className="wk-actions">
-            <button onClick={() => handleToggleDisplayEventVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
+            <Button variant="ghost" onClick={() => handleToggleDisplayEventVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
               {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
-            </button>
-            <button className="del" onClick={() => handleDeleteDisplayEvent(item.id)} title="Retirer">
+            </Button>
+            <Button variant="ghost" className="del" onClick={() => handleDeleteDisplayEvent(item.id)} title="Retirer">
               <Trash2 size={10} />
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -1930,9 +1914,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {item._linkedGoogleEvent && <span className="wk-google-badge" title="Lié Google">G</span>}
           {isProcessed && <span className="wk-status-dot done">✓</span>}
           <div className="wk-actions">
-            <button className="del" onClick={(e) => { e.stopPropagation(); handleHideAffaire(item); }} title="Retirer">
+            <Button variant="ghost" className="del" onClick={(e) => { e.stopPropagation(); handleHideAffaire(item); }} title="Retirer">
               <X size={10} />
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -2063,13 +2047,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className="section-count" style={{ background: info.color }}>{totalCount}</span>
           {isEvenements && (
             <div className="ical-header-actions" onClick={e => e.stopPropagation()}>
-              <button className="ical-manage-btn" onClick={() => setShowIcalManager(v => !v)}>
+              <Button variant="ghost" className="ical-manage-btn" onClick={() => setShowIcalManager(v => !v)}>
                 <Link size={13} /> iCal ({icalCalendars.length})
-              </button>
+              </Button>
               <Tooltip content="Rafraîchir les événements iCal">
-                <button className="ical-refresh-btn" onClick={() => { loadIcalCalendars(); loadIcalEvents(); }}>
+                <Button variant="ghost" className="ical-refresh-btn" onClick={() => { loadIcalCalendars(); loadIcalEvents(); }}>
                   <RefreshCw size={13} className={icalLoading ? 'spinning' : ''} />
-                </button>
+                </Button>
               </Tooltip>
             </div>
           )}
@@ -2219,34 +2203,32 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="tp-toolbar-left">
           {/* Toggle vue Jour / Semaine */}
           <div className="tp-view-toggle">
-            <button
-              className={viewMode === 'day' ? 'active' : ''}
+            <Button variant="ghost"               className={viewMode === 'day' ? 'active' : ''}
               onClick={() => setViewMode('day')}
               title="Vue jour"
             >
               <LayoutList size={15} /> Jour
-            </button>
-            <button
-              className={viewMode === 'week' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={viewMode === 'week' ? 'active' : ''}
               onClick={() => setViewMode('week')}
               title="Vue semaine"
             >
               <CalendarDays size={15} /> Semaine
-            </button>
+            </Button>
           </div>
 
           <div className="tp-date-nav">
-            <button onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? -7 : -1))}>
+            <Button variant="ghost" onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? -7 : -1))}>
               <ChevronLeft size={16} />
-            </button>
+            </Button>
             <span className="tp-current-date" onClick={() => setSelectedDate(todayStr())} title="Aujourd'hui">
               {viewMode === 'week'
                 ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
                 : formatDateFr(selectedDate)}
             </span>
-            <button onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? 7 : 1))}>
+            <Button variant="ghost" onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? 7 : 1))}>
               <ChevronRight size={16} />
-            </button>
+            </Button>
           </div>
           {totalTasks > 0 && (
             <span style={{ fontSize: '0.82rem', color: 'var(--theme-text-secondary)' }}>
@@ -2347,8 +2329,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                   </span>
                 </div>
                 <div className="recurring-item-actions">
-                  <Tooltip content="Modifier"><button onClick={() => setRecurringForm({ ...rt })}><Edit2 size={14} /></button></Tooltip>
-                  <Tooltip content="Supprimer"><button className="delete" onClick={() => handleDeleteRecurring(rt.id)}><Trash2 size={14} /></button></Tooltip>
+                  <Tooltip content="Modifier"><Button variant="ghost" onClick={() => setRecurringForm({ ...rt })}><Edit2 size={14} /></Button></Tooltip>
+                  <Tooltip content="Supprimer"><Button variant="ghost" className="delete" onClick={() => handleDeleteRecurring(rt.id)}><Trash2 size={14} /></Button></Tooltip>
                 </div>
               </div>
             ))}
@@ -2529,8 +2511,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                         )}
                       </div>
                       <div className="ical-cal-actions">
-                        <Tooltip content="Modifier"><button onClick={() => setIcalForm({ ...cal })}><Edit2 size={13} /></button></Tooltip>
-                        <Tooltip content="Supprimer"><button className="delete" onClick={() => handleDeleteIcal(cal.id)}><Trash2 size={13} /></button></Tooltip>
+                        <Tooltip content="Modifier"><Button variant="ghost" onClick={() => setIcalForm({ ...cal })}><Edit2 size={13} /></Button></Tooltip>
+                        <Tooltip content="Supprimer"><Button variant="ghost" className="delete" onClick={() => handleDeleteIcal(cal.id)}><Trash2 size={13} /></Button></Tooltip>
                       </div>
                     </div>
                   ))}

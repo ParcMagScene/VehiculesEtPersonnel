@@ -401,7 +401,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
         <div className="bl-loc-header">
           <h3><Layers size={20} /> Import Bon de Préparation</h3>
           <span className="bl-loc-header-badge">Location / Prestation</span>
-          <button className="bl-loc-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="bl-loc-close" onClick={onClose}><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -442,9 +442,9 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                     {getDocTypeLabel(docType)}
                   </span>
                 )}
-                <Tooltip content="Retirer"><button className="bl-loc-file-remove" onClick={handleRemoveFile}>
+                <Tooltip content="Retirer"><Button variant="ghost" className="bl-loc-file-remove" onClick={handleRemoveFile}>
                   <X size={16} />
-                </button></Tooltip>
+                </Button></Tooltip>
               </div>
 
               {/* Parsing progress */}
@@ -476,8 +476,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                 <label><Tag size={14} /> Type d'affaire</label>
                 <div className="bl-loc-type-buttons">
                   {TYPE_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
+                    <Button variant="ghost"                       key={opt.value}
                       type="button"
                       className={`bl-loc-type-btn ${affaireType === opt.value ? 'active' : ''}`}
                       onClick={() => setAffaireType(opt.value)}
@@ -489,7 +488,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                       }}
                     >
                       {opt.icon} {opt.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -641,13 +640,12 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                     )}
 
                     {/* Toggle texte brut */}
-                    <button
-                      className="bl-loc-raw-toggle"
+                    <Button variant="ghost"                       className="bl-loc-raw-toggle"
                       onClick={() => setShowRawText(!showRawText)}
                     >
                       {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
                       {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
-                    </button>
+                    </Button>
                     {showRawText && (
                       <div className="bl-loc-raw-text">{rawText}</div>
                     )}
@@ -660,9 +658,9 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                 <div className="bl-loc-no-data">
                   <AlertTriangle size={16} />
                   Aucune donnée structurée détectée dans ce PDF.
-                  <button className="bl-loc-raw-toggle" onClick={() => setShowRawText(!showRawText)} style={{ marginLeft: 'auto' }}>
+                  <Button variant="ghost" className="bl-loc-raw-toggle" onClick={() => setShowRawText(!showRawText)} style={{ marginLeft: 'auto' }}>
                     {showRawText ? 'Masquer' : 'Voir texte brut'}
-                  </button>
+                  </Button>
                 </div>
               )}
               {!parsing && !parsedData && showRawText && rawText && (
@@ -689,15 +687,14 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
           <div className="bl-loc-footer-right">
             <Button variant="ghost" onClick={onClose}>Annuler</Button>
             {parsedData && !isWrongDocType && (
-              <button
-                className="bl-loc-btn-events"
+              <Button variant="ghost"                 className="bl-loc-btn-events"
                 onClick={handleGenerateEvents}
                 disabled={generating || saving || !affaireType}
                 title="Importer et créer les événements d'affichage dynamique"
               >
                 <Monitor size={15} />
                 {generating ? 'Génération...' : 'Importer + Événements'}
-              </button>
+              </Button>
             )}
             <Button
               variant="primary"

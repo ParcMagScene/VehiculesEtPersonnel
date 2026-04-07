@@ -238,14 +238,14 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
           <h3><MessageSquare size={18} /> Messages</h3>
           <div className="msg-header-actions">
             <Tooltip content="Nouveau message">
-              <button className="msg-header-btn" onClick={openNewConvModal}>
+              <Button variant="ghost" className="msg-header-btn" onClick={openNewConvModal}>
                 <Plus size={16} />
-              </button>
+              </Button>
             </Tooltip>
             <Tooltip content="Fermer">
-              <button className="msg-header-btn" onClick={onClose}>
+              <Button variant="ghost" className="msg-header-btn" onClick={onClose}>
                 <X size={16} />
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -295,9 +295,9 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
           /* ═══ Vue chat ═══ */
           <div className="msg-chat-view">
             <div className="msg-chat-header">
-              <button className="msg-back-btn" onClick={() => { setActiveConversation(null); setMessages([]); }}>
+              <Button variant="ghost" className="msg-back-btn" onClick={() => { setActiveConversation(null); setMessages([]); }}>
                 <ArrowLeft size={18} />
-              </button>
+              </Button>
               <span className="msg-chat-title">{getConversationName(activeConversation)}</span>
             </div>
 
@@ -351,33 +351,31 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
 
             <div className="msg-input-area">
               <Tooltip content="Joindre un fichier">
-                <button className="msg-attach-btn" onClick={() => fileInputRef.current?.click()}>
+                <Button variant="ghost" className="msg-attach-btn" onClick={() => fileInputRef.current?.click()}>
                   <Paperclip size={18} />
-                </button>
+                </Button>
               </Tooltip>
               <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
               <Tooltip content="Emojis">
-                <button className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`} onClick={() => setShowEmojiPicker(v => !v)}>
+                <Button variant="ghost" className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`} onClick={() => setShowEmojiPicker(v => !v)}>
                   <Smile size={18} />
-                </button>
+                </Button>
               </Tooltip>
               {showEmojiPicker && (
                 <div className="msg-emoji-picker">
                   <div className="msg-emoji-tabs">
                     {EMOJI_CATEGORIES.map((cat, i) => (
-                      <button
-                        key={i}
+                      <Button variant="ghost"                         key={i}
                         className={`msg-emoji-tab${emojiCategory === i ? ' active' : ''}`}
                         onClick={() => setEmojiCategory(i)}
                       >
                         {cat.name.split(' ')[0]}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   <div className="msg-emoji-grid">
                     {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, i) => (
-                      <button
-                        key={i}
+                      <Button variant="ghost"                         key={i}
                         className="msg-emoji-item"
                         onClick={() => {
                           setInputText(prev => prev + emoji);
@@ -385,7 +383,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                         }}
                       >
                         {emoji}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -399,9 +397,9 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 rows={1}
               />
               <Tooltip content="Envoyer">
-                <button className="msg-send-btn" onClick={handleSend} disabled={!inputText.trim()}>
+                <Button variant="ghost" className="msg-send-btn" onClick={handleSend} disabled={!inputText.trim()}>
                   <Send size={16} />
-                </button>
+                </Button>
               </Tooltip>
             </div>
           </div>

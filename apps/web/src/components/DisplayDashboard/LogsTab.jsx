@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Table, EmptyState } from '@/design-system';
+import { Button, EmptyState, Table } from '@/design-system';
 
 const PAGE_SIZE = 50;
 
@@ -98,13 +98,13 @@ function LogsTab({ refreshKey }) {
 
       {totalPages > 1 && (
         <div className="logs-pagination">
-          <button disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+          <Button variant="ghost" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
             <ChevronLeft size={14} /> Précédent
-          </button>
+          </Button>
           <span>Page {page + 1} / {totalPages}</span>
-          <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+          <Button variant="ghost" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
             Suivant <ChevronRight size={14} />
-          </button>
+          </Button>
         </div>
       )}
     </div>

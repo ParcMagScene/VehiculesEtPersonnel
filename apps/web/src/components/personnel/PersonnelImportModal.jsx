@@ -284,38 +284,34 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
                 <div className="eq-import-section">
                   <h4><AlertCircle size={14} /> Analyse des collisions</h4>
                   <div className="pi-collision-summary">
-                    <button
-                      className={`pi-collision-stat ${filterAction === 'all' ? 'active' : ''}`}
+                    <Button variant="ghost"                       className={`pi-collision-stat ${filterAction === 'all' ? 'active' : ''}`}
                       onClick={() => setFilterAction('all')}
                     >
                       <span className="pi-collision-count">{preview.analysis.length}</span>
                       <span>Total</span>
-                    </button>
-                    <button
-                      className={`pi-collision-stat create ${filterAction === 'create' ? 'active' : ''}`}
+                    </Button>
+                    <Button variant="ghost"                       className={`pi-collision-stat create ${filterAction === 'create' ? 'active' : ''}`}
                       onClick={() => setFilterAction('create')}
                     >
                       <UserPlus size={16} />
                       <span className="pi-collision-count">{preview.toCreate}</span>
                       <span>À créer</span>
-                    </button>
-                    <button
-                      className={`pi-collision-stat update ${filterAction === 'update' ? 'active' : ''}`}
+                    </Button>
+                    <Button variant="ghost"                       className={`pi-collision-stat update ${filterAction === 'update' ? 'active' : ''}`}
                       onClick={() => setFilterAction('update')}
                     >
                       <RefreshCw size={16} />
                       <span className="pi-collision-count">{preview.toUpdate}</span>
                       <span>À mettre à jour</span>
-                    </button>
+                    </Button>
                     {preview.conflicts > 0 && (
-                      <button
-                        className={`pi-collision-stat conflict ${filterAction === 'conflict' ? 'active' : ''}`}
+                      <Button variant="ghost"                         className={`pi-collision-stat conflict ${filterAction === 'conflict' ? 'active' : ''}`}
                         onClick={() => setFilterAction('conflict')}
                       >
                         <AlertTriangle size={16} />
                         <span className="pi-collision-count">{preview.conflicts}</span>
                         <span>Conflits</span>
-                      </button>
+                      </Button>
                     )}
                     <div className="pi-collision-stat info">
                       <span className="pi-collision-count">{preview.existingCount}</span>

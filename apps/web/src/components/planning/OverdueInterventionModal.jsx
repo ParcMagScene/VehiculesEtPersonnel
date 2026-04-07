@@ -63,18 +63,18 @@ const OverdueInterventionModal = ({
       className="overdue-intervention-modal"
       footer={!showReasonInput ? (
         <div className="action-buttons">
-          <button className="action-button completed" onClick={() => handleAction('completed')}>
+          <Button variant="ghost" className="action-button completed" onClick={() => handleAction('completed')}>
             <CheckCircle size={20} /> Effectuée
-          </button>
-          <button className="action-button pending" onClick={() => handleAction('pending')}>
+          </Button>
+          <Button variant="ghost" className="action-button pending" onClick={() => handleAction('pending')}>
             <Clock size={20} /> Mettre en attente
-          </button>
-          <button className="action-button not-completed" onClick={() => handleAction('cancelled')}>
+          </Button>
+          <Button variant="ghost" className="action-button not-completed" onClick={() => handleAction('cancelled')}>
             <XCircle size={20} /> Annuler l'intervention
-          </button>
-          <button className="action-button reschedule" onClick={() => handleAction('reschedule')}>
+          </Button>
+          <Button variant="ghost" className="action-button reschedule" onClick={() => handleAction('reschedule')}>
             <Calendar size={20} /> Reporter
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="reason-actions">

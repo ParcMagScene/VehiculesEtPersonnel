@@ -3,7 +3,7 @@ import { X, HelpCircle, Download, Truck, Users, Briefcase, Calendar, MessageSqua
   Package, ShoppingCart, ChevronDown, ChevronRight, Wrench, CalendarDays, Shield } from 'lucide-react';
 import { SHORTCUTS, SHORTCUT_CATEGORIES } from '../hooks/useKeyboardShortcuts';
 import './HelpModal.css';
-import { Input, Tabs, TabList, Tab, TabPanel, Card, EmptyState, SearchBar, Accordion } from '@/design-system';
+import { Accordion, Button, Card, EmptyState, Input, SearchBar, Tab, TabList, TabPanel, Tabs } from '@/design-system';
 
 // ═══ FAQ Data ═══
 const FAQ_ITEMS = [
@@ -120,12 +120,12 @@ const HelpModal = ({ isOpen, onClose }) => {
         <div className="help-header">
           <h3><HelpCircle size={20} /> Aide — eM@g</h3>
           <div className="help-header-actions">
-            <button onClick={handleDownloadPDF} title="Ouvrir le guide complet">
+            <Button variant="ghost" onClick={handleDownloadPDF} title="Ouvrir le guide complet">
               <Download size={14} /> Guide PDF
-            </button>
-            <button className="help-close-btn" onClick={onClose}>
+            </Button>
+            <Button variant="ghost" className="help-close-btn" onClick={onClose}>
               <X size={18} />
-            </button>
+            </Button>
           </div>
         </div>
 

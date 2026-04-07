@@ -9,7 +9,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import './MobileAffaires.css';
-import { Input, Spinner, Avatar, SearchBar } from '@/design-system';
+import { Avatar, Button, Input, SearchBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -146,9 +146,9 @@ function MobileAffaires({ onBack }) {
     return (
       <div className="mobile-affaires">
         <div className="maff-header">
-          <button className="maff-back" onClick={() => { setSelectedAffaire(null); setDetailData(null); }}>
+          <Button variant="ghost" className="maff-back" onClick={() => { setSelectedAffaire(null); setDetailData(null); }}>
             <ArrowLeft size={20} />
-          </button>
+          </Button>
           <h2>{a.numeroAffaire || 'Affaire'}</h2>
         </div>
 
@@ -353,31 +353,30 @@ function MobileAffaires({ onBack }) {
   return (
     <div className="mobile-affaires">
       <div className="maff-header">
-        <button className="maff-back" onClick={onBack}>
+        <Button variant="ghost" className="maff-back" onClick={onBack}>
           <ArrowLeft size={20} />
-        </button>
+        </Button>
         <h2>Affaires</h2>
       </div>
 
       {/* Navigation date */}
       <div className="maff-date-nav">
-        <button className="maff-nav-btn" onClick={() => navigate(-1)}>
+        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(-1)}>
           <ChevronLeft size={20} />
-        </button>
-        <button
-          className={`maff-date-label ${isToday ? 'today' : ''}`}
+        </Button>
+        <Button variant="ghost"           className={`maff-date-label ${isToday ? 'today' : ''}`}
           onClick={() => setCurrentDate(startOfDay(new Date()))}
         >
           {format(currentDate, 'EEEE d MMMM', { locale: fr })}
-        </button>
-        <button className="maff-nav-btn" onClick={() => navigate(1)}>
+        </Button>
+        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(1)}>
           <ChevronRight size={20} />
-        </button>
+        </Button>
       </div>
       {!isToday && (
-        <button className="maff-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        <Button variant="ghost" className="maff-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
           Aujourd'hui
-        </button>
+        </Button>
       )}
 
       {/* Recherche */}
@@ -390,21 +389,19 @@ function MobileAffaires({ onBack }) {
 
       {/* Filtres par type */}
       <div className="maff-type-filters">
-        <button
-          className={`maff-filter-pill ${filterType === null ? 'active' : ''}`}
+        <Button variant="ghost"           className={`maff-filter-pill ${filterType === null ? 'active' : ''}`}
           onClick={() => setFilterType(null)}
         >
           Tous
-        </button>
+        </Button>
         {AFFAIRE_TYPES.map(t => (
-          <button
-            key={t.value}
+          <Button variant="ghost"             key={t.value}
             className={`maff-filter-pill ${filterType === t.value ? 'active' : ''}`}
             style={filterType === t.value ? { background: t.color, color: '#fff', borderColor: t.color } : {}}
             onClick={() => setFilterType(filterType === t.value ? null : t.value)}
           >
             {t.icon} {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 

@@ -980,9 +980,9 @@ const TripDetailsModal = ({
               ✅ Détails du trajet enregistrés
             </div>
           )}
-          <button onClick={handleSafeClose} className="close-button">
+          <Button variant="ghost" onClick={handleSafeClose} className="close-button">
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         {/* Timeline chronologique pour les trajets liés */}
@@ -1003,8 +1003,7 @@ const TripDetailsModal = ({
               const isLast = idx === combinedEvents.length - 1;
               
               return (
-                <button
-                  key={ce.event.id}
+                <Button variant="ghost"                   key={ce.event.id}
                   type="button"
                   className={`combined-edit-tab ${activeTab === idx ? 'active' : ''} ${hasData ? 'has-data' : ''}`}
                   onClick={() => setActiveTab(idx)}
@@ -1016,7 +1015,7 @@ const TripDetailsModal = ({
                     {isFirst ? '(Aller)' : isLast ? '(Retour)' : '(Transfert)'}
                   </span>
                   {hasData && <span className="tab-saved">✓</span>}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -1081,15 +1080,14 @@ const TripDetailsModal = ({
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('departureLocation')}
                     title="Enregistrer comme lieu"
                   >
                     <MapPin size={16} />
                     Nouveau lieu
-                  </button>
+                  </Button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
               </FormField>
@@ -1156,27 +1154,25 @@ const TripDetailsModal = ({
                     />
                   </FormField>
                   <FormField className="form-group" label="-">
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       onClick={() => removePause(pause.id)}
                       className="remove-pause-btn"
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </Button>
                   </FormField>
                 </div>
               );
             })}
             <div className="trip-row">
               <div className="form-group">
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   onClick={() => addPause('outbound')}
                   className="add-pause-btn"
                 >
                   <Plus size={16} />
                   Ajouter une pause
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1192,15 +1188,14 @@ const TripDetailsModal = ({
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('arrivalLocation')}
                     title="Enregistrer comme lieu"
                   >
                     <MapPin size={16} />
                     Nouveau lieu
-                  </button>
+                  </Button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
               </FormField>
@@ -1227,15 +1222,14 @@ const TripDetailsModal = ({
             </div>
 
             <div className="duration-section">
-              <button
-                type="button"
+              <Button variant="ghost"                 type="button"
                 onClick={handleCalculateOutbound}
                 disabled={isCalculating}
                 className="calculate-btn"
               >
                 <Clock size={18} />
                 {isCalculating ? 'Calcul...' : 'Calculer le temps de trajet'}
-              </button>
+              </Button>
               {formData.outboundDuration && (() => {
                 const pauseDurations = pauses
                   .filter(p => p.pauseType === 'outbound' && p.duration)
@@ -1267,15 +1261,14 @@ const TripDetailsModal = ({
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('returnDepartureLocation')}
                     title="Enregistrer comme lieu"
                   >
                     <MapPin size={16} />
                     Nouveau lieu
-                  </button>
+                  </Button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
               </FormField>
@@ -1342,27 +1335,25 @@ const TripDetailsModal = ({
                     />
                   </FormField>
                   <FormField className="form-group" label="-">
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       onClick={() => removePause(pause.id)}
                       className="remove-pause-btn"
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </Button>
                   </FormField>
                 </div>
               );
             })}
             <div className="trip-row">
               <div className="form-group">
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   onClick={() => addPause('return')}
                   className="add-pause-btn"
                 >
                   <Plus size={16} />
                   Ajouter une pause
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1378,15 +1369,14 @@ const TripDetailsModal = ({
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('returnArrivalLocation')}
                     title="Enregistrer comme lieu"
                   >
                     <MapPin size={16} />
                     Nouveau lieu
-                  </button>
+                  </Button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
               </FormField>
@@ -1413,15 +1403,14 @@ const TripDetailsModal = ({
             </div>
 
             <div className="duration-section">
-              <button
-                type="button"
+              <Button variant="ghost"                 type="button"
                 onClick={handleCalculateReturn}
                 disabled={isCalculating}
                 className="calculate-btn"
               >
                 <Clock size={18} />
                 {isCalculating ? 'Calcul...' : 'Calculer le temps de trajet'}
-              </button>
+              </Button>
               {formData.returnDuration && (() => {
                 const pauseDurations = pauses
                   .filter(p => p.pauseType === 'return' && p.duration)

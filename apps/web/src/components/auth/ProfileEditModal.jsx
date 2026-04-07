@@ -96,9 +96,9 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
           <h3 className="profile-edit-header-title">
             <User size={20} /> {isAdminMode ? `Modifier ${editedUser.name}` : 'Mon profil'}
           </h3>
-          <button onClick={onClose} className="theme-close-btn">
+          <Button variant="ghost" onClick={onClose} className="theme-close-btn">
             <X size={20} />
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
@@ -112,13 +112,12 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
                 <Avatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
               )}
               
-              <button
-                onClick={() => fileInputRef.current?.click()}
+              <Button variant="ghost"                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 className="profile-edit-avatar-btn"
               >
                 <Camera size={14} />
-              </button>
+              </Button>
             </div>
 
             <input
@@ -134,9 +133,9 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
             )}
 
             {editedUser.avatar && !uploading && (
-              <button onClick={handleDeleteAvatar} className="profile-edit-delete-avatar">
+              <Button variant="ghost" onClick={handleDeleteAvatar} className="profile-edit-delete-avatar">
                 <Trash2 size={14} /> Supprimer la photo
-              </button>
+              </Button>
             )}
           </div>
 

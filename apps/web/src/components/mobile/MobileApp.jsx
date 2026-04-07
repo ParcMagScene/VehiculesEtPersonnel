@@ -22,7 +22,7 @@ import { useTheme, PALETTES } from '../../hooks/useTheme';
 import api from '../../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../../utils/notificationSound';
 import './MobileApp.css';
-import { Spinner } from '@/design-system';
+import { Button, Spinner } from '@/design-system';
 
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -229,26 +229,25 @@ function MobileApp({ onSwitchToDesktop }) {
     <div className="mobile-app">
       {/* Header */}
       <header className="mobile-header">
-        <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+        <Button variant="ghost" className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        </Button>
         <img src="/Logos/LogoEmagTransp.png" alt="eM@g" className="mobile-header-logo" />
         <div className="user-info">
-          <button
-            className="header-msg-btn"
+          <Button variant="ghost"             className="header-msg-btn"
             onClick={() => { setCurrentScreen('messaging'); currentScreenRef.current = 'messaging'; }}
           >
             <MessageSquare size={20} />
             {unreadMsgCount > 0 && (
               <span className="header-msg-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>
             )}
-          </button>
-          <button 
+          </Button>
+          <Button variant="ghost" 
             className="user-initial"
             onClick={() => setShowUserMenu(!showUserMenu)}
           >
             {currentUser?.name?.charAt(0)}
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -265,14 +264,14 @@ function MobileApp({ onSwitchToDesktop }) {
               </div>
             </div>
             <div className="mobile-sheet-actions">
-              <button onClick={() => { setShowUserMenu(false); window.location.reload(); }}>
+              <Button variant="ghost" onClick={() => { setShowUserMenu(false); window.location.reload(); }}>
                 <LayoutGrid size={18} />
                 Changer d'utilisateur
-              </button>
-              <button className="danger" onClick={() => { setShowUserMenu(false); handleLogout(); }}>
+              </Button>
+              <Button variant="ghost" className="danger" onClick={() => { setShowUserMenu(false); handleLogout(); }}>
                 <LogOut size={18} />
                 Se déconnecter
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -291,144 +290,129 @@ function MobileApp({ onSwitchToDesktop }) {
           </div>
           
           <nav className="menu-nav">
-            <button
-              className={currentScreen === 'home' ? 'active' : ''}
+            <Button variant="ghost"               className={currentScreen === 'home' ? 'active' : ''}
               onClick={() => { setCurrentScreen('home'); setMenuOpen(false); }}
             >
               <Home size={20} />
               <span>Accueil</span>
-            </button>
+            </Button>
 
             <div className="menu-section-label">Parc</div>
-            <button
-              className={currentScreen === 'parc-dashboard' ? 'active' : ''}
+            <Button variant="ghost"               className={currentScreen === 'parc-dashboard' ? 'active' : ''}
               onClick={() => { setCurrentScreen('parc-dashboard'); setMenuOpen(false); }}
             >
               <Truck size={20} />
               <span>Tableau de bord</span>
-            </button>
-            <button
-              className={currentScreen === 'planning' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'planning' ? 'active' : ''}
               onClick={() => { setCurrentScreen('planning'); setMenuOpen(false); }}
             >
               <LayoutGrid size={20} />
               <span>Planning</span>
-            </button>
-            <button
-              className={currentScreen === 'reservations' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'reservations' ? 'active' : ''}
               onClick={() => { setCurrentScreen('reservations'); setMenuOpen(false); }}
             >
               <Car size={20} />
               <span>Réservations</span>
-            </button>
-            <button
-              className={currentScreen === 'maintenances' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'maintenances' ? 'active' : ''}
               onClick={() => { setCurrentScreen('maintenances'); setMenuOpen(false); }}
             >
               <Settings size={20} />
               <span>Interventions</span>
-            </button>
+            </Button>
 
-            <button
-              className={currentScreen === 'affaires' ? 'active' : ''}
+            <Button variant="ghost"               className={currentScreen === 'affaires' ? 'active' : ''}
               onClick={() => { setCurrentScreen('affaires'); setMenuOpen(false); }}
             >
               <Briefcase size={20} />
               <span>Affaires</span>
-            </button>
-            <button
-              className={currentScreen === 'tasks' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'tasks' ? 'active' : ''}
               onClick={() => { setCurrentScreen('tasks'); setMenuOpen(false); }}
             >
               <ClipboardList size={20} />
               <span>Tâches du jour</span>
-            </button>
+            </Button>
 
             <div className="menu-section-label">Équipe</div>
-            <button
-              className={currentScreen === 'personnel' ? 'active' : ''}
+            <Button variant="ghost"               className={currentScreen === 'personnel' ? 'active' : ''}
               onClick={() => { setCurrentScreen('personnel'); setMenuOpen(false); }}
             >
               <Users size={20} />
               <span>Personnel</span>
-            </button>
-            <button
-              className={currentScreen === 'messaging' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'messaging' ? 'active' : ''}
               onClick={() => { setCurrentScreen('messaging'); setMenuOpen(false); }}
             >
               <MessageSquare size={20} />
               <span>Messagerie</span>
               {unreadMsgCount > 0 && <span className="menu-badge">{unreadMsgCount}</span>}
-            </button>
+            </Button>
 
             <div className="menu-section-label">Gestion</div>
-            <button
-              className={currentScreen === 'equipment' ? 'active' : ''}
+            <Button variant="ghost"               className={currentScreen === 'equipment' ? 'active' : ''}
               onClick={() => { setCurrentScreen('equipment'); setMenuOpen(false); }}
             >
               <Package size={20} />
               <span>Matériel & SAV</span>
-            </button>
-            <button
-              className={currentScreen === 'location' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'location' ? 'active' : ''}
               onClick={() => { setCurrentScreen('location'); setMenuOpen(false); }}
             >
               <MapPin size={20} />
               <span>Localisation</span>
-            </button>
-            <button
-              className={currentScreen === 'orders' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'orders' ? 'active' : ''}
               onClick={() => { setCurrentScreen('orders'); setMenuOpen(false); }}
             >
               <ShoppingCart size={20} />
               <span>Commandes</span>
-            </button>
-            <button
-              className={currentScreen === 'leaves' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'leaves' ? 'active' : ''}
               onClick={() => { setCurrentScreen('leaves'); setMenuOpen(false); }}
             >
               <Palmtree size={20} />
               <span>Congés</span>
-            </button>
-            <button
-              className={currentScreen === 'inventory' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={currentScreen === 'inventory' ? 'active' : ''}
               onClick={() => { setCurrentScreen('inventory'); setMenuOpen(false); }}
             >
               <ClipboardCheck size={20} />
               <span>Inventaire</span>
-            </button>
+            </Button>
 
             {/* ── Thème ── */}
             <div className="menu-section-label">Apparence</div>
-            <button onClick={() => setShowThemePanel(!showThemePanel)}>
+            <Button variant="ghost" onClick={() => setShowThemePanel(!showThemePanel)}>
               <Palette size={20} />
               <span>Thème & couleurs</span>
               <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
                 {isDark ? '🌙' : '☀️'}
               </span>
-            </button>
+            </Button>
             {showThemePanel && (
               <div className="menu-theme-panel">
                 <div className="menu-theme-mode">
-                  <button 
+                  <Button variant="ghost" 
                     className={`menu-theme-mode-btn ${!isDark ? 'active' : ''}`} 
                     onClick={() => { if (isDark) toggleTheme(); }}
                   >
                     <Sun size={16} /> Clair
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className={`menu-theme-mode-btn ${isDark ? 'active' : ''}`}
                     onClick={() => { if (!isDark) toggleTheme(); }}
                   >
                     <Moon size={16} /> Sombre
-                  </button>
+                  </Button>
                 </div>
                 <div className="menu-palette-grid">
                   {PALETTES.map(p => {
                     const colors = isDark ? p.darkColors : p.colors;
                     return (
-                      <button
-                        key={p.id}
+                      <Button variant="ghost"                         key={p.id}
                         className={`menu-palette-btn ${palette === p.id ? 'active' : ''}`}
                         onClick={() => setPalette(p.id)}
                         title={p.name}
@@ -438,7 +422,7 @@ function MobileApp({ onSwitchToDesktop }) {
                           <div style={{ background: colors.accent, width: '50%', height: '100%', borderRadius: '0 4px 4px 0' }} />
                         </div>
                         <span>{p.name.replace('Flat ', '')}</span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -446,15 +430,15 @@ function MobileApp({ onSwitchToDesktop }) {
             )}
           </nav>
 
-          <button className="menu-logout" onClick={handleLogout}>
+          <Button variant="ghost" className="menu-logout" onClick={handleLogout}>
             <LogOut size={20} />
             <span>Se déconnecter</span>
-          </button>
+          </Button>
           {onSwitchToDesktop && (
-            <button className="menu-desktop" onClick={onSwitchToDesktop}>
+            <Button variant="ghost" className="menu-desktop" onClick={onSwitchToDesktop}>
               <Monitor size={20} />
               <span>Version bureau</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>

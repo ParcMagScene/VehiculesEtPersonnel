@@ -210,9 +210,9 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
               </div>
             )}
           </div>
-          <button className="close-button" onClick={handleSafeClose}>
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="maintenance-form">
@@ -243,14 +243,14 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                     <div key={index} className="controle-item">
                       <div className="controle-header">
                         <strong>{typeConfig?.label || controle.type}</strong>
-                        <button 
+                        <Button variant="ghost" 
                           type="button" 
                           className="btn-remove"
                           onClick={() => handleRemoveControle(index)}
                           title="Supprimer ce contrôle"
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </Button>
                       </div>
                       <div className="controle-details">
                         <div>

@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
 import './MobileLogin.css';
 import { useToast } from '../../hooks/useToast';
-import { FormField, Input, Card, InlineAlert } from '@/design-system';
+import { Button, Card, FormField, InlineAlert, Input } from '@/design-system';
 
 function MobileLogin({ onLogin }) {
   const toast = useToast();
@@ -115,11 +115,11 @@ function MobileLogin({ onLogin }) {
             <InlineAlert>{error}</InlineAlert>
           )}
 
-          <button type="submit" className="login-button" disabled={isLoading}>
+          <Button variant="ghost" type="submit" className="login-button" disabled={isLoading}>
             {isLoading ? (mode === 'register' ? 'Création...' : 'Connexion...') : (mode === 'register' ? 'Créer le compte' : 'Se connecter')}
-          </button>
+          </Button>
 
-          <button 
+          <Button variant="ghost" 
             type="button" 
             className="toggle-mode-button"
             onClick={() => {
@@ -129,20 +129,19 @@ function MobileLogin({ onLogin }) {
             }}
           >
             {mode === 'login' ? 'Créer un compte' : 'Déjà un compte ? Se connecter'}
-          </button>
+          </Button>
 
-          <button 
+          <Button variant="ghost" 
             type="button" 
             className="access-request-button"
             onClick={() => setShowAccessRequest(true)}
           >
             <Mail size={16} />
             Pas d'accès ? Faire une demande
-          </button>
+          </Button>
 
           {mode === 'login' && (
-            <button
-              type="button"
+            <Button variant="ghost"               type="button"
               className="forgot-password-button"
               onClick={() => {
                 setShowResetPassword(true);
@@ -155,7 +154,7 @@ function MobileLogin({ onLogin }) {
             >
               <Key size={16} />
               Réinitialiser le mot de passe
-            </button>
+            </Button>
           )}
         </form>
 
@@ -252,21 +251,19 @@ function MobileLogin({ onLogin }) {
                 {resetError && <InlineAlert>{resetError}</InlineAlert>}
                 
                 <div className="mobile-sheet-form-actions">
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="toggle-mode-button"
                     onClick={() => { setShowResetPassword(false); setResetError(''); }}
                     disabled={isLoading}
                   >
                     Annuler
-                  </button>
-                  <button
-                    type="submit"
+                  </Button>
+                  <Button variant="ghost"                     type="submit"
                     className="login-button"
                     disabled={isLoading || !resetFormEmail || !resetFormName || !resetFormPassword || !resetFormConfirm}
                   >
                     {isLoading ? 'Réinitialisation...' : 'Réinitialiser'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>

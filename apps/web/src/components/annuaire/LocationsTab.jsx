@@ -147,7 +147,7 @@ function LocationsTab({ currentUser }) {
                         <td>
                           {!loc.isCompanyLocation && (
                             <div className="actions-cell">
-                              <Tooltip content="Modifier"><button onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></button></Tooltip>
+                              <Tooltip content="Modifier"><Button variant="ghost" onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></Button></Tooltip>
                               {currentUser?.isAdmin && (
                                 <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(loc)}><Trash2 size={14} /></Button></Tooltip>
                               )}

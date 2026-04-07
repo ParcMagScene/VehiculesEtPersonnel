@@ -33,7 +33,7 @@ import YearSelector from '../YearSelector';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
-import { Dialog } from '@/design-system';
+import { Button, Dialog } from '@/design-system';
 
 import { STATUS, TIMING } from '../../constants';
 
@@ -367,8 +367,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
             // Si dans le même groupe, bouton "délier"
             if (seg.type === 'group' && !isFirstInSeg) {
               gridElements.push(
-                <button
-                  key={`linked-sep-${segIdx}-${itemIdx}`}
+                <Button variant="ghost"                   key={`linked-sep-${segIdx}-${itemIdx}`}
                   className="tournee-link-btn linked"
                   style={{ gridColumn: `${linkCol} / span 1` }}
                   title="Délier les trajets"
@@ -379,13 +378,12 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                   }}
                 >
                   <Link size={12} />
-                </button>
+                </Button>
               );
             } else {
               // Bouton "dé-lié" (pas encore liés) - icône Link2
               gridElements.push(
-                <button
-                  key={`link-${segIdx}-${itemIdx}`}
+                <Button variant="ghost"                   key={`link-${segIdx}-${itemIdx}`}
                   className="tournee-link-btn"
                   style={{ gridColumn: `${linkCol} / span 1` }}
                   title="Lier les trajets"
@@ -396,7 +394,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                   }}
                 >
                   <Link2 size={12} />
-                </button>
+                </Button>
               );
             }
           }
@@ -410,8 +408,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
               }}>
                 <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
                 {onOpenTrip && (
-                  <button
-                    className="tournee-trip-btn"
+                  <Button variant="ghost"                     className="tournee-trip-btn"
                     title="Détails du trajet"
                     onMouseDown={(e) => {
                       e.stopPropagation();
@@ -420,7 +417,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                     }}
                   >
                     <MapPin size={10} />
-                  </button>
+                  </Button>
                 )}
               </span>
             );
@@ -433,8 +430,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
               }}>
                 <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
                 {isLastInSeg && onOpenTrip && (
-                  <button
-                    className="tournee-trip-btn combined"
+                  <Button variant="ghost"                     className="tournee-trip-btn combined"
                     title={`Trajet combiné (${seg.items.length} événements)`}
                     onMouseDown={(e) => {
                       e.stopPropagation();
@@ -443,7 +439,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                     }}
                   >
                     <MapPin size={10} />
-                  </button>
+                  </Button>
                 )}
               </span>
             );
@@ -504,13 +500,12 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
       <div className="reservation-affaire">
         <span className="reservation-affaire-text">{affaires[0]}{affaires.length > 1 && <span className="affaire-plus"> +{affaires.length - 1}</span>}</span>
         {singleEventId && onOpenTrip && (
-          <button
-            className="reservation-trip-btn"
+          <Button variant="ghost"             className="reservation-trip-btn"
             title="Voir le trajet"
             onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
           >
             <MapPin size={10} />
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -520,13 +515,12 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
   if (singleEventId && onOpenTrip && !block.isTournee) {
     return (
       <div className="reservation-affaire">
-        <button
-          className="reservation-trip-btn solo"
+        <Button variant="ghost"           className="reservation-trip-btn solo"
           title="Voir le trajet"
           onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
         >
           <MapPin size={10} />
-        </button>
+        </Button>
       </div>
     );
   }
@@ -1913,15 +1907,15 @@ const Calendar = ({
       {/* Toolbar de navigation */}
       <div className="cal-nav-toolbar">
         <div className="cal-nav-views">
-          <button className={`cal-nav-view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => setView('day')}>Jour</button>
-          <button className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</button>
-          <button className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</button>
-          <button className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</button>
+          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => setView('day')}>Jour</Button>
+          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</Button>
+          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</Button>
+          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</Button>
         </div>
         <div className="cal-nav-date">
-          <button className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></button>
-          <button className={`cal-nav-btn cal-nav-today ${showTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</button>
-          <button className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></button>
+          <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></Button>
+          <Button variant="ghost" className={`cal-nav-btn cal-nav-today ${showTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
+          <Button variant="ghost" className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></Button>
           <span 
             className="cal-nav-label clickable"
             onClick={() => {
@@ -1944,13 +1938,13 @@ const Calendar = ({
             <span className="vehicle-availability-badge" title="Véhicules disponibles aujourd'hui (hors locations)">
               {availabilityCount.company.available}/{availabilityCount.company.total}
             </span>
-            <button 
+            <Button variant="ghost" 
               className="section-toggle-button" 
               onClick={() => setCollapsedSections(prev => ({ ...prev, company: !prev.company }))}
               title={collapsedSections.company ? 'Développer' : 'Rétracter'}
             >
               {collapsedSections.company ? '▼' : '▲'}
-            </button>
+            </Button>
           </div>
           <div className="calendar-headers-scroll-area">
             <div className={`calendar-grid-headers ${view}-view`} style={{ gridTemplateColumns: gridColumns }}>
@@ -2125,12 +2119,12 @@ const Calendar = ({
                   <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
                     {availabilityCount.location.available}/{availabilityCount.location.total}
                   </span>
-                  <button 
+                  <Button variant="ghost" 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
                   >
                     {collapsedSections.location ? '▼' : '▲'}
-                  </button>
+                  </Button>
                 </div>
                 {!collapsedSections.location && vehicleGroups.locationVehicles.map((vehicle) => {
                   // Vérifier si le véhicule a une panne signalée
@@ -2312,15 +2306,14 @@ const Calendar = ({
                             </div>
                           </div>
                           {!block.isMaintenance && onDeleteReservation && (
-                            <button
-                              className="reservation-delete-btn"
+                            <Button variant="ghost"                               className="reservation-delete-btn"
                               title="Supprimer cette réservation"
                               onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDialog({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                             >
                               <Trash2 size={12} />
-                            </button>
+                            </Button>
                           )}
                           {view !== 'year' && !isBeingResized && (
                             <>
@@ -2374,12 +2367,12 @@ const Calendar = ({
                   <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
                     {availabilityCount.location.available}/{availabilityCount.location.total}
                   </span>
-                  <button 
+                  <Button variant="ghost" 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
                   >
                     {collapsedSections.location ? '▼' : '▲'}
-                  </button>
+                  </Button>
                 </div>
               )}
               
@@ -2505,15 +2498,14 @@ const Calendar = ({
                             </div>
                           </div>
                           {!block.isMaintenance && onDeleteReservation && (
-                            <button
-                              className="reservation-delete-btn"
+                            <Button variant="ghost"                               className="reservation-delete-btn"
                               title="Supprimer cette réservation"
                               onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDialog({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                             >
                               <Trash2 size={12} />
-                            </button>
+                            </Button>
                           )}
                           {view !== 'year' && !isBeingResized && (
                             <>

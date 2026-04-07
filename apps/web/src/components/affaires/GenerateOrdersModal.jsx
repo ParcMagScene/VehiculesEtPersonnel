@@ -121,7 +121,7 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
         {/* Header */}
         <div className="theme-modal-header">
           <h3><ShoppingCart size={20} /> Commandes — {affaireReference || affaireId}</h3>
-          <button className="theme-close-btn" onClick={handleClose}><X size={18} /></button>
+          <Button variant="ghost" className="theme-close-btn" onClick={handleClose}><X size={18} /></Button>
         </div>
 
         {/* Body */}

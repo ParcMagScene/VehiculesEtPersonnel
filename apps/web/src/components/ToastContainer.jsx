@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 import { playSound, vibrate } from '../utils/notificationSound';
+import { Button } from '@/design-system';
 import './ToastContainer.css';
 
 const ICONS = {
@@ -77,9 +78,9 @@ const ToastContainer = forwardRef(function ToastContainer(_, ref) {
           >
             <Icon size={18} className="toast-icon" />
             <span className="toast-msg">{t.message}</span>
-            <button className="toast-dismiss" onClick={() => dismiss(t.id)} aria-label="Fermer">
+            <Button variant="ghost" className="toast-dismiss" onClick={() => dismiss(t.id)} aria-label="Fermer">
               <X size={14} />
-            </button>
+            </Button>
           </div>
         );
       })}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Home, ArrowRight } from 'lucide-react';
 import api from '../../utils/api';
-import { Spinner, InlineAlert } from '@/design-system';
+import { Button, InlineAlert, Spinner } from '@/design-system';
 import './MobileQRLanding.css';
 
 // ═══ PAGE D'ATTERRISSAGE QR — CHOIX MATÉRIEL OU ACCUEIL ═══
@@ -76,24 +76,22 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
 
         {/* Action buttons */}
         <div className="qr-landing-actions">
-          <button
-            className="qr-landing-btn qr-landing-btn-equipment"
+          <Button variant="ghost"             className="qr-landing-btn qr-landing-btn-equipment"
             onClick={onGoToEquipment}
             disabled={loading || !!error}
           >
             <Package size={22} />
             <span>Aller au matériel</span>
             <ArrowRight size={18} />
-          </button>
+          </Button>
 
-          <button
-            className="qr-landing-btn qr-landing-btn-home"
+          <Button variant="ghost"             className="qr-landing-btn qr-landing-btn-home"
             onClick={onGoHome}
           >
             <Home size={22} />
             <span>Accueil eM@g</span>
             <ArrowRight size={18} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

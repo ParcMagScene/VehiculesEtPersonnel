@@ -14,7 +14,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
-import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
 import { STATUS } from '../../constants';
 
 import './LeaveRequestsPanel.css';
@@ -129,17 +129,17 @@ const LeaveRequestsPanel = ({
             <h2>Mes demandes de congés</h2>
           </div>
           <div className="lrp-header-actions">
-            <Tooltip content="Rafraîchir"><button className="lrp-btn-refresh" onClick={loadRequests}>
+            <Tooltip content="Rafraîchir"><Button variant="ghost" className="lrp-btn-refresh" onClick={loadRequests}>
               <RefreshCw size={16} />
-            </button></Tooltip>
+            </Button></Tooltip>
             {onNewRequest && (
-              <button className="lrp-btn-new" onClick={onNewRequest}>
+              <Button variant="ghost" className="lrp-btn-new" onClick={onNewRequest}>
                 <Send size={14} /> Nouvelle demande
-              </button>
+              </Button>
             )}
-            <button className="lrp-close-btn" onClick={onClose}>
+            <Button variant="ghost" className="lrp-close-btn" onClick={onClose}>
               <X size={20} />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -201,9 +201,9 @@ const LeaveRequestsPanel = ({
               icon={<Calendar size={32} />}
               title="Aucune demande de congé"
               action={onNewRequest && (
-                <button className="lrp-btn-new-empty" onClick={onNewRequest}>
+                <Button variant="ghost" className="lrp-btn-new-empty" onClick={onNewRequest}>
                   <Send size={14} /> Faire une demande
-                </button>
+                </Button>
               )}
             />
           ) : (
@@ -287,32 +287,30 @@ const LeaveRequestsPanel = ({
                       )}
 
                       <div className="lrp-card-actions">
-                        <button
-                          className="lrp-action-btn pdf"
+                        <Button variant="ghost"                           className="lrp-action-btn pdf"
                           onClick={() => handleDownloadPdf(req.id)}
                           title="Télécharger le PDF"
                         >
                           <Download size={14} /> PDF
-                        </button>
+                        </Button>
                         {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) && (
                           cancellingId === req.id ? (
                             <div className="lrp-cancel-confirm">
                               <span>Confirmer l'annulation ?</span>
-                              <button className="lrp-action-btn cancel-yes" onClick={() => handleCancel(req.id)}>
+                              <Button variant="ghost" className="lrp-action-btn cancel-yes" onClick={() => handleCancel(req.id)}>
                                 Oui
-                              </button>
-                              <button className="lrp-action-btn cancel-no" onClick={() => setCancellingId(null)}>
+                              </Button>
+                              <Button variant="ghost" className="lrp-action-btn cancel-no" onClick={() => setCancellingId(null)}>
                                 Non
-                              </button>
+                              </Button>
                             </div>
                           ) : (
-                            <button
-                              className="lrp-action-btn cancel"
+                            <Button variant="ghost"                               className="lrp-action-btn cancel"
                               onClick={() => setCancellingId(req.id)}
                               title="Annuler"
                             >
                               <Trash2 size={14} /> Annuler
-                            </button>
+                            </Button>
                           )
                         )}
                       </div>

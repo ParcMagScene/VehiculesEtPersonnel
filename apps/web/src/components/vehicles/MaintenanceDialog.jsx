@@ -453,7 +453,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
             </div>
           </div>
-          <button className="close-button" onClick={handleSafeClose}>✕</button>
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>✕</Button>
         </div>
 
         <Tabs value={activeTab} onChange={setActiveTab}>
@@ -932,12 +932,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               {vehicleMaintenances.length === 0 ? (
                 <div className="empty-state">
                   <p>Aucun entretien enregistré pour ce véhicule</p>
-                  <button 
+                  <Button variant="ghost" 
                     className="add-first-button"
                     onClick={() => setActiveTab('new')}
                   >
                     ➕ Ajouter le premier entretien
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="maintenance-list">
@@ -974,21 +974,19 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                               {getStatusIcon(maintenance.status)}
                               {getStatusLabel(maintenance.status)}
                             </StatusBadge>
-                            <button
-                              className="edit-maintenance-button"
+                            <Button variant="ghost"                               className="edit-maintenance-button"
                               onClick={() => startEditing(maintenance)}
                               title="Modifier"
                             >
                               ✏️
-                            </button>
+                            </Button>
                             {canManageMaintenance && (
-                              <button
-                                className="delete-maintenance-button"
+                              <Button variant="ghost"                                 className="delete-maintenance-button"
                                 onClick={() => deleteMaintenance(maintenance.id)}
                                 title="Supprimer"
                               >
                                 🗑️
-                              </button>
+                              </Button>
                             )}
                           </div>
                         </div>
@@ -1040,32 +1038,30 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           <div className="form-actions">
             {isViewMode ? (
               <div className="form-actions-right" style={{ marginLeft: 'auto' }}>
-                <button type="button" className="submit-button" onClick={onClose}>Fermer</button>
+                <Button variant="ghost" type="button" className="submit-button" onClick={onClose}>Fermer</Button>
               </div>
             ) : editingId ? (
               <>
                 <div className="form-actions-left">
                   {canManageMaintenance && (
-                    <button 
+                    <Button variant="ghost" 
                       type="button" 
                       className="delete-button"
                       onClick={() => deleteMaintenance(editingId)}
                     >
                       🗑️ Supprimer
-                    </button>
+                    </Button>
                   )}
                   {canManageMaintenance && formData.status !== STATUS.CANCELLED && !showCancelForm && (
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       className="cancel-intervention-button"
                       onClick={() => setShowCancelForm(true)}
                     >
                       ❌ Annuler l'intervention
-                    </button>
+                    </Button>
                   )}
                   {canManageMaintenance && formData.status === STATUS.CANCELLED && (
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       className="reschedule-button"
                       onClick={() => {
                         handleChange('status', 'scheduled');
@@ -1073,12 +1069,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       }}
                     >
                       📅 Reprogrammer
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <div className="form-actions-right">
                   {canManageMaintenance && formData.status !== STATUS.CANCELLED && (
-                    <button 
+                    <Button variant="ghost" 
                       type="button" 
                       className="reschedule-button"
                       onClick={() => {
@@ -1087,20 +1083,20 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                     >
                       <Clock size={16} />
                       Reporter
-                    </button>
+                    </Button>
                   )}
                   {hasChanges && (
-                    <button type="submit" form="maintenance-form" className="submit-button">
+                    <Button variant="ghost" type="submit" form="maintenance-form" className="submit-button">
                       ✓ Valider les modifications
-                    </button>
+                    </Button>
                   )}
                 </div>
               </>
             ) : (
               <>
-                <button type="submit" form="maintenance-form" className="submit-button">
+                <Button variant="ghost" type="submit" form="maintenance-form" className="submit-button">
                   {isQuickReport ? '⚠️ Signaler' : formData.status === STATUS.PENDING ? '📝 Enregistrer la demande' : '📅 Enregistrer'}
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -1139,19 +1135,19 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 </p>
               </div>
               <div className="conflict-warning-actions">
-                <button 
+                <Button variant="ghost" 
                   className="conflict-button conflict-cancel"
                   onClick={() => setConflictWarning(null)}
                 >
                   Annuler
-                </button>
-                <button 
+                </Button>
+                <Button variant="ghost" 
                   className="conflict-button conflict-change"
                   onClick={() => setConflictWarning(null)}
                 >
                   Changer les dates
-                </button>
-                <button 
+                </Button>
+                <Button variant="ghost" 
                   className="conflict-button conflict-proceed"
                   onClick={(e) => {
                     // Forcer l'enregistrement malgré le conflit
@@ -1187,7 +1183,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                   }}
                 >
                   Programmer quand même
-                </button>
+                </Button>
               </div>
             </div>
           </div>

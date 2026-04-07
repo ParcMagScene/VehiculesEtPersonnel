@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { Button } from '@/design-system';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -63,7 +64,7 @@ class ErrorBoundary extends React.Component {
               </pre>
             </>
           )}
-          <button 
+          <Button variant="ghost" 
             onClick={() => isInline ? this.setState({ hasError: false, error: null, errorInfo: null }) : window.location.reload()}
             style={{
               marginTop: '20px',
@@ -77,7 +78,7 @@ class ErrorBoundary extends React.Component {
             }}
           >
             Recharger la page
-          </button>
+          </Button>
         </div>
       );
     }

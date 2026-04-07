@@ -64,13 +64,12 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
       {/* Filtres */}
       <div className="media-filters">
         {['all', 'image', 'video'].map(f => (
-          <button
-            key={f}
+          <Button variant="ghost"             key={f}
             className={`filter-btn ${filter === f ? 'active' : ''}`}
             onClick={() => setFilter(f)}
           >
             {f === 'all' ? 'Tous' : f === 'image' ? '🖼 Images' : '🎬 Vidéos'}
-          </button>
+          </Button>
         ))}
         <span className="media-count">{media.length} fichier(s)</span>
       </div>
@@ -117,7 +116,7 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
       {preview && (
         <div className="media-preview-overlay" onClick={() => setPreview(null)}>
           <div className="media-preview-content" onClick={e => e.stopPropagation()}>
-            <button className="media-preview-close" onClick={() => setPreview(null)}>✕</button>
+            <Button variant="ghost" className="media-preview-close" onClick={() => setPreview(null)}>✕</Button>
             {preview.media_type === 'video' ? (
               <video src={preview.file_path} controls autoPlay style={{ maxWidth: '100%', maxHeight: '80vh' }} />
             ) : (

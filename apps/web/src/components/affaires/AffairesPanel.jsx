@@ -9,7 +9,7 @@ import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import './AffairesPanel.css';
-import { Input, Checkbox, Spinner, EmptyState, InlineAlert, SearchBar, Tooltip, Divider } from '@/design-system';
+import { Button, Checkbox, Divider, EmptyState, InlineAlert, Input, SearchBar, Spinner, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -739,7 +739,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   return (
     <div className="affaires-panel">
       {error && (
-        <InlineAlert action={<button onClick={handleRefresh}>Réessayer</button>}>{error}</InlineAlert>
+        <InlineAlert action={<Button variant="ghost" onClick={handleRefresh}>Réessayer</Button>}>{error}</InlineAlert>
       )}
       {googleError && (
         <InlineAlert variant="warning">{googleError}</InlineAlert>
@@ -793,16 +793,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           {/* Type — sélecteur horizontal */}
           <div className="affaires-type-selector">
-            <button
-              className={`affaires-type-btn${!filterType ? ' active' : ''}`}
+            <Button variant="ghost"               className={`affaires-type-btn${!filterType ? ' active' : ''}`}
               onClick={() => setFilterType('')}
               title="Tous les types"
             >
               Tous
-            </button>
+            </Button>
             {AFFAIRE_TYPES.map(t => (
-              <button
-                key={t.value}
+              <Button variant="ghost"                 key={t.value}
                 className={`affaires-type-btn${filterType === t.value ? ' active' : ''}`}
                 style={filterType === t.value ? { '--type-color': t.color } : {}}
                 onClick={() => setFilterType(filterType === t.value ? '' : t.value)}
@@ -810,7 +808,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
               >
                 <span className="affaires-type-icon">{t.icon}</span>
                 <span className="affaires-type-label">{t.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -818,14 +816,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           {/* Vue semaine / mois */}
           <div className="affaires-tb-view-selector">
-            <button className={`affaires-tb-view-btn${viewMode === 'week' ? ' active' : ''}`} onClick={() => handleViewModeChange('week')}>Sem.</button>
-            <button className={`affaires-tb-view-btn${viewMode === 'month' ? ' active' : ''}`} onClick={() => handleViewModeChange('month')}>Mois</button>
+            <Button variant="ghost" className={`affaires-tb-view-btn${viewMode === 'week' ? ' active' : ''}`} onClick={() => handleViewModeChange('week')}>Sem.</Button>
+            <Button variant="ghost" className={`affaires-tb-view-btn${viewMode === 'month' ? ' active' : ''}`} onClick={() => handleViewModeChange('month')}>Mois</Button>
           </div>
 
           {/* Navigation dates */}
-          <Tooltip content="Période précédente"><button className="affaires-tb-nav-btn" onClick={goToPrevious}><ChevronLeft size={16} /></button></Tooltip>
-          <button className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`} onClick={goToToday}>Aujourd'hui</button>
-          <Tooltip content="Période suivante"><button className="affaires-tb-nav-btn" onClick={goToNext}><ChevronRight size={16} /></button></Tooltip>
+          <Tooltip content="Période précédente"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToPrevious}><ChevronLeft size={16} /></Button></Tooltip>
+          <Button variant="ghost" className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
+          <Tooltip content="Période suivante"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToNext}><ChevronRight size={16} /></Button></Tooltip>
           <div
             className="affaires-tb-date-label"
             onClick={() => { viewMode === 'month' ? setShowMonthSelector(true) : setShowWeekSelector(true); }}
@@ -857,8 +855,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           <Divider orientation="vertical" />
 
           {/* Boutons d'actions */}
-          <button
-            className="affaires-new-btn"
+          <Button variant="ghost"             className="affaires-new-btn"
             onClick={async () => {
               try {
                 const newAffaire = {
@@ -886,36 +883,33 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           >
             <Plus size={14} />
             <span>Nouvelle affaire</span>
-          </button>
+          </Button>
           {/* Import BL/BP unifié */}
-          <button
-            className="affaires-tb-bl-import-btn multi-import"
+          <Button variant="ghost"             className="affaires-tb-bl-import-btn multi-import"
             onClick={() => setShowMultiImport(true)}
             title="Importer un ou plusieurs BL / BP"
             style={{ gap: 4 }}
           >
             <PackagePlus size={14} /> Import BL/BP
-          </button>
-          <button
-            className="affaires-tb-bl-import-btn"
+          </Button>
+          <Button variant="ghost"             className="affaires-tb-bl-import-btn"
             onClick={() => setShowBatchAnalysis(true)}
             title="Analyse batch des BL PDF"
             style={{ gap: 4 }}
           >
             <BarChart2 size={14} /> Analyse batch
-          </button>
+          </Button>
 
           <Divider orientation="vertical" />
 
           {/* Stats */}
-          <button
-            className="affaires-tb-nav-btn"
+          <Button variant="ghost"             className="affaires-tb-nav-btn"
             onClick={handleRefresh}
             title="Rafraîchir les affaires"
             style={{ display: 'flex', alignItems: 'center', gap: 4 }}
           >
             <RefreshCw size={14} />
-          </button>
+          </Button>
           <div className="affaires-count-box">
             <span className="affaires-count-number">{filteredAffaires.length}</span>
             <span className="affaires-count-label">affaire{filteredAffaires.length !== 1 ? 's' : ''}</span>
@@ -1122,8 +1116,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       />
 
       {/* FAB création rapide d'affaire */}
-      <button
-        className="affaire-fab-create"
+      <Button variant="ghost"         className="affaire-fab-create"
         onClick={async () => {
           try {
             const newAffaire = {
@@ -1150,7 +1143,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         title="Nouvelle affaire"
       >
         <Plus size={22} />
-      </button>
+      </Button>
 
       {/* Sélecteurs de date */}
       {showMonthSelector && (

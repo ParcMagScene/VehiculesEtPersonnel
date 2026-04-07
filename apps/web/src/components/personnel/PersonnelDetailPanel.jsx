@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, User, Phone, Mail, Briefcase, Award, Calendar, MapPin, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
-import { Tag, Avatar, SectionHeader } from '@/design-system';
+import { Avatar, Button, SectionHeader, Tag } from '@/design-system';
 import { STATUS } from '../../constants';
 
 import './PersonnelDetailPanel.css';
@@ -196,9 +196,9 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
     <section className="pdp-section">
       <SectionHeader className="pdp-section-title" as="h4" icon={<Clock size={14} />} title="Absences" actions={
         onRequestLeave && (
-          <button className="pdp-absence-add-btn" onClick={() => onRequestLeave(personId)} title="Ajouter une absence">
+          <Button variant="ghost" className="pdp-absence-add-btn" onClick={() => onRequestLeave(personId)} title="Ajouter une absence">
             <Plus size={12} />
-          </button>
+          </Button>
         )
       } />
       {loading ? (
@@ -301,9 +301,9 @@ const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onE
             </div>
           </div>
         </div>
-        <button className="slide-panel-close" onClick={handleClose}>
+        <Button variant="ghost" className="slide-panel-close" onClick={handleClose}>
           <X size={18} />
-        </button>
+        </Button>
       </div>
 
       {/* Body */}
@@ -319,9 +319,9 @@ const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onE
       {/* Footer */}
       {onEdit && (
         <div className="pdp-slide-footer">
-          <button className="pdp-slide-edit-btn" onClick={() => onEdit?.(currentPerson)}>
+          <Button variant="ghost" className="pdp-slide-edit-btn" onClick={() => onEdit?.(currentPerson)}>
             <ExternalLink size={14} /> Modifier la fiche
-          </button>
+          </Button>
         </div>
       )}
     </div>

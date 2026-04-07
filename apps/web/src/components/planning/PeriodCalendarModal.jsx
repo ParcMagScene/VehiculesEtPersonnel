@@ -227,24 +227,24 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
               <div className="pcm-header-person">{person.firstName} {person.lastName || ''}</div>
             </div>
           </div>
-          <button className="pcm-close" onClick={onClose}>
+          <Button variant="ghost" className="pcm-close" onClick={onClose}>
             <X size={18} />
-          </button>
+          </Button>
         </div>
 
         {/* Calendrier */}
         <div className="pcm-body">
           <div className="pcm-calendar">
             <div className="pcm-cal-nav">
-              <button onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="pcm-nav-btn">
+              <Button variant="ghost" onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="pcm-nav-btn">
                 <ChevronLeft size={18} />
-              </button>
+              </Button>
               <span className="pcm-cal-month">
                 {format(currentMonth, 'MMMM yyyy', { locale: fr })}
               </span>
-              <button onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="pcm-nav-btn">
+              <Button variant="ghost" onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="pcm-nav-btn">
                 <ChevronRight size={18} />
-              </button>
+              </Button>
             </div>
 
             <div className="pcm-cal-grid">
@@ -264,8 +264,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                 );
 
                 return (
-                  <button
-                    key={i}
+                  <Button variant="ghost"                     key={i}
                     className={[
                       'pcm-cal-day',
                       !inMonth && 'other-month',
@@ -284,7 +283,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                     onMouseLeave={() => setHoverDate(null)}
                   >
                     {format(day, 'd')}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -320,18 +319,16 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                   <div className="pcm-option-row pcm-rdv-category">
                     <label>Type :</label>
                     <div className="pcm-category-toggle">
-                      <button
-                        className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
+                      <Button variant="ghost"                         className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
                         onClick={() => setRdvCategory('pro')}
                       >
                         <Briefcase size={14} /> Pro
-                      </button>
-                      <button
-                        className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
+                      </Button>
+                      <Button variant="ghost"                         className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
                         onClick={() => setRdvCategory('perso')}
                       >
                         <User size={14} /> Perso
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -355,24 +352,24 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                   <div className="pcm-option-row">
                     <label>Début :</label>
                     <div className="pcm-period-toggle">
-                      <button className={startPeriod === 'AM' ? 'active' : ''} onClick={() => setStartPeriod('AM')}>
+                      <Button variant="ghost" className={startPeriod === 'AM' ? 'active' : ''} onClick={() => setStartPeriod('AM')}>
                         Matin
-                      </button>
-                      <button className={startPeriod === 'PM' ? 'active' : ''} onClick={() => setStartPeriod('PM')}>
+                      </Button>
+                      <Button variant="ghost" className={startPeriod === 'PM' ? 'active' : ''} onClick={() => setStartPeriod('PM')}>
                         Après-midi
-                      </button>
+                      </Button>
                     </div>
                     <span className="pcm-date-display">{format(startDate, 'dd MMM yyyy', { locale: fr })}</span>
                   </div>
                   <div className="pcm-option-row">
                     <label>Fin :</label>
                     <div className="pcm-period-toggle">
-                      <button className={endPeriod === 'AM' ? 'active' : ''} onClick={() => setEndPeriod('AM')}>
+                      <Button variant="ghost" className={endPeriod === 'AM' ? 'active' : ''} onClick={() => setEndPeriod('AM')}>
                         Matin
-                      </button>
-                      <button className={endPeriod === 'PM' ? 'active' : ''} onClick={() => setEndPeriod('PM')}>
+                      </Button>
+                      <Button variant="ghost" className={endPeriod === 'PM' ? 'active' : ''} onClick={() => setEndPeriod('PM')}>
                         Journée entière
-                      </button>
+                      </Button>
                     </div>
                     <span className="pcm-date-display">
                       {endDate ? format(endDate, 'dd MMM yyyy', { locale: fr }) : format(startDate, 'dd MMM yyyy', { locale: fr })}

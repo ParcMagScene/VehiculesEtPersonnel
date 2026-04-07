@@ -452,13 +452,13 @@ function EventDetailsModal({
                         {reservation.startDate} ({reservation.startPeriod}) → {reservation.endDate} ({reservation.endPeriod})
                       </div>
                     </div>
-                    <button 
+                    <Button variant="ghost" 
                       className="btn-edit-reservation" 
                       onClick={() => handleEditReservation(reservation)}
                       title={currentUser?.isAdmin ? "Modifier" : "Voir"}
                     >
                       <Edit size={16} />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -514,21 +514,19 @@ function EventDetailsModal({
                       }}
                     />
                     <div className="drive-link-edit-actions">
-                      <button
-                        className="drive-link-btn drive-link-save"
+                      <Button variant="ghost"                         className="drive-link-btn drive-link-save"
                         onClick={handleSaveDriveLink}
                         disabled={savingDriveLink}
                         title="Enregistrer"
                       >
                         <Check size={14} />
-                      </button>
-                      <button
-                        className="drive-link-btn drive-link-cancel"
+                      </Button>
+                      <Button variant="ghost"                         className="drive-link-btn drive-link-cancel"
                         onClick={handleCancelEditDriveLink}
                         title="Annuler"
                       >
                         <X size={14} />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -562,21 +560,19 @@ function EventDetailsModal({
                         </a>
                         {currentUser?.isAdmin && (
                           <div className="drive-link-item-actions">
-                            <button
-                              className="drive-link-item-btn drive-link-item-edit"
+                            <Button variant="ghost"                               className="drive-link-item-btn drive-link-item-edit"
                               onClick={() => handleStartEditDriveLink(link.reservationId, link.index, link)}
                               title="Modifier"
                             >
                               <Edit size={13} />
-                            </button>
-                            <button
-                              className="drive-link-item-btn drive-link-item-delete"
+                            </Button>
+                            <Button variant="ghost"                               className="drive-link-item-btn drive-link-item-delete"
                               onClick={() => handleDeleteDriveLink(link.reservationId, link.index)}
                               title="Supprimer"
                               disabled={savingDriveLink}
                             >
                               <Trash2 size={13} />
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -595,7 +591,7 @@ function EventDetailsModal({
               actions={<div className="section-actions">
                 {currentUser?.isAdmin && (
                   <>
-                    <button 
+                    <Button variant="ghost" 
                       className="btn-import-bl" 
                       onClick={handleImportBL}
                       title="Importer un BL"
@@ -603,7 +599,7 @@ function EventDetailsModal({
                     >
                       <FileText size={16} />
                       Importer BL
-                    </button>
+                    </Button>
                     <label 
                       className={`btn-open-folder ${!event.affaire || uploading ? 'disabled' : ''}`}
                       title="Joindre des fichiers"
@@ -621,7 +617,7 @@ function EventDetailsModal({
                     </label>
                   </>
                 )}
-                <button 
+                <Button variant="ghost" 
                   className="btn-open-folder" 
                   onClick={handleOpenFolder}
                   title="Ouvrir le dossier"
@@ -629,7 +625,7 @@ function EventDetailsModal({
                 >
                   <Folder size={16} />
                   Ouvrir dossier
-                </button>
+                </Button>
               </div>}
             />
             
@@ -655,13 +651,12 @@ function EventDetailsModal({
                     <span className="file-name">{file.name}</span>
                     <span className="file-size">{file.size}</span>
                     {currentUser?.isAdmin && (
-                      <button
-                        className="btn-delete-attachment"
+                      <Button variant="ghost"                         className="btn-delete-attachment"
                         onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(file); }}
                         title="Supprimer cette pièce jointe"
                       >
                         <Trash2 size={14} />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 ))}
@@ -676,21 +671,19 @@ function EventDetailsModal({
             Fermer
           </Button>
           <div className="footer-actions">
-            <button
-              className="btn-display-event"
+            <Button variant="ghost"               className="btn-display-event"
               onClick={() => setShowDisplayDialog(true)}
               title="Ajouter à l'affichage dynamique"
             >
               📺 Affichage
-            </button>
-            <button
-              className="btn-bl-import"
+            </Button>
+            <Button variant="ghost"               className="btn-bl-import"
               onClick={() => setShowBLImport(true)}
               title="Importer un BL pour cet événement"
             >
               <FileText size={16} />
               Import BL
-            </button>
+            </Button>
             {currentUser?.isAdmin && onRequestDeleteEvent && (
               <Button
                 variant="danger"
@@ -712,14 +705,13 @@ function EventDetailsModal({
               </Button>
             )}
             {currentUser?.isAdmin && onRequestEditEvent && (
-              <button
-                className="btn-edit-event"
+              <Button variant="ghost"                 className="btn-edit-event"
                 onClick={() => onRequestEditEvent(event)}
                 title="Modifier l'événement"
               >
                 <Pencil size={16} />
                 Modifier
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -839,8 +831,7 @@ function EventDetailsModal({
                         handleFileClick(file);
                       }}
                     >
-                      <button
-                        className="folder-file-delete"
+                      <Button variant="ghost"                         className="folder-file-delete"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteAttachment(file);
@@ -848,7 +839,7 @@ function EventDetailsModal({
                         title={`Supprimer ${file.name}`}
                       >
                         <Trash2 size={14} />
-                      </button>
+                      </Button>
                       <div className="file-icon">
                         {file.name.toLowerCase().endsWith('.pdf') ? (
                           <FileText size={32} />

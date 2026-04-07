@@ -269,7 +269,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
         {/* Header */}
         <div className="modal-header">
           <h3><FileText size={20} /> Import Bon de Livraison</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="modal-close" onClick={onClose}><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -310,9 +310,9 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                     {getDocTypeLabel(docType)}
                   </span>
                 )}
-                <Tooltip content="Retirer"><button className="file-remove" onClick={handleRemoveFile}>
+                <Tooltip content="Retirer"><Button variant="ghost" className="file-remove" onClick={handleRemoveFile}>
                   <X size={16} />
-                </button></Tooltip>
+                </Button></Tooltip>
               </div>
 
               {/* Parsing progress */}
@@ -336,8 +336,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                 <label><Tag size={14} /> Type d'affaire</label>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {AFFAIRE_TYPE_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
+                    <Button variant="ghost"                       key={opt.value}
                       type="button"
                       onClick={() => setAffaireType(opt.value)}
                       style={{
@@ -350,7 +349,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                       }}
                     >
                       {opt.icon} {opt.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 {isBLVenteIncompat && (
@@ -499,13 +498,12 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                     )}
 
                     {/* Texte brut toggle */}
-                    <button
-                      className="raw-text-toggle"
+                    <Button variant="ghost"                       className="raw-text-toggle"
                       onClick={() => setShowRawText(!showRawText)}
                     >
                       {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
                       {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
-                    </button>
+                    </Button>
                     {showRawText && (
                       <div className="raw-text-block">{rawText}</div>
                     )}
@@ -523,13 +521,12 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                 }}>
                   <AlertTriangle size={16} />
                   Aucune donnée structurée détectée dans ce PDF.
-                  <button
-                    className="raw-text-toggle"
+                  <Button variant="ghost"                     className="raw-text-toggle"
                     onClick={() => setShowRawText(!showRawText)}
                     style={{ marginLeft: 'auto' }}
                   >
                     {showRawText ? 'Masquer' : 'Voir texte brut'}
-                  </button>
+                  </Button>
                 </div>
               )}
               {!parsing && !parsedData && showRawText && rawText && (
@@ -556,15 +553,14 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
           <div className="footer-right">
             <Button variant="ghost" onClick={onClose}>Annuler</Button>
             {parsedData && (
-              <button
-                className="btn-generate"
+              <Button variant="ghost"                 className="btn-generate"
                 onClick={handleGenerateEvents}
                 disabled={generating || saving || isBLVenteIncompat}
                 title={isBLVenteIncompat ? 'Type d\'affaire incompatible avec un BL Vente' : 'Importer le BL et créer les événements d\'affichage dynamique'}
               >
                 <Monitor size={15} />
                 {generating ? 'Génération...' : 'Importer + Créer événements'}
-              </button>
+              </Button>
             )}
             <Button
               variant="primary"

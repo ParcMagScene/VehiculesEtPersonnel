@@ -8,7 +8,7 @@ import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../../utils/affaireCons
 import AffaireBadge from '../AffaireBadge';
 import { useToast } from '../../hooks/useToast';
 import './EventTaskModal.css';
-import { Input, Select } from '@/design-system';
+import { Button, Input, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -244,7 +244,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
             <h3><Calendar size={18} /> Définir les tâches</h3>
             <p className="etm-event-title">{eventInfo.summary}</p>
           </div>
-          <button className="etm-close" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="etm-close" onClick={onClose}><X size={20} /></Button>
         </div>
 
         {/* Event summary */}
@@ -355,17 +355,17 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         {/* Footer */}
         <div className="etm-footer">
           {hasExistingTasks && (
-            <button className="etm-btn danger" onClick={handleDeleteAll} disabled={deleting}>
+            <Button variant="ghost" className="etm-btn danger" onClick={handleDeleteAll} disabled={deleting}>
               {deleting ? <Loader size={14} className="spin" /> : <AlertCircle size={14} />}
               Supprimer les tâches
-            </button>
+            </Button>
           )}
           <div className="etm-footer-right">
-            <button className="etm-btn secondary" onClick={onClose}>Annuler</button>
-            <button className="etm-btn primary" onClick={handleSave} disabled={saving || enabledSteps.length === 0}>
+            <Button variant="ghost" className="etm-btn secondary" onClick={onClose}>Annuler</Button>
+            <Button variant="ghost" className="etm-btn primary" onClick={handleSave} disabled={saving || enabledSteps.length === 0}>
               {saving ? <Loader size={14} className="spin" /> : <Check size={14} />}
               {hasExistingTasks ? 'Mettre à jour' : 'Créer'} {enabledSteps.length} tâche{enabledSteps.length > 1 ? 's' : ''}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

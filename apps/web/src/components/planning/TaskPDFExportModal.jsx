@@ -501,22 +501,22 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
               <span className="pdf-export-date">{dateFr}</span>
             </div>
           </div>
-          <button className="pdf-export-close" onClick={onClose}>
+          <Button variant="ghost" className="pdf-export-close" onClick={onClose}>
             <X size={18} />
-          </button>
+          </Button>
         </div>
 
         <div className="pdf-export-body">
           {/* Panneau de sélection (gauche) */}
           <div className="pdf-export-selection">
             <div className="selection-toolbar">
-              <button className="select-all-btn" onClick={toggleAll}>
+              <Button variant="ghost" className="select-all-btn" onClick={toggleAll}>
                 {selectedIds.size === totalItems ? (
                   <><CheckSquare size={15} /> Tout désélectionner</>
                 ) : (
                   <><Square size={15} /> Tout sélectionner</>
                 )}
-              </button>
+              </Button>
               <span className="selection-count">
                 {selectedIds.size}/{totalItems} élément{selectedIds.size > 1 ? 's' : ''}
               </span>

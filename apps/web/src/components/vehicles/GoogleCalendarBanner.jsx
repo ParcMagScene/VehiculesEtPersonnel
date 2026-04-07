@@ -8,7 +8,7 @@ import logger, { oauthLogger } from '../../utils/logger';
 import { capitalizeText } from '../../utils/dateUtils';
 import { Search, RefreshCw, Plus, Truck, Users, CalendarPlus } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
-import { Input, Spinner, InlineAlert, SearchBar, LoadingOverlay } from '@/design-system';
+import { Button, InlineAlert, Input, LoadingOverlay, SearchBar, Spinner } from '@/design-system';
 
 import { TIMING } from '../../constants';
 
@@ -948,13 +948,13 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
           <div className="auth-prompt">
             <h3>📅 Synchronisation Google Calendar</h3>
             <p>Connectez-vous pour afficher vos événements personnels</p>
-            <button 
+            <Button variant="ghost" 
               onClick={handleSignIn} 
               className="signin-button"
               disabled={!tokenClient}
             >
               {tokenClient ? 'Se connecter avec Google' : 'Chargement...'}
-            </button>
+            </Button>
             {error && (
               <InlineAlert>{error}</InlineAlert>
             )}
@@ -1000,20 +1000,18 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                   <span>Locations</span>
                   <span>Prestations</span>
                   <span>Installations</span>
-                  <button
-                    className="banner-reconnect-google"
+                  <Button variant="ghost"                     className="banner-reconnect-google"
                     onClick={handleReconnect}
                     title="Reconnecter / changer de compte Google"
                   >
                     <RefreshCw size={12} />
                     <span>Compte Google</span>
-                  </button>
+                  </Button>
                 </div>
               )}
               <div className="banner-header-actions">
                 {displayMode !== 'closed' && (
-                  <button
-                    className={`banner-search-toggle ${searchOpen ? 'active' : ''}`}
+                  <Button variant="ghost"                     className={`banner-search-toggle ${searchOpen ? 'active' : ''}`}
                     onClick={() => {
                       setSearchOpen(prev => !prev);
                       if (searchOpen) setSearchFilter('');
@@ -1022,15 +1020,15 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
                     title="Rechercher un événement"
                   >
                     <Search size={14} />
-                  </button>
+                  </Button>
                 )}
-                <button 
+                <Button variant="ghost" 
                   className="toggle-banner-button" 
                   onClick={cycleDisplayMode} 
                   title={getModeLabel()}
                 >
                   {getModeIcon()}
-                </button>
+                </Button>
               </div>
             </div>
             {searchOpen && displayMode !== 'closed' && (
@@ -1047,24 +1045,22 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
               </div>
             )}
             {/* Bouton contextuel : Nouvelle réservation / Nouvelle affectation / Nouvelle affaire */}
-            <button
-              className="banner-new-action-btn"
+            <Button variant="ghost"               className="banner-new-action-btn"
               onClick={activeModule === 'affaires' ? onNewAffaire : activeModule === 'personnel' ? onNewAssignment : onNewReservation}
               title={activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}
             >
               <Plus size={14} />
               <span>{activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}</span>
-            </button>
+            </Button>
             {/* Bouton Nouvel événement Google Calendar */}
             {isSignedIn && currentUser?.isAdmin && (
-              <button
-                className="banner-new-action-btn banner-new-event-btn"
+              <Button variant="ghost"                 className="banner-new-action-btn banner-new-event-btn"
                 onClick={handleOpenNewEvent}
                 title="Créer un événement Google Calendar"
               >
                 <CalendarPlus size={14} />
                 <span>Nouvel événement</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>

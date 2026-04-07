@@ -5,7 +5,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import './MobilePersonnel.css';
-import { Spinner, Avatar } from '@/design-system';
+import { Avatar, Button, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -150,9 +150,9 @@ function MobilePersonnel({ onBack, currentUser }) {
     return (
       <div className="mobile-personnel">
         <div className="mpers-header">
-          <button className="mpers-back" onClick={() => setSelectedPerson(null)}>
+          <Button variant="ghost" className="mpers-back" onClick={() => setSelectedPerson(null)}>
             <ArrowLeft size={20} />
-          </button>
+          </Button>
           <h2>{fullName || `Personnel #${p.id}`}</h2>
         </div>
 
@@ -240,35 +240,35 @@ function MobilePersonnel({ onBack, currentUser }) {
   return (
     <div className="mobile-personnel">
       <div className="mpers-header">
-        <button className="mpers-back" onClick={onBack}>
+        <Button variant="ghost" className="mpers-back" onClick={onBack}>
           <ArrowLeft size={20} />
-        </button>
+        </Button>
         <h2>{isSimpleUser ? 'Mon planning' : 'Personnel'}</h2>
         <div className="mpers-view-toggle">
-          <button className={viewMode === 'day' ? 'active' : ''} onClick={() => setViewMode('day')}>Jour</button>
-          <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Semaine</button>
+          <Button variant="ghost" className={viewMode === 'day' ? 'active' : ''} onClick={() => setViewMode('day')}>Jour</Button>
+          <Button variant="ghost" className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Semaine</Button>
         </div>
       </div>
 
       {/* Navigation date */}
       <div className="mpers-date-nav">
-        <button className="mpers-nav-btn" onClick={() => navigate(-1)}>
+        <Button variant="ghost" className="mpers-nav-btn" onClick={() => navigate(-1)}>
           <ChevronLeft size={20} />
-        </button>
-        <button className={`mpers-date-label ${isToday ? 'today' : ''}`} onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        </Button>
+        <Button variant="ghost" className={`mpers-date-label ${isToday ? 'today' : ''}`} onClick={() => setCurrentDate(startOfDay(new Date()))}>
           {viewMode === 'day'
             ? format(currentDate, 'EEEE d MMMM', { locale: fr })
             : `${format(dateRange.start, 'd MMM', { locale: fr })} — ${format(dateRange.end, 'd MMM', { locale: fr })}`
           }
-        </button>
-        <button className="mpers-nav-btn" onClick={() => navigate(1)}>
+        </Button>
+        <Button variant="ghost" className="mpers-nav-btn" onClick={() => navigate(1)}>
           <ChevronRight size={20} />
-        </button>
+        </Button>
       </div>
       {!isToday && (
-        <button className="mpers-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        <Button variant="ghost" className="mpers-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
           Aujourd'hui
-        </button>
+        </Button>
       )}
 
       {loading ? (

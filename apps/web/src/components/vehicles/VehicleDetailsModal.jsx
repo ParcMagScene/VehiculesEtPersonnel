@@ -3,6 +3,7 @@ import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import InterventionModal from '../planning/InterventionModal';
+import { Button } from '@/design-system';
 import './VehicleDetailsModal.css';
 
 const VehicleDetailsModal = ({ 
@@ -185,9 +186,9 @@ const VehicleDetailsModal = ({
               </div>
             </div>
           </div>
-          <button className="close-button" onClick={onClose}>
+          <Button variant="ghost" className="close-button" onClick={onClose}>
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         {/* Corps du modal */}
@@ -276,7 +277,7 @@ const VehicleDetailsModal = ({
           <div className="action-buttons">
             {isAdmin && (
               <>
-                <button 
+                <Button variant="ghost" 
                   className="action-btn schedule-btn"
                   onClick={() => {
                     onScheduleMaintenance(vehicle);
@@ -285,8 +286,8 @@ const VehicleDetailsModal = ({
                 >
                   <Calendar size={20} />
                   Programmer une intervention
-                </button>
-                <button 
+                </Button>
+                <Button variant="ghost" 
                   className="action-btn maintenance-btn"
                   onClick={() => {
                     onRequestMaintenance(vehicle);
@@ -295,10 +296,10 @@ const VehicleDetailsModal = ({
                 >
                   <Wrench size={20} />
                   Demander une intervention
-                </button>
+                </Button>
                 
                 {/* Bouton Kilométrage accessible uniquement aux admins */}
-                <button 
+                <Button variant="ghost" 
                   className="action-btn kilometrage-btn"
                   onClick={() => {
                     onOpenMaintenance(vehicle);
@@ -306,11 +307,11 @@ const VehicleDetailsModal = ({
                 >
                   <Gauge size={20} />
                   Kilométrage & Contrôles techniques
-                </button>
+                </Button>
               </>
             )}
             
-            <button 
+            <Button variant="ghost" 
               className="action-btn breakdown-btn"
               onClick={() => {
                 onReportBreakdown(vehicle);
@@ -319,7 +320,7 @@ const VehicleDetailsModal = ({
             >
               <AlertTriangle size={20} />
               Signaler une panne
-            </button>
+            </Button>
             {!isAdmin && (
               <p className="info-message">
                 ℹ️ Vous ne pouvez que signaler des pannes. Pour programmer une intervention ou gérer le kilométrage/contrôles techniques, contactez un administrateur.
@@ -378,13 +379,13 @@ const VehicleDetailsModal = ({
               <div className="empty-deadlines">
                 <p>Aucun contrôle technique enregistré</p>
                 {isAdmin && (
-                  <button 
+                  <Button variant="ghost" 
                     className="add-control-button"
                     onClick={() => onOpenMaintenance(vehicle)}
                   >
                     <Calendar size={16} />
                     Ajouter des contrôles techniques
-                  </button>
+                  </Button>
                 )}
               </div>
             )}

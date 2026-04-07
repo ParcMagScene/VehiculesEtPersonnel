@@ -5,6 +5,7 @@ import { Wrench, AlertTriangle, Calendar, Users, Briefcase, Clock, Ban } from 'l
 import api from '../../utils/api';
 import { STATUS } from '../../constants';
 
+import { Button } from '@/design-system';
 import './PlanningView.css';
 
 function PlanningView({ 
@@ -146,20 +147,18 @@ function PlanningView({
           {format(weekDays[0], "'Semaine du' d MMMM yyyy", { locale: fr })}
         </div>
         <div className="planning-mode-toggle">
-          <button
-            className={`planning-mode-btn ${planningMode === 'vehicles' ? 'active' : ''}`}
+          <Button variant="ghost"             className={`planning-mode-btn ${planningMode === 'vehicles' ? 'active' : ''}`}
             onClick={() => setPlanningMode('vehicles')}
           >
             <Calendar size={16} />
             <span>Véhicules</span>
-          </button>
-          <button
-            className={`planning-mode-btn ${planningMode === 'personnel' ? 'active' : ''}`}
+          </Button>
+          <Button variant="ghost"             className={`planning-mode-btn ${planningMode === 'personnel' ? 'active' : ''}`}
             onClick={() => setPlanningMode('personnel')}
           >
             <Users size={16} />
             <span>Personnel</span>
-          </button>
+          </Button>
         </div>
       </div>
 

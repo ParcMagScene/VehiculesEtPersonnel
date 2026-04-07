@@ -73,7 +73,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
           <form className="personnel-form compact" onSubmit={handleSubmit}>
             <div className="personnel-form-header">
               <h3>{editingPosition ? 'Modifier' : 'Nouveau poste'}</h3>
-              <button type="button" className="close-btn" onClick={resetForm}><X size={18} /></button>
+              <Button variant="ghost" type="button" className="close-btn" onClick={resetForm}><X size={18} /></Button>
             </div>
             <div className="personnel-form-grid">
               <div className="form-field">

@@ -13,7 +13,7 @@ import {
 import api from '../../utils/api';
 import { useInventory } from '../../hooks/useInventory';
 import './InventoryPanel.css';
-import { Input, Select, Table, Tabs, TabList, Tab, TabPanel, Spinner, Card, Tooltip } from '@/design-system';
+import { Button, Card, Input, Select, Spinner, Tab, TabList, TabPanel, Table, Tabs, Tooltip } from '@/design-system';
 
 // ═══════ SUB-VIEWS (inline pour éviter le surcoût de fichiers séparés) ═══════
 
@@ -72,9 +72,9 @@ function DashboardView({ stats, alerts, anomalies, onRefresh, onExportCSV, onRun
 
       {/* Actions rapides */}
       <div className="inv-actions-bar">
-        <button className="inv-btn" onClick={onRefresh}><RefreshCw size={14} /> Rafraîchir</button>
-        <button className="inv-btn" onClick={onExportCSV}><Download size={14} /> Export CSV</button>
-        <button className="inv-btn" onClick={onRunAbc}><Star size={14} /> Classification ABC</button>
+        <Button variant="ghost" className="inv-btn" onClick={onRefresh}><RefreshCw size={14} /> Rafraîchir</Button>
+        <Button variant="ghost" className="inv-btn" onClick={onExportCSV}><Download size={14} /> Export CSV</Button>
+        <Button variant="ghost" className="inv-btn" onClick={onRunAbc}><Star size={14} /> Classification ABC</Button>
       </div>
 
       {/* Répartition par dépôt */}
@@ -190,9 +190,9 @@ function LocationsView({ locations, onCreate, onUpdate, onDelete }) {
     <div className="inv-locations">
       <div className="inv-toolbar">
         <h3><MapPin size={18} /> Emplacements ({locations.length})</h3>
-        <button className="inv-btn primary" onClick={() => { resetForm(); setShowForm(!showForm); }}>
+        <Button variant="ghost" className="inv-btn primary" onClick={() => { resetForm(); setShowForm(!showForm); }}>
           <Plus size={14} /> Ajouter
-        </button>
+        </Button>
       </div>
 
       {showForm && (
@@ -216,8 +216,8 @@ function LocationsView({ locations, onCreate, onUpdate, onDelete }) {
             <Input type="number" placeholder="Capacité" value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} />
           </div>
           <div className="inv-form-actions">
-            <button type="submit" className="inv-btn primary">{editId ? 'Modifier' : 'Créer'}</button>
-            <button type="button" className="inv-btn" onClick={resetForm}>Annuler</button>
+            <Button variant="ghost" type="submit" className="inv-btn primary">{editId ? 'Modifier' : 'Créer'}</Button>
+            <Button variant="ghost" type="button" className="inv-btn" onClick={resetForm}>Annuler</Button>
           </div>
         </form>
       )}
@@ -236,8 +236,8 @@ function LocationsView({ locations, onCreate, onUpdate, onDelete }) {
               <td>{loc.zone || '—'}</td>
               <td>{loc.capacity || '—'}</td>
               <td className="inv-actions">
-                <Tooltip content="Modifier"><button className="inv-btn-icon" onClick={() => startEdit(loc)}><Edit size={14} /></button></Tooltip>
-                <Tooltip content="Supprimer"><button className="inv-btn-icon danger" onClick={() => onDelete(loc.id)}><Trash2 size={14} /></button></Tooltip>
+                <Tooltip content="Modifier"><Button variant="ghost" className="inv-btn-icon" onClick={() => startEdit(loc)}><Edit size={14} /></Button></Tooltip>
+                <Tooltip content="Supprimer"><Button variant="ghost" className="inv-btn-icon danger" onClick={() => onDelete(loc.id)}><Trash2 size={14} /></Button></Tooltip>
               </td>
             </tr>
           ))}
@@ -279,9 +279,9 @@ function PricesView() {
           <Input type="number" placeholder="ID article" value={itemId}
             onChange={e => setItemId(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && searchPrice()} />
-          <button className="inv-btn primary" onClick={searchPrice} disabled={loading}>
+          <Button variant="ghost" className="inv-btn primary" onClick={searchPrice} disabled={loading}>
             <Search size={14} /> {loading ? '…' : 'Analyser'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -378,7 +378,7 @@ function AnomaliesView({ anomalies, onDetect, onResolve }) {
     <div className="inv-anomalies">
       <div className="inv-toolbar">
         <h3><AlertTriangle size={18} /> Anomalies ({anomalies.length} ouvertes)</h3>
-        <button className="inv-btn primary" onClick={onDetect}><Search size={14} /> Lancer détection</button>
+        <Button variant="ghost" className="inv-btn primary" onClick={onDetect}><Search size={14} /> Lancer détection</Button>
       </div>
 
       {anomalies.length === 0 && <div className="inv-empty"><CheckCircle2 size={24} /> Aucune anomalie ouverte</div>}
@@ -404,12 +404,12 @@ function AnomaliesView({ anomalies, onDetect, onResolve }) {
               )}
             </div>
             <div className="inv-anomaly-actions">
-              <button className="inv-btn small" onClick={() => onResolve(a.id, 'resolved')}>
+              <Button variant="ghost" className="inv-btn small" onClick={() => onResolve(a.id, 'resolved')}>
                 <CheckCircle2 size={12} /> Résolu
-              </button>
-              <button className="inv-btn small muted" onClick={() => onResolve(a.id, 'ignored')}>
+              </Button>
+              <Button variant="ghost" className="inv-btn small muted" onClick={() => onResolve(a.id, 'ignored')}>
                 <XCircle size={12} /> Ignorer
-              </button>
+              </Button>
             </div>
           </div>
         ))}
@@ -438,7 +438,7 @@ function CountView({ onSubmitCount }) {
     <div className="inv-count">
       <div className="inv-toolbar">
         <h3><ClipboardCheck size={18} /> Comptage inventaire</h3>
-        <button className="inv-btn" onClick={addRow}><Plus size={14} /> Ajouter ligne</button>
+        <Button variant="ghost" className="inv-btn" onClick={addRow}><Plus size={14} /> Ajouter ligne</Button>
       </div>
 
       <div className="inv-count-grid">
@@ -448,12 +448,12 @@ function CountView({ onSubmitCount }) {
               onChange={e => updateRow(i, 'stock_item_id', e.target.value)} />
             <Input type="number" placeholder="Qté comptée" value={item.counted_qty}
               onChange={e => updateRow(i, 'counted_qty', e.target.value)} />
-            <button className="inv-btn-icon danger" onClick={() => removeRow(i)}><Trash2 size={14} /></button>
+            <Button variant="ghost" className="inv-btn-icon danger" onClick={() => removeRow(i)}><Trash2 size={14} /></Button>
           </div>
         ))}
       </div>
 
-      <button className="inv-btn primary" onClick={handleSubmit}><CheckCircle2 size={14} /> Valider le comptage</button>
+      <Button variant="ghost" className="inv-btn primary" onClick={handleSubmit}><CheckCircle2 size={14} /> Valider le comptage</Button>
 
       {result && (
         <div className="inv-count-result">

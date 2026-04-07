@@ -146,7 +146,7 @@ const GoogleCalendarConfig = () => {
               <div className="uri-item">
                 <strong>Origines JavaScript autorisées :</strong>
                 <code className="selectable">{window.location.origin}</code>
-                <button 
+                <Button variant="ghost" 
                   type="button"
                   className="btn-copy-small"
                   onClick={() => {
@@ -155,12 +155,12 @@ const GoogleCalendarConfig = () => {
                   }}
                 >
                   📋 Copier
-                </button>
+                </Button>
               </div>
               <div className="uri-item">
                 <strong>URI de redirection autorisés :</strong>
                 <code className="selectable">{window.location.origin}</code>
-                <button 
+                <Button variant="ghost" 
                   type="button"
                   className="btn-copy-small"
                   onClick={() => {
@@ -169,7 +169,7 @@ const GoogleCalendarConfig = () => {
                   }}
                 >
                   📋 Copier
-                </button>
+                </Button>
               </div>
             </div>
             <small>
@@ -261,14 +261,14 @@ const GoogleCalendarConfig = () => {
       <div className="oauth-actions">
         <h4>🔐 Gestion OAuth</h4>
         <div className="oauth-buttons">
-          <button 
+          <Button variant="ghost" 
             type="button"
             className="btn-revoke"
             onClick={handleRevokeOAuth}
           >
             <LogOut size={18} />
             Déconnecter OAuth
-          </button>
+          </Button>
           <Button 
             variant="secondary"
             onClick={handleOpenGooglePermissions}

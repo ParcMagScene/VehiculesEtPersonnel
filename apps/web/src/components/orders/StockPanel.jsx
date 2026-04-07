@@ -331,7 +331,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           <div className="stock-management-panel" onClick={e => e.stopPropagation()}>
             <div className="stock-management-header">
               <h2><Layers size={20} /> Gestion des catégories</h2>
-              <button onClick={onCloseManagement}><X size={20} /></button>
+              <Button variant="ghost" onClick={onCloseManagement}><X size={20} /></Button>
             </div>
             <CategoriesView
               categories={categories}
@@ -408,7 +408,7 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
           <span className="stock-slide-ref">{current.reference}</span>
         </div>
         <Tooltip content="Fermer">
-          <button className="stock-slide-close" onClick={handleClose}><X size={18} /></button>
+          <Button variant="ghost" className="stock-slide-close" onClick={handleClose}><X size={18} /></Button>
         </Tooltip>
       </div>
       <div className="stock-slide-body">
@@ -451,9 +451,9 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
             </Button>
           </Tooltip>
         )}
-        <button className="stock-slide-open-btn" onClick={() => onOpenDialog(current)}>
+        <Button variant="ghost" className="stock-slide-open-btn" onClick={() => onOpenDialog(current)}>
           <ExternalLink size={14} /> Ouvrir la fiche
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -586,23 +586,22 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
             placeholder="Toutes catégories"
             allowClear
           />
-          <button
-            className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
+          <Button variant="ghost"             className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
             onClick={() => onLowStockChange(!lowStockFilter)}
             title="Afficher uniquement les stocks bas"
           >
             <AlertTriangle size={14} />
             Stock bas
-          </button>
+          </Button>
         </div>
-        <button className="stock-add-btn" onClick={onImport} title="Importer un inventaire CSV">
+        <Button variant="ghost" className="stock-add-btn" onClick={onImport} title="Importer un inventaire CSV">
           <Upload size={16} />
           <span>Importer</span>
-        </button>
-        <button className="stock-add-btn" onClick={onAdd}>
+        </Button>
+        <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
           <Plus size={16} />
           <span>Nouvel article</span>
-        </button>
+        </Button>
       </div>
 
       {/* Table */}
@@ -610,7 +609,7 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
         <EmptyState
           icon={<Package size={48} />}
           title="Aucun article trouvé"
-          action={<button className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer un article</button>}
+          action={<Button variant="ghost" className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer un article</Button>}
         />
       ) : (
         <div className="stock-table-container">
@@ -696,20 +695,20 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
   return (
     <div className="stock-detail">
       <div className="stock-detail-header">
-        <button className="stock-back-btn" onClick={onBack}>
+        <Button variant="ghost" className="stock-back-btn" onClick={onBack}>
           <ArrowLeft size={18} /> Retour
-        </button>
+        </Button>
         <div className="stock-detail-actions">
-          <button className="stock-movement-btn" onClick={onMovement}>
+          <Button variant="ghost" className="stock-movement-btn" onClick={onMovement}>
             <TrendingUp size={16} /> Mouvement
-          </button>
-          <button className="stock-edit-btn" onClick={onEdit}>
+          </Button>
+          <Button variant="ghost" className="stock-edit-btn" onClick={onEdit}>
             <Edit2 size={16} /> Modifier
-          </button>
+          </Button>
           {isAdmin && (
-            <button className="stock-delete-btn" onClick={onDelete}>
+            <Button variant="ghost" className="stock-delete-btn" onClick={onDelete}>
               <Trash2 size={16} />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -766,9 +765,9 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
                   ? <>
                       {item.location_depot ? `D${item.location_depot} — ` : ''}{item.location_zone}{item.location_floor ? ` (${item.location_floor})` : ''}
                       {(depotZones || allDepotZones) && (
-                        <button className="stock-zone-map-btn" onClick={() => setShowMap(!showMap)} title="Voir sur le plan">
+                        <Button variant="ghost" className="stock-zone-map-btn" onClick={() => setShowMap(!showMap)} title="Voir sur le plan">
                           <Map size={13} /> Plan
-                        </button>
+                        </Button>
                       )}
                     </>
                   : item.location || '—'}
@@ -860,9 +859,9 @@ function MovementsView({ movements, items, onAddMovement, onRefresh }) {
             ))}
           </Select>
         </div>
-        <button className="stock-add-btn" onClick={onAddMovement}>
+        <Button variant="ghost" className="stock-add-btn" onClick={onAddMovement}>
           <Plus size={16} /> Nouveau mouvement
-        </button>
+        </Button>
       </div>
 
       {filtered.length === 0 ? (
@@ -926,9 +925,9 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
       <div className="stock-toolbar">
         <h3><Layers size={18} /> Catégories ({categories.length})</h3>
         {isAdmin && (
-          <button className="stock-add-btn" onClick={onAdd}>
+          <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
             <Plus size={16} /> Nouvelle catégorie
-          </button>
+          </Button>
         )}
       </div>
 
@@ -936,7 +935,7 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
         <EmptyState
           icon={<Layers size={48} />}
           title="Aucune catégorie créée"
-          action={isAdmin && <button className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer</button>}
+          action={isAdmin && <Button variant="ghost" className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer</Button>}
         />
       ) : (
         <div className="stock-categories-grid">
@@ -952,10 +951,10 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
               {isAdmin && (
                 <div className="cat-actions">
                   <Tooltip content="Modifier">
-                    <button onClick={() => onEdit(cat)}><Edit2 size={14} /></button>
+                    <Button variant="ghost" onClick={() => onEdit(cat)}><Edit2 size={14} /></Button>
                   </Tooltip>
                   <Tooltip content="Supprimer">
-                    <button onClick={() => onDelete(cat)} disabled={cat.item_count > 0}><Trash2 size={14} /></button>
+                    <Button variant="ghost" onClick={() => onDelete(cat)} disabled={cat.item_count > 0}><Trash2 size={14} /></Button>
                   </Tooltip>
                 </div>
               )}
@@ -1097,9 +1096,9 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                   location_floor: loc.location_floor || '',
                 }))}
               />
-              <button type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)}>
+              <Button variant="ghost" type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)}>
                 <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
-              </button>
+              </Button>
               {showMap && (() => {
                 const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
                 const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
@@ -1109,9 +1108,9 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                     {depotsList.length > 1 && (
                       <div className="stock-form-map-tabs">
                         {depotsList.map((d, i) => (
-                          <button key={d.id || i} type="button" className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
+                          <Button variant="ghost" key={d.id || i} type="button" className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
                             {d.name || `Dépôt ${d.id || i + 1}`}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     )}
@@ -1206,12 +1205,11 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
             <label>Icône</label>
             <div className="stock-icon-picker">
               {CATEGORY_ICONS.map(icon => (
-                <button
-                  key={icon}
+                <Button variant="ghost"                   key={icon}
                   type="button"
                   className={`icon-pick ${form.icon === icon ? 'active' : ''}`}
                   onClick={() => setForm(f => ({ ...f, icon }))}
-                >{icon}</button>
+                >{icon}</Button>
               ))}
             </div>
           </div>
@@ -1219,8 +1217,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
             <label>Couleur</label>
             <div className="stock-color-picker">
               {CATEGORY_COLORS.map(color => (
-                <button
-                  key={color}
+                <Button variant="ghost"                   key={color}
                   type="button"
                   className={`color-pick ${form.color === color ? 'active' : ''}`}
                   style={{ background: color }}
@@ -1292,15 +1289,14 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
             <label>Type de mouvement</label>
             <div className="stock-movement-types">
               {Object.entries(MOVEMENT_TYPES).map(([key, mt]) => (
-                <button
-                  key={key}
+                <Button variant="ghost"                   key={key}
                   type="button"
                   className={`movement-type-btn ${form.type === key ? 'active' : ''}`}
                   style={{ '--mt-color': mt.color }}
                   onClick={() => setForm(f => ({ ...f, type: key }))}
                 >
                   {mt.icon} {mt.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

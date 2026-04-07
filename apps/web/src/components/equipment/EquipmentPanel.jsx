@@ -190,11 +190,11 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
 
   return (
     <div className="eq-cascade-filter" ref={containerRef} onMouseLeave={startClose} onMouseEnter={cancelClose}>
-      <button className={`eq-cascade-btn ${value ? 'active' : ''}`} onClick={() => { setIsOpen(!isOpen); setExpandedFamily(null); setExpandedSub(null); }}>
+      <Button variant="ghost" className={`eq-cascade-btn ${value ? 'active' : ''}`} onClick={() => { setIsOpen(!isOpen); setExpandedFamily(null); setExpandedSub(null); }}>
         <Filter size={13} />
         <span>{getLabel()}</span>
         <ChevronRight size={12} className={`eq-cascade-arrow ${isOpen ? 'open' : ''}`} />
-      </button>
+      </Button>
       {isOpen && (
         <div className="eq-cascade-menu eq-cascade-l1">
           <div className="eq-cascade-item eq-cascade-all" onClick={() => handleSelect('')}>
@@ -353,11 +353,11 @@ const CategoryCascadePicker = ({ families, subfamilies, leafCategories, value, o
 
   return (
     <div className="eq-cascade-filter eq-cascade-picker" ref={containerRef} onMouseLeave={startClose} onMouseEnter={cancelClose}>
-      <button type="button" className={`eq-cascade-btn eq-cascade-picker-btn ${value.family_id ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+      <Button variant="ghost" type="button" className={`eq-cascade-btn eq-cascade-picker-btn ${value.family_id ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}>
         <Tag size={13} />
         <span>{getLabel()}</span>
         <ChevronRight size={12} className={`eq-cascade-arrow ${isOpen ? 'open' : ''}`} />
-      </button>
+      </Button>
       {isOpen && (
         <div className="eq-cascade-menu eq-cascade-l1 eq-cascade-picker-menu">
           <div className="eq-cascade-item eq-cascade-all" onClick={() => handleSelect('', '', '')}>
@@ -501,8 +501,8 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
             onKeyDown={(e) => handleKeyDown(e, item)}
             disabled={saving}
           />
-          <button className="eq-cat-edit-confirm" onClick={() => saveEdit(item)} disabled={saving}><Check size={14} /></button>
-          <button className="eq-cat-edit-cancel" onClick={cancelEdit}><X size={14} /></button>
+          <Button variant="ghost" className="eq-cat-edit-confirm" onClick={() => saveEdit(item)} disabled={saving}><Check size={14} /></Button>
+          <Button variant="ghost" className="eq-cat-edit-cancel" onClick={cancelEdit}><X size={14} /></Button>
         </span>
       );
     }
@@ -510,7 +510,7 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
       <>
         <span className={className}>{item.name}</span>
         <Tooltip content="Renommer">
-          <button className="eq-cat-edit-btn" onClick={(e) => startEdit(item, e)}><Edit2 size={12} /></button>
+          <Button variant="ghost" className="eq-cat-edit-btn" onClick={(e) => startEdit(item, e)}><Edit2 size={12} /></Button>
         </Tooltip>
       </>
     );
@@ -524,13 +524,13 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
         const famCount = countEquipment(fam.id);
         return (
           <div key={fam.id} className={`eq-cat-family ${isOpen ? 'open' : ''}`}>
-            <button className="eq-cat-family-btn" onClick={() => editingId !== fam.id && toggleFamily(fam.id)}>
+            <Button variant="ghost" className="eq-cat-family-btn" onClick={() => editingId !== fam.id && toggleFamily(fam.id)}>
               <ChevronRight size={14} className={`eq-cat-chevron ${isOpen ? 'rotated' : ''}`} />
               <span className="eq-cat-family-icon" style={{ color: fam.color || 'var(--theme-text-gray)' }}>{fam.icon || '📦'}</span>
               {renderEditableNameOrInput(fam, 'eq-cat-family-name')}
               <span className="eq-cat-badge-sub">{subs.length} cat.</span>
               <span className="eq-cat-badge-count">{famCount} éq.</span>
-            </button>
+            </Button>
             {isOpen && (
               <div className="eq-cat-children">
                 {subs.length === 0 && <span className="eq-cat-empty-child">Aucune catégorie</span>}
@@ -540,12 +540,12 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
                   const subCount = countSubEquipment(sub.id);
                   return (
                     <div key={sub.id} className={`eq-cat-sub ${isSubOpen ? 'open' : ''}`}>
-                      <button className="eq-cat-sub-btn" onClick={() => editingId !== sub.id && toggleSub(sub.id)}>
+                      <Button variant="ghost" className="eq-cat-sub-btn" onClick={() => editingId !== sub.id && toggleSub(sub.id)}>
                         <ChevronRight size={12} className={`eq-cat-chevron ${isSubOpen ? 'rotated' : ''}`} />
                         {renderEditableNameOrInput(sub, 'eq-cat-sub-name')}
                         <span className="eq-cat-badge-leaf">{leaves.length} types</span>
                         <span className="eq-cat-badge-count">{subCount} éq.</span>
-                      </button>
+                      </Button>
                       {isSubOpen && (
                         <div className="eq-cat-leaves">
                           {leaves.length === 0 && <span className="eq-cat-empty-child">Aucun type</span>}
@@ -876,13 +876,13 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
       <div className="eq-toolbar">
         <div className="eq-toolbar-top">
           <div className="eq-tabs">
-            <button className={`eq-tab ${subTab === 'inventory' ? 'active' : ''}`} onClick={() => setSubTab('inventory')}>
+            <Button variant="ghost" className={`eq-tab ${subTab === 'inventory' ? 'active' : ''}`} onClick={() => setSubTab('inventory')}>
               <Package size={14} /> Équipements
-            </button>
-            <button className={`eq-tab ${subTab === 'sav' ? 'active' : ''}`} onClick={() => setSubTab('sav')}>
+            </Button>
+            <Button variant="ghost" className={`eq-tab ${subTab === 'sav' ? 'active' : ''}`} onClick={() => setSubTab('sav')}>
               <Wrench size={14} /> SAV
               {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -962,39 +962,39 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
 
         {/* Stats */}
         <div className="eq-stats-row">
-          <button className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }} title="Tous">
+          <Button variant="ghost" className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }} title="Tous">
             <Package size={13} />
             <span className="eq-stat-value">{stats.total}</span>
-          </button>
-          <button className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`} onClick={() => { setFilterStatus('available'); setListFilter(''); setSubTab('inventory'); }} title="Disponibles">
+          </Button>
+          <Button variant="ghost" className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`} onClick={() => { setFilterStatus('available'); setListFilter(''); setSubTab('inventory'); }} title="Disponibles">
             <CheckCircle size={13} />
             <span className="eq-stat-value">{stats.available}</span>
-          </button>
-          <button className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_use'); setListFilter(''); setSubTab('inventory'); }} title="En service">
+          </Button>
+          <Button variant="ghost" className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_use'); setListFilter(''); setSubTab('inventory'); }} title="En service">
             <Clock size={13} />
             <span className="eq-stat-value">{stats.in_use}</span>
-          </button>
-          <button className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }} title="Maintenance">
+          </Button>
+          <Button variant="ghost" className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }} title="Maintenance">
             <Wrench size={13} />
             <span className="eq-stat-value">{stats.maintenance}</span>
-          </button>
+          </Button>
           {stats.openTickets > 0 && (
-            <button className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`} onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }} title="Tickets SAV">
+            <Button variant="ghost" className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`} onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }} title="Tickets SAV">
               <AlertTriangle size={13} />
               <span className="eq-stat-value">{stats.openTickets}</span>
-            </button>
+            </Button>
           )}
           {favoriteIds.size > 0 && (
-            <button className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }} title="Favoris">
+            <Button variant="ghost" className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }} title="Favoris">
               <Star size={13} />
               <span className="eq-stat-value">{favoriteIds.size}</span>
-            </button>
+            </Button>
           )}
           {watchIds.size > 0 && (
-            <button className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }} title="Surveillance">
+            <Button variant="ghost" className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }} title="Surveillance">
               <Eye size={13} />
               <span className="eq-stat-value">{watchIds.size}</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -1244,7 +1244,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
           <div className="eq-management-panel" onClick={(e) => e.stopPropagation()}>
             <div className="eq-management-header">
               <h2><Package size={22} /> Gestion du Matériel</h2>
-              <button className="eq-management-close" onClick={onCloseManagement}><X size={20} /></button>
+              <Button variant="ghost" className="eq-management-close" onClick={onCloseManagement}><X size={20} /></Button>
             </div>
 
             {/* Onglets de gestion */}
@@ -1256,15 +1256,14 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                 { id: 'stats', label: 'Statistiques', icon: Hash, color: '#10b981' },
                 { id: 'media', label: 'Médias', icon: ImageIcon, color: '#ec4899' },
               ].map(tab => (
-                <button
-                  key={tab.id}
+                <Button variant="ghost"                   key={tab.id}
                   className={`eq-mgmt-tab ${mgmtTab === tab.id ? 'active' : ''}`}
                   onClick={() => setMgmtTab(tab.id)}
                   style={{ '--tab-color': tab.color }}
                 >
                   <tab.icon size={16} />
                   <span>{tab.label}</span>
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -1557,7 +1556,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                           style={{ flex: 1, fontSize: 11, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--theme-border-medium)', minWidth: 0 }}
                           autoFocus
                         />
-                        <button onClick={handleRename} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--theme-primary)', color: 'var(--theme-text-inverse)', border: 'none', cursor: 'pointer' }}>OK</button>
+                        <Button variant="ghost" onClick={handleRename} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--theme-primary)', color: 'var(--theme-text-inverse)', border: 'none', cursor: 'pointer' }}>OK</Button>
                       </div>
                     ) : (
                       <span className="eq-media-card-name" title={p}>{p.length > 20 ? p.slice(0, 17) + '...' : p}</span>
@@ -1590,7 +1589,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                           ))}
                           {linkFilteredEquipment.length === 0 && <div style={{ padding: 4, opacity: 0.5 }}>Aucun résultat</div>}
                         </div>
-                        <button onClick={() => { setLinkingPhoto(null); setLinkSearch(''); }} style={{ fontSize: 9, padding: '1px 6px', marginTop: 2, borderRadius: 3, background: 'var(--theme-bg-tertiary)', border: '1px solid var(--theme-border-medium)', cursor: 'pointer' }}>Annuler</button>
+                        <Button variant="ghost" onClick={() => { setLinkingPhoto(null); setLinkSearch(''); }} style={{ fontSize: 9, padding: '1px 6px', marginTop: 2, borderRadius: 3, background: 'var(--theme-bg-tertiary)', border: '1px solid var(--theme-border-medium)', cursor: 'pointer' }}>Annuler</Button>
                       </div>
                     ) : (
                       <span className="eq-media-card-nolink" onClick={() => setLinkingPhoto(p)} style={{ cursor: 'pointer' }} title="Cliquer pour associer manuellement">
@@ -1600,19 +1599,19 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                   </div>
                   <div className="eq-media-card-actions" style={{ display: 'flex', gap: 2 }}>
                     <Tooltip content="Renommer">
-                      <button className="eq-media-card-action-btn" onClick={() => { setRenamingPhoto(p); setRenameValue(p.replace(/\.[^.]+$/, '')); }}>
+                      <Button variant="ghost" className="eq-media-card-action-btn" onClick={() => { setRenamingPhoto(p); setRenameValue(p.replace(/\.[^.]+$/, '')); }}>
                         <Edit2 size={12} />
-                      </button>
+                      </Button>
                     </Tooltip>
                     <Tooltip content="Associer manuellement">
-                      <button className="eq-media-card-action-btn" onClick={() => setLinkingPhoto(linkingPhoto === p ? null : p)}>
+                      <Button variant="ghost" className="eq-media-card-action-btn" onClick={() => setLinkingPhoto(linkingPhoto === p ? null : p)}>
                         <Link2 size={12} />
-                      </button>
+                      </Button>
                     </Tooltip>
                     <Tooltip content="Supprimer cette photo">
-                      <button className="eq-media-card-delete" onClick={() => handleDelete(p)}>
+                      <Button variant="ghost" className="eq-media-card-delete" onClick={() => handleDelete(p)}>
                         <Trash2 size={13} />
-                      </button>
+                      </Button>
                     </Tooltip>
                   </div>
                 </div>
@@ -1661,7 +1660,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
       {previewPhoto && (
         <div className="eq-media-preview-overlay" onMouseDown={(e) => e.target === e.currentTarget && setPreviewPhoto(null)}>
           <div className="eq-media-preview-content" onClick={(e) => e.stopPropagation()}>
-            <button className="eq-media-preview-close" onClick={() => setPreviewPhoto(null)}><X size={22} /></button>
+            <Button variant="ghost" className="eq-media-preview-close" onClick={() => setPreviewPhoto(null)}><X size={22} /></Button>
             <img
               src={typeof previewPhoto === 'string' ? `/Photos/Matériel/${previewPhoto}` : previewPhoto.src}
               alt={typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}
@@ -1827,21 +1826,21 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
               <Hash size={14} />
               <code className="eq-uid-code">{eq.uid}</code>
               <Tooltip content="Afficher QR Code">
-                <button className="eq-btn-qr" onClick={() => setShowQR(!showQR)}>
+                <Button variant="ghost" className="eq-btn-qr" onClick={() => setShowQR(!showQR)}>
                   <QrCode size={16} />
-                </button>
+                </Button>
               </Tooltip>
               {onToggleList && (
                 <>
                   <Tooltip content={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
-                    <button className={`eq-btn-list-star ${isFav ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'favorite'); }}>
+                    <Button variant="ghost" className={`eq-btn-list-star ${isFav ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'favorite'); }}>
                       <Star size={16} fill={isFav ? '#f59e0b' : 'none'} />
-                    </button>
+                    </Button>
                   </Tooltip>
                   <Tooltip content={isWatch ? 'Retirer de la surveillance' : 'Mettre en surveillance'}>
-                    <button className={`eq-btn-list-eye ${isWatch ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'watch'); }}>
+                    <Button variant="ghost" className={`eq-btn-list-eye ${isWatch ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'watch'); }}>
                       <Eye size={16} />
-                    </button>
+                    </Button>
                   </Tooltip>
                 </>
               )}
@@ -1911,9 +1910,9 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
               <span className="eq-field-value">
                 {(eq.location_zone || eq.locationZone) ? `${(eq.location_depot || eq.locationDepot) ? `D${eq.location_depot || eq.locationDepot} — ` : ''}${eq.location_zone || eq.locationZone}${(eq.location_code || eq.locationCode) ? ` — ${eq.location_code || eq.locationCode}` : ''}${(eq.location_floor || eq.locationFloor) ? ` (${eq.location_floor || eq.locationFloor})` : ''}` : eq.location}
                 {(eq.location_zone || eq.locationZone) && onOpenDepotMap && (
-                  <button className="eq-zone-map-btn" onClick={(e) => { e.stopPropagation(); onOpenDepotMap(eq.location_zone || eq.locationZone, eq.name); }} title="Voir sur le plan">
+                  <Button variant="ghost" className="eq-zone-map-btn" onClick={(e) => { e.stopPropagation(); onOpenDepotMap(eq.location_zone || eq.locationZone, eq.name); }} title="Voir sur le plan">
                     <Map size={13} /> Plan
-                  </button>
+                  </Button>
                 )}
               </span>
             </div>
@@ -2063,9 +2062,9 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
           <span className="eq-slide-type">{currentEq.categoryIcon || currentEq.category_icon || '📦'} {currentEq.categoryName || currentEq.category_name || ''}</span>
         </div>
         <Tooltip content="Fermer">
-          <button className="eq-slide-close" onClick={handleClose}>
+          <Button variant="ghost" className="eq-slide-close" onClick={handleClose}>
             <X size={18} />
-          </button>
+          </Button>
         </Tooltip>
       </div>
       <div className="eq-slide-body">
@@ -2086,9 +2085,9 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
             </Button>
           </Tooltip>
         )}
-        <button className="eq-slide-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentEq); }}>
+        <Button variant="ghost" className="eq-slide-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentEq); }}>
           <ExternalLink size={14} /> Ouvrir la fiche complète
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -2127,9 +2126,9 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
             </span>
           </div>
           <Tooltip content="Fermer">
-            <button className="eq-dialog-close" onClick={handleClose} style={{ flexShrink: 0, marginLeft: '12px' }}>
+            <Button variant="ghost" className="eq-dialog-close" onClick={handleClose} style={{ flexShrink: 0, marginLeft: '12px' }}>
               <X size={20} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
         <div className="eq-dialog-body">
@@ -2238,7 +2237,7 @@ const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onD
                 <td>
                   <div className="eq-table-actions">
                     <Tooltip content="Modifier">
-                      <button onClick={(e) => { e.stopPropagation(); onEdit(t); }}><Edit2 size={14} /></button>
+                      <Button variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(t); }}><Edit2 size={14} /></Button>
                     </Tooltip>
                     <Tooltip content="Supprimer">
                       <Button variant="danger" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); onDelete(t.id); }}><Trash2 size={14} /></Button>
@@ -2423,9 +2422,9 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                 </div>
                 {form.photo && (
                   <Tooltip content="Retirer la photo">
-                    <button type="button" className="eq-photo-picker-clear" onClick={() => setForm(f => ({ ...f, photo: '' }))}>
+                    <Button variant="ghost" type="button" className="eq-photo-picker-clear" onClick={() => setForm(f => ({ ...f, photo: '' }))}>
                       <X size={14} />
-                    </button>
+                    </Button>
                   </Tooltip>
                 )}
               </div>
@@ -2436,8 +2435,8 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                     <Input type="text" value={photoSearch} onChange={(e) => setPhotoSearch(e.target.value)} placeholder="Rechercher..." autoFocus />
                   </div>
                   <div className="eq-photo-picker-tabs">
-                    <button type="button" className={`eq-picker-tab${pickerTab === 'photos' ? ' active' : ''}`} onClick={() => setPickerTab('photos')}>📸 Photos ({photosList.length})</button>
-                    <button type="button" className={`eq-picker-tab${pickerTab === 'generic' ? ' active' : ''}`} onClick={() => setPickerTab('generic')}>🖼️ Génériques ({allGenerics.length})</button>
+                    <Button variant="ghost" type="button" className={`eq-picker-tab${pickerTab === 'photos' ? ' active' : ''}`} onClick={() => setPickerTab('photos')}>📸 Photos ({photosList.length})</Button>
+                    <Button variant="ghost" type="button" className={`eq-picker-tab${pickerTab === 'generic' ? ' active' : ''}`} onClick={() => setPickerTab('generic')}>🖼️ Génériques ({allGenerics.length})</Button>
                   </div>
                   <div className="eq-photo-picker-grid">
                     {/* Option icône par défaut (pas de photo) */}
@@ -2539,9 +2538,9 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                     location_floor: loc.location_floor || '',
                   }))}
                 />
-                <button type="button" className="eq-form-map-toggle" onClick={() => setShowMap(true)}>
+                <Button variant="ghost" type="button" className="eq-form-map-toggle" onClick={() => setShowMap(true)}>
                   <Map size={14} /> Choisir sur le plan
-                </button>
+                </Button>
                 {showMap && (() => {
                   const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
                   const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
@@ -2555,9 +2554,9 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                         {depotsList.length > 1 && (
                           <div className="eq-form-map-tabs" style={{ position: 'static', margin: '0 auto 0 16px' }}>
                             {depotsList.map((d, i) => (
-                              <button key={d.id || i} type="button" className={`eq-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
+                              <Button variant="ghost" key={d.id || i} type="button" className={`eq-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
                                 {d.name || `Dépôt ${d.id || i + 1}`}
-                              </button>
+                              </Button>
                             ))}
                           </div>
                         )}
@@ -2881,9 +2880,9 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
                     <div style={{ fontSize: '0.7rem', color: 'var(--theme-accent, #2563eb)', fontWeight: 500 }}>S/N {selectedEquipment.serialNumber}</div>
                   )}
                 </div>
-                <button type="button" onClick={() => setSelectedEquipment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--theme-text-muted)', padding: '4px' }}>
+                <Button variant="ghost" type="button" onClick={() => setSelectedEquipment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--theme-text-muted)', padding: '4px' }}>
                   <X size={16} />
-                </button>
+                </Button>
               </div>
             ) : (
               <div style={{ position: 'relative', zIndex: 100 }}>
@@ -3008,9 +3007,9 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onDelete, 
           <span className="eq-slide-status" style={{ background: tst.color }}>{tst.label}</span>
         </div>
         <Tooltip content="Fermer">
-          <button className="eq-slide-close" onClick={handleClose}>
+          <Button variant="ghost" className="eq-slide-close" onClick={handleClose}>
             <X size={18} />
-          </button>
+          </Button>
         </Tooltip>
       </div>
       <div className="eq-slide-body">
@@ -3027,9 +3026,9 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onDelete, 
       </div>
       <div className="eq-slide-footer">
         <Button variant="secondary" onClick={() => onEdit(t)} style={{ flex: 1 }}><Edit2 size={14} /> Modifier</Button>
-        <button className="eq-slide-open-btn" onClick={() => onOpenDialog(t)} style={{ flex: 1 }}>
+        <Button variant="ghost" className="eq-slide-open-btn" onClick={() => onOpenDialog(t)} style={{ flex: 1 }}>
           <ExternalLink size={14} /> Fiche complète
-        </button>
+        </Button>
         {onDelete && <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(t.id)} style={{ padding: '6px 10px' }}><Trash2 size={14} /></Button></Tooltip>}
       </div>
     </div>
@@ -3075,9 +3074,9 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
             {(eq || t.importName || t.importCode) && <span className="eq-dialog-equip-ref">{eq ? `${eq.categoryIcon || '📦'} ${cleanName(eq.name)}` : (t.importName || '')} {displayRef ? `(${displayRef})` : ''}</span>}
           </div>
           <Tooltip content="Fermer">
-            <button className="eq-dialog-close" onClick={handleClose}>
+            <Button variant="ghost" className="eq-dialog-close" onClick={handleClose}>
               <X size={20} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
         <div className="eq-dialog-body">

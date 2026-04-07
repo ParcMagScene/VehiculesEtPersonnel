@@ -1,15 +1,16 @@
 import React, { Suspense, lazy } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
+import { Button } from '@/design-system';
 const InventoryPanel = lazy(() => import('../inventory/InventoryPanel'));
 
 function MobileInventory({ onBack }) {
   return (
     <div className="mobile-module-wrapper">
       <div className="mobile-module-header">
-        <button className="mobile-back-btn" onClick={onBack}>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack}>
           <ArrowLeft size={20} />
-        </button>
+        </Button>
         <h2>Inventaire</h2>
       </div>
       <div className="mobile-module-content">

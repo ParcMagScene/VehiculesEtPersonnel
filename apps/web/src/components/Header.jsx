@@ -8,7 +8,7 @@ import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './planning/OverdueInterventionModal';
 import ProfileEditModal from './auth/ProfileEditModal';
 import { useToast } from '../hooks/useToast';
-import { Dialog, Textarea, Avatar } from '@/design-system';
+import { Avatar, Button, Dialog, Textarea } from '@/design-system';
 import { STATUS } from '../constants';
 
 import './Header.css';
@@ -224,18 +224,18 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         <div className="header-title-container">
           <div className="header-logo-area">
             <img src="/Logos/LogoEmagTransp.png" alt="eM@g Scene" className="header-logo" />
-            <button className="help-trigger-btn" onClick={onOpenHelp} title="Aide — Guide d'utilisation" aria-label="Aide">
+            <Button variant="ghost" className="help-trigger-btn" onClick={onOpenHelp} title="Aide — Guide d'utilisation" aria-label="Aide">
               <HelpCircle size={18} />
               <span>Aide</span>
-            </button>
-            <button 
+            </Button>
+            <Button variant="ghost" 
               className="theme-toggle-btn" 
               onClick={onToggleTheme} 
               title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'} 
               aria-label="Basculer le thème"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+            </Button>
           </div>
           <div className="module-tabs" role="tablist" aria-label="Module principal">
             {(() => {
@@ -263,8 +263,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               return orderedTabs.map(tab => {
                 const Icon = tab.icon;
                 return (
-                  <button
-                    key={tab.id}
+                  <Button variant="ghost"                     key={tab.id}
                     className={`module-tab ${activeModule === tab.id ? 'active' : ''}`}
                     onClick={() => setActiveModule(tab.id)}
                     role="tab"
@@ -272,7 +271,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   >
                     <Icon size={18} />
                     <span>{tab.label}</span>
-                  </button>
+                  </Button>
                 );
               });
             })()}
@@ -291,7 +290,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   notificationFilter === 'reservations' ? 'Demandes de réservation' :
                   'Notifications'
                 }</h3>
-                <button className="close-popup-button" onClick={() => setShowNotificationsPopup(false)}>✕</button>
+                <Button variant="ghost" className="close-popup-button" onClick={() => setShowNotificationsPopup(false)}>✕</Button>
               </div>
               <div className="notifications-popup-content">
                 {((notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
@@ -508,8 +507,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   <span className="notification-registration">{vehicle.registration}</span>
                                 )}
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    className="notif-action-btn create-intervention"
+                                  <Button variant="ghost"                                     className="notif-action-btn create-intervention"
                                     onClick={() => {
                                       setShowNotificationsPopup(false);
                                       setExpandedReportedId(null);
@@ -520,7 +518,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   >
                                     <Wrench size={14} />
                                     Créer une intervention
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
                             );
@@ -627,8 +625,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                     autoFocus
                                   />
                                   <div className="reject-form-buttons">
-                                    <button
-                                      className="notif-action-btn confirm-reject"
+                                    <Button variant="ghost"                                       className="notif-action-btn confirm-reject"
                                       disabled={!rejectionReason.trim()}
                                       onClick={async () => {
                                         try {
@@ -644,22 +641,20 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                       }}
                                     >
                                       Confirmer le refus
-                                    </button>
-                                    <button
-                                      className="notif-action-btn cancel-reject"
+                                    </Button>
+                                    <Button variant="ghost"                                       className="notif-action-btn cancel-reject"
                                       onClick={() => {
                                         setRejectingRequestId(null);
                                         setRejectionReason('');
                                       }}
                                     >
                                       Annuler
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               ) : (
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    className="notif-action-btn approve"
+                                  <Button variant="ghost"                                     className="notif-action-btn approve"
                                     onClick={async () => {
                                       try {
                                         await api.approveReservationRequest(request.id);
@@ -674,14 +669,13 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   >
                                     <Check size={14} />
                                     Approuver
-                                  </button>
-                                  <button
-                                    className="notif-action-btn reject"
+                                  </Button>
+                                  <Button variant="ghost"                                     className="notif-action-btn reject"
                                     onClick={() => setRejectingRequestId(request.id)}
                                   >
                                     <X size={14} />
                                     Refuser
-                                  </button>
+                                  </Button>
                                 </div>
                               )}
                             </div>
@@ -703,7 +697,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
               <div className="notifications-popup-header">
                 <h3><CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" /> Demandes de réservation</h3>
-                <button className="close-popup-button" onClick={() => setShowRequestsPopup(false)}>✕</button>
+                <Button variant="ghost" className="close-popup-button" onClick={() => setShowRequestsPopup(false)}>✕</Button>
               </div>
               <div className="notifications-popup-content">
                 {pendingReservationRequests.length === 0 ? (
@@ -805,8 +799,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                     autoFocus
                                   />
                                   <div className="reject-form-buttons">
-                                    <button
-                                      className="notif-action-btn confirm-reject"
+                                    <Button variant="ghost"                                       className="notif-action-btn confirm-reject"
                                       disabled={!rejectionReason.trim()}
                                       onClick={async () => {
                                         try {
@@ -821,19 +814,17 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                       }}
                                     >
                                       <X size={14} /> Confirmer le refus
-                                    </button>
-                                    <button
-                                      className="notif-action-btn dismiss"
+                                    </Button>
+                                    <Button variant="ghost"                                       className="notif-action-btn dismiss"
                                       onClick={() => { setRejectingRequestId(null); setRejectionReason(''); }}
                                     >
                                       Annuler
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               ) : (
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    className="notif-action-btn approve"
+                                  <Button variant="ghost"                                     className="notif-action-btn approve"
                                     onClick={() => {
                                       setConfirmDialog({
                                         title: 'Approuver la demande',
@@ -855,14 +846,13 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   >
                                     <Check size={14} />
                                     Valider
-                                  </button>
-                                  <button
-                                    className="notif-action-btn reject"
+                                  </Button>
+                                  <Button variant="ghost"                                     className="notif-action-btn reject"
                                     onClick={() => { setRejectingRequestId(request.id); setRejectionReason(''); }}
                                   >
                                     <X size={14} />
                                     Refuser
-                                  </button>
+                                  </Button>
                                 </div>
                               )}
                             </div>
@@ -961,23 +951,23 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             )}
             </div>
             
-            <button className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages" title="Messages">
+            <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages" title="Messages">
               <MessageSquare size={20} />
               {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
-            </button>
+            </Button>
 
             {currentUser?.isAdmin && (
-              <button className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing" title="Mailing">
+              <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing" title="Mailing">
                 <Mail size={20} />
-              </button>
+              </Button>
             )}
 
-            <button className="qr-button" onClick={() => setShowQRCodeModal(true)} aria-label="Afficher le QR code mobile">
+            <Button variant="ghost" className="qr-button" onClick={() => setShowQRCodeModal(true)} aria-label="Afficher le QR code mobile">
               <QrCode size={20} />
-            </button>
+            </Button>
 
             {(activeModule === 'vehicles' || activeModule === 'equipment' || activeModule === 'stock') && (
-            <button 
+            <Button variant="ghost" 
               className="management-button" 
               onClick={onOpenManagement} 
               aria-label="Ouvrir le panneau de gestion"
@@ -985,10 +975,10 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             >
               {activeModule === 'vehicles' ? <Truck size={18} /> : activeModule === 'stock' ? <Layers size={18} /> : <Package size={18} />}
               Gestion
-            </button>
+            </Button>
             )}
 
-            <button 
+            <Button variant="ghost" 
               className="settings-button" 
               onClick={onOpenSettings} 
               aria-label="Ouvrir les paramètres"
@@ -1018,12 +1008,11 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   {pendingAccessRequests}
                 </span>
               )}
-            </button>
+            </Button>
 
             {currentUser && (
               <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
+                <Button variant="ghost"                   onClick={() => setShowUserMenu(!showUserMenu)}
                   title={currentUser.name}
                   aria-label={`Menu utilisateur (${currentUser.name})`}
                   style={{
@@ -1051,7 +1040,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   }}
                 >
                   <Avatar name={currentUser.name} avatar={currentUser.avatar} size={36} />
-                </button>
+                </Button>
 
                 {showUserMenu && (
                   <>
@@ -1067,44 +1056,39 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                         </div>
                       </div>
                       
-                      <button
-                        className="user-menu-btn"
+                      <Button variant="ghost"                         className="user-menu-btn"
                         onClick={() => { setShowUserMenu(false); setShowProfileModal(true); }}
                       >
                         <UserCog size={16} />
                         Mon profil
-                      </button>
+                      </Button>
 
-                      <button
-                        className="user-menu-btn"
+                      <Button variant="ghost"                         className="user-menu-btn"
                         onClick={() => { setShowUserMenu(false); if (onOpenPreferences) onOpenPreferences(); }}
                       >
                         <Settings size={16} />
                         Préférences
-                      </button>
+                      </Button>
 
-                      <button
-                        className="user-menu-btn"
+                      <Button variant="ghost"                         className="user-menu-btn"
                         onClick={() => { setShowUserMenu(false); onLogout(); }}
                       >
                         <LayoutGrid size={16} />
                         Changer d'utilisateur
-                      </button>
+                      </Button>
 
-                      <button
-                        className="user-menu-btn danger"
+                      <Button variant="ghost"                         className="user-menu-btn danger"
                         onClick={() => { setShowUserMenu(false); onLogout(); }}
                       >
                         <XCircle size={16} />
                         Se déconnecter
-                      </button>
+                      </Button>
 
-                      <button
-                        className="user-menu-cancel"
+                      <Button variant="ghost"                         className="user-menu-cancel"
                         onClick={() => setShowUserMenu(false)}
                       >
                         Annuler
-                      </button>
+                      </Button>
                     </div>
                   </>
                 )}

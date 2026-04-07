@@ -162,19 +162,19 @@ const VideoPanel = ({ currentUser }) => {
         <div className="video-panel__actions">
           {/* Vues */}
           <div className="video-panel__view-toggle">
-            <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} title="Vue grille">
+            <Button variant="ghost" className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} title="Vue grille">
               <Grid size={18} />
-            </button>
-            <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste">
+            </Button>
+            <Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste">
               <List size={18} />
-            </button>
-            <button className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements">
+            </Button>
+            <Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements">
               <Film size={18} />
-            </button>
+            </Button>
             {isAdmin && (
-              <button className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
+              <Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
                 <Settings size={18} />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -184,28 +184,27 @@ const VideoPanel = ({ currentUser }) => {
               <Divider orientation="vertical" />
               <div className="video-panel__layout-btns">
                 {GRID_LAYOUTS.map(l => (
-                  <button
-                    key={l.id}
+                  <Button variant="ghost"                     key={l.id}
                     className={`video-panel__layout-btn ${gridSize === l.id ? 'active' : ''}`}
                     onClick={() => { setGridSize(l.id); setGridPage(0); }}
                     title={`Grille ${l.label} caméras`}
                   >
                     {l.label === '1' ? <Maximize2 size={14} /> : <LayoutGrid size={14} />}
                     <span>{l.label}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="video-panel__page-controls">
-                  <Tooltip content="Page précédente"><button onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
+                  <Tooltip content="Page précédente"><Button variant="ghost" onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
                     <ChevronLeft size={16} />
-                  </button></Tooltip>
+                  </Button></Tooltip>
                   <span className="video-panel__page-info">{gridPage + 1}/{totalPages}</span>
-                  <Tooltip content="Page suivante"><button onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
+                  <Tooltip content="Page suivante"><Button variant="ghost" onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
                     <ChevronRight size={16} />
-                  </button></Tooltip>
+                  </Button></Tooltip>
                 </div>
               )}
 

@@ -678,45 +678,45 @@ const AffaireImportModal = ({
             <div className="choice-step">
               {workflow === 'new' && (
                 <>
-                  <button 
+                  <Button variant="ghost" 
                     className="choice-button"
                     onClick={() => setStep('upload')}
                   >
                     📄 Importer un BL pour cet événement
-                  </button>
+                  </Button>
                 </>
               )}
               
               {workflow === 'import-or-create' && (
                 <>
-                  <button 
+                  <Button variant="ghost" 
                     className="choice-button"
                     onClick={() => setStep('form')}
                   >
                     ✏️ Modifier les informations
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className="choice-button"
                     onClick={() => setStep('upload')}
                   >
                     📄 {existingAffaires.length > 0 ? 'Remplacer le BL' : 'Importer un BL'}
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className="choice-button"
                     onClick={() => setStep('upload-additional')}
                   >
                     📎 Ajouter un BL supplémentaire
-                  </button>
+                  </Button>
                 </>
               )}
               
               {workflow === 'update' && (
-                <button 
+                <Button variant="ghost" 
                   className="choice-button"
                   onClick={() => setStep('upload')}
                 >
                   📄 Importer/Remplacer le BL
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -748,13 +748,13 @@ const AffaireImportModal = ({
                 </p>
                 <p className="drop-zone-or">ou</p>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                  <button 
+                  <Button variant="ghost" 
                     className="browse-button"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     Parcourir
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className="browse-button batch-browse"
                     onClick={() => {
                       fileInputRef.current.multiple = true;
@@ -762,7 +762,7 @@ const AffaireImportModal = ({
                     }}
                   >
                     📦 Lot de PDFs
-                  </button>
+                  </Button>
                 </div>
                 <input
                   ref={fileInputRef}
@@ -922,13 +922,13 @@ const AffaireImportModal = ({
                 <div className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>✅ PDF analysé: {pdfFile.name}</span>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
+                    <Button variant="ghost" 
                       className="btn-view-pdf"
                       onClick={() => setShowPreview(!showPreview)}
                     >
                       {showPreview ? '🔽 Masquer' : '👁️ Aperçu'}
-                    </button>
-                    <button 
+                    </Button>
+                    <Button variant="ghost" 
                       className="btn-view-pdf"
                       onClick={() => {
                         if (pdfPreviewUrl) {
@@ -944,7 +944,7 @@ const AffaireImportModal = ({
                       }}
                     >
                       🔗 Ouvrir
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -964,7 +964,7 @@ const AffaireImportModal = ({
               {!pdfFile && existingAffaires.length > 0 && existingAffaires[0].pdfData && (
                 <div className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>📄 BL principal: {existingAffaires[0].pdfFileName}</span>
-                  <button 
+                  <Button variant="ghost" 
                     className="btn-view-pdf"
                     onClick={() => {
                       const pdfData = existingAffaires[0].pdfData;
@@ -980,7 +980,7 @@ const AffaireImportModal = ({
                     }}
                   >
                     👁️ Voir le PDF
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -992,7 +992,7 @@ const AffaireImportModal = ({
                     <div key={index} className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                       <span>📎 {bl.fileName}</span>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
+                        <Button variant="ghost" 
                           className="btn-view-pdf"
                           onClick={() => {
                             const byteCharacters = atob(bl.data.split(',')[1]);
@@ -1007,15 +1007,15 @@ const AffaireImportModal = ({
                           }}
                         >
                           👁️ Voir
-                        </button>
-                        <button 
+                        </Button>
+                        <Button variant="ghost" 
                           className="btn-delete-pdf"
                           onClick={() => {
                             setAdditionalBLs(prev => prev.filter((_, i) => i !== index));
                           }}
                         >
                           🗑️
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}

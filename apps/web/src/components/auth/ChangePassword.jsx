@@ -89,14 +89,13 @@ const ChangePassword = ({ currentUser }) => {
                   placeholder="Saisir le nouveau mot de passe"
                   autoComplete="new-password"
                 />
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   className="password-toggle-btn"
                   onClick={() => setShowAdminPassword(!showAdminPassword)}
                   title={showAdminPassword ? 'Masquer' : 'Afficher'}
                 >
                   {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                </Button>
               </div>
               <p className="field-hint">Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial</p>
             </FormField>
@@ -141,14 +140,13 @@ const ChangePassword = ({ currentUser }) => {
             minLength={10}
             autoComplete="new-password"
           />
-          <button
-            type="button"
+          <Button variant="ghost"             type="button"
             className="password-toggle-btn"
             onClick={() => setShowNewPassword(!showNewPassword)}
             title={showNewPassword ? 'Masquer' : 'Afficher'}
           >
             {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
+          </Button>
           </div>
           <p className="field-hint">Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial</p>
         </FormField>
@@ -164,14 +162,13 @@ const ChangePassword = ({ currentUser }) => {
             minLength={10}
             autoComplete="new-password"
           />
-          <button
-            type="button"
+          <Button variant="ghost"             type="button"
             className="password-toggle-btn"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             title={showConfirmPassword ? 'Masquer' : 'Afficher'}
           >
             {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
+          </Button>
           </div>
         </FormField>
 

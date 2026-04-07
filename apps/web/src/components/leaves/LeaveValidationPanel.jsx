@@ -17,7 +17,7 @@ import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
 import './LeaveValidationPanel.css';
-import { DetailRow, Tabs, TabList, Tab, TabPanel, Textarea, Avatar, EmptyState, InlineAlert } from '@/design-system';
+import { Avatar, Button, DetailRow, EmptyState, InlineAlert, Tab, TabList, TabPanel, Tabs, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -84,7 +84,7 @@ const AdminSignaturePad = ({ onSign, value }) => {
         onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
         onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
       />
-      <button type="button" className="lvp-sig-clear" onClick={clear}>Effacer</button>
+      <Button variant="ghost" type="button" className="lvp-sig-clear" onClick={clear}>Effacer</Button>
     </div>
   );
 };
@@ -208,8 +208,8 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
             <h2>Validation des congés</h2>
           </div>
           <div className="lvp-header-actions">
-            <button className="lvp-btn-refresh" onClick={loadData}><RefreshCw size={16} /></button>
-            <button className="lvp-close-btn" onClick={onClose}><X size={20} /></button>
+            <Button variant="ghost" className="lvp-btn-refresh" onClick={loadData}><RefreshCw size={16} /></Button>
+            <Button variant="ghost" className="lvp-close-btn" onClick={onClose}><X size={20} /></Button>
           </div>
         </div>
 
@@ -388,28 +388,25 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
 
                         {/* Bouton PDF */}
                         <div className="lvp-detail-actions">
-                          <button className="lvp-action-btn pdf" onClick={() => handlePdf(req.id)}>
+                          <Button variant="ghost" className="lvp-action-btn pdf" onClick={() => handlePdf(req.id)}>
                             <Download size={14} /> PDF
-                          </button>
+                          </Button>
                         </div>
 
                         {/* ZONE DE DÉCISION (pending uniquement) */}
                         {req.status === STATUS.PENDING && !isDeciding && (
                           <div className="lvp-decision-btns">
-                            <button
-                              className="lvp-decision-btn accept"
+                            <Button variant="ghost"                               className="lvp-decision-btn accept"
                               onClick={() => { setDecisionMode({ id: req.id, action: 'accept' }); setAdminComment(''); }}
                             >
                               <CheckCircle size={14} /> Accepter
-                            </button>
-                            <button
-                              className="lvp-decision-btn refuse"
+                            </Button>
+                            <Button variant="ghost"                               className="lvp-decision-btn refuse"
                               onClick={() => { setDecisionMode({ id: req.id, action: 'refuse' }); setAdminComment(''); }}
                             >
                               <XCircle size={14} /> Refuser
-                            </button>
-                            <button
-                              className="lvp-decision-btn modify"
+                            </Button>
+                            <Button variant="ghost"                               className="lvp-decision-btn modify"
                               onClick={() => {
                                 setDecisionMode({ id: req.id, action: 'modify' });
                                 setAdminComment('');
@@ -418,7 +415,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
                               }}
                             >
                               <ArrowRight size={14} /> Modifier
-                            </button>
+                            </Button>
                           </div>
                         )}
 
@@ -492,8 +489,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
 
                             {/* Actions */}
                             <div className="lvp-decision-actions">
-                              <button
-                                className="lvp-action-btn cancel"
+                              <Button variant="ghost"                                 className="lvp-action-btn cancel"
                                 onClick={() => {
                                   setDecisionMode(null);
                                   setAdminComment('');
@@ -501,9 +497,8 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
                                 }}
                               >
                                 Annuler
-                              </button>
-                              <button
-                                className={`lvp-action-btn confirm ${decisionMode.action}`}
+                              </Button>
+                              <Button variant="ghost"                                 className={`lvp-action-btn confirm ${decisionMode.action}`}
                                 onClick={handleDecision}
                                 disabled={processing}
                               >
@@ -517,7 +512,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
                                     {decisionMode.action === 'modify' && 'Confirmer la modification'}
                                   </>
                                 )}
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         )}

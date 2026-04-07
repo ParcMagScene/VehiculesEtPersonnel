@@ -128,7 +128,7 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
           {isAdmin && (
             <div className="screen-actions">
               <Tooltip content="Modifier">
-                <Button variant="ghost" size="sm" iconOnly onClick={() => { setEditingScreen(screen); setShowScreenModal(true); }}>
+                <Button variant="ghost" size="sm" iconOnly aria-label="Modifier" onClick={() => { setEditingScreen(screen); setShowScreenModal(true); }}>
                   <Settings size={14} />
                 </Button>
               </Tooltip>

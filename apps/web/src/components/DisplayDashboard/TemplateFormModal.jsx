@@ -160,7 +160,7 @@ function TemplateFormModal({ template, onSave, onClose }) {
                 </div>
                 {form.zones.length > 1 && (
                   <Tooltip content="Supprimer">
-                    <Button variant="danger" size="sm" iconOnly onClick={() => removeZone(idx)}>
+                    <Button variant="danger" size="sm" iconOnly aria-label="Supprimer la zone" onClick={() => removeZone(idx)}>
                       <Trash2 size={12} />
                     </Button>
                   </Tooltip>

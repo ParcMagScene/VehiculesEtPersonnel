@@ -326,6 +326,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           variant="primary" size="sm" iconOnly
                           onClick={() => setEditingUser(user)}
                           title="Modifier le profil"
+                          aria-label="Modifier le profil"
                         >
                           <Pencil size={14} />
                         </Button>
@@ -339,6 +340,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           variant="danger" size="sm" iconOnly
                           onClick={() => handleDeleteUser(user.id)}
                           title="Supprimer l'utilisateur"
+                          aria-label="Supprimer l'utilisateur"
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -420,6 +422,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                         variant="danger" size="sm" iconOnly
                         onClick={() => handleRemoveEmail(email.id)}
                         title="Supprimer"
+                        aria-label="Supprimer"
                       >
                         <Trash2 size={16} />
                       </Button>

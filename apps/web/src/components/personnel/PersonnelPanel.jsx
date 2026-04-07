@@ -652,13 +652,13 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                         </td>
                         <td className="pp-actions-cell">
                           <Tooltip content="Modifier">
-                            <Button variant="ghost" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); openEdit(person); }}>
+                            <Button variant="ghost" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); openEdit(person); }} aria-label="Modifier">
                               <Edit2 size={14} />
                             </Button>
                           </Tooltip>
                           {currentUser?.isAdmin && (
                             <Tooltip content="Supprimer">
-                              <Button variant="danger" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); handleDelete(person.id); }}>
+                              <Button variant="danger" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); handleDelete(person.id); }} aria-label="Supprimer">
                                 <Trash2 size={14} />
                               </Button>
                             </Tooltip>
@@ -1775,9 +1775,9 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               <Button variant="ghost" className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</Button>
             </div>
             <div className="cal-nav-date">
-              <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></Button>
+              <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious} aria-label="Mois précédent"><ChevronLeft size={18} /></Button>
               <Button variant="ghost" className={`cal-nav-btn cal-nav-today ${ppShowTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
-              <Button variant="ghost" className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></Button>
+              <Button variant="ghost" className="cal-nav-btn" onClick={goToNext} aria-label="Mois suivant"><ChevronRight size={18} /></Button>
               <span 
                 className="cal-nav-label clickable"
                 onClick={() => {

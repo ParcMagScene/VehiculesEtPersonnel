@@ -83,18 +83,18 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
           </div>
           <div className="list-item-actions">
             <Tooltip content="Modifier">
-              <Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(pl)}>
+              <Button variant="ghost" size="sm" iconOnly aria-label="Modifier" onClick={() => onEdit(pl)}>
                 <Settings size={14} />
               </Button>
             </Tooltip>
             <Tooltip content={pl.is_active ? 'Désactiver' : 'Activer'}>
-              <Button variant="ghost" size="sm" iconOnly onClick={() => handleToggle(pl)}>
+              <Button variant="ghost" size="sm" iconOnly aria-label="Basculer visibilité" onClick={() => handleToggle(pl)}>
                 {pl.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
               </Button>
             </Tooltip>
             {currentUser?.isAdmin && (
               <Tooltip content="Supprimer">
-                <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(pl)}>
+                <Button variant="danger" size="sm" iconOnly aria-label="Supprimer" onClick={() => handleDelete(pl)}>
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>

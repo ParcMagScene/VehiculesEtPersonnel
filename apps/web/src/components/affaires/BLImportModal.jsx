@@ -269,7 +269,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
         {/* Header */}
         <div className="modal-header">
           <h3><FileText size={20} /> Import Bon de Livraison</h3>
-          <Button variant="ghost" className="modal-close" onClick={onClose}><X size={18} /></Button>
+          <Button variant="ghost" className="modal-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}

@@ -821,9 +821,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           </div>
 
           {/* Navigation dates */}
-          <Tooltip content="Période précédente"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToPrevious}><ChevronLeft size={16} /></Button></Tooltip>
+          <Tooltip content="Période précédente"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToPrevious} aria-label="Période précédente"><ChevronLeft size={16} /></Button></Tooltip>
           <Button variant="ghost" className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
-          <Tooltip content="Période suivante"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToNext}><ChevronRight size={16} /></Button></Tooltip>
+          <Tooltip content="Période suivante"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToNext} aria-label="Période suivante"><ChevronRight size={16} /></Button></Tooltip>
           <div
             className="affaires-tb-date-label"
             onClick={() => { viewMode === 'month' ? setShowMonthSelector(true) : setShowWeekSelector(true); }}
@@ -934,34 +934,34 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             {/* En-tête du tableau (cliquable pour trier) */}
             <div className="affaire-table-header">
               <span className="ath-status"></span>
-              <span className="ath-numero sortable" onClick={() => toggleSort('numero')}>
+              <span className="ath-numero sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('numero')}>
                 N° Affaire {sortBy === 'numero' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-type sortable" onClick={() => toggleSort('type')}>
+              <span className="ath-type sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('type')}>
                 Type {sortBy === 'type' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-dates sortable" onClick={() => toggleSort('dateDebut')}>
+              <span className="ath-dates sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('dateDebut')}>
                 Période {sortBy === 'dateDebut' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-client sortable" onClick={() => toggleSort('client')}>
+              <span className="ath-client sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('client')}>
                 Client {sortBy === 'client' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-titre sortable" onClick={() => toggleSort('titre')}>
+              <span className="ath-titre sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('titre')}>
                 Titre / Événement {sortBy === 'titre' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-lieu sortable" onClick={() => toggleSort('lieu')}>
+              <span className="ath-lieu sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('lieu')}>
                 Lieu {sortBy === 'lieu' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
               <span className="ath-bl">BL</span>
               <span className="ath-orders">Cmd</span>
               <span className="ath-icons"></span>
-              <span className="ath-tasks sortable" onClick={() => toggleSort('tasks')}>
+              <span className="ath-tasks sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('tasks')}>
                 Tâches {sortBy === 'tasks' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-resa sortable" onClick={() => toggleSort('resa')}>
+              <span className="ath-resa sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('resa')}>
                 Résa {sortBy === 'resa' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-pers sortable" onClick={() => toggleSort('pers')}>
+              <span className="ath-pers sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('pers')}>
                 Pers {sortBy === 'pers' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
             </div>

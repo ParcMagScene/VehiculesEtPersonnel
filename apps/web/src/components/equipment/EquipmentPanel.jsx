@@ -198,7 +198,7 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
       </Button>
       {isOpen && (
         <div className="eq-cascade-menu eq-cascade-l1">
-          <div className="eq-cascade-item eq-cascade-all" onClick={() => handleSelect('')}>
+          <div className="eq-cascade-item eq-cascade-all" role="button" tabIndex={0} onClick={() => handleSelect('')}>
             Toutes familles
           </div>
           {families.map(fam => {
@@ -225,7 +225,7 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
                 </div>
                 {isMobile && isExpanded && subs.length > 0 && (
                   <div className="eq-cascade-menu eq-cascade-l2">
-                    <div className="eq-cascade-item eq-cascade-all" onClick={(e) => { e.stopPropagation(); handleSelect(`family:${fam.id}`); }}>
+                    <div className="eq-cascade-item eq-cascade-all" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); handleSelect(`family:${fam.id}`); }}>
                       Toute la famille
                     </div>
                     {subs.map(sf => {
@@ -248,7 +248,7 @@ const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, o
                           </div>
                           {isSubExpanded && cats.length > 0 && (
                             <div className="eq-cascade-menu eq-cascade-l3">
-                              <div className="eq-cascade-item eq-cascade-all" onClick={(e) => { e.stopPropagation(); handleSelect(`subfamily:${sf.id}`); }}>
+                              <div className="eq-cascade-item eq-cascade-all" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); handleSelect(`subfamily:${sf.id}`); }}>
                                 Toute la sous-famille
                               </div>
                               {cats.map(cat => (
@@ -361,7 +361,7 @@ const CategoryCascadePicker = ({ families, subfamilies, leafCategories, value, o
       </Button>
       {isOpen && (
         <div className="eq-cascade-menu eq-cascade-l1 eq-cascade-picker-menu">
-          <div className="eq-cascade-item eq-cascade-all" onClick={() => handleSelect('', '', '')}>
+          <div className="eq-cascade-item eq-cascade-all" role="button" tabIndex={0} onClick={() => handleSelect('', '', '')}>
             Aucune catégorie
           </div>
           {families.map(fam => {
@@ -503,7 +503,7 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
             disabled={saving}
           />
           <Button variant="ghost" className="eq-cat-edit-confirm" onClick={() => saveEdit(item)} disabled={saving}><Check size={14} /></Button>
-          <Button variant="ghost" className="eq-cat-edit-cancel" onClick={cancelEdit}><X size={14} /></Button>
+          <Button variant="ghost" className="eq-cat-edit-cancel" onClick={cancelEdit} aria-label="Annuler"><X size={14} /></Button>
         </span>
       );
     }
@@ -1241,7 +1241,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
           <div className="eq-management-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Gestion du Matériel">
             <div className="eq-management-header">
               <h2><Package size={22} /> Gestion du Matériel</h2>
-              <Button variant="ghost" className="eq-management-close" onClick={onCloseManagement}><X size={20} /></Button>
+              <Button variant="ghost" className="eq-management-close" onClick={onCloseManagement} aria-label="Fermer"><X size={20} /></Button>
             </div>
 
             {/* Onglets de gestion */}
@@ -1528,7 +1528,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
               const linkedEq = photoEquipmentMap[p];
               return (
                 <div key={p} className={`eq-media-card ${linkedEq ? 'linked' : ''}`}>
-                  <div className="eq-media-card-img" onClick={() => setPreviewPhoto(p)}>
+                  <div className="eq-media-card-img" role="button" tabIndex={0} onClick={() => setPreviewPhoto(p)}>
                     <img src={`/Photos/Matériel/${p}`} alt={p} loading="lazy" />
                     <div className="eq-media-card-zoom"><ZoomIn size={16} /></div>
                   </div>
@@ -1579,7 +1579,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                         <Button variant="ghost" onClick={() => { setLinkingPhoto(null); setLinkSearch(''); }} style={{ fontSize: 9, padding: '1px 6px', marginTop: 2, borderRadius: 3, background: 'var(--theme-bg-tertiary)', border: '1px solid var(--theme-border-medium)', cursor: 'pointer' }}>Annuler</Button>
                       </div>
                     ) : (
-                      <span className="eq-media-card-nolink" onClick={() => setLinkingPhoto(p)} style={{ cursor: 'pointer' }} title="Cliquer pour associer manuellement">
+                      <span className="eq-media-card-nolink" role="button" tabIndex={0} onClick={() => setLinkingPhoto(p)} style={{ cursor: 'pointer' }} title="Cliquer pour associer manuellement">
                         Non associé
                       </span>
                     )}
@@ -1617,7 +1617,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
           <div className="eq-media-photo-grid">
             {logosList.map(l => (
               <div key={l} className="eq-media-card logo-card">
-                <div className="eq-media-card-img" onClick={() => setPreviewPhoto({ src: `/Logos/${l}`, name: l })}>
+                <div className="eq-media-card-img" role="button" tabIndex={0} onClick={() => setPreviewPhoto({ src: `/Logos/${l}`, name: l })}>
                   <img src={`/Logos/${l}`} alt={l} loading="lazy" />
                   <div className="eq-media-card-zoom"><ZoomIn size={16} /></div>
                 </div>
@@ -1742,7 +1742,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                       }
                     }
                     if (z) return (
-                      <span className="eq-zone-badge eq-zone-clickable" style={{ background: z.color, color: z.textColor || '#fff' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }} title="Voir sur le plan">
+                      <span className="eq-zone-badge eq-zone-clickable" role="button" tabIndex={0} style={{ background: z.color, color: z.textColor || '#fff' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }} title="Voir sur le plan">
                         <MapPin size={11} />
                         {z.label}
                         {(eq.location_code || eq.locationCode) && <span className="eq-zone-code">{eq.location_code || eq.locationCode}</span>}
@@ -1750,7 +1750,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                     );
                     // Zone non trouvée dans les JSON mais présente en base → quand même cliquable
                     return (
-                      <span className="eq-zone-badge eq-zone-clickable" style={{ background: 'var(--theme-text-secondary)', color: 'var(--theme-text-inverse)' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }} title="Voir sur le plan">
+                      <span className="eq-zone-badge eq-zone-clickable" role="button" tabIndex={0} style={{ background: 'var(--theme-text-secondary)', color: 'var(--theme-text-inverse)' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }} title="Voir sur le plan">
                         <MapPin size={11} />
                         {zoneId}
                       </span>
@@ -1940,7 +1940,7 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
           const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
           const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
           return (
-            <div key={t.id} className={`eq-ticket-item ${onOpenTicketDialog ? 'eq-clickable-ticket' : ''}`} onClick={() => onOpenTicketDialog && onOpenTicketDialog(t)} style={onOpenTicketDialog ? { cursor: 'pointer' } : {}}>
+            <div key={t.id} className={`eq-ticket-item ${onOpenTicketDialog ? 'eq-clickable-ticket' : ''}`} role="button" tabIndex={0} onClick={() => onOpenTicketDialog && onOpenTicketDialog(t)} style={onOpenTicketDialog ? { cursor: 'pointer' } : {}}>
               <div className="eq-ticket-header">
                 <span className="eq-ticket-type">{SAV_TYPES[t.type] || t.type}</span>
                 <span className="eq-ticket-priority" style={{ color: pri.color }}>{pri.label}</span>
@@ -2051,14 +2051,14 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, _persons, photosList, 
       <div className="eq-slide-footer">
         {onPrintLabel && (
           <Tooltip content="Imprimer étiquette">
-            <Button variant="secondary" className="eq-footer-icon-btn" iconOnly onClick={() => onPrintLabel(currentEq)}>
+            <Button variant="secondary" className="eq-footer-icon-btn" iconOnly aria-label="Imprimer étiquette" onClick={() => onPrintLabel(currentEq)}>
               <Printer size={14} />
             </Button>
           </Tooltip>
         )}
         {onPrintSheet && (
           <Tooltip content="Imprimer la fiche">
-            <Button variant="secondary" className="eq-footer-icon-btn" iconOnly onClick={() => onPrintSheet(currentEq)}>
+            <Button variant="secondary" className="eq-footer-icon-btn" iconOnly aria-label="Imprimer la fiche" onClick={() => onPrintSheet(currentEq)}>
               <FileText size={14} />
             </Button>
           </Tooltip>
@@ -2218,7 +2218,7 @@ const SavTicketsList = ({ tickets, _equipment, _persons, selectedId, onSelect, o
                       <Button variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(t); }}><Edit2 size={14} /></Button>
                     </Tooltip>
                     <Tooltip content="Supprimer">
-                      <Button variant="danger" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); onDelete(t.id); }}><Trash2 size={14} /></Button>
+                      <Button variant="danger" size="sm" iconOnly aria-label="Supprimer" onClick={(e) => { e.stopPropagation(); onDelete(t.id); }}><Trash2 size={14} /></Button>
                     </Tooltip>
                   </div>
                 </td>
@@ -2384,7 +2384,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
             <div className="eq-form-field eq-form-full">
               <label>Photo</label>
               <div className="eq-photo-picker">
-                <div className="eq-photo-picker-preview" onClick={() => setShowPhotoPicker(!showPhotoPicker)}>
+                <div className="eq-photo-picker-preview" role="button" tabIndex={0} onClick={() => setShowPhotoPicker(!showPhotoPicker)}>
                   {currentPhotoUrl ? (
                     <img src={currentPhotoUrl} alt="" loading="lazy" />
                   ) : genericImageUrl ? (

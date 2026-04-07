@@ -122,7 +122,7 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
                   }
                 </Select>
                 <Tooltip content="Supprimer">
-                  <Button variant="danger" size="sm" iconOnly onClick={() => handleRemove(index)}>
+                  <Button variant="danger" size="sm" iconOnly aria-label="Supprimer la règle" onClick={() => handleRemove(index)}>
                     <Trash2 size={14} />
                   </Button>
                 </Tooltip>

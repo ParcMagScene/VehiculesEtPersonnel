@@ -126,10 +126,10 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
                         setForm({ name: pos.name, category: pos.category, is_common: !!pos.isCommon });
                         setEditingPosition(pos);
                         setShowForm(true);
-                      }}>
+                      }} aria-label="Modifier">
                         <Edit2 size={12} />
                       </Button>
-                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(pos.id)}>
+                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(pos.id)} aria-label="Supprimer">
                         <Trash2 size={12} />
                       </Button>
                     </div>

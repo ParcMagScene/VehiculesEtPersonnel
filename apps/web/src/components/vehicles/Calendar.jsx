@@ -1915,9 +1915,9 @@ const Calendar = ({
           <Button variant="ghost" className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</Button>
         </div>
         <div className="cal-nav-date">
-          <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></Button>
+          <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious} aria-label="Période précédente"><ChevronLeft size={18} /></Button>
           <Button variant="ghost" className={`cal-nav-btn cal-nav-today ${showTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
-          <Button variant="ghost" className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></Button>
+          <Button variant="ghost" className="cal-nav-btn" onClick={goToNext} aria-label="Période suivante"><ChevronRight size={18} /></Button>
           <span 
             className="cal-nav-label clickable"
             onClick={() => {

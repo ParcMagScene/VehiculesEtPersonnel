@@ -267,7 +267,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
             const Icon = step.icon;
             return (
               <div key={step.key} className={`etm-step ${s.enabled ? 'enabled' : ''}`}>
-                <div className="etm-step-header" onClick={() => toggleStep(step.key)}>
+                <div className="etm-step-header" role="button" tabIndex={0} onClick={() => toggleStep(step.key)}>
                   <div className={`etm-step-check ${s.enabled ? 'checked' : ''}`} style={s.enabled ? { background: step.color } : {}}>
                     {s.enabled && <Check size={12} />}
                   </div>

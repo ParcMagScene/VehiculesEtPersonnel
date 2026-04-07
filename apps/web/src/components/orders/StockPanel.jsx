@@ -315,7 +315,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           <div className="stock-management-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
             <div className="stock-management-header">
               <h2><Layers size={20} /> Gestion des catégories</h2>
-              <Button variant="ghost" onClick={onCloseManagement}><X size={20} /></Button>
+              <Button variant="ghost" onClick={onCloseManagement} aria-label="Fermer"><X size={20} /></Button>
             </div>
             <CategoriesView
               categories={categories}
@@ -430,7 +430,7 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
         </Button>
         {isAdmin && (
           <Tooltip content="Modifier">
-            <Button variant="secondary" onClick={() => onEdit(current)} iconOnly>
+            <Button variant="secondary" onClick={() => onEdit(current)} iconOnly aria-label="Modifier">
               <Edit2 size={14} />
             </Button>
           </Tooltip>
@@ -510,7 +510,7 @@ function _DashboardView({ stats, _items, onSelectItem }) {
             {stats.lowStockItems.map(item => {
               const pct = item.min_quantity > 0 ? Math.round((item.quantity / item.min_quantity) * 100) : 0;
               return (
-                <div key={item.id} className="stock-alert-item" onClick={() => onSelectItem(item)}>
+                <div key={item.id} className="stock-alert-item" role="button" tabIndex={0} onClick={() => onSelectItem(item)}>
                   <div className="alert-item-info">
                     <span className="alert-item-name">{item.name}</span>
                     <span className="alert-item-ref">{item.reference}</span>
@@ -539,7 +539,7 @@ function _DashboardView({ stats, _items, onSelectItem }) {
           <h3>🔥 Articles les plus mouvementés</h3>
           <div className="stock-top-items">
             {stats.topMovedItems.map((item, i) => (
-              <div key={item.id} className="stock-top-item" onClick={() => onSelectItem(item)}>
+              <div key={item.id} className="stock-top-item" role="button" tabIndex={0} onClick={() => onSelectItem(item)}>
                 <span className="top-rank">#{i + 1}</span>
                 <span className="top-name">{item.name}</span>
                 <span className="top-ref">{item.reference}</span>

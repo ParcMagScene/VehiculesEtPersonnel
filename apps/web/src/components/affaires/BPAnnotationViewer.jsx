@@ -572,9 +572,9 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
             {blImport?.filename && <span className="bp-filename">{blImport.filename}</span>}
           </div>
           <div className="bp-annotation-toolbar">
-            <Tooltip content="Zoom -"><Button variant="ghost" onClick={zoomOut}><ZoomOut size={16} /></Button></Tooltip>
+            <Tooltip content="Zoom -"><Button variant="ghost" onClick={zoomOut} aria-label="Zoom arrière"><ZoomOut size={16} /></Button></Tooltip>
             <span className="bp-zoom-label">{Math.round(displayScale * 100)}%</span>
-            <Tooltip content="Zoom +"><Button variant="ghost" onClick={zoomIn}><ZoomIn size={16} /></Button></Tooltip>
+            <Tooltip content="Zoom +"><Button variant="ghost" onClick={zoomIn} aria-label="Zoom avant"><ZoomIn size={16} /></Button></Tooltip>
             <Tooltip content="Ajuster"><Button variant="ghost" onClick={zoomFit}>🔍</Button></Tooltip>
             <div className="bp-toolbar-sep" />
             <Button variant="ghost" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
@@ -596,10 +596,10 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
               </Button>
             </Tooltip>
             <div className="bp-toolbar-sep" />
-            <Tooltip content="Imprimer"><Button variant="ghost" onClick={handlePrint}><Printer size={16} /></Button></Tooltip>
-            <Tooltip content="Télécharger"><Button variant="ghost" onClick={handleDownload}><Download size={16} /></Button></Tooltip>
+            <Tooltip content="Imprimer"><Button variant="ghost" onClick={handlePrint} aria-label="Imprimer"><Printer size={16} /></Button></Tooltip>
+            <Tooltip content="Télécharger"><Button variant="ghost" onClick={handleDownload} aria-label="Télécharger"><Download size={16} /></Button></Tooltip>
           </div>
-          <Button variant="ghost" className="bp-annotation-close" onClick={onClose}><X size={18} /></Button>
+          <Button variant="ghost" className="bp-annotation-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}

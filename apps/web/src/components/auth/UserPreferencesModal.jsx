@@ -141,7 +141,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
       <div className="prefs-modal">
         <div className="prefs-header">
           <h3><Settings size={18} /> Préférences</h3>
-          <Button variant="ghost" onClick={handleSafeClose}><X size={18} /></Button>
+          <Button variant="ghost" onClick={handleSafeClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         <div className="prefs-body">

@@ -124,7 +124,7 @@ function MobileLocation({ onBack }) {
     return (
       <div className="mobile-location">
         <div className="mobile-module-header">
-          <Button variant="ghost" className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></Button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
           <h2>📍 Localisation</h2>
         </div>
         <div className="mobile-module-loading">Chargement du plan...</div>
@@ -135,7 +135,7 @@ function MobileLocation({ onBack }) {
   return (
     <div className="mobile-location">
       <div className="mobile-module-header">
-        <Button variant="ghost" className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></Button>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
         <h2>📍 Localisation</h2>
         <div className="mloc-view-toggle">
           <Button variant="ghost" className={viewMode === 'map' ? 'active' : ''} onClick={() => setViewMode('map')}>
@@ -222,9 +222,9 @@ function MobileLocation({ onBack }) {
             onTouchEnd={handleTouchEnd}
           >
             <div className="mloc-zoom-controls">
-              <Button variant="ghost" onClick={handleZoomIn}><ZoomIn size={18} /></Button>
-              <Button variant="ghost" onClick={handleZoomOut}><ZoomOut size={18} /></Button>
-              <Button variant="ghost" onClick={handleResetView}><RotateCcw size={18} /></Button>
+              <Button variant="ghost" onClick={handleZoomIn} aria-label="Zoomer"><ZoomIn size={18} /></Button>
+              <Button variant="ghost" onClick={handleZoomOut} aria-label="Dézoomer"><ZoomOut size={18} /></Button>
+              <Button variant="ghost" onClick={handleResetView} aria-label="Réinitialiser la vue"><RotateCcw size={18} /></Button>
             </div>
 
             <svg

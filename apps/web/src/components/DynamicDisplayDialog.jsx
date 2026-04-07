@@ -170,7 +170,7 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
             <Monitor size={20} />
             {isEdit ? 'Modifier l\'événement' : 'Nouvel événement d\'affichage'}
           </h3>
-          <Button variant="ghost" className="dialog-close" onClick={onClose}><X size={18} /></Button>
+          <Button variant="ghost" className="dialog-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}

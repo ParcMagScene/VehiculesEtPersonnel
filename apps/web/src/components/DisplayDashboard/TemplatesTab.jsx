@@ -78,12 +78,12 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
             {isAdmin && (
               <div className="template-actions">
                 <Tooltip content="Modifier">
-                  <Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(tpl)}>
+                  <Button variant="ghost" size="sm" iconOnly aria-label="Modifier" onClick={() => onEdit(tpl)}>
                     <Settings size={14} />
                   </Button>
                 </Tooltip>
                 <Tooltip content="Supprimer">
-                  <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(tpl)}>
+                  <Button variant="danger" size="sm" iconOnly aria-label="Supprimer" onClick={() => handleDelete(tpl)}>
                     <Trash2 size={14} />
                   </Button>
                 </Tooltip>

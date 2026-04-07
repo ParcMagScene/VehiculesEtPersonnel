@@ -826,13 +826,13 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       <div className="event-assign-container">
         <div className="multi-assign-chips">
           {assignments.map(a => (
-            <span key={a.id} className="task-person assigned" onClick={() => setAssigningEntity(isOpen ? null : key)}>
+            <span key={a.id} className="task-person assigned" role="button" tabIndex={0} onClick={() => setAssigningEntity(isOpen ? null : key)}>
               <User size={11} />
               {a.firstName} {a.lastName?.charAt(0)}.
             </span>
           ))}
           <Tooltip content="Affecter du personnel">
-            <Button variant="primary" size="sm" iconOnly className="btn-assign" onClick={() => setAssigningEntity(isOpen ? null : key)}>
+            <Button variant="primary" size="sm" iconOnly className="btn-assign" onClick={() => setAssigningEntity(isOpen ? null : key)} aria-label="Affecter">
               <UserPlus size={13} />
             </Button>
           </Tooltip>
@@ -843,7 +843,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             {persons.map(p => {
               const isAssigned = assignments.some(a => a.personId === p.id);
               return (
-                <div key={p.id} className={`assign-option ${isAssigned ? 'selected' : ''}`} onClick={() => handleToggleAssignment(entityType, entityId, p.id)}>
+                <div key={p.id} className={`assign-option ${isAssigned ? 'selected' : ''}`} role="button" tabIndex={0} onClick={() => handleToggleAssignment(entityType, entityId, p.id)}>
                   <span className={`assign-check ${isAssigned ? 'on' : ''}`}>{isAssigned ? <Check size={12} /> : null}</span>
                   {p.firstName || p.prenom} {p.lastName || p.nom}
                 </div>
@@ -1417,7 +1417,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { onNavigateToEntity('affaire', { numero: num }); } : undefined} />
         </span>
 
-        <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
           {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
         </span>
@@ -1507,7 +1507,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[displayNom, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={[displayNom, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -1615,7 +1615,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
         </span>
 
-        <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
           {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
         </span>
@@ -1717,7 +1717,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[displayNom, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={[displayNom, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -2208,7 +2208,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             <Button variant="ghost" onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? -7 : -1))}>
               <ChevronLeft size={16} />
             </Button>
-            <span className="tp-current-date" onClick={() => setSelectedDate(todayStr())} title="Aujourd'hui">
+            <span className="tp-current-date" role="button" tabIndex={0} onClick={() => setSelectedDate(todayStr())} title="Aujourd'hui">
               {viewMode === 'week'
                 ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
                 : formatDateFr(selectedDate)}
@@ -2291,8 +2291,8 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
               <div className="recurring-form-row">
                 <Input type="text" placeholder="Notes (optionnel)" value={recurringForm.notes || ''} onChange={e => setRecurringForm(f => ({ ...f, notes: e.target.value }))} />
                 <div className="form-actions">
-                  <Button variant="success" size="sm" iconOnly onClick={handleSaveRecurring}><Check size={14} /></Button>
-                  <Button variant="ghost" size="sm" iconOnly onClick={() => setRecurringForm(null)}><X size={14} /></Button>
+                  <Button variant="success" size="sm" iconOnly onClick={handleSaveRecurring} aria-label="Enregistrer"><Check size={14} /></Button>
+                  <Button variant="ghost" size="sm" iconOnly onClick={() => setRecurringForm(null)} aria-label="Annuler"><X size={14} /></Button>
                 </div>
               </div>
             </div>
@@ -2476,8 +2476,8 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
                     <div className="ical-form-row">
                       <input type="color" value={icalForm.color || '#3b82f6'} onChange={e => setIcalForm(f => ({ ...f, color: e.target.value }))} title="Couleur" />
                       <div className="form-actions">
-                        <Button variant="success" size="sm" iconOnly onClick={handleSaveIcal}><Check size={14} /></Button>
-                        <Button variant="ghost" size="sm" iconOnly onClick={() => setIcalForm(null)}><X size={14} /></Button>
+                        <Button variant="success" size="sm" iconOnly onClick={handleSaveIcal} aria-label="Enregistrer"><Check size={14} /></Button>
+                        <Button variant="ghost" size="sm" iconOnly onClick={() => setIcalForm(null)} aria-label="Annuler"><X size={14} /></Button>
                       </div>
                     </div>
                   </div>

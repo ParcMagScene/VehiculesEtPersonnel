@@ -173,7 +173,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             <Tag size={18} />
             <span>Étiquette — {eq.reference || cleanName(eq.name)}</span>
           </div>
-          <Button variant="ghost" className="elp-close" onClick={onClose}><X size={18} /></Button>
+          <Button variant="ghost" className="elp-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         <div className="elp-body">

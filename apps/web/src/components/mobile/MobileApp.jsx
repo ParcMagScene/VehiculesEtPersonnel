@@ -597,7 +597,7 @@ function MobileApp({ onSwitchToDesktop }) {
 
       {/* Toast notification messages */}
       {msgToast && (
-        <div className="mobile-msg-toast" onClick={() => { setMsgToast(null); setCurrentScreen('messaging'); }}>
+        <div className="mobile-msg-toast" role="button" tabIndex={0} onClick={() => { setMsgToast(null); setCurrentScreen('messaging'); }}>
           <MessageSquare size={16} />
           <span>{msgToast}</span>
         </div>

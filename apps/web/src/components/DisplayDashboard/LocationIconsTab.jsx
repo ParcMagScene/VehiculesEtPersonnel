@@ -183,7 +183,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
           )}
           {rules.map((rule, index) => (
             <div key={index} className="dtv-icon-rule">
-              <div className="dtv-icon-selector" onClick={() => setShowMosaic(index)}>
+              <div className="dtv-icon-selector" role="button" tabIndex={0} onClick={() => setShowMosaic(index)}>
                 {rule.gifFilename ? (
                   <img src={gifUrl(rule.gifFilename)} alt={rule.gifFilename} />
                 ) : (
@@ -230,7 +230,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
             ) : (
               <div className="dtv-mosaic-grid">
                 {gifs.map(gif => (
-                  <div key={gif} className="dtv-mosaic-item" onClick={() => handleSelectIcon(gif)}>
+                  <div key={gif} className="dtv-mosaic-item" role="button" tabIndex={0} onClick={() => handleSelectIcon(gif)}>
                     <img src={gifUrl(gif)} alt={gif} />
                   </div>
                 ))}

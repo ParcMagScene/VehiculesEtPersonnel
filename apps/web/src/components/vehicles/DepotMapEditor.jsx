@@ -1174,11 +1174,11 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
           >
             {/* Zoom controls floating */}
             <div className="dep-ed-zoom-controls">
-              <Tooltip content="Dézoomer"><Button variant="ghost" onClick={handleEditorZoomOut} className="dep-ed-btn-sm"><ZoomOut size={14} /></Button></Tooltip>
+              <Tooltip content="Dézoomer"><Button variant="ghost" onClick={handleEditorZoomOut} className="dep-ed-btn-sm" aria-label="Dézoomer"><ZoomOut size={14} /></Button></Tooltip>
               <span className="dep-ed-zoom-level">{Math.round(editorZoom * 100)}%</span>
-              <Tooltip content="Zoomer"><Button variant="ghost" onClick={handleEditorZoomIn} className="dep-ed-btn-sm"><ZoomIn size={14} /></Button></Tooltip>
+              <Tooltip content="Zoomer"><Button variant="ghost" onClick={handleEditorZoomIn} className="dep-ed-btn-sm" aria-label="Zoomer"><ZoomIn size={14} /></Button></Tooltip>
               <Tooltip content="100%"><Button variant="ghost" onClick={handleEditorZoomReset} className="dep-ed-btn-sm">1:1</Button></Tooltip>
-              <Tooltip content="Ajuster"><Button variant="ghost" onClick={handleEditorZoomFit} className="dep-ed-btn-sm"><Maximize2 size={14} /></Button></Tooltip>
+              <Tooltip content="Ajuster"><Button variant="ghost" onClick={handleEditorZoomFit} className="dep-ed-btn-sm" aria-label="Ajuster à l'écran"><Maximize2 size={14} /></Button></Tooltip>
             </div>
 
             {/* Subtract mode banner */}

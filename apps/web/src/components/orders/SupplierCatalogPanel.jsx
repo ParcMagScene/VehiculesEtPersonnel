@@ -330,7 +330,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
                       {canWrite && (
                         <td>
                           <Tooltip content="Supprimer">
-                            <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} onClick={() => handleDeleteArticle(a.id)}>
+                            <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} aria-label="Supprimer" onClick={() => handleDeleteArticle(a.id)}>
                               <Trash2 size={14} />
                             </Button>
                           </Tooltip>
@@ -391,7 +391,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
                     {canWrite && (
                       <td>
                         <Tooltip content="Supprimer import + articles">
-                          <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} onClick={() => handleDeleteImport(imp)}>
+                          <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} aria-label="Supprimer" onClick={() => handleDeleteImport(imp)}>
                             <Trash2 size={14} />
                           </Button>
                         </Tooltip>
@@ -611,7 +611,7 @@ function ImportPDFModal({ onDone, onClose }) {
                         <span>{f.name}</span>
                         <span className="catalog-import-file-size">{(f.size / 1024 / 1024).toFixed(1)} Mo</span>
                         <Tooltip content="Retirer">
-                          <Button variant="ghost" size="sm" iconOnly onClick={() => handleRemoveFile(i)}>
+                          <Button variant="ghost" size="sm" iconOnly aria-label="Retirer" onClick={() => handleRemoveFile(i)}>
                             <X size={14} />
                           </Button>
                         </Tooltip>

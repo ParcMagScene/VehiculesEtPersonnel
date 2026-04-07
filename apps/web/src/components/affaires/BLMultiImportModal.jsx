@@ -255,7 +255,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
         {/* Header */}
         <div className="modal-header">
           <h3><PackagePlus size={20} /> Import BL / BP</h3>
-          <Button variant="ghost" className="modal-close" onClick={onClose}><X size={18} /></Button>
+          <Button variant="ghost" className="modal-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -353,7 +353,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
             <div className="batch-file-list">
               {items.map((item, idx) => (
                 <div key={idx} className={`batch-file-item ${item.status}`}>
-                  <div className="batch-file-header" onClick={() => toggleExpand(idx)}>
+                  <div className="batch-file-header" role="button" tabIndex={0} onClick={() => toggleExpand(idx)}>
                     <span className="batch-file-expand">
                       {item.expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </span>
@@ -469,7 +469,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                             const isOpen = item.expandedSections[sIdx];
                             return (
                               <div key={sIdx} className="detail-section" style={{ '--sec-bg': sc.bg, '--sec-border': sc.border, '--sec-text': sc.text }}>
-                                <div className="detail-section-header" onClick={(e) => { e.stopPropagation(); toggleSection(idx, sIdx); }}>
+                                <div className="detail-section-header" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); toggleSection(idx, sIdx); }}>
                                   <span>{sc.icon}</span>
                                   <span className="detail-section-name">{sec.name}</span>
                                   <span className="detail-section-count">{sec.items?.length || 0} art.</span>

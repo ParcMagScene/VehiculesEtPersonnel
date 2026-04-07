@@ -67,7 +67,7 @@ function MobileLeaves({ currentUser, onBack }) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
-          <Button variant="ghost" className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></Button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
           <h2>🏖️ Congés</h2>
         </div>
         <div className="mobile-module-loading">Chargement...</div>
@@ -135,7 +135,7 @@ function MobileLeaves({ currentUser, onBack }) {
   return (
     <div className="mobile-leaves">
       <div className="mobile-module-header">
-        <Button variant="ghost" className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></Button>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
         <h2>🏖️ Congés</h2>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           {isAdmin && pendingCount > 0 && (
@@ -144,7 +144,7 @@ function MobileLeaves({ currentUser, onBack }) {
               <span className="ml-admin-badge">{pendingCount}</span>
             </Button>
           )}
-          <Button variant="ghost" className="ml-refresh-btn" onClick={loadData}><RefreshCw size={16} /></Button>
+          <Button variant="ghost" className="ml-refresh-btn" onClick={loadData} aria-label="Actualiser"><RefreshCw size={16} /></Button>
         </div>
       </div>
 
@@ -227,7 +227,7 @@ function LeaveCard({ leave, onClick }) {
   const days = leave.working_days || leave.workingDays || '?';
 
   return (
-    <div className="ml-leave-card" onClick={onClick}>
+    <div className="ml-leave-card" role="button" tabIndex={0} onClick={onClick}>
       <div className="ml-leave-type" style={{ background: typeInfo.color + '20', color: typeInfo.color }}>
         <span>{typeInfo.icon}</span>
       </div>
@@ -480,7 +480,7 @@ function LeaveAdminList({ pendingLeaves, onDecision, onSelect, onRefresh }) {
           
           return (
             <div key={leave.id} className="ml-leave-card ml-admin-card">
-              <div className="ml-leave-card-top" onClick={() => onSelect(leave)}>
+              <div className="ml-leave-card-top" role="button" tabIndex={0} onClick={() => onSelect(leave)}>
                 <div className="ml-leave-type" style={{ background: typeInfo.color + '20', color: typeInfo.color }}>
                   <span>{typeInfo.icon}</span>
                 </div>

@@ -80,7 +80,7 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
         <div className="media-grid">
           {media.map(item => (
             <div key={item.id} className="media-card">
-              <div className="media-preview" onClick={() => setPreview(item)}>
+              <div className="media-preview" role="button" tabIndex={0} onClick={() => setPreview(item)}>
                 {item.media_type === 'video' ? (
                   <div className="media-video-thumb">
                     <Film size={32} />

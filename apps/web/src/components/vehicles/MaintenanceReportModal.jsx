@@ -182,7 +182,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
       <div className="mr-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="mr-header">
           <h2><FileText size={20} /> Rapport Maintenance Matériel</h2>
-          <Button variant="ghost" className="mr-close" onClick={onClose}><X size={20} /></Button>
+          <Button variant="ghost" className="mr-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Toolbar */}
@@ -198,9 +198,9 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
             ))}
           </div>
           <div className="mr-toolbar-center">
-            <Button variant="ghost" className="mr-nav-btn" onClick={goPrev}><ChevronLeft size={18} /></Button>
+            <Button variant="ghost" className="mr-nav-btn" onClick={goPrev} aria-label="Rapport précédent"><ChevronLeft size={18} /></Button>
             <Button variant="ghost" className="mr-today-btn" onClick={goToday}>Aujourd'hui</Button>
-            <Button variant="ghost" className="mr-nav-btn" onClick={goNext}><ChevronRight size={18} /></Button>
+            <Button variant="ghost" className="mr-nav-btn" onClick={goNext} aria-label="Rapport suivant"><ChevronRight size={18} /></Button>
             <span className="mr-date-label">{label}</span>
           </div>
           <div className="mr-toolbar-right">

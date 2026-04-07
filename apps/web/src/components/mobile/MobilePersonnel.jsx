@@ -445,7 +445,7 @@ function MobilePersonnel({ onBack, currentUser }) {
             const tasks = getTasksForPersonDay(p.id, currentDate);
             const isUnavailable = unavail.length > 0;
             return (
-              <div key={p.id} className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`} onClick={() => setSelectedPerson(p)}>
+              <div key={p.id} className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`} role="button" tabIndex={0} onClick={() => setSelectedPerson(p)}>
                 {p.photo ? (
                   <img src={`/avatars/${p.photo}`} alt="" className="mpers-avatar-img" loading="lazy" />
                 ) : (
@@ -492,7 +492,7 @@ function MobilePersonnel({ onBack, currentUser }) {
               {permanentPersons.map(p => {
                 const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
                 return (
-                  <div key={p.id} className="mpers-week-person" onClick={() => setSelectedPerson(p)}>
+                  <div key={p.id} className="mpers-week-person" role="button" tabIndex={0} onClick={() => setSelectedPerson(p)}>
                     {p.photo ? (
                       <img src={`/avatars/${p.photo}`} alt="" loading="lazy" className="mpers-week-avatar-img" />
                     ) : (

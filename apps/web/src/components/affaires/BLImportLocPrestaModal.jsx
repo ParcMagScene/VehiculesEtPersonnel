@@ -401,7 +401,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
         <div className="bl-loc-header">
           <h3><Layers size={20} /> Import Bon de Préparation</h3>
           <span className="bl-loc-header-badge">Location / Prestation</span>
-          <Button variant="ghost" className="bl-loc-close" onClick={onClose}><X size={18} /></Button>
+          <Button variant="ghost" className="bl-loc-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -565,7 +565,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                               className={`bl-loc-section ${isExpanded ? 'expanded' : ''}`}
                               style={{ '--sec-bg': sc.bg, '--sec-border': sc.border, '--sec-text': sc.text }}
                             >
-                              <div className="bl-loc-section-header" onClick={() => toggleSection(idx)}>
+                              <div className="bl-loc-section-header" role="button" tabIndex={0} onClick={() => toggleSection(idx)}>
                                 <span className="bl-loc-section-icon">{sc.icon}</span>
                                 <span className="bl-loc-section-name">{sec.name}</span>
                                 <span className="bl-loc-section-count">{sec.items?.length || 0} art.</span>

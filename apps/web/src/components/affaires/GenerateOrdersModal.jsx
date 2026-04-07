@@ -121,7 +121,7 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
         {/* Header */}
         <div className="theme-modal-header">
           <h3><ShoppingCart size={20} /> Commandes — {affaireReference || affaireId}</h3>
-          <Button variant="ghost" className="theme-close-btn" onClick={handleClose}><X size={18} /></Button>
+          <Button variant="ghost" className="theme-close-btn" onClick={handleClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -204,7 +204,7 @@ function SupplierBlock({ supplier, config, onChangeAction }) {
 
   return (
     <div className="supplier-block">
-      <div className="supplier-header" onClick={() => setExpanded(!expanded)}>
+      <div className="supplier-header" role="button" tabIndex={0} onClick={() => setExpanded(!expanded)}>
         <span className="supplier-expand">
           {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </span>

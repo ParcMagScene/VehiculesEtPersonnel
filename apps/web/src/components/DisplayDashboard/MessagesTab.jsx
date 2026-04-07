@@ -105,17 +105,17 @@ function MessagesTab({ _currentUser, refreshKey, onEdit, onRefresh }) {
             </div>
             <div className="list-item-actions">
               <Tooltip content="Modifier">
-                <Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(msg)}>
+                <Button variant="ghost" size="sm" iconOnly aria-label="Modifier" onClick={() => onEdit(msg)}>
                   <Settings size={14} />
                 </Button>
               </Tooltip>
               <Tooltip content={msg.is_active ? 'Désactiver' : 'Activer'}>
-                <Button variant="ghost" size="sm" iconOnly onClick={() => handleToggle(msg)}>
+                <Button variant="ghost" size="sm" iconOnly aria-label="Basculer visibilité" onClick={() => handleToggle(msg)}>
                   {msg.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
                 </Button>
               </Tooltip>
               <Tooltip content="Supprimer">
-                <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(msg)}>
+                <Button variant="danger" size="sm" iconOnly aria-label="Supprimer" onClick={() => handleDelete(msg)}>
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>

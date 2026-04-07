@@ -115,10 +115,10 @@ const SkillsTab = ({ skills, setSkills, currentUser }) => {
                   {skill.description && <span className="skill-item-desc">{skill.description}</span>}
                   {currentUser?.isAdmin && (
                     <div className="skill-item-actions">
-                      <Button variant="ghost" size="sm" iconOnly onClick={() => { setForm({ name: skill.name, category: skill.category, description: skill.description || '' }); setEditingSkill(skill); setShowForm(true); }}>
+                      <Button variant="ghost" size="sm" iconOnly onClick={() => { setForm({ name: skill.name, category: skill.category, description: skill.description || '' }); setEditingSkill(skill); setShowForm(true); }} aria-label="Modifier">
                         <Edit2 size={12} />
                       </Button>
-                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(skill.id)}>
+                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(skill.id)} aria-label="Supprimer">
                         <Trash2 size={12} />
                       </Button>
                     </div>

@@ -122,7 +122,7 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
               <span className="eq-qty">×{item.quantity}</span>
               {item.weight && <span style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>{item.weight * item.quantity} kg</span>}
               <Tooltip content="Retirer">
-                <Button variant="danger" size="sm" iconOnly onClick={() => handleRemove(item.id)}>
+                <Button variant="danger" size="sm" iconOnly aria-label="Retirer" onClick={() => handleRemove(item.id)}>
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>

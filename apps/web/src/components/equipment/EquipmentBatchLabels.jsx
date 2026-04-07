@@ -290,7 +290,7 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
 
           return (
             <div key={ref} className="ebl-group">
-              <div className="ebl-group-header" onClick={() => toggleCollapse(ref)}>
+              <div className="ebl-group-header" role="button" tabIndex={0} onClick={() => toggleCollapse(ref)}>
                 <Button variant="ghost" className="ebl-collapse-btn">
                   {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                 </Button>

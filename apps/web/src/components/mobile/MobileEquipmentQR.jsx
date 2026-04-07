@@ -333,7 +333,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
   return (
     <div className="m-eq-qr">
       <div className="m-eq-qr-header">
-        <Button variant="ghost" onClick={onBack || onNavigateHome}><ArrowLeft size={20} /></Button>
+        <Button variant="ghost" onClick={onBack || onNavigateHome} aria-label="Retour"><ArrowLeft size={20} /></Button>
         <h2>Équipement scanné</h2>
       </div>
 

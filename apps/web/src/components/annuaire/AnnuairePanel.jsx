@@ -312,7 +312,7 @@ function AnnuairePanel({ currentUser }) {
 
           <div className="annuaire-toolbar-actions">
             {(activeTab === 'clients' || activeTab === 'suppliers') && (
-              <Button variant="ghost" size="sm" iconOnly onClick={() => setShowFilters(!showFilters)}>
+              <Button variant="ghost" size="sm" iconOnly aria-label="Filtres" onClick={() => setShowFilters(!showFilters)}>
                 <Filter size={15} />
               </Button>
             )}

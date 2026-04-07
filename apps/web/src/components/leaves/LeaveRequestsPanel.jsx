@@ -170,16 +170,16 @@ const LeaveRequestsPanel = ({
 
         {/* Stats rapides */}
         <div className="lrp-stats">
-          <span className="lrp-stat" data-active={filter === 'all'} onClick={() => setFilter('all')}>
+          <span className="lrp-stat" data-active={filter === 'all'} role="tab" tabIndex={0} onClick={() => setFilter('all')}>
             Toutes ({stats.total})
           </span>
-          <span className="lrp-stat pending" data-active={filter === STATUS.PENDING} onClick={() => setFilter('pending')}>
+          <span className="lrp-stat pending" data-active={filter === STATUS.PENDING} role="tab" tabIndex={0} onClick={() => setFilter('pending')}>
             En attente ({stats.pending})
           </span>
-          <span className="lrp-stat accepted" data-active={filter === STATUS.ACCEPTED} onClick={() => setFilter('accepted')}>
+          <span className="lrp-stat accepted" data-active={filter === STATUS.ACCEPTED} role="tab" tabIndex={0} onClick={() => setFilter('accepted')}>
             Acceptées ({stats.accepted})
           </span>
-          <span className="lrp-stat refused" data-active={filter === STATUS.REFUSED} onClick={() => setFilter('refused')}>
+          <span className="lrp-stat refused" data-active={filter === STATUS.REFUSED} role="tab" tabIndex={0} onClick={() => setFilter('refused')}>
             Refusées ({stats.refused})
           </span>
         </div>

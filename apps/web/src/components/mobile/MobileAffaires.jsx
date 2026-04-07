@@ -323,14 +323,14 @@ function MobileAffaires({ onBack }) {
             <div className="maff-detail-section">
               <h4><Briefcase size={16} /> Affaires liées</h4>
               {detailData.links.parents.map(p => (
-                <div key={p.id} className="maff-linked-card" onClick={() => openDetail(p)}>
+                <div key={p.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(p)}>
                   <span className="maff-linked-label">Parent</span>
                   <span className="maff-linked-num">{p.numeroAffaire}</span>
                   <span className="maff-linked-name">{p.nom || p.client || ''}</span>
                 </div>
               ))}
               {detailData.links.children.map(c => (
-                <div key={c.id} className="maff-linked-card" onClick={() => openDetail(c)}>
+                <div key={c.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(c)}>
                   <span className="maff-linked-label">Enfant</span>
                   <span className="maff-linked-num">{c.numeroAffaire}</span>
                   <span className="maff-linked-name">{c.nom || c.client || ''}</span>

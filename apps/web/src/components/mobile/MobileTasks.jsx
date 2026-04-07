@@ -110,7 +110,7 @@ function MobileTasks({ currentUser, onBack }) {
   return (
     <div className="mobile-tasks">
       <div className="mobile-tasks-header">
-        <Button variant="ghost" className="mobile-back-btn" onClick={onBack}><ArrowLeft size={20} /></Button>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ArrowLeft size={20} /></Button>
         <h2>Tâches du jour</h2>
         <Button variant="ghost" className="mobile-tasks-refresh" onClick={loadTasks} disabled={loading}>
           <RefreshCw size={18} className={loading ? 'spin' : ''} />

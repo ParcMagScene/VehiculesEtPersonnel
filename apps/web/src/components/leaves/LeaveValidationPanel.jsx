@@ -208,7 +208,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
             <h2>Validation des congés</h2>
           </div>
           <div className="lvp-header-actions">
-            <Button variant="ghost" className="lvp-btn-refresh" onClick={loadData}><RefreshCw size={16} /></Button>
+            <Button variant="ghost" className="lvp-btn-refresh" onClick={loadData} aria-label="Actualiser"><RefreshCw size={16} /></Button>
             <Button variant="ghost" className="lvp-close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
           </div>
         </div>
@@ -533,7 +533,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
                 const typeCfg = LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] || LEAVE_TYPE_LABELS.conge_paye;
                 return (
                   <div key={req.id} className={`lvp-card ${req.status}`}>
-                    <div className="lvp-card-main" onClick={() => setExpandedId(expandedId === req.id ? null : req.id)}>
+                    <div className="lvp-card-main" role="button" tabIndex={0} onClick={() => setExpandedId(expandedId === req.id ? null : req.id)}>
                       <div className="lvp-card-person">
                         <Avatar name={`${req.first_name || req.firstName} ${req.last_name || req.lastName}`} avatar={req.person_photo} size="sm" />
                         <div>

@@ -1138,7 +1138,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
               {linkSearchResults.length > 0 && (
                 <div className="link-search-results">
                   {linkSearchResults.map(a => (
-                    <div key={a.id} className="link-search-item" onClick={() => handleAddLink(a.id)}>
+                    <div key={a.id} className="link-search-item" role="button" tabIndex={0} onClick={() => handleAddLink(a.id)}>
                       <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                       <span className="link-search-client">{a.client || '—'}</span>
                       <span className="link-search-title">{a.titre || a.eventName || ''}</span>
@@ -1200,7 +1200,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
               const statusInfo = TASK_STATUS_MAP[s.status] || TASK_STATUS_MAP.pending;
               return (
                 <div key={step.key} className={`task-step-item ${s.enabled ? 'enabled' : ''}`} style={s.enabled ? { borderLeftColor: step.color } : {}}>
-                  <div className="task-step-header" onClick={(e) => toggleTaskStep(step.key, e)} style={{ cursor: 'pointer' }}>
+                  <div className="task-step-header" role="button" tabIndex={0} onClick={(e) => toggleTaskStep(step.key, e)} style={{ cursor: 'pointer' }}>
                     <div className="task-step-check" style={s.enabled ? { background: step.color, borderColor: step.color } : {}}>
                       {s.enabled && <Check size={10} color="#fff" />}
                     </div>

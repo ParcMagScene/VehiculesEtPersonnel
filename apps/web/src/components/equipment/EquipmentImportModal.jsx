@@ -243,7 +243,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
                 <div className="eq-import-tree">
                   {hierarchy && [...hierarchy.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([family, subfamilies]) => (
                     <div key={family} className="eq-tree-family">
-                      <div className="eq-tree-item eq-tree-level-1" onClick={() => toggleFamily(family)}>
+                      <div className="eq-tree-item eq-tree-level-1" role="button" tabIndex={0} onClick={() => toggleFamily(family)}>
                         {expandedFamilies.has(family) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         <strong>{family}</strong>
                         <span className="eq-tree-count">{subfamilies.size} sous-familles</span>

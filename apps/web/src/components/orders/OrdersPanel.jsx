@@ -524,7 +524,7 @@ function OrdersPanel({ currentUser, isMobile }) {
             <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
             <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
             {completionAlerts.length > 0 && (
-              <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
+              <span className="stat-badge alert" role="button" tabIndex={0} onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
             )}
           </div>
         )}
@@ -1485,7 +1485,7 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
           const status = REQUEST_STATUS[req.status] || REQUEST_STATUS.pending;
           const priority = REQUEST_PRIORITY[req.priority] || REQUEST_PRIORITY.normal;
           return (
-            <div key={req.id} onClick={() => onClick?.(req)}
+            <div key={req.id} role="button" tabIndex={0} onClick={() => onClick?.(req)}
               style={{ background: 'var(--theme-bg-card, #fff)', border: `1px solid ${selectedId === req.id ? 'var(--theme-accent, #2563eb)' : 'var(--theme-border)'}`, borderRadius: 10, padding: '0.8rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1917,7 +1917,7 @@ const _SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrde
   return (
     <div className="supplier-slide-panel">
       <div className="slide-panel-header">
-        <Button variant="ghost" className="back-btn" onClick={onClose}><X size={18} /></Button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h2><Building2 size={20} /> {supplier.name}</h2>
         <Button variant="ghost" className="action-btn" onClick={() => { onClose(); onViewDetail(supplier); }}>
           <Eye size={14} /> Détail complet
@@ -1933,7 +1933,7 @@ const _SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrde
               const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
               const completion = order.item_count > 0 ? Math.round((order.completed_items / order.item_count) * 100) : 0;
               return (
-                <div key={order.id} className="supplier-order-card" onClick={() => { onClose(); onViewOrder(order); }}>
+                <div key={order.id} className="supplier-order-card" role="button" tabIndex={0} onClick={() => { onClose(); onViewOrder(order); }}>
                   <div className="order-card-top">
                     <span className="order-ref"><Hash size={14} /> {order.reference}</span>
                     <StatusBadge color={status.color} size="sm">
@@ -2084,7 +2084,7 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                 return (
                   <div key={order.id} className="supplier-order-detail-card">
                     <div className="order-card-top">
-                      <span className="order-ref clickable" onClick={() => { onClose(); onViewOrder(order); }}>
+                      <span className="order-ref clickable" role="button" tabIndex={0} onClick={() => { onClose(); onViewOrder(order); }}>
                         <Hash size={14} /> {order.reference}
                       </span>
                       <StatusBadge color={status.color} size="sm">
@@ -2176,7 +2176,7 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
   return (
     <div className="orders-slide-panel open">
       <div className="slide-panel-header">
-        <Button variant="ghost" className="back-btn" onClick={onClose}><X size={18} /></Button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{order.reference}</h3>
         <Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(order)} title="Ouvrir en détail"><Eye size={14} /></Button>
       </div>
@@ -2239,7 +2239,7 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
   return (
     <div className="orders-slide-panel open">
       <div className="slide-panel-header">
-        <Button variant="ghost" className="back-btn" onClick={onClose}><X size={18} /></Button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{quote.reference}</h3>
         <Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(quote)} title="Ouvrir en détail"><Eye size={14} /></Button>
       </div>
@@ -2294,7 +2294,7 @@ const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin,
   return (
     <div className="orders-slide-panel open">
       <div className="slide-panel-header">
-        <Button variant="ghost" className="back-btn" onClick={onClose}><X size={18} /></Button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{request.article}</h3>
         <div style={{ display: 'flex', gap: 4 }}>
           <Button variant="ghost" className="action-btn small" onClick={() => onEdit(request)} title="Modifier"><Edit2 size={14} /></Button>
@@ -2333,7 +2333,7 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
   return (
     <div className="orders-slide-panel open">
       <div className="slide-panel-header">
-        <Button variant="ghost" className="back-btn" onClick={onClose}><X size={18} /></Button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3><Building2 size={16} /> {supplier.name}</h3>
         <Button variant="ghost" className="action-btn small" onClick={() => { onClose(); onViewDetail(supplier); }} title="Détail complet"><Eye size={14} /></Button>
       </div>
@@ -2366,7 +2366,7 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
               const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
               const completion = order.item_count > 0 ? Math.round((order.completed_items / order.item_count) * 100) : 0;
               return (
-                <div key={order.id} className="supplier-order-card" onClick={() => onViewOrder(order)}>
+                <div key={order.id} className="supplier-order-card" role="button" tabIndex={0} onClick={() => onViewOrder(order)}>
                   <div className="order-card-top">
                     <span className="order-ref"><Hash size={14} /> {order.reference}</span>
                     <StatusBadge color={status.color} size="sm">

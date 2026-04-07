@@ -3,10 +3,10 @@
 // Congés : historique, export PDF, impression
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   X, Calendar, Download, Printer, ChevronDown, ChevronRight,
-  FileText, Clock, CheckCircle, AlertTriangle, RefreshCw,
+  FileText, RefreshCw,
   CalendarOff, User, Filter, Edit3, Plus,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';

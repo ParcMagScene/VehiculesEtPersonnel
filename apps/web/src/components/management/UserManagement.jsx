@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users, Briefcase } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users } from 'lucide-react';
 import api from '../../utils/api';
 import ProfileEditModal from '../auth/ProfileEditModal';
 import './UserManagement.css';
@@ -172,7 +172,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     const { id, email: reqEmail, name: reqName } = approveModal;
 
     try {
-      const result = await api.updateAccessRequest(id, 'approved', giveAdmin);
+      const _result = await api.updateAccessRequest(id, 'approved', giveAdmin);
       
       if (sendEmail) {
         // Construire l'URL de création de compte

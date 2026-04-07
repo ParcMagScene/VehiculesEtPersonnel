@@ -1,4 +1,3 @@
-import React from 'react';
 import { getApiUrl } from '../utils/api';
 
 // Générer les initiales à partir du nom

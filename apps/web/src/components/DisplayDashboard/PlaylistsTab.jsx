@@ -1,5 +1,5 @@
 // PlaylistsTab — Liste et gestion des playlists
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { List, Play, Monitor, Clock, Trash2, Settings, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';

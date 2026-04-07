@@ -3,8 +3,8 @@
 // (type de tâche → couleur d'affichage sur l'écran TV)
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Tag, Plus, Trash2, Save, GripVertical } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { Tag, Plus, Trash2, Save } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { Button, Select, Tooltip, SectionHeader } from '@/design-system';
@@ -32,7 +32,7 @@ const TASK_SECTIONS = [
   { key: 'manual', label: '✏️ Divers' },
 ];
 
-function ColorRulesTab({ currentUser, refreshKey, onPreviewChange }) {
+function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
   const toast = useToast();
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);

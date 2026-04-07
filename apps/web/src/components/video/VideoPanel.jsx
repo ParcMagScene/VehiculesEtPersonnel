@@ -2,7 +2,7 @@
 // VideoPanel.jsx — Module principal de surveillance vidéo
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { useCameraList } from '../../hooks/useCameraList';
 import { usePTZ } from '../../hooks/usePTZ';
 import CameraGrid from './CameraGrid';
@@ -11,7 +11,7 @@ import PlaybackPanel from './PlaybackPanel';
 import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight, Film } from 'lucide-react';
 import api from '../../utils/api';
 import './VideoPanel.css';
-import { Button, Dialog, Table, Spinner, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
+import { Button, Dialog, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
 
 import { ROLES } from '../../constants';
 

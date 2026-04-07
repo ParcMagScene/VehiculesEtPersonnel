@@ -57,7 +57,6 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showNewConv, setShowNewConv] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);

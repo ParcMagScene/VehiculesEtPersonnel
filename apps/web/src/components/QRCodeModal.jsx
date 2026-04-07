@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { QrCode, Printer, Link as LinkIcon, Download } from 'lucide-react';
 import { Button, ModalLayout } from '@/design-system';
 import './QRCodeModal.css';
@@ -233,7 +233,7 @@ function QRCodeModal({ onClose }) {
     }, 'image/jpeg', 0.95);
   };
 
-  const handleOverlayClick = (e) => {
+  const _handleOverlayClick = (e) => {
     if (e.target.classList.contains('qr-modal-overlay')) {
       onClose();
     }

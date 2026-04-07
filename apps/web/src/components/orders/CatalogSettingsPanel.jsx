@@ -2,7 +2,7 @@
 // CatalogSettingsPanel.jsx — Apprentissage parsers & normalisation taxonomie
 // ============================================================
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, Upload, AlertTriangle, CheckCircle2, BarChart3, Tags, ArrowRight, RefreshCw, Zap, Eye, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, BarChart3, Tags, ArrowRight, RefreshCw, Zap, Eye } from 'lucide-react';
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
 import { extractPDFMeta } from '../../utils/pdfParser';
@@ -141,7 +141,6 @@ function ParserLearningTab() {
 function SingleParserReport({ report }) {
   const { result, analysis, parserLabel } = report;
   const m = analysis?.metrics;
-
 
   if (!m) return null;
 

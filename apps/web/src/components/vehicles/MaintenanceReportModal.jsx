@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, Printer, FileText, ChevronLeft, ChevronRight, Calendar, Download, Filter } from 'lucide-react';
+import { X, Printer, FileText, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import api from '../../utils/api';
 import './MaintenanceReportModal.css';
 import { Button, Select, Table } from '@/design-system';

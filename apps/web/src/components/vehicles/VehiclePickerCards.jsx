@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check } from 'lucide-react';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import './VehiclePickerCards.css';

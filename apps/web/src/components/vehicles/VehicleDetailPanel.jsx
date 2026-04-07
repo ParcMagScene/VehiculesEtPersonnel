@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader, User, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Wrench, AlertTriangle, Calendar, Gauge, User, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import { Button, Tag } from '@/design-system';

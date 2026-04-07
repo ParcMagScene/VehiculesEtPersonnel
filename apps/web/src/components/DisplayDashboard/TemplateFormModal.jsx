@@ -1,5 +1,5 @@
 // TemplateFormModal — Création / édition d'un template d'affichage
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Layout, Save, Plus, Trash2 } from 'lucide-react';
 import { Button, FormField, ModalLayout, Input, Textarea, Select, Tooltip } from '@/design-system';
 import { useToast } from '../../hooks/useToast';

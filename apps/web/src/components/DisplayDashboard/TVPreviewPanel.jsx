@@ -3,8 +3,8 @@
 // « Direct » (diffusion en cours) + « Preview » (après validation)
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { Monitor, Eye, RefreshCw, Radio, Bell } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { Eye, RefreshCw, Radio, Bell } from 'lucide-react';
 import api from '../../utils/api';
 import TVScreenMini from './TVScreenMini';
 

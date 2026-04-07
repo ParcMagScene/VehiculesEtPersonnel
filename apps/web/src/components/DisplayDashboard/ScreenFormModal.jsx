@@ -1,5 +1,5 @@
 // ScreenFormModal — Création / édition d'un écran d'affichage
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Monitor, Save } from 'lucide-react';
 import { Button, FormField, ModalLayout, Input, Select } from '@/design-system';
 import { useToast } from '../../hooks/useToast';

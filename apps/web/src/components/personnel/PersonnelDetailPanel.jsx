@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, User, Phone, Mail, Briefcase, Award, Calendar, MapPin, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Phone, Mail, Briefcase, Award, Calendar, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import { Avatar, Button, SectionHeader, Tag } from '@/design-system';
@@ -54,7 +54,7 @@ const LEAVE_TYPE_LABELS = {
 const STATUS_LABELS = { pending: 'En attente', approved: 'Approuvé', rejected: 'Refusé' };
 const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444' };
 
-const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequestLeave }) => {
+const PersonnelDetailContent = ({ person, positions = [], _skills = [], onRequestLeave }) => {
   if (!person) return null;
 
   // Parser les postes par défaut

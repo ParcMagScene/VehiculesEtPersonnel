@@ -1,7 +1,4 @@
-import React from 'react';
 import { safeDate } from '../../utils/formatUtils';
-import { Table } from '@/design-system';
-
 import { STATUS } from '../../constants';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');

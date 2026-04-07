@@ -2,7 +2,7 @@
  * GenerateOrdersModal — Créer/Mettre à jour des commandes depuis les articles d'une affaire
  * Détecte les fournisseurs, propose créer ou ajouter à une commande existante.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Package, Briefcase, Plus, ChevronDown, ChevronRight, Check, AlertTriangle, Loader, ShoppingCart, Truck } from 'lucide-react';
 import api from '../../utils/api';
 import './GenerateOrdersModal.css';

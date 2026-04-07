@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save, Tag, ShieldAlert } from 'lucide-react';
 import api from '../../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel } from '../../utils/pdfParser';

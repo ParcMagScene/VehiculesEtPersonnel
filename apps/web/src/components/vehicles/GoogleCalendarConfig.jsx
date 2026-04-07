@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Save, AlertCircle, LogOut, RefreshCw } from 'lucide-react';
 import api from '../../utils/api';
 import { saveToIndexedDB, loadFromIndexedDB } from '../../utils/indexedDB';

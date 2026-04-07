@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Lock, Save, Eye, EyeOff, Shield, KeyRound } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, FormField, Input } from '@/design-system';

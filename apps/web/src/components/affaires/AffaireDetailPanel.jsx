@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, ChevronRight, ChevronDown, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw, ShoppingCart, Palette } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw, ShoppingCart } from 'lucide-react';
 import { AFFAIRE_TYPES, getTypeInfo, AFFAIRE_TYPE_SECTIONS } from '../../utils/affaireConstants';
 import api, { getApiUrl } from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
@@ -80,7 +80,7 @@ const extractLinksFromText = (text) => {
 // Contenu partagé (sections de détail)
 // ═══════════════════════════════════════
 
-const AffaireDetailContent = ({ affaire, reservations = [], missions = [], persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity, isEditing = false, editForm = null, setEditForm = null }) => {
+const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity, isEditing = false, editForm = null, setEditForm = null }) => {
   const typeInfo = getTypeInfo(isEditing && editForm ? editForm.type : affaire.type);
 
   // ═══ États pour les actions (mode éditable) ═══
@@ -102,7 +102,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   const fileInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
 
-  const { annotate, reset: resetAnnotation, annotationResult, isLoading: annotationLoading } = useAnnotateBP({ toast: { error: (msg) => showFeedback({ type: 'error', message: msg }, 4000) } });
+  const { annotate, reset: resetAnnotation, annotationResult, isLoading: _annotationLoading } = useAnnotateBP({ toast: { error: (msg) => showFeedback({ type: 'error', message: msg }, 4000) } });
 
   // ═══ Autocomplete Client & Interlocuteur ═══
   const [clientSuggestions, setClientSuggestions] = useState([]);
@@ -641,7 +641,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   }, [affaire.numeroAffaire, showArticles, linkedBLImports]);
 
   // ═══ Générer commandes depuis articles BL ═══
-  const handleGenerateOrders = () => {
+  const _handleGenerateOrders = () => {
     if (blArticles.length === 0 || generatingOrders) return;
     const fournisseurs = [...new Set(blArticles.map(a => a.fournisseur).filter(Boolean))];
     if (fournisseurs.length === 0) {

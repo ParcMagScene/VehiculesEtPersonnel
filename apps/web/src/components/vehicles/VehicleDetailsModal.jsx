@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader, User } from 'lucide-react';
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';

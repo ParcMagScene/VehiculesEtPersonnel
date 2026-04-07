@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import api from '../utils/api';
 import { setVolume, requestNotificationPermission } from '../utils/notificationSound';
 

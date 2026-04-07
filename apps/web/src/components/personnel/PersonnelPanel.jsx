@@ -38,10 +38,9 @@ import PositionsTab from './PositionsTab';
 import { STATUS } from '../../constants';
 
 import {
-  PERSON_TYPES, CONTRACT_TYPES, SKILL_CATEGORIES, SKILL_LEVELS,
+  PERSON_TYPES, CONTRACT_TYPES, SKILL_LEVELS,
   POSITION_CATEGORIES, PERMANENT_TYPES, NON_PERMANENT_TYPES,
-  getCategoryColor, getPositionCategoryColor,
-} from './personnelConstants';
+  getCategoryColor, } from './personnelConstants';
 
 // ═══════════════════════════════════════
 // Composant principal
@@ -1576,8 +1575,8 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           }
           const isOriginalBeingResized = spanHere && isResizing && spanHere.missionId === resizingSpanId;
 
-          const missionTitle = spanHere?.mission?.title || '';
-          const assignStatus = spanHere?.assignment?.status || '';
+          const _missionTitle = spanHere?.mission?.title || '';
+          const _assignStatus = spanHere?.assignment?.status || '';
           const isHovered = hoveredSlot?.personId === person.id && hoveredSlot?.slotIndex === slotIndex;
           const dayLabel = view === 'year'
             ? format(slot.day, 'MMMM yyyy', { locale: fr })
@@ -1742,7 +1741,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   };
 
   // Rendu d'un bloc de preview (drag-move ou resize)
-  const renderPreviewBlock = (span, person) => {
+  const renderPreviewBlock = (span, _person) => {
     const assignStatus = span.assignment?.status || '';
     const missionTitle = span.mission?.title || '';
     return (

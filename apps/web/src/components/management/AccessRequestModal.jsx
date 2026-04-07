@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, User, Send, Lock, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
 import { Button, ModalLayout, Input, InlineAlert, FormField } from '@/design-system';
 import api from '../../utils/api';

@@ -3,7 +3,7 @@ import { ShoppingCart, FileText, Plus, Filter, Edit2, Trash2, ArrowLeft,
   Users as UsersIcon, Package, Send, Check, X, ArrowRight, 
   Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck,
   ClipboardList, Bell, Eye, CheckCircle, Clock, Archive, 
-  FileDown, Receipt, Layers, ChevronRight, Globe, BookOpen } from 'lucide-react';
+  FileDown, Receipt, Layers, BookOpen } from 'lucide-react';
 
 const SupplierCatalogPanel = lazy(() => import('./SupplierCatalogPanel'));
 import api from '../../utils/api';
@@ -899,7 +899,7 @@ const QuotesList = React.memo(({ quotes, onView, onDoubleClick, onEdit, onDelete
 });
 
 // ═══ Liste des fournisseurs ═══
-const SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
+const _SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
   if (!suppliers.length) return <div className="orders-empty">Aucun fournisseur</div>;
   return (
     <div className="orders-suppliers-grid">
@@ -929,7 +929,7 @@ const SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
 });
 
 // ═══ Détail Commande ═══
-const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChange }) => {
+const _OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChange }) => {
   const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
   const items = order.items || [];
 
@@ -1058,7 +1058,7 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
 });
 
 // ═══ Détail Devis ═══
-const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, onStatusChange }) => {
+const _QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, onStatusChange }) => {
   const status = QUOTE_STATUS[quote.status] || QUOTE_STATUS.draft;
   const items = quote.items || [];
   return (
@@ -1932,7 +1932,7 @@ const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick
 });
 
 // ═══ Volet fournisseur (clic simple) ═══
-const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder }) => {
+const _SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder }) => {
   return (
     <div className="supplier-slide-panel">
       <div className="slide-panel-header">
@@ -1998,7 +1998,7 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
 const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, currentUser }) => {
   const { supplier, orders, documents, catalogs, workflow } = data;
   const [activeSection, setActiveSection] = useState('workflow');
-  const [uploadingDoc, setUploadingDoc] = useState(null);
+  const [_uploadingDoc, setUploadingDoc] = useState(null);
   const toast = useToast();
 
   const handleUploadDoc = async (orderId, docType) => {

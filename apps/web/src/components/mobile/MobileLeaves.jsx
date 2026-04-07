@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
-  ChevronLeft, Plus, Clock, CheckCircle, XCircle, AlertTriangle, 
-  Calendar, ChevronDown, FileText, Send, Trash2, Filter, RefreshCw, X
+  ChevronLeft, Plus, Clock, CheckCircle, XCircle, Calendar, Send, Trash2, RefreshCw
 } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, DetailRow, Textarea, InlineAlert} from '@/design-system';

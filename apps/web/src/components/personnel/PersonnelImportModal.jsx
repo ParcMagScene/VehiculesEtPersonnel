@@ -3,11 +3,10 @@
 // Import avec détection des collisions (code libre, nom+prénom)
 // ============================================================
 
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
-  Upload, FileText, AlertTriangle, CheckCircle, X,
-  ChevronDown, ChevronRight, Eye, Download,
-  Users, UserCheck, UserPlus, AlertCircle, RefreshCw,
+  Upload, AlertTriangle, CheckCircle, Eye, Download,
+  Users, UserPlus, AlertCircle, RefreshCw,
 } from 'lucide-react';
 import { Button, ModalLayout, Table, Spinner, Tag, InlineAlert, Accordion } from '@/design-system';
 import api from '../../utils/api';
@@ -70,7 +69,7 @@ function parseCSV(text, separator = ';') {
 
 const PersonnelImportModal = ({ onClose, onImportDone }) => {
   const [step, setStep] = useState('upload'); // upload | preview | importing | done
-  const [file, setFile] = useState(null);
+  const [_file, setFile] = useState(null);
   const [csvData, setCsvData] = useState(null);
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);

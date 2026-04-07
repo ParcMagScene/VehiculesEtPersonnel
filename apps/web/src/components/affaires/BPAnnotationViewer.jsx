@@ -42,8 +42,7 @@ function groupTextIntoLines(textItems, viewport) {
       y: tx[5],
       width: item.width * viewport.scale,
       height: Math.abs(tx[3] - tx[1]) || item.height * viewport.scale || 12,
-      italic: !isMainFont || hasShear,
-    };
+      italic: !isMainFont || hasShear };
   }).filter(p => p.text.length > 0);
 
   const tolerance = 4;
@@ -70,8 +69,7 @@ function groupTextIntoLines(textItems, viewport) {
         text: item.text,
         items: [item],
         italicChars: item.italic ? item.text.length : 0,
-        totalChars: item.text.length,
-      });
+        totalChars: item.text.length });
     }
   }
 
@@ -85,7 +83,7 @@ function groupTextIntoLines(textItems, viewport) {
 
 // ─── Dessiner les annotations sur l'overlay ───
 function drawAnnotations(ctx, lines, viewport, annotationData) {
-  const { sections = [], annotatedItems = [], kits = [] } = annotationData;
+  const { sections = [], annotatedItems = [], _kits = [] } = annotationData;
   if (lines.length === 0) return;
 
   // Index section -> couleur
@@ -327,7 +325,7 @@ function drawInfoBlock(ctx, canvasWidth, lines, affaireData, scale) {
   }
 }
 
-function roundRect(ctx, x, y, w, h, r) {
+function _roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -359,7 +357,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
   const [loading, setLoading] = useState(false);
 
   const data = annotationResult || {};
-  const { sections = [], stats = {}, infoLines = [], affaire, blImport, kits = [] } = data;
+  const { sections = [], stats = {}, infoLines = [], affaire, blImport, _kits = [] } = data;
 
   // ─── Charger le PDF ───
   useEffect(() => {

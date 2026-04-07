@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { User, ChevronDown, Check } from 'lucide-react';
 import { Avatar, Button } from '@/design-system';
 import './DriverSelect.css';

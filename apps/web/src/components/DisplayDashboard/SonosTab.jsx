@@ -3,13 +3,13 @@
 // Affichage du titre en cours, et configuration IP
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
+import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { Music, Wifi, RefreshCw, Disc } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { Button, Input, Checkbox, InlineAlert, SectionHeader } from '@/design-system';
 
-function SonosTab({ currentUser, refreshKey }) {
+function SonosTab({ _currentUser, refreshKey }) {
   const toast = useToast();
   const [sonosIP, setSonosIP] = useState('');
   const [nowPlaying, setNowPlaying] = useState(null);

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  X, Clock, User, FileText, Calendar, Check, Loader, Save, Briefcase, Search, Link2, Unlink, MapPin, ExternalLink
+  X, Clock, User, FileText, Calendar, Loader, Save, Briefcase, Search, Link2, Unlink, MapPin, ExternalLink
 } from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
@@ -149,7 +149,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     }
   };
 
-  const personName = task.personFirstName
+  const _personName = task.personFirstName
     ? `${task.personFirstName} ${task.personLastName || ''}`
     : null;
 

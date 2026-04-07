@@ -3,7 +3,7 @@ import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, ChevronDown, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
   CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings,
-  Repeat, SkipForward, Link, RefreshCw, Palette, Truck, CheckCheck, Search, Unlink
+  Repeat, SkipForward, Link, RefreshCw, Truck, CheckCheck
 } from 'lucide-react';
 import api from '../../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
@@ -85,7 +85,7 @@ const mapAffaireToSection = (affaire) => {
   return info ? info.section : 'manual';
 };
 
-const STATUS_ORDER = ['pending', 'in_progress', 'done', 'cancelled'];
+const _STATUS_ORDER = ['pending', 'in_progress', 'done', 'cancelled'];
 
 const todayStr = () => {
   const d = new Date();
@@ -120,7 +120,7 @@ const getWeekDays = (dateStr) => {
 };
 
 // ═══ Composant Principal ═══
-function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavigateToEntity }) {
+function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavigateToEntity }) {
   const toast = useToast();
   const [tasks, setTasks] = useState([]);
   const [persons, setPersons] = useState([]);
@@ -135,7 +135,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Inline add form
-  const [addingSection, setAddingSection] = useState(null);
+  const [_addingSection, setAddingSection] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPerson, setNewTaskPerson] = useState('');
   const [newTaskAffaire, setNewTaskAffaire] = useState('');
@@ -148,7 +148,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [newTaskVehicle, setNewTaskVehicle] = useState(''); // vehicle ID (for new reservation)
   // Affaire autocomplete (inline add)
   const [affaireInlineSearch, setAffaireInlineSearch] = useState('');
-  const [affaireInlineOpen, setAffaireInlineOpen] = useState(false);
+  const [_affaireInlineOpen, setAffaireInlineOpen] = useState(false);
   const [allAffaires, setAllAffaires] = useState([]);
   const affaireInlineRef = useRef(null);
   const [showPdfExport, setShowPdfExport] = useState(false);
@@ -268,7 +268,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   }, []);
 
   // Filtrer les affaires pour l'autocomplete inline
-  const filteredInlineAffaires = useMemo(() => {
+  const _filteredInlineAffaires = useMemo(() => {
     if (!affaireInlineSearch.trim()) return allAffaires.slice(0, 30);
     const q = affaireInlineSearch.toLowerCase();
     return allAffaires.filter(a =>
@@ -278,7 +278,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     ).slice(0, 30);
   }, [allAffaires, affaireInlineSearch]);
 
-  const selectedInlineAffaire = useMemo(() => {
+  const _selectedInlineAffaire = useMemo(() => {
     if (!newTaskAffaire) return null;
     return allAffaires.find(a => a.numeroAffaire === newTaskAffaire) || null;
   }, [allAffaires, newTaskAffaire]);
@@ -492,7 +492,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     [displayEvents, linkedEventIds]
   );
 
-  const eventsBySection = useMemo(() => {
+  const _eventsBySection = useMemo(() => {
     const groups = {};
     Object.keys(SECTIONS).forEach(k => { groups[k] = []; });
     unlinkedEvents.forEach(ev => {
@@ -763,7 +763,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   }, [viewMode, weekDays, tasks, unlinkedEvents, enrichedAffaires, filteredWeekGoogleEvents, icalEvents]);
 
   // Index des display events par affaire_id (pour affectation personnel sur les lignes affaire)
-  const displayEventByAffaire = useMemo(() => {
+  const _displayEventByAffaire = useMemo(() => {
     const map = new Map();
     displayEvents.forEach(ev => {
       if (ev.affaireId) {
@@ -860,8 +860,6 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     );
   };
 
-
-
   // Toggle task status
   const cycleStatus = async (task) => {
     const nextStatus = {
@@ -918,7 +916,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   // Add task inline
-  const handleAddTask = async (section) => {
+  const _handleAddTask = async (section) => {
     if (!newTaskTitle.trim()) {
       toast.warning('Titre requis');
       return;
@@ -1298,9 +1296,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     );
   };
 
-  const renderDisplayEventRow = (event) => {
+  const _renderDisplayEventRow = (event) => {
     const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
-    const isPrep = event.type === 'preparation';
+    const _isPrep = event.type === 'preparation';
     const isHidden = event.visible === 0;
 
     // Le type est redondant si on est dans une section affaireOnly (le bandeau dit déjà "Préparations X", "Chargement", etc.)
@@ -1392,7 +1390,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   // Carte affaire dans une section — layout colonnes aligné
-  const renderAffaireRow = (affaire) => {
+  const _renderAffaireRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
     const isExpanded = expandedRdv === affaire.numeroAffaire;
     const planningStatus = affaire.planningStatus || eventStatuses.get(`rdv:${affaire.numeroAffaire}`) || 'pending';
@@ -1484,7 +1482,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const timeStr = startDT.includes('T')
       ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
       : 'Journée';
-    const dayStr = startDT.includes('T')
+    const _dayStr = startDT.includes('T')
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const location = event.location || '';
@@ -1696,7 +1694,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const timeStr = startDT.includes('T')
       ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
       : 'Journée';
-    const dayStr = startDT.includes('T')
+    const _dayStr = startDT.includes('T')
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const isProcessed = processedGoogleIds.has(event.id);
@@ -2180,7 +2178,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     }
   };
 
-  const handleCyclePlanningEventStatus = async (eventType, eventId) => {
+  const _handleCyclePlanningEventStatus = async (eventType, eventId) => {
     try {
       await api.cyclePlanningEventStatus(eventType, eventId);
       loadTasks(true);
@@ -2190,7 +2188,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   // Format date court pour le mode semaine
-  const getDateBadge = (dateStr) => {
+  const _getDateBadge = (dateStr) => {
     if (viewMode !== 'week' || !dateStr) return null;
     const d = new Date(dateStr + 'T00:00:00');
     return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
@@ -2358,7 +2356,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
               const evCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
               const taskCount = dayData.tasks.length;
-              const total = evCount + taskCount;
+              const _total = evCount + taskCount;
 
               return (
                 <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>

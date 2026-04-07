@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, CheckCircle, Clock, Circle, XCircle, RefreshCw, Briefcase, MapPin, User } from 'lucide-react';
 import api from '../../utils/api';
 import { Accordion, Button, ProgressBar } from '@/design-system';

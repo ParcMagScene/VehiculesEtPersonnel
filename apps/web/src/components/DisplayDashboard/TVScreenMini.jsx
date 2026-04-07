@@ -4,7 +4,7 @@
 // Aligné sur : calendar-dashboard/client/ (index.html + styles.css)
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 
 import { STATUS } from '../../constants';
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Car, Calendar, Settings, LogOut, Home, AlertCircle, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, ChevronLeft, Bell, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase, ClipboardList } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Car, Settings, LogOut, Home, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase, ClipboardList } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
@@ -35,7 +35,7 @@ function MobileApp({ onSwitchToDesktop }) {
   const [clients, setClients] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [garages, setGarages] = useState([]);
-  const { theme, isDark, toggleTheme, palette, setPalette } = useTheme();
+  const { theme: _theme, isDark, toggleTheme, palette, setPalette } = useTheme();
   const [showThemePanel, setShowThemePanel] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -485,7 +485,7 @@ function MobileApp({ onSwitchToDesktop }) {
             reservations={reservations}
             maintenances={maintenances}
             onClose={() => setCurrentScreen('parc-dashboard')}
-            onCreateReservation={(vehicleId, date) => {
+            onCreateReservation={(_vehicleId, _date) => {
               setCurrentScreen('reservations');
             }}
           />

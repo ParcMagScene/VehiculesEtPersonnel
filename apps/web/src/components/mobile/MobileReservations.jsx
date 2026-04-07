@@ -1,7 +1,7 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import { useState, useImperativeHandle, forwardRef } from 'react';
 import { format, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ArrowLeft, Car, Calendar, Users, MapPin, Plus, ChevronRight, Check } from 'lucide-react';
+import { ArrowLeft, Car, Calendar, Users, Plus, ChevronRight, Check } from 'lucide-react';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import api from '../../utils/api';
 import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';

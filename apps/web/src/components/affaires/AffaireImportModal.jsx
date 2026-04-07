@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import logger from "../../utils/logger";
 import api from '../../utils/api';
 import './AffaireImportModal.css';
-import { extractTextFromPDF, parseBonLivraison, parseDate, smartParse, batchParsePDFs, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
+import { extractTextFromPDF, smartParse, batchParsePDFs } from '../../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../../utils/indexedDB';
 import PhoneInput from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
@@ -13,9 +13,9 @@ const AffaireImportModal = ({
   isOpen, 
   onClose, 
   event,
-  onEventCreated,
+  _onEventCreated,
   onEventUpdated,
-  onRequestEditReservation
+  _onRequestEditReservation
 }) => {
   const toast = useToast();
   const [step, setStep] = useState('upload'); // 'choice', 'upload', 'form', 'edit-event', 'upload-additional'
@@ -36,7 +36,7 @@ const AffaireImportModal = ({
     titre: '',
     description: ''
   });
-  const [eventFormData, setEventFormData] = useState({
+  const [_eventFormData, setEventFormData] = useState({
     titre: '',
     description: '',
     dateDebut: '',
@@ -45,13 +45,13 @@ const AffaireImportModal = ({
   const [existingAffaires, setExistingAffaires] = useState([]);
   const [replaceConfirm, setReplaceConfirm] = useState(null);
   const [initialFormData, setInitialFormData] = useState(null);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [_hasChanges, setHasChanges] = useState(false);
   
   // ═══ Nouveaux états : aperçu PDF, détection type, batch ═══
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [detectedDocType, setDetectedDocType] = useState(null); // { docType, docTypeLabel, confidence }
-  const [extractedText, setExtractedText] = useState('');
+  const [_extractedText, setExtractedText] = useState('');
   const [batchMode, setBatchMode] = useState(false);
   const [batchResults, setBatchResults] = useState([]); // [{ file, docType, confidence, info, error }]
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
@@ -196,7 +196,7 @@ const AffaireImportModal = ({
     setHasChanges(hasChanged);
   }, [formData, initialFormData]);
 
-  const loadExistingAffaires = async () => {
+  const _loadExistingAffaires = async () => {
     if (!event?.id) return;
     
     try {
@@ -279,7 +279,7 @@ const AffaireImportModal = ({
     e.stopPropagation();
   };
 
-  const handleDrop = async (e) => {
+  const _handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -290,7 +290,7 @@ const AffaireImportModal = ({
     }
   };
 
-  const handleFileInput = async (e) => {
+  const _handleFileInput = async (e) => {
     const files = e.target.files;
     if (files.length > 0) {
       await handleFileSelection(files[0]);
@@ -550,7 +550,7 @@ const AffaireImportModal = ({
     }
   };
 
-  const handleCreateWithoutPDF = () => {
+  const _handleCreateWithoutPDF = () => {
     setStep('form');
   };
 

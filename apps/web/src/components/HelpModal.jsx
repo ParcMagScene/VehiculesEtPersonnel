@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { X, HelpCircle, Download, Truck, Users, Briefcase, Calendar, MessageSquare, Mouse, Keyboard, 
-  Package, ShoppingCart, ChevronDown, ChevronRight, Wrench, CalendarDays, Shield } from 'lucide-react';
+import { X, HelpCircle, Download, Truck, Users, Briefcase, MessageSquare, Keyboard, 
+  Package, ShoppingCart, Wrench, Shield } from 'lucide-react';
 import { SHORTCUTS, SHORTCUT_CATEGORIES } from '../hooks/useKeyboardShortcuts';
 import './HelpModal.css';
-import { Accordion, Button, Card, EmptyState, Input, SearchBar, Tab, TabList, TabPanel, Tabs } from '@/design-system';
+import { Accordion, Button, Card, EmptyState, SearchBar, Tab, TabList, TabPanel, Tabs } from '@/design-system';
 
 // ═══ FAQ Data ═══
 const FAQ_ITEMS = [

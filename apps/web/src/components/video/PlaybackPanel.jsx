@@ -2,7 +2,7 @@
 // PlaybackPanel.jsx — Relecture des enregistrements NVR
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Calendar, Play, Square, Loader, Clock, Film, AlertCircle } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Select } from '@/design-system';

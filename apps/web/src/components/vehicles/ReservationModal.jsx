@@ -114,17 +114,15 @@ const ReservationModal = ({
     onClose();
   };
 
-  const [newAffaire, setNewAffaire] = useState('');
-
   // Ref pour le champ lieu (autocomplétion custom sur les lieux enregistrés)
   const locationInputRef = React.useRef(null);
 
   // Hooks pour l'autocomplétion
   const { suggestions: clientSuggestions, addToHistory: addClient } = useAutocomplete('clients');
   const { suggestions: driverSuggestions, addToHistory: addDriver } = useAutocomplete('drivers');
-  const { suggestions: locationSuggestions, addToHistory: addLocation } = useAutocomplete('locations');
+  const { suggestions: _locationSuggestions, addToHistory: addLocation } = useAutocomplete('locations');
   const { suggestions: prestationSuggestions, addToHistory: addPrestation } = useAutocomplete('prestations');
-  const { suggestions: affaireSuggestions, addToHistory: addAffaire } = useAutocomplete('affaires');
+  const { suggestions: _affaireSuggestions, addToHistory: addAffaire } = useAutocomplete('affaires');
 
   // États pour TripDetailsModal
   const [selectedEventForTrip, setSelectedEventForTrip] = useState(null);
@@ -361,7 +359,7 @@ const ReservationModal = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleGoogleEventSelect = (e) => {
+  const _handleGoogleEventSelect = (e) => {
     const eventId = e.target.value;
     if (eventId) {
       const selectedEvent = googleEvents.find(ev => ev.id === eventId);
@@ -661,7 +659,7 @@ const ReservationModal = ({
 
   // Ouvrir le modal de trajet combiné pour un groupe
   const handleOpenCombinedTripDetails = (groupEventItems) => {
-    setSelectedEventsForCombinedTrip(groupEventItems.map((item, index) => ({
+    setSelectedEventsForCombinedTrip(groupEventItems.map((item, _index) => ({
       event: item.event,
       eventIndex: formData.linkedEventIds.indexOf(item.eventId)
     })));
@@ -768,7 +766,7 @@ const ReservationModal = ({
     });
   };
 
-  const formatEventOption = (event) => {
+  const _formatEventOption = (event) => {
     const startDate = event.start?.dateTime 
       ? new Date(event.start.dateTime) 
       : event.start?.date 
@@ -814,7 +812,7 @@ const ReservationModal = ({
       : '#3b82f6';
   };
 
-  const selectedVehicle = vehicles.find(v => v.id === parseInt(formData.vehicleId));
+  const _selectedVehicle = vehicles.find(v => v.id === parseInt(formData.vehicleId));
   const displayDate = formData.date 
     ? format(new Date(formData.date), "EEEE d MMMM yyyy", { locale: fr })
     : '';
@@ -1302,7 +1300,7 @@ const ReservationModal = ({
             )}
 
             {formData.isTournee && formData.linkedEventIds.length > 0 && (() => {
-              const { groups, ungrouped, sortedEventIds } = getTripGroups();
+              const { _groups, _ungrouped, sortedEventIds } = getTripGroups();
               
               // Préparer les données enrichies pour chaque event
               const enrichedEvents = sortedEventIds.map((item, idx) => {
@@ -1333,7 +1331,7 @@ const ReservationModal = ({
               let currentGroupId = null;
               let currentGroupItems = [];
               
-              enrichedEvents.forEach((item, idx) => {
+              enrichedEvents.forEach((item, _idx) => {
                 if (item.groupId) {
                   if (item.groupId === currentGroupId) {
                     currentGroupItems.push(item);

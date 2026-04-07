@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, MapPin, Clock, User, ArrowRight, ArrowDown } from 'lucide-react';
+import { X, Plus, Trash2, MapPin, Clock, User, ArrowDown } from 'lucide-react';
 import './TripDetailsModal.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded as checkGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import LocationDialog from './LocationDialog';
@@ -19,7 +19,7 @@ const TripDetailsModal = ({
   drivers,
   persons = [],
   vehicle,
-  nextEvent, // Pour les jonctions
+  _nextEvent, // Pour les jonctions
   googleMapsApiKey,
   companyAddress = '',
   initialLocations = [],
@@ -76,7 +76,7 @@ const TripDetailsModal = ({
     onClose();
   };
   const [isSaved, setIsSaved] = useState(!!currentTripDetail);
-  const [locations, setLocations] = useState([]);
+  const [_locations, setLocations] = useState([]);
   const [allLocations, setAllLocations] = useState([]);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocationField, setEditingLocationField] = useState(null);
@@ -142,7 +142,7 @@ const TripDetailsModal = ({
     }
   };
 
-  const getLocationHistory = () => {
+  const _getLocationHistory = () => {
     try {
       return JSON.parse(localStorage.getItem('locationHistory') || '[]');
     } catch (error) {
@@ -160,7 +160,7 @@ const TripDetailsModal = ({
             lng: position.coords.longitude
           });
         },
-        (error) => {
+        (_error) => {
         }
       );
     }
@@ -542,7 +542,7 @@ const TripDetailsModal = ({
           })
         };
         
-        const outboundResult = await new Promise((resolve, reject) => {
+        const outboundResult = await new Promise((resolve, _reject) => {
           service.route(request, (response, status) => {
             if (status === 'OK') {
               let totalDurationSeconds = 0;
@@ -594,7 +594,7 @@ const TripDetailsModal = ({
           })
         };
         
-        const returnResult = await new Promise((resolve, reject) => {
+        const returnResult = await new Promise((resolve, _reject) => {
           service.route(request, (response, status) => {
             if (status === 'OK') {
               let totalDurationSeconds = 0;

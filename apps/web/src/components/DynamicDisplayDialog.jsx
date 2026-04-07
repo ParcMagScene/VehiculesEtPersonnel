@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Monitor, X, Save, Briefcase, MapPin, User, Clock, MessageSquare, Calendar, ExternalLink } from 'lucide-react';
 import api from '../utils/api';
 import { useToast } from '../hooks/useToast';

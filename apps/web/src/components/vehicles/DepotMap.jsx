@@ -4,13 +4,13 @@
 // zoom/pan, recherche visuelle et tooltip détaillé
 // ============================================================
 
-import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { MapPin, Layers, BarChart3, ZoomIn, ZoomOut, Maximize2, Settings2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
-import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from './DepotMapEditor';
+import { getZonePoints, hasSkew, computeZonesBounds } from './DepotMapEditor';
 import './DepotMap.css';
-import { Button, Input, SearchBar, Tooltip } from '@/design-system';
+import { Button, SearchBar, Tooltip } from '@/design-system';
 
 const DepotMapEditor = lazy(() => import('./DepotMapEditor'));
 

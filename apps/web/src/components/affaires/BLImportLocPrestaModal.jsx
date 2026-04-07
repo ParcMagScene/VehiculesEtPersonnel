@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save, Tag, Layers, Calendar, Package, ShieldAlert, Link2 } from 'lucide-react';
+import { useState, useCallback, useRef } from 'react';
+import { X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save, Tag, Layers, Calendar, Package, ShieldAlert, Link2 } from 'lucide-react';
 import api from '../../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
 import { useToast } from '../../hooks/useToast';

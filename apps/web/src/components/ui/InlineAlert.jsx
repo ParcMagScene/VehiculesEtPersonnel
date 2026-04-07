@@ -12,7 +12,7 @@
  *   - children    : contenu du message
  *   - className   : string supplémentaire
  */
-import { AlertTriangle, AlertCircle, CheckCircle, Info, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
 
 const DEFAULT_ICONS = {
   error:   <AlertTriangle size={14} />,

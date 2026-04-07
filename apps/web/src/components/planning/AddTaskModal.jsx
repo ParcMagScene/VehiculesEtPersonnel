@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  X, Check, Plus, Search, Unlink, MapPin, Clock, User, Briefcase, Truck, ChevronDown
+  X, Plus, Search, Unlink, MapPin, Clock, User, Briefcase, Truck, ChevronDown
 } from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';

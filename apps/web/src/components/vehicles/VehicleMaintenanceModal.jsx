@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
 import { Button, Dialog, FormField, Input, Select } from '@/design-system';
 import './VehicleMaintenanceModal.css';

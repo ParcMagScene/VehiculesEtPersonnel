@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Check, Clock, X, ChevronRight, Edit2, Trash2, RotateCcw, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2, Download, Camera } from 'lucide-react';
+import { Package, Search, Plus, Filter, Wrench, AlertTriangle, CheckCircle, Check, Clock, X, ChevronRight, Edit2, Trash2, Tag, MapPin, Calendar, DollarSign, User, Clipboard, Upload, ExternalLink, Star, Eye, QrCode, Image as ImageIcon, Hash, Printer, FileText, Map, ZoomIn, Link2, Download, Camera } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../../utils/api';
 import { safeDate } from '../../utils/formatUtils';
@@ -148,7 +148,7 @@ const getCategoryHierarchy = (eq, categories) => {
 
 // ═══ FILTRE CATÉGORIES EN CASCADE (hover desktop / accordion mobile) ═══
 const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, onChange, isMobile }) => {
-  const toast = useToast();
+  const _toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
   const [hoveredSub, setHoveredSub] = useState(null);
@@ -582,7 +582,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [persons, setPersons] = useState([]);
   const [brandsList, setBrandsList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [_error, setError] = useState(null);
 
   // Filtres
   const [search, setSearch] = useState('');
@@ -608,7 +608,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
   const [showMobileSavRequest, setShowMobileSavRequest] = useState(false);
   const [labelPrintEquipment, setLabelPrintEquipment] = useState(null);
   const [mgmtTab, setMgmtTab] = useState('imports');
-
 
   // SAV volets
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -825,8 +824,6 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
       toast.error('Erreur: ' + err.message);
     }
   };
-
-
 
   const toggleList = async (equipmentId, listType) => {
     try {
@@ -1350,7 +1347,7 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
                 selectedZone={depotMapModalZone.zoneId}
                 focusZoneId={depotMapModalZone.zoneId}
                 focusEquipmentName={depotMapModalZone.equipmentName}
-                onZoneSelect={(zoneId) => {}}
+                onZoneSelect={(_zoneId) => {}}
                 onZoneFilter={() => {}}
                 compact={true}
               />
@@ -1685,7 +1682,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
 };
 
 // ═══ LISTE D'ÉQUIPEMENTS (tableau) ═══
-const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photosList, logosList, favoriteIds, watchIds, onToggleList, onSelect, onDoubleClick, onOpenDepotMap, categories }) => {
+const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photosList, _logosList, favoriteIds, watchIds, _onToggleList, onSelect, onDoubleClick, onOpenDepotMap, categories }) => {
   if (equipment.length === 0) {
     return (
       <EmptyState icon={<Package size={48} strokeWidth={1} />} title="Aucun matériel trouvé" description="Ajoutez votre premier équipement avec le bouton +" />
@@ -1794,7 +1791,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
 };
 
 // ═══ CONTENU DÉTAIL PARTAGÉ ═══
-const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreateTicket, onDelete, onSerialize, onPrintLabel, onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, onOpenDepotMap, categories: catList }) => {
+const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCreateTicket, _onDelete, _onSerialize, _onPrintLabel, _onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, onOpenDepotMap, categories: catList }) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
@@ -2007,7 +2004,7 @@ const EquipmentDetailContent = ({ eq, isAdmin, compact = false, onEdit, onCreate
 };
 
 // ═══ VOLET LATÉRAL (clic simple) ═══
-const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, onEdit, onPrintLabel, onPrintSheet, isAdmin, onOpenDepotMap }) => {
+const EquipmentSlidePanel = ({ equipment: eq, categories, _persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, _onEdit, onPrintLabel, onPrintSheet, isAdmin, onOpenDepotMap }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -2051,7 +2048,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
   if (!isVisible && !eq) return null;
 
   const currentEq = eq || {};
-  const st = EQUIPMENT_STATUS[currentEq.status] || EQUIPMENT_STATUS.available;
+  const _st = EQUIPMENT_STATUS[currentEq.status] || EQUIPMENT_STATUS.available;
 
   return (
     <div className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
@@ -2093,7 +2090,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, persons, photosList, l
 };
 
 // ═══ MODAL DÉTAIL COMPLET (double-clic) ═══
-const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onCreateTicket, onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet, onSerialize, onOpenDepotMap }) => {
+const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onCreateTicket, _onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet, onSerialize, onOpenDepotMap }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -2112,7 +2109,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
 
   if (!eq) return null;
 
-  const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
+  const _st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
 
   return (
     <div className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
@@ -2188,7 +2185,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, persons, isAdmin, ph
 };
 
 // ═══ LISTE DES TICKETS SAV ═══
-const SavTicketsList = ({ tickets, equipment, persons, selectedId, onSelect, onDoubleClick, onEdit, onDelete }) => {
+const SavTicketsList = ({ tickets, _equipment, _persons, selectedId, onSelect, onDoubleClick, onEdit, onDelete }) => {
   if (tickets.length === 0) {
     return (
       <EmptyState icon={<Wrench size={48} strokeWidth={1} />} title="Aucun ticket SAV" description="Les tickets apparaîtront ici lorsque du matériel nécessitera une intervention" />
@@ -2302,13 +2299,13 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
     photo: eq?.photo || '',
   });
 
-  const currentSubfamilies = useMemo(() => {
+  const _currentSubfamilies = useMemo(() => {
     if (!form.family_id) return [];
     const fid = parseInt(form.family_id);
     return subfamilies.filter(sf => (sf.parentId || sf.parent_id) === fid);
   }, [form.family_id, subfamilies]);
 
-  const currentLeafCategories = useMemo(() => {
+  const _currentLeafCategories = useMemo(() => {
     if (!form.subfamily_id) return [];
     const sid = parseInt(form.subfamily_id);
     return leafCategories.filter(c => (c.parentId || c.parent_id) === sid);
@@ -2962,7 +2959,7 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
 };
 
 // ═══ VOLET LATÉRAL SAV (clic simple) ═══
-const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onDelete, onOpenDialog, onOpenEquipmentDialog }) => {
+const SavSlidePanel = ({ ticket, equipment, _persons, onClose, onEdit, onDelete, onOpenDialog, onOpenEquipmentDialog }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -3034,7 +3031,7 @@ const SavSlidePanel = ({ ticket, equipment, persons, onClose, onEdit, onDelete, 
 };
 
 // ═══ DIALOG DÉTAIL SAV (double-clic) ═══
-const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit, onDelete, onOpenEquipmentDialog }) => {
+const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit, onDelete, _onOpenEquipmentDialog }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {

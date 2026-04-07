@@ -4,7 +4,7 @@
 // automatiques (type de tâche + type d'affaire) + widget Sonos
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
   ClipboardList, Clock, Check, Music, Disc, RefreshCw,
   Truck, Settings, Eye, EyeOff,

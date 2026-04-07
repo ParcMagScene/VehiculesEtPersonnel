@@ -3,14 +3,14 @@
 // Import catalogues PDF, consultation, filtres, suppression
 // ============================================================
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FileText, Upload, Trash2, X, ChevronLeft, ChevronRight, Package, Filter, History, BarChart3, AlertCircle, DatabaseZap, Settings, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { FileText, Upload, Trash2, X, ChevronLeft, ChevronRight, Package, History, BarChart3, AlertCircle, DatabaseZap, Settings, RefreshCw } from 'lucide-react';
 import api from '../../utils/api';
 import './SupplierCatalogPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, ModalLayout, Input, Select, Table, EntityCombobox, Spinner, Tag, InlineAlert, SearchBar, Tooltip } from '@/design-system';
-import { extractTextFromPDF, extractPDFMeta } from '../../utils/pdfParser';
-import { parseCatalog, detectSupplier, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
+import { Button, Dialog, ModalLayout, Select, Table, EntityCombobox, Spinner, Tag, InlineAlert, SearchBar, Tooltip } from '@/design-system';
+import { extractPDFMeta } from '../../utils/pdfParser';
+import { parseCatalog, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
 import CatalogSettingsPanel from './CatalogSettingsPanel';
 
 const PAGE_SIZE = 50;

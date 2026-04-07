@@ -3,14 +3,13 @@
 // Exports CSV, synthèses imprimables, statistiques clés
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  FileText, Download, Printer, BarChart3, Calendar,
-  Truck, Users, Package, ShoppingCart, Briefcase,
-  RefreshCw, Filter, Clock, CheckCircle, AlertTriangle,
-  ChevronDown, TrendingUp, Wrench, X, FileSpreadsheet,
+  Download, Printer, BarChart3, Calendar,
+  Truck, Users, ShoppingCart, Briefcase,
+  RefreshCw, Wrench, FileSpreadsheet,
 } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, differenceInDays } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, subMonths, startOfYear, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import './ReportsPanel.css';
@@ -95,7 +94,7 @@ const REPORT_SECTIONS = [
 // Composant principal
 // ═══════════════════════════════════════
 
-const ReportsPanel = ({ currentUser }) => {
+const ReportsPanel = ({ _currentUser }) => {
   const [section, setSection] = useState('fleet');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

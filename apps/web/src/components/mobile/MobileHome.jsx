@@ -1,4 +1,3 @@
-import React from 'react';
 import { Truck, Users, Package, ShoppingCart, Palmtree, Map, Wrench, Briefcase, ClipboardList } from 'lucide-react';
 import { Button } from '@/design-system';
 import './MobileHome.css';

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameWeek, getWeek, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X } from 'lucide-react';
@@ -53,7 +53,7 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
     return Array.from(weeksSet).map(key => new Date(key));
   }, [monthDays]);
 
-  const currentWeekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const _currentWeekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
 
   return (
     <div className="week-selector-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>

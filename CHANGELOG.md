@@ -8,6 +8,19 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.8] — 2026-04-07
+
+### Changed
+- **Phase K (QUALITY)** : Nettoyage dead code — 523 avertissements ESLint `no-unused-vars` éliminés (152 fichiers)
+  - 122 `import React` supprimés (React 17+ JSX transform les rend inutiles)
+  - 214 imports inutilisés supprimés (icônes Lucide, hooks React, utilitaires)
+  - 110 variables/fonctions mortes préfixées `_` (fonctions jamais appelées, state inutilisé)
+  - 73 arguments de fonction inutilisés préfixés `_` (props destructurés, callbacks)
+  - 4 useState complets supprimés (paires value+setter jamais utilisées)
+  - Résultat : 0 avertissement `no-unused-vars` restant
+
+---
+
 ## [2.1.5] — 2026-04-07
 
 ### Changed

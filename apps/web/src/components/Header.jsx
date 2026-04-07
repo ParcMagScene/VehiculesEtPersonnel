@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, ClipboardCheck, Video, Layers } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video, Layers } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -13,7 +13,7 @@ import { STATUS } from '../constants';
 
 import './Header.css';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
+const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], _onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
   const toast = useToast();
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'

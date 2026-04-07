@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, User } from 'lucide-react';
 import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
@@ -96,7 +96,7 @@ const LoginForm = ({ onLogin }) => {
     setError('');
     
     try {
-      const data = await api.forceLogin(conflictUser.email, conflictUser.password);
+      const _data = await api.forceLogin(conflictUser.email, conflictUser.password);
       
       // Fermer le modal et informer le parent
       setShowSessionConflict(false);
@@ -137,7 +137,7 @@ const LoginForm = ({ onLogin }) => {
 
     setLoading(true);
     try {
-      const data = await api.setNewPassword(resetFormEmail, resetToken, newPassword);
+      const _data = await api.setNewPassword(resetFormEmail, resetToken, newPassword);
       setShowResetPassword(false);
       window.location.reload();
     } catch (err) {

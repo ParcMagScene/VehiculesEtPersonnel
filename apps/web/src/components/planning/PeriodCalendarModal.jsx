@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, format, addMonths, subMonths,
-  isSameMonth, isSameDay, isWeekend, isBefore, isAfter, parseISO
+  isSameMonth, isSameDay, isWeekend, isBefore, isAfter
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, X, AlertTriangle, Check, Clock, CalendarPlus, Briefcase, User } from 'lucide-react';

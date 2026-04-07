@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Plus, Edit2, Trash2, Filter, X, Check, ChevronDown, ChevronRight,
-  Building2, Users2, UserCheck, Phone, Mail, Globe, MapPin, FileText,
-  Upload, Download, BarChart3, BookOpen, Contact, Eye, EyeOff,
-  Building, Hash, Tag, ArrowLeft, Briefcase, Star, RefreshCw
+  Plus, Edit2, Trash2, Filter, X, Check, Building2, UserCheck, Phone, Mail, Globe, MapPin, Upload, BookOpen, Contact, Eye, Building, ArrowLeft, Star
 } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, SearchBar, Tooltip, SectionHeader } from '@/design-system';
@@ -487,7 +484,7 @@ function AnnuairePanel({ currentUser }) {
 // ═══════════════════════════════════════════════════════════════
 // ENTITY TABLE
 // ═══════════════════════════════════════════════════════════════
-function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, onEdit, onDelete }) {
+function EntityTable({ data, entityType, currentUser, _getLookupName, onSelect, onEdit, onDelete }) {
   if (!data.length) {
     return <div className="annuaire-empty"><p>Aucun enregistrement trouvé</p></div>;
   }
@@ -584,7 +581,7 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
 // ═══════════════════════════════════════════════════════════════
 // DETAIL VIEW
 // ═══════════════════════════════════════════════════════════════
-function DetailView({ item, entityType, lookups, getLookupName, currentUser, onBack, onEdit, onAddContact, toast }) {
+function DetailView({ item, entityType, _lookups, getLookupName, _currentUser, onBack, onEdit, onAddContact, toast }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -987,7 +984,7 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
 // ═══════════════════════════════════════════════════════════════
 // REFERENTIELS VIEW
 // ═══════════════════════════════════════════════════════════════
-function ReferentielsView({ refTab, setRefTab, refData, loading, currentUser, onAdd, onEdit, onDelete }) {
+function ReferentielsView({ refTab, setRefTab, refData, _loading, currentUser, onAdd, onEdit, onDelete }) {
   return (
     <div className="referentiels-view">
       <div className="ref-tabs">

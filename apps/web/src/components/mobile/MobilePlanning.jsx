@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { format, addDays, startOfMonth, endOfMonth, startOfDay, addMonths, subMonths, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
@@ -170,8 +170,8 @@ function MobilePlanning({
     return allElements;
   };
 
-  const getClient = (clientId) => clients.find(c => c.id === clientId);
-  const getDriver = (driverId) => drivers.find(d => d.id === driverId);
+  const _getClient = (clientId) => clients.find(c => c.id === clientId);
+  const _getDriver = (driverId) => drivers.find(d => d.id === driverId);
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -230,7 +230,7 @@ function MobilePlanning({
   }, [selectedMonth, monthDays]);
 
   // Debug - compter les réservations du mois
-  const monthReservationsCount = useMemo(() => {
+  const _monthReservationsCount = useMemo(() => {
     return reservations.filter(r => {
       const resDate = new Date(r.startDate);
       return resDate.getMonth() === selectedMonth.getMonth() && 

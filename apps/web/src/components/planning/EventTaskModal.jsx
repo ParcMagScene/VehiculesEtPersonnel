@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  X, Calendar, Clock, MapPin, Briefcase, Check, Loader,
+  X, Calendar, Clock, MapPin, Check, Loader,
   Package, Truck, ArrowRight, RotateCcw, Wrench, AlertCircle
 } from 'lucide-react';
 import api from '../../utils/api';

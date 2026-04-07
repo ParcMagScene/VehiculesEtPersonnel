@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Calendar, MapPin, User, Phone,
-  FileText, Truck, Clock, Package, Users, DollarSign, Briefcase,
+  FileText, Truck, Package, Users, DollarSign, Briefcase,
   ClipboardList, CheckCircle, AlertCircle,
 } from 'lucide-react';
 import { format, addDays, startOfDay, parseISO, isSameDay } from 'date-fns';
@@ -9,7 +9,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import './MobileAffaires.css';
-import { Avatar, Button, Input, SearchBar, Spinner } from '@/design-system';
+import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
 

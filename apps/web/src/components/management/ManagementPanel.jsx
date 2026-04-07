@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Map, MapPin, Cloud, Gauge } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, MapPin, Cloud, Gauge } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../../utils/photoList';
 import { formatPhoneDisplay } from '../PhoneInput';
@@ -23,7 +23,7 @@ import { Button, Dialog, Input, Select } from '@/design-system';
 const ManagementPanel = ({
   vehicles,
   setVehicles,
-  reservations,
+  _reservations,
   setReservations,
   clients,
   setClients,
@@ -31,9 +31,9 @@ const ManagementPanel = ({
   setDrivers,
   locations,
   setLocations,
-  calendarConfig,
+  _calendarConfig,
   setCalendarConfig,
-  garages,
+  _garages,
   setGarages,
   maintenances,
   setMaintenances,
@@ -77,8 +77,8 @@ const ManagementPanel = ({
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [vehicleToMaintain, setVehicleToMaintain] = useState(null);
   const [companyAddress, setCompanyAddress] = useState('');
-  const autocompleteRef = useRef(null);
-  const inputRef = useRef(null);
+  const _autocompleteRef = useRef(null);
+  const _inputRef = useRef(null);
 
   const fileInputRef = useRef(null);
 
@@ -134,8 +134,6 @@ const ManagementPanel = ({
     };
     loadDepotData();
   }, [activeTab, activeDepot]);
-
-
 
   // Charger la liste des photos au montage du composant
   useEffect(() => {
@@ -199,7 +197,7 @@ const ManagementPanel = ({
     }
   };
 
-  const setCurrentList = (newList) => {
+  const _setCurrentList = (newList) => {
     switch (activeTab) {
       case 'vehicles': setVehicles(newList); break;
       case 'clients': setClients(newList); break;
@@ -471,7 +469,7 @@ const ManagementPanel = ({
     });
   };
 
-  const handleMoveUp = async (index) => {
+  const _handleMoveUp = async (index) => {
     if (index === 0) return;
     const currentList = [...getCurrentList()];
     [currentList[index - 1], currentList[index]] = [currentList[index], currentList[index - 1]];
@@ -503,7 +501,7 @@ const ManagementPanel = ({
     }
   };
 
-  const handleMoveDown = async (index) => {
+  const _handleMoveDown = async (index) => {
     const currentList = [...getCurrentList()];
     if (index === currentList.length - 1) return;
     [currentList[index], currentList[index + 1]] = [currentList[index + 1], currentList[index]];
@@ -1361,7 +1359,7 @@ const ManagementPanel = ({
                         return (
                           <div key={type} className="locations-group">
                             <h4 className="group-title">{type} ({typeLocations.length})</h4>
-                            {typeLocations.map((item, index) => (
+                            {typeLocations.map((item, _index) => (
                               <div key={item.id} className="item-card">
                                 {editingItem?.id === item.id ? (
                                   <div className="edit-form">
@@ -1429,7 +1427,7 @@ const ManagementPanel = ({
                     })()
                   ) : (
                     // Affichage normal pour les autres onglets
-                    getCurrentList().map((item, index) => (
+                    getCurrentList().map((item, _index) => (
                     <div key={item.id} className="item-card">
                       {editingItem?.id === item.id ? (
                         <div className="edit-form">

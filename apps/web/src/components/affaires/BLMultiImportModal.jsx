@@ -3,7 +3,7 @@
  * Drop one or many PDFs, parse them, review with full detail, then batch import.
  * Creates new affaires or updates existing ones.
  */
-import React, { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase,
   Trash2, Loader, Tag, ChevronDown, ChevronRight, PackagePlus,

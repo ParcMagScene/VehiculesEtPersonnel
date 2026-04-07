@@ -66,7 +66,7 @@ const getDriveLinksCount = (block) => {
 };
 
 // Composant Tooltip pour les réservations
-const ReservationTooltip = ({ block, currentUser, users = [] }) => {
+const _ReservationTooltip = ({ block, currentUser, users = [] }) => {
   let creatorName = `Utilisateur ${block.createdBy}`;
   
   if (currentUser && block.createdBy === currentUser.id) {
@@ -557,7 +557,7 @@ const Calendar = ({
   maintenances = [],
   onAddReservation,
   onUpdateReservation,
-  onUpdateMaintenance,
+  _onUpdateMaintenance,
   onDeleteReservation,
   clients,
   drivers,
@@ -1077,7 +1077,7 @@ const Calendar = ({
   }, [view, currentDate]);
 
   // Heures pour la vue jour (référence future si granularité horaire ajoutée)
-  const dayHours = useMemo(() => {
+  const _dayHours = useMemo(() => {
     if (view !== 'day') return [];
     return Array.from({ length: 16 }, (_, i) => i + 6); // 6h à 21h
   }, [view]);
@@ -1651,7 +1651,7 @@ const Calendar = ({
   const handleBlockDragEnd = () => {
     if (!blockDragState) return;
     
-    const { block, vehicle, targetVehicle, currentStart, currentEnd, originalStart, originalEnd, hasConflict } = blockDragState;
+    const { block, vehicle, targetVehicle, currentStart, currentEnd, originalStart, _originalEnd, hasConflict } = blockDragState;
     
     // Vérifier si la position a changé
     const hasMoved = !isSameDay(originalStart.date, currentStart.date) || originalStart.period !== currentStart.period;
@@ -1744,7 +1744,7 @@ const Calendar = ({
   }, [reservationLookup]);
 
   // Grouper les réservations consécutives pour affichage continu
-  const getReservationBlocks = (vehicleId, days, period) => {
+  const _getReservationBlocks = (vehicleId, days, period) => {
     const blocks = [];
     let currentBlock = null;
 
@@ -1787,7 +1787,7 @@ const Calendar = ({
     return blocks;
   };
 
-  const findBlockForCell = (blocks, dayIndex) => {
+  const _findBlockForCell = (blocks, dayIndex) => {
     return blocks.find(block => block.indices.includes(dayIndex));
   };
 
@@ -1846,7 +1846,7 @@ const Calendar = ({
   }, [view, days.length, windowWidth]);
 
   // Gestionnaire de mouvement global pour le redimensionnement avec throttle
-  const throttleTimeoutRef = React.useRef(null);
+  const _throttleTimeoutRef = React.useRef(null);
   const lastPositionRef = React.useRef({ dayIndex: null, period: null });
   
   const handleGlobalMouseMove = (e) => {
@@ -2197,7 +2197,7 @@ const Calendar = ({
                   const isInBlock = blocks.some(b => slotIndex > b.startIndex && slotIndex < b.startIndex + b.span);
                   
                   // Vérifier si cette cellule fait partie de la prévisualisation
-                  const cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
+                  const _cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
                   
                   // Vérifier si cette cellule est dans un bloc en cours de redimensionnement
                   const inResizingBlock = blocks.some(b => {
@@ -2389,7 +2389,7 @@ const Calendar = ({
                   const isInBlock = blocks.some(b => slotIndex > b.startIndex && slotIndex < b.startIndex + b.span);
                   
                   // Vérifier si cette cellule fait partie de la prévisualisation
-                  const cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
+                  const _cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
                   
                   // Vérifier si cette cellule est dans un bloc en cours de redimensionnement
                   const inResizingBlock = blocks.some(b => {

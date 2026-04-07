@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { CheckCircle, XCircle, Calendar, Clock } from 'lucide-react';
 import { Button, Dialog, ModalLayout, Textarea} from '@/design-system';
 import './OverdueInterventionModal.css';

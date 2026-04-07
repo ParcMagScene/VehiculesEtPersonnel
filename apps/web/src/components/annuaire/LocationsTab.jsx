@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Plus, Edit2, Trash2, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import LocationDialog from '../vehicles/LocationDialog';
-import { Button, Dialog, Input, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
+import { Button, Dialog, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
 import { useToast } from '../../hooks/useToast';
 

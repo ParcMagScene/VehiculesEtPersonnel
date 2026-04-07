@@ -1,6 +1,6 @@
 // TemplatesTab — Gestion des templates d'affichage
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Layout, Trash2, Settings, ToggleLeft, ToggleRight, Eye } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { Layout, Trash2, Settings } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';

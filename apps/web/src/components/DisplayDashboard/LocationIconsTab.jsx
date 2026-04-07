@@ -3,8 +3,8 @@
 // Galerie d'icônes + Règles d'association type de tâche → icône
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Film, Upload, Plus, Trash2, Save, X, Check } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { Film, Upload, Plus, Trash2, Save, X } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api, { getApiUrl } from '../../utils/api';
 import { Button, Dialog, Select, Tooltip, SectionHeader } from '@/design-system';
@@ -32,7 +32,7 @@ const TASK_SECTIONS = [
   { key: 'manual', label: '✏️ Divers' },
 ];
 
-function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
+function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
   const toast = useToast();
   const [gifs, setGifs] = useState([]);
   const [rules, setRules] = useState([]);
@@ -41,7 +41,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
   const [showMosaic, setShowMosaic] = useState(null); // index de la règle en cours
   const [confirmDialog, setConfirmDialog] = useState(null);
 
-  const API_URL = getApiUrl();
+  const _API_URL = getApiUrl();
 
   const loadData = useCallback(async () => {
     try {

@@ -4,7 +4,7 @@
 // Workflow : consultation → décision → signature → notification
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Calendar, Clock, CheckCircle, XCircle, AlertTriangle,
   FileText, Download, ChevronDown, User,
@@ -25,7 +25,7 @@ import { STATUS } from '../../constants';
 // COMPOSANT SIGNATURE CANVAS (admin)
 // ═══════════════════════════════════════
 
-const AdminSignaturePad = ({ onSign, value }) => {
+const AdminSignaturePad = ({ onSign, _value }) => {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const lastPoint = useRef(null);

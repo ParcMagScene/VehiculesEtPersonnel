@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
 import { format } from 'date-fns';
 import Header from './components/Header';
 const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
@@ -35,7 +35,6 @@ const MobileApp = lazy(() => import('./components/mobile/MobileApp'));
 const ManagementPanel = lazy(() => import('./components/management/ManagementPanel'));
 const MaintenanceDialog = lazy(() => import('./components/vehicles/MaintenanceDialog'));
 const VehicleMaintenanceModal = lazy(() => import('./components/vehicles/VehicleMaintenanceModal'));
-const PersonnelPanel = lazy(() => import('./components/personnel/PersonnelPanel'));
 const AffairesPanel = lazy(() => import('./components/affaires/AffairesPanel'));
 const EquipmentPanel = lazy(() => import('./components/equipment/EquipmentPanel'));
 const OrdersPanel = lazy(() => import('./components/orders/OrdersPanel'));
@@ -723,7 +722,7 @@ function AppContent() {
             currentUser={currentUser}
             panelType="settings"
             onClose={() => setShowSettings(false)}
-            onNavigateToPersonnel={(person) => {
+            onNavigateToPersonnel={(_person) => {
               setShowSettings(false);
               setActiveModule('planning');
             }}

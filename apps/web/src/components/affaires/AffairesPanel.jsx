@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare, PackagePlus, DollarSign } from 'lucide-react';
+import { Calendar, Briefcase, Paperclip, LinkIcon, Plus, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, PackagePlus, DollarSign } from 'lucide-react';
 import api from '../../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -9,7 +9,7 @@ import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import './AffairesPanel.css';
-import { Button, Checkbox, Divider, EmptyState, InlineAlert, Input, SearchBar, Spinner, Tooltip } from '@/design-system';
+import { Button, Checkbox, Divider, EmptyState, InlineAlert, SearchBar, Spinner, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -81,7 +81,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const [googleError, setGoogleError] = useState(null);
   const [sortBy, setSortBy] = useState('dateDebut');
   const [sortOrder, setSortOrder] = useState('desc');
-  const googleCalendarIdRef = useRef(null);
+  const _googleCalendarIdRef = useRef(null);
 
   // Sélection / détail affaire
   const [selectedAffaire, setSelectedAffaire] = useState(null);
@@ -459,7 +459,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   // Filtrer et trier
   const filteredAffaires = useMemo(() => {
     let result = [...enrichedAffaires];
-    const today = new Date().toISOString().slice(0, 10);
+    const _today = new Date().toISOString().slice(0, 10);
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const archiveThreshold = oneWeekAgo.toISOString().slice(0, 10);

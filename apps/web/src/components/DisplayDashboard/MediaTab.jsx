@@ -1,6 +1,6 @@
 // MediaTab — Galerie de médias (images/vidéos)
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Image, Film, Trash2, Download, Eye } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { Image, Film, Trash2, Eye } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
@@ -13,7 +13,7 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
+function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
   const toast = useToast();
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);

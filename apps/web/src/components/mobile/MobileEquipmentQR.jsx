@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Package, ArrowLeft, FileText, AlertTriangle, Wrench, Settings, Home, Loader } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, FileText, AlertTriangle, Wrench, Settings, Home, Loader } from 'lucide-react';
 import api from '../../utils/api';
 import './MobileEquipmentQR.css';
 import { useToast } from '../../hooks/useToast';

@@ -1,5 +1,5 @@
 // MessagesTab — Gestion des messages/annonces d'affichage
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { MessageSquare, Trash2, Settings, ToggleLeft, ToggleRight, AlertTriangle, Clock } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -12,7 +12,7 @@ const PRIORITY_CONFIG = {
   urgent: { label: 'Urgente', color: 'var(--theme-danger)', icon: AlertTriangle },
 };
 
-function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
+function MessagesTab({ _currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);

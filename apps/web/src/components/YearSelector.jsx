@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/design-system';
 import './YearSelector.css';

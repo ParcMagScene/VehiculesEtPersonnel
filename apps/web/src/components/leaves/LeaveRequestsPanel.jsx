@@ -3,10 +3,9 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-  X, Calendar, Clock, CheckCircle, AlertTriangle,
-  Download, Trash2, ChevronDown,
+  X, Calendar, Clock, CheckCircle, Download, Trash2, ChevronDown,
   Send, RefreshCw,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';

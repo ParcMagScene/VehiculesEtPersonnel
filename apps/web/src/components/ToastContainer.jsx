@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 import { playSound, vibrate } from '../utils/notificationSound';
 import { Button } from '@/design-system';

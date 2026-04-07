@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { format, startOfDay, endOfDay, addDays, isToday, isTomorrow, isPast, differenceInDays, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfDay, addDays, isToday, isPast, startOfWeek, endOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import logger from '../../utils/logger';

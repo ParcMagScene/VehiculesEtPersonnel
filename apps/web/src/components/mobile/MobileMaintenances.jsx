@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import { useState, useImperativeHandle, forwardRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ArrowLeft, Settings, AlertTriangle, Calendar, Plus, MapPin } from 'lucide-react';

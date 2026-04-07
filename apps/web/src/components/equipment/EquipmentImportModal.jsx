@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle, X, ChevronDown, ChevronRight, Eye, Download } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { Upload, FileText, CheckCircle, ChevronDown, ChevronRight, Eye, Download } from 'lucide-react';
 import { Button, ModalLayout, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
 import { STATUS } from '../../constants';
@@ -53,9 +53,9 @@ function parseCSV(text, separator = ';') {
 
 const EquipmentImportModal = ({ onClose, onImportDone }) => {
   const [step, setStep] = useState('upload'); // upload | preview | importing | done
-  const [file, setFile] = useState(null);
+  const [_file, setFile] = useState(null);
   const [csvData, setCsvData] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [_preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -115,7 +115,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
     }
   }, [handleFileSelect]);
 
-  const handlePreview = async () => {
+  const _handlePreview = async () => {
     try {
       setLoading(true);
       const result = await api.importEquipmentCsv(csvData.rows, 'preview');

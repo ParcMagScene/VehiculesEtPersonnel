@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, Home, ArrowRight } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, InlineAlert, Spinner } from '@/design-system';

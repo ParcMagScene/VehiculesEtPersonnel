@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
-import { format, addDays, parseISO, isToday, isTomorrow, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
+import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
+import { format, parseISO, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './GoogleCalendarBanner.css';
 import EventDetailsModal from '../planning/EventDetailsModal';
 import api from '../../utils/api';
-import logger, { oauthLogger } from '../../utils/logger';
+import { oauthLogger } from '../../utils/logger';
 import { capitalizeText } from '../../utils/dateUtils';
-import { Search, RefreshCw, Plus, Truck, Users, CalendarPlus } from 'lucide-react';
+import { Search, RefreshCw, Plus, CalendarPlus } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
-import { Button, InlineAlert, Input, LoadingOverlay, SearchBar, Spinner } from '@/design-system';
+import { Button, InlineAlert, LoadingOverlay, SearchBar } from '@/design-system';
 
 import { TIMING } from '../../constants';
 
@@ -16,7 +16,7 @@ import { TIMING } from '../../constants';
 const AffaireImportModal = lazy(() => import('../affaires/AffaireImportModal'));
 const GoogleEventFormModal = lazy(() => import('./GoogleEventFormModal'));
 
-function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire }) {
+function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire }) {
   const toast = useToast();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -25,11 +25,10 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
   const [tokenClient, setTokenClient] = useState(null);
   const [displayMode, setDisplayMode] = useState('compact'); // 'closed', 'compact'
   const [bannerHeight, setBannerHeight] = useState(200);
-  const [isResizing, setIsResizing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [clickedCell, setClickedCell] = useState(null);
+  const [_clickedCell, setClickedCell] = useState(null);
   const [googleClientId, setGoogleClientId] = useState(null);
   const [googleCalendarId, setGoogleCalendarId] = useState(null);
   
@@ -548,8 +547,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
             renewalResolverRef.current.resolve(true);
             renewalResolverRef.current = null;
           }
-        },
-      });
+        } });
 
       setTokenClient(client);
       
@@ -616,7 +614,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     }
   };
 
-  const handleSignOut = async () => {
+  const _handleSignOut = async () => {
     // Supprimer le token du backend
     try {
       await api.deleteGoogleToken();
@@ -659,8 +657,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
         timeMax: timeMax.toISOString(),
         singleEvents: true,
         maxResults: 2500,
-        orderBy: 'startTime',
-      };
+        orderBy: 'startTime' };
 
       const data = await api.getGoogleEvents(params);
       
@@ -760,13 +757,11 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     if (view === 'week') {
       return eachDayOfInterval({
         start: startOfWeek(currentDate, { weekStartsOn: 1 }),
-        end: endOfWeek(currentDate, { weekStartsOn: 1 }),
-      });
+        end: endOfWeek(currentDate, { weekStartsOn: 1 }) });
     } else if (view === 'month') {
       return eachDayOfInterval({
         start: startOfMonth(currentDate),
-        end: endOfMonth(currentDate),
-      });
+        end: endOfMonth(currentDate) });
     } else if (view === 'year') {
       // Utiliser eachMonthOfInterval comme Calendar pour synchroniser la grille
       const months = eachMonthOfInterval({
@@ -785,7 +780,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
     const processedEvents = new Set();
 
     // Pour la vue année, filtrer les événements par année affichée
-    const filteredEvents = view === 'year'
+    const _filteredEvents = view === 'year'
       ? events.filter(event => {
           const eventStart = event.start.dateTime ? parseISO(event.start.dateTime) : parseISO(event.start.date);
           return eventStart.getFullYear() === currentDate.getFullYear();
@@ -1184,8 +1179,7 @@ function GoogleCalendarBanner({ calendarConfig, view, currentDate, currentUser, 
           transition: 'background 0.2s',
           userSelect: 'none',
           position: 'relative',
-          zIndex: 200,
-        }}
+          zIndex: 200 }}
         onMouseEnter={(e) => {
           e.currentTarget.style.filter = 'brightness(1.15)';
         }}

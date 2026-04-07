@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   X, FileDown, Eye, Check, CheckSquare, Square, Minus,
   User, Clock, Loader2, Calendar, MapPin, Briefcase
@@ -75,12 +75,12 @@ const mapEventToSection = (event) => {
   return 'evenements';
 };
 
-const mapAffaireToSection = (affaire) => {
+const _mapAffaireToSection = (affaire) => {
   const info = AFFAIRE_TYPE_INFO[affaire.type];
   return info ? info.section : 'manual';
 };
 
-function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], googleRdvEvents = [], planningAssignments = [], persons = [], onClose }) {
+function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], googleRdvEvents = [], planningAssignments = [], _persons = [], onClose }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [pdfUrl, setPdfUrl] = useState(null);
   const [generating, setGenerating] = useState(false);

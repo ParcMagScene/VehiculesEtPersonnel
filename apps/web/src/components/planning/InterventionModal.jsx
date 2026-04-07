@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Save, AlertTriangle, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Save, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select } from '@/design-system';
 import './InterventionModal.css';
 import { useToast } from '../../hooks/useToast';
@@ -104,7 +104,7 @@ const InterventionModal = ({
     }
   };
 
-  const getTypeLabel = (type) => {
+  const _getTypeLabel = (type) => {
     const types = {
       'maintenance': 'Maintenance',
       'repair': 'Réparation',
@@ -119,7 +119,7 @@ const InterventionModal = ({
     return types[type] || type;
   };
 
-  const getStatusLabel = (status) => {
+  const _getStatusLabel = (status) => {
     const statuses = {
       'planned': 'Planifiée',
       'scheduled': 'Programmée',

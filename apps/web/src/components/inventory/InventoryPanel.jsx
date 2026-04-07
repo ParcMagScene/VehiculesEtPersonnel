@@ -3,12 +3,11 @@
    Onglets : Dashboard · Articles · Emplacements · Prix · Anomalies
    ═══════════════════════════════════════════════════════════════ */
 
-import { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   BarChart3, MapPin, DollarSign, AlertTriangle, Package, Search, Plus,
-  RefreshCw, Download, Upload, CheckCircle2, XCircle, Eye, Edit, Trash2,
-  ChevronDown, ChevronUp, Filter, ArrowUpDown, TrendingUp, TrendingDown,
-  Boxes, ClipboardCheck, FileSpreadsheet, Info, Star, ArrowDownCircle, ArrowUpCircle, RotateCcw
+  RefreshCw, Download, CheckCircle2, XCircle, Edit, Trash2,
+  TrendingUp, ClipboardCheck, Star
 } from 'lucide-react';
 import api from '../../utils/api';
 import { useInventory } from '../../hooks/useInventory';
@@ -18,7 +17,7 @@ import { Button, Card, Input, Select, Spinner, Tab, TabList, TabPanel, Table, Ta
 // ═══════ SUB-VIEWS (inline pour éviter le surcoût de fichiers séparés) ═══════
 
 // ── Dashboard View ──
-function DashboardView({ stats, alerts, anomalies, onRefresh, onExportCSV, onRunAbc }) {
+function DashboardView({ stats, alerts, _anomalies, onRefresh, onExportCSV, onRunAbc }) {
   if (!stats) return <div className="inv-loading">Chargement des statistiques…</div>;
   const { summary } = stats;
 
@@ -570,7 +569,6 @@ function MovementsView() {
   );
 }
 
-
 // ═══════════════════════════════════════════════════════════════
 // COMPOSANT PRINCIPAL — InventoryPanel
 // ═══════════════════════════════════════════════════════════════
@@ -584,7 +582,7 @@ const TABS = [
   { id: 'count',     label: 'Comptage',      icon: ClipboardCheck },
 ];
 
-export default function InventoryPanel({ currentUser }) {
+export default function InventoryPanel({ _currentUser }) {
   
   // Fabrication d'un toast minimaliste si pas injecté
   const toast = useMemo(() => ({

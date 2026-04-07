@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import {
   X, Mail, FileText, Clock, Send, Plus, Trash2, Edit3, Eye,
-  Search, ChevronDown, ChevronUp, Users, AlertTriangle, Check,
-  Copy, Settings, RefreshCw
+  Search, AlertTriangle, Check,
+  Settings, RefreshCw
 } from 'lucide-react';
 import api from '../../utils/api';
 import './MailingPanel.css';

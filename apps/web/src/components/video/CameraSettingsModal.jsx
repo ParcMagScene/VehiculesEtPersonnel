@@ -2,7 +2,7 @@
 // CameraSettingsModal.jsx — Modal de configuration d'une caméra
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Trash2, TestTube2 } from 'lucide-react';
 import { Button, FormField, ModalLayout, Input, Textarea, Select, Checkbox } from '@/design-system';
 

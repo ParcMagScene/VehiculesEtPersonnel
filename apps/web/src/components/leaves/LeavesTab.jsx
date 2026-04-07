@@ -5,14 +5,13 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Calendar, Clock, CheckCircle, XCircle, AlertTriangle,
-  Plus, Download, RefreshCw, Users, BarChart3,
-  ChevronDown, Trash2, Send, FileText, Shield,
-  CalendarOff, Filter, Eye, TrendingUp,
+  Calendar, Clock, CheckCircle, XCircle, Plus, Download, RefreshCw, Users, BarChart3,
+  ChevronDown, Trash2, Shield,
+  CalendarOff, Eye, TrendingUp,
 } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';

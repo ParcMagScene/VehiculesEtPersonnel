@@ -3,9 +3,9 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  X, Calendar, Clock, AlertTriangle, CheckCircle, FileText,
+  X, Calendar, Clock, CheckCircle, FileText,
   Upload, Trash2, User, Info, Pen, Send,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -127,7 +127,7 @@ const LeaveRequestForm = ({
   person = null,
   persons = [],
   isAdmin = false,
-  currentUser = null,
+  _currentUser = null,
   onClose,
   onCreated,
 }) => {
@@ -147,7 +147,7 @@ const LeaveRequestForm = ({
   const [exceptionalTypes, setExceptionalTypes] = useState({});
   const [calculation, setCalculation] = useState(null);
   const [balance, setBalance] = useState(null);
-  const [holidays, setHolidays] = useState([]);
+  const [_holidays, setHolidays] = useState([]);
 
   // State du justificatif
   const [justificationFile, setJustificationFile] = useState(null);
@@ -341,7 +341,7 @@ const LeaveRequestForm = ({
   };
 
   // Obtenir l'info du type sélectionné
-  const currentTypeInfo = leaveTypes[leaveType];
+  const _currentTypeInfo = leaveTypes[leaveType];
 
   return (
     <div className="lrf-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>

@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.1.8] — 2026-04-07
+
+### Changed
+- **Phase K** : Nettoyage dead code — 523 avertissements `no-unused-vars` → 0 (152 fichiers, -71 lignes nettes)
+  - 122 `import React` inutiles supprimés (JSX transform React 17+)
+  - 214 imports inutilisés retirés (icônes Lucide, hooks, utilitaires non référencés)
+  - 110 variables/fonctions mortes préfixées `_` (dead code conservé mais silencieux)
+  - 73 arguments de fonction inutilisés préfixés `_` (props, callbacks, catch params)
+  - 4 `useState` complets supprimés (loading/setLoading, isResizing, newAffaire, showActions)
+
+---
+
 ## [2.1.7] — 2026-04-07
 
 ### Changed

@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths,
-  startOfWeek, endOfWeek, startOfMonth, endOfMonth,
-  eachDayOfInterval, isSameDay, isSameMonth, isToday, parseISO, isWeekend,
+  format, addWeeks, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
+  eachDayOfInterval, isSameMonth, isToday, isWeekend,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -11,7 +10,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import './PersonnelAgenda.css';
-import { Avatar, Button, EmptyState, Input, SearchBar } from '@/design-system';
+import { Avatar, Button, EmptyState, SearchBar } from '@/design-system';
 
 import { STATUS } from '../../constants';
 

@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Tag, CheckSquare, Square, Printer, Download, ChevronDown, ChevronRight } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './EquipmentBatchLabels.css';
-import { Button, Input, SearchBar } from '@/design-system';
+import { Button, SearchBar } from '@/design-system';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -13,7 +13,7 @@ const APP_BASE_URL = window.location.origin;
 
 const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
+const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [search, setSearch] = useState('');
   const [showLogo, setShowLogo] = useState(true);
@@ -203,7 +203,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
       let labelSvg = '<g transform="translate(' + x + ',' + y + ')">';
       labelSvg += '<rect width="' + lw + '" height="' + lh + '" fill="none" stroke="#ccc" stroke-width="0.5" stroke-dasharray="2,2" />';
       
-      let textX = 10;
+      let _textX = 10;
       let textY = showLogo ? 30 : 15;
       
       if (showLogo) {
@@ -335,7 +335,6 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
           );
         })}
       </div>
-
 
     </div>
   );

@@ -3,7 +3,7 @@
 // + Message furtif temporaire
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { MessageCircle, Zap, Save, Trash2, Clock } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -29,7 +29,7 @@ const DURATION_OPTIONS = [
   { value: 'endOfWeek', label: "Jusqu'à la fin de la semaine" },
 ];
 
-function WelcomeMessagesTab({ currentUser, refreshKey, onPreviewChange }) {
+function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
   const toast = useToast();
   const [activeDay, setActiveDay] = useState('lundi');
   const [messages, setMessages] = useState({});

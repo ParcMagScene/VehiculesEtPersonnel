@@ -2,7 +2,7 @@
 // CameraGrid.jsx — Grille multi-caméras (1/4/9/16)
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 
 const GRID_LAYOUTS = [

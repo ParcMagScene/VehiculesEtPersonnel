@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Boxes, Sun, Moon, Radio } from 'lucide-react';
 import api from '../../utils/api';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, getVolume, SOUND_TYPES } from '../../utils/notificationSound';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, SOUND_TYPES } from '../../utils/notificationSound';
 import { PALETTES } from '../../hooks/useTheme';
-import { Button, Dialog, Select, Checkbox, Toggle } from '@/design-system';
+import { Button, Dialog, Select, Toggle } from '@/design-system';
 import './UserPreferencesModal.css';
 import { useToast } from '../../hooks/useToast';
 

@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import {
-  X, Save, Calendar, Clock, User, Briefcase, AlertTriangle,
-  ChevronDown, ChevronUp, Plus, Minus, Check, Info, Trash2, Edit2, Users, Search,
+  X, Save, Calendar, Clock, User, Briefcase, ChevronDown, Plus, Check, Info, Trash2, Edit2, Users, Search,
 } from 'lucide-react';
-import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDay, addDays } from 'date-fns';
+import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
@@ -553,7 +552,6 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         ? `${selectedAffaire.numeroAffaire || ''} — ${selectedAffaire.titre || selectedAffaire.eventName || selectedAffaire.client || 'Mission'}`.trim()
         : selectedPositions.length > 0 ? selectedPositions.join(', ') : `Mission ${format(parseISO(startDate), 'd MMM yyyy', { locale: fr })}`;
 
-
       // Sérialiser les jours OFF (on ne stocke que les jours explicitement OFF)
       const offDays = Object.entries(dayStates)
         .filter(([, v]) => v === 'off')
@@ -579,7 +577,6 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
       };
 
       let mission, assignment;
-
 
       if (isEdit) {
         // ── Mode édition : mettre à jour ──
@@ -671,7 +668,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   };
 
   // Raccourci pour la catégorie d'une compétence
-  const getSkillCategory = (skillId) => {
+  const _getSkillCategory = (skillId) => {
     const skill = (skills || []).find(s => s.id === parseInt(skillId));
     if (!skill) return null;
     return SKILL_CATEGORIES.find(c => c.value === skill.category);

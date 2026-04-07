@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, Phone, Mail, Star, Shield, Truck, User, Calendar } from 'lucide-react';
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, isWithinInterval, startOfDay, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';

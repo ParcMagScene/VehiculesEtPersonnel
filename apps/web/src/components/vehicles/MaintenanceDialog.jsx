@@ -392,7 +392,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     return labels[type] || type;
   };
 
-  const updateMaintenanceStatus = (maintenanceId, newStatus) => {
+  const _updateMaintenanceStatus = (maintenanceId, newStatus) => {
     const maintenance = maintenances.find(m => m.id === maintenanceId);
     if (maintenance) {
       const updated = { ...maintenance, status: newStatus };
@@ -410,7 +410,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     });
   };
 
-  const cancelEditing = () => {
+  const _cancelEditing = () => {
     setEditingId(null);
     setIsQuickReport(getInitialQuickReport());
     setFormData({
@@ -1149,10 +1149,10 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 </Button>
                 <Button variant="ghost" 
                   className="conflict-button conflict-proceed"
-                  onClick={(e) => {
+                  onClick={(_e) => {
                     // Forcer l'enregistrement malgré le conflit
                     setConflictWarning(null);
-                    const fakeEvent = { preventDefault: () => {} };
+                    const _fakeEvent = { preventDefault: () => {} };
                     // Appeler handleSubmit avec le flag de conflit déjà passé
                     const maintenance = {
                       id: editingId || Date.now(),

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { X, Camera, User, Save, Trash2 } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Input, Avatar, InlineAlert } from '@/design-system';

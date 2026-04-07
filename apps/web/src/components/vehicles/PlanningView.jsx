@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from 'date-fns';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { format, addDays, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, Users, Briefcase, Clock, Ban } from 'lucide-react';
 import api from '../../utils/api';

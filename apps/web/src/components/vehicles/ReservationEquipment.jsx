@@ -3,8 +3,8 @@
 // Composant à intégrer dans un modal de détail de réservation
 // ============================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, Trash2, Box, Search, Weight, Ruler, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Package, Plus, Trash2, Box, Search } from 'lucide-react';
 import { Button, Dialog, ModalLayout, Input, Tooltip } from '@/design-system';
 import api from '../../utils/api';
 import { formatDimensions, buildChargementUrlForReservation, openInChargement } from '../../utils/deepLinking';
@@ -13,7 +13,7 @@ import { useToast } from '../../hooks/useToast';
 
 import { TIMING } from '../../constants';
 
-export default function ReservationEquipment({ reservationId, currentUser }) {
+export default function ReservationEquipment({ reservationId, _currentUser }) {
   const toast = useToast();
   const [data, setData] = useState({ items: [], summary: { count: 0, totalQuantity: 0, totalWeight: 0, totalVolume: 0 } });
   const [loading, setLoading] = useState(true);

@@ -4,8 +4,8 @@
 // de référence en overlay pour aligner précisément
 // ============================================================
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Save, X, Undo2, Redo2, Image, Move, Maximize2, Plus, Trash2, RotateCcw, Eye, EyeOff, Grid3X3, Copy, ZoomIn, ZoomOut, Scissors } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Save, X, Undo2, Redo2, Maximize2, Plus, Trash2, RotateCcw, Eye, EyeOff, Grid3X3, Copy, ZoomIn, ZoomOut, Scissors } from 'lucide-react';
 import api from '../../utils/api';
 import './DepotMapEditor.css';
 import { Button, Dialog, Input, Select, Tooltip } from '@/design-system';
@@ -296,7 +296,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   // Which part of the image to show for the current floor
   // Depot 1: image is landscape with RDC left, MEZZ right
   // Depot 2: image is portrait with RDC top, MEZZ bottom
-  const overlayClip = useMemo(() => {
+  const _overlayClip = useMemo(() => {
     if (depotId === '1' || depotId === 1) {
       // Depot 1 image: 3506x4959 — Both floors side by side
       // RDC = left half (approx 0-47%), MEZZ = right half (approx 50-97%)

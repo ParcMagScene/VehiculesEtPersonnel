@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Calendar, GraduationCap, Building2, Wrench, FileCheck, Clock } from 'lucide-react';
 import { Button, Divider, Tag } from '@/design-system';
 import './PersonnelContextMenu.css';

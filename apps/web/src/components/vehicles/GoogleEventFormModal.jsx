@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar, MapPin, Save, Clock, Type, AlignLeft } from 'lucide-react';
 import './GoogleEventFormModal.css';
-import { Button, Input, Textarea, Checkbox, Toggle } from '@/design-system';
+import { Button, Input, Textarea, Toggle } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
 import AddressAutocomplete from '../AddressAutocomplete';
 

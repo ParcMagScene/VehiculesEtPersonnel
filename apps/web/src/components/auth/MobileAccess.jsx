@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Smartphone, Link as LinkIcon, QrCode, Copy, Check, Printer, Truck, Users, MessageSquare, Package, ShoppingCart, Calendar, Settings, Wrench, LayoutGrid, Eye } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link as LinkIcon, QrCode, Copy, Check, Printer } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './MobileAccess.css';
 import { Button, Input } from '@/design-system';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, MapPin, Users, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil, Briefcase } from 'lucide-react';
+import { Calendar, MapPin, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil, Briefcase } from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import './EventDetailsModal.css';
@@ -20,7 +20,7 @@ function EventDetailsModal({
   onRequestCreateReservation,
   onRequestCreateAssignment,
   onEventCreated,
-  onEventUpdated,
+  _onEventUpdated,
   onRequestEditEvent,
   onRequestDeleteEvent,
   onReservationsRefresh,
@@ -31,7 +31,6 @@ function EventDetailsModal({
   const [linkedReservations, setLinkedReservations] = useState([]);
   const [linkedAffaires, setLinkedAffaires] = useState([]);
   const [attachmentFiles, setAttachmentFiles] = useState([]);
-  const [showActions, setShowActions] = useState(true);
   const [previewFile, setPreviewFile] = useState(null);
   const [showFolderView, setShowFolderView] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
@@ -544,7 +543,7 @@ function EventDetailsModal({
                 }
                 return (
                   <div className="drive-links-list">
-                    {allLinks.map((link, idx) => (
+                    {allLinks.map((link, _idx) => (
                       <div key={`${link.reservationId}-${link.index}`} className="drive-link-item">
                         <a
                           href={link.url}

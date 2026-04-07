@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, Filter,
-  TrendingUp, TrendingDown, AlertTriangle, BarChart3, ArrowUpCircle, ArrowDownCircle,
-  RotateCcw, Layers, Tag as TagIcon, MapPin, Euro, Hash, X, Check, ChevronDown,
-  Archive, Eye, FolderOpen, Upload, FileText, AlertCircle, ExternalLink, Map } from 'lucide-react';
+import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, TrendingUp, AlertTriangle, ArrowUpCircle, ArrowDownCircle,
+  RotateCcw, Layers, Tag as TagIcon, MapPin, Euro, Hash, X, Check, Archive, Upload, ExternalLink, Map } from 'lucide-react';
 import api from '../../utils/api';
-import { formatCurrency, formatDateTime as formatDate, formatDateSimple as formatDateShort } from '../../utils/formatUtils';
+import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
 import { Button, Dialog, ModalLayout, Input, Textarea, Select, Table, EntityCombobox, Spinner, Tag, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import './StockPanel.css';
 import { useToast } from '../../hooks/useToast';
@@ -17,8 +15,7 @@ const MOVEMENT_TYPES = {
   in: { label: 'Entrée', color: '#10b981', icon: '📥', Icon: ArrowDownCircle },
   out: { label: 'Sortie', color: '#ef4444', icon: '📤', Icon: ArrowUpCircle },
   adjustment: { label: 'Ajustement', color: '#f59e0b', icon: '🔧', Icon: RotateCcw },
-  return: { label: 'Retour', color: '#3b82f6', icon: '↩️', Icon: RotateCcw },
-};
+  return: { label: 'Retour', color: '#3b82f6', icon: '↩️', Icon: RotateCcw } };
 
 const UNITS = ['u', 'm', 'm²', 'm³', 'kg', 'L', 'h', 'j', 'lot', 'forfait', 'paire', 'rouleau', 'boîte'];
 
@@ -350,7 +347,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
 // ═══════════════════════════════════════════════════════════════
 // Volet latéral (Slide Panel)
 // ═══════════════════════════════════════════════════════════════
-const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAdmin, depotZones, allDepotZones }) => {
+const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAdmin, _depotZones, _allDepotZones }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -462,7 +459,7 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
 // ═══════════════════════════════════════════════════════════════
 // Dashboard (exporté pour InventoryPanel)
 // ═══════════════════════════════════════════════════════════════
-function DashboardView({ stats, items, onSelectItem }) {
+function _DashboardView({ stats, _items, onSelectItem }) {
   if (!stats) return <div className="stock-empty">Chargement des statistiques...</div>;
 
   return (
@@ -572,7 +569,7 @@ function DashboardView({ stats, items, onSelectItem }) {
 // ═══════════════════════════════════════════════════════════════
 // Liste des Articles
 // ═══════════════════════════════════════════════════════════════
-function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, selectedItemId, onSelect, onDoubleClick, onAdd, onImport, isAdmin }) {
+function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, selectedItemId, onSelect, onDoubleClick, onAdd, onImport, _isAdmin }) {
   return (
     <div className="stock-items-view">
       {/* Toolbar */}
@@ -840,7 +837,7 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
 // ═══════════════════════════════════════════════════════════════
 // Vue Mouvements globaux
 // ═══════════════════════════════════════════════════════════════
-function MovementsView({ movements, items, onAddMovement, onRefresh }) {
+function _MovementsView({ movements, _items, onAddMovement, _onRefresh }) {
   const [typeFilter, setTypeFilter] = useState('');
 
   const filtered = useMemo(() => {
@@ -987,8 +984,7 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
     location_zone: item?.location_zone || '',
     location_floor: item?.location_floor || '',
     supplier_id: item?.supplier_id || '',
-    notes: item?.notes || '',
-  });
+    notes: item?.notes || '' });
 
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -1002,8 +998,7 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
       quantity: Number(form.quantity) || 0,
       min_quantity: Number(form.min_quantity) || 0,
       category_id: form.category_id || null,
-      supplier_id: form.supplier_id || null,
-    });
+      supplier_id: form.supplier_id || null });
   };
 
   return (
@@ -1087,14 +1082,12 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                 value={{
                   location_depot: form.location_depot,
                   location_zone: form.location_zone,
-                  location_floor: form.location_floor,
-                }}
+                  location_floor: form.location_floor }}
                 onChange={(loc) => setForm(f => ({
                   ...f,
                   location_depot: loc.location_depot || '',
                   location_zone: loc.location_zone || '',
-                  location_floor: loc.location_floor || '',
-                }))}
+                  location_floor: loc.location_floor || '' }))}
               />
               <Button variant="ghost" type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)}>
                 <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
@@ -1124,8 +1117,7 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                           ...f,
                           location_depot: currentDepotData.id || currentDepotData.depotId || '',
                           location_zone: zoneId,
-                          location_floor: zoneObj?.floor || '',
-                        }));
+                          location_floor: zoneObj?.floor || '' }));
                       }}
                       onZoneFilter={() => {}}
                       compact
@@ -1158,8 +1150,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
     description: category?.description || '',
     parent_id: category?.parent_id || '',
     color: category?.color || CATEGORY_COLORS[0],
-    icon: category?.icon || '📦',
-  });
+    icon: category?.icon || '📦' });
 
   const parentOptions = categories.filter(c => c.id !== category?.id);
 
@@ -1240,8 +1231,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
     type: 'in',
     quantity: '',
     reason: '',
-    reference: '',
-  });
+    reference: '' });
 
   const selectedItem = items.find(i => i.id === Number(form.stock_item_id));
 
@@ -1251,8 +1241,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
     onSave({
       ...form,
       stock_item_id: Number(form.stock_item_id),
-      quantity: Number(form.quantity),
-    });
+      quantity: Number(form.quantity) });
   };
 
   return (
@@ -1388,8 +1377,7 @@ function parseInventoryCSV(text) {
             category_name: cols[3] || '',
             location: cols[4] || '',
             quantity: qty,
-            unit_price: isNaN(val) ? 0 : val,
-          });
+            unit_price: isNaN(val) ? 0 : val });
         }
       }
     }
@@ -1405,8 +1393,7 @@ function parseInventoryCSV(text) {
     loc: headers.findIndex(h => /^(emplacement|lieu|location)/.test(h)),
     qty: headers.findIndex(h => /^(quanti|qty|qté|stock)/.test(h)),
     price: headers.findIndex(h => /^(valeur|prix|p\.?u|unit)/.test(h)),
-    total: headers.findIndex(h => /^total/.test(h)),
-  };
+    total: headers.findIndex(h => /^total/.test(h)) };
 
   for (let i = headerIdx + 1; i < lines.length; i++) {
     const line = lines[i];
@@ -1430,8 +1417,7 @@ function parseInventoryCSV(text) {
       category_name: get(colIdx.cat),
       location: get(colIdx.loc),
       quantity: getNum(colIdx.qty),
-      unit_price: getNum(colIdx.price),
-    });
+      unit_price: getNum(colIdx.price) });
   }
 
   return items;
@@ -1465,7 +1451,7 @@ function parseInventoryPDF(text) {
     if (!line || SKIP_RE.test(line)) continue;
 
     // Split sur 2+ espaces = colonnes
-    const cols = line.split(/\s{2,}/).map(c => c.trim()).filter(Boolean);
+    const cols = line.split(/\s{2 }/).map(c => c.trim()).filter(Boolean);
     if (cols.length < 4) continue;
 
     // Les 3 dernières colonnes = total, valeur, quantité
@@ -1514,8 +1500,7 @@ function parseInventoryPDF(text) {
       category_name,
       location,
       quantity: isNaN(qty) ? 0 : qty,
-      unit_price: isNaN(value) ? 0 : value,
-    });
+      unit_price: isNaN(value) ? 0 : value });
   }
   return items;
 }
@@ -1528,7 +1513,7 @@ function ImportStockModal({ onDone, onClose }) {
   const [parsedItems, setParsedItems] = useState([]);
   const [error, setError] = useState('');
   const [importMode, setImportMode] = useState('upsert'); // upsert | insert_only
-  const [result, setResult] = useState(null);
+  const [_result, setResult] = useState(null);
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -1578,8 +1563,7 @@ function ImportStockModal({ onDone, onClose }) {
     try {
       const res = await api.importStockItems({
         items: parsedItems,
-        mode: importMode,
-      });
+        mode: importMode });
       setResult(res);
       toast.success(`Import terminé : ${res.inserted} créés, ${res.updated} mis à jour, ${res.skipped} ignorés`);
       onDone();

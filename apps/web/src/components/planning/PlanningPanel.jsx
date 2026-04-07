@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { ClipboardList, Calendar, Tv2, Users } from 'lucide-react';
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
@@ -17,10 +17,10 @@ function PlanningPanel({
   navigateToPersonId, onNavigateToPersonHandled,
   quickAssignmentSlot, onQuickAssignmentHandled,
 }) {
-  const toast = useToast();
+  const _toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('personnel');
   const [stats, setStats] = useState(null);
-  const [displayRefreshKey, setDisplayRefreshKey] = useState(0);
+  const [displayRefreshKey, _setDisplayRefreshKey] = useState(0);
 
   // Auto-switch vers l'onglet Personnel quand navigation demandée
   useEffect(() => {

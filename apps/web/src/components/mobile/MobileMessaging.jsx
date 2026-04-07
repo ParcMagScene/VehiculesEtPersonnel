@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Send, Paperclip, Plus, MessageSquare, File, Image, Download, Users } from 'lucide-react';
 import { Button, Input, ModalLayout, Spinner } from '@/design-system';
 import api, { getApiUrl } from '../../utils/api';

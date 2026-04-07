@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  ChevronLeft, MapPin, Package, Layers, ChevronDown, ChevronUp, 
-  X, ZoomIn, ZoomOut, RotateCcw, Filter, Eye
+  ChevronLeft, MapPin, Package, Layers, X, ZoomIn, ZoomOut, RotateCcw
 } from 'lucide-react';
 import api from '../../utils/api';
-import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from '../vehicles/DepotMapEditor';
+import { getZonePoints, hasSkew, computeZonesBounds } from '../vehicles/DepotMapEditor';
 import './MobileLocation.css';
-import { Button, Input, SearchBar } from '@/design-system';
+import { Button, SearchBar } from '@/design-system';
 
 import { STATUS } from '../../constants';
 
@@ -23,7 +22,7 @@ function MobileLocation({ onBack }) {
   const [floor, setFloor] = useState('RDC');
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [depot, setDepot] = useState(1);
+  const [depot, _setDepot] = useState(1);
   const svgRef = useRef(null);
   const containerRef = useRef(null);
 

@@ -1,5 +1,5 @@
 // ScreensTab — Liste et gestion des écrans d'affichage
-import React, { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
 import { Monitor, Wifi, WifiOff, MapPin, Settings, Trash2, ToggleLeft, ToggleRight, Plus } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';

@@ -83,9 +83,9 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
       <section className="vdp-section">
         <div className="vdp-photo-block">
           {vehicle.photo ? (
-            <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} className="vdp-photo" />
+            <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" className="vdp-photo" />
           ) : (
-            <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vdp-photo vdp-avatar" />
+            <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vdp-photo vdp-avatar" />
           )}
         </div>
         <div className="vdp-info-grid">

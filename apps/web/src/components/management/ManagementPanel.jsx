@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, MapPin, Cloud, Gauge } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../../utils/photoList';
@@ -15,7 +15,7 @@ import ClientDialog from '../vehicles/ClientDialog';
 import ReservationRequestsPanel from '../vehicles/ReservationRequestsPanel';
 import VehicleMaintenanceModal from '../vehicles/VehicleMaintenanceModal';
 import api from '../../utils/api';
-import PersonnelPanel from '../personnel/PersonnelPanel';
+const PersonnelPanel = React.lazy(() => import('../personnel/PersonnelPanel'));
 import './ManagementPanel.css';
 import { useToast } from '../../hooks/useToast';
 import { Button, Input, Select } from '@/design-system';
@@ -693,8 +693,9 @@ const ManagementPanel = ({
               <X size={24} />
             </Button>
           </div>
-          <PersonnelPanel currentUser={currentUser} mode="management" />
-        </div>
+          <Suspense fallback={<div style={{padding:'2rem',textAlign:'center'}}>Chargement…</div>}>
+            <PersonnelPanel currentUser={currentUser} mode="management" />
+          </Suspense>        </div>
       </div>
     );
   }

@@ -120,7 +120,7 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
             {preview.media_type === 'video' ? (
               <video src={preview.file_path} controls autoPlay style={{ maxWidth: '100%', maxHeight: '80vh' }} />
             ) : (
-              <img src={preview.file_path} alt={preview.original_name} style={{ maxWidth: '100%', maxHeight: '80vh' }} />
+              <img src={preview.file_path} alt={preview.original_name} loading="lazy" style={{ maxWidth: '100%', maxHeight: '80vh' }} />
             )}
             <p className="preview-filename">{preview.original_name}</p>
           </div>

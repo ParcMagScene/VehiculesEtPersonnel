@@ -159,7 +159,7 @@ function MobilePersonnel({ onBack, currentUser }) {
         <div className="mpers-detail">
           <div className="mpers-detail-top">
             {p.photo ? (
-              <img src={`/avatars/${p.photo}`} alt="" className="mpers-detail-photo" />
+              <img src={`/avatars/${p.photo}`} alt="" loading="lazy" className="mpers-detail-photo" />
             ) : (
               <Avatar name={fullName} size="xl" />
             )}
@@ -301,7 +301,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                 {/* En-tête profil */}
                 <div className="mpers-my-profile">
                   {myPerson.photo ? (
-                    <img src={`/avatars/${myPerson.photo}`} alt="" className="mpers-my-avatar-img" />
+                    <img src={`/avatars/${myPerson.photo}`} alt="" loading="lazy" className="mpers-my-avatar-img" />
                   ) : (
                     <Avatar name={fullName} size={48} />
                   )}
@@ -378,7 +378,7 @@ function MobilePersonnel({ onBack, currentUser }) {
             <div className="mpers-my-planning">
               <div className="mpers-my-profile">
                 {myPerson.photo ? (
-                  <img src={`/avatars/${myPerson.photo}`} alt="" className="mpers-my-avatar-img" />
+                  <img src={`/avatars/${myPerson.photo}`} alt="" loading="lazy" className="mpers-my-avatar-img" />
                 ) : (
                   <Avatar name={fullName} size={48} />
                 )}
@@ -494,7 +494,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                 return (
                   <div key={p.id} className="mpers-week-person" onClick={() => setSelectedPerson(p)}>
                     {p.photo ? (
-                      <img src={`/avatars/${p.photo}`} alt="" className="mpers-week-avatar-img" />
+                      <img src={`/avatars/${p.photo}`} alt="" loading="lazy" className="mpers-week-avatar-img" />
                     ) : (
                       <Avatar name={fullName} size={30} />
                     )}

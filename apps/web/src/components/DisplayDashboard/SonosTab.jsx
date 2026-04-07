@@ -108,7 +108,7 @@ function SonosTab({ _currentUser, refreshKey }) {
             ) : nowPlaying.playing ? (
               <div className="dtv-sonos-playing">
                 {nowPlaying.albumArtURI && (
-                  <img src={nowPlaying.albumArtURI} alt="Album art" className="dtv-sonos-art" />
+                  <img src={nowPlaying.albumArtURI} alt="Album art" loading="lazy" className="dtv-sonos-art" />
                 )}
                 <div className="dtv-sonos-info">
                   <div className="dtv-sonos-title">{nowPlaying.title}</div>

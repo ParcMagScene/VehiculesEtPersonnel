@@ -154,6 +154,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                       <img
                         src={v.photo ? `/Photos/${v.photo}` : getVehicleAvatar(v.type)}
                         alt={v.name}
+                        loading="lazy"
                         onError={(e) => { e.target.src = getVehicleAvatar(v.type); }}
                       />
                     </div>
@@ -194,6 +195,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                           <img
                             src={vehicle.photo ? `/Photos/${vehicle.photo}` : getVehicleAvatar(vehicle.type)}
                             alt={vehicle.name}
+                            loading="lazy"
                             onError={(e) => { e.target.src = getVehicleAvatar(vehicle.type); }}
                           />
                         </div>
@@ -323,6 +325,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                     <img
                       src={vehicle?.photo ? `/Photos/${vehicle.photo}` : getVehicleAvatar(vehicle?.type)}
                       alt={vehicle?.name || 'Véhicule'}
+                      loading="lazy"
                       onError={(e) => { e.target.src = getVehicleAvatar(vehicle?.type); }}
                     />
                   </div>

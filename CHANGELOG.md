@@ -8,6 +8,17 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.1.11] — 2026-04-07
+
+### Changed
+- **Phase N (PERF)** : Optimisation performance — lazy loading et images, 19 fichiers
+  - `VehicleSlidePanel` lazy dans App.jsx — bundle initial −9.2 kB (193→184 kB)
+  - `PersonnelPanel` lazy dans ManagementPanel — chargé uniquement à l'onglet Personnel
+  - `pdfjs-dist` (438 kB) en import dynamique — chargé au premier import PDF, plus au montage des panels
+  - `loading="lazy"` ajouté sur 33 images (`<img>`) dans 16 composants (listes, modals, mobile)
+
+---
+
 ## [2.1.10] — 2026-04-07
 
 ### Changed

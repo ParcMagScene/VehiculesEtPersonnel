@@ -107,7 +107,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
           <div className="profile-edit-avatar-section">
             <div className="profile-edit-avatar-wrapper">
               {previewUrl ? (
-                <img src={previewUrl} alt="Preview" className="profile-edit-avatar-preview" />
+                <img src={previewUrl} alt="Preview" loading="lazy" className="profile-edit-avatar-preview" />
               ) : (
                 <Avatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
               )}

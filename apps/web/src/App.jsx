@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } fro
 import { format } from 'date-fns';
 import Header from './components/Header';
 const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
-import { VehicleSlidePanel } from './components/vehicles/VehicleDetailPanel';
+const VehicleSlidePanel = lazy(() => import('./components/vehicles/VehicleDetailPanel').then(m => ({ default: m.VehicleSlidePanel })));
 import LoginForm from './components/auth/LoginForm';
 import ErrorBoundary from './components/ErrorBoundary';
 const PlanningView = lazy(() => import('./components/vehicles/PlanningView'));
@@ -543,6 +543,7 @@ function AppContent() {
               />
               </Suspense>
               </ErrorBoundary>
+              <Suspense fallback={null}>
               <VehicleSlidePanel
                 vehicle={selectedVehicleForDetails}
                 maintenances={data.maintenances}
@@ -558,6 +559,7 @@ function AppContent() {
                   else if (action === 'breakdown') { handleReportBreakdown(v); setSelectedVehicleForDetails(null); }
                 }}
               />
+              </Suspense>
             </div>
           )}
         </>

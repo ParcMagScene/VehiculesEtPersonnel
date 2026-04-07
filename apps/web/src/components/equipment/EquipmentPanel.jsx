@@ -1651,6 +1651,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
             <img
               src={typeof previewPhoto === 'string' ? `/Photos/Matériel/${previewPhoto}` : previewPhoto.src}
               alt={typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}
+              loading="lazy"
             />
             <span className="eq-media-preview-name">{typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}</span>
           </div>
@@ -1704,7 +1705,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
               >
                 <td className="eq-table-thumb">
                   {(photo || genericImg) ? (
-                    <img src={photo || genericImg} alt="" className={`eq-table-photo${!photo && genericImg ? ' eq-generic' : ''}`} />
+                    <img src={photo || genericImg} alt="" loading="lazy" className={`eq-table-photo${!photo && genericImg ? ' eq-generic' : ''}`} />
                   ) : (
                     <span className="eq-table-photo-placeholder">{eq.categoryIcon || eq.category_icon || '📦'}</span>
                   )}
@@ -1789,14 +1790,14 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
       <div className="eq-detail-hero">
         {(photo || genericImg) && (
           <div className={`eq-detail-photo${!photo && genericImg ? ' eq-generic' : ''}`}>
-            <img src={photo || genericImg} alt={cleanName(eq.name)} />
+            <img src={photo || genericImg} alt={cleanName(eq.name)} loading="lazy" />
           </div>
         )}
         <div className="eq-detail-identity">
           <h2 className="eq-detail-name">{eq.categoryIcon || eq.category_icon || '📦'} {cleanName(eq.name)}</h2>
           <div className="eq-detail-meta-row">
             <span className="eq-detail-status" style={{ background: st.color }}>{st.icon} {st.label}</span>
-            {logo && <img className="eq-detail-brand-img" src={logo} alt={eq.brand_canonical || eq.brand} title={eq.brand_canonical || eq.brand} />}
+            {logo && <img className="eq-detail-brand-img" src={logo} alt={eq.brand_canonical || eq.brand} loading="lazy" title={eq.brand_canonical || eq.brand} />}
           </div>
           {eq.uid && (
             <div className="eq-detail-uid-row">
@@ -2385,9 +2386,9 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
               <div className="eq-photo-picker">
                 <div className="eq-photo-picker-preview" onClick={() => setShowPhotoPicker(!showPhotoPicker)}>
                   {currentPhotoUrl ? (
-                    <img src={currentPhotoUrl} alt="" />
+                    <img src={currentPhotoUrl} alt="" loading="lazy" />
                   ) : genericImageUrl ? (
-                    <img src={genericImageUrl} alt="" className="eq-generic-preview" />
+                    <img src={genericImageUrl} alt="" loading="lazy" className="eq-generic-preview" />
                   ) : (
                     <span className="eq-photo-picker-icon">{defaultIcon}</span>
                   )}
@@ -2430,7 +2431,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                         onClick={() => { setForm(f => ({ ...f, photo: p })); setShowPhotoPicker(false); setPhotoSearch(''); }}
                         title={p}
                       >
-                        <img src={`/Photos/Matériel/${p}`} alt={p} />
+                        <img src={`/Photos/Matériel/${p}`} alt={p} loading="lazy" />
                         <span className="eq-photo-picker-item-label">{p.replace(/\.[^.]+$/, '')}</span>
                       </div>
                     ))}
@@ -2447,7 +2448,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                               onClick={() => { setForm(f => ({ ...f, photo: `generic:${g.groupKey}/${g.key}` })); setShowPhotoPicker(false); setPhotoSearch(''); }}
                               title={g.label}
                             >
-                              <img src={g.path} alt={g.label} />
+                              <img src={g.path} alt={g.label} loading="lazy" />
                               <span className="eq-photo-picker-item-label">{g.label}</span>
                             </div>
                           </React.Fragment>

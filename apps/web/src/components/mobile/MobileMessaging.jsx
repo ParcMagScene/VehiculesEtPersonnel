@@ -232,6 +232,7 @@ function MobileMessaging({ currentUser, onBack }) {
                     <img
                       src={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
                       alt={item.attachments[0].original_name}
+                      loading="lazy"
                       className="mmsg-img"
                       onClick={() => window.open(`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`, '_blank')}
                     />

@@ -115,7 +115,7 @@ function MediaUploadModal({ onSave, onClose }) {
             {file ? (
               <div className="drop-zone-preview">
                 {preview ? (
-                  <img src={preview} alt="Aperçu" className="drop-preview-img" />
+                  <img src={preview} alt="Aperçu" loading="lazy" className="drop-preview-img" />
                 ) : (
                   <Film size={48} />
                 )}

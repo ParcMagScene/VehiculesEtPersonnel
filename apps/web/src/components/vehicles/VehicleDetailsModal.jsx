@@ -189,11 +189,11 @@ const VehicleDetailsModal = ({
             <div className="info-container">
               {vehicle.photo ? (
                 <div className="vehicle-photo-container">
-                  <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
+                  <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" />
                 </div>
               ) : (
                 <div className="vehicle-photo-container">
-                  <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
+                  <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vehicle-avatar" />
                 </div>
               )}
               <div className="info-grid">

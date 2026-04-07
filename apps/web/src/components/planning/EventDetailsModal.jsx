@@ -774,6 +774,7 @@ function EventDetailsModal({
                 <img 
                   src={previewFile.url} 
                   alt={previewFile.name}
+                  loading="lazy"
                   style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                 />
               ) : (
@@ -844,7 +845,7 @@ function EventDetailsModal({
                         {file.name.toLowerCase().endsWith('.pdf') ? (
                           <FileText size={32} />
                         ) : file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                          <img src={file.url} alt={file.name} className="file-thumbnail" />
+                          <img src={file.url} alt={file.name} loading="lazy" className="file-thumbnail" />
                         ) : (
                           <FileText size={32} />
                         )}

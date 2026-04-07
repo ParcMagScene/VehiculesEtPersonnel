@@ -87,12 +87,15 @@ apps/api/import-backup.js
 apps/api/_audit-output.txt
 apps/api/_taxonomy-state.txt
 apps/api/_brand-analysis-results.json
+apps/api/_*.mjs
+apps/api/_*.cjs
 _fix-delete-btn.cjs
 _taxonomy-simulator.html
 
 # Scripts NVR avec IPs et credentials hardcodés
 scripts/_*-nvr-*.py
 scripts/_enable-nvr-*.py
+scripts/_check-users.cjs
 scripts/_test-nvr-*.py
 scripts/_search-nvr-*.py
 scripts/parse-nmap-cameras.py

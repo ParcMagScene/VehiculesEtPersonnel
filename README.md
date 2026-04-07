@@ -1,6 +1,6 @@
 # 🚛 eM@g — Gestion de Flotte, Personnel & Équipements
 
-Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour Mag Scène (entreprise de prestations événementielles à La Réunion).
+Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour les entreprises de prestations événementielles et techniques.
 
 ## ✨ Fonctionnalités
 
@@ -247,4 +247,4 @@ npm run dev:start    # Démarre backend + frontend en dev
 
 ---
 
-**Développé pour Mag Scène — La Réunion**
+**Développé avec ❤️ — Open Source**

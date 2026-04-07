@@ -1,7 +1,7 @@
 {
-  "name": "eM@g - Mag Scène",
+  "name": "eM@g",
   "short_name": "eM@g",
-  "description": "Gestion du parc Mag Scène",
+  "description": "Gestion de parc matériel et personnel",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

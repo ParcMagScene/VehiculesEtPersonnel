@@ -36,7 +36,7 @@
 | Structure des dossiers | [§3](01-Architecture/ARCHITECTURE.md#3-structure-des-dossiers) | Monorepo `apps/api`, `apps/web`, `apps/tv-client` |
 | Architecture Backend | [§4](01-Architecture/ARCHITECTURE.md#4-architecture-backend) | Express, 18 fichiers routes, middlewares, `.env` |
 | Architecture Frontend | [§5](01-Architecture/ARCHITECTURE.md#5-architecture-frontend) | App.jsx, code splitting, IndexedDB (12 stores), API client (15 modules, ~375 méthodes) |
-| Déploiement & infrastructure | [§14](01-Architecture/ARCHITECTURE.md#14-déploiement--infrastructure) | PM2, Raspberry Pi, DuckDNS, ports 3002/4173 |
+| Déploiement & infrastructure | [§14](01-Architecture/ARCHITECTURE.md#14-déploiement--infrastructure) | PM2, Raspberry Pi, Dynamic DNS, ports 3002/4173 |
 | Design System | [§15](01-Architecture/ARCHITECTURE.md#15-design-system) | Variables CSS, tokens, thèmes |
 | Cache Backend | [§16](01-Architecture/ARCHITECTURE.md#16-cache-backend) | LRU/TTL, invalidation automatique |
 | Performance (Phase 4) | [§17](01-Architecture/ARCHITECTURE.md#17-performance-phase-4) | Batch queries, index SQL |
@@ -277,7 +277,7 @@ SilentRefresh   ──→ ARCHITECTURE.md (auth)
 | **RTSP** | Real-Time Streaming Protocol — flux vidéo caméras |
 | **PM2** | Process Manager 2 — gestionnaire de processus Node.js |
 | **WAL** | Write-Ahead Logging — mode journalisation SQLite |
-| **DuckDNS** | Service DNS dynamique gratuit |
+| **Dynamic DNS** | Service DNS dynamique (configurable) |
 | **Flugtcase** | Flight case — caisse de transport pour équipement événementiel |
 
 ---

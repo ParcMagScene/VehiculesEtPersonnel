@@ -210,7 +210,7 @@ const HelpModal = ({ isOpen, onClose }) => {
           </TabPanel>
 
           <div className="help-version">
-            eM@g v2.1 — MagScene © {new Date().getFullYear()}
+            eM@g v2.1 — eM@g © {new Date().getFullYear()}
           </div>
         </div>
         </Tabs>

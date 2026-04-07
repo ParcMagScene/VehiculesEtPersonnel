@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, readdirSync } from 'fs';
 import { join, relative } from 'path';
 
-const ROOT = '/Users/reunion/eM@g';
+const ROOT = process.cwd();
 const COMP = join(ROOT, 'src/components');
 
 // Root-level components (not moved)

@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync, readdirSync } from 'fs';
 import { join, dirname, relative, basename, extname } from 'path';
 
-const ROOT = '/Users/reunion/eM@g';
+const ROOT = process.cwd();
 const COMP = join(ROOT, 'src/components');
 
 // ═══ Mapping composant → dossier cible ═══

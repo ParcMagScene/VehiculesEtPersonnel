@@ -1,5 +1,7 @@
 # 🚛 eM@g — Gestion de Flotte, Personnel & Équipements
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour les entreprises de prestations événementielles et techniques.
 
 ## ✨ Fonctionnalités
@@ -61,7 +63,7 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 - **Écrans & Playlists** : Configuration d'écrans, playlists de contenu, médias, messages, templates
 - **Apparence** : Règles de couleurs dynamiques, icônes de localisation, messages de bienvenue
 - **Sonos** : Contrôle Sonos intégré (now playing)
-- **Alarme SNCF** : Alarme sonore à l'échéance des tâches + bouton test admin
+- **Alarme sonore** : Alarme à l'échéance des tâches + bouton test admin
 - **Sneaky** : Affichage furtif de GIFs
 - **Prévisualisation** : Aperçu temps réel des écrans TV, sidebar tâches avec nettoyage automatique des titres
 - **Client TV** : Client web dédié pour écrans d'affichage
@@ -119,32 +121,26 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
-cd "eM@g"
+git clone https://github.com/your-org/emag.git
+cd emag
 
-# Installer les dépendances frontend
+# Installer toutes les dépendances (monorepo)
 npm install
-
-# Installer les dépendances backend
-cd server && npm install && cd ..
 ```
 
 ### Configuration
 
 ```bash
 # Créer le fichier d'environnement backend
-cp server/.env.example server/.env
-# Éditer server/.env avec votre JWT_SECRET
+cp apps/api/.env.example apps/api/.env
+# Éditer apps/api/.env avec votre JWT_SECRET
 ```
 
 ### Lancement en développement
 
 ```bash
-# Terminal 1 — Backend (port 3003)
-cd server && npm start
-
-# Terminal 2 — Frontend (port 5174)
-npm run dev
+# Lance backend (port 3003) + frontend (port 5174)
+npm run dev:start
 ```
 
 - **Frontend** : http://localhost:5174
@@ -247,4 +243,4 @@ npm run dev:start    # Démarre backend + frontend en dev
 
 ---
 
-**Développé avec ❤️ — Open Source**
+**Développé avec ❤️ — Open Source sous [licence MIT](LICENSE)**

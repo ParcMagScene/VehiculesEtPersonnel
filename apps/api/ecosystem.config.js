@@ -22,7 +22,7 @@ export default {
       // Sauvegarde automatique toutes les 6 heures
       cron_restart: "0 */6 * * *",
       // Script à exécuter après le redémarrage
-      post_update: ["./backup-database.sh"],
+      post_update: ["../../scripts/backup-databases.sh"],
       // Graceful shutdown
       shutdown_with_message: true,
     },

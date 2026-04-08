@@ -8,19 +8,19 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 0.5rem;
-  color: var(--text-secondary, #6b7280);
+  gap: var(--space-2);
+  color: var(--text-secondary);
 }
 
 /* ── Tailles ── */
-.ui-empty-state--sm { padding: 1rem; }
-.ui-empty-state--md { padding: 2rem 1rem; }
-.ui-empty-state--lg { padding: 3rem 1.5rem; }
+.ui-empty-state--sm { padding: var(--space-4); }
+.ui-empty-state--md { padding: var(--space-8) var(--space-4); }
+.ui-empty-state--lg { padding: var(--space-12) var(--space-6); }
 
 /* ── Icône ── */
 .ui-empty-state__icon {
   opacity: 0.5;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-1);
 }
 .ui-empty-state--sm .ui-empty-state__icon { opacity: 0.4; }
 .ui-empty-state--lg .ui-empty-state__icon { opacity: 0.6; }
@@ -28,21 +28,21 @@
 /* ── Titre ── */
 .ui-empty-state__title {
   margin: 0;
-  font-weight: 500;
-  color: var(--text-primary, #374151);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
 }
-.ui-empty-state--sm .ui-empty-state__title { font-size: 0.85rem; }
-.ui-empty-state--md .ui-empty-state__title { font-size: 0.95rem; }
-.ui-empty-state--lg .ui-empty-state__title { font-size: 1.1rem; }
+.ui-empty-state--sm .ui-empty-state__title { font-size: var(--font-sm); }
+.ui-empty-state--md .ui-empty-state__title { font-size: var(--font-base); }
+.ui-empty-state--lg .ui-empty-state__title { font-size: var(--font-lg); }
 
 /* ── Description ── */
 .ui-empty-state__description {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--font-sm);
   opacity: 0.8;
 }
 
 /* ── Action ── */
 .ui-empty-state__action {
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
 }

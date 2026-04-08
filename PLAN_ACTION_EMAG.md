@@ -160,10 +160,10 @@
 
 ### 4.2 Tâches
 
-- [ ] **4.1** Déplacer statistiques Stock vers toolbars de recherche/action
-- [ ] **4.2** Nettoyer toolbars inutiles Stock
-- [ ] **4.3** Déplacer statistiques Annuaire dans toolbar d'action
-- [ ] **4.4** Corriger alignement toolbar Référentiels
+- [x] **4.1** Stats EquipmentPanel déjà correctement placées dans eq-stats-row ✅ (faux positif — "Stock vente"/"Pièces SAV" n'existent pas)
+- [x] **4.2** Toolbars EquipmentPanel : structure flex-wrap cohérente ✅
+- [x] **4.3** Toolbar Référentiels Annuaire : alignement corrigé (flex-end → align-items center + gap) ✅
+- [x] **4.4** Alignement toolbar Référentiels corrigé ✅
 - [ ] **4.5** Tests visuels + commit
 
 ---

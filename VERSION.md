@@ -1,7 +1,7 @@
 # eM@g — Version
 
-**Version courante** : `2.1.9`  
-**Date** : 7 avril 2026  
+**Version courante** : `2.0.0`  
+**Date** : 8 avril 2026  
 **Branche** : `dev`
 
 ---

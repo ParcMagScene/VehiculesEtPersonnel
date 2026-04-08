@@ -1,3 +1,7 @@
+> **⚠️ DÉPRÉCIÉ** — Ce rapport est supplée par [`AUDIT.md`](AUDIT.md) (Partie II).  
+> Les corrections appliquées (avril 2026) y sont documentées.  
+> Ce fichier est conservé en archive — ne plus le mettre à jour.
+
 # Rapport d'Audit de Sécurité — eM@g
 
 > **Version** : 1.0.0  

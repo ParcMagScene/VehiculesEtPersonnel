@@ -102,6 +102,19 @@
 
 → Codes d'erreur : `400` Bad Request, `401` Unauthorized, `403` Forbidden, `404` Not Found, `409` Conflict, `500` Internal Server Error
 
+### 3.1 Routes dépréciées (legacy)
+
+Ces routes restent fonctionnelles pour rétrocompatibilité mais émettent un avertissement dans les logs. Elles seront supprimées dans une version majeure future.
+
+| Préfixe legacy | Remplacement | Fichier |
+|----------------|--------------|----------|
+| `/api/clients` | `/api/annuaire/clients` | `routes.js` → `annuaireRoutes.js` |
+| `/api/drivers` | `/api/annuaire` (table `persons`) | `routes.js` → `annuaireRoutes.js` |
+| `/api/locations` | `/api/annuaire/locations` | `routes.js` → `annuaireRoutes.js` |
+| `/api/garages` | `/api/annuaire/garages` | `routes.js` → `annuaireRoutes.js` |
+
+> **Action** : migrer tous les appels frontend vers les routes `/api/annuaire/*` avant suppression.
+
 ---
 
 ## 4. Modules fonctionnels

@@ -5,6 +5,26 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.1.0] — 2026-04-08
+
+### Added
+- `PLAN_ACTION_EMAG.md` — Plan d'action global 49 issues (5 CRIT, 21 HIGH, 18 MED, 5 LOW)
+- Section « Routes dépréciées » dans `API-INDEX.md` (legacy `/api/clients`, `/api/drivers`, `/api/locations`, `/api/garages`)
+- 4 variables manquantes dans `.env.example` (DB_PATH, ALLOW_HTTP, MEDIAMTX_API_URL, MEDIAMTX_WEBRTC_URL)
+
+### Changed
+- `VERSION.md` — Version alignée sur package.json (2.1.9 → 2.0.0)
+- `SECURITY_AUDIT.md` — Marqué comme déprécié (supplanté par AUDIT.md Partie II)
+
+### Security
+- Rate limiter ajouté sur `/api/auth/check-reset` (commit `3f89572`)
+- Réponse anti-énumération sur `/api/auth/check-reset`
+- Blocage SSRF IPv6 dans videoProxyService.js
+- Validation base64 des champs signature dans sanitize.js
+- Whitelist des champs SQL dynamiques dans planningRoutes.js
+
+---
+
 ## [1.0.0] — 2026-04-07
 
 ### Added

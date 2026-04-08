@@ -56,7 +56,7 @@ function smartCacheHeaders() {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), staleAssetReload(), smartCacheHeaders()],
   // Le dossier public est à la racine du monorepo
   publicDir: '../../public',
@@ -81,9 +81,10 @@ export default defineConfig({
     },
   },
   esbuild: {
-    // En build de production, supprimer les console.log/debug (garder console.error/warn)
-    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
-    pure: process.env.NODE_ENV === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
+    // [PHASE 5] Conditionné par le mode Vite (pas process.env.NODE_ENV)
+    // vite build → mode='production', vite dev → mode='development'
+    drop: mode === 'production' ? ['debugger'] : [],
+    pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
   },
   server: {
     // MODE DEV — proxy vers le backend DEV sur port 3003
@@ -135,4 +136,4 @@ export default defineConfig({
       'pdfjs-dist/build/pdf.worker.min.mjs': 'pdfjs-dist/build/pdf.worker.mjs'
     }
   }
-})
+}))

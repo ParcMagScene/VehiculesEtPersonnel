@@ -12,7 +12,9 @@ export const getApiUrl = () => {
   }
 
   // Sinon, construire l'URL du backend à partir du hostname courant
-  return `http://${window.location.hostname}:3002/api`;
+  // [PHASE 5] Port configurable via VITE_API_PORT (défaut : 3002)
+  const apiPort = import.meta.env.VITE_API_PORT || '3002';
+  return `http://${window.location.hostname}:${apiPort}/api`;
 };
 
 export const API_URL = getApiUrl();

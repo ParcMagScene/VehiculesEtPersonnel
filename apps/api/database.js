@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // ⚠️ En ESM, les imports sont hoistés et exécutés AVANT le code de server.js.
-// On doit charger dotenv ici pour que DB_PATH soit défini au moment de la lecture.
+// On doit charger dotenv ici (duplication intentionnelle avec env.js) car database.js
+// est importé avant env.js à cause du hoisting ESM. Les deux doivent rester synchronisés.
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 const envFile = isDev ? '.env.development' : '.env';
 dotenv.config({ path: join(__dirname, envFile) });

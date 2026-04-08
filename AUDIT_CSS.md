@@ -475,7 +475,7 @@
 | U4 — Modals unification | ✅ DONE | `e7ed615` |
 | U5 — Toolbars/Headers | ✅ DONE | `24ae834` |
 | U6 — Border-radius tokens | ✅ DONE | `bba14a0` |
-| U7 — Font-size tokens | ⬜ TODO | — |
+| U7 — Font-size tokens | ✅ DONE | `04cf7b5` |
 | U8 — Couleurs tokens | ⬜ TODO | — |
 | U9 — Inline styles extraction | ⬜ TODO | — |
 | U10 — Collisions namespacing | ⬜ TODO | — |

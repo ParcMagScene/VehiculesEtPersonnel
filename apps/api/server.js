@@ -11,7 +11,7 @@ if (isDev) {
   logger.info('═══════════════════════════════════════════');
   logger.info('  🔧 MODE DÉVELOPPEMENT — Serveur isolé');
   logger.info(`  📄 Env: ${envFile}`);
-  logger.info(`  🔌 Port: ${process.env.PORT || 3003}`);
+  logger.info(`  🔌 Port: ${process.env.PORT || 3002}`);
   logger.info(`  💾 DB: ${process.env.DB_PATH || 'vehicules-dev.db'}`);
   logger.info('  ⚠️  La production n\'est PAS affectée');
   logger.info('═══════════════════════════════════════════');

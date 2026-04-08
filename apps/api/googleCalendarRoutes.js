@@ -4,6 +4,8 @@ import db from './database.js';
 import logger from './logger.js';
 
 const GOOGLE_API_BASE = 'https://www.googleapis.com/calendar/v3';
+const GCAL_TIMEOUT_MS = 10000;  // 10s timeout sur les appels Google
+const GCAL_MAX_RETRIES = 2;     // 1 retry sur erreurs transitoires (502, 503, 504)
 
 // Wrapper async pour garantir qu'une erreur non catchée renvoie 502 au client
 const gcalRoute = (fn) => async (req, res) => {
@@ -31,36 +33,53 @@ async function googleProxy(req, res, method, url, body) {
   const headers = { 'Authorization': `Bearer ${token}` };
   if (body) headers['Content-Type'] = 'application/json';
 
-  try {
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+  for (let attempt = 0; attempt <= GCAL_MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GCAL_TIMEOUT_MS);
 
-    // Renvoyer le status code de Google tel quel
-    if (!response.ok) {
-      const text = await response.text();
-      let errorData;
-      try { errorData = JSON.parse(text); } catch { errorData = { message: text }; }
+    try {
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
 
-      if (response.status === 401) {
-        // Token expiré côté Google — supprimer de la DB
-        db.prepare('DELETE FROM google_tokens WHERE user_id = ?').run(req.user.id);
-        return res.status(401).json({ error: 'google_token_expired', message: 'Token Google expiré — reconnectez-vous' });
+      // Renvoyer le status code de Google tel quel
+      if (!response.ok) {
+        // Retry sur erreurs transitoires (sauf dernier essai)
+        if ([502, 503, 504].includes(response.status) && attempt < GCAL_MAX_RETRIES) {
+          continue;
+        }
+
+        const text = await response.text();
+        let errorData;
+        try { errorData = JSON.parse(text); } catch { errorData = { message: text }; }
+
+        if (response.status === 401) {
+          // Token expiré côté Google — supprimer de la DB
+          db.prepare('DELETE FROM google_tokens WHERE user_id = ?').run(req.user.id);
+          return res.status(401).json({ error: 'google_token_expired', message: 'Token Google expiré — reconnectez-vous' });
+        }
+
+        return res.status(response.status).json(errorData);
       }
 
-      return res.status(response.status).json(errorData);
+      // 204 No Content (ex: DELETE)
+      if (response.status === 204) return res.status(204).end();
+
+      const data = await response.json();
+      return res.json(data);
+    } catch (err) {
+      clearTimeout(timer);
+      // Retry sur timeout (sauf dernier essai)
+      if (err.name === 'AbortError' && attempt < GCAL_MAX_RETRIES) {
+        continue;
+      }
+      logger.error('Google Calendar proxy error:', err.message);
+      return res.status(502).json({ error: 'google_proxy_error', message: 'Erreur communication Google Calendar' });
     }
-
-    // 204 No Content (ex: DELETE)
-    if (response.status === 204) return res.status(204).end();
-
-    const data = await response.json();
-    return res.json(data);
-  } catch (err) {
-    logger.error('Google Calendar proxy error:', err.message);
-    return res.status(502).json({ error: 'google_proxy_error', message: 'Erreur communication Google Calendar' });
   }
 }
 
@@ -88,6 +107,9 @@ export function setupGoogleCalendarRoutes(app, authenticateToken) {
     const { accessToken, expiresAt } = req.body;
     if (!accessToken || !expiresAt) {
       return res.status(400).json({ error: 'accessToken et expiresAt requis' });
+    }
+    if (typeof expiresAt !== 'number' || expiresAt < Date.now()) {
+      return res.status(400).json({ error: 'expiresAt doit être un timestamp futur' });
     }
 
     db.prepare(`

@@ -68,6 +68,21 @@ function copyBLToAttachments(file, affaireId) {
 }
 
 // ═══════════════════════════════════════════════
+// VALIDATION — Dates & Heures
+// ═══════════════════════════════════════════════
+
+const DATE_RE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+
+function isValidDate(str) {
+  return typeof str === 'string' && DATE_RE.test(str);
+}
+
+function isValidTime(str) {
+  return typeof str === 'string' && TIME_RE.test(str);
+}
+
+// ═══════════════════════════════════════════════
 // AFFICHAGE DYNAMIQUE — CRUD
 // ═══════════════════════════════════════════════
 
@@ -141,6 +156,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (!type || !category || !date) {
         return res.status(400).json({ error: 'Champs obligatoires : type, category, date' });
       }
+      if (!isValidDate(date)) {
+        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (time && !isValidTime(time)) {
+        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+      }
 
       const id = crypto.randomUUID().replace(/-/g, '');
 
@@ -166,6 +187,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (!existing) return res.status(404).json({ error: 'Événement non trouvé' });
 
       const { affaire_id, bl_import_id, type, category, date, period, time, comment, client, location, visible } = req.body;
+
+      if (date && !isValidDate(date)) {
+        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (time && !isValidTime(time)) {
+        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+      }
 
       const stmt = db.prepare(`
         UPDATE dynamic_display_events
@@ -1721,6 +1749,15 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (!date) {
         return res.status(400).json({ error: 'Le champ date est obligatoire' });
       }
+      if (!isValidDate(date)) {
+        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (time && !isValidTime(time)) {
+        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+      }
+      if (end_time && !isValidTime(end_time)) {
+        return res.status(400).json({ error: 'Format end_time invalide (attendu HH:mm)' });
+      }
 
       const id = crypto.randomUUID().replace(/-/g, '');
 
@@ -1794,9 +1831,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       `);
 
       const createdIds = [];
+      const skipped = [];
       const insertMany = db.transaction((items) => {
         for (const t of items) {
           if (!t.date) continue;
+          if (!isValidDate(t.date)) { skipped.push(t.date); continue; }
           const id = crypto.randomUUID().replace(/-/g, '');
           const sect = t.section || 'manual';
           const vis = EVENT_SECTIONS_BATCH.includes(sect) ? 0 : 1;
@@ -1869,6 +1908,16 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
 
       const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id, location_address, location_lat, location_lng } = req.body;
+
+      if (date && !isValidDate(date)) {
+        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (time && !isValidTime(time)) {
+        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+      }
+      if (end_time && !isValidTime(end_time)) {
+        return res.status(400).json({ error: 'Format end_time invalide (attendu HH:mm)' });
+      }
 
       const stmt = db.prepare(`
         UPDATE task_assignments

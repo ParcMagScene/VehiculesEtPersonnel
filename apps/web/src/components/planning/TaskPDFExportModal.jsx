@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import { formatDateFr } from '../../utils/formatUtils';
+import { safeParseDate } from '../../utils/dateUtils';
 import './TaskPDFExportModal.css';
 import { Button, EmptyState } from '@/design-system';
 
@@ -471,7 +472,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const ev = item.data;
       const startDT = ev.start?.dateTime || ev.start?.date || '';
       const timeStr = startDT.includes('T')
-        ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        ? safeParseDate(startDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || ''
         : '';
       return (
         <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>

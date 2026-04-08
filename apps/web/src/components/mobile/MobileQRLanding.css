@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: var(--space-5);
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
 }
@@ -35,7 +35,7 @@
 /* ── Header ── */
 .qr-landing-header {
   background: linear-gradient(135deg, var(--theme-text-dark), var(--theme-info-dark));
-  padding: 28px 24px 24px;
+  padding: 28px var(--space-6) var(--space-6);
   text-align: center;
   color: var(--theme-text-inverse);
 }
@@ -48,13 +48,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  margin: 0 auto var(--space-3);
 }
 
 .qr-landing-header h1 {
   font-size: 22px;
   font-weight: 700;
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
   letter-spacing: 0.5px;
 }
 
@@ -66,7 +66,7 @@
 
 /* ── Equipment Info ── */
 .qr-landing-info {
-  padding: 24px 24px 16px;
+  padding: var(--space-6) var(--space-6) var(--space-4);
   text-align: center;
   border-bottom: 1px solid var(--theme-border-light);
 }
@@ -75,9 +75,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-2-5);
   color: var(--theme-text-secondary);
-  padding: 12px 0;
+  padding: var(--space-3) 0;
 }
 
 .qr-spinner {
@@ -92,7 +92,7 @@
 .qr-landing-error {
   color: var(--theme-danger);
   font-size: var(--font-base);
-  padding: 12px 0;
+  padding: var(--space-3) 0;
 }
 
 .qr-landing-uid {
@@ -101,9 +101,9 @@
   color: var(--theme-text-secondary);
   background: var(--theme-border-light);
   display: inline-block;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   letter-spacing: 0.5px;
 }
 
@@ -111,34 +111,34 @@
   font-size: var(--font-lg);
   font-weight: 600;
   color: var(--theme-text-primary);
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .qr-landing-detail {
   font-size: var(--font-base);
   color: var(--theme-text-secondary);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1-5);
 }
 
 .qr-landing-status {
   font-size: var(--font-base);
   font-weight: 500;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 /* ── Action Buttons ── */
 .qr-landing-actions {
-  padding: 20px 24px 28px;
+  padding: var(--space-5) var(--space-6) 28px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .qr-landing-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
   border: none;
   border-radius: var(--radius-xl);
   font-size: var(--font-md);

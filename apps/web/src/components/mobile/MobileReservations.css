@@ -5,8 +5,8 @@
 .mobile-reservations .screen-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
 .mobile-reservations .back-button,
@@ -48,7 +48,7 @@
 .mobile-reservations .reservation-form {
   background: var(--theme-bg-card);
   border-radius: var(--radius-xl);
-  padding: 20px;
+  padding: var(--space-5);
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
@@ -60,18 +60,18 @@
 .mobile-reservations .form-group label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 700;
   color: var(--theme-text-body);
   font-size: var(--font-base);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .mobile-reservations .form-group input,
 .mobile-reservations .form-group select,
 .mobile-reservations .form-group textarea {
   width: 100%;
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   border: 2px solid var(--theme-border);
   border-radius: var(--radius-xl);
   font-size: var(--font-md);
@@ -94,24 +94,24 @@
 .mobile-reservations .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .mobile-reservations .form-error {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   background: var(--theme-danger-bg);
   color: var(--theme-danger-dark);
   border-radius: var(--radius-lg);
   font-size: var(--font-base);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   border: 1px solid var(--btn-danger-hover-bg);
   font-weight: 500;
 }
 
 .mobile-reservations .form-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
 }
 
 .mobile-reservations .btn-cancel,
@@ -153,7 +153,7 @@
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border: 2px solid var(--theme-border);
   border-radius: var(--radius-xl);
   background: var(--theme-bg-card);
@@ -199,7 +199,7 @@
 .vehicle-picker-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
   flex: 1;
   min-width: 0;
 }
@@ -260,7 +260,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 20px 14px;
+  padding: var(--space-5) var(--space-5) 14px;
   border-bottom: 1px solid var(--theme-border);
 }
 
@@ -288,7 +288,7 @@
 .vehicle-picker-list {
   overflow-y: auto;
   flex: 1;
-  padding: 8px 12px max(24px, env(safe-area-inset-bottom));
+  padding: var(--space-2) var(--space-3) max(24px, env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
 }
 
@@ -297,7 +297,7 @@
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   border: none;
   background: var(--theme-bg-card);
   cursor: pointer;
@@ -348,7 +348,7 @@
 
 .vehicle-picker-item-meta {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1-5);
   flex-wrap: wrap;
 }
 
@@ -357,7 +357,7 @@
   font-weight: 600;
   color: var(--theme-primary);
   background: var(--theme-bg-hover);
-  padding: 1px 8px;
+  padding: 1px var(--space-2);
   border-radius: var(--radius-sm);
 }
 
@@ -366,7 +366,7 @@
   font-weight: 500;
   color: var(--btn-success-color);
   background: var(--theme-success-bg);
-  padding: 1px 8px;
+  padding: 1px var(--space-2);
   border-radius: var(--radius-sm);
 }
 
@@ -383,13 +383,13 @@
 
 .vehicle-picker-empty {
   text-align: center;
-  padding: 48px 20px;
+  padding: var(--space-12) var(--space-5);
   color: var(--theme-text-muted);
 }
 
 .vehicle-picker-empty svg {
   opacity: 0.4;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .vehicle-picker-empty p {
@@ -401,13 +401,13 @@
 .mobile-reservations .reservations-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .mobile-reservations .reservation-card {
   background: var(--theme-bg-card);
   border-radius: var(--radius-xl);
-  padding: 16px;
+  padding: var(--space-4);
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
@@ -416,7 +416,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .mobile-reservations .reservation-vehicle-thumb {
@@ -439,7 +439,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .mobile-reservations .vehicle-name {
@@ -451,7 +451,7 @@
 .mobile-reservations .vehicle-plate {
   background: var(--theme-bg-hover);
   color: var(--theme-primary);
-  padding: 2px 10px;
+  padding: var(--space-0-5) var(--space-2-5);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 700;
@@ -462,23 +462,23 @@
 .mobile-reservations .reservation-dates {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--theme-text-subtle);
   font-size: var(--font-base);
-  margin-bottom: 10px;
+  margin-bottom: var(--space-2-5);
   font-weight: 500;
 }
 
 .mobile-reservations .reservation-details {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .mobile-reservations .detail-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--theme-text-secondary);
   font-size: var(--font-base);
 }
@@ -489,8 +489,8 @@
 }
 
 .mobile-reservations .reservation-notes {
-  margin-top: 10px;
-  padding: 10px 14px;
+  margin-top: var(--space-2-5);
+  padding: var(--space-2-5) 14px;
   background: var(--theme-bg-page);
   border-radius: var(--radius-lg);
   font-size: var(--font-base);
@@ -502,7 +502,7 @@
 /* ═══ ÉTAT VIDE ═══ */
 .mobile-reservations .empty-state {
   text-align: center;
-  padding: 48px 24px;
+  padding: var(--space-12) var(--space-6);
   background: var(--theme-bg-card);
   border-radius: var(--radius-xl);
   box-shadow: 0 2px 8px var(--shadow-inner);
@@ -511,12 +511,12 @@
 
 .mobile-reservations .empty-state svg {
   color: var(--theme-border-muted);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .mobile-reservations .empty-state p {
   color: var(--theme-text-secondary);
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
   font-size: 15px;
 }
 
@@ -524,7 +524,7 @@
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: var(--theme-text-inverse);
   border: none;
-  padding: 14px 24px;
+  padding: 14px var(--space-6);
   border-radius: var(--radius-xl);
   font-weight: 700;
   cursor: pointer;

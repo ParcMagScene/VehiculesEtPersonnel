@@ -11,7 +11,7 @@
 .mobile-header {
   background: var(--theme-gradient);
   color: var(--theme-text-inverse);
-  padding: 1rem;
+  padding: var(--space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -38,7 +38,7 @@
   background: var(--glass-light);
   border: none;
   color: var(--theme-text-inverse);
-  padding: 0.5rem;
+  padding: var(--space-2);
   border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
@@ -49,7 +49,7 @@
 .user-info {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .header-msg-btn {
@@ -57,7 +57,7 @@
   background: var(--glass-light);
   border: none;
   color: var(--theme-text-inverse);
-  padding: 6px;
+  padding: var(--space-1-5);
   border-radius: var(--radius-full);
   cursor: pointer;
   display: flex;
@@ -83,7 +83,7 @@
   line-height: 16px;
   text-align: center;
   border-radius: var(--radius-md);
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   box-shadow: 0 1px 3px var(--shadow-modal);
 }
 
@@ -131,7 +131,7 @@
   height: 4px;
   background: var(--theme-border-muted, #ccc);
   border-radius: 2px;
-  margin: 10px auto 4px;
+  margin: var(--space-2-5) auto var(--space-1);
 }
 
 @keyframes sheet-fade-in {
@@ -148,8 +148,8 @@
 .mobile-sheet-user {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--theme-border-light);
 }
 
@@ -176,7 +176,7 @@
 .mobile-sheet-email {
   font-size: var(--font-sm);
   color: var(--theme-text-gray);
-  margin-top: 2px;
+  margin-top: var(--space-0-5);
 }
 
 .mobile-sheet-actions {
@@ -187,9 +187,9 @@
 .mobile-sheet-actions button {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 14px 20px;
+  padding: 14px var(--space-5);
   border: none;
   background: none;
   font-size: 0.95rem;
@@ -212,7 +212,7 @@
 /* ── Sheet formulaire (réutilisable) ── */
 .mobile-sheet-title {
   margin: 0;
-  padding: 4px 20px 12px;
+  padding: var(--space-1) var(--space-5) var(--space-3);
   font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-primary);
@@ -220,21 +220,21 @@
 }
 
 .mobile-sheet-desc {
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   color: var(--theme-text-body);
   font-size: var(--font-base);
   line-height: 1.5;
 }
 
 .mobile-sheet-form {
-  padding: 16px 20px 4px;
+  padding: var(--space-4) var(--space-5) var(--space-1);
 }
 
 .mobile-sheet-form .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-3);
 }
 
 .mobile-sheet-form .form-group label {
@@ -244,7 +244,7 @@
 }
 
 .mobile-sheet-form .form-group input {
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   border: 2px solid var(--theme-border);
   border-radius: var(--radius-lg);
   font-size: var(--font-md);
@@ -263,8 +263,8 @@
 
 .mobile-sheet-form-actions {
   display: flex;
-  gap: 12px;
-  padding-top: 8px;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
 }
 
 .mobile-sheet-form-actions button {
@@ -326,12 +326,12 @@
 }
 
 .menu-user {
-  padding: 2rem 1.5rem;
+  padding: var(--space-8) var(--space-6);
   background: var(--theme-gradient);
   color: var(--theme-text-inverse);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .menu-avatar {
@@ -357,19 +357,19 @@
 }
 
 .menu-user-email {
-  margin: 0.25rem 0 0;
+  margin: var(--space-1) 0 0;
   font-size: var(--font-base);
   opacity: 0.9;
 }
 
 .menu-nav {
   flex: 1;
-  padding: 1rem 0;
+  padding: var(--space-4) 0;
   overflow-y: auto;
 }
 
 .menu-section-label {
-  padding: 12px 1.5rem 4px;
+  padding: var(--space-3) var(--space-6) var(--space-1);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -379,12 +379,12 @@
 
 .menu-nav button {
   width: 100%;
-  padding: 1rem 1.5rem;
+  padding: var(--space-4) var(--space-6);
   background: none;
   border: none;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
   font-size: var(--font-md);
   color: var(--theme-text-body);
   cursor: pointer;
@@ -404,13 +404,13 @@
 
 .menu-logout {
   width: 100%;
-  padding: 1rem 1.5rem;
+  padding: var(--space-4) var(--space-6);
   background: none;
   border: none;
   border-top: 1px solid var(--theme-border-medium);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
   font-size: var(--font-md);
   color: var(--theme-danger-dark);
   cursor: pointer;
@@ -418,13 +418,13 @@
 
 .menu-desktop {
   width: 100%;
-  padding: 1rem 1.5rem;
+  padding: var(--space-4) var(--space-6);
   background: none;
   border: none;
   border-top: 1px solid var(--theme-border-medium);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
   font-size: var(--font-base);
   color: var(--theme-text-gray);
   cursor: pointer;
@@ -446,7 +446,7 @@
   min-height: 100vh;
   min-height: 100dvh;
   min-height: 100dvh;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .spinner {
@@ -471,7 +471,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 6px;
+  padding: 0 var(--space-1-5);
   animation: badge-pulse-mobile 2s ease-in-out infinite;
 }
 
@@ -492,7 +492,7 @@
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2-5);
   font-size: var(--font-base);
   font-weight: 500;
   box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
@@ -517,8 +517,8 @@
 .mobile-module-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
   flex-shrink: 0;
@@ -587,7 +587,7 @@
 .mobile-module-content .eq-table-row td.eq-table-name {
   display: table-cell;
   width: 100%;
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   font-size: var(--font-base);
   font-weight: 500;
 }
@@ -640,11 +640,11 @@
 
 .mobile-module-content .orders-toolbar {
   margin-bottom: 0;
-  padding: 6px 8px;
+  padding: var(--space-1-5) var(--space-2);
 }
 
 .mobile-module-content .orders-tabs {
-  padding: 6px 8px;
+  padding: var(--space-1-5) var(--space-2);
 }
 
 .mobile-module-content .orders-panel {
@@ -684,15 +684,15 @@
   display: flex !important;
   width: 100%;
   justify-content: center;
-  padding: 10px 16px;
+  padding: var(--space-2-5) var(--space-4);
   font-size: var(--font-base);
   border-radius: var(--radius-md);
 }
 
 /* ─── Toolbar mobile : pleine largeur, empilée ─── */
 .mobile-module-content .eq-toolbar {
-  padding: 6px 0;
-  gap: 6px;
+  padding: var(--space-1-5) 0;
+  gap: var(--space-1-5);
   border-bottom: none;
 }
 
@@ -703,15 +703,15 @@
 .mobile-module-content .eq-toolbar-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-1-5);
   width: 100%;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
 }
 
 /* Search — même style que les filtres */
 .mobile-module-content .eq-search {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
   border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
@@ -730,7 +730,7 @@
 
 .mobile-module-content .eq-cascade-btn {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
   font-size: var(--font-base);
   border-radius: var(--radius-sm);
   justify-content: space-between;
@@ -741,7 +741,7 @@
   position: relative;
   top: auto;
   left: auto;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   width: 100%;
   max-height: 50vh;
   border-radius: var(--radius-md);
@@ -756,13 +756,13 @@
   margin-left: 0;
   border: none;
   box-shadow: none;
-  padding-left: 12px;
+  padding-left: var(--space-3);
   min-width: auto;
   width: 100%;
 }
 
 .mobile-module-content .eq-cascade-item {
-  padding: 10px 12px;
+  padding: var(--space-2-5) var(--space-3);
   font-size: var(--font-base);
 }
 
@@ -778,7 +778,7 @@
 .mobile-module-content .eq-zone-filter {
   flex: 1;
   min-width: 0;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
   font-size: var(--font-base);
   border-radius: var(--radius-sm);
 }
@@ -786,7 +786,7 @@
 /* SAV status filter pleine largeur */
 .mobile-module-content .eq-filter {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2-5);
   font-size: var(--font-base);
   border-radius: var(--radius-sm);
 }
@@ -808,7 +808,7 @@
 
 .mobile-module-content .eq-dialog-header {
   border-radius: 0;
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
 }
 
 .mobile-module-content .eq-dialog-body {
@@ -833,16 +833,16 @@
   border-radius: 0;
   border: none;
   border-top: 1px solid var(--theme-border);
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   padding-bottom: max(12px, env(safe-area-inset-bottom));
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mobile-module-content .eq-actions-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   padding: 0;
   border: none;
@@ -860,7 +860,7 @@
 .mobile-module-content .eq-dialog-actions .eq-btn-danger {
   width: 100%;
   justify-content: center;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   font-size: var(--font-base);
   border-radius: var(--radius-md-lg);
 }
@@ -887,15 +887,15 @@
    Theme Panel (inside menu)
    ═══════════════════════════════════════════════ */
 .menu-theme-panel {
-  padding: 12px 1.5rem 16px;
+  padding: var(--space-3) var(--space-6) var(--space-4);
   border-top: 1px solid var(--theme-border-light);
   background: var(--theme-bg-secondary);
 }
 
 .menu-theme-mode {
   display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-3);
 }
 
 .menu-theme-mode-btn {
@@ -903,8 +903,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px;
+  gap: var(--space-1-5);
+  padding: var(--space-2-5);
   border: 2px solid var(--theme-border);
   border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
@@ -924,14 +924,14 @@
 .menu-palette-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .menu-palette-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2-5);
   border: 2px solid var(--theme-border);
   border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);

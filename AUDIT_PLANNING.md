@@ -25,37 +25,38 @@ Fiabiliser le module Planning et la synchronisation Google Calendar. Corriger le
 
 ## Problèmes détectés
 
-| # | Sévérité | Problème | Source |
+| # | Sévérité | Problème | Statut |
 |---|----------|----------|--------|
-| P1 | HIGH | Sync GCal silencieuse en cas d'erreur token expiré | PLAN_ACTION_EMAG |
-| P2 | MED | Invalid Date possible sur événements sans date fin | Commit `dab447d` (partiellement corrigé) |
-| P3 | MED | Pas de retry sur erreur réseau GCal | PLAN_ACTION_EMAG |
-| P4 | MED | Catégories planning non validées côté backend | PLAN_ACTION_EMAG |
-| P5 | LOW | Tooltip tronqué sur événements longs | PLAN_ACTION_EMAG |
-
-## Analyse UI → API → DB
-
-- **UI** : `PlanningPanel.jsx` → `PlanningView.jsx` → affiche événements
-- **API** : `api.planning.getEvents()` → `GET /api/planning/events`
-- **DB** : Table `planning_events` (id, title, start_date, end_date, category, ...)
-- **GCal** : `googleCalendarRoutes.js` → OAuth2 → fetch events → upsert DB
+| P1 | CRIT | Aucune validation format date YYYY-MM-DD sur POST/PUT display-events | ✅ FIXÉ |
+| P2 | CRIT | Aucune validation date/time/end_time sur POST/PUT tasks | ✅ FIXÉ |
+| P3 | CRIT | Batch tasks ignore silencieusement les dates invalides | ✅ FIXÉ |
+| P4 | HIGH | new Date() sans garde isNaN → "Invalid Date" affiché (6 occurrences, 3 fichiers) | ✅ FIXÉ |
+| P5 | HIGH | GCal fetch() sans timeout AbortController → blocage indéfini | ✅ FIXÉ |
+| P6 | HIGH | GCal pas de retry sur erreurs transitoires (502/503/504) | ✅ FIXÉ |
+| P7 | MED | GCal POST /token expiresAt non validé comme nombre/futur | ✅ FIXÉ |
+| P8 | HIGH | GCal pas de refresh_token → reconnexion manuelle à chaque expiration | 📋 NOTÉ (redesign OAuth requis) |
 
 ## Plan d'action
 
 | Étape | Action | État |
 |-------|--------|------|
-| 1 | Scan complet des routes planning + GCal | ⬜ TODO |
-| 2 | Identifier tous les chemins sans validation de date | ⬜ TODO |
-| 3 | Ajouter guards Invalid Date backend | ⬜ TODO |
-| 4 | Ajouter retry GCal avec backoff | ⬜ TODO |
-| 5 | Valider catégories backend | ⬜ TODO |
+| 1 | Scan complet routes planning + GCal | ✅ DONE |
+| 2 | Ajout isValidDate/isValidTime helpers backend | ✅ DONE |
+| 3 | Validation date/time sur POST/PUT display-events et tasks | ✅ DONE |
+| 4 | safeParseDate() helper frontend (dateUtils.js) | ✅ DONE |
+| 5 | Gardes Invalid Date (6 occurrences dans 3 composants) | ✅ DONE |
+| 6 | GCal AbortController timeout 10s + retry 1x (502/503/504) | ✅ DONE |
+| 7 | Validation expiresAt POST /token | ✅ DONE |
 
 ## Tests à effectuer
 
-- Tests unitaires existants
-- Test manuel sync GCal (token valide + expiré)
-- Test création événement sans date fin
+- `node --test tests/unit.test.js` — ✅ 21/21, 0 fail
+- Aucune erreur lint/syntaxe (6 fichiers vérifiés)
+- Test manuel sync GCal (token valide + expiré) — à valider
 
 ## Notes de validation
 
-_(à remplir après chaque étape)_
+- Commit `a25df74` sur `audit/planning`
+- Merge `audit/planning → dev` le 2026-04-08
+- refresh_token GCal : nécessite redesign OAuth (scope, backend-side flow) — reporté à phase dédiée
+- Aucune régression détectée

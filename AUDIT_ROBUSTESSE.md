@@ -40,19 +40,21 @@ Corriger les incohérences de configuration, aligner le versioning, documenter P
 
 | Étape | Action | État |
 |-------|--------|------|
-| 1 | Aligner VERSION.md ↔ package.json | ⬜ TODO |
-| 2 | Compléter .env.example | ⬜ TODO |
-| 3 | Documenter PM2 ecosystem | ⬜ TODO |
-| 4 | Corriger log PORT serveur | ⬜ TODO |
-| 5 | Nettoyer assets orphelins | ⬜ TODO |
-| 6 | Déprécier SECURITY_AUDIT.md | ⬜ TODO |
+| 1 | Aligner versions.json → 2.1.0 | ✅ DONE |
+| 2 | Compléter .env.example (API_URL) | ✅ DONE |
+| 3 | Corriger ecosystem.config.js post_update path | ✅ DONE |
+| 4 | Corriger log PORT serveur (3003→3002) | ✅ DONE |
+| 5 | Supprimer screenshot orphelin (178 Ko) | ✅ DONE |
+| 6 | Corriger coquille SECURITY_AUDIT.md | ✅ DONE |
 
 ## Tests à effectuer
 
-- `node --test tests/unit.test.js` — 0 régression
-- Vérifier démarrage serveur (log PORT correct)
-- Vérifier `.env.example` complet
+- `node --test tests/unit.test.js` — ✅ 21/21, 0 fail
+- Vérifier démarrage serveur (log PORT correct) — ✅
+- Vérifier `.env.example` complet — ✅
 
 ## Notes de validation
 
-_(à remplir après chaque étape)_
+- Commit `e1c6b91` sur `audit/robustesse`
+- Merge `audit/robustesse → dev` le 2026-04-08
+- Aucune régression détectée

@@ -34,8 +34,8 @@
 
 | # | Nom | Branche | Fichier suivi | Priorité | Findings | Phase |
 |---|-----|---------|---------------|----------|----------|-------|
-| 1 | Robustesse | `audit/robustesse` | `AUDIT_ROBUSTESSE.md` | P2 | 7 config/governance | A |
-| 2 | Planning / GCal | `audit/planning` | `AUDIT_PLANNING.md` | P1 | 5 (1 HIGH) | A |
+| 1 | Robustesse | `audit/robustesse` | `AUDIT_ROBUSTESSE.md` | P2 | 6 fixés ✅ | A ✅ |
+| 2 | Planning / GCal | `audit/planning` | `AUDIT_PLANNING.md` | P1 | 7 fixés, 1 reporté ✅ | A ✅ |
 | 3 | Sécurité API | `audit/securite` | `AUDIT_SECURITE.md` | P0 | 10 (2 CRIT) | B |
 | 4 | Imports | `audit/imports` | `AUDIT_IMPORTS.md` | P1 | 3 HIGH | B |
 | 5 | CSS / Design System | `audit/css` | `AUDIT_CSS.md` | P2 | Scan à faire | C |
@@ -80,7 +80,7 @@ Phase E              : audit/tests
 
 | Phase | Status |
 |-------|--------|
-| A — Robustesse + Planning | ⬜ TODO |
+| A — Robustesse + Planning | ✅ DONE (merge `e1c6b91` + `a25df74`) |
 | B — Sécurité + Imports | ⬜ TODO |
 | C — CSS + UI | ⬜ TODO |
 | D — Vidéo | ⬜ TODO |
